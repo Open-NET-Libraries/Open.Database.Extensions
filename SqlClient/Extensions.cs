@@ -9,7 +9,7 @@ using System.Threading.Tasks.Dataflow;
 namespace Open.Database.Extensions.SqlClient
 {
 	public static class Extensions
-    {
+	{
 		public static IDbDataParameter AddParameterType(this IDbCommand target, string name, SqlDbType value)
 		{
 			var c = (SqlParameter)target.CreateParameter();
@@ -20,7 +20,7 @@ namespace Open.Database.Extensions.SqlClient
 		}
 
 		public static SqlCommand CreateCommand(this SqlConnection conn,
-			CommandType type, string commandText, int secondsTimeout = 600)
+			CommandType type, string commandText, int secondsTimeout = 30)
 		{
 			var command = conn.CreateCommand();
 			command.CommandType = type;
@@ -30,9 +30,25 @@ namespace Open.Database.Extensions.SqlClient
 			return command;
 		}
 
+		public static ISourceBlock<T> IterateReaderAsync<T>(this SqlDataReader reader,
+			Func<IDataRecord, T> transform)
+		{
+			var block = new BufferBlock<T>();
+
+			Task.Run(async () =>
+			{
+				while (await reader.ReadAsync())
+					block.Post(transform(reader));
+
+				block.Complete();
+			});
+
+			return block;
+		}
+
 		public static async Task IterateReaderAsync<T>(this SqlDataReader reader,
-		Func<IDataRecord, T> transform,
-		Action<T> whileWaitingForNext)
+			Func<IDataRecord, T> transform,
+			Action<T> whileWaitingForNext)
 		{
 			var block = new ActionBlock<T>(whileWaitingForNext);
 
@@ -51,10 +67,18 @@ namespace Open.Database.Extensions.SqlClient
 			return list;
 		}
 
-		public static SqlStoredProcedure NewStoredProcedure(this SqlConnectionFactory target, string name)
+		public static ExpressiveSqlCommand Command(
+			this IDbConnectionFactory<SqlConnection> target,
+			string command, CommandType type = CommandType.Text)
 		{
-			return new SqlStoredProcedure(target, name);
+			return new ExpressiveSqlCommand(target, type, command);
 		}
 
+		public static ExpressiveSqlCommand StoredProcedure(
+			this IDbConnectionFactory<SqlConnection> target,
+			string command)
+		{
+			return new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
+		}
 	}
 }

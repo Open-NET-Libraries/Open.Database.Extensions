@@ -8,16 +8,14 @@ using System.Threading.Tasks;
 namespace Open.Database.Extensions.SqlClient
 {
 
-
-	public class SqlStoredProcedure : StoredProcedureBase<SqlConnectionFactory, SqlDbType, SqlStoredProcedure>
+	public class ExpressiveSqlCommand : ExpressiveCommandBase<SqlConnection, SqlDbType, ExpressiveSqlCommand>
 	{
-		public SqlStoredProcedure(SqlConnectionFactory connFactory, string name, List<Param> @params = null) : base(connFactory, name, @params)
+		public ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string name, List<Param> @params = null) : base(connFactory, type, name, @params)
 		{
 		}
 
-		protected SqlStoredProcedure(SqlConnectionFactory connFactory, string name, params Param[] @params) : this(connFactory, name, @params.ToList())
+		protected ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string name, params Param[] @params) : this(connFactory, type, name, @params.ToList())
 		{
-
 		}
 
 		protected override void AddParams(IDbCommand command)
@@ -34,20 +32,35 @@ namespace Open.Database.Extensions.SqlClient
 		{
 			using (var con = ConnectionFactory.Create())
 			using (var cmd = con.CreateCommand(
-				CommandType.StoredProcedure, Name, Timeout))
+				Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				await con.OpenAsync();
-				return UseScalar
-					? (int)(await cmd.ExecuteScalarAsync())
-					: await cmd.ExecuteNonQueryAsync();
+				return await cmd.ExecuteNonQueryAsync();
 			}
+		}
+
+		public async Task<object> ExecuteScalarAsync()
+		{
+			using (var con = ConnectionFactory.Create())
+			using (var cmd = con.CreateCommand(
+				Type, Command, Timeout))
+			{
+				AddParams(cmd);
+				await con.OpenAsync();
+				return await cmd.ExecuteScalarAsync();
+			}
+		}
+
+		public async Task<T> ExecuteScalarAsync<T>()
+		{
+			return (T)(await ExecuteScalarAsync());
 		}
 
 		public async Task IterateReaderAsync(Action<IDataRecord> handler)
 		{
 			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(CommandType.StoredProcedure, Name, Timeout))
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				await con.OpenAsync();
@@ -62,7 +75,7 @@ namespace Open.Database.Extensions.SqlClient
 			Action<T> whileWaitingForNext)
 		{
 			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(CommandType.StoredProcedure, Name, Timeout))
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				await con.OpenAsync();

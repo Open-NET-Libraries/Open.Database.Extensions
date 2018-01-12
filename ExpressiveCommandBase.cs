@@ -5,30 +5,40 @@ using System.Linq;
 
 namespace Open.Database.Extensions
 {
-	public abstract class StoredProcedureBase<TConnFactory, TDbType, TThis>
-		where TConnFactory : class, IDbConnectionFactory
+	public abstract class ExpressiveCommandBase<TConn, TDbType, TThis>
+		where TConn : class, IDbConnection
 		where TDbType : struct
-		where TThis : StoredProcedureBase<TConnFactory, TDbType, TThis>
+		where TThis : ExpressiveCommandBase<TConn, TDbType, TThis>
 	{
-		protected TConnFactory ConnectionFactory;
+		protected IDbConnectionFactory<TConn> ConnectionFactory;
 
-		protected StoredProcedureBase(TConnFactory connFactory, string name, List<Param> @params = null)
+		protected ExpressiveCommandBase(
+			IDbConnectionFactory<TConn> connFactory,
+			CommandType type,
+			string command,
+			List<Param> @params = null)
 		{
 			ConnectionFactory = connFactory ?? throw new ArgumentNullException("connFactory");
-			Name = name ?? throw new ArgumentNullException("name");
+			Type = type;
+			Command = command ?? throw new ArgumentNullException("command");
 			Params = @params ?? new List<Param>();
-			UseScalar = false;
 			Timeout = 30;
 		}
 
-		protected StoredProcedureBase(TConnFactory connFactory, string name, params Param[] @params) : this(connFactory, name, @params.ToList())
+		protected ExpressiveCommandBase(
+			IDbConnectionFactory<TConn> connFactory,
+			CommandType type,
+			string command,
+			params Param[] @params)
+			: this(connFactory, type, command, @params.ToList())
 		{
 
 		}
 
-		public string Name { get; set; }
+		public string Command { get; set; }
+		public CommandType Type { get; set; }
+
 		public List<Param> Params { get; set; }
-		public bool UseScalar { get; set; }
 
 		public int Timeout { get; set; }
 
@@ -93,12 +103,6 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
-		public TThis SetUseScalar(bool useScalar = true)
-		{
-			UseScalar = useScalar;
-			return (TThis)this;
-		}
-
 		public TThis SetTimeout(int seconds)
 		{
 			Timeout = seconds;
@@ -109,7 +113,7 @@ namespace Open.Database.Extensions
 		public T ExecuteReader<T>(Func<IDataReader, T> handler)
 		{
 			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(CommandType.StoredProcedure, Name, Timeout))
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				con.Open();
@@ -121,7 +125,7 @@ namespace Open.Database.Extensions
 		public void ExecuteReader(Action<IDataReader> handler)
 		{
 			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(CommandType.StoredProcedure, Name, Timeout))
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				con.Open();
@@ -137,11 +141,10 @@ namespace Open.Database.Extensions
 					handler(reader);
 			});
 
-
 		IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform)
 		{
 			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(CommandType.StoredProcedure, Name, Timeout))
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				con.Open();
@@ -222,14 +225,28 @@ namespace Open.Database.Extensions
 		public int ExecuteNonQuery()
 		{
 			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(CommandType.StoredProcedure, Name, Timeout))
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
 			{
 				AddParams(cmd);
 				con.Open();
-				return UseScalar
-					? (int)cmd.ExecuteScalar()
-					: cmd.ExecuteNonQuery();
+				return cmd.ExecuteNonQuery();
 			}
+		}
+
+		public object ExecuteScalar()
+		{
+			using (var con = ConnectionFactory.Create())
+			using (var cmd = con.CreateCommand(Type, Command, Timeout))
+			{
+				AddParams(cmd);
+				con.Open();
+				return cmd.ExecuteScalar();
+			}
+		}
+
+		public T ExecuteScalar<T>()
+		{
+			return (T)ExecuteScalar();
 		}
 
 		public DataTable LoadTable()
@@ -238,8 +255,6 @@ namespace Open.Database.Extensions
 			ExecuteReader(reader => table.Load(reader));
 			return table;
 		}
-
-
 
 	}
 }

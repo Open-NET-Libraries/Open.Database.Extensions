@@ -24,7 +24,7 @@ namespace Open.Database.Extensions
         }
 
         public static IDbCommand CreateCommand(this IDbConnection conn,
-            CommandType type, string commandText, int secondsTimeout = 600)
+            CommandType type, string commandText, int secondsTimeout = 30)
         {
             var command = conn.CreateCommand();
             command.CommandType = type;
@@ -35,11 +35,11 @@ namespace Open.Database.Extensions
         }
 
         public static DataTable LoadTable(this IDbConnectionFactory factory,
-            CommandType type, string commandText, int millisecondsTimeout = 600)
+            CommandType type, string commandText, int secondsTimeout = 30)
         {
             var data = new DataTable();
             using (var con = factory.Create())
-            using (var com = con.CreateCommand(type, commandText))
+            using (var com = con.CreateCommand(type, commandText, secondsTimeout))
             using (var reader = com.ExecuteReader())
             {
                 data.Load(reader);
@@ -47,12 +47,19 @@ namespace Open.Database.Extensions
             return data;
         }
 
-        // This is begging for an async producer consumer queue... (Dataflow?)
-
-        public static DbStoredProcedure NewStoredProcedure(this IDbConnectionFactory target, string name)
+        public static ExpressiveDbCommand Command(
+			this IDbConnectionFactory<IDbConnection> target,
+			string command, CommandType type = CommandType.Text)
         {
-            return new DbStoredProcedure(target, name);
-        }
-    }
+            return new ExpressiveDbCommand(target, type, command);
+		}
+
+		public static ExpressiveDbCommand StoredProcedure(
+			this IDbConnectionFactory<IDbConnection> target,
+			string command)
+		{
+			return new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
+		}
+	}
 }
  

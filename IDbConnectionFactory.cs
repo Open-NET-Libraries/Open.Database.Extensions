@@ -8,7 +8,8 @@ namespace Open.Database.Extensions
 		TConn Create();
     }
 
-    public interface IDbConnectionFactory : IDbConnectionFactory<IDbConnection>
+    public interface IDbConnectionFactory
+		: IDbConnectionFactory<IDbConnection>
 	{
 		
     }
