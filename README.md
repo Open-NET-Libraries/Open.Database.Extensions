@@ -11,3 +11,14 @@ Connection factories facilitate creation and disposal of connections without the
 The provided expressive command classes allow for an expressive means to append parameters and execute the results without lenghty complicated setup.
 
 Extensions are provied to create commands from connection factories.
+
+### Example
+
+```cs
+var result = connectionFactory
+   .StoredProcedure("[procedure name]")
+   .AddParam("a",1)
+   .AddParam("b",true)
+   .AddParam("c","hello")
+   .ExecuteScalar();
+```
