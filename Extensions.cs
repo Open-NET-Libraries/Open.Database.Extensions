@@ -34,19 +34,6 @@ namespace Open.Database.Extensions
             return command;
         }
 
-        public static DataTable LoadTable(this IDbConnectionFactory factory,
-            CommandType type, string commandText, int secondsTimeout = 30)
-        {
-            var data = new DataTable();
-            using (var con = factory.Create())
-            using (var com = con.CreateCommand(type, commandText, secondsTimeout))
-            using (var reader = com.ExecuteReader())
-            {
-                data.Load(reader);
-            }
-            return data;
-        }
-
         public static ExpressiveDbCommand Command(
 			this IDbConnectionFactory<IDbConnection> target,
 			string command, CommandType type = CommandType.Text)

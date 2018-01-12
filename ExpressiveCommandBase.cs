@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -183,43 +184,92 @@ namespace Open.Database.Extensions
 			return e;
 		}
 
-		protected class Transformer<T>
+		//protected class Transformer<T>
+		//	where T : new()
+		//{
+		//	readonly Type _type;
+		//	public Transformer()
+		//	{
+		//		_type = typeof(T);
+		//	}
+
+		//	public T Transform(IDataRecord r)
+		//	{
+		//		var e = new T();
+		//		for (var i = 0; i < r.FieldCount; i++)
+		//		{
+		//			var n = r.GetName(i);
+		//			var f = _type.GetProperty(n);
+		//			if (f == null) continue;
+		//			var value = r.GetValue(i);
+		//			if (value == DBNull.Value) value = null;
+		//			f.SetValue(e, value);
+		//		}
+		//		return e;
+		//	}
+		//}
+
+		protected class DeferredTransformer<T>
 			where T : new()
 		{
 			readonly Type _type;
-			public Transformer()
+			readonly HashSet<string> _properties;
+			public readonly ConcurrentQueue<Dictionary<string, object>> Values;
+
+			public DeferredTransformer()
 			{
 				_type = typeof(T);
+				_properties = new HashSet<string>(
+					_type.GetProperties().Select(p => p.Name));
+				Values = new ConcurrentQueue<Dictionary<string, object>>();
 			}
 
-			public T Transform(IDataRecord r)
+			public void Queue(IDataRecord r)
 			{
-				var e = new T();
+				var e = new Dictionary<string, object>();
 				for (var i = 0; i < r.FieldCount; i++)
 				{
 					var n = r.GetName(i);
-					var f = _type.GetProperty(n);
-					if (f == null) continue;
-					var value = r.GetValue(i);
-					if (value == DBNull.Value) value = null;
-					f.SetValue(e, value);
+					if(_properties.Contains(n))
+						e.Add(n, r.GetValue(i));
 				}
-				return e;
+				Values.Enqueue(e);
+			}
+
+			public IEnumerable<T> DequeueAndTransform()
+			{
+				while(Values.TryDequeue(out Dictionary<string,object> e))
+				{
+					var r = new T();
+					foreach(var n in _properties)
+					{
+						if(e.ContainsKey(n))
+						{
+							var value = e[n];
+							if (value == DBNull.Value) value = null;
+							_type.GetProperty(n).SetValue(r, value);
+						}
+					}
+
+					yield return r;
+				}
 			}
 		}
 
 		public List<T> ToList<T>()
 			where T : new()
 		{
-			var x = new Transformer<T>();
-			return IterateReaderInternal(x.Transform).ToList();
+			var x = new DeferredTransformer<T>();
+			IterateReader(x.Queue);
+			return x.DequeueAndTransform().ToList();
 		}
 
 		public T[] ToArray<T>()
 			where T : new()
 		{
-			var x = new Transformer<T>();
-			return IterateReaderInternal(x.Transform).ToArray();
+			var x = new DeferredTransformer<T>();
+			IterateReader(x.Queue);
+			return x.DequeueAndTransform().ToArray();
 		}
 
 		public int ExecuteNonQuery()

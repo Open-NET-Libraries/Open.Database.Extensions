@@ -93,11 +93,12 @@ namespace Open.Database.Extensions.SqlClient
 			return list;
 		}
 
-		public Task<List<T>> ToListAsync<T>()
+		public async Task<List<T>> ToListAsync<T>()
 			where T : new()
 		{
-			var x = new Transformer<T>();
-			return ToListAsync(record => x.Transform(record));
+			var x = new DeferredTransformer<T>();
+			await IterateReaderAsync(x.Queue);
+			return x.DequeueAndTransform().ToList();
 		}
 
 	}
