@@ -6,6 +6,8 @@ Useful set of utilities and abstractions for simplifying modern database operati
 
 Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.  A ```SqlConnectionFactory``` is provided and can be overriden to provide more specific dependency injection configurations.
 
-## Stored Procedures
+## Expressive Commands
 
-The provided ```StoredProcedure``` classes allow for an expressive means to append parameters and execute the results without lenghty complicated setup.
+The provided expressive command classes allow for an expressive means to append parameters and execute the results without lenghty complicated setup.
+
+Extensions are provied to create commands from connection factories.
