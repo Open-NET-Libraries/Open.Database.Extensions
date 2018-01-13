@@ -11,7 +11,11 @@
     <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>1.1.2</Version>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <PackageReleaseNotes>Significant expansion of API including '.ToTargetBlock' and '.AsSourceBlock'.
+Meticulous reuse of extensions and base classes to reduce redundancy and expand extendability.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

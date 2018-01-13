@@ -1,310 +1,230 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
-	public abstract class ExpressiveCommandBase<TConn, TDbType, TThis>
-		where TConn : class, IDbConnection
-		where TDbType : struct
-		where TThis : ExpressiveCommandBase<TConn, TDbType, TThis>
-	{
-		protected IDbConnectionFactory<TConn> ConnectionFactory;
+    public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
+        where TConnection : class, IDbConnection
+        where TCommand : class, IDbCommand
+        where TDbType : struct
+        where TThis : ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
+    {
+        protected IDbConnectionFactory<TConnection> ConnectionFactory;
 
-		protected ExpressiveCommandBase(
-			IDbConnectionFactory<TConn> connFactory,
-			CommandType type,
-			string command,
-			List<Param> @params = null)
-		{
-			ConnectionFactory = connFactory ?? throw new ArgumentNullException("connFactory");
-			Type = type;
-			Command = command ?? throw new ArgumentNullException("command");
-			Params = @params ?? new List<Param>();
-			Timeout = 30;
-		}
+        protected const int DEFAULT_SECONDS_TIMEOUT = 30;
 
-		protected ExpressiveCommandBase(
-			IDbConnectionFactory<TConn> connFactory,
-			CommandType type,
-			string command,
-			params Param[] @params)
-			: this(connFactory, type, command, @params.ToList())
-		{
+        protected ExpressiveCommandBase(
+            IDbConnectionFactory<TConnection> connFactory,
+            CommandType type,
+            string command,
+            List<Param> @params = null)
+        {
+            ConnectionFactory = connFactory ?? throw new ArgumentNullException(nameof(connFactory));
+            Type = type;
+            Command = command ?? throw new ArgumentNullException(nameof(command));
+            Params = @params ?? new List<Param>();
+            Timeout = DEFAULT_SECONDS_TIMEOUT;
+        }
 
-		}
+        protected ExpressiveCommandBase(
+            IDbConnectionFactory<TConnection> connFactory,
+            CommandType type,
+            string command,
+            params Param[] @params)
+            : this(connFactory, type, command, @params.ToList())
+        {
 
-		public string Command { get; set; }
-		public CommandType Type { get; set; }
+        }
 
-		public List<Param> Params { get; set; }
+        public string Command { get; set; }
+        public CommandType Type { get; set; }
 
-		public int Timeout { get; set; }
+        public List<Param> Params { get; protected set; }
 
-		public struct Param
-		{
-			public string Name { get; set; }
-			public object Value { get; set; }
-			public TDbType? Type { get; set; }
-		}
+        public ushort Timeout { get; set; }
 
-		public TThis AddParam(string name, object value, TDbType type)
-		{
-			Params.Add(new Param
-			{
-				Name = name,
-				Value = value,
-				Type = type
-			});
+        public TThis AddParam(string name, object value, TDbType type)
+        {
+            Params.Add(new Param
+            {
+                Name = name,
+                Value = value,
+                Type = type
+            });
 
-			return (TThis)this;
-		}
+            return (TThis)this;
+        }
 
-		public TThis AddParam(string name, object value)
-		{
-			var p = new Param { Name = name };
-			if (value != null) p.Value = value;
-			else p.Value = DBNull.Value;
+        public TThis AddParam(string name, object value)
+        {
+            var p = new Param { Name = name };
+            if (value != null) p.Value = value;
+            else p.Value = DBNull.Value;
 
-			Params.Add(p);
-			return (TThis)this;
-		}
+            Params.Add(p);
+            return (TThis)this;
+        }
 
-		public TThis AddParam<T>(string name, T? value, TDbType type)
-			where T : struct
-		{
-			var p = new Param { Name = name, Type = type };
-			if (value.HasValue) p.Value = value.Value;
-			else p.Value = DBNull.Value;
+        public TThis AddParam<T>(string name, T? value, TDbType type)
+            where T : struct
+        {
+            var p = new Param { Name = name, Type = type };
+            if (value.HasValue) p.Value = value.Value;
+            else p.Value = DBNull.Value;
 
-			Params.Add(p);
-			return (TThis)this;
-		}
+            Params.Add(p);
+            return (TThis)this;
+        }
 
-		public TThis AddParam<T>(string name, T? value)
-			where T : struct
-		{
-			var p = new Param { Name = name };
-			if (value.HasValue) p.Value = value.Value;
-			else p.Value = DBNull.Value;
+        public TThis AddParam<T>(string name, T? value)
+            where T : struct
+        {
+            var p = new Param { Name = name };
+            if (value.HasValue) p.Value = value.Value;
+            else p.Value = DBNull.Value;
 
-			Params.Add(p);
-			return (TThis)this;
-		}
+            Params.Add(p);
+            return (TThis)this;
+        }
 
-		public TThis AddParam(string name)
-		{
-			Params.Add(new Param
-			{
-				Name = name
-			});
+        public TThis AddParam(string name)
+        {
+            Params.Add(new Param
+            {
+                Name = name
+            });
 
-			return (TThis)this;
-		}
+            return (TThis)this;
+        }
 
-		public TThis SetTimeout(int seconds)
-		{
-			Timeout = seconds;
-			return (TThis)this;
-		}
+        public TThis SetTimeout(ushort seconds)
+        {
+            Timeout = seconds;
+            return (TThis)this;
+        }
 
-		protected abstract void AddParams(IDbCommand command);
-		public T ExecuteReader<T>(Func<IDataReader, T> handler)
-		{
-			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(Type, Command, Timeout))
-			{
-				AddParams(cmd);
-				con.Open();
-				using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
-					return handler(reader);
-			}
-		}
+        protected abstract void AddParams(TCommand command);
 
-		public void ExecuteReader(Action<IDataReader> handler)
-		{
-			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(Type, Command, Timeout))
-			{
-				AddParams(cmd);
-				con.Open();
-				using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
-					handler(reader);
-			}
-		}
+        public void Execute(Action<TCommand> handler)
+        {
+            using (var con = ConnectionFactory.Create())
+            using (var cmd = con.CreateCommand(Type, Command, Timeout))
+            {
+                var c = cmd as TCommand;
+                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                AddParams(c);
+                con.Open();
+                handler(c);
+            }
+        }
 
-		public void IterateReader(Action<IDataRecord> handler)
-			=> ExecuteReader(reader =>
-			{
-				while (reader.Read())
-					handler(reader);
-			});
+        public T Execute<T>(Func<TCommand, T> handler)
+        {
+            using (var con = ConnectionFactory.Create())
+            using (var cmd = con.CreateCommand(Type, Command, Timeout))
+            {
+                var c = cmd as TCommand;
+                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                AddParams(c);
+                con.Open();
+                return handler(c);
+            }
+        }
 
-		IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform)
-		{
-			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(Type, Command, Timeout))
-			{
-				AddParams(cmd);
-				con.Open();
-				using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
-				{
-					while (reader.Read())
-					{
-						yield return transform(reader);
-					}
-				}
-			}
-		}
+        // ** This should remain protected as there is a high risk of holding a connection open if left publicly accessible.
+        protected IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform)
+        {
+            using (var con = ConnectionFactory.Create())
+            using (var cmd = con.CreateCommand(Type, Command, Timeout))
+            {
+                var c = cmd as TCommand;
+                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                AddParams(c);
+                con.Open();
+                using (var reader = c.ExecuteReader(CommandBehavior.CloseConnection))
+                {
+                    while (reader.Read())
+                    {
+                        yield return transform(reader);
+                    }
+                }
+            }
+        }
 
-		public List<T> ToList<T>(Func<IDataRecord, T> transform)
-		{
-			return IterateReaderInternal(transform).ToList();
-		}
+        public void ExecuteReader(Action<IDataReader> handler)
+            => Execute(command => command.ExecuteReader(handler));
 
-		public T[] ToArray<T>(Func<IDataRecord, T> transform)
-		{
-			return IterateReaderInternal(transform).ToArray();
-		}
+        public T ExecuteReader<T>(Func<IDataReader, T> handler)
+            => Execute(command => command.ExecuteReader(handler));
 
-		static T Transform<T>(IDataRecord r)
-			where T : new()
-		{
-			var type = typeof(T);
-			var e = new T();
-			for (var i = 0; i < r.FieldCount; i++)
-			{
-				var n = r.GetName(i);
-				var value = r.GetValue(i);
-				if (value == DBNull.Value) value = null;
-				type.GetProperty(n).SetValue(e, value);
-			}
-			return e;
-		}
+        public void IterateReader(Action<IDataRecord> handler)
+            => Execute(command => command.IterateReader(handler));
 
-		//protected class Transformer<T>
-		//	where T : new()
-		//{
-		//	readonly Type _type;
-		//	public Transformer()
-		//	{
-		//		_type = typeof(T);
-		//	}
+        public void IterateReaderWhile(Func<IDataRecord, bool> handler)
+            => Execute(command => command.IterateReaderWhile(handler));
 
-		//	public T Transform(IDataRecord r)
-		//	{
-		//		var e = new T();
-		//		for (var i = 0; i < r.FieldCount; i++)
-		//		{
-		//			var n = r.GetName(i);
-		//			var f = _type.GetProperty(n);
-		//			if (f == null) continue;
-		//			var value = r.GetValue(i);
-		//			if (value == DBNull.Value) value = null;
-		//			f.SetValue(e, value);
-		//		}
-		//		return e;
-		//	}
-		//}
+        public int ExecuteNonQuery()
+            => Execute(command => command.ExecuteNonQuery());
 
-		protected class DeferredTransformer<T>
-			where T : new()
-		{
-			readonly Type _type;
-			readonly HashSet<string> _properties;
-			public readonly ConcurrentQueue<Dictionary<string, object>> Values;
+        public object ExecuteScalar()
+            => Execute(command => command.ExecuteScalar());
 
-			public DeferredTransformer()
-			{
-				_type = typeof(T);
-				_properties = new HashSet<string>(
-					_type.GetProperties().Select(p => p.Name));
-				Values = new ConcurrentQueue<Dictionary<string, object>>();
-			}
+        public T ExecuteScalar<T>()
+            => (T)ExecuteScalar();
 
-			public void Queue(IDataRecord r)
-			{
-				var e = new Dictionary<string, object>();
-				for (var i = 0; i < r.FieldCount; i++)
-				{
-					var n = r.GetName(i);
-					if(_properties.Contains(n))
-						e.Add(n, r.GetValue(i));
-				}
-				Values.Enqueue(e);
-			}
+        public DataTable LoadTable()
+            => Execute(command => command.ToDataTable());
 
-			public IEnumerable<T> DequeueAndTransform()
-			{
-				while(Values.TryDequeue(out Dictionary<string,object> e))
-				{
-					var r = new T();
-					foreach(var n in _properties)
-					{
-						if(e.ContainsKey(n))
-						{
-							var value = e[n];
-							if (value == DBNull.Value) value = null;
-							_type.GetProperty(n).SetValue(r, value);
-						}
-					}
+        // ** This should remain protected as there is a high risk of holding a connection open if left publicly accessible.
+        protected IEnumerable<Dictionary<string, object>> IterateReaderInternal()
+            => IterateReaderInternal(r => r.ToDictionary());
 
-					yield return r;
-				}
-			}
-		}
+        // ** This should remain protected as there is a high risk of holding a connection open if left publicly accessible.
+        protected IEnumerable<Dictionary<string, object>> IterateReaderInternal(HashSet<string> columnNames)
+             => IterateReaderInternal(r => r.ToDictionary(columnNames));
 
-		public List<T> ToList<T>()
-			where T : new()
-		{
-			var x = new DeferredTransformer<T>();
-			IterateReader(x.Queue);
-			return x.DequeueAndTransform().ToList();
-		}
+        public List<Dictionary<string, object>> ToList(HashSet<string> columnNames)
+            => IterateReaderInternal(columnNames).ToList();
 
-		public T[] ToArray<T>()
-			where T : new()
-		{
-			var x = new DeferredTransformer<T>();
-			IterateReader(x.Queue);
-			return x.DequeueAndTransform().ToArray();
-		}
+        public List<Dictionary<string, object>> ToList(IEnumerable<string> columnNames)
+            => ToList(new HashSet<string>(columnNames));
 
-		public int ExecuteNonQuery()
-		{
-			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(Type, Command, Timeout))
-			{
-				AddParams(cmd);
-				con.Open();
-				return cmd.ExecuteNonQuery();
-			}
-		}
+        public List<Dictionary<string, object>> ToList(params string[] columnNames)
+            => columnNames.Length == 0
+                ? IterateReaderInternal().ToList()
+                : ToList(new HashSet<string>(columnNames));
 
-		public object ExecuteScalar()
-		{
-			using (var con = ConnectionFactory.Create())
-			using (var cmd = con.CreateCommand(Type, Command, Timeout))
-			{
-				AddParams(cmd);
-				con.Open();
-				return cmd.ExecuteScalar();
-			}
-		}
+        public Dictionary<string, object>[] ToArray(HashSet<string> columnNames)
+            => IterateReaderInternal(columnNames).ToArray();
 
-		public T ExecuteScalar<T>()
-		{
-			return (T)ExecuteScalar();
-		}
+        public Dictionary<string, object>[] ToArray(IEnumerable<string> columnNames)
+            => ToArray(new HashSet<string>(columnNames));
 
-		public DataTable LoadTable()
-		{
-			var table = new DataTable();
-			ExecuteReader(reader => table.Load(reader));
-			return table;
-		}
+        public Dictionary<string, object>[] ToArray(params string[] columnNames)
+            => columnNames.Length == 0
+                ? IterateReaderInternal().ToArray()
+                : ToArray(new HashSet<string>(columnNames));
 
-	}
+        public void ToTargetBlock<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
+            => IterateReaderWhile(r => target.Post(transform(r)));
+
+        public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform)
+        {
+            var source = new BufferBlock<T>();
+            ToTargetBlock(transform, source);
+            return source;
+        }
+
+        public IEnumerable<T> Results<T>()
+            where T : new()
+        {
+            var x = new Transformer<T>();
+            // ToArray pulls extracts all the data first.  Then we use the .Select to transform into the desired model T;
+            return ToArray(x.PropertyNames)
+                .Select(entry => x.Transform(entry));
+        }
+    }
 }

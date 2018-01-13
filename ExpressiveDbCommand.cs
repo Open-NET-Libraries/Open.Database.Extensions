@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Open.Database.Extensions
 {
-	public class ExpressiveDbCommand : ExpressiveCommandBase<IDbConnection, DbType, ExpressiveDbCommand>
+	public class ExpressiveDbCommand : ExpressiveCommandBase<IDbConnection, IDbCommand, DbType, ExpressiveDbCommand>
     {
         public ExpressiveDbCommand(
 			IDbConnectionFactory<IDbConnection> connFactory,
