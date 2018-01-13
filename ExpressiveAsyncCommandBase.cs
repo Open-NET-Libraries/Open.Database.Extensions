@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
-    public abstract class ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
+	public abstract class ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
         : ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
         where TConnection : class, IDbConnection
         where TCommand : class, IDbCommand
@@ -61,7 +60,6 @@ namespace Open.Database.Extensions
         /// <summary>
         /// Iterates asynchronously until the handler returns false.  Then cancels.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="predicate"></param>
         /// <returns></returns>
         public abstract Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate);

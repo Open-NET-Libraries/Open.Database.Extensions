@@ -2,12 +2,35 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Core non-DB-specific extensions for building a command and retrieving data using best practices.
+	/// </summary>
     public static partial class Extensions
     {
-        public static IDbDataParameter AddParameter(this IDbCommand target, string name, object value = null)
+		internal static bool IsStillAlive(this Task task)
+		{
+			return !task.IsCompleted && !task.IsCanceled && !task.IsFaulted;
+		}
+
+		internal static bool IsStillAlive<T>(this ITargetBlock<T> task)
+		{
+			return IsStillAlive(task.Completion);
+		}
+
+		/// <summary>
+		/// Shortcut for adding command parameter.
+		/// </summary>
+		/// <param name="target">The command to add a parameter to.</param>
+		/// <param name="name">The name of the parameter.</param>
+		/// <param name="value">The value of the parameter.</param>
+		/// <returns>The created IDbDataParameter.</returns>
+		public static IDbDataParameter AddParameter(this IDbCommand target,
+			string name, object value = null)
         {
             var c = target.CreateParameter();
             c.ParameterName = name;
@@ -17,19 +40,37 @@ namespace Open.Database.Extensions
             return c;
         }
 
-        public static IDbDataParameter AddParameterType(this IDbCommand target, string name, DbType value)
+		/// <summary>
+		/// Shortcut for adding command a typed (non-input) parameter.
+		/// </summary>
+		/// <param name="target">The command to add a parameter to.</param>
+		/// <param name="name">The name of the parameter.</param>
+		/// <param name="type">The DbType of the parameter.</param>
+		/// <returns>The created IDbDataParameter.</returns>
+		public static IDbDataParameter AddParameterType(this IDbCommand target,
+			string name, DbType type)
         {
             var c = target.CreateParameter();
             c.ParameterName = name;
-            c.DbType = value;
+            c.DbType = type;
             target.Parameters.Add(c);
             return c;
         }
 
-        public static IDbCommand CreateCommand(this IDbConnection conn,
-            CommandType type, string commandText, int secondsTimeout = 30)
+		/// <summary>
+		/// Shortcut for creating an IDbCommand from any IDbConnection.
+		/// </summary>
+		/// <param name="connection">The connection to create a command from.</param>
+		/// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+		/// <param name="commandText">The command text or stored procedure name to use.</param>
+		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+		/// <returns>The created IDbCommand.</returns>
+		public static IDbCommand CreateCommand(this IDbConnection connection,
+            CommandType type,
+			string commandText,
+			int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
         {
-            var command = conn.CreateCommand();
+            var command = connection.CreateCommand();
             command.CommandType = type;
             command.CommandText = commandText;
             command.CommandTimeout = secondsTimeout;
@@ -37,25 +78,48 @@ namespace Open.Database.Extensions
             return command;
         }
 
-
+		/// <summary>
+		/// Iterates all records from an IDataReader.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
         public static void Iterate(this IDataReader reader, Action<IDataRecord> handler)
         {
             while (reader.Read()) handler(reader);
         }
 
-        public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> handler)
+		/// <summary>
+		/// Iterates all records from an IDataReader.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns></returns>
+		public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform)
         {
             while (reader.Read())
-                yield return handler(reader);
+                yield return transform(reader);
         }
 
-        public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> handler)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>A list of all results.</returns>
+		public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> transform)
         {
             using (var reader = command.ExecuteReader(CommandBehavior.CloseConnection))
-                return reader.Iterate(handler).ToList();
+                return reader.Iterate(transform).ToList();
         }
 
-        public static DataTable ToDataTable(this IDbCommand command)
+		/// <summary>
+		/// Loads all data from a command through an IDataReader into a DataTable.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <returns>The resultant DataTable.</returns>
+		public static DataTable ToDataTable(this IDbCommand command)
         {
             using (var reader = command.ExecuteReader(CommandBehavior.CloseConnection))
             {
@@ -65,24 +129,49 @@ namespace Open.Database.Extensions
             }
         }
 
-        public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> handler)
+		/// <summary>
+		/// Iterates an IDataReader while the predicate returns true.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate)
         {
-            while (reader.Read() && handler(reader));
+            while (reader.Read() && predicate(reader));
         }
 
-        public static void ExecuteReader(this IDbCommand command, Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.CloseConnection)
+		/// <summary>
+		/// Executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public static void ExecuteReader(this IDbCommand command, Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.CloseConnection)
         {
             using (var reader = command.ExecuteReader(behavior))
                 handler(reader);
         }
 
-        public static T ExecuteReader<T>(this IDbCommand command, Func<IDataReader,T> handler, CommandBehavior behavior = CommandBehavior.CloseConnection)
+		/// <summary>
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <returns>The result of the transform.</returns>
+		public static T ExecuteReader<T>(this IDbCommand command, Func<IDataReader,T> transform, CommandBehavior behavior = CommandBehavior.CloseConnection)
         {
             using (var reader = command.ExecuteReader(behavior))
-               return handler(reader);
+               return transform(reader);
         }
 
-        public static void IterateReader(this IDbCommand command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.CloseConnection)
+		/// <summary>
+		/// Iterates a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public static void IterateReader(this IDbCommand command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.CloseConnection)
         {
             using (var reader = command.ExecuteReader(behavior))
                 reader.Iterate(handler);
@@ -113,12 +202,24 @@ namespace Open.Database.Extensions
         internal static IEnumerable<Dictionary<string, object>> IterateReaderInternal(IDbCommand command, HashSet<string> columnNames)
             => IterateReaderInternal(command, r => r.ToDictionary(columnNames));
 
-        public static void IterateReaderWhile(this IDbCommand command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.CloseConnection)
+		/// <summary>
+		/// Iterates an IDataReader on a command while the predicate returns true.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public static void IterateReaderWhile(this IDbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.CloseConnection)
         {
             using (var reader = command.ExecuteReader(behavior))
-                reader.IterateWhile(handler);
+                reader.IterateWhile(predicate);
         }
 
+		/// <summary>
+		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// </summary>
+		/// <param name="record">The IDataRecord to extract values from.</param>
+		/// <param name="columnNames">The column names to query.</param>
+		/// <returns>The resultant Dictionary of values.</returns>
         public static Dictionary<string, object> ToDictionary(this IDataRecord record, HashSet<string> columnNames)
         {
             var e = new Dictionary<string, object>();
@@ -134,7 +235,13 @@ namespace Open.Database.Extensions
             return e;
         }
 
-        public static Dictionary<string, object> ToDictionary(this IDataRecord record, params string[] columnNames)
+		/// <summary>
+		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// </summary>
+		/// <param name="record">The IDataRecord to extract values from.</param>
+		/// <param name="columnNames">The column names to query.  If none specified, the result will contain all columns.</param>
+		/// <returns>The resultant Dictionary of values.</returns>
+		public static Dictionary<string, object> ToDictionary(this IDataRecord record, params string[] columnNames)
         {
             if (columnNames.Length != 0)
                 return ToDictionary(record, new HashSet<string>(columnNames));
@@ -148,42 +255,111 @@ namespace Open.Database.Extensions
             return e;
         }
 
-        public static Dictionary<string, object> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
+		/// <summary>
+		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// </summary>
+		/// <param name="record">The IDataRecord to extract values from.</param>
+		/// <param name="columnNames">The column names to query.</param>
+		/// <returns>The resultant Dictionary of values.</returns>
+		public static Dictionary<string, object> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
         {
             return ToDictionary(record, new HashSet<string>(columnNames));
         }
 
-        public static List<Dictionary<string, object>> ToList(this IDbCommand command, HashSet<string> columnNames)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>A list of dictionaries represending the requested data.</returns>
+		public static List<Dictionary<string, object>> ToList(this IDbCommand command, HashSet<string> columnNames)
             => IterateReaderInternal(command, columnNames).ToList();
 
-        public static List<Dictionary<string, object>> ToList(this IDbCommand command, IEnumerable<string> columnNames)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>A list of dictionaries represending the requested data.</returns>
+		public static List<Dictionary<string, object>> ToList(this IDbCommand command, IEnumerable<string> columnNames)
             => ToList(command, new HashSet<string>(columnNames));
 
-        public static List<Dictionary<string, object>> ToList(this IDbCommand command, params string[] columnNames)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
+		/// <returns>A list of dictionaries represending the requested data.</returns>
+		public static List<Dictionary<string, object>> ToList(this IDbCommand command, params string[] columnNames)
             => columnNames.Length == 0
                 ? IterateReaderInternal(command).ToList()
                 : ToList(command, new HashSet<string>(columnNames));
 
-        public static Dictionary<string, object>[] ToArray(this IDbCommand command, HashSet<string> columnNames)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>An array of dictionaries represending the requested data.</returns>
+		public static Dictionary<string, object>[] ToArray(this IDbCommand command, HashSet<string> columnNames)
             => IterateReaderInternal(command, columnNames).ToArray();
 
-        public static Dictionary<string, object>[] ToArray(this IDbCommand command, IEnumerable<string> columnNames)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>An array of dictionaries represending the requested data.</returns>
+		public static Dictionary<string, object>[] ToArray(this IDbCommand command, IEnumerable<string> columnNames)
             => ToArray(command, new HashSet<string>(columnNames));
 
-        public static Dictionary<string, object>[] ToArray(this IDbCommand command, params string[] columnNames)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
+		/// <returns>An array of dictionaries represending the requested data.</returns>
+		public static Dictionary<string, object>[] ToArray(this IDbCommand command, params string[] columnNames)
             => columnNames.Length == 0
                 ? IterateReaderInternal(command).ToArray()
                 : ToArray(command, new HashSet<string>(columnNames));
 
 
-        public static ExpressiveDbCommand Command(
+		/// <summary>
+		/// Iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="target">The target block to recieve the results.</param>
+		public static void ToTargetBlock<T>(this IDataReader reader,
+			Func<IDataRecord, T> transform,
+			ITargetBlock<T> target)
+		{
+			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader)));
+		}
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The connection factory to generate a commands from.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command(
             this IDbConnectionFactory<IDbConnection> target,
             string command, CommandType type = CommandType.Text)
         {
             return new ExpressiveDbCommand(target, type, command);
         }
 
-        public static ExpressiveDbCommand StoredProcedure(
+		/// <summary>
+		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The connection factory to generate a commands from.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand StoredProcedure(
             this IDbConnectionFactory<IDbConnection> target,
             string command)
         {
