@@ -37,5 +37,5 @@ using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseCo
 
 Is now simplifed to this:
 ```cs
-var myResult = cmd.ToListAsync(transform);
+var myResult = await cmd.ToListAsync(transform);
 ```
