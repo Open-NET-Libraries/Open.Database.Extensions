@@ -284,6 +284,9 @@ namespace Open.Database.Extensions
         public List<T> ToList<T>(Func<IDataRecord, T> transform)
             => ExecuteReader(record => record.Iterate(transform).ToList());
 
+        public T[] ToArray<T>(Func<IDataRecord, T> transform)
+            => ExecuteReader(record => record.Iterate(transform).ToArray());
+
         public List<Dictionary<string, object>> Retrieve(HashSet<string> columnNames)
             => IterateReaderInternal(columnNames).ToList();
 

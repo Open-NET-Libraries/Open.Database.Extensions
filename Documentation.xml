@@ -221,6 +221,15 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>A list of all results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>A list of all results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.ToDataTable(System.Data.IDbCommand)">
             <summary>
             Loads all data from a command through an IDataReader into a DataTable.

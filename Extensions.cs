@@ -114,12 +114,25 @@ namespace Open.Database.Extensions
                 return reader.Iterate(transform).ToList();
         }
 
-		/// <summary>
-		/// Loads all data from a command through an IDataReader into a DataTable.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate a reader from.</param>
-		/// <returns>The resultant DataTable.</returns>
-		public static DataTable ToDataTable(this IDbCommand command)
+        /// <summary>
+        /// Iterates all records using an IDataReader and returns the desired results as a list.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>A list of all results.</returns>
+        public static T[] ToArray<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+        {
+            using (var reader = command.ExecuteReader(CommandBehavior.CloseConnection))
+                return reader.Iterate(transform).ToArray();
+        }
+
+        /// <summary>
+        /// Loads all data from a command through an IDataReader into a DataTable.
+        /// </summary>
+        /// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <returns>The resultant DataTable.</returns>
+        public static DataTable ToDataTable(this IDbCommand command)
         {
             using (var reader = command.ExecuteReader(CommandBehavior.CloseConnection))
             {
