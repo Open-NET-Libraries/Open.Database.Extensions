@@ -22,3 +22,20 @@ var result = connectionFactory
    .AddParam("c","hello")
    .ExecuteScalar();
 ```
+
+## Extensions
+
+Instead of writing this:
+```cs
+var myResult = new List<T>();
+using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+{
+   while(await reader.ReadAsync())
+     list.Add(transform(reader));
+}
+```
+
+Is now simplifed to this:
+```cs
+var myResult = cmd.ToListAsync(transform);
+```
