@@ -299,7 +299,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> ToList(this IDbCommand command, HashSet<string> columnNames)
+		public static List<Dictionary<string, object>> Retrieve(this IDbCommand command, HashSet<string> columnNames)
             => IterateReaderInternal(command, columnNames).ToList();
 
 		/// <summary>
@@ -308,8 +308,8 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> ToList(this IDbCommand command, IEnumerable<string> columnNames)
-            => ToList(command, new HashSet<string>(columnNames));
+		public static List<Dictionary<string, object>> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
+            => Retrieve(command, new HashSet<string>(columnNames));
 
 		/// <summary>
 		/// Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -317,41 +317,11 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
 		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> ToList(this IDbCommand command, params string[] columnNames)
+		public static List<Dictionary<string, object>> Retrieve(this IDbCommand command, params string[] columnNames)
             => columnNames.Length == 0
                 ? IterateReaderInternal(command).ToList()
-                : ToList(command, new HashSet<string>(columnNames));
-
-		/// <summary>
-		/// Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>An array of dictionaries represending the requested data.</returns>
-		public static Dictionary<string, object>[] ToArray(this IDbCommand command, HashSet<string> columnNames)
-            => IterateReaderInternal(command, columnNames).ToArray();
-
-		/// <summary>
-		/// Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>An array of dictionaries represending the requested data.</returns>
-		public static Dictionary<string, object>[] ToArray(this IDbCommand command, IEnumerable<string> columnNames)
-            => ToArray(command, new HashSet<string>(columnNames));
-
-		/// <summary>
-		/// Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
-		/// <returns>An array of dictionaries represending the requested data.</returns>
-		public static Dictionary<string, object>[] ToArray(this IDbCommand command, params string[] columnNames)
-            => columnNames.Length == 0
-                ? IterateReaderInternal(command).ToArray()
-                : ToArray(command, new HashSet<string>(columnNames));
-
-
+                : Retrieve(command, new HashSet<string>(columnNames));
+        
 		/// <summary>
 		/// Iterates an IDataReader and through the transform function and posts each record it to the target block.
 		/// </summary>

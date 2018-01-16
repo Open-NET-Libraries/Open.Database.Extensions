@@ -311,7 +311,7 @@
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToList(System.Data.IDbCommand,System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.HashSet{System.String})">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
@@ -319,7 +319,7 @@
             <param name="columnNames">The column names to select.</param>
             <returns>A list of dictionaries represending the requested data.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToList(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
@@ -327,37 +327,13 @@
             <param name="columnNames">The column names to select.</param>
             <returns>A list of dictionaries represending the requested data.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToList(System.Data.IDbCommand,System.String[])">
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.String[])">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
             <returns>A list of dictionaries represending the requested data.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToArray(System.Data.IDbCommand,System.Collections.Generic.HashSet{System.String})">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
-            <param name="columnNames">The column names to select.</param>
-            <returns>An array of dictionaries represending the requested data.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToArray(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
-            <param name="columnNames">The column names to select.</param>
-            <returns>An array of dictionaries represending the requested data.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToArray(System.Data.IDbCommand,System.String[])">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as an array of Dictionaries containing only the specified column values.
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
-            <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
-            <returns>An array of dictionaries represending the requested data.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
             <summary>
@@ -472,7 +448,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <param name="target">The target block to recieve the results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToListAsync(System.Data.SqlClient.SqlCommand,System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlCommand,System.Collections.Generic.HashSet{System.String})">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
@@ -480,7 +456,7 @@
             <param name="columnNames">The column names to select.</param>
             <returns>A task containing a list of dictionaries represending the requested data.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToListAsync(System.Data.SqlClient.SqlCommand,System.Collections.Generic.IEnumerable{System.String})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlCommand,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
@@ -488,7 +464,7 @@
             <param name="columnNames">The column names to select.</param>
             <returns>A task containing a list of dictionaries represending the requested data.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToListAsync(System.Data.SqlClient.SqlCommand,System.String[])">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlCommand,System.String[])">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>

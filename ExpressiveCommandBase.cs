@@ -281,27 +281,19 @@ namespace Open.Database.Extensions
         protected IEnumerable<Dictionary<string, object>> IterateReaderInternal(HashSet<string> columnNames)
              => IterateReaderInternal(r => r.ToDictionary(columnNames));
 
-        public List<Dictionary<string, object>> ToList(HashSet<string> columnNames)
+        public List<T> ToList<T>(Func<IDataRecord, T> transform)
+            => ExecuteReader(record => record.Iterate(transform).ToList());
+
+        public List<Dictionary<string, object>> Retrieve(HashSet<string> columnNames)
             => IterateReaderInternal(columnNames).ToList();
 
-        public List<Dictionary<string, object>> ToList(IEnumerable<string> columnNames)
-            => ToList(new HashSet<string>(columnNames));
+        public List<Dictionary<string, object>> Retrieve(IEnumerable<string> columnNames)
+            => Retrieve(new HashSet<string>(columnNames));
 
-        public List<Dictionary<string, object>> ToList(params string[] columnNames)
+        public List<Dictionary<string, object>> Retrieve(params string[] columnNames)
             => columnNames.Length == 0
                 ? IterateReaderInternal().ToList()
-                : ToList(new HashSet<string>(columnNames));
-
-        public Dictionary<string, object>[] ToArray(HashSet<string> columnNames)
-            => IterateReaderInternal(columnNames).ToArray();
-
-        public Dictionary<string, object>[] ToArray(IEnumerable<string> columnNames)
-            => ToArray(new HashSet<string>(columnNames));
-
-        public Dictionary<string, object>[] ToArray(params string[] columnNames)
-            => columnNames.Length == 0
-                ? IterateReaderInternal().ToArray()
-                : ToArray(new HashSet<string>(columnNames));
+                : Retrieve(new HashSet<string>(columnNames));
 
         public void ToTargetBlock<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
             => IterateReaderWhile(r => target.Post(transform(r)));
@@ -324,7 +316,7 @@ namespace Open.Database.Extensions
         {
             var x = new Transformer<T>();
             // ToArray pulls extracts all the data first. 
-			foreach(var entry in ToArray(x.PropertyNames))
+			foreach(var entry in Retrieve(x.PropertyNames))
 			{
 				// By using yield return, we ensure lazy operation.  
 				yield return x.Transform(entry);

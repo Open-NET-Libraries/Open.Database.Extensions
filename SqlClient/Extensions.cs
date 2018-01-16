@@ -132,7 +132,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>A task containing a list of dictionaries represending the requested data.</returns>
-		public static async Task<List<Dictionary<string, object>>> ToListAsync(this SqlCommand command, HashSet<string> columnNames)
+		public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlCommand command, HashSet<string> columnNames)
 		{
 			var list = new List<Dictionary<string, object>>();
 			await IterateReaderAsync(command, r => list.Add(r.ToDictionary(columnNames)));
@@ -145,8 +145,8 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>A task containing a list of dictionaries represending the requested data.</returns>
-		public static Task<List<Dictionary<string, object>>> ToListAsync(this SqlCommand command, IEnumerable<string> columnNames)
-			=> ToListAsync(command, new HashSet<string>(columnNames));
+		public static Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlCommand command, IEnumerable<string> columnNames)
+			=> RetrieveAsync(command, new HashSet<string>(columnNames));
 
 		/// <summary>
 		/// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -154,11 +154,11 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select. If none specified, the results will contain all columns.</param>
 		/// <returns>A task containing a list of dictionaries represending the requested data.</returns>
-		public static async Task<List<Dictionary<string, object>>> ToListAsync(this SqlCommand command, params string[] columnNames)
+		public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlCommand command, params string[] columnNames)
 		{
 			// Probably an unnecessary check, but need to be sure.
 			if (columnNames.Length != 0)
-				return await ToListAsync(command, new HashSet<string>(columnNames));
+				return await RetrieveAsync(command, new HashSet<string>(columnNames));
 
 			var list = new List<Dictionary<string, object>>();
 			await IterateReaderAsync(command, r => list.Add(r.ToDictionary()));

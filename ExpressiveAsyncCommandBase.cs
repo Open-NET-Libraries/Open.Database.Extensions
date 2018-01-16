@@ -100,21 +100,21 @@ namespace Open.Database.Extensions
 
         public abstract Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform);
 
-        public async Task<List<Dictionary<string, object>>> ToListAsync(HashSet<string> columnNames)
+        public async Task<List<Dictionary<string, object>>> RetrieveAsync(HashSet<string> columnNames)
         {
             var list = new List<Dictionary<string, object>>();
             await IterateReaderAsync(r => list.Add(r.ToDictionary(columnNames)));
             return list;
         }
 
-        public Task<List<Dictionary<string, object>>> ToListAsync(IEnumerable<string> columnNames)
-            => ToListAsync(new HashSet<string>(columnNames));
+        public Task<List<Dictionary<string, object>>> RetrieveAsync(IEnumerable<string> columnNames)
+            => RetrieveAsync(new HashSet<string>(columnNames));
 
-        public async Task<List<Dictionary<string, object>>> ToListAsync(params string[] columnNames)
+        public async Task<List<Dictionary<string, object>>> RetrieveAsync(params string[] columnNames)
         {
             // Probably an unnecessary check, but need to be sure.
             if (columnNames.Length != 0)
-                return await ToListAsync(new HashSet<string>(columnNames));
+                return await RetrieveAsync(new HashSet<string>(columnNames));
 
             var list = new List<Dictionary<string, object>>();
             await IterateReaderAsync(r => list.Add(r.ToDictionary()));
@@ -126,7 +126,7 @@ namespace Open.Database.Extensions
         {
             var x = new Transformer<T>();
             // ToListAsync pulls extracts all the data first.  Then we use the .Select to transform into the desired model T;
-            return (await ToListAsync(x.PropertyNames))
+            return (await RetrieveAsync(x.PropertyNames))
                 .Select(entry => x.Transform(entry));
         }
 
