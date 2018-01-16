@@ -94,7 +94,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <returns></returns>
+		/// <returns>An enumerable used to iterate the results.</returns>
 		public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform)
         {
             while (reader.Read())
@@ -214,12 +214,39 @@ namespace Open.Database.Extensions
                 reader.IterateWhile(predicate);
         }
 
-		/// <summary>
-		/// Returns the specified column data of IDataRecord as a Dictionary.
-		/// </summary>
-		/// <param name="record">The IDataRecord to extract values from.</param>
-		/// <param name="columnNames">The column names to query.</param>
-		/// <returns>The resultant Dictionary of values.</returns>
+        /// <summary>
+        /// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>The value from the transform.</returns>
+        public static T First<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+        {
+            using (var reader = command.ExecuteReader())
+                return reader.Iterate(transform).First();
+        }
+
+
+        /// <summary>
+        /// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>The value from the transform.</returns>
+        public static T Single<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+        {
+            using (var reader = command.ExecuteReader())
+                return reader.Iterate(transform).Single();
+        }
+
+        /// <summary>
+        /// Returns the specified column data of IDataRecord as a Dictionary.
+        /// </summary>
+        /// <param name="record">The IDataRecord to extract values from.</param>
+        /// <param name="columnNames">The column names to query.</param>
+        /// <returns>The resultant Dictionary of values.</returns>
         public static Dictionary<string, object> ToDictionary(this IDataRecord record, HashSet<string> columnNames)
         {
             var e = new Dictionary<string, object>();

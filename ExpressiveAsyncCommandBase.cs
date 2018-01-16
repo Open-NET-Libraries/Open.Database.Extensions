@@ -50,6 +50,27 @@ namespace Open.Database.Extensions
         }
 
         /// <summary>
+        /// Asynchronously iterates a IDataReader and returns the each result until the count is met.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <param name="maxCount">The maximum number of records before complete.</param>
+        /// <returns>The value from the transform.</returns>
+        public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int maxCount)
+        {
+            if (maxCount < 0) throw new ArgumentOutOfRangeException(nameof(maxCount), maxCount, "Cannot be negative.");
+            List<T> results = new List<T>();
+            if (maxCount == 0) return Task.FromResult(results);
+
+            return IterateReaderAsyncWhile(record =>
+            {
+                results.Add(transform(record));
+                return results.Count<maxCount;
+            })
+            .ContinueWith(t=>results);
+        }
+
+        /// <summary>
         /// Iterates asynchronously and will stop iterating if canceled.
         /// </summary>
         /// <param name="handler">The active IDataRecord is passed to this handler.</param>

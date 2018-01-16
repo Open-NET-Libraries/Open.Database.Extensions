@@ -242,6 +242,25 @@ namespace Open.Database.Extensions
         public void IterateReaderWhile(Func<IDataRecord, bool> handler)
             => Execute(command => command.IterateReaderWhile(handler));
 
+        /// <summary>
+        /// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>The value from the transform.</returns>
+        public T First<T>(Func<IDataRecord, T> transform)
+            => ExecuteReader(reader => reader.Iterate(transform).First());
+
+        /// <summary>
+        /// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>The value from the transform.</returns>
+        public T Single<T>(Func<IDataRecord, T> transform)
+            => ExecuteReader(reader => reader.Iterate(transform).Single());
+
         public int ExecuteNonQuery()
             => Execute(command => command.ExecuteNonQuery());
 
