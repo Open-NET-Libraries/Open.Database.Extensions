@@ -85,13 +85,27 @@ namespace Open.Database.Extensions
         /// <returns></returns>
         public abstract Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate);
 
-        public async Task ToTargetBlockAsync<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
+		/// <summary>
+		/// Posts all transformed records to the provided target block.
+		/// If .Complete is called on the target block, then the iteration stops.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="target">The target block to recieve the records.</param>
+		/// <returns>A task that is complete once there are no more results.</returns>
+		public async Task ToTargetBlockAsync<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
         {
             await IterateReaderAsyncWhile(r => target.Post(transform(r)));
             target.Complete();
         }
 
-        public ISourceBlock<T> AsSourceBlockAsync<T>(Func<IDataRecord, T> transform)
+		/// <summary>
+		/// Provides a BufferBlock as the source of records.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>A buffer block that is recieving the results.</returns>
+		public ISourceBlock<T> AsSourceBlockAsync<T>(Func<IDataRecord, T> transform)
         {
             var source = new BufferBlock<T>();
             ToTargetBlockAsync(transform, source).ConfigureAwait(false);
