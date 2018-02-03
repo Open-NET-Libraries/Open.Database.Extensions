@@ -23,6 +23,15 @@ var result = connectionFactory
    .ExecuteScalar();
 ```
 
+
+## Asynchronous
+
+When using the SQL Client, asychronous methods are available.
+
+Subsequently, Open.Linq.AsyncExtensions is available to help with asynchronous LINQ method chaining:
+
+https://www.nuget.org/packages/Open.Linq.AsyncExtensions
+
 ## Extensions
 
 Instead of writing this:
@@ -40,22 +49,14 @@ Is now simplifed to this:
 var myResult = await cmd.ToListAsync(transform);
 ```
 
-## Asynchronous
-
-When using the SQL Client, asychronous methods are available.
-
-Subsequently, Open.Linq.AsyncExtensions is available to help with method chaining:
-
-https://www.nuget.org/packages/Open.Linq.AsyncExtensions
-
 ## Deferred Transformation
 
 In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.
 
-### `Results<T>` &amp; `ResultsAsync<T>`
+#### `Results<T>` &amp; `ResultsAsync<T>`
 
 Using the provided type `T` entity, the data is coerced by which properties intersect with what are available by the reader.
 
-### `Retrieve` &amp; `RetrieveAsync`
+#### `Retrieve` &amp; `RetrieveAsync`
 
 Returns a `List<Dictionary<string, object>>` containing the requested data.  Takes parameters to isolate the desired columns.
