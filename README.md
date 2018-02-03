@@ -55,7 +55,7 @@ In order to keep connection open time to a minimum, some methods cache data befo
 
 #### `Results<T>` &amp; `ResultsAsync<T>`
 
-Using the provided type `T` entity, the data is coerced by which properties intersect with what are available by the reader.
+Using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the ```IDataReader```.
 
 #### `Retrieve` &amp; `RetrieveAsync`
 
