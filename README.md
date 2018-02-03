@@ -39,3 +39,9 @@ Is now simplifed to this:
 ```cs
 var myResult = await cmd.ToListAsync(transform);
 ```
+
+## Asynchronous
+
+When using the SQL Client, asychronous methods are available.  
+Subsequently, Open.Linq.AsyncExtensions is available to help with method chaining:
+https://www.nuget.org/packages/Open.Linq.AsyncExtensions
