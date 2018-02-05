@@ -164,9 +164,10 @@ namespace Open.Database.Extensions
             where T : new()
         {
             var x = new Transformer<T>();
-            // ToListAsync pulls extracts all the data first.  Then we use the .Select to transform into the desired model T;
-            return (await RetrieveAsync(x.PropertyNames))
-                .Select(entry => x.Transform(entry));
+			var q = new Queue<Dictionary<string, object>>();
+			await IterateReaderAsync(r => q.Enqueue(r.ToDictionary(x.PropertyNames)));
+
+			return x.Transform(q);
         }
 
     }

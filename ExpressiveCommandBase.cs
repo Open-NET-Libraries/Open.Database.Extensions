@@ -398,12 +398,13 @@ namespace Open.Database.Extensions
             where T : new()
         {
             var x = new Transformer<T>();
-            // ToArray pulls extracts all the data first. 
-			foreach(var entry in Retrieve(x.PropertyNames))
-			{
-				// By using yield return, we ensure lazy operation.  
-				yield return x.Transform(entry);
-			}
+
+			// Use a queue so that when each item is subsequently enumerated, the reference is removed and memory is progressively cleaned up.
+			var q = new Queue<Dictionary<string,object>>();
+			foreach (var e in IterateReaderInternal(x.PropertyNames))
+				q.Enqueue(e);
+
+			return x.Transform(q);
         }
     }
 }

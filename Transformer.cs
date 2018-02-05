@@ -10,13 +10,15 @@ namespace Open.Database.Extensions
     {
         public readonly Type Type;
         public readonly PropertyInfo[] Properties;
-        public readonly IReadOnlyList<string> PropertyNames;
+		public readonly string[] _propertyNames;
+		public HashSet<string> PropertyNames => new HashSet<string>(_propertyNames);
+
 
         public Transformer()
         {
             Type = typeof(T);
             Properties = Type.GetProperties();
-            PropertyNames = Properties.Select(p => p.Name).ToList().AsReadOnly();
+			_propertyNames = Properties.Select(p => p.Name).ToArray();
         }
 
         public T Transform(IDictionary<string,object> entry)
@@ -35,5 +37,18 @@ namespace Open.Database.Extensions
             return model;
         }
 
-    }
+		public IEnumerable<T> Transform(Queue<Dictionary<string,object>> q)
+		{
+			while (q.Count != 0)
+			{
+				var e = q.Dequeue();
+				var t = Transform(e);
+				e.Clear();
+				yield return t;
+			}
+
+			// By using the above routine, we guarantee as enumeration occurs, references are released.
+		}
+
+	}
 }

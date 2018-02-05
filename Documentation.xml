@@ -46,6 +46,41 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>A buffer block that is recieving the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToListAsync``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Asynchronously returns all records via a transform function.
+            </summary>
+            <param name="transform">The desired column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Collections.Generic.HashSet{System.String})">
+            <summary>
+            Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
+            </summary>
+            <param name="columnNames">The desired column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
+            </summary>
+            <param name="columnNames">The desired column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.String[])">
+            <summary>
+            Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
+            </summary>
+            <param name="columnNames">The desired column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ResultsAsync``1">
+            <summary>
+            Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <returns>A task containing the enumerable to pull the transformed results from.</returns>
+        </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4">
             <summary>
             Base class for developing expressive commands.
