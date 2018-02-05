@@ -112,19 +112,39 @@ namespace Open.Database.Extensions
             return source;
         }
 
-        public abstract Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform);
+		/// <summary>
+		/// Asynchronously returns all records via a transform function.
+		/// </summary>
+		/// <param name="transform">The desired column names.</param>
+		/// <returns>A task containing the list of results.</returns>
+		public abstract Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform);
 
-        public async Task<List<Dictionary<string, object>>> RetrieveAsync(HashSet<string> columnNames)
+		/// <summary>
+		/// Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
+		/// </summary>
+		/// <param name="columnNames">The desired column names.</param>
+		/// <returns>A task containing the list of results.</returns>
+		public async Task<List<Dictionary<string, object>>> RetrieveAsync(HashSet<string> columnNames)
         {
             var list = new List<Dictionary<string, object>>();
             await IterateReaderAsync(r => list.Add(r.ToDictionary(columnNames)));
             return list;
         }
 
-        public Task<List<Dictionary<string, object>>> RetrieveAsync(IEnumerable<string> columnNames)
+		/// <summary>
+		/// Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
+		/// </summary>
+		/// <param name="columnNames">The desired column names.</param>
+		/// <returns>A task containing the list of results.</returns>
+		public Task<List<Dictionary<string, object>>> RetrieveAsync(IEnumerable<string> columnNames)
             => RetrieveAsync(new HashSet<string>(columnNames));
 
-        public async Task<List<Dictionary<string, object>>> RetrieveAsync(params string[] columnNames)
+		/// <summary>
+		/// Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
+		/// </summary>
+		/// <param name="columnNames">The desired column names.</param>
+		/// <returns>A task containing the list of results.</returns>
+		public async Task<List<Dictionary<string, object>>> RetrieveAsync(params string[] columnNames)
         {
             // Probably an unnecessary check, but need to be sure.
             if (columnNames.Length != 0)
@@ -135,7 +155,12 @@ namespace Open.Database.Extensions
             return list;
         }
 
-        public async Task<IEnumerable<T>> ResultsAsync<T>()
+		/// <summary>
+		/// Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <returns>A task containing the enumerable to pull the transformed results from.</returns>
+		public async Task<IEnumerable<T>> ResultsAsync<T>()
             where T : new()
         {
             var x = new Transformer<T>();
