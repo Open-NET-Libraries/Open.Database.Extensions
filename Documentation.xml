@@ -28,6 +28,24 @@
             <param name="predicate"></param>
             <returns></returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToTargetBlockAsync``1(System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
+            <summary>
+            Posts all transformed records to the provided target block.
+            If .Complete is called on the target block, then the iteration stops.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="target">The target block to recieve the records.</param>
+            <returns>A task that is complete once there are no more results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.AsSourceBlockAsync``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Provides a BufferBlock as the source of records.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>A buffer block that is recieving the results.</returns>
+        </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4">
             <summary>
             Base class for developing expressive commands.
@@ -138,6 +156,32 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The results of each transformation.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader(System.Action{System.Data.IDataReader})">
+            <summary>
+            Executes a reader on a command with a handler function.
+            </summary>
+            <param name="handler">The handler function for the data reader.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader``1(System.Func{System.Data.IDataReader,``0})">
+            <summary>
+            Executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The result of the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReader(System.Action{System.Data.IDataRecord})">
+            <summary>
+            Iterates a reader on a command with a handler function.
+            </summary>
+            <param name="handler">The handler function for each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderWhile(System.Func{System.Data.IDataRecord,System.Boolean})">
+            <summary>
+            Iterates a reader on a command while the handler function returns true.
+            </summary>
+            <param name="handler">The handler function for each IDataRecord.</param>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.First``1(System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none.
@@ -151,9 +195,98 @@
             Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteNonQuery">
+            <summary>
+            Calls ExecuteNonQuery on the underlying command.
+            </summary>
+            <returns>The integer responise from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteScalar">
+            <summary>
+            Calls ExecuteScalar on the underlying command.
+            </summary>
+            <returns>The varlue returned from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteScalar``1">
+            <summary>
+            Calls ExecuteScalar on the underlying command.
+            </summary>
+            <typeparam name="T">The type expected.</typeparam>
+            <returns>The varlue returned from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.LoadTable">
+            <summary>
+            Imports all data using an IDataReader into a DataTable.
+            </summary>
+            <returns>The resultant DataTabel.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderInternal">
+            <summary>
+            Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
+            </summary>
+            <returns>The enumerable with the data records stored in a dictionary..</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderInternal(System.Collections.Generic.HashSet{System.String})">
+            <summary>
+            Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
+            </summary>
+            <returns>The enumerable with the data records stored in a dictionary.  Only the column names requested will be returned.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ToList``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Converts all IDataRecords into a list using a transform function.
+            </summary>
+            <typeparam name="T">The expected return type.</typeparam>
+            <param name="transform">The transform function.</param>
+            <returns>The list of transformed records.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ToArray``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Converts all IDataRecords into an array using a transform function.
+            </summary>
+            <typeparam name="T">The expected return type.</typeparam>
+            <param name="transform">The transform function.</param>
+            <returns>The array of transformed records.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.HashSet{System.String})">
+            <summary>
+            Returns all records in order as Dictionaries where the keys are the specified column names.
+            </summary>
+            <param name="columnNames">The desired column names.</param>
+            <returns>The list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Returns all records in order as Dictionaries where the keys are the specified column names.
+            </summary>
+            <param name="columnNames">The desired column names.</param>
+            <returns>The list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.String[])">
+            <summary>
+            Returns all records in order as Dictionaries where the keys are the specified column names.
+            </summary>
+            <param name="columnNames">The desired column names.</param>
+            <returns>The list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ToTargetBlock``1(System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
+            <summary>
+            Posts all records to a target block using the transform function.
+            </summary>
+            <typeparam name="T">The expected type.</typeparam>
+            <param name="transform">The transform function.</param>
+            <param name="target">The target block to receive the results (to be posted to).</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Returns a buffer block that will contain the results.
+            </summary>
+            <typeparam name="T">The expected type.</typeparam>
+            <param name="transform">The transform function.</param>
+            <returns>The buffer block that will contain the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Results``1">
             <summary>
@@ -162,6 +295,43 @@
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4.Param">
+            <summary>
+            A struct that represents the param to be created when the command is exectued.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.ExpressiveCommandBase`4.Param.Name">
+            <summary>
+            The name of the param.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.ExpressiveCommandBase`4.Param.Value">
+            <summary>
+            The value of the param.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.ExpressiveCommandBase`4.Param.Type">
+            <summary>
+            The DbType of the param.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Param.Equals(System.Object)">
+            <summary>
+            Determines whether the specified param is equal to the current one.
+            </summary>
+            <param name="obj">Param to compare against.</param>
+            <returns>True if properties are equal.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Param.op_Equality(Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param)">
+            <summary>
+            Equality operator.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Param.op_Inequality(Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param)">
+            <summary>
+            Inequality operator.
+            </summary>
         </member>
         <member name="T:Open.Database.Extensions.Extensions">
             <summary>

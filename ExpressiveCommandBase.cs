@@ -230,16 +230,35 @@ namespace Open.Database.Extensions
             }
         }
 
-        public void ExecuteReader(Action<IDataReader> handler)
+		/// <summary>
+		/// Executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for the data reader.</param>
+		public void ExecuteReader(Action<IDataReader> handler)
             => Execute(command => command.ExecuteReader(handler));
 
-        public T ExecuteReader<T>(Func<IDataReader, T> handler)
-            => Execute(command => command.ExecuteReader(handler));
+		/// <summary>
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The result of the transform.</returns>
+		public T ExecuteReader<T>(Func<IDataReader, T> transform)
+            => Execute(command => command.ExecuteReader(transform));
 
-        public void IterateReader(Action<IDataRecord> handler)
+
+		/// <summary>
+		/// Iterates a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public void IterateReader(Action<IDataRecord> handler)
             => Execute(command => command.IterateReader(handler));
 
-        public void IterateReaderWhile(Func<IDataRecord, bool> handler)
+		/// <summary>
+		/// Iterates a reader on a command while the handler function returns true.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public void IterateReaderWhile(Func<IDataRecord, bool> handler)
             => Execute(command => command.IterateReaderWhile(handler));
 
         /// <summary>
@@ -255,53 +274,114 @@ namespace Open.Database.Extensions
         /// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
         /// </summary>
         /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="command">The IDbCommand to generate a reader from.</param>
         /// <param name="transform">The transform function to process each IDataRecord.</param>
         /// <returns>The value from the transform.</returns>
         public T Single<T>(Func<IDataRecord, T> transform)
             => ExecuteReader(reader => reader.Iterate(transform).Single());
 
+		/// <summary>
+		/// Calls ExecuteNonQuery on the underlying command.
+		/// </summary>
+		/// <returns>The integer responise from the method.</returns>
         public int ExecuteNonQuery()
             => Execute(command => command.ExecuteNonQuery());
 
+		/// <summary>
+		/// Calls ExecuteScalar on the underlying command.
+		/// </summary>
+		/// <returns>The varlue returned from the method.</returns>
         public object ExecuteScalar()
             => Execute(command => command.ExecuteScalar());
 
-        public T ExecuteScalar<T>()
+		/// <summary>
+		/// Calls ExecuteScalar on the underlying command.
+		/// </summary>
+		/// <typeparam name="T">The type expected.</typeparam>
+		/// <returns>The varlue returned from the method.</returns>
+		public T ExecuteScalar<T>()
             => (T)ExecuteScalar();
 
+		/// <summary>
+		/// Imports all data using an IDataReader into a DataTable.
+		/// </summary>
+		/// <returns>The resultant DataTabel.</returns>
         public DataTable LoadTable()
             => Execute(command => command.ToDataTable());
 
-        // ** This should remain protected as there is a high risk of holding a connection open if left publicly accessible.
-        protected IEnumerable<Dictionary<string, object>> IterateReaderInternal()
+		/// <summary>
+		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
+		/// </summary>
+		/// <returns>The enumerable with the data records stored in a dictionary..</returns>
+		protected IEnumerable<Dictionary<string, object>> IterateReaderInternal()
             => IterateReaderInternal(r => r.ToDictionary());
 
-        // ** This should remain protected as there is a high risk of holding a connection open if left publicly accessible.
-        protected IEnumerable<Dictionary<string, object>> IterateReaderInternal(HashSet<string> columnNames)
+		/// <summary>
+		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
+		/// </summary>
+		/// <returns>The enumerable with the data records stored in a dictionary.  Only the column names requested will be returned.</returns>
+		protected IEnumerable<Dictionary<string, object>> IterateReaderInternal(HashSet<string> columnNames)
              => IterateReaderInternal(r => r.ToDictionary(columnNames));
 
+		/// <summary>
+		/// Converts all IDataRecords into a list using a transform function.
+		/// </summary>
+		/// <typeparam name="T">The expected return type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <returns>The list of transformed records.</returns>
         public List<T> ToList<T>(Func<IDataRecord, T> transform)
             => ExecuteReader(record => record.Iterate(transform).ToList());
 
-        public T[] ToArray<T>(Func<IDataRecord, T> transform)
+		/// <summary>
+		/// Converts all IDataRecords into an array using a transform function.
+		/// </summary>
+		/// <typeparam name="T">The expected return type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <returns>The array of transformed records.</returns>
+		public T[] ToArray<T>(Func<IDataRecord, T> transform)
             => ExecuteReader(record => record.Iterate(transform).ToArray());
 
+		/// <summary>
+		/// Returns all records in order as Dictionaries where the keys are the specified column names.
+		/// </summary>
+		/// <param name="columnNames">The desired column names.</param>
+		/// <returns>The list of results.</returns>
         public List<Dictionary<string, object>> Retrieve(HashSet<string> columnNames)
             => IterateReaderInternal(columnNames).ToList();
 
-        public List<Dictionary<string, object>> Retrieve(IEnumerable<string> columnNames)
+		/// <summary>
+		/// Returns all records in order as Dictionaries where the keys are the specified column names.
+		/// </summary>
+		/// <param name="columnNames">The desired column names.</param>
+		/// <returns>The list of results.</returns>
+		public List<Dictionary<string, object>> Retrieve(IEnumerable<string> columnNames)
             => Retrieve(new HashSet<string>(columnNames));
 
-        public List<Dictionary<string, object>> Retrieve(params string[] columnNames)
+		/// <summary>
+		/// Returns all records in order as Dictionaries where the keys are the specified column names.
+		/// </summary>
+		/// <param name="columnNames">The desired column names.</param>
+		/// <returns>The list of results.</returns>
+		public List<Dictionary<string, object>> Retrieve(params string[] columnNames)
             => columnNames.Length == 0
                 ? IterateReaderInternal().ToList()
                 : Retrieve(new HashSet<string>(columnNames));
 
+		/// <summary>
+		/// Posts all records to a target block using the transform function.
+		/// </summary>
+		/// <typeparam name="T">The expected type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <param name="target">The target block to receive the results (to be posted to).</param>
         public void ToTargetBlock<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
             => IterateReaderWhile(r => target.Post(transform(r)));
 
-        public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform)
+		/// <summary>
+		/// Returns a buffer block that will contain the results.
+		/// </summary>
+		/// <typeparam name="T">The expected type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <returns>The buffer block that will contain the results.</returns>
+		public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform)
         {
             var source = new BufferBlock<T>();
             ToTargetBlock(transform, source);
