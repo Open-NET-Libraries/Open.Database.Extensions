@@ -9,81 +9,81 @@ using System.Threading.Tasks.Dataflow;
 namespace Open.Database.Extensions
 {
 	public abstract class ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
-        : ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
-        where TConnection : class, IDbConnection
-        where TCommand : class, IDbCommand
-        where TDbType : struct
-        where TThis : ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
-    {
+		: ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
+		where TConnection : class, IDbConnection
+		where TCommand : class, IDbCommand
+		where TDbType : struct
+		where TThis : ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
+	{
 
-        protected ExpressiveAsyncCommandBase(
-            IDbConnectionFactory<TConnection> connFactory,
-            CommandType type,
-            string name,
-            List<Param> @params = null)
-            : base(connFactory, type, name, @params)
-        {
-        }
+		protected ExpressiveAsyncCommandBase(
+			IDbConnectionFactory<TConnection> connFactory,
+			CommandType type,
+			string name,
+			List<Param> @params = null)
+			: base(connFactory, type, name, @params)
+		{
+		}
 
-        protected ExpressiveAsyncCommandBase(
-            IDbConnectionFactory<TConnection> connFactory,
-            CommandType type,
-            string name,
-            params Param[] @params)
-            : this(connFactory, type, name, @params.ToList())
-        {
+		protected ExpressiveAsyncCommandBase(
+			IDbConnectionFactory<TConnection> connFactory,
+			CommandType type,
+			string name,
+			params Param[] @params)
+			: this(connFactory, type, name, @params.ToList())
+		{
 
-        }
+		}
 
 
-        public abstract Task ExecuteAsync(Func<TCommand, Task> handler);
+		public abstract Task ExecuteAsync(Func<TCommand, Task> handler);
 
-        public abstract Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> handler);
+		public abstract Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> handler);
 
-        public abstract Task<int> ExecuteNonQueryAsync();
+		public abstract Task<int> ExecuteNonQueryAsync();
 
-        public abstract Task<object> ExecuteScalarAsync();
+		public abstract Task<object> ExecuteScalarAsync();
 
-        public async Task<T> ExecuteScalarAsync<T>()
-        {
-            return (T)(await ExecuteScalarAsync());
-        }
+		public async Task<T> ExecuteScalarAsync<T>()
+		{
+			return (T)(await ExecuteScalarAsync());
+		}
 
-        /// <summary>
-        /// Asynchronously iterates a IDataReader and returns the each result until the count is met.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="transform">The transform function to process each IDataRecord.</param>
-        /// <param name="maxCount">The maximum number of records before complete.</param>
-        /// <returns>The value from the transform.</returns>
-        public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int maxCount)
-        {
-            if (maxCount < 0) throw new ArgumentOutOfRangeException(nameof(maxCount), maxCount, "Cannot be negative.");
-            List<T> results = new List<T>();
-            if (maxCount == 0) return Task.FromResult(results);
+		/// <summary>
+		/// Asynchronously iterates a IDataReader and returns the each result until the count is met.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="maxCount">The maximum number of records before complete.</param>
+		/// <returns>The value from the transform.</returns>
+		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int maxCount)
+		{
+			if (maxCount < 0) throw new ArgumentOutOfRangeException(nameof(maxCount), maxCount, "Cannot be negative.");
+			List<T> results = new List<T>();
+			if (maxCount == 0) return Task.FromResult(results);
 
-            return IterateReaderAsyncWhile(record =>
-            {
-                results.Add(transform(record));
-                return results.Count<maxCount;
-            })
-            .ContinueWith(t=>results);
-        }
+			return IterateReaderAsyncWhile(record =>
+			{
+				results.Add(transform(record));
+				return results.Count < maxCount;
+			})
+			.ContinueWith(t => results);
+		}
 
-        /// <summary>
-        /// Iterates asynchronously and will stop iterating if canceled.
-        /// </summary>
-        /// <param name="handler">The active IDataRecord is passed to this handler.</param>
-        /// <param name="token">An optional cancellation token.</param>
-        /// <returns></returns>
-        public abstract Task IterateReaderAsync(Action<IDataRecord> handler, CancellationToken? token = null);
+		/// <summary>
+		/// Iterates asynchronously and will stop iterating if canceled.
+		/// </summary>
+		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
+		/// <param name="token">An optional cancellation token.</param>
+		/// <returns></returns>
+		public abstract Task IterateReaderAsync(Action<IDataRecord> handler, CancellationToken? token = null);
 
-        /// <summary>
-        /// Iterates asynchronously until the handler returns false.  Then cancels.
-        /// </summary>
-        /// <param name="predicate"></param>
-        /// <returns></returns>
-        public abstract Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate);
+		/// <summary>
+		/// Iterates asynchronously until the handler returns false.  Then cancels.
+		/// </summary>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public abstract Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate);
 
 		/// <summary>
 		/// Posts all transformed records to the provided target block.
@@ -91,13 +91,45 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="target">The target block to recieve the records.</param>
+		/// <param name="target">The target block to receive the records.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public async Task ToTargetBlockAsync<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
-        {
-            await IterateReaderAsyncWhile(r => target.Post(transform(r)));
-            target.Complete();
-        }
+		{
+			await IterateReaderAsyncWhile(r => target.Post(transform(r)));
+		}
+
+		/// <summary>
+		/// Posts requested columns to a target block.
+		/// </summary>
+		/// <param name="target">The target block to receive the records.</param>
+		/// <param name="columnNames">The column names to return.</param>
+		/// <returns>A task that is complete once there are no more results.</returns>
+		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, HashSet<string> columnNames)
+		{
+			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
+		}
+
+		/// <summary>
+		/// Posts requested columns to a target block.
+		/// </summary>
+		/// <param name="target">The target block to receive the records.</param>
+		/// <param name="columnNames">The column names to return.  If none are specified, all are returned.</param>
+		/// <returns>A task that is complete once there are no more results.</returns>
+		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, params string[] columnNames)
+		{
+			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
+		}
+
+		/// <summary>
+		/// Posts requested columns to a target block.
+		/// </summary>
+		/// <param name="target">The target block to receive the records.</param>
+		/// <param name="columnNames">The column names to return.</param>
+		/// <returns>A task that is complete once there are no more results.</returns>
+		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, IEnumerable<string> columnNames)
+		{
+			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
+		}
 
 		/// <summary>
 		/// Provides a BufferBlock as the source of records.
@@ -106,11 +138,47 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>A buffer block that is recieving the results.</returns>
 		public ISourceBlock<T> AsSourceBlockAsync<T>(Func<IDataRecord, T> transform)
-        {
-            var source = new BufferBlock<T>();
-            ToTargetBlockAsync(transform, source).ConfigureAwait(false);
-            return source;
-        }
+		{
+			var source = new BufferBlock<T>();
+			ToTargetBlockAsync(transform, source).ConfigureAwait(false);
+			return source;
+		}
+
+		/// <summary>
+		/// Provides a BufferBlock as the source of records.
+		/// </summary>
+		/// <param name="columnNames">The column names to return.</param>
+		/// <returns>A buffer block that is recieving the results.</returns>
+		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(HashSet<string> columnNames)
+		{
+			var source = new BufferBlock<Dictionary<string, object>>();
+			ToTargetBlockAsync(source, columnNames).ConfigureAwait(false);
+			return source;
+		}
+
+		/// <summary>
+		/// Provides a BufferBlock as the source of records.
+		/// </summary>
+		/// <param name="columnNames">The column names to return.  If none are specified, all are returned.</param>
+		/// <returns>A buffer block that is recieving the results.</returns>
+		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(params string[] columnNames)
+		{
+			var source = new BufferBlock<Dictionary<string, object>>();
+			ToTargetBlockAsync(source, columnNames).ConfigureAwait(false);
+			return source;
+		}
+
+		/// <summary>
+		/// Provides a BufferBlock as the source of records.
+		/// </summary>
+		/// <param name="columnNames">The column names to return.</param>
+		/// <returns>A buffer block that is recieving the results.</returns>
+		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(IEnumerable<string> columnNames)
+		{
+			var source = new BufferBlock<Dictionary<string, object>>();
+			ToTargetBlockAsync(source, columnNames).ConfigureAwait(false);
+			return source;
+		}
 
 		/// <summary>
 		/// Asynchronously returns all records via a transform function.
@@ -125,11 +193,11 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The desired column names.</param>
 		/// <returns>A task containing the list of results.</returns>
 		public async Task<List<Dictionary<string, object>>> RetrieveAsync(HashSet<string> columnNames)
-        {
-            var list = new List<Dictionary<string, object>>();
-            await IterateReaderAsync(r => list.Add(r.ToDictionary(columnNames)));
-            return list;
-        }
+		{
+			var list = new List<Dictionary<string, object>>();
+			await IterateReaderAsync(r => list.Add(r.ToDictionary(columnNames)));
+			return list;
+		}
 
 		/// <summary>
 		/// Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
@@ -137,7 +205,7 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The desired column names.</param>
 		/// <returns>A task containing the list of results.</returns>
 		public Task<List<Dictionary<string, object>>> RetrieveAsync(IEnumerable<string> columnNames)
-            => RetrieveAsync(new HashSet<string>(columnNames));
+			=> RetrieveAsync(new HashSet<string>(columnNames));
 
 		/// <summary>
 		/// Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
@@ -145,15 +213,15 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The desired column names.</param>
 		/// <returns>A task containing the list of results.</returns>
 		public async Task<List<Dictionary<string, object>>> RetrieveAsync(params string[] columnNames)
-        {
-            // Probably an unnecessary check, but need to be sure.
-            if (columnNames.Length != 0)
-                return await RetrieveAsync(new HashSet<string>(columnNames));
+		{
+			// Probably an unnecessary check, but need to be sure.
+			if (columnNames.Length != 0)
+				return await RetrieveAsync(new HashSet<string>(columnNames));
 
-            var list = new List<Dictionary<string, object>>();
-            await IterateReaderAsync(r => list.Add(r.ToDictionary()));
-            return list;
-        }
+			var list = new List<Dictionary<string, object>>();
+			await IterateReaderAsync(r => list.Add(r.ToDictionary()));
+			return list;
+		}
 
 		/// <summary>
 		/// Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
@@ -161,14 +229,31 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <returns>A task containing the enumerable to pull the transformed results from.</returns>
 		public async Task<IEnumerable<T>> ResultsAsync<T>()
-            where T : new()
-        {
-            var x = new Transformer<T>();
+			where T : new()
+		{
+			var x = new Transformer<T>();
+			var n = x.PropertyNames;
 			var q = new Queue<Dictionary<string, object>>();
-			await IterateReaderAsync(r => q.Enqueue(r.ToDictionary(x.PropertyNames)));
+			await IterateReaderAsync(r => q.Enqueue(r.ToDictionary(n)));
 
 			return x.Transform(q);
-        }
+		}
 
-    }
+		/// <summary>
+		/// Provides a transform block as the source of records.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <returns>A transform block that is recieving the results.</returns>
+		public ISourceBlock<T> ResultsBlockAsync<T>()
+		   where T : new()
+		{
+			var x = new Transformer<T>();
+			var n = x.PropertyNames;
+			var q = new TransformBlock<Dictionary<string, object>, T>(e => x.TransformAndClear(e));
+			IterateReaderAsyncWhile(r => q.Post(r.ToDictionary(n))).ConfigureAwait(false);
+
+			return q;
+		}
+
+	}
 }

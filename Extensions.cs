@@ -341,7 +341,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="target">The target block to recieve the results.</param>
+		/// <param name="target">The target block to receivethe results.</param>
 		public static void ToTargetBlock<T>(this IDataReader reader,
 			Func<IDataRecord, T> transform,
 			ITargetBlock<T> target)

@@ -21,7 +21,7 @@ namespace Open.Database.Extensions
 			_propertyNames = Properties.Select(p => p.Name).ToArray();
         }
 
-        public T Transform(IDictionary<string,object> entry)
+        public T TransformAndClear(IDictionary<string,object> entry)
         {
             var model = new T();
             foreach (var p in Properties)
@@ -34,6 +34,7 @@ namespace Open.Database.Extensions
                     p.SetValue(model, value);
                 }
             }
+			entry.Clear();
             return model;
         }
 
@@ -41,10 +42,7 @@ namespace Open.Database.Extensions
 		{
 			while (q.Count != 0)
 			{
-				var e = q.Dequeue();
-				var t = Transform(e);
-				e.Clear();
-				yield return t;
+				yield return TransformAndClear(q.Dequeue());
 			}
 
 			// By using the above routine, we guarantee as enumeration occurs, references are released.

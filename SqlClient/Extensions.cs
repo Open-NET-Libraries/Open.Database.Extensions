@@ -97,7 +97,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The SqlDataReader to read from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="target">The target block to recieve the results.</param>
+		/// <param name="target">The target block to receivethe results.</param>
 		public static async Task ToTargetBlock<T>(this SqlDataReader reader,
 			Func<IDataRecord, T> transform,
 			ITargetBlock<T> target)
@@ -111,7 +111,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="target">The target block to recieve the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		public static async Task ToTargetBlock<T>(this SqlCommand command,
 			Func<IDataRecord, T> transform,
 			ITargetBlock<T> target)

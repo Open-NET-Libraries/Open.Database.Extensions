@@ -11,9 +11,9 @@
     <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>3.0.2</Version>
-    <AssemblyVersion>3.0.2.0</AssemblyVersion>
-    <FileVersion>3.0.2.0</FileVersion>
+    <Version>3.1.0</Version>
+    <AssemblyVersion>3.1.0.0</AssemblyVersion>
+    <FileVersion>3.1.0.0</FileVersion>
     <PackageReleaseNotes>More documentation and improved Results and ResultsAsync algorithm.</PackageReleaseNotes>
   </PropertyGroup>
 
