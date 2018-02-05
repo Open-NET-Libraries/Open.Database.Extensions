@@ -381,11 +381,20 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The expected type.</typeparam>
 		/// <param name="transform">The transform function.</param>
+		/// <param name="synchronousExecution">By default the command is deferred.
+		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
+		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <returns>The buffer block that will contain the results.</returns>
-		public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform)
+		public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform, bool synchronousExecution = false)
 		{
 			var source = new BufferBlock<T>();
-			ToTargetBlock(transform, source);
+			void i()
+			{
+				ToTargetBlock(transform, source);
+				source.Complete();
+			};
+			if (synchronousExecution) i();
+			else Task.Run(() => i());
 			return source;
 		}
 
@@ -424,7 +433,11 @@ namespace Open.Database.Extensions
 			var x = new Transformer<T>();
 			var n = x.PropertyNames;
 			var q = new TransformBlock<Dictionary<string, object>, T>(e => x.TransformAndClear(e));
-			void i() => IterateReaderWhile(r => q.Post(r.ToDictionary(n)));
+			void i()
+			{
+				ToTargetBlock(r => r.ToDictionary(n), q);
+				q.Complete();
+			};
 			if (synchronousExecution) i();
 			else Task.Run(() => i());
 			return q;

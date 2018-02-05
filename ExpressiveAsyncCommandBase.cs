@@ -126,7 +126,9 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the records.</param>
 		/// <param name="columnNames">The column names to return.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
-		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, IEnumerable<string> columnNames)
+		public async Task ToTargetBlockAsync(
+			ITargetBlock<Dictionary<string, object>> target,
+			IEnumerable<string> columnNames)
 		{
 			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
 		}
@@ -140,7 +142,9 @@ namespace Open.Database.Extensions
 		public ISourceBlock<T> AsSourceBlockAsync<T>(Func<IDataRecord, T> transform)
 		{
 			var source = new BufferBlock<T>();
-			ToTargetBlockAsync(transform, source).ConfigureAwait(false);
+			ToTargetBlockAsync(transform, source)
+				.ContinueWith(t => source.Complete())
+				.ConfigureAwait(false);
 			return source;
 		}
 
@@ -152,7 +156,9 @@ namespace Open.Database.Extensions
 		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(HashSet<string> columnNames)
 		{
 			var source = new BufferBlock<Dictionary<string, object>>();
-			ToTargetBlockAsync(source, columnNames).ConfigureAwait(false);
+			ToTargetBlockAsync(source, columnNames)
+				.ContinueWith(t => source.Complete())
+				.ConfigureAwait(false);
 			return source;
 		}
 
@@ -164,7 +170,9 @@ namespace Open.Database.Extensions
 		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(params string[] columnNames)
 		{
 			var source = new BufferBlock<Dictionary<string, object>>();
-			ToTargetBlockAsync(source, columnNames).ConfigureAwait(false);
+			ToTargetBlockAsync(source, columnNames)
+				.ContinueWith(t => source.Complete())
+				.ConfigureAwait(false);
 			return source;
 		}
 
@@ -176,7 +184,9 @@ namespace Open.Database.Extensions
 		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(IEnumerable<string> columnNames)
 		{
 			var source = new BufferBlock<Dictionary<string, object>>();
-			ToTargetBlockAsync(source, columnNames).ConfigureAwait(false);
+			ToTargetBlockAsync(source, columnNames)
+				.ContinueWith(t => source.Complete())
+				.ConfigureAwait(false);
 			return source;
 		}
 
@@ -250,7 +260,9 @@ namespace Open.Database.Extensions
 			var x = new Transformer<T>();
 			var n = x.PropertyNames;
 			var q = new TransformBlock<Dictionary<string, object>, T>(e => x.TransformAndClear(e));
-			IterateReaderAsyncWhile(r => q.Post(r.ToDictionary(n))).ConfigureAwait(false);
+			ToTargetBlockAsync(r => r.ToDictionary(n), q)
+				.ContinueWith(t => q.Complete())
+				.ConfigureAwait(false);
 
 			return q;
 		}

@@ -116,7 +116,7 @@ namespace Open.Database.Extensions.SqlClient
 			Func<IDataRecord, T> transform,
 			ITargetBlock<T> target)
 		{
-			if(target.IsStillAlive())
+			if (target.IsStillAlive())
 			{
 				using (var reader = await command.ExecuteReaderAsync())
 				{
@@ -212,7 +212,9 @@ namespace Open.Database.Extensions.SqlClient
 			Func<IDataRecord, T> transform)
 		{
 			var source = new BufferBlock<T>();
-			ToTargetBlock(reader, transform, source).ConfigureAwait(false);
+			ToTargetBlock(reader, transform, source)
+				.ContinueWith(t => source.Complete())
+				.ConfigureAwait(false);
 			return source;
 		}
 
@@ -232,6 +234,7 @@ namespace Open.Database.Extensions.SqlClient
 			{
 				using (var reader = await command.ExecuteReaderAsync())
 					await ToTargetBlock(reader, transform, source);
+				source.Complete();
 			});
 			return source;
 		}

@@ -367,12 +367,15 @@
             <param name="transform">The transform function.</param>
             <param name="target">The target block to receive the results (to be posted to).</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Func{System.Data.IDataRecord,``0},System.Boolean)">
             <summary>
             Returns a buffer block that will contain the results.
             </summary>
             <typeparam name="T">The expected type.</typeparam>
             <param name="transform">The transform function.</param>
+            <param name="synchronousExecution">By default the command is deferred.
+            If set to true, the command runs synchronusly and all data is acquired before the method returns.
+            If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
             <returns>The buffer block that will contain the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Results``1">

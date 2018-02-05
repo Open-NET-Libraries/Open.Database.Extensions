@@ -6,15 +6,15 @@
     <Authors>electricessence</Authors>
     <Company />
     <Product />
-    <PackageLicenseUrl>https://github.com/electricessence/Open.Database.Extensions/blob/master/LISCENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/electricessence/Open.Database.Extensions/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
     <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>3.1.0</Version>
-    <AssemblyVersion>3.1.0.0</AssemblyVersion>
-    <FileVersion>3.1.0.0</FileVersion>
-    <PackageReleaseNotes>More documentation and improved Results and ResultsAsync algorithm.</PackageReleaseNotes>
+    <Version>3.1.1</Version>
+    <AssemblyVersion>3.1.1.0</AssemblyVersion>
+    <FileVersion>3.1.1.0</FileVersion>
+    <PackageReleaseNotes>Improved Dataflow methods and behavior.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
