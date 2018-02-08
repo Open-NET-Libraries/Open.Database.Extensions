@@ -26,11 +26,7 @@ var result = connectionFactory
 
 ## Asynchronous
 
-When using the SQL Client, asychronous methods are available.
-
-Subsequently, Open.Linq.AsyncExtensions is available to help with asynchronous LINQ method chaining:
-
-https://www.nuget.org/packages/Open.Linq.AsyncExtensions
+When using the SQL Client, asychronous methods are available as well as `.ToTargetBlock(target)` and `.AsSourceBlock()` methods.
 
 ## Extensions
 
