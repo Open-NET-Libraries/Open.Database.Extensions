@@ -54,6 +54,12 @@ namespace Open.Database.Extensions.SqlClient
             }
         }
 
+        public Task ExecuteReaderAsync(Func<SqlDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default)
+            => ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior)));
+
+        public Task<T> ExecuteReaderAsync<T>(Func<SqlDataReader, Task<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
+            => ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior)));
+
         public override Task<int> ExecuteNonQueryAsync()
             => ExecuteAsync(command => command.ExecuteNonQueryAsync());
 

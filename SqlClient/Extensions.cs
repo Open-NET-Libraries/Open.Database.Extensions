@@ -87,7 +87,7 @@ namespace Open.Database.Extensions.SqlClient
 		public static async Task<List<T>> ToListAsync<T>(this SqlCommand command,
 			Func<IDataRecord, T> transform)
 		{
-			using (var reader = await command.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+			using (var reader = await command.ExecuteReaderAsync())
 				return await reader.ToListAsync(transform);
 		}
 
@@ -126,18 +126,67 @@ namespace Open.Database.Extensions.SqlClient
 			}
 		}
 
-		/// <summary>
-		/// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>A task containing a list of dictionaries represending the requested data.</returns>
-		public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlCommand command, HashSet<string> columnNames)
+        /// <summary>
+        /// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+        /// </summary>
+        /// <param name="reader">The SqlDataReader to read the data from.</param>
+        /// <param name="columnNames">The column names to select.</param>
+        /// <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlDataReader reader, ISet<string> columnNames)
+        {
+            var list = new List<Dictionary<string, object>>();
+            if(await reader.ReadAsync())
+            {
+                list.Add(reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, columnNames));
+                while (await reader.ReadAsync())
+                    list.Add(reader.ToDictionary(columnIndexes));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+        /// </summary>
+        /// <param name="reader">The SqlDataReader to read the data from.</param>
+        /// <param name="columnNames">The column names to select.</param>
+        /// <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        public static Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlDataReader reader, IEnumerable<string> columnNames)
+            => RetrieveAsync(reader, new HashSet<string>(columnNames));
+
+        /// <summary>
+        /// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+        /// </summary>
+        /// <param name="reader">The SqlDataReader to read the data from.</param>
+        /// <param name="columnNames">The column names to select. If none specified, the results will contain all columns.</param>
+        /// <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlDataReader reader, params string[] columnNames)
+        {
+            // Probably an unnecessary check, but need to be sure.
+            if (columnNames.Length != 0)
+                return await RetrieveAsync(reader, new HashSet<string>(columnNames));
+
+            var list = new List<Dictionary<string, object>>();
+            if (await reader.ReadAsync())
+            {
+                list.Add(reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes));
+                while (await reader.ReadAsync())
+                    list.Add(reader.ToDictionary(columnIndexes));
+            }
+            return list;
+        }
+
+
+        /// <summary>
+        /// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+        /// </summary>
+        /// <param name="command">The IDbCommand to generate the reader from.</param>
+        /// <param name="columnNames">The column names to select.</param>
+        /// <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlCommand command, ISet<string> columnNames)
 		{
-			var list = new List<Dictionary<string, object>>();
-			await IterateReaderAsync(command, r => list.Add(r.ToDictionary(columnNames)));
-			return list;
-		}
+            using (var reader = await command.ExecuteReaderAsync())
+                return await RetrieveAsync(reader, columnNames);
+        }
 
 		/// <summary>
 		/// Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -156,13 +205,8 @@ namespace Open.Database.Extensions.SqlClient
 		/// <returns>A task containing a list of dictionaries represending the requested data.</returns>
 		public static async Task<List<Dictionary<string, object>>> RetrieveAsync(this SqlCommand command, params string[] columnNames)
 		{
-			// Probably an unnecessary check, but need to be sure.
-			if (columnNames.Length != 0)
-				return await RetrieveAsync(command, new HashSet<string>(columnNames));
-
-			var list = new List<Dictionary<string, object>>();
-			await IterateReaderAsync(command, r => list.Add(r.ToDictionary()));
-			return list;
+            using (var reader = await command.ExecuteReaderAsync())
+                return await RetrieveAsync(reader, columnNames);
 		}
 
 		/// <summary>
@@ -173,7 +217,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="token">Optional cancellatio token.</param>
 		public static async Task IterateReaderAsync(this SqlCommand command, Action<IDataRecord> handler, CancellationToken? token = null)
 		{
-			using (var reader = await command.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+			using (var reader = await command.ExecuteReaderAsync())
 			{
 				if (token.HasValue)
 				{
@@ -189,13 +233,36 @@ namespace Open.Database.Extensions.SqlClient
 			}
 		}
 
-		/// <summary>
-		/// Asynchronously iterates an IDataReader on a command while the predicate returns true.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate a reader from.</param>
-		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-		public static async Task IterateReaderAsyncWhile(this SqlCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.CloseConnection)
+        /// <summary>
+        /// Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="reader">The SqlDataReader to read the data from.</param>
+        /// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A task containing the enumerable to pull the transformed results from.</returns>
+        public static async Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
+            where T : new()
+        {
+            var x = new Transformer<T>(fieldMappingOverrides);
+            var n = x.ColumnNames;
+            var q = new Queue<Dictionary<string, object>>();
+            if(await reader.ReadAsync())
+            {
+                q.Enqueue(reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, n));
+                while (await reader.ReadAsync())
+                    q.Enqueue(reader.ToDictionary(columnIndexes));
+            }
+
+            return x.Transform(q);
+        }
+
+        /// <summary>
+        /// Asynchronously iterates an IDataReader on a command while the predicate returns true.
+        /// </summary>
+        /// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+        /// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+        public static async Task IterateReaderAsyncWhile(this SqlCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			using (var reader = await command.ExecuteReaderAsync(behavior))
 				while (await reader.ReadAsync() && predicate(reader)) ;

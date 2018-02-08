@@ -38,7 +38,7 @@
             <param name="target">The target block to receive the records.</param>
             <returns>A task that is complete once there are no more results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToTargetBlockAsync(System.Threading.Tasks.Dataflow.ITargetBlock{System.Collections.Generic.Dictionary{System.String,System.Object}},System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToTargetBlockAsync(System.Threading.Tasks.Dataflow.ITargetBlock{System.Collections.Generic.Dictionary{System.String,System.Object}},System.Collections.Generic.ISet{System.String})">
             <summary>
             Posts requested columns to a target block.
             </summary>
@@ -70,7 +70,7 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>A buffer block that is recieving the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.ISet{System.String})">
             <summary>
             Provides a BufferBlock as the source of records.
             </summary>
@@ -98,7 +98,7 @@
             <param name="transform">The desired column names.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Collections.Generic.ISet{System.String})">
             <summary>
             Asynchronously returns all records in order as Dictionaries where the keys are the specified column names.
             </summary>
@@ -119,18 +119,20 @@
             <param name="columnNames">The desired column names.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ResultsAsync``1">
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A task containing the enumerable to pull the transformed results from.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ResultsBlockAsync``1">
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ResultsBlockAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Provides a transform block as the source of records.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A transform block that is recieving the results.</returns>
         </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4">
@@ -243,18 +245,20 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The results of each transformation.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader(System.Action{System.Data.IDataReader})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader(System.Action{System.Data.IDataReader},System.Data.CommandBehavior)">
             <summary>
             Executes a reader on a command with a handler function.
             </summary>
             <param name="handler">The handler function for the data reader.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader``1(System.Func{System.Data.IDataReader,``0})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader``1(System.Func{System.Data.IDataReader,``0},System.Data.CommandBehavior)">
             <summary>
             Executes a reader on a command with a transform function.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <returns>The result of the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReader(System.Action{System.Data.IDataRecord})">
@@ -316,7 +320,7 @@
             </summary>
             <returns>The enumerable with the data records stored in a dictionary..</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderInternal(System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderInternal(System.Collections.Generic.ISet{System.String})">
             <summary>
             Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
             </summary>
@@ -338,7 +342,7 @@
             <param name="transform">The transform function.</param>
             <returns>The array of transformed records.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.ISet{System.String})">
             <summary>
             Returns all records in order as Dictionaries where the keys are the specified column names.
             </summary>
@@ -378,22 +382,34 @@
             If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
             <returns>The buffer block that will contain the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Results``1">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Results``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Iterates each record and attempts to map the fields to type T.
             Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ResultsBlock``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)">
+            <summary>
+            Provides a transform block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="synchronousExecution">By default the command is deferred.
+            If set to true, the command runs synchronusly and all data is acquired before the method returns.
+            If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+            <returns>A transform block that is recieving the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ResultsBlock``1(System.Boolean)">
             <summary>
             Provides a transform block as the source of records.
             </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="synchronousExecution">By default the command is deferred.
             If set to true, the command runs synchronusly and all data is acquired before the method returns.
             If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <returns>A transform block that is recieving the results.</returns>
         </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4.Param">
@@ -566,11 +582,28 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>The value from the transform.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.Int32,System.String}})">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
+            <param name="columnMap">The column ids and resultant names to query.</param>
+            <returns>The resultant Dictionary of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.ISet{System.String})">
+            <summary>
+            Returns the specified column data of IDataRecord as a Dictionary.
+            </summary>
+            <param name="record">The IDataRecord to extract values from.</param>
+            <param name="columnNames">The column names to query.</param>
+            <returns>The resultant Dictionary of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToDictionaryOutIndexes(System.Data.IDataRecord,System.Collections.Generic.IReadOnlyList{System.Collections.Generic.KeyValuePair{System.Int32,System.String}}@,System.Collections.Generic.ISet{System.String})">
+            <summary>
+            Returns the specified column data of IDataRecord as a Dictionary.
+            </summary>
+            <param name="record">The IDataRecord to extract values from.</param>
+            <param name="columnIndexes">The map of indexes to column names queried.</param>
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
@@ -582,6 +615,15 @@
             <param name="columnNames">The column names to query.  If none specified, the result will contain all columns.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToDictionaryOutIndexes(System.Data.IDataRecord,System.Collections.Generic.IReadOnlyList{System.Collections.Generic.KeyValuePair{System.Int32,System.String}}@,System.String[])">
+            <summary>
+            Returns the specified column data of IDataRecord as a Dictionary.
+            </summary>
+            <param name="record">The IDataRecord to extract values from.</param>
+            <param name="columnIndexes">The map of indexes to column names queried.</param>
+            <param name="columnNames">The column names to query.  If none specified, the result will contain all columns.</param>
+            <returns>The resultant Dictionary of values.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
@@ -590,9 +632,42 @@
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.Extensions.ToDictionaryOutIndexes(System.Data.IDataRecord,System.Collections.Generic.IReadOnlyList{System.Collections.Generic.KeyValuePair{System.Int32,System.String}}@,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            Returns the specified column data of IDataRecord as a Dictionary.
+            </summary>
+            <param name="record">The IDataRecord to extract values from.</param>
+            <param name="columnIndexes">The map of indexes to column names queried.</param>
+            <param name="columnNames">The column names to query.</param>
+            <returns>The resultant Dictionary of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.ISet{System.String})">
+            <summary>
+            Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="columnNames">The column names to select.</param>
+            <returns>A list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="columnNames">The column names to select.</param>
+            <returns>A list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.String[])">
+            <summary>
+            Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
+            <returns>A list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.ISet{System.String})">
+            <summary>
+            Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="columnNames">The column names to select.</param>
@@ -600,7 +675,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="columnNames">The column names to select.</param>
@@ -608,11 +683,21 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.String[])">
             <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
             <returns>A list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
             <summary>
@@ -727,7 +812,31 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <param name="target">The target block to receive the results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlCommand,System.Collections.Generic.HashSet{System.String})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.ISet{System.String})">
+            <summary>
+            Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="reader">The SqlDataReader to read the data from.</param>
+            <param name="columnNames">The column names to select.</param>
+            <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="reader">The SqlDataReader to read the data from.</param>
+            <param name="columnNames">The column names to select.</param>
+            <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.String[])">
+            <summary>
+            Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="reader">The SqlDataReader to read the data from.</param>
+            <param name="columnNames">The column names to select. If none specified, the results will contain all columns.</param>
+            <returns>A task containing a list of dictionaries represending the requested data.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlCommand,System.Collections.Generic.ISet{System.String})">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
@@ -758,6 +867,15 @@
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
             <param name="token">Optional cancellatio token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ResultsAsync``1(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The SqlDataReader to read the data from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the enumerable to pull the transformed results from.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.IterateReaderAsyncWhile(System.Data.SqlClient.SqlCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)">
             <summary>

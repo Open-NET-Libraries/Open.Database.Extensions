@@ -40,7 +40,7 @@ namespace Open.Database.Extensions
 
 		public abstract Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> handler);
 
-		public abstract Task<int> ExecuteNonQueryAsync();
+        public abstract Task<int> ExecuteNonQueryAsync();
 
 		public abstract Task<object> ExecuteScalarAsync();
 
@@ -104,9 +104,13 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the records.</param>
 		/// <param name="columnNames">The column names to return.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
-		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, HashSet<string> columnNames)
+		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, ISet<string> columnNames)
 		{
-			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+			await IterateReaderAsyncWhile(r =>
+                target.Post(columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, columnNames)
+                    : r.ToDictionary(columnIndexes)));
 		}
 
 		/// <summary>
@@ -117,8 +121,12 @@ namespace Open.Database.Extensions
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, params string[] columnNames)
 		{
-			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
-		}
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+            await IterateReaderAsyncWhile(r =>
+                target.Post(columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, columnNames)
+                    : r.ToDictionary(columnIndexes)));
+        }
 
 		/// <summary>
 		/// Posts requested columns to a target block.
@@ -130,8 +138,12 @@ namespace Open.Database.Extensions
 			ITargetBlock<Dictionary<string, object>> target,
 			IEnumerable<string> columnNames)
 		{
-			await IterateReaderAsyncWhile(r => target.Post(r.ToDictionary(columnNames)));
-		}
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+            await IterateReaderAsyncWhile(r =>
+                target.Post(columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, columnNames)
+                    : r.ToDictionary(columnIndexes)));
+        }
 
 		/// <summary>
 		/// Provides a BufferBlock as the source of records.
@@ -153,7 +165,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="columnNames">The column names to return.</param>
 		/// <returns>A buffer block that is recieving the results.</returns>
-		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(HashSet<string> columnNames)
+		public ISourceBlock<Dictionary<string, object>> AsSourceBlockAsync<T>(ISet<string> columnNames)
 		{
 			var source = new BufferBlock<Dictionary<string, object>>();
 			ToTargetBlockAsync(source, columnNames)
@@ -202,10 +214,14 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="columnNames">The desired column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public async Task<List<Dictionary<string, object>>> RetrieveAsync(HashSet<string> columnNames)
+		public async Task<List<Dictionary<string, object>>> RetrieveAsync(ISet<string> columnNames)
 		{
 			var list = new List<Dictionary<string, object>>();
-			await IterateReaderAsync(r => list.Add(r.ToDictionary(columnNames)));
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+            await IterateReaderAsync(r =>
+                list.Add(columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, columnNames)
+                    : r.ToDictionary(columnIndexes)));
 			return list;
 		}
 
@@ -229,38 +245,51 @@ namespace Open.Database.Extensions
 				return await RetrieveAsync(new HashSet<string>(columnNames));
 
 			var list = new List<Dictionary<string, object>>();
-			await IterateReaderAsync(r => list.Add(r.ToDictionary()));
-			return list;
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+            await IterateReaderAsync(r =>
+                list.Add(columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, columnNames)
+                    : r.ToDictionary(columnIndexes)));
+            return list;
 		}
 
-		/// <summary>
-		/// Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <returns>A task containing the enumerable to pull the transformed results from.</returns>
-		public async Task<IEnumerable<T>> ResultsAsync<T>()
+        /// <summary>
+        /// Retrieves the results before closing the connection and asynchronously returning an enumerable that coerces the data to fit type T.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A task containing the enumerable to pull the transformed results from.</returns>
+        public async Task<IEnumerable<T>> ResultsAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
 			where T : new()
 		{
-			var x = new Transformer<T>();
-			var n = x.PropertyNames;
+			var x = new Transformer<T>(fieldMappingOverrides);
+			var n = x.ColumnNames;
 			var q = new Queue<Dictionary<string, object>>();
-			await IterateReaderAsync(r => q.Enqueue(r.ToDictionary(n)));
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+            await IterateReaderAsync(r =>
+                q.Enqueue(columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, n)
+                    : r.ToDictionary(columnIndexes)));
 
 			return x.Transform(q);
 		}
 
-		/// <summary>
-		/// Provides a transform block as the source of records.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <returns>A transform block that is recieving the results.</returns>
-		public ISourceBlock<T> ResultsBlockAsync<T>()
+        /// <summary>
+        /// Provides a transform block as the source of records.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A transform block that is recieving the results.</returns>
+        public ISourceBlock<T> ResultsBlockAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
 		   where T : new()
 		{
-			var x = new Transformer<T>();
-			var n = x.PropertyNames;
+			var x = new Transformer<T>(fieldMappingOverrides);
+			var n = x.ColumnNames;
 			var q = new TransformBlock<Dictionary<string, object>, T>(e => x.TransformAndClear(e));
-			ToTargetBlockAsync(r => r.ToDictionary(n), q)
+            IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
+            ToTargetBlockAsync(r => columnIndexes == null
+                    ? r.ToDictionaryOutIndexes(out columnIndexes, n)
+                    : r.ToDictionary(columnIndexes), q)
 				.ContinueWith(t => q.Complete())
 				.ConfigureAwait(false);
 
