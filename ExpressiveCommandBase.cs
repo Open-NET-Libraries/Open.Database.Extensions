@@ -25,6 +25,10 @@ namespace Open.Database.Extensions
 		/// </summary>
 		protected readonly IDbConnectionFactory<TConnection> ConnectionFactory;
 
+		/// <param name="connFactory">The factory to generate connections from.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
 		protected ExpressiveCommandBase(
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
@@ -38,6 +42,10 @@ namespace Open.Database.Extensions
 			Timeout = CommandTimeout.DEFAULT_SECONDS;
 		}
 
+		/// <param name="connFactory">The factory to generate connections from.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
 		protected ExpressiveCommandBase(
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
@@ -224,9 +232,7 @@ namespace Open.Database.Extensions
 				using (var reader = c.ExecuteReader(CommandBehavior.CloseConnection))
 				{
 					while (reader.Read())
-					{
 						yield return transform(reader);
-					}
 				}
 			}
 		}
@@ -249,7 +255,6 @@ namespace Open.Database.Extensions
         public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> Execute(command => command.ExecuteReader(transform, behavior));
 
-
 		/// <summary>
 		/// Iterates a reader on a command with a handler function.
 		/// </summary>
@@ -265,13 +270,35 @@ namespace Open.Database.Extensions
 			=> Execute(command => command.IterateReaderWhile(handler));
 
 		/// <summary>
-		/// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none.
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
+		/// <typeparam name="TResult">The type returned by the selector.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
+		/// <returns>The result of the transform.</returns>
+		public TResult IterateReader<TEntity, TResult>(
+			Func<IDataRecord, TEntity> transform,
+			Func<IEnumerable<TEntity>, TResult> selector)
+			=> Execute(command => command.IterateReader(transform, selector));
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first result through a transform funciton.  Throws if none.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>The value from the transform.</returns>
 		public T First<T>(Func<IDataRecord, T> transform)
 			=> ExecuteReader(reader => reader.Iterate(transform).First());
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The value from the transform.</returns>
+		public T FirstOrDefault<T>(Func<IDataRecord, T> transform)
+			=> ExecuteReader(reader => reader.Iterate(transform).FirstOrDefault());
 
 		/// <summary>
 		/// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
@@ -281,6 +308,46 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public T Single<T>(Func<IDataRecord, T> transform)
 			=> ExecuteReader(reader => reader.Iterate(transform).Single());
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.  Throws if more than one entry.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The value from the transform.</returns>
+		public T SingleOrDefault<T>(Func<IDataRecord, T> transform)
+			=> ExecuteReader(reader => reader.Iterate(transform).SingleOrDefault());
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first number of results defined by the count.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="count">The maximum number of records to return.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The results from the transform limited by the take count.</returns>
+		public List<T> Take<T>(int count, Func<IDataRecord, T> transform)
+			=> Execute(command => command.Take<T>(count, transform));
+
+		/// <summary>
+		/// Iterates an IDataReader and skips the first number of results defined by the count.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="count">The number of records to skip.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The results from the transform after the skip count.</returns>
+		public List<T> Skip<T>(int count, Func<IDataRecord, T> transform)
+			=> Execute(command => command.Skip<T>(count, transform));
+
+		/// <summary>
+		/// Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="skip">The number of entries to skip before starting to take results.</param>
+		/// <param name="take">The maximum number of records to return.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The results from the skip, transform and take operation.</returns>
+		public List<T> SkipThenTake<T>(int skip, int take, Func<IDataRecord, T> transform)
+			=> Execute(command => command.SkipThenTake<T>(skip, take, transform));
 
 		/// <summary>
 		/// Calls ExecuteNonQuery on the underlying command.
@@ -335,7 +402,6 @@ namespace Open.Database.Extensions
                 }
             }
         }
-
 
 		/// <summary>
 		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
@@ -457,7 +523,6 @@ namespace Open.Database.Extensions
 
 			return x.Transform(q);
 		}
-
 
         /// <summary>
         /// Provides a transform block as the source of records.

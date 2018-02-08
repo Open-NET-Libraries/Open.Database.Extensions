@@ -8,6 +8,9 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Base class for asynchronous enabled commands.
+	/// </summary>
 	public abstract class ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
 		: ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
 		where TConnection : class, IDbConnection
@@ -16,34 +19,65 @@ namespace Open.Database.Extensions
 		where TThis : ExpressiveAsyncCommandBase<TConnection, TCommand, TDbType, TThis>
 	{
 
+		/// <param name="connFactory">The factory to generate connections from.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
 		protected ExpressiveAsyncCommandBase(
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
-			string name,
+			string command,
 			List<Param> @params = null)
-			: base(connFactory, type, name, @params)
+			: base(connFactory, type, command, @params)
 		{
 		}
 
+		/// <param name="connFactory">The factory to generate connections from.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
 		protected ExpressiveAsyncCommandBase(
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
-			string name,
+			string command,
 			params Param[] @params)
-			: this(connFactory, type, name, @params.ToList())
+			: this(connFactory, type, command, @params.ToList())
 		{
 
 		}
 
 
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public abstract Task ExecuteAsync(Func<TCommand, Task> handler);
 
-		public abstract Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> handler);
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The result of the transform.</returns>
+		public abstract Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> transform);
 
-        public abstract Task<int> ExecuteNonQueryAsync();
+		/// <summary>
+		/// Asynchronously executes a non-query on the underlying command.
+		/// </summary>
+		/// <returns>The integer responise from the method.</returns>
+		public abstract Task<int> ExecuteNonQueryAsync();
 
+		/// <summary>
+		/// Asynchronously executes scalar on the underlying command.
+		/// </summary>
+		/// <returns>The varlue returned from the method.</returns>
 		public abstract Task<object> ExecuteScalarAsync();
 
+		/// <summary>
+		/// Asynchronously executes scalar on the underlying command.
+		/// </summary>
+		/// <typeparam name="T">The type expected.</typeparam>
+		/// <returns>The varlue returned from the method.</returns>
 		public async Task<T> ExecuteScalarAsync<T>()
 		{
 			return (T)(await ExecuteScalarAsync());
@@ -54,18 +88,18 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="maxCount">The maximum number of records before complete.</param>
+		/// <param name="count">The maximum number of records before complete.</param>
 		/// <returns>The value from the transform.</returns>
-		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int maxCount)
+		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count)
 		{
-			if (maxCount < 0) throw new ArgumentOutOfRangeException(nameof(maxCount), maxCount, "Cannot be negative.");
+			if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 			List<T> results = new List<T>();
-			if (maxCount == 0) return Task.FromResult(results);
+			if (count == 0) return Task.FromResult(results);
 
 			return IterateReaderAsyncWhile(record =>
 			{
 				results.Add(transform(record));
-				return results.Count < maxCount;
+				return results.Count < count;
 			})
 			.ContinueWith(t => results);
 		}
@@ -94,9 +128,7 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the records.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public async Task ToTargetBlockAsync<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
-		{
-			await IterateReaderAsyncWhile(r => target.Post(transform(r)));
-		}
+			=> await IterateReaderAsyncWhile(r => target.Post(transform(r)));
 
 		/// <summary>
 		/// Posts requested columns to a target block.
@@ -134,9 +166,7 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the records.</param>
 		/// <param name="columnNames">The column names to return.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
-		public async Task ToTargetBlockAsync(
-			ITargetBlock<Dictionary<string, object>> target,
-			IEnumerable<string> columnNames)
+		public async Task ToTargetBlockAsync(ITargetBlock<Dictionary<string, object>> target, IEnumerable<string> columnNames)
 		{
             IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
             await IterateReaderAsyncWhile(r =>

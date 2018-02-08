@@ -9,19 +9,34 @@ using System.Threading.Tasks;
 namespace Open.Database.Extensions.SqlClient
 {
 
-    public class ExpressiveSqlCommand : ExpressiveAsyncCommandBase<SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand>
+	/// <summary>
+	/// A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
+	/// </summary>
+	public class ExpressiveSqlCommand : ExpressiveAsyncCommandBase<SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand>
     {
-        public ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string name, List<Param> @params = null)
-            : base(connFactory, type, name, @params)
+		/// <param name="connFactory">The factory to generate connections from.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string command, List<Param> @params = null)
+            : base(connFactory, type, command, @params)
         {
         }
 
-        protected ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string name, params Param[] @params)
-            : this(connFactory, type, name, @params.ToList())
+		/// <param name="connFactory">The factory to generate connections from.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string command, params Param[] @params)
+            : this(connFactory, type, command, @params.ToList())
         {
         }
 
-        protected override void AddParams(SqlCommand command)
+		/// <summary>
+		/// Handles adding the list of parameters to a new command.
+		/// </summary>
+		/// <param name="command"></param>
+		protected override void AddParams(SqlCommand command)
         {
             foreach (var p in Params)
             {
@@ -30,7 +45,11 @@ namespace Open.Database.Extensions.SqlClient
             }
         }
 
-        public override async Task ExecuteAsync(Func<SqlCommand, Task> handler)
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public override async Task ExecuteAsync(Func<SqlCommand, Task> handler)
         {
             using (var con = ConnectionFactory.Create())
             using (var cmd = con.CreateCommand(
@@ -42,7 +61,13 @@ namespace Open.Database.Extensions.SqlClient
             }
         }
 
-        public override async Task<T> ExecuteAsync<T>(Func<SqlCommand, Task<T>> handler)
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The result of the transform.</returns>
+		public override async Task<T> ExecuteAsync<T>(Func<SqlCommand, Task<T>> transform)
         {
             using (var con = ConnectionFactory.Create())
             using (var cmd = con.CreateCommand(
@@ -50,29 +75,65 @@ namespace Open.Database.Extensions.SqlClient
             {
                 AddParams(cmd);
                 await con.OpenAsync();
-                return await handler(cmd);
+                return await transform(cmd);
             }
         }
 
-        public Task ExecuteReaderAsync(Func<SqlDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default)
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for the data reader.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public Task ExecuteReaderAsync(Func<SqlDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default)
             => ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior)));
 
-        public Task<T> ExecuteReaderAsync<T>(Func<SqlDataReader, Task<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
-            => ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior)));
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <returns>The result of the transform.</returns>
+		public Task<T> ExecuteReaderAsync<T>(Func<SqlDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
+            => ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior)));
 
-        public override Task<int> ExecuteNonQueryAsync()
+		/// <summary>
+		/// Calls ExecuteNonQueryAsync on the underlying command.
+		/// </summary>
+		/// <returns>The integer responise from the method.</returns>
+		public override Task<int> ExecuteNonQueryAsync()
             => ExecuteAsync(command => command.ExecuteNonQueryAsync());
 
-        public override Task<object> ExecuteScalarAsync()
+		/// <summary>
+		/// Calls ExecuteScalarAsync on the underlying command.
+		/// </summary>
+		/// <returns>The varlue returned from the method.</returns>
+		public override Task<object> ExecuteScalarAsync()
             => ExecuteAsync(command => command.ExecuteScalarAsync());
 
-        public override Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform)
+		/// <summary>
+		/// Asynchronously returns all records via a transform function.
+		/// </summary>
+		/// <param name="transform">The desired column names.</param>
+		/// <returns>A task containing the list of results.</returns>
+		public override Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform)
             => ExecuteAsync(command => command.ToListAsync(transform));
 
-        public override Task IterateReaderAsync(Action<IDataRecord> handler, CancellationToken? token = null)
+		/// <summary>
+		/// Iterates asynchronously and will stop iterating if canceled.
+		/// </summary>
+		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
+		/// <param name="token">An optional cancellation token.</param>
+		/// <returns></returns>
+		public override Task IterateReaderAsync(Action<IDataRecord> handler, CancellationToken? token = null)
             => ExecuteAsync(command => command.IterateReaderAsync(handler, token));
 
-        public override Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate)
+		/// <summary>
+		/// Iterates asynchronously until the handler returns false.  Then cancels.
+		/// </summary>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public override Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate)
             => ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate));
 
     }

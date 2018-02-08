@@ -11,13 +11,17 @@
     <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>3.2.0</Version>
-    <AssemblyVersion>3.2.0.0</AssemblyVersion>
-    <FileVersion>3.2.0.0</FileVersion>
+    <Version>4.0.0</Version>
+    <AssemblyVersion>4.0.0.0</AssemblyVersion>
+    <FileVersion>4.0.0.0</FileVersion>
     <PackageReleaseNotes>- Set optional CommandBehavior parameters to .Default to prevent confusion.
 - Added ExecuteReaderAsync to ExpressiveSqlCommand but not to the base class since it would require an additional type parameter.
 - Added more retrieve and results methods/extensions for flexible use of a data reader.
-- Added field mapping to transformation with the results methods.</PackageReleaseNotes>
+- Added field mapping to transformation with the results methods.
+- Added useful Linq style methods to synchronous extensions and ExpressiveDbCommand.
+- Fully documented methods.
+- Better code reuse.
+- Specialized optimizations.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

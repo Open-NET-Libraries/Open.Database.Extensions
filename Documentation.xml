@@ -4,13 +4,63 @@
         <name>Open.Database.Extensions</name>
     </assembly>
     <members>
+        <member name="T:Open.Database.Extensions.ExpressiveAsyncCommandBase`4">
+            <summary>
+            Base class for asynchronous enabled commands.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param[])">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task})">
+            <summary>
+            Asynchronously executes a reader on a command with a handler function.
+            </summary>
+            <param name="handler">The handler function for each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteAsync``1(System.Func{`1,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Asynchronously executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The result of the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteNonQueryAsync">
+            <summary>
+            Asynchronously executes a non-query on the underlying command.
+            </summary>
+            <returns>The integer responise from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteScalarAsync">
+            <summary>
+            Asynchronously executes scalar on the underlying command.
+            </summary>
+            <returns>The varlue returned from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteScalarAsync``1">
+            <summary>
+            Asynchronously executes scalar on the underlying command.
+            </summary>
+            <typeparam name="T">The type expected.</typeparam>
+            <returns>The varlue returned from the method.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.TakeAsync``1(System.Func{System.Data.IDataRecord,``0},System.Int32)">
             <summary>
             Asynchronously iterates a IDataReader and returns the each result until the count is met.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="maxCount">The maximum number of records before complete.</param>
+            <param name="count">The maximum number of records before complete.</param>
             <returns>The value from the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
@@ -149,6 +199,18 @@
             THe connection factory to use to generate connections and commands.
             </summary>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param[])">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
         <member name="P:Open.Database.Extensions.ExpressiveCommandBase`4.Command">
             <summary>
             The command text or procedure name to use.
@@ -273,9 +335,27 @@
             </summary>
             <param name="handler">The handler function for each IDataRecord.</param>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReader``2(System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})">
+            <summary>
+            Executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
+            <typeparam name="TResult">The type returned by the selector.</typeparam>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
+            <returns>The result of the transform.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.First``1(System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none.
+            Iterates an IDataReader and returns the first result through a transform funciton.  Throws if none.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.FirstOrDefault``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function to process each IDataRecord.</param>
@@ -288,6 +368,42 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.SingleOrDefault``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.  Throws if more than one entry.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Take``1(System.Int32,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and returns the first number of results defined by the count.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="count">The maximum number of records to return.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The results from the transform limited by the take count.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Skip``1(System.Int32,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and skips the first number of results defined by the count.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="count">The number of records to skip.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The results from the transform after the skip count.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.SkipThenTake``1(System.Int32,System.Int32,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="skip">The number of entries to skip before starting to take results.</param>
+            <param name="take">The maximum number of records to return.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The results from the skip, transform and take operation.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteNonQuery">
             <summary>
@@ -449,6 +565,29 @@
             Inequality operator.
             </summary>
         </member>
+        <member name="T:Open.Database.Extensions.ExpressiveDbCommand">
+            <summary>
+            An abstraction for executing commands on a database using best practices and simplified expressive syntax.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.IDbConnection},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.IDbConnection},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param[])">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.AddParams(System.Data.IDbCommand)">
+            <summary>
+            Handles adding the list of parameters to a new command.
+            </summary>
+            <param name="command"></param>
+        </member>
         <member name="T:Open.Database.Extensions.Extensions">
             <summary>
             Core non-DB-specific extensions for building a command and retrieving data using best practices.
@@ -516,11 +655,19 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>A list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToDataTable(System.Data.IDbCommand)">
+        <member name="M:Open.Database.Extensions.Extensions.ToDataTable(System.Data.IDataReader)">
+            <summary>
+            Loads all remaining data from an IDataReader into a DataTable.
+            </summary>
+            <param name="reader">The IDataReader to load data from.</param>
+            <returns>The resultant DataTable.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToDataTable(System.Data.IDbCommand,System.Data.CommandBehavior)">
             <summary>
             Loads all data from a command through an IDataReader into a DataTable.
             </summary>
             <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <returns>The resultant DataTable.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean})">
@@ -548,6 +695,17 @@
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <returns>The result of the transform.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.IterateReader``2(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})">
+            <summary>
+            Executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
+            <typeparam name="TResult">The type returned by the selector.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
+            <returns>The result of the transform.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.IterateReader(System.Data.IDbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)">
             <summary>
             Iterates a reader on a command with a handler function.
@@ -566,7 +724,16 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.First``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none.
+            Iterates an IDataReader and returns the first result through a transform funciton.  Throws if none.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The IDbCommand to generate a reader from.</param>
@@ -575,12 +742,52 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Single``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
+            Iterates an IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.SingleOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.  Throws if more than one entry.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Take``1(System.Data.IDbCommand,System.Int32,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and returns the first number of results defined by the count.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="count">The maximum number of records to return.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The results from the transform limited by the take count.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Skip``1(System.Data.IDbCommand,System.Int32,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and skips the first number of results defined by the count.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="count">The number of records to skip.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The results from the transform after the skip count.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.SkipThenTake``1(System.Data.IDbCommand,System.Int32,System.Int32,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="skip">The number of entries to skip before starting to take results.</param>
+            <param name="take">The maximum number of records to return.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>The results from the skip, transform and take operation.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.Int32,System.String}})">
             <summary>
@@ -600,7 +807,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToDictionaryOutIndexes(System.Data.IDataRecord,System.Collections.Generic.IReadOnlyList{System.Collections.Generic.KeyValuePair{System.Int32,System.String}}@,System.Collections.Generic.ISet{System.String})">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
+            Returns the specified column data of IDataRecord as a Dictionary and stores the column indexes in the columnIndexes out parameter.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnIndexes">The map of indexes to column names queried.</param>
@@ -617,7 +824,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToDictionaryOutIndexes(System.Data.IDataRecord,System.Collections.Generic.IReadOnlyList{System.Collections.Generic.KeyValuePair{System.Int32,System.String}}@,System.String[])">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
+            Returns the specified column data of IDataRecord as a Dictionary and stores the column indexes in the columnIndexes out parameter.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnIndexes">The map of indexes to column names queried.</param>
@@ -701,7 +908,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
             <summary>
-            Iterates an IDataReader and through the transform function and posts each record it to the target block.
+            Iterates an IDataReader through the transform function and posts each record to the target block.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -742,6 +949,93 @@
             <summary>
             Simplified interface with IDbConnection as the generic type.
             </summary>
+        </member>
+        <member name="T:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand">
+            <summary>
+            A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param[])">
+            <param name="connFactory">The factory to generate connections from.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.AddParams(System.Data.SqlClient.SqlCommand)">
+            <summary>
+            Handles adding the list of parameters to a new command.
+            </summary>
+            <param name="command"></param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ExecuteAsync(System.Func{System.Data.SqlClient.SqlCommand,System.Threading.Tasks.Task})">
+            <summary>
+            Asynchronously executes a reader on a command with a handler function.
+            </summary>
+            <param name="handler">The handler function for each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ExecuteAsync``1(System.Func{System.Data.SqlClient.SqlCommand,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Asynchronously executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The result of the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ExecuteReaderAsync(System.Func{System.Data.SqlClient.SqlDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior)">
+            <summary>
+            Asynchronously executes a reader on a command with a handler function.
+            </summary>
+            <param name="handler">The handler function for the data reader.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ExecuteReaderAsync``1(System.Func{System.Data.SqlClient.SqlDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior)">
+            <summary>
+            Asynchronously executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <returns>The result of the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ExecuteNonQueryAsync">
+            <summary>
+            Calls ExecuteNonQueryAsync on the underlying command.
+            </summary>
+            <returns>The integer responise from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ExecuteScalarAsync">
+            <summary>
+            Calls ExecuteScalarAsync on the underlying command.
+            </summary>
+            <returns>The varlue returned from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ToListAsync``1(System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Asynchronously returns all records via a transform function.
+            </summary>
+            <param name="transform">The desired column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Iterates asynchronously and will stop iterating if canceled.
+            </summary>
+            <param name="handler">The active IDataRecord is passed to this handler.</param>
+            <param name="token">An optional cancellation token.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean})">
+            <summary>
+            Iterates asynchronously until the handler returns false.  Then cancels.
+            </summary>
+            <param name="predicate"></param>
+            <returns></returns>
         </member>
         <member name="T:Open.Database.Extensions.SqlClient.Extensions">
             <summary>
