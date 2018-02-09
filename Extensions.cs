@@ -101,14 +101,34 @@ namespace Open.Database.Extensions
 				yield return transform(reader);
 		}
 
-		/// <summary>
-		/// Iterates all records using an IDataReader and returns the desired results as a list.
-		/// </summary>
+        /// <summary>
+        /// Shortcut for .Iterate(transform).ToList();
+        /// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <returns>A list of all results.</returns>
-		public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+		/// <returns>A list of the transformed results.</returns>
+        public static List<T> ToList<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+            => reader.Iterate(transform).ToList();
+
+        /// <summary>
+        /// Shortcut for .Iterate(transform).ToArray();
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="reader">The IDataReader to iterate.</param>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>An array of the transformed results.</returns>
+        public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+            => reader.Iterate(transform).ToArray();
+
+        /// <summary>
+        /// Iterates all records using an IDataReader and returns the desired results as a list.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="command">The IDbCommand to generate a reader from.</param>
+        /// <param name="transform">The transform function to process each IDataRecord.</param>
+        /// <returns>A list of all results.</returns>
+        public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
 			using (var reader = command.ExecuteReader())
 				return reader.Iterate(transform).ToList();
