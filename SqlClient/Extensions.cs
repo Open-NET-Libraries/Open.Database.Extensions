@@ -102,7 +102,9 @@ namespace Open.Database.Extensions.SqlClient
 			Func<IDataRecord, T> transform,
 			ITargetBlock<T> target)
 		{
-			while (target.IsStillAlive() && await reader.ReadAsync() && target.Post(transform(reader))) ;
+			while (target.IsStillAlive()
+				&& await reader.ReadAsync()
+				&& target.Post(transform(reader))) { }
 		}
 
 		/// <summary>
