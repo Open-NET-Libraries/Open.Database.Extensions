@@ -13,7 +13,8 @@ namespace Open.Database.Extensions
 
         // Allow mapping key = object property, value = column name.
         readonly Dictionary<string, string> PropertyMap;
-        public HashSet<string> PropertyNames => new HashSet<string>(PropertyMap.Keys);
+		readonly Dictionary<string, PropertyInfo> ColumnToPropertyMap;
+		public HashSet<string> PropertyNames => new HashSet<string>(PropertyMap.Keys);
         public HashSet<string> ColumnNames => new HashSet<string>(PropertyMap.Values);
 
         public Transformer(IEnumerable<KeyValuePair<string, string>> overrides = null)
@@ -22,35 +23,44 @@ namespace Open.Database.Extensions
             Properties = Type.GetProperties();
             PropertyMap = Properties.Select(p=>p.Name).ToDictionary(n=>n);
 
+			var pm = Properties.ToDictionary(p => p.Name);
+
             if(overrides!=null)
             {
                 foreach (var o in overrides)
                     PropertyMap[o.Key] = o.Value;
             }
-        }
 
-        public T TransformAndClear(IDictionary<string, object> entry)
-        {
-            var model = new T();
-            foreach (var p in Properties)
-            {
-                var columnName = PropertyMap[p.Name];
-                if (entry.ContainsKey(columnName))
-                {
-                    var value = entry[columnName];
-                    if (value == DBNull.Value) value = null;
-                    p.SetValue(model, value);
-                }
-            }
-			entry.Clear();
-            return model;
-        }
+			ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value, kvp => pm[kvp.Key]);
 
-		public IEnumerable<T> Transform(Queue<Dictionary<string,object>> q)
+		}
+
+
+		public IEnumerable<T> Transform(DataReaderResults results)
 		{
+			var q = results.Values;
+			var names = results.Names;
+			var count = names.Length;
+			var properties = names
+				.Select(n => ColumnToPropertyMap.TryGetValue(n, out PropertyInfo p) ? p : null)
+				.ToArray();
+
 			while (q.Count != 0)
 			{
-				yield return TransformAndClear(q.Dequeue());
+				var record = q.Dequeue();
+				var model = new T();
+				for(var i = 0;i< count; i++)
+				{
+					var name = names[i];
+					var value = record[i];
+					var p = properties[i];
+					if (p == null) continue;
+					if (value == DBNull.Value) value = null;
+					p.SetValue(model, value);
+				}
+				
+				yield return model;
+
 			}
 
 			// By using the above routine, we guarantee as enumeration occurs, references are released.

@@ -83,10 +83,100 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static void Iterate(this IDataReader reader, Action<IDataRecord> handler)
+		public static void ForEach(this IDataReader reader, Action<IDataRecord> handler)
 		{
 			while (reader.Read()) handler(reader);
 		}
+
+		/// <summary>
+		/// Returns all the column names for the current result set.
+		/// </summary>
+		/// <param name="reader">The reader to get column names from.</param>
+		/// <returns>The array of column names.</returns>
+		public static string[] GetNames(this IDataRecord reader)
+		{
+			var fieldCount = reader.FieldCount;
+			var columnNames = new string[fieldCount];
+			for (var i = 0; i < fieldCount; i++)
+				columnNames[i] = reader.GetName(i);
+			return columnNames;
+		}
+
+		/// <summary>
+		/// Returns all the data type names for the columns of current result set.
+		/// </summary>
+		/// <param name="reader">The reader to get data type names from.</param>
+		/// <returns>The array of data type names.</returns>
+		public static string[] GetDataTypeNames(this IDataRecord reader)
+		{
+			var fieldCount = reader.FieldCount;
+			var results = new string[fieldCount];
+			for (var i = 0; i < fieldCount; i++)
+				results[i] = reader.GetDataTypeName(i);
+			return results;
+		}
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
+		{
+			if (reader.Read())
+			{
+				var fieldCount = reader.FieldCount;
+				do
+				{
+					var row = new object[fieldCount];
+					reader.GetValues(row);
+					yield return row;
+				} while (reader.Read());
+			}
+		}
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
+		{
+			if (reader.Read())
+			{
+				var o = ordinals.ToArray();
+				var fieldCount = o.Length;
+				if (fieldCount == 0)
+				{
+					do
+					{
+						yield return Array.Empty<object>();
+					} while (reader.Read());
+				}
+				else
+				{
+					do
+					{
+						var row = new object[fieldCount];
+						for (var i = 0; i < fieldCount; i++)
+							row[i] = reader.GetValue(i);
+						yield return row;
+					} while (reader.Read());
+				}
+
+			}
+		}
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
+			=> AsEnumerable(reader, new int[1] { n }.Concat(others));
 
 		/// <summary>
 		/// Iterates all records from an IDataReader.
@@ -101,36 +191,50 @@ namespace Open.Database.Extensions
 				yield return transform(reader);
 		}
 
-        /// <summary>
-        /// Shortcut for .Iterate(transform).ToList();
-        /// </summary>
+		/// <summary>
+		/// Shortcut for .Iterate(transform).ToList();
+		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>A list of the transformed results.</returns>
-        public static List<T> ToList<T>(this IDataReader reader, Func<IDataRecord, T> transform)
-            => reader.Iterate(transform).ToList();
+		public static List<T> ToList<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+			=> reader.Iterate(transform).ToList();
 
-        /// <summary>
-        /// Shortcut for .Iterate(transform).ToArray();
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="reader">The IDataReader to iterate.</param>
-        /// <param name="transform">The transform function to process each IDataRecord.</param>
-        /// <returns>An array of the transformed results.</returns>
-        public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
-            => reader.Iterate(transform).ToArray();
+		/// <summary>
+		/// Shortcut for .Iterate(transform).ToArray();
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>An array of the transformed results.</returns>
+		public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+			=> reader.Iterate(transform).ToArray();
 
-        /// <summary>
-        /// Iterates all records using an IDataReader and returns the desired results as a list.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="command">The IDbCommand to generate a reader from.</param>
-        /// <param name="transform">The transform function to process each IDataRecord.</param>
-        /// <returns>A list of all results.</returns>
-        public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>A list of all results.</returns>
+		public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
 			using (var reader = command.ExecuteReader())
+				return reader.Iterate(transform).ToList();
+		}
+
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>A list of all results.</returns>
+		public static List<T> ToList<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
+		{
+			using (var reader = command.ExecuteReader(behavior))
 				return reader.Iterate(transform).ToList();
 		}
 
@@ -148,13 +252,26 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>A list of all results.</returns>
+		public static T[] ToArray<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
+		{
+			using (var reader = command.ExecuteReader(behavior))
+				return reader.Iterate(transform).ToArray();
+		}
+
+		/// <summary>
 		/// Loads all remaining data from an IDataReader into a DataTable.
 		/// </summary>
 		/// <param name="reader">The IDataReader to load data from.</param>
 		/// <returns>The resultant DataTable.</returns>
 		public static DataTable ToDataTable(this IDataReader reader)
 		{
-
 			var table = new DataTable();
 			table.Load(reader);
 			return table;
@@ -167,7 +284,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <returns>The resultant DataTable.</returns>
-		public static DataTable ToDataTable(this IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
+		public static DataTable ToDataTable(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		{
 			using (var reader = command.ExecuteReader(behavior))
 				return reader.ToDataTable();
@@ -180,7 +297,7 @@ namespace Open.Database.Extensions
 		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
 		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate)
 		{
-			while (reader.Read() && predicate(reader)) ;
+			while (reader.Read() && predicate(reader)) { }
 		}
 
 		/// <summary>
@@ -218,7 +335,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
 		/// <returns>The result of the transform.</returns>
-		public static TResult IterateReader<TEntity,TResult>(
+		public static TResult IterateReader<TEntity, TResult>(
 			this IDbCommand command,
 			Func<IDataRecord, TEntity> transform,
 			Func<IEnumerable<TEntity>, TResult> selector)
@@ -227,20 +344,50 @@ namespace Open.Database.Extensions
 				return selector(reader.Iterate(transform));
 		}
 
+		/// <summary>
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
+		/// <typeparam name="TResult">The type returned by the selector.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
+		/// <returns>The result of the transform.</returns>
+		public static TResult IterateReader<TEntity, TResult>(
+			this IDbCommand command,
+			CommandBehavior behavior,
+			Func<IDataRecord, TEntity> transform,
+			Func<IEnumerable<TEntity>, TResult> selector)
+		{
+			using (var reader = command.ExecuteReader(behavior))
+				return selector(reader.Iterate(transform));
+		}
 
 		/// <summary>
 		/// Iterates a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-		public static void IterateReader(this IDbCommand command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
+		public static void IterateReader(this IDbCommand command, Action<IDataRecord> handler)
 		{
-			using (var reader = command.ExecuteReader(behavior))
-				reader.Iterate(handler);
+			using (var reader = command.ExecuteReader())
+				reader.ForEach(handler);
 		}
 
-		internal static IEnumerable<T> IterateReaderInternal<T>(IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+		/// <summary>
+		/// Iterates a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public static void IterateReader(this IDbCommand command, CommandBehavior behavior, Action<IDataRecord> handler)
+		{
+			using (var reader = command.ExecuteReader(behavior))
+				reader.ForEach(handler);
+		}
+
+		internal static IEnumerable<T> IterateReaderInternal<T>(IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 		{
 			using (var reader = command.ExecuteReader(behavior))
 			{
@@ -249,50 +396,20 @@ namespace Open.Database.Extensions
 			}
 		}
 
-		internal static IEnumerable<Dictionary<string, object>> IterateReaderInternal(IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
+		internal static IEnumerable<object[]> IterateReaderInternal(IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			using (var reader = command.ExecuteReader(behavior))
 			{
 				if (reader.Read())
 				{
-					// First capture the indexes for reuse.
-					yield return reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes);
-					while (reader.Read())
-						yield return reader.ToDictionary(columnIndexes);
+					var fieldCount = reader.FieldCount;
+					do
+					{
+						var row = new object[fieldCount];
+						reader.GetValues(row);
+						yield return row;
+					} while (reader.Read());
 				}
-			}
-		}
-
-		internal static IEnumerable<Dictionary<string, object>> IterateReaderInternal(IDbCommand command, ISet<string> columnNames, CommandBehavior behavior = CommandBehavior.Default)
-		{
-			using (var reader = command.ExecuteReader(behavior))
-			{
-				if (reader.Read())
-				{
-					yield return reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, columnNames);
-					while (reader.Read())
-						yield return reader.ToDictionary(columnIndexes);
-				}
-			}
-		}
-
-		internal static IEnumerable<Dictionary<string, object>> IterateInternal(IDataReader reader, ISet<string> columnNames)
-		{
-			if (reader.Read())
-			{
-				yield return reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, columnNames);
-				while (reader.Read())
-					yield return reader.ToDictionary(columnIndexes);
-			}
-		}
-
-		internal static IEnumerable<Dictionary<string, object>> IterateInternal(IDataReader reader)
-		{
-			if (reader.Read())
-			{
-				yield return reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes);
-				while (reader.Read())
-					yield return reader.ToDictionary(columnIndexes);
 			}
 		}
 
@@ -317,7 +434,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public static T First<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
-			using (var reader = command.ExecuteReader())
+			using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
 				return reader.Iterate(transform).First();
 		}
 
@@ -330,7 +447,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public static T FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
-			using (var reader = command.ExecuteReader())
+			using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
 				return reader.Iterate(transform).FirstOrDefault();
 		}
 
@@ -430,6 +547,23 @@ namespace Open.Database.Extensions
 		/// Returns the specified column data of IDataRecord as a Dictionary.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
+		/// <param name="columnMap">The column ids and resultant names to query.</param>
+		/// <returns>The resultant Dictionary of values.</returns>
+		public static Dictionary<string, object> ToDictionary(this IDataRecord record, IEnumerable<(int, string)> columnMap)
+		{
+			var e = new Dictionary<string, object>();
+			if (columnMap != null)
+			{
+				foreach (var c in columnMap)
+					e.Add(c.Item2, record.GetValue(c.Item1));
+			}
+			return e;
+		}
+
+		/// <summary>
+		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// </summary>
+		/// <param name="record">The IDataRecord to extract values from.</param>
 		/// <param name="columnNames">The column names to query.</param>
 		/// <returns>The resultant Dictionary of values.</returns>
 		public static Dictionary<string, object> ToDictionary(this IDataRecord record, ISet<string> columnNames)
@@ -444,33 +578,6 @@ namespace Open.Database.Extensions
 						e.Add(n, record.GetValue(i));
 				}
 			}
-			return e;
-		}
-
-		/// <summary>
-		/// Returns the specified column data of IDataRecord as a Dictionary and stores the column indexes in the columnIndexes out parameter.
-		/// </summary>
-		/// <param name="record">The IDataRecord to extract values from.</param>
-		/// <param name="columnIndexes">The map of indexes to column names queried.</param>
-		/// <param name="columnNames">The column names to query.</param>
-		/// <returns>The resultant Dictionary of values.</returns>
-		public static Dictionary<string, object> ToDictionaryOutIndexes(this IDataRecord record, out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, ISet<string> columnNames)
-		{
-			var indexes = new Dictionary<int, string>();
-			var e = new Dictionary<string, object>();
-			if (columnNames != null && columnNames.Count != 0)
-			{
-				for (var i = 0; i < record.FieldCount; i++)
-				{
-					var n = record.GetName(i);
-					if (columnNames.Contains(n))
-					{
-						indexes.Add(i, n);
-						e.Add(n, record.GetValue(i));
-					}
-				}
-			}
-			columnIndexes = indexes.OrderBy(kvp => kvp.Key).ToList().AsReadOnly();
 			return e;
 		}
 
@@ -495,30 +602,6 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Returns the specified column data of IDataRecord as a Dictionary and stores the column indexes in the columnIndexes out parameter.
-		/// </summary>
-		/// <param name="record">The IDataRecord to extract values from.</param>
-		/// <param name="columnIndexes">The map of indexes to column names queried.</param>
-		/// <param name="columnNames">The column names to query.  If none specified, the result will contain all columns.</param>
-		/// <returns>The resultant Dictionary of values.</returns>
-		public static Dictionary<string, object> ToDictionaryOutIndexes(this IDataRecord record, out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, params string[] columnNames)
-		{
-			if (columnNames.Length != 0)
-				return ToDictionaryOutIndexes(record, out columnIndexes, new HashSet<string>(columnNames));
-
-			var indexes = new Dictionary<int, string>();
-			var e = new Dictionary<string, object>();
-			for (var i = 0; i < record.FieldCount; i++)
-			{
-				var n = record.GetName(i);
-				indexes.Add(i, n);
-				e.Add(n, record.GetValue(i));
-			}
-			columnIndexes = indexes.OrderBy(kvp => kvp.Key).ToList().AsReadOnly();
-			return e;
-		}
-
-		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
@@ -527,73 +610,161 @@ namespace Open.Database.Extensions
 		public static Dictionary<string, object> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
 			=> ToDictionary(record, new HashSet<string>(columnNames));
 
+		static DataReaderResults RetrieveBlanksInternal(IDataReader reader)
+		{
+			// No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
+			return new DataReaderResults
+			{
+				Ordinals = Array.Empty<int>(),
+				Names = Array.Empty<string>(),
+				Values = new Queue<object[]>(AsEnumerable(reader, Enumerable.Empty<int>()))
+			};
+		}
+
 		/// <summary>
-		/// Returns the specified column data of IDataRecord as a Dictionary.
-		/// </summary>
-		/// <param name="record">The IDataRecord to extract values from.</param>
-		/// <param name="columnIndexes">The map of indexes to column names queried.</param>
-		/// <param name="columnNames">The column names to query.</param>
-		/// <returns>The resultant Dictionary of values.</returns>
-		public static Dictionary<string, object> ToDictionaryOutIndexes(this IDataRecord record, out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, IEnumerable<string> columnNames)
-			=> ToDictionaryOutIndexes(record, out columnIndexes, new HashSet<string>(columnNames));
-		
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// Iterates all records within the first result set using an IDataReader and returns the results.
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> Retrieve(this IDataReader reader, ISet<string> columnNames)
-			=> IterateInternal(reader, columnNames).ToList();
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDataReader reader)
+
+		{
+			var names = reader.GetNames();
+			// No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
+			return new DataReaderResults
+			{
+				Ordinals = Enumerable.Range(0, names.Length).ToArray(),
+				Names = names,
+				Values = new Queue<object[]>(AsEnumerable(reader))
+			};
+		}
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
-			=> Retrieve(reader, new HashSet<string>(columnNames));
+		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
+		{
+			var o = ordinals as ISet<int> ?? new HashSet<int>(ordinals);
+			if (o.Count == 0)
+			{
+				// No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
+				return RetrieveBlanksInternal(reader);
+			}
+			else
+			{
+				var ordinalValues = ordinals.OrderBy(n => n).ToArray();
+
+				return new DataReaderResults
+				{
+					Ordinals = ordinalValues,
+					Names = ordinalValues.Select(n => reader.GetName(n)).ToArray(),
+					Values = new Queue<object[]>(AsEnumerable(reader, ordinalValues))
+				};
+			}
+		}
 
 		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
-		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> Retrieve(this IDataReader reader, params string[] columnNames)
-			=> columnNames.Length == 0
-				? IterateInternal(reader).ToList()
-				: Retrieve(reader, new HashSet<string>(columnNames));
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDataReader reader, int n, params int[] others)
+			=> Retrieve(reader, new int[1] { n }.Concat(others));
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// </summary>
+		/// <param name="reader">The IDataReader to read results from.</param>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
+		{
+			var cn = columnNames as ISet<string> ?? new HashSet<string>(columnNames);
+			if (cn.Count == 0)
+			{
+				// No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
+				return RetrieveBlanksInternal(reader);
+			}
+			else
+			{
+				// Validate the requested columns first.
+				var columns = cn
+					.Select(n => (name: n, ordinal: reader.GetOrdinal(n)))
+					.OrderBy(c => c.ordinal)
+					.ToArray();
+
+				var ordinalValues = columns.Select(c => c.ordinal).ToArray();
+
+				return new DataReaderResults
+				{
+					Ordinals = ordinalValues,
+					Names = columns.Select(c => c.name).ToArray(),
+					Values = new Queue<object[]>(AsEnumerable(reader, ordinalValues))
+				};
+			}
+		}
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// </summary>
+		/// <param name="reader">The IDataReader to read results from.</param>
+		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining column names to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDataReader reader, string c, params string[] others)
+			=> Retrieve(reader, new string[1] { c }.Concat(others));
+
+		/// <summary>
+		/// Iterates all records within the first result set using an IDataReader and returns the results.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDbCommand command)
+			=> ExecuteReader(command, reader => reader.Retrieve());
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDbCommand command, IEnumerable<int> ordinals)
+			=> ExecuteReader(command, reader => reader.Retrieve(ordinals));
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDbCommand command, int n, params int[] others)
+			=> ExecuteReader(command, reader => Retrieve(reader, new int[1] { n }.Concat(others)));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> Retrieve(this IDbCommand command, ISet<string> columnNames)
-			=> IterateReaderInternal(command, columnNames).ToList();
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
+			=> ExecuteReader(command, reader => reader.Retrieve(columnNames));
 
 		/// <summary>
-		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
-			=> Retrieve(command, new HashSet<string>(columnNames));
+		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining column names to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public static DataReaderResults Retrieve(this IDbCommand command, string c, params string[] others)
+			=> ExecuteReader(command, reader => Retrieve(reader, new string[1] { c }.Concat(others)));
 
-		/// <summary>
-		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.  If none specified, the results will contain all columns.</param>
-		/// <returns>A list of dictionaries represending the requested data.</returns>
-		public static List<Dictionary<string, object>> Retrieve(this IDbCommand command, params string[] columnNames)
-			=> columnNames.Length == 0
-				? IterateReaderInternal(command).ToList()
-				: Retrieve(command, new HashSet<string>(columnNames));
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
@@ -607,12 +778,8 @@ namespace Open.Database.Extensions
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
-			var n = x.ColumnNames;
 
-			// Use a queue so that when each item is subsequently enumerated, the reference is removed and memory is progressively cleaned up.
-			var q = new Queue<Dictionary<string, object>>();
-			foreach (var e in IterateInternal(reader, n))
-				q.Enqueue(e);
+			var r = Retrieve(reader, x.ColumnNames);
 
 			return x.Transform(q);
 		}
@@ -628,7 +795,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, T> transform,
 			ITargetBlock<T> target)
 		{
-			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) ;
+			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
 		}
 
 		/// <summary>
@@ -642,9 +809,7 @@ namespace Open.Database.Extensions
 			this IDbConnectionFactory<IDbConnection> target,
 			string command,
 			CommandType type = CommandType.Text)
-		{
-			return new ExpressiveDbCommand(target, type, command);
-		}
+			=> new ExpressiveDbCommand(target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -655,8 +820,6 @@ namespace Open.Database.Extensions
 		public static ExpressiveDbCommand StoredProcedure(
 			this IDbConnectionFactory<IDbConnection> target,
 			string command)
-		{
-			return new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
-		}
+			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
 	}
 }
