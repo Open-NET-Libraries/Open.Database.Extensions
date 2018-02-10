@@ -237,22 +237,22 @@ namespace Open.Database.Extensions
 			}
 		}
 
-        /// <summary>
-        /// Executes a reader on a command with a handler function.
-        /// </summary>
-        /// <param name="handler">The handler function for the data reader.</param>
-        /// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-        public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
+		/// <summary>
+		/// Executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for the data reader.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 			=> Execute(command => command.ExecuteReader(handler, behavior));
 
-        /// <summary>
-        /// Executes a reader on a command with a transform function.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="transform">The transform function for each IDataRecord.</param>
-        /// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-        /// <returns>The result of the transform.</returns>
-        public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+		/// <summary>
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <returns>The result of the transform.</returns>
+		public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> Execute(command => command.ExecuteReader(transform, behavior));
 
 		/// <summary>
@@ -377,64 +377,14 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant DataTabel.</returns>
 		public DataTable LoadTable()
 			=> Execute(command => command.ToDataTable());
-
+		
 		/// <summary>
-		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
+		/// Converts all IDataRecords into a list using a transform function.
 		/// </summary>
-		/// <returns>The enumerable with the data records stored in a dictionary..</returns>
-		protected IEnumerable<Dictionary<string, object>> IterateReaderInternal()
-        {
-            using (var con = ConnectionFactory.Create())
-            using (var cmd = con.CreateCommand(Type, Command, Timeout))
-            {
-                var c = cmd as TCommand;
-                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                AddParams(c);
-                con.Open();
-                using (var reader = c.ExecuteReader(CommandBehavior.CloseConnection))
-                {
-                    if(reader.Read())
-                    {
-                        yield return reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes);
-                        while (reader.Read())
-                            yield return reader.ToDictionary(columnIndexes);
-                    }
-                }
-            }
-        }
-
-		/// <summary>
-		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
-		/// </summary>
-		/// <returns>The enumerable with the data records stored in a dictionary.  Only the column names requested will be returned.</returns>
-		protected IEnumerable<Dictionary<string, object>> IterateReaderInternal(ISet<string> columnNames)
-        {
-            using (var con = ConnectionFactory.Create())
-            using (var cmd = con.CreateCommand(Type, Command, Timeout))
-            {
-                var c = cmd as TCommand;
-                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                AddParams(c);
-                con.Open();
-                using (var reader = c.ExecuteReader(CommandBehavior.CloseConnection))
-                {
-                    if (reader.Read())
-                    {
-                        yield return reader.ToDictionaryOutIndexes(out IReadOnlyList<KeyValuePair<int, string>> columnIndexes, columnNames);
-                        while (reader.Read())
-                            yield return reader.ToDictionary(columnIndexes);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Converts all IDataRecords into a list using a transform function.
-        /// </summary>
-        /// <typeparam name="T">The expected return type.</typeparam>
-        /// <param name="transform">The transform function.</param>
-        /// <returns>The list of transformed records.</returns>
-        public List<T> ToList<T>(Func<IDataRecord, T> transform)
+		/// <typeparam name="T">The expected return type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <returns>The list of transformed records.</returns>
+		public List<T> ToList<T>(Func<IDataRecord, T> transform)
 			=> ExecuteReader(record => record.Iterate(transform).ToList());
 
 		/// <summary>
@@ -447,30 +397,56 @@ namespace Open.Database.Extensions
 			=> ExecuteReader(record => record.Iterate(transform).ToArray());
 
 		/// <summary>
-		/// Returns all records in order as Dictionaries where the keys are the specified column names.
+		/// Iterates all records within the first result set using an IDataReader and returns the results.
 		/// </summary>
-		/// <param name="columnNames">The desired column names.</param>
-		/// <returns>The list of results.</returns>
-		public List<Dictionary<string, object>> Retrieve(ISet<string> columnNames)
-			=> IterateReaderInternal(columnNames).ToList();
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public QueryResult<Queue<object[]>> Retrieve()
+			=> Execute(command => command.Retrieve());
 
 		/// <summary>
-		/// Returns all records in order as Dictionaries where the keys are the specified column names.
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 		/// </summary>
-		/// <param name="columnNames">The desired column names.</param>
-		/// <returns>The list of results.</returns>
-		public List<Dictionary<string, object>> Retrieve(IEnumerable<string> columnNames)
-			=> Retrieve(new HashSet<string>(columnNames));
+		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public QueryResult<Queue<object[]>> Retrieve(IEnumerable<int> ordinals)
+			=> Execute(command => command.Retrieve(ordinals));
 
 		/// <summary>
-		/// Returns all records in order as Dictionaries where the keys are the specified column names.
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 		/// </summary>
-		/// <param name="columnNames">The desired column names.</param>
-		/// <returns>The list of results.</returns>
-		public List<Dictionary<string, object>> Retrieve(params string[] columnNames)
-			=> columnNames.Length == 0
-				? IterateReaderInternal().ToList()
-				: Retrieve(new HashSet<string>(columnNames));
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public QueryResult<Queue<object[]>> Retrieve(int n, params int[] others)
+			=> Execute(command => command.Retrieve(n, others));
+
+		/// <summary>
+		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// </summary>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public QueryResult<Queue<object[]>> Retrieve(IEnumerable<string> columnNames)
+			=> Execute(command => command.Retrieve(columnNames));
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// </summary>
+		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining column names to request from the reader for each record.</param>
+		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		public QueryResult<Queue<object[]>> Retrieve(string c, params string[] others)
+			=> Execute(command => command.Retrieve(c, others));
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public IEnumerable<T> Results<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
+			where T : new()
+			=> Execute(command => command.Results<T>(fieldMappingOverrides));
 
 		/// <summary>
 		/// Posts all records to a target block using the transform function.
@@ -478,7 +454,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The expected type.</typeparam>
 		/// <param name="transform">The transform function.</param>
 		/// <param name="target">The target block to receive the results (to be posted to).</param>
-		public void ToTargetBlock<T>(Func<IDataRecord, T> transform, ITargetBlock<T> target)
+		public void ToTargetBlock<T>(ITargetBlock<T> target, Func<IDataRecord, T> transform)
 			=> IterateReaderWhile(r => target.Post(transform(r)));
 
 		/// <summary>
@@ -488,14 +464,14 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function.</param>
 		/// <param name="synchronousExecution">By default the command is deferred.
 		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+		/// If set to false (default) the data is recieved asynchronously (deferred: data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <returns>The buffer block that will contain the results.</returns>
 		public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform, bool synchronousExecution = false)
 		{
 			var source = new BufferBlock<T>();
 			void i()
 			{
-				ToTargetBlock(transform, source);
+				ToTargetBlock(source, transform);
 				source.Complete();
 			};
 			if (synchronousExecution) i();
@@ -503,66 +479,42 @@ namespace Open.Database.Extensions
 			return source;
 		}
 
-        /// <summary>
-        /// Iterates each record and attempts to map the fields to type T.
-        /// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-        /// </summary>
-        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-        /// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-        /// <returns>The enumerable to pull the transformed results from.</returns>
-        public IEnumerable<T> Results<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
-			where T : new()
-		{
-			var x = new Transformer<T>(fieldMappingOverrides);
-			var n = x.ColumnNames;
-
-			// Use a queue so that when each item is subsequently enumerated, the reference is removed and memory is progressively cleaned up.
-			var q = new Queue<Dictionary<string, object>>();
-			foreach (var e in IterateReaderInternal(n))
-				q.Enqueue(e);
-
-			return x.Transform(q);
-		}
-
-        /// <summary>
-        /// Provides a transform block as the source of records.
-        /// </summary>
-        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-        /// <param name="synchronousExecution">By default the command is deferred.
-        /// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-        /// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
-        /// <returns>A transform block that is recieving the results.</returns>
-        public ISourceBlock<T> ResultsBlock<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, bool synchronousExecution = false)
+		/// <summary>
+		/// Provides a transform block as the source of records.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <param name="synchronousExecution">By default the command is deferred.
+		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
+		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+		/// <returns>A transform block that is recieving the results.</returns>
+		public ISourceBlock<T> AsSourceBlock<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, bool synchronousExecution = false)
 		   where T : new()
 		{
-			var x = new Transformer<T>();
-			var n = x.ColumnNames;
-			var q = new TransformBlock<Dictionary<string, object>, T>(e => x.TransformAndClear(e));
-            void i()
+			var x = new Transformer<T>(fieldMappingOverrides);
+			var cn = x.ColumnNames;
+			var q = x.Results(out Action<QueryResult<IEnumerable<object[]>>> deferred);
+
+			void i() => ExecuteReader(reader =>
 			{
-                IReadOnlyList<KeyValuePair<int, string>> columnIndexes = null;
-                ToTargetBlock(r => columnIndexes == null
-                    ? r.ToDictionaryOutIndexes(out columnIndexes, n)
-                    : r.ToDictionary(columnIndexes), q);
-				q.Complete();
-			};
+				// Validate the requested columns first.
+				var columns = cn
+					.Select(n => (name: n, ordinal: reader.GetOrdinal(n)))
+					.OrderBy(c => c.ordinal)
+					.ToArray();
+
+				var ordinalValues = columns.Select(c => c.ordinal).ToArray();
+				deferred(new QueryResult<IEnumerable<object[]>>(
+					ordinalValues,
+					columns.Select(c => c.name).ToArray(),
+					reader.AsEnumerable(ordinalValues)));
+			});
+
 			if (synchronousExecution) i();
 			else Task.Run(() => i());
 			return q;
 		}
 
-        /// <summary>
-        /// Provides a transform block as the source of records.
-        /// </summary>
-        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-        /// <param name="synchronousExecution">By default the command is deferred.
-        /// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-        /// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
-        /// <returns>A transform block that is recieving the results.</returns>
-        public ISourceBlock<T> ResultsBlock<T>(bool synchronousExecution = false)
-           where T : new()
-            => ResultsBlock<T>(null, synchronousExecution);
 
-    }
+	}
 }
