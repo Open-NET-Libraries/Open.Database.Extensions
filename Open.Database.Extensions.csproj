@@ -14,14 +14,9 @@
     <Version>5.0.0</Version>
     <AssemblyVersion>5.0.0.0</AssemblyVersion>
     <FileVersion>5.0.0.0</FileVersion>
-    <PackageReleaseNotes>- Set optional CommandBehavior parameters to .Default to prevent confusion.
-- Added ExecuteReaderAsync to ExpressiveSqlCommand but not to the base class since it would require an additional type parameter.
-- Added more retrieve and results methods/extensions for flexible use of a data reader.
-- Added field mapping to transformation with the results methods.
-- Added useful Linq style methods to synchronous extensions and ExpressiveDbCommand.
-- Fully documented methods.
-- Better code reuse.
-- Specialized optimizations.</PackageReleaseNotes>
+    <PackageReleaseNotes>- Refactored and adjusted API to avoid bad use of Dictionaries and improve model transformation.
+- More optimized Dataflow methods. 
+- Additional useful extensions for IDataReader, IDataRecord, IDbCommand and more.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
