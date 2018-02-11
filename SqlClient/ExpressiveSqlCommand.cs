@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions.SqlClient
 {
@@ -131,11 +132,55 @@ namespace Open.Database.Extensions.SqlClient
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
 		/// </summary>
-		/// <param name="predicate"></param>
-		/// <returns></returns>
+		/// <param name="predicate">If true, the iteration continues.</param>
+		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
 		public override Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate)
             => ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate));
 
-    }
+		/// <summary>
+		/// Iterates asynchronously until the handler returns false.  Then cancels.
+		/// </summary>
+		/// <param name="predicate">If true, the iteration continues.</param>
+		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
+		public override Task IterateReaderAsyncWhile(Func<IDataRecord, Task<bool>> predicate)
+			=> ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate));
+
+		/// <summary>
+		/// Returns a source block as the source of records.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>A transform block that is recieving the results.</returns>
+		public override ISourceBlock<T> AsSourceBlockAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+		{
+			var x = new Transformer<T>(fieldMappingOverrides);
+			var cn = x.ColumnNames;
+			var block = x.ResultsBlock(out Action<string[]> initColumnNames);
+
+			ExecuteReaderAsync(async reader =>
+			{
+				// Validate the requested columns first.
+				var columns = cn
+					.Select(n => (name: n, ordinal: reader.GetOrdinal(n)))
+					.OrderBy(c => c.ordinal)
+					.ToArray();
+
+				var ordinalValues = columns.Select(c => c.ordinal).ToArray();
+				initColumnNames(columns.Select(c => c.name).ToArray());
+
+				Task<bool> lastSend = null;
+				while(await reader.ReadAsync())
+				{
+					if (lastSend!=null && !await lastSend) break;
+					lastSend = block.SendAsync(reader.GetValuesFromOrdinals(ordinalValues));
+				}
+
+				block.Complete();
+			});
+
+			return block;
+		}
+
+	}
 
 }

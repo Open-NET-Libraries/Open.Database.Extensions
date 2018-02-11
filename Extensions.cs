@@ -91,16 +91,34 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Returns all the column names for the current result set.
 		/// </summary>
-		/// <param name="reader">The reader to get column names from.</param>
+		/// <param name="record">The reader to get column names from.</param>
 		/// <returns>The array of column names.</returns>
-		public static string[] GetNames(this IDataRecord reader)
+		public static string[] GetNames(this IDataRecord record)
 		{
-			var fieldCount = reader.FieldCount;
+			var fieldCount = record.FieldCount;
 			var columnNames = new string[fieldCount];
 			for (var i = 0; i < fieldCount; i++)
-				columnNames[i] = reader.GetName(i);
+				columnNames[i] = record.GetName(i);
 			return columnNames;
 		}
+
+		/// <summary>
+		/// Produces a selective set of column values based upon the desired ordinal positions.
+		/// </summary>
+		/// <param name="record">The IDataRecord to query.</param>
+		/// <param name="ordinals">The set of ordinals to query.</param>
+		/// <returns>An array of values matching the ordinal positions requested.</returns>
+		public static object[] GetValuesFromOrdinals(this IDataRecord record, params int[] ordinals)
+		{
+			var count = ordinals.Length;
+			if (count == 0) return Array.Empty<object>();
+			
+			var values = new object[count];
+			for (var i = 0; i < count; i++)
+				values[i] = record.GetValue(ordinals[i]);
+			return values;
+		}
+
 
 		/// <summary>
 		/// Returns all the data type names for the columns of current result set.

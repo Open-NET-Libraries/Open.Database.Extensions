@@ -75,10 +75,17 @@
             <summary>
             Iterates asynchronously until the handler returns false.  Then cancels.
             </summary>
-            <param name="predicate"></param>
-            <returns></returns>
+            <param name="predicate">If true, the iteration continues.</param>
+            <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToTargetBlockAsync``1(System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Iterates asynchronously until the handler returns false.  Then cancels.
+            </summary>
+            <param name="predicate">If true, the iteration continues.</param>
+            <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToTargetBlockAsync``1(System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Posts all transformed records to the provided target block.
             If .Complete is called on the target block, then the iteration stops.
@@ -95,6 +102,14 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>A buffer block that is recieving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A transform block that is recieving the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToListAsync``1(System.Func{System.Data.IDataRecord,``0})">
             <summary>
@@ -543,8 +558,16 @@
             <summary>
             Returns all the column names for the current result set.
             </summary>
-            <param name="reader">The reader to get column names from.</param>
+            <param name="record">The reader to get column names from.</param>
             <returns>The array of column names.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Int32[])">
+            <summary>
+            Produces a selective set of column values based upon the desired ordinal positions.
+            </summary>
+            <param name="record">The IDataRecord to query.</param>
+            <param name="ordinals">The set of ordinals to query.</param>
+            <returns>An array of values matching the ordinal positions requested.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetDataTypeNames(System.Data.IDataRecord)">
             <summary>
@@ -1044,6 +1067,11 @@
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
         </member>
+        <member name="F:Open.Database.Extensions.QueryResult`1.ColumnCount">
+            <summary>
+            The number of columns.
+            </summary>
+        </member>
         <member name="F:Open.Database.Extensions.QueryResult`1.Ordinals">
             <summary>
             The ordinal values requested.
@@ -1143,8 +1171,23 @@
             <summary>
             Iterates asynchronously until the handler returns false.  Then cancels.
             </summary>
-            <param name="predicate"></param>
-            <returns></returns>
+            <param name="predicate">If true, the iteration continues.</param>
+            <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Iterates asynchronously until the handler returns false.  Then cancels.
+            </summary>
+            <param name="predicate">If true, the iteration continues.</param>
+            <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A transform block that is recieving the results.</returns>
         </member>
         <member name="T:Open.Database.Extensions.SqlClient.Extensions">
             <summary>
@@ -1197,23 +1240,23 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToTargetBlock``1(System.Data.SqlClient.SqlDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToTargetBlockAsync``1(System.Data.SqlClient.SqlDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The SqlDataReader to read from.</param>
+            <param name="target">The target block to receive the results.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="target">The target block to receivethe results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToTargetBlock``1(System.Data.SqlClient.SqlCommand,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.ITargetBlock{``0})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ToTargetBlockAsync``1(System.Data.SqlClient.SqlCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
             <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.IterateReaderAsync(System.Data.SqlClient.SqlCommand,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
             <summary>
@@ -1231,24 +1274,13 @@
             <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AsSourceBlock``1(System.Data.SqlClient.SqlDataReader,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.IterateReaderAsyncWhile(System.Data.SqlClient.SqlCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior)">
             <summary>
-            Asynchronously iterates an IDataReader and through the transform function and posts each record it to a buffer block.
+            Asynchronously iterates an IDataReader on a command while the predicate returns true.
             </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-            <returns>A buffer block which receives the posted results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AsSourceBlock``1(System.Data.SqlClient.SqlCommand,System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Asynchronously iterates an IDataReader and through the transform function and posts each record it to a buffer block.
-            The command is constructed and executed asynchronously and deferred.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The SqlCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-            <returns>A buffer block which receives the posted results.</returns>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
             <summary>

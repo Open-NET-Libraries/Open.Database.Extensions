@@ -136,10 +136,10 @@ namespace Open.Database.Extensions
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public Task ToTargetBlockAsync<T>(ITargetBlock<T> target, Func<IDataRecord, T> transform)
 		{
-			Task<bool> lastSend = Task.FromResult(true);
+			Task<bool> lastSend = null;
 			return IterateReaderAsyncWhile(async r =>
 			{
-				if (!await lastSend) return false;
+				if (lastSend!=null && !await lastSend) return false;
 				lastSend = target.SendAsync(transform(r));
 				return true;
 			});
@@ -160,42 +160,15 @@ namespace Open.Database.Extensions
 			return source;
 		}
 
-
 		/// <summary>
-		/// Provides a transform block as the source of records.
+		/// Returns a source block as the source of records.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <returns>A transform block that is recieving the results.</returns>
-		public virtual ISourceBlock<T> AsSourceBlockAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
-		   where T : new()
-		{
-			var x = new Transformer<T>(fieldMappingOverrides);
-			var cn = x.ColumnNames;
-			var q = x.Results(out Action<QueryResult<Action<object[]>>> deferred);
+		public abstract ISourceBlock<T> AsSourceBlockAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+		   where T : new();
 
-			var 
-
-			ExecuteAsync(reader =>
-			{
-				// Validate the requested columns first.
-				var columns = cn
-					.Select(n => (name: n, ordinal: reader.GetOrdinal(n)))
-					.OrderBy(c => c.ordinal)
-					.ToArray();
-
-				var ordinalValues = columns.Select(c => c.ordinal).ToArray();
-				deferred(new QueryResult<IEnumerable<object[]>>(
-					ordinalValues,
-					columns.Select(c => c.name).ToArray(),
-					reader.AsEnumerable(ordinalValues)));
-			});
-
-			else Task.Run(() => i());
-			return q;
-		}
 
 		/// <summary>
 		/// Asynchronously returns all records via a transform function.

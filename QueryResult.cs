@@ -18,7 +18,13 @@ namespace Open.Database.Extensions
 			Names = names ?? throw new ArgumentNullException(nameof(names));
 			Result = result ?? throw new ArgumentNullException(nameof(result));
 			if (ordinals.Length != names.Length) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
+			ColumnCount = ordinals.Length;
 		}
+
+		/// <summary>
+		/// The number of columns.
+		/// </summary>
+		public readonly int ColumnCount;
 
 		/// <summary>
 		/// The ordinal values requested.

@@ -102,10 +102,10 @@ namespace Open.Database.Extensions.SqlClient
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform)
 		{
-			Task<bool> lastSend = Task.FromResult(true);
+			Task<bool> lastSend = null;
 			while (target.IsStillAlive()
 				&& await reader.ReadAsync()
-				&& await lastSend)
+				&& (lastSend==null || await lastSend))
 			{
 				// Allows for a premtive read before waiting for the next send.
 				lastSend = target.SendAsync(transform(reader));
@@ -168,7 +168,19 @@ namespace Open.Database.Extensions.SqlClient
 			using (var reader = await command.ExecuteReaderAsync(behavior))
 				while (await reader.ReadAsync() && predicate(reader)) { }
 		}
-		
+
+		/// <summary>
+		/// Asynchronously iterates an IDataReader on a command while the predicate returns true.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public static async Task IterateReaderAsyncWhile(this SqlCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			using (var reader = await command.ExecuteReaderAsync(behavior))
+				while (await reader.ReadAsync() && await predicate(reader)) { }
+		}
+
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
 		/// </summary>

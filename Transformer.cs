@@ -3,151 +3,122 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
-    class Transformer<T>
-        where T : new()
-    {
-        public readonly Type Type;
-        public readonly PropertyInfo[] Properties;
+	class Transformer<T>
+		where T : new()
+	{
+		public readonly Type Type;
+		public readonly PropertyInfo[] Properties;
 
-        // Allow mapping key = object property, value = column name.
-        readonly Dictionary<string, string> PropertyMap;
+		// Allow mapping key = object property, value = column name.
+		readonly Dictionary<string, string> PropertyMap;
 		readonly Dictionary<string, PropertyInfo> ColumnToPropertyMap;
 		public HashSet<string> PropertyNames => new HashSet<string>(PropertyMap.Keys);
-        public HashSet<string> ColumnNames => new HashSet<string>(PropertyMap.Values);
+		public HashSet<string> ColumnNames => new HashSet<string>(PropertyMap.Values);
 
-        public Transformer(IEnumerable<KeyValuePair<string, string>> overrides = null)
-        {
-            Type = typeof(T);
-            Properties = Type.GetProperties();
-            PropertyMap = Properties.Select(p=>p.Name).ToDictionary(n=>n);
+		public Transformer(IEnumerable<KeyValuePair<string, string>> overrides = null)
+		{
+			Type = typeof(T);
+			Properties = Type.GetProperties();
+			PropertyMap = Properties.Select(p => p.Name).ToDictionary(n => n);
 
 			var pm = Properties.ToDictionary(p => p.Name);
 
-            if(overrides!=null)
-            {
-                foreach (var o in overrides)
-                    PropertyMap[o.Key] = o.Value;
-            }
+			if (overrides != null)
+			{
+				foreach (var o in overrides)
+					PropertyMap[o.Key] = o.Value;
+			}
 
 			ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value, kvp => pm[kvp.Key]);
 
 		}
 
+
+		class Processor
+		{
+			public Processor(Transformer<T> transformer, string[] names = null)
+			{
+				Transformer = transformer;
+				Transform = record =>
+				{
+					var model = new T();
+					var count = _names.Length;
+					for (var i = 0; i < count; i++)
+					{
+						var p = _properties[i];
+						if (p != null)
+						{
+							var name = _names[i];
+							var value = record[i];
+							if (value == DBNull.Value) value = null;
+							p.SetValue(model, value);
+						}
+					}
+
+					return model;
+				};
+
+				if (names != null) SetNames(names);
+			}
+
+			public readonly Transformer<T> Transformer;
+
+			string[] _names;
+			PropertyInfo[] _properties;
+
+			public readonly Func<object[], T> Transform; // Using a Func<object[],T> for better type inferrence.
+
+			public void SetNames(string[] names)
+			{
+				var map = Transformer.ColumnToPropertyMap;
+				_names = names;
+				_properties = names
+					.Select(n => map.TryGetValue(n, out PropertyInfo p) ? p : null)
+					.ToArray();
+			}
+
+			public TransformBlock<object[], T> GetBlock()
+				=> new TransformBlock<object[], T>(Transform);
+		}
+
 		public IEnumerable<T> DequeueResults(QueryResult<Queue<object[]>> results)
 		{
+			var processor = new Processor(this, results.Names);
 			var q = results.Result;
-			var names = results.Names;
-			var count = names.Length;
-			var properties = names
-				.Select(n => ColumnToPropertyMap.TryGetValue(n, out PropertyInfo p) ? p : null)
-				.ToArray();
 
 			while (q.Count != 0)
-			{
-				var record = q.Dequeue();
-				var model = new T();
-				for(var i = 0;i< count; i++)
-				{
-					var p = properties[i];
-					if (p != null)
-					{
-						var name = names[i];
-						var value = record[i];
-						if (value == DBNull.Value) value = null;
-						p.SetValue(model, value);
-					}
-				}
-				
-				yield return model;
-			}
+				yield return processor.Transform(q.Dequeue());
 
 			// By using the above routine, we guarantee as enumeration occurs, references are released (dequeued).
 		}
 
 		public ISourceBlock<T> Results(out Action<QueryResult<IEnumerable<object[]>>> deferred)
 		{
-			IEnumerable<object[]> q = null;
-			string[] names = null;
-			int count = 0;
-			PropertyInfo[] properties = null;
-
-			var x = new TransformBlock<object[], T>(record =>
-			{
-				var model = new T();
-				for (var i = 0; i < count; i++)
-				{
-					var p = properties[i];
-					if (p != null)
-					{
-						var name = names[i];
-						var value = record[i];
-						if (value == DBNull.Value) value = null;
-						p.SetValue(model, value);
-					}
-				}
-
-				return model;
-			});
+			var processor = new Processor(this);
+			var x = processor.GetBlock();
 
 			deferred = results =>
 			{
-				q = results.Result;
-				names = results.Names;
-				count = names.Length;
-				properties = names
-					.Select(n => ColumnToPropertyMap.TryGetValue(n, out PropertyInfo p) ? p : null)
-					.ToArray();
-
+				processor.SetNames(results.Names);
+				var q = results.Result;
 				foreach (var record in q) if (!x.Post(record)) break;
-				x.Complete();
+				x.Complete(); // May not be necessary, but we'll call it to ensure the .Completion occurs.
 			};
 
 			return x;
 		}
 
-		public ISourceBlock<T> Results(out Action<QueryResult<ISourceBlock<object[]>>> deferred)
+		public TransformBlock<object[], T> ResultsBlock(
+			out Action<string[]> initColumnNames)
 		{
-			ISourceBlock<object[]> q = null;
-			string[] names = null;
-			int count = 0;
-			PropertyInfo[] properties = null;
+			var processor = new Processor(this);
+			var x = processor.GetBlock();
 
-			var x = new TransformBlock<object[], T>(record =>
-			{
-				var model = new T();
-				for (var i = 0; i < count; i++)
-				{
-					var p = properties[i];
-					if (p != null)
-					{
-						var name = names[i];
-						var value = record[i];
-						if (value == DBNull.Value) value = null;
-						p.SetValue(model, value);
-					}
-				}
-
-				return model;
-			});
-
-			deferred = results =>
-			{
-				q = results.Result;
-				names = results.Names;
-				count = names.Length;
-				properties = names
-					.Select(n => ColumnToPropertyMap.TryGetValue(n, out PropertyInfo p) ? p : null)
-					.ToArray();
-
-				q.LinkTo(x);
-				q.Completion.ContinueWith(t => x.Complete());
-				x.Completion.ContinueWith(t => q.Complete());
-			};
+			initColumnNames = results => processor.SetNames(results);
 
 			return x;
 		}
