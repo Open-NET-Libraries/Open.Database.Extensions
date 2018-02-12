@@ -59,4 +59,4 @@ Synchronously queries (pulls all the data).  Returns a `QueryResult<Queue<object
 
 #### `AsSourceBlockAsync<T>()`
 
-Retuns a Dataflow source block.  Then asynchronously buffers and transforms the results allowing for any possible Dataflow configuration.  The source block is marked as complete when there are no more results.  If the block is somehow marked as complete externally, the flow of data will stop and the connection will close.
+(Fully asynchronous.) Retuns a Dataflow source block.  Then asynchronously buffers and transforms the results allowing for any possible Dataflow configuration.  The source block is marked as complete when there are no more results.  If the block is somehow marked as complete externally, the flow of data will stop and the connection will close.
