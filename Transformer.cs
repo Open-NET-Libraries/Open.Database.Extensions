@@ -37,7 +37,6 @@ namespace Open.Database.Extensions
 
 		}
 
-
 		class Processor
 		{
 			public Processor(Transformer<T> transformer, string[] names = null)
@@ -85,7 +84,7 @@ namespace Open.Database.Extensions
 				=> new TransformBlock<object[], T>(Transform);
 		}
 
-		public IEnumerable<T> DequeueResults(QueryResult<Queue<object[]>> results)
+		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results)
 		{
 			var processor = new Processor(this, results.Names);
 			var q = results.Result;
@@ -123,7 +122,6 @@ namespace Open.Database.Extensions
 			return x;
 		}
 
-
 		public IEnumerable<T> Results(DataTable table, bool clearTable)
 		{
 			var columns = table.Columns.AsEnumerable();
@@ -132,7 +130,7 @@ namespace Open.Database.Extensions
 				columns.Select(c => c.ColumnName).ToArray(),
 				new Queue<object[]>(table.Rows.AsEnumerable().Select(r => r.ItemArray)));
 			if (clearTable) table.Rows.Clear();
-			return DequeueResults(results);
+			return AsDequeueingEnumerable(results);
 		}
 
 	}

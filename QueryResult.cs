@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Open.Database.Extensions
 {
@@ -42,4 +44,51 @@ namespace Open.Database.Extensions
 		public readonly TResult Result;
 
 	}
+
+	/// <summary>
+	/// A set of extensions for getting column data from a QueryResult.
+	/// </summary>
+	public static class QueryResultExtensions
+	{
+		/// <summary>
+		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static IEnumerable<Dictionary<string, object>> AsDequeueingMappedEnumerable(this QueryResult<Queue<object[]>> source)
+		{
+			var q = source.Result;
+			var names = source.Names;
+			var count = source.ColumnCount;
+			while (q.Count != 0)
+			{
+				var r = q.Dequeue();
+				var d = new Dictionary<string, object>(count);
+				for (var i = 0; i < count; i++)
+					d.Add(names[i], r[i]);
+				yield return d;
+			}
+		}
+
+		/// <summary>
+		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static IEnumerable<Dictionary<string, object>> AsMappedEnumerable(this QueryResult<IEnumerable<object[]>> source)
+		{
+			var q = source.Result;
+			var names = source.Names;
+			var count = source.ColumnCount;
+			foreach(var r in q)
+			{
+				var d = new Dictionary<string, object>(count);
+				for (var i = 0; i < count; i++)
+					d.Add(names[i], r[i]);
+				yield return d;
+			}
+		}
+
+	}
+
 }

@@ -119,7 +119,6 @@ namespace Open.Database.Extensions
 			return values;
 		}
 
-
 		/// <summary>
 		/// Returns all the data type names for the columns of current result set.
 		/// </summary>
@@ -816,7 +815,7 @@ namespace Open.Database.Extensions
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
-			return x.DequeueResults(Retrieve(reader, x.ColumnNames));
+			return x.AsDequeueingEnumerable(Retrieve(reader, x.ColumnNames));
 		}
 
 		/// <summary>
@@ -831,7 +830,7 @@ namespace Open.Database.Extensions
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
-			return x.DequeueResults(Retrieve(command, x.ColumnNames));
+			return x.AsDequeueingEnumerable(Retrieve(command, x.ColumnNames));
 		}
 
 		// NOTE: The Results<T> methods should faster than the ResultsFromDataTable<T> variations but are provided for validation of this assumption.

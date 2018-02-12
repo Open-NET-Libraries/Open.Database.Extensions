@@ -1087,6 +1087,25 @@
             The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redunant memory usage.
             </summary>
         </member>
+        <member name="T:Open.Database.Extensions.QueryResultExtensions">
+            <summary>
+            A set of extensions for getting column data from a QueryResult.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsDequeueingMappedEnumerable(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedEnumerable(Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
         <member name="T:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand">
             <summary>
             A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
