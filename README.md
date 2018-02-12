@@ -26,7 +26,7 @@ var result = connectionFactory
 
 ## Asynchronous
 
-When using the SQL Client, asychronous methods are available as well as `.ToTargetBlock(target)` and `.AsSourceBlock()` methods.
+When using the SQL Client, asychronous methods are available as well as `.ToTargetBlockAsync<T>(target)` and `.AsSourceBlockAsync<T>()` Dataflow methods.
 
 ## Extensions
 
