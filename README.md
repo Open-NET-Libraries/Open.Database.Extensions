@@ -49,10 +49,14 @@ var myResult = await cmd.ToListAsync(transform);
 
 In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.
 
-#### `Results<T>` &amp; `ResultsAsync<T>`
+#### `Results<T>()`
 
-Using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the ```IDataReader```.
+Synchronously queries (pulls all the data).  Then using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the ```IDataReader```.
 
-#### `Retrieve` &amp; `RetrieveAsync`
+#### `Retrieve()`
 
-Returns a `List<Dictionary<string, object>>` containing the requested data.  Takes parameters to isolate the desired columns.
+Synchronously queries (pulls all the data).  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column mappings.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
+
+#### `AsSourceBlockAsync()`
+
+Retuns a Dataflow source block.  Then asynchronously buffers and transforms the results allowing for any possible Dataflow configuration.  The source block is marked as complete when there are no more results.  If the block is somehow marked as complete externally, the flow of data will stop and the connection will close.
