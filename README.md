@@ -57,6 +57,6 @@ Synchronously queries (pulls all the data).  Then using the provided type `T` en
 
 Synchronously queries (pulls all the data).  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column mappings.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
 
-#### `AsSourceBlockAsync()`
+#### `AsSourceBlockAsync<T>()`
 
 Retuns a Dataflow source block.  Then asynchronously buffers and transforms the results allowing for any possible Dataflow configuration.  The source block is marked as complete when there are no more results.  If the block is somehow marked as complete externally, the flow of data will stop and the connection will close.
