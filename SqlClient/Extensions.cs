@@ -287,6 +287,42 @@ namespace Open.Database.Extensions.SqlClient
 
 
         /// <summary>
+        /// Asynchronously returns all records and iteratively attempts to map the fields to type T.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="reader">The IDataReader to read results from.</param>
+        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A task containing the list of results.</returns>
+        public static async Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides) where T : new()
+        {
+            var x = new Transformer<T>(fieldMappingOverrides);
+            return x.AsDequeueingEnumerable(await reader.RetrieveAsync(x.ColumnNames));
+        }
+
+        /// <summary>
+        /// Asynchronously returns all records and iteratively attempts to map the fields to type T.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="reader">The IDataReader to read results from.</param>
+        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A task containing the list of results.</returns>
+        public static Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides) where T : new()
+            => reader.ResultsAsync<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
+
+        /// <summary>
+        /// Asynchronously returns all records and iteratively attempts to map the fields to type T.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="reader">The IDataReader to read results from.</param>
+        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A task containing the list of results.</returns>
+        public static async Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
+        {
+            var x = new Transformer<T>(fieldMappingOverrides);
+            return x.AsDequeueingEnumerable(await reader.RetrieveAsync(x.ColumnNames));
+        }
+
+        /// <summary>
         /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
         /// </summary>
         /// <param name="target">The connection factory to generate a commands from.</param>
