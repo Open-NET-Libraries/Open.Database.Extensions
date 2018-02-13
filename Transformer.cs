@@ -31,7 +31,11 @@ namespace Open.Database.Extensions
 			if (overrides != null)
 			{
 				foreach (var o in overrides)
-					PropertyMap[o.Key] = o.Value;
+                {
+                    var v = o.Value;
+                    if (v == null) PropertyMap.Remove(o.Key); // Null values indicate a desire to 'ignore' a field.
+                    else PropertyMap[o.Key] = o.Value;
+                }		
 			}
 
 			ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value, kvp => pm[kvp.Key]);
