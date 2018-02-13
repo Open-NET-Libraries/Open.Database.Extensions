@@ -28,7 +28,7 @@ var result = connectionFactory
 
 End-to-end asynchronous methods suffixed with `Async`.
 
-When using the SQL Client, asychronous methods are available as well as ```.ToTargetBlockAsync<T>(target)``` and ```.AsSourceBlockAsync<T>()``` Dataflow methods.
+When using the SQL Client, asychronous methods are available as well as ```.ToTargetBlockAsync<T>(target)``` and ``.AsSourceBlockAsync&lt;T&gt;()`` Dataflow methods.
 
 ## Extensions
 
