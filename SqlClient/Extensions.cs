@@ -17,6 +17,22 @@ namespace Open.Database.Extensions.SqlClient
     {
 
         /// <summary>
+        /// Shortcut for adding command parameter.
+        /// </summary>
+        /// <param name="target">The command to add a parameter to.</param>
+        /// <param name="name">The name of the parameter.</param>
+        /// <param name="value">The value of the parameter.</param>
+        /// <param name="type">The DbType of the parameter.</param>
+        /// <returns>The created IDbDataParameter.</returns>
+        public static IDbDataParameter AddParameter(this SqlCommand target,
+            string name, object value, SqlDbType type)
+        {
+            var p = target.AddParameterType(name, type);
+            p.Value = value;
+            return p;
+        }
+
+        /// <summary>
         /// Shortcut for adding command a typed (non-input) parameter.
         /// </summary>
         /// <param name="target">The command to add a parameter to.</param>
