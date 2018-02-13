@@ -65,7 +65,21 @@ var people = cmd.Results<Person>();
 
 ```cs
 // If the database fields don't map exactly.
-var people = cmd.Results<Person>((Field:"FirstName",Column:"first_name"));
+var people = cmd.Results<Person>(
+ (Field:"FirstName", Column:"first_name"),
+ (Field:"LastName", Column:"last_name")));
+```
+or
+```cs
+var people = cmd.Results<Person>(
+ ("FirstName", "first_name"),
+ ("LastName", "last_name"));
+```
+or
+```cs
+var people = cmd.Results<Person>(new Dictionary<string,string>{
+ {"FirstName", "first_name"},
+ {"LastName", "last_name"});
 ```
 
 #### `Retrieve()` and `RetrieveAsync()`
