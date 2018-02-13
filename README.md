@@ -59,12 +59,12 @@ Optionally a field to column override map can be passed as a parameter.  If a co
 
 ##### Examples
 
-If all the columns in the database map exactly to a field.  A column that has no associated field/property is ignored.
+If all the columns in the database map exactly to a field: (A column that has no associated field/property is ignored.)
 ```cs
 var people = cmd.Results<Person>();
 ```
 
-If the database fields don't map exactly.
+If the database fields don't map exactly:
 
 ```cs
 var people = cmd.Results<Person>(
