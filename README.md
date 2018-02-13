@@ -55,6 +55,8 @@ In order to keep connection open time to a minimum, some methods cache data befo
 
 Synchronously queries (pulls all the data).  Then using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the ```IDataReader```.
 
+Optionally a 
+
 #### `Retrieve()` and `RetrieveAsync()`
 
 Synchronously queries (pulls all the data).  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column mappings.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
