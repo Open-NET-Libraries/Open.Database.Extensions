@@ -642,6 +642,16 @@
             <param name="value">The value of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType)">
+            <summary>
+            Shortcut for adding command parameter.
+            </summary>
+            <param name="target">The command to add a parameter to.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="value">The value of the parameter.</param>
+            <param name="type">The DbType of the parameter.</param>
+            <returns>The created IDbDataParameter.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.DbType)">
             <summary>
             Shortcut for adding command a typed (non-input) parameter.
@@ -1469,6 +1479,16 @@
             SqlClient extensions for building a command and retrieving data using best practices.
             </summary>
         </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameter(System.Data.SqlClient.SqlCommand,System.String,System.Object,System.Data.SqlDbType)">
+            <summary>
+            Shortcut for adding command parameter.
+            </summary>
+            <param name="target">The command to add a parameter to.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="value">The value of the parameter.</param>
+            <param name="type">The DbType of the parameter.</param>
+            <returns>The created IDbDataParameter.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.SqlClient.SqlCommand,System.String,System.Data.SqlDbType)">
             <summary>
             Shortcut for adding command a typed (non-input) parameter.
@@ -1598,6 +1618,33 @@
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ResultsAsync``1(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ResultsAsync``1(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ResultsAsync``1(System.Data.SqlClient.SqlDataReader,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
             <summary>
