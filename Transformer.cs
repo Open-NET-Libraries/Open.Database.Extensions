@@ -20,7 +20,7 @@ namespace Open.Database.Extensions
 		public HashSet<string> PropertyNames => new HashSet<string>(PropertyMap.Keys);
 		public HashSet<string> ColumnNames => new HashSet<string>(PropertyMap.Values);
 
-		public Transformer(IEnumerable<KeyValuePair<string, string>> overrides = null)
+		public Transformer(IEnumerable<(string Field, string Column)> overrides = null)
 		{
 			Type = typeof(T);
 			Properties = Type.GetProperties();
@@ -30,11 +30,11 @@ namespace Open.Database.Extensions
 
 			if (overrides != null)
 			{
-				foreach (var o in overrides)
+				foreach (var (Field, Column) in overrides)
                 {
-                    var v = o.Value;
-                    if (v == null) PropertyMap.Remove(o.Key); // Null values indicate a desire to 'ignore' a field.
-                    else PropertyMap[o.Key] = o.Value;
+                    var cn = Column;
+                    if (cn == null) PropertyMap.Remove(Field); // Null values indicate a desire to 'ignore' a field.
+                    else PropertyMap[Field] = cn;
                 }		
 			}
 

@@ -444,7 +444,29 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public IEnumerable<T> Results<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
+		public IEnumerable<T> Results<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+			where T : new()
+			=> Execute(command => command.Results<T>(fieldMappingOverrides));
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public IEnumerable<T> Results<T>(IEnumerable<(string Field, string Column)> fieldMappingOverrides)
+			where T : new()
+			=> Execute(command => command.Results<T>(fieldMappingOverrides));
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public IEnumerable<T> Results<T>(params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
 			=> Execute(command => command.Results<T>(fieldMappingOverrides));
 
@@ -488,7 +510,7 @@ namespace Open.Database.Extensions
 		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
 		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <returns>A transform block that is recieving the results.</returns>
-		public ISourceBlock<T> AsSourceBlock<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, bool synchronousExecution = false)
+		public ISourceBlock<T> AsSourceBlock<T>(IEnumerable<(string Field, string Column)> fieldMappingOverrides, bool synchronousExecution = false)
 		   where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
@@ -515,6 +537,28 @@ namespace Open.Database.Extensions
 			return q;
 		}
 
+		/// <summary>
+		/// Provides a transform block as the source of records.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <param name="synchronousExecution">By default the command is deferred.
+		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
+		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+		/// <returns>A transform block that is recieving the results.</returns>
+		public ISourceBlock<T> AsSourceBlock<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, bool synchronousExecution = false)
+		   where T : new()
+			=> AsSourceBlock<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), synchronousExecution);
+
+		/// <summary>
+		/// Provides a transform block as the source of records.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>A transform block that is recieving the results.</returns>
+		public ISourceBlock<T> AsSourceBlock<T>(params (string Field, string Column)[] fieldMappingOverrides)
+			where T : new()
+			=> AsSourceBlock<T>((IEnumerable<(string Field, string Column)>)fieldMappingOverrides);
 
 	}
 }

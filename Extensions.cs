@@ -217,6 +217,7 @@ namespace Open.Database.Extensions
 				yield return r;
 		}
 
+
 		/// <summary>
 		/// Loads all data into a queue before iterating (dequeing) the results as type T.
 		/// </summary>
@@ -224,12 +225,36 @@ namespace Open.Database.Extensions
 		/// <param name="table">The DataTable to read from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
-		/// <returns></returns>
-		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null, bool clearSourceTable = false) where T : new()
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string Column)> fieldMappingOverrides, bool clearSourceTable = false) where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
 			return x.Results(table, clearSourceTable);
 		}
+
+		/// <summary>
+		/// Loads all data into a queue before iterating (dequeing) the results as type T.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="table">The DataTable to read from.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IEnumerable<T> To<T>(this DataTable table, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
+		{
+			var x = new Transformer<T>(fieldMappingOverrides);
+			return x.Results(table, false);
+		}
+
+		/// <summary>
+		/// Loads all data into a queue before iterating (dequeing) the results as type T.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="table">The DataTable to read from.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, bool clearSourceTable = false) where T : new()
+			=> table.To<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
 		/// <summary>
 		/// Iterates all records from an IDataReader.
@@ -809,7 +834,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
+		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
@@ -821,17 +846,72 @@ namespace Open.Database.Extensions
 		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="reader">The IDataReader to read results from.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public static IEnumerable<T> Results<T>(this IDataReader reader, params (string Field, string Column)[] fieldMappingOverrides)
+			where T : new()
+		{
+			var x = new Transformer<T>(fieldMappingOverrides);
+			return x.AsDequeueingEnumerable(Retrieve(reader, x.ColumnNames));
+		}
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="reader">The IDataReader to read results from.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+			where T : new()
+			=> reader.Results<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
+		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
 			return x.AsDequeueingEnumerable(Retrieve(command, x.ColumnNames));
 		}
 
-		// NOTE: The Results<T> methods should faster than the ResultsFromDataTable<T> variations but are provided for validation of this assumption.
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public static IEnumerable<T> Results<T>(this IDbCommand command, params (string Field, string Column)[] fieldMappingOverrides)
+			where T : new()
+		{
+			var x = new Transformer<T>(fieldMappingOverrides);
+			return x.AsDequeueingEnumerable(Retrieve(command, x.ColumnNames));
+		}
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+			where T : new()
+			=> command.Results<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
+
+
+		// NOTE: The Results<T> methods should be faster than the ResultsFromDataTable<T> variations but are provided for validation of this assumption.
 
 		/// <summary>
 		/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
