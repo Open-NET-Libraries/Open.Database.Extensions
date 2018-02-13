@@ -100,4 +100,4 @@ Depending on the level of asynchrony in your application, you may want to avoid 
 
 `ResultsAsync<T>()` is fully asynchronous from end-to-end but returns an `IEnumerable<T>` that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.
 
-Both methods ultimately are using a Queue<object[]> or ConcurrentQueue<object[]> (Dataflow) to buffer the data, but `ResultsAsync<T>()` buffers the entire data set before dequeuing and transforming the results.
+Both methods ultimately are using a `Queue<object[]>` or `ConcurrentQueue<object[]>` (Dataflow) to buffer the data, but `ResultsAsync<T>()` buffers the entire data set before dequeuing and transforming the results.
