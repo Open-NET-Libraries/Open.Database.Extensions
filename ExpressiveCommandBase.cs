@@ -399,7 +399,7 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
 		/// </summary>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve()
 			=> Execute(command => command.Retrieve());
 
@@ -407,7 +407,7 @@ namespace Open.Database.Extensions
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 		/// </summary>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(IEnumerable<int> ordinals)
 			=> Execute(command => command.Retrieve(ordinals));
 
@@ -416,7 +416,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(int n, params int[] others)
 			=> Execute(command => command.Retrieve(n, others));
 
@@ -424,7 +424,7 @@ namespace Open.Database.Extensions
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
 		/// </summary>
 		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(IEnumerable<string> columnNames)
 			=> Execute(command => command.Retrieve(columnNames));
 
@@ -433,7 +433,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(string c, params string[] others)
 			=> Execute(command => command.Retrieve(c, others));
 

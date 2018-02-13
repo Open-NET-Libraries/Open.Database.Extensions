@@ -85,6 +85,43 @@
             <param name="predicate">If true, the iteration continues.</param>
             <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync">
+            <summary>
+            Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
+            </summary>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>
+            Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
+            </summary>
+            <param name="ordinals">The ordinals to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Int32,System.Int32[])">
+            <summary>
+            Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
+            </summary>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="columnNames">The column names to select.</param>
+            <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.RetrieveAsync(System.String,System.String[])">
+            <summary>
+            Iterates all records within the current result set using an IDataReader and returns the desired results.
+            </summary>
+            <param name="c">The first column name to include in the request to the reader for each record.</param>
+            <param name="others">The remaining column names to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ToTargetBlockAsync``1(System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Posts all transformed records to the provided target block.
@@ -116,6 +153,14 @@
             Asynchronously returns all records via a transform function.
             </summary>
             <param name="transform">The desired column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A task containing the list of results.</returns>
         </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4">
@@ -383,14 +428,14 @@
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
             </summary>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
             </summary>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Int32,System.Int32[])">
             <summary>
@@ -398,14 +443,14 @@
             </summary>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
             </summary>
             <param name="columnNames">The column names to select.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.String,System.String[])">
             <summary>
@@ -413,7 +458,7 @@
             </summary>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Results``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
@@ -614,7 +659,7 @@
             <param name="rows">The row collection.</param>
             <returns>An enumerable of DataRows.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToEntities``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)">
             <summary>
             Loads all data into a queue before iterating (dequeing) the results as type T.
             </summary>
@@ -887,7 +932,7 @@
             Iterates all records within the first result set using an IDataReader and returns the results.
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
@@ -895,7 +940,7 @@
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Int32,System.Int32[])">
             <summary>
@@ -904,7 +949,7 @@
             <param name="reader">The IDataReader to read results from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
@@ -912,7 +957,7 @@
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="columnNames">The column names to select.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.String,System.String[])">
             <summary>
@@ -921,14 +966,14 @@
             <param name="reader">The IDataReader to read results from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand)">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
@@ -936,7 +981,7 @@
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Int32,System.Int32[])">
             <summary>
@@ -945,7 +990,7 @@
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
@@ -953,7 +998,7 @@
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="columnNames">The column names to select.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.String,System.String[])">
             <summary>
@@ -962,7 +1007,7 @@
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
@@ -1092,14 +1137,52 @@
             A set of extensions for getting column data from a QueryResult.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsDequeueingMappedEnumerable(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedEnumerable(Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns a block that attempts to map the fields to type T.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
             </summary>
@@ -1171,13 +1254,6 @@
             </summary>
             <returns>The varlue returned from the method.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ToListAsync``1(System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Asynchronously returns all records via a transform function.
-            </summary>
-            <param name="transform">The desired column names.</param>
-            <returns>A task containing the list of results.</returns>
-        </member>
         <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Iterates asynchronously and will stop iterating if canceled.
@@ -1207,6 +1283,27 @@
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A transform block that is recieving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.RetrieveAsync">
+            <summary>
+            Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
+            </summary>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.RetrieveAsync(System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>
+            Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
+            </summary>
+            <param name="ordinals">The ordinals to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.RetrieveAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            </summary>
+            <param name="columnNames">The column names to select.</param>
+            <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="T:Open.Database.Extensions.SqlClient.Extensions">
             <summary>
@@ -1300,6 +1397,48 @@
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader)">
+            <summary>
+            Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>
+            Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.Int32,System.Int32[])">
+            <summary>
+            Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            </summary>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="columnNames">The column names to select.</param>
+            <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.RetrieveAsync(System.Data.SqlClient.SqlDataReader,System.String,System.String[])">
+            <summary>
+            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            </summary>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="c">The first column name to include in the request to the reader for each record.</param>
+            <param name="others">The remaining column names to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
             <summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
@@ -111,7 +112,18 @@ namespace Open.Database.Extensions
 			return x;
 		}
 
-		public TransformBlock<object[], T> ResultsBlock(
+        public ISourceBlock<T> Results(QueryResult<ISourceBlock<object[]>> source)
+        {
+            var processor = new Processor(this, source.Names);
+            var x = processor.GetBlock();
+            var r = source.Result;
+            r.LinkTo(x);
+            r.Completion.ContinueWith(t => x.Complete()); // Signal that no more results will be coming.
+            x.Completion.ContinueWith(t => r.Complete()); // Signal that no more results can be recieved.
+            return x;
+        }
+
+        public TransformBlock<object[], T> ResultsBlock(
 			out Action<string[]> initColumnNames)
 		{
 			var processor = new Processor(this);

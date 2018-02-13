@@ -177,7 +177,7 @@ namespace Open.Database.Extensions
 					{
 						var row = new object[fieldCount];
 						for (var i = 0; i < fieldCount; i++)
-							row[i] = reader.GetValue(i);
+							row[i] = reader.GetValue(o[i]);
 						yield return row;
 					} while (reader.Read());
 				}
@@ -225,7 +225,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 		/// <returns></returns>
-		public static IEnumerable<T> ToEntities<T>(this DataTable table, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null, bool clearSourceTable = false) where T : new()
+		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null, bool clearSourceTable = false) where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
 			return x.Results(table, clearSourceTable);
@@ -673,7 +673,7 @@ namespace Open.Database.Extensions
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader)
 		{
 			var names = reader.GetNames();
@@ -683,38 +683,37 @@ namespace Open.Database.Extensions
 				new Queue<object[]>(AsEnumerable(reader)));
 		}
 
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
+        /// <summary>
+        /// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+        /// </summary>
+        /// <param name="reader">The IDataReader to read results from.</param>
+        /// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
 		{
-			var o = ordinals as ISet<int> ?? new HashSet<int>(ordinals);
-			if (o.Count == 0)
+			var o = ordinals.ToArray();
+			if (o.Length == 0)
 			{
 				// No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
 				return RetrieveBlanksInternal(reader);
 			}
 			else
 			{
-				var ordinalValues = ordinals.OrderBy(n => n).ToArray();
 				return new QueryResult<Queue<object[]>>(
-					ordinalValues,
-					ordinalValues.Select(n => reader.GetName(n)).ToArray(),
-					new Queue<object[]>(AsEnumerable(reader, ordinalValues)));
+					o,
+					o.Select(n => reader.GetName(n)).ToArray(),
+					new Queue<object[]>(AsEnumerable(reader, o)));
 			}
 		}
 
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, int n, params int[] others)
+        /// <summary>
+        /// Iterates all records within the current result set using an IDataReader and returns the desired results.
+        /// </summary>
+        /// <param name="reader">The IDataReader to read results from.</param>
+        /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+        /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, int n, params int[] others)
 			=> Retrieve(reader, new int[1] { n }.Concat(others));
 
 		/// <summary>
@@ -722,11 +721,11 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 		{
-			var cn = columnNames as ISet<string> ?? new HashSet<string>(columnNames);
-			if (cn.Count == 0)
+			var cn = columnNames.ToArray();
+			if (cn.Length == 0)
 			{
 				// No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
 				return RetrieveBlanksInternal(reader);
@@ -736,7 +735,6 @@ namespace Open.Database.Extensions
 				// Validate the requested columns first.
 				var columns = cn
 					.Select(n => (name: n, ordinal: reader.GetOrdinal(n)))
-					.OrderBy(c => c.ordinal)
 					.ToArray();
 
 				var ordinalValues = columns.Select(c => c.ordinal).ToArray();
@@ -753,7 +751,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, string c, params string[] others)
 			=> Retrieve(reader, new string[1] { c }.Concat(others));
 
@@ -761,7 +759,7 @@ namespace Open.Database.Extensions
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command)
 			=> ExecuteReader(command, reader => reader.Retrieve());
 
@@ -770,7 +768,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, IEnumerable<int> ordinals)
 			=> ExecuteReader(command, reader => reader.Retrieve(ordinals));
 
@@ -780,7 +778,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, int n, params int[] others)
 			=> ExecuteReader(command, reader => Retrieve(reader, new int[1] { n }.Concat(others)));
 
@@ -789,7 +787,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
 			=> ExecuteReader(command, reader => reader.Retrieve(columnNames));
 
@@ -799,7 +797,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
-		/// <returns>the DataReaderResults that contain all the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, string c, params string[] others)
 			=> ExecuteReader(command, reader => Retrieve(reader, new string[1] { c }.Concat(others)));
 
@@ -845,7 +843,7 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable to pull the transformed results from.</returns>
 		public static IEnumerable<T> ResultsFromDataTable<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
 			where T : new()
-			=> reader.ToDataTable().ToEntities<T>(fieldMappingOverrides, true);
+			=> reader.ToDataTable().To<T>(fieldMappingOverrides, true);
 
 		/// <summary>
 		/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
@@ -857,7 +855,7 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable to pull the transformed results from.</returns>
 		public static IEnumerable<T> ResultsFromDataTable<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
 			where T : new()
-			=> command.ToDataTable().ToEntities<T>(fieldMappingOverrides, true);
+			=> command.ToDataTable().To<T>(fieldMappingOverrides, true);
 
 		/// <summary>
 		/// Iterates an IDataReader through the transform function and posts each record to the target block.
@@ -884,9 +882,6 @@ namespace Open.Database.Extensions
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform)
 			=> command.ExecuteReader(reader => reader.ToTargetBlock(target, transform));
-
-		// NOTE: Do not provide AsSourceBlock extensions due to the asynchronous nature.
-		// If an asynchronous source block is desired, then the extension needs full control of command setup and execution to ensure proper disposal and completion.
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.

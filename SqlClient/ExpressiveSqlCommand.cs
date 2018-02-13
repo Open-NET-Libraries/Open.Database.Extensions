@@ -113,14 +113,6 @@ namespace Open.Database.Extensions.SqlClient
             => ExecuteAsync(command => command.ExecuteScalarAsync());
 
 		/// <summary>
-		/// Asynchronously returns all records via a transform function.
-		/// </summary>
-		/// <param name="transform">The desired column names.</param>
-		/// <returns>A task containing the list of results.</returns>
-		public override Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform)
-            => ExecuteAsync(command => command.ToListAsync(transform));
-
-		/// <summary>
 		/// Iterates asynchronously and will stop iterating if canceled.
 		/// </summary>
 		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
@@ -145,13 +137,14 @@ namespace Open.Database.Extensions.SqlClient
 		public override Task IterateReaderAsyncWhile(Func<IDataRecord, Task<bool>> predicate)
 			=> ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate));
 
-		/// <summary>
-		/// Returns a source block as the source of records.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>A transform block that is recieving the results.</returns>
-		public override ISourceBlock<T> AsSourceBlockAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+
+        /// <summary>
+        /// Returns a source block as the source of records.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A transform block that is recieving the results.</returns>
+        public override ISourceBlock<T> AsSourceBlockAsync<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
 			var cn = x.ColumnNames;
@@ -181,6 +174,29 @@ namespace Open.Database.Extensions.SqlClient
 			return block;
 		}
 
-	}
+        /// <summary>
+        /// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
+        /// </summary>
+        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        public override Task<QueryResult<Queue<object[]>>> RetrieveAsync()
+            => ExecuteReaderAsync(reader => reader.RetrieveAsync());
+
+        /// <summary>
+        /// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
+        /// </summary>
+        /// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        public override Task<QueryResult<Queue<object[]>>> RetrieveAsync(IEnumerable<int> ordinals)
+            => ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals));
+
+        /// <summary>
+        /// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+        /// </summary>
+        /// <param name="columnNames">The column names to select.</param>
+        /// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        public override Task<QueryResult<Queue<object[]>>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
+            => ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder));
+    }
 
 }
