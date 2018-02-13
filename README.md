@@ -53,7 +53,7 @@ In order to keep connection open time to a minimum, some methods cache data befo
 
 #### `Results<T>()` and `ResultsAsync<T>()`
 
-Synchronously queries (pulls all the data).  Then using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the ```IDataReader```.
+Pulls all the data first.  Then using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the ```IDataReader```.
 
 Optionally a field to column override map can be passed as a parameter.  If a column is set as `null` then that field is ignored (not applied to the model).
 
@@ -70,7 +70,7 @@ var people = cmd.Results<Person>((Field:"FirstName",Column:"first_name"));
 
 #### `Retrieve()` and `RetrieveAsync()`
 
-Synchronously queries (pulls all the data).  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column mappings.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
+Pulls all the data first.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column mappings.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
 
 #### `AsSourceBlockAsync<T>()`
 
