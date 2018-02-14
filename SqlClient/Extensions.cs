@@ -23,11 +23,12 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="name">The name of the parameter.</param>
         /// <param name="value">The value of the parameter.</param>
         /// <param name="type">The DbType of the parameter.</param>
+        /// <param name="direction">The direction of the parameter.</param>
         /// <returns>The created IDbDataParameter.</returns>
-        public static IDbDataParameter AddParameter(this SqlCommand target,
-            string name, object value, SqlDbType type)
+        public static SqlParameter AddParameter(this SqlCommand target,
+            string name, object value, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
         {
-            var p = target.AddParameterType(name, type);
+            var p = target.AddParameterType(name, type, direction);
             p.Value = value;
             return p;
         }
@@ -38,16 +39,19 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="target">The command to add a parameter to.</param>
         /// <param name="name">The name of the parameter.</param>
         /// <param name="type">The SqlDbType of the parameter.</param>
+        /// <param name="direction">The direction of the parameter.</param>
         /// <returns>The created IDbDataParameter.</returns>
-        public static IDbDataParameter AddParameterType(this SqlCommand target, string name, SqlDbType type)
+        public static SqlParameter AddParameterType(this SqlCommand target,
+            string name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
         {
             var c = target.CreateParameter();
             c.ParameterName = name;
             c.SqlDbType = type;
+            c.Direction = direction;
             target.Parameters.Add(c);
             return c;
         }
-
+        
         /// <summary>
         /// Shortcut for adding command a typed (non-input) parameter.
         /// </summary>
@@ -55,7 +59,7 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="name">The name of the parameter.</param>
         /// <param name="type">The SqlDbType of the parameter.</param>
         /// <returns>The created IDbDataParameter.</returns>
-        public static IDbDataParameter AddParameterType(this IDbCommand target, string name, SqlDbType type)
+        public static SqlParameter AddParameterType(this IDbCommand target, string name, SqlDbType type)
         {
             return AddParameterType((SqlCommand)target, name, type);
         }
@@ -73,6 +77,24 @@ namespace Open.Database.Extensions.SqlClient
         {
             var command = connection.CreateCommand();
             command.CommandType = type;
+            command.CommandText = commandText;
+            command.CommandTimeout = secondsTimeout;
+
+            return command;
+        }
+
+        /// <summary>
+        /// Shortcut for creating an SqlCommand from any SqlConnection.
+        /// </summary>
+        /// <param name="connection">The connection to create a command from.</param>
+        /// <param name="commandText">The command text or stored procedure name to use.</param>
+        /// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+        /// <returns>The created SqlCommand.</returns>
+        public static SqlCommand CreateStoredProcedureCommand(this SqlConnection connection,
+            string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
+        {
+            var command = connection.CreateCommand();
+            command.CommandType = CommandType.StoredProcedure;
             command.CommandText = commandText;
             command.CommandTimeout = secondsTimeout;
 

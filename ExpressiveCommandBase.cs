@@ -427,11 +427,19 @@ namespace Open.Database.Extensions
 		public T ExecuteScalar<T>()
 			=> (T)ExecuteScalar();
 
-		/// <summary>
-		/// Imports all data using an IDataReader into a DataTable.
-		/// </summary>
-		/// <returns>The resultant DataTabel.</returns>
-		public DataTable LoadTable()
+        /// <summary>
+        /// Calls ExecuteScalar on the underlying command.
+        /// </summary>
+        /// <typeparam name="T">The type expected.</typeparam>
+        /// <returns>The varlue returned from the method.</returns>
+        public T ExecuteScalar<T>(Func<object,T> transform)
+            => transform(ExecuteScalar());
+
+        /// <summary>
+        /// Imports all data using an IDataReader into a DataTable.
+        /// </summary>
+        /// <returns>The resultant DataTabel.</returns>
+        public DataTable LoadTable()
 			=> Execute(command => command.ToDataTable());
 		
 		/// <summary>

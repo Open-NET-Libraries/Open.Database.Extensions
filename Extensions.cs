@@ -47,9 +47,10 @@ namespace Open.Database.Extensions
         /// <param name="name">The name of the parameter.</param>
         /// <param name="value">The value of the parameter.</param>
         /// <param name="type">The DbType of the parameter.</param>
+        /// <param name="direction">The direction of the parameter.</param>
         /// <returns>The created IDbDataParameter.</returns>
         public static IDbDataParameter AddParameter(this IDbCommand target,
-            string name, object value, DbType type)
+            string name, object value, DbType type, ParameterDirection direction = ParameterDirection.Input)
         {
             var p = target.AddParameterType(name, type);
             p.Value = value;
@@ -62,13 +63,15 @@ namespace Open.Database.Extensions
         /// <param name="target">The command to add a parameter to.</param>
         /// <param name="name">The name of the parameter.</param>
         /// <param name="type">The DbType of the parameter.</param>
+        /// <param name="direction">The direction of the parameter.</param>
         /// <returns>The created IDbDataParameter.</returns>
         public static IDbDataParameter AddParameterType(this IDbCommand target,
-            string name, DbType type)
+            string name, DbType type, ParameterDirection direction = ParameterDirection.Input)
         {
             var c = target.CreateParameter();
             c.ParameterName = name;
             c.DbType = type;
+            c.Direction = direction;
             target.Parameters.Add(c);
             return c;
         }
@@ -88,6 +91,25 @@ namespace Open.Database.Extensions
         {
             var command = connection.CreateCommand();
             command.CommandType = type;
+            command.CommandText = commandText;
+            command.CommandTimeout = secondsTimeout;
+
+            return command;
+        }
+
+        /// <summary>
+        /// Shortcut for creating an IDbCommand from any IDbConnection of CommandType.StoredProcedure.
+        /// </summary>
+        /// <param name="connection">The connection to create a command from.</param>
+        /// <param name="commandText">The command text or stored procedure name to use.</param>
+        /// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+        /// <returns>The created IDbCommand.</returns>
+        public static IDbCommand CreateStoredProcedureCommand(this IDbConnection connection,
+            string commandText,
+            int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
+        {
+            var command = connection.CreateCommand();
+            command.CommandType = CommandType.StoredProcedure;
             command.CommandText = commandText;
             command.CommandTimeout = secondsTimeout;
 

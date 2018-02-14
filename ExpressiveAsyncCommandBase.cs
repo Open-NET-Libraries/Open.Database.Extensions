@@ -79,9 +79,23 @@ namespace Open.Database.Extensions
         /// <typeparam name="T">The type expected.</typeparam>
         /// <returns>The varlue returned from the method.</returns>
         public async Task<T> ExecuteScalarAsync<T>()
-        {
-            return (T)(await ExecuteScalarAsync());
-        }
+            => (T)(await ExecuteScalarAsync());
+
+        /// <summary>
+        /// Asynchronously executes scalar on the underlying command.
+        /// </summary>
+        /// <typeparam name="T">The type expected.</typeparam>
+        /// <returns>The varlue returned from the method.</returns>
+        public async Task<T> ExecuteScalarAsync<T>(Func<object, T> transform)
+            => transform(await ExecuteScalarAsync());
+
+        /// <summary>
+        /// Asynchronously executes scalar on the underlying command.
+        /// </summary>
+        /// <typeparam name="T">The type expected.</typeparam>
+        /// <returns>The varlue returned from the method.</returns>
+        public async Task<T> ExecuteScalarAsync<T>(Func<object, Task<T>> transform)
+            => await transform(await ExecuteScalarAsync());
 
         /// <summary>
         /// Asynchronously iterates a IDataReader and returns the each result until the count is met.

@@ -54,6 +54,20 @@
             <typeparam name="T">The type expected.</typeparam>
             <returns>The varlue returned from the method.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0})">
+            <summary>
+            Asynchronously executes scalar on the underlying command.
+            </summary>
+            <typeparam name="T">The type expected.</typeparam>
+            <returns>The varlue returned from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Asynchronously executes scalar on the underlying command.
+            </summary>
+            <typeparam name="T">The type expected.</typeparam>
+            <returns>The varlue returned from the method.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveAsyncCommandBase`4.TakeAsync``1(System.Func{System.Data.IDataRecord,``0},System.Int32)">
             <summary>
             Asynchronously iterates a IDataReader and returns the each result until the count is met.
@@ -480,6 +494,13 @@
             <typeparam name="T">The type expected.</typeparam>
             <returns>The varlue returned from the method.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteScalar``1(System.Func{System.Object,``0})">
+            <summary>
+            Calls ExecuteScalar on the underlying command.
+            </summary>
+            <typeparam name="T">The type expected.</typeparam>
+            <returns>The varlue returned from the method.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.LoadTable">
             <summary>
             Imports all data using an IDataReader into a DataTable.
@@ -688,7 +709,7 @@
             <param name="value">The value of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType)">
+        <member name="M:Open.Database.Extensions.Extensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)">
             <summary>
             Shortcut for adding command parameter.
             </summary>
@@ -696,15 +717,17 @@
             <param name="name">The name of the parameter.</param>
             <param name="value">The value of the parameter.</param>
             <param name="type">The DbType of the parameter.</param>
+            <param name="direction">The direction of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.DbType)">
+        <member name="M:Open.Database.Extensions.Extensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.DbType,System.Data.ParameterDirection)">
             <summary>
             Shortcut for adding command a typed (non-input) parameter.
             </summary>
             <param name="target">The command to add a parameter to.</param>
             <param name="name">The name of the parameter.</param>
             <param name="type">The DbType of the parameter.</param>
+            <param name="direction">The direction of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">
@@ -713,6 +736,15 @@
             </summary>
             <param name="connection">The connection to create a command from.</param>
             <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created IDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.IDbConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an IDbCommand from any IDbConnection of CommandType.StoredProcedure.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
             <param name="commandText">The command text or stored procedure name to use.</param>
             <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
             <returns>The created IDbCommand.</returns>
@@ -1415,6 +1447,14 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Returns a block that attempts to map the fields to type T.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
         <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
@@ -1558,7 +1598,7 @@
             SqlClient extensions for building a command and retrieving data using best practices.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameter(System.Data.SqlClient.SqlCommand,System.String,System.Object,System.Data.SqlDbType)">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameter(System.Data.SqlClient.SqlCommand,System.String,System.Object,System.Data.SqlDbType,System.Data.ParameterDirection)">
             <summary>
             Shortcut for adding command parameter.
             </summary>
@@ -1566,15 +1606,17 @@
             <param name="name">The name of the parameter.</param>
             <param name="value">The value of the parameter.</param>
             <param name="type">The DbType of the parameter.</param>
+            <param name="direction">The direction of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.SqlClient.SqlCommand,System.String,System.Data.SqlDbType)">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.SqlClient.SqlCommand,System.String,System.Data.SqlDbType,System.Data.ParameterDirection)">
             <summary>
             Shortcut for adding command a typed (non-input) parameter.
             </summary>
             <param name="target">The command to add a parameter to.</param>
             <param name="name">The name of the parameter.</param>
             <param name="type">The SqlDbType of the parameter.</param>
+            <param name="direction">The direction of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.SqlDbType)">
@@ -1592,6 +1634,15 @@
             </summary>
             <param name="connection">The connection to create a command from.</param>
             <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand(System.Data.SqlClient.SqlConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an SqlCommand from any SqlConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
             <param name="commandText">The command text or stored procedure name to use.</param>
             <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
             <returns>The created SqlCommand.</returns>
