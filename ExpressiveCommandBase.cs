@@ -111,6 +111,7 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
+
 		/// <summary>
 		/// Adds a parameter to the params list.
 		/// </summary>
@@ -161,12 +162,67 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
-		/// <summary>
-		/// Sets the timeout value.
-		/// </summary>
-		/// <param name="seconds">The number of seconds to wait before the connection times out.</param>
-		/// <returns>This instance for use in method chaining.</returns>
-		public TThis SetTimeout(ushort seconds)
+
+        /// <summary>
+        /// Conditionally adds a parameter to the params list.
+        /// </summary>
+        /// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+        /// <param name="name">The name of the parameter.</param>
+        /// <param name="value">The value of the parameter.</param>
+        /// <returns>This instance for use in method chaining.</returns>
+        public TThis AddParamIf<T>(bool condition, string name, T? value)
+            where T : struct
+            => condition ? AddParam(name, value) : (TThis)this;
+
+        /// <summary>
+        /// Conditionally adds a parameter to the params list.
+        /// </summary>
+        /// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+        /// <param name="name">The name of the parameter.</param>
+        /// <param name="value">The value of the parameter.</param>
+        /// <returns>This instance for use in method chaining.</returns>
+        public TThis AddParamIf(bool condition, string name, object value)
+            => condition ? AddParam(name, value) : (TThis)this;
+
+        /// <summary>
+        /// Conditionally adds a parameter to the params list.
+        /// </summary>
+        /// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+        /// <param name="name">The name of the parameter.</param>
+        /// <param name="value">The value of the parameter.</param>
+		/// <param name="type">The database type of the parameter.</param>
+        /// <returns>This instance for use in method chaining.</returns>
+        public TThis AddParamIf(bool condition, string name, object value, TDbType type)
+            => condition ? AddParam(name, value, type) : (TThis)this;
+
+        /// <summary>
+        /// Conditionally adds a parameter to the params list.
+        /// </summary>
+        /// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+        /// <param name="name">The name of the parameter.</param>
+        /// <param name="value">The value of the parameter.</param>
+        /// <param name="type">The database type of the parameter.</param>
+        /// <returns>This instance for use in method chaining.</returns>
+        public TThis AddParamIf<T>(bool condition, string name, T? value, TDbType type)
+            where T : struct
+            => condition ? AddParam(name, value, type) : (TThis)this;
+
+        /// <summary>
+        /// Conditionally adds a parameter to the params list.
+        /// </summary>
+        /// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+        /// <param name="name">The name of the parameter.</param>
+        /// <returns>This instance for use in method chaining.</returns>
+        public TThis AddParamIf(bool condition, string name)
+            => condition ? AddParam(name) : (TThis)this;
+
+
+        /// <summary>
+        /// Sets the timeout value.
+        /// </summary>
+        /// <param name="seconds">The number of seconds to wait before the connection times out.</param>
+        /// <returns>This instance for use in method chaining.</returns>
+        public TThis SetTimeout(ushort seconds)
 		{
 			Timeout = seconds;
 			return (TThis)this;
@@ -519,17 +575,17 @@ namespace Open.Database.Extensions
 
 			void i() => ExecuteReader(reader =>
 			{
-				// Validate the requested columns first.
-				var columns = cn
-					.Select(n => (name: n, ordinal: reader.GetOrdinal(n)))
-					.OrderBy(c => c.ordinal)
+                // Ignores fields that don't match.
+                var columns = reader.GetMatchingOrdinals(cn)
+					.OrderBy(c => c.Ordinal)
 					.ToArray();
 
-				var ordinalValues = columns.Select(c => c.ordinal).ToArray();
+				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
 				deferred(new QueryResult<IEnumerable<object[]>>(
 					ordinalValues,
-					columns.Select(c => c.name).ToArray(),
+					columns.Select(c => c.Name).ToArray(),
 					reader.AsEnumerable(ordinalValues)));
+
 			});
 
 			if (synchronousExecution) i();
@@ -558,7 +614,7 @@ namespace Open.Database.Extensions
 		/// <returns>A transform block that is recieving the results.</returns>
 		public ISourceBlock<T> AsSourceBlock<T>(params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
-			=> AsSourceBlock<T>((IEnumerable<(string Field, string Column)>)fieldMappingOverrides);
+			=> AsSourceBlock<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
 	}
 }

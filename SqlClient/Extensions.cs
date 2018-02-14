@@ -256,7 +256,7 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this SqlDataReader reader, IEnumerable<int> ordinals)
-            => RetrieveAsyncInternal(reader, ordinals as int[] ?? ordinals.ToArray());  
+            => RetrieveAsyncInternal(reader, ordinals as int[] ?? ordinals.ToArray());
 
         /// <summary>
         /// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -264,7 +264,7 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="reader">The reader to enumerate.</param>
         /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
         /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        /// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this SqlDataReader reader, int n, params int[] others)
             => RetrieveAsync(reader, new int[1] { n }.Concat(others));
 
@@ -277,18 +277,12 @@ namespace Open.Database.Extensions.SqlClient
         /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
         public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this SqlDataReader reader, IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
         {
-            // Validate the requested columns first.
-            var x = columnNames
-                .Select(n => (name: n, ordinal: reader.GetOrdinal(n)));
+            // Validate columns first.
+            var columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
 
-            if (normalizeColumnOrder)
-                x = x.OrderBy(c => c.ordinal);
-
-            var columns = x.ToArray();
-
-            return RetrieveAsyncInternal(reader, 
-                columns.Select(c => c.ordinal).ToArray(),
-                columns.Select(c => c.name).ToArray());
+            return RetrieveAsyncInternal(reader,
+                columns.Select(c => c.Ordinal).ToArray(),
+                columns.Select(c => c.Name).ToArray());
         }
 
         /// <summary>
@@ -312,7 +306,12 @@ namespace Open.Database.Extensions.SqlClient
         public static async Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides) where T : new()
         {
             var x = new Transformer<T>(fieldMappingOverrides);
-            return x.AsDequeueingEnumerable(await reader.RetrieveAsync(x.ColumnNames));
+            // Ignore missing columns.
+            var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
+
+            return x.AsDequeueingEnumerable(await RetrieveAsyncInternal(reader,
+                columns.Select(c => c.Ordinal).ToArray(),
+                columns.Select(c => c.Name).ToArray()));
         }
 
         /// <summary>
@@ -323,7 +322,7 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
         /// <returns>A task containing the list of results.</returns>
         public static Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides) where T : new()
-            => reader.ResultsAsync<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
+            => ResultsAsync<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
         /// <summary>
         /// Asynchronously returns all records and iteratively attempts to map the fields to type T.
@@ -332,11 +331,8 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="reader">The IDataReader to read results from.</param>
         /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
         /// <returns>A task containing the list of results.</returns>
-        public static async Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
-        {
-            var x = new Transformer<T>(fieldMappingOverrides);
-            return x.AsDequeueingEnumerable(await reader.RetrieveAsync(x.ColumnNames));
-        }
+        public static Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
+            => ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
         /// <summary>
         /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.

@@ -14,7 +14,9 @@
     <Version>5.2.1</Version>
     <AssemblyVersion>5.2.1.0</AssemblyVersion>
     <FileVersion>5.2.1.0</FileVersion>
-    <PackageReleaseNotes>- More extensions and flexibility for transforming results.</PackageReleaseNotes>
+    <PackageReleaseNotes>- Improved expected behavior of .Retrieve vs .Results.
+.Retrieve will throw if a column is requested that doesn't not exist.
+.Results will only populate columns that match, and does not throw.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

@@ -282,6 +282,52 @@
             <param name="name">The name of the parameter.</param>
             <returns>This instance for use in method chaining.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AddParamIf``1(System.Boolean,System.String,System.Nullable{``0})">
+            <summary>
+            Conditionally adds a parameter to the params list.
+            </summary>
+            <param name="condition">The condition to add the param by.  Only adds if true.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="value">The value of the parameter.</param>
+            <returns>This instance for use in method chaining.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AddParamIf(System.Boolean,System.String,System.Object)">
+            <summary>
+            Conditionally adds a parameter to the params list.
+            </summary>
+            <param name="condition">The condition to add the param by.  Only adds if true.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="value">The value of the parameter.</param>
+            <returns>This instance for use in method chaining.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AddParamIf(System.Boolean,System.String,System.Object,`2)">
+            <summary>
+            Conditionally adds a parameter to the params list.
+            </summary>
+            <param name="condition">The condition to add the param by.  Only adds if true.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="value">The value of the parameter.</param>
+            <param name="type">The database type of the parameter.</param>
+            <returns>This instance for use in method chaining.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AddParamIf``1(System.Boolean,System.String,System.Nullable{``0},`2)">
+            <summary>
+            Conditionally adds a parameter to the params list.
+            </summary>
+            <param name="condition">The condition to add the param by.  Only adds if true.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="value">The value of the parameter.</param>
+            <param name="type">The database type of the parameter.</param>
+            <returns>This instance for use in method chaining.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AddParamIf(System.Boolean,System.String)">
+            <summary>
+            Conditionally adds a parameter to the params list.
+            </summary>
+            <param name="condition">The condition to add the param by.  Only adds if true.</param>
+            <param name="name">The name of the parameter.</param>
+            <returns>This instance for use in method chaining.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.SetTimeout(System.UInt16)">
             <summary>
             Sets the timeout value.
@@ -685,6 +731,22 @@
             <param name="record">The reader to get column names from.</param>
             <returns>The array of column names.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.GetOrdinalMapping(System.Data.IDataRecord)">
+            <summary>
+            Returns the (name,ordinal) mapping for current result set.
+            </summary>
+            <param name="record">The reader to get column names from.</param>
+            <returns>The array of mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.GetOrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Returns an array of name to ordinal mappings.
+            </summary>
+            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="columnNames">The requested column names.</param>
+            <param name="sort">If true, will order the results by ordinal ascending.</param>
+            <returns></returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Int32[])">
             <summary>
             Produces a selective set of column values based upon the desired ordinal positions.
@@ -692,6 +754,15 @@
             <param name="record">The IDataRecord to query.</param>
             <param name="ordinals">The set of ordinals to query.</param>
             <returns>An array of values matching the ordinal positions requested.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.GetMatchingOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Returns an array of name to ordinal mappings.
+            </summary>
+            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="columnNames">The requested column names.</param>
+            <param name="sort">If true, will order the results by ordinal ascending.</param>
+            <returns></returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetDataTypeNames(System.Data.IDataRecord)">
             <summary>
@@ -1473,6 +1544,14 @@
             <param name="columnNames">The column names to select.</param>
             <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
         </member>
         <member name="T:Open.Database.Extensions.SqlClient.Extensions">
             <summary>
