@@ -233,17 +233,12 @@ namespace Open.Database.Extensions
             }
         }
 
-        /// <summary>
-        /// Enumerates all the remaining values of the current result set of a data reader.
-        /// </summary>
-        /// <param name="reader">The reader to enumerate.</param>
-        /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-        /// <returns>An enumeration of the values returned from a data reader.</returns>
-        public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
+
+        static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
         {
-            if (reader.Read())
+            if (readStarted || reader.Read())
             {
-                var o = ordinals.ToArray();
+                var o = ordinals as int[] ?? ordinals.ToArray();
                 var fieldCount = o.Length;
                 if (fieldCount == 0)
                 {
@@ -265,6 +260,15 @@ namespace Open.Database.Extensions
 
             }
         }
+
+        /// <summary>
+        /// Enumerates all the remaining values of the current result set of a data reader.
+        /// </summary>
+        /// <param name="reader">The reader to enumerate.</param>
+        /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+        /// <returns>An enumeration of the values returned from a data reader.</returns>
+        public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
+            => AsEnumerableInternal(reader, ordinals, false);
 
         /// <summary>
         /// Enumerates all the remaining values of the current result set of a data reader.
@@ -769,30 +773,18 @@ namespace Open.Database.Extensions
         public static Dictionary<string, object> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
             => ToDictionary(record, new HashSet<string>(columnNames));
 
-        static QueryResult<Queue<object[]>> RetrieveBlanksInternal(IDataReader reader)
-            => new QueryResult<Queue<object[]>>(
-                Array.Empty<int>(),
-                Array.Empty<string>(),
-                new Queue<object[]>(AsEnumerable(reader, Enumerable.Empty<int>())));
 
-        static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, int[] ordinals, string[] columnNames = null)
+
+        static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, int[] ordinals, string[] columnNames = null, bool readStarted = false)
         {
             var fieldCount = ordinals.Length;
             if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
             else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
 
-            if (fieldCount == 0)
-            {
-                // No column names specified?  Then return results, but empty ones.  Simplify the results for counting.  
-                return RetrieveBlanksInternal(reader);
-            }
-            else
-            {
-                return new QueryResult<Queue<object[]>>(
-                    ordinals,
-                    columnNames,
-                    new Queue<object[]>(AsEnumerable(reader, ordinals)));
-            }
+            return new QueryResult<Queue<object[]>>(
+                ordinals,
+                columnNames,
+                new Queue<object[]>(AsEnumerableInternal(reader, ordinals, readStarted)));
         }
 
         /// <summary>
@@ -908,13 +900,15 @@ namespace Open.Database.Extensions
         public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
             where T : new()
         {
+            if (!reader.Read()) return Enumerable.Empty<T>();
+
             var x = new Transformer<T>(fieldMappingOverrides);
             // Ignore missing columns.
             var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
 
             return x.AsDequeueingEnumerable(RetrieveInternal(reader,
                 columns.Select(c => c.Ordinal).ToArray(),
-                columns.Select(c => c.Name).ToArray()));
+                columns.Select(c => c.Name).ToArray(), readStarted: true));
         }
 
         /// <summary>

@@ -207,7 +207,7 @@ namespace Open.Database.Extensions.SqlClient
         public static async Task<QueryResult<Queue<object[]>>> RetrieveAsync(this SqlDataReader reader)
         {
             var fieldCount = reader.FieldCount;
-            var names = reader.GetNames();
+            var names = reader.GetNames(); // pull before first read.
             var buffer = new Queue<object[]>();
 
             while (await reader.ReadAsync())
@@ -223,7 +223,7 @@ namespace Open.Database.Extensions.SqlClient
                 buffer);
         }
 
-        static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(SqlDataReader reader, int[] ordinals, string[] columnNames = null)
+        static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(SqlDataReader reader, int[] ordinals, string[] columnNames = null, bool readStarted = false)
         {
             var fieldCount = ordinals.Length;
             if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
@@ -240,8 +240,14 @@ namespace Open.Database.Extensions.SqlClient
             };
 
             var buffer = new Queue<object[]>();
-            while (await reader.ReadAsync())
-                buffer.Enqueue(handler(reader));
+            if (readStarted || await reader.ReadAsync())
+            {
+                do
+                {
+                    buffer.Enqueue(handler(reader));
+                }
+                while (await reader.ReadAsync());
+            }
 
             return new QueryResult<Queue<object[]>>(
                 ordinals,
@@ -305,13 +311,15 @@ namespace Open.Database.Extensions.SqlClient
         /// <returns>A task containing the list of results.</returns>
         public static async Task<IEnumerable<T>> ResultsAsync<T>(this SqlDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides) where T : new()
         {
+            if (!await reader.ReadAsync()) return Enumerable.Empty<T>();
+
             var x = new Transformer<T>(fieldMappingOverrides);
             // Ignore missing columns.
             var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
 
             return x.AsDequeueingEnumerable(await RetrieveAsyncInternal(reader,
                 columns.Select(c => c.Ordinal).ToArray(),
-                columns.Select(c => c.Name).ToArray()));
+                columns.Select(c => c.Name).ToArray(), readStarted: true));
         }
 
         /// <summary>
