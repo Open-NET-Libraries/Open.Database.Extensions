@@ -38,7 +38,7 @@ namespace Open.Database.Extensions
                 }		
 			}
 
-			ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value, kvp => pm[kvp.Key]);
+			ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value.ToLowerInvariant(), kvp => pm[kvp.Key]);
 
 		}
 
@@ -81,7 +81,7 @@ namespace Open.Database.Extensions
 				var map = Transformer.ColumnToPropertyMap;
 				_names = names;
 				_properties = names
-					.Select(n => map.TryGetValue(n, out PropertyInfo p) ? p : null)
+					.Select(n => map.TryGetValue(n.ToLowerInvariant(), out PropertyInfo p) ? p : null)
 					.ToArray();
 			}
 

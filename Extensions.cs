@@ -164,7 +164,7 @@ namespace Open.Database.Extensions
             try
             {
                 var q = cn
-                    .Select(n => (Name: n, Ordinal: record.GetOrdinal(n)));
+                    .Select(n => (Name: n, Ordinal: record.GetOrdinal(n))); // Does do a case-insensitive search after a case-sensitive one.
 
                 if (sort)
                     q = q.OrderBy(m => m.Ordinal);
@@ -210,15 +210,31 @@ namespace Open.Database.Extensions
         public static (string Name, int Ordinal)[] GetMatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
         {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
+
+            // Normalize the requested column names to be lowercase.
+            columnNames = columnNames.Select(c =>
+            {
+                if(string.IsNullOrWhiteSpace(c))
+                    throw new ArgumentException("Column names cannot be null or whitespace only.");
+                return c.ToLowerInvariant();
+            });
+
             var actual = record.GetOrdinalMapping();
             if (sort)
             {
-                var requested = columnNames as HashSet<string> ?? new HashSet<string>(columnNames);
-                return actual.Where(m => requested.Contains(m.Name)).ToArray();
+                var requested = new HashSet<string>(columnNames);
+                // Return actual values based upon if their lower-case counterparts exist in the requested.
+                return actual
+                    .Where(m => columnNames.Contains(m.Name.ToLowerInvariant()))
+                    .ToArray();
             } else
             {
-                var actualColumns = actual.ToDictionary(m => m.Name, m => m);
-                return columnNames.Where(c => actualColumns.ContainsKey(c)).Select(c => actualColumns[c]).ToArray();
+                // Create a map of lower-case keys to acutal.
+                var actualColumns = actual.ToDictionary(m => m.Name.ToLowerInvariant(), m => m);
+                return columnNames
+                    .Where(c => actualColumns.ContainsKey(c)) // Select lower case column names if they exist in the dictionary.
+                    .Select(c => actualColumns[c]) // Then select the actual values based upon that key.
+                    .ToArray();
             }
         }
         
