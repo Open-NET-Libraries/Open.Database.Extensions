@@ -14,9 +14,8 @@
     <Version>5.4.0</Version>
     <AssemblyVersion>5.4.0.0</AssemblyVersion>
     <FileVersion>5.4.0.0</FileVersion>
-    <PackageReleaseNotes>- Improved expected behavior of .Retrieve vs .Results.
-.Retrieve will throw if a column is requested that doesn't not exist.
-.Results will only populate columns that match, and does not throw.</PackageReleaseNotes>
+    <PackageReleaseNotes>Refactored code that was exclusive to SqlClient to be part of broarder Db classes and extensions.
+Provides 'async' functionality for all DbDataReader and DbCommand classes.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
