@@ -111,7 +111,7 @@ namespace Open.Database.Extensions
         /// <summary>
         /// Calls ExecuteScalarAsync on the underlying command.
         /// </summary>
-        /// <returns>The varlue returned from the method.</returns>
+        /// <returns>The value returned from the method.</returns>
         public Task<object> ExecuteScalarAsync()
             => ExecuteAsync(command => command.ExecuteScalarAsync());
 
@@ -119,15 +119,23 @@ namespace Open.Database.Extensions
         /// Asynchronously executes scalar on the underlying command.
         /// </summary>
         /// <typeparam name="T">The type expected.</typeparam>
-        /// <returns>The varlue returned from the method.</returns>
+        /// <returns>The value returned from the method.</returns>
         public async Task<T> ExecuteScalarAsync<T>(Func<object, T> transform)
             => transform(await ExecuteScalarAsync());
+
+        /// <summary>
+        /// Asynchronously executes scalar on the underlying command and casts to the expected type.
+        /// </summary>
+        /// <typeparam name="T">The type expected.</typeparam>
+        /// <returns>The value returned from the method.</returns>
+        public async Task<T> ExecuteScalarAsync<T>()
+            => (T)(await ExecuteScalarAsync());
 
         /// <summary>
         /// Asynchronously executes scalar on the underlying command.
         /// </summary>
         /// <typeparam name="T">The type expected.</typeparam>
-        /// <returns>The varlue returned from the method.</returns>
+        /// <returns>The value returned from the method.</returns>
         public async Task<T> ExecuteScalarAsync<T>(Func<object, Task<T>> transform)
             => await transform(await ExecuteScalarAsync());
 

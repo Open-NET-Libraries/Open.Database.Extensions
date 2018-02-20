@@ -11,11 +11,10 @@
     <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.4.0</Version>
-    <AssemblyVersion>5.4.0.0</AssemblyVersion>
-    <FileVersion>5.4.0.0</FileVersion>
-    <PackageReleaseNotes>Refactored code that was exclusive to SqlClient to be part of broarder Db classes and extensions.
-Provides 'async' functionality for all DbDataReader and DbCommand classes.</PackageReleaseNotes>
+    <Version>5.4.1</Version>
+    <AssemblyVersion>5.4.1.0</AssemblyVersion>
+    <FileVersion>5.4.1.0</FileVersion>
+    <PackageReleaseNotes>Tweaks to interfaces and restored ExecuteScalarAsync&lt;T&gt;().</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

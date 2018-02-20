@@ -4,6 +4,23 @@
         <name>Open.Database.Extensions</name>
     </assembly>
     <members>
+        <member name="T:Open.Database.Extensions.DbConnectionFactory`1">
+            <summary>
+            Generic connection factory implementation that accepts a factory function.
+            </summary>
+            <typeparam name="TConnection"></typeparam>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory`1.#ctor(System.Func{`0})">
+            <summary>
+            Constructs a DbConnectionFactory.
+            </summary>
+            <param name="factory"></param>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory`1.Create">
+            <summary>
+            Creates a connection of from the underlying factory function. 
+            </summary>
+        </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4">
             <summary>
             Base class for developing expressive commands.
@@ -547,21 +564,28 @@
             <summary>
             Calls ExecuteScalarAsync on the underlying command.
             </summary>
-            <returns>The varlue returned from the method.</returns>
+            <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0})">
             <summary>
             Asynchronously executes scalar on the underlying command.
             </summary>
             <typeparam name="T">The type expected.</typeparam>
-            <returns>The varlue returned from the method.</returns>
+            <returns>The value returned from the method.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1">
+            <summary>
+            Asynchronously executes scalar on the underlying command and casts to the expected type.
+            </summary>
+            <typeparam name="T">The type expected.</typeparam>
+            <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}})">
             <summary>
             Asynchronously executes scalar on the underlying command.
             </summary>
             <typeparam name="T">The type expected.</typeparam>
-            <returns>The varlue returned from the method.</returns>
+            <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
             <summary>
@@ -1482,6 +1506,17 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
+        <member name="T:Open.Database.Extensions.IDbConnectionFactory">
+            <summary>
+            Simplified interface with IDbConnection as the generic type.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.IDbConnectionFactory.Create">
+            <summary>
+            Generates a new connection of declared generic type.
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Open.Database.Extensions.IDbConnectionFactory`1">
             <summary>
             Base interface for creating connections.
@@ -1494,11 +1529,6 @@
             Generates a new connection of declared generic type.
             </summary>
             <returns></returns>
-        </member>
-        <member name="T:Open.Database.Extensions.IDbConnectionFactory">
-            <summary>
-            Simplified interface with IDbConnection as the generic type.
-            </summary>
         </member>
         <member name="T:Open.Database.Extensions.QueryResult`1">
             <summary>
@@ -1725,17 +1755,17 @@
             Default SqlConnectionFactory for generating SqlConnections.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.SqlConnectionFactory.#ctor(System.String)">
+        <member name="M:Open.Database.Extensions.SqlClient.SqlConnectionFactory.#ctor(System.Func{System.Data.SqlClient.SqlConnection})">
             <summary>
             Default injectable connection factory constructor.
             </summary>
-            <param name="connectionString">Required connection string value.</param>
+            <param name="factory">The factory that generates the connections.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.SqlConnectionFactory.Create">
+        <member name="M:Open.Database.Extensions.SqlClient.SqlConnectionFactory.#ctor(System.String)">
             <summary>
-            Method for generating SqlConnections.
+            Default injectable connection factory constructor that accepts a connection string.
             </summary>
-            <returns></returns>
+            <param name="connectionString">Required connection string value.</param>
         </member>
     </members>
 </doc>
