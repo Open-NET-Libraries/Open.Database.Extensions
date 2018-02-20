@@ -29,4 +29,18 @@ namespace Open.Database.Extensions
 
         IDbConnection IDbConnectionFactory.Create() => Create();
     }
+
+    /// <summary>
+    /// DbConnection factory implementation that accepts a factory function.
+    /// </summary>
+    public class DbConnectionFactory : DbConnectionFactory<DbConnection>
+    {
+        /// <summary>
+        /// Constructs a DbConnectionFactory.
+        /// </summary>
+        /// <param name="factory"></param>
+        public DbConnectionFactory(Func<DbConnection> factory) : base(factory)
+        {
+        }
+    }
 }

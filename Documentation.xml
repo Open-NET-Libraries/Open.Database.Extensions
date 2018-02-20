@@ -21,6 +21,17 @@
             Creates a connection of from the underlying factory function. 
             </summary>
         </member>
+        <member name="T:Open.Database.Extensions.DbConnectionFactory">
+            <summary>
+            DbConnection factory implementation that accepts a factory function.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory.#ctor(System.Func{System.Data.Common.DbConnection})">
+            <summary>
+            Constructs a DbConnectionFactory.
+            </summary>
+            <param name="factory"></param>
+        </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4">
             <summary>
             Base class for developing expressive commands.
@@ -1506,6 +1517,23 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(System.Func{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Func{System.Data.Common.DbConnection},System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
         <member name="T:Open.Database.Extensions.IDbConnectionFactory">
             <summary>
             Simplified interface with IDbConnection as the generic type.
@@ -1743,6 +1771,23 @@
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String)">
+            <summary>
+            Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(System.Func{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveSqlCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Func{System.Data.SqlClient.SqlConnection},System.String)">
             <summary>
             Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
