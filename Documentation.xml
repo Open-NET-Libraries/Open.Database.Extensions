@@ -330,6 +330,13 @@
             </summary>
             <returns>The resultant DataTabel.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.LoadTables">
+            <summary>
+            Loads all data from a command through an IDataReader into a DataTables.
+            Calls .NextResult() to check for more results.
+            </summary>
+            <returns>The resultant list of DataTables.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ToList``1(System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Converts all IDataRecords into a list using a transform function.
@@ -399,6 +406,18 @@
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.FirstOrdinalResults">
+            <summary>
+            Reads the first column from every record and returns the results as a list.
+            </summary>
+            <returns>The list of transformed records.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.FirstOrdinalResults``1">
+            <summary>
+            Reads the first column from every record.
+            </summary>
+            <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Results``1(System.ValueTuple{System.String,System.String}[])">
             <summary>
@@ -628,6 +647,18 @@
             <param name="transform">The transform function to process each IDataRecord.</param>
             <param name="count">The maximum number of records before complete.</param>
             <returns>The value from the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync">
+            <summary>
+            Reads the first column from every record and returns the results as a list.
+            </summary>
+            <returns>The list of transformed records.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync``1">
+            <summary>
+            Reads the first column from every record.
+            </summary>
+            <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync(System.Int32,System.Int32[])">
             <summary>
@@ -1031,6 +1062,15 @@
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <returns>The resultant DataTable.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToDataTables(System.Data.IDbCommand,System.Data.CommandBehavior)">
+            <summary>
+            Loads all data from a command through an IDataReader into a DataTables.
+            Calls .NextResult() to check for more results.
+            </summary>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <returns>The resultant list of DataTables.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean})">
             <summary>
             Iterates an IDataReader while the predicate returns true.
@@ -1356,6 +1396,30 @@
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDataReader)">
+            <summary>
+            Reads the first column from every record and returns the results as a list.
+            </summary>
+            <returns>The list of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDbCommand)">
+            <summary>
+            Reads the first column from every record.
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)">
+            <summary>
+            Reads the first column from every record and returns the results as a list.
+            </summary>
+            <returns>The list of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)">
+            <summary>
+            Reads the first column from every record.
+            </summary>
+            <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>

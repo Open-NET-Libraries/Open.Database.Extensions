@@ -187,13 +187,29 @@ namespace Open.Database.Extensions
             .ContinueWith(t => results);
         }
 
-        /// <summary>
-        /// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
-        /// </summary>
-        /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-        /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-        public Task<QueryResult<Queue<object[]>>> RetrieveAsync(int n, params int[] others)
+
+		/// <summary>
+		/// Reads the first column from every record and returns the results as a list.
+		/// </summary>
+		/// <returns>The list of transformed records.</returns>
+		public Task<List<object>> FirstOrdinalResultsAsync()
+			=> ToListAsync(r => r.GetValue(0));
+
+
+		/// <summary>
+		/// Reads the first column from every record.
+		/// </summary>
+		/// <returns>The enumerable of casted values.</returns>
+		public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
+			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync<T0>());
+
+		/// <summary>
+		/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// </summary>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		public Task<QueryResult<Queue<object[]>>> RetrieveAsync(int n, params int[] others)
             => RetrieveAsync(new int[1] { n }.Concat(others));
 
         /// <summary>

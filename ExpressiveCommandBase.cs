@@ -441,7 +441,15 @@ namespace Open.Database.Extensions
         /// <returns>The resultant DataTabel.</returns>
         public DataTable LoadTable()
 			=> Execute(command => command.ToDataTable());
-		
+
+		/// <summary>
+		/// Loads all data from a command through an IDataReader into a DataTables.
+		/// Calls .NextResult() to check for more results.
+		/// </summary>
+		/// <returns>The resultant list of DataTables.</returns>
+		public List<DataTable> LoadTables()
+			=> Execute(command => command.ToDataTables());
+
 		/// <summary>
 		/// Converts all IDataRecords into a list using a transform function.
 		/// </summary>
@@ -522,6 +530,21 @@ namespace Open.Database.Extensions
 		public IEnumerable<T> Results<T>(IEnumerable<(string Field, string Column)> fieldMappingOverrides)
 			where T : new()
 			=> Execute(command => command.Results<T>(fieldMappingOverrides));
+
+		/// <summary>
+		/// Reads the first column from every record and returns the results as a list.
+		/// </summary>
+		/// <returns>The list of transformed records.</returns>
+		public List<object> FirstOrdinalResults()
+			=> ToList(r => r.GetValue(0));
+
+
+		/// <summary>
+		/// Reads the first column from every record.
+		/// </summary>
+		/// <returns>The enumerable of casted values.</returns>
+		public IEnumerable<T0> FirstOrdinalResults<T0>()
+			=> Execute(command => command.FirstOrdinalResults<T0>());
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
