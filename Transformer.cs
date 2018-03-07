@@ -53,7 +53,7 @@ namespace Open.Database.Extensions
 					var count = _names.Length;
 					for (var i = 0; i < count; i++)
 					{
-						var p = _properties[i];
+						var p = _propertySetters[i];
 						if (p != null)
 						{
 							var name = _names[i];
@@ -72,7 +72,7 @@ namespace Open.Database.Extensions
 			public readonly Transformer<T> Transformer;
 
 			string[] _names;
-			Action<T, object>[] _properties;
+			Action<T, object>[] _propertySetters;
 
 			public readonly Func<object[], T> Transform; // Using a Func<object[],T> for better type inferrence.
 
@@ -80,7 +80,7 @@ namespace Open.Database.Extensions
 			{
 				var map = Transformer.ColumnToPropertyMap;
 				_names = names;
-				_properties = names
+				_propertySetters = names
 					.Select(n => map.TryGetValue(n.ToLowerInvariant(), out PropertyInfo p) ? p.BuildUntypedSetter<T>() : null)
 					.ToArray();
 			}
