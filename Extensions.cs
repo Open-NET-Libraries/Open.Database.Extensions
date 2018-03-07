@@ -24,7 +24,51 @@ namespace Open.Database.Extensions
 			return IsStillAlive(task.Completion);
 		}
 
+		internal static object DBNullValueToNull(object value)
+			=> value == DBNull.Value ? null : value;
 
+		/// <summary>
+		/// Any DBNull values are converted to null.
+		/// </summary>
+		/// <param name="values">The source values.</param>
+		/// <returns>The converted enumerable.</returns>
+		public static IEnumerable<object> DBNullToNull(this IEnumerable<object> values)
+		{
+			foreach (var v in values)
+				yield return DBNullValueToNull(v);
+		}
+
+		/// <summary>
+		/// Returns a copy of this array with any DBNull values converted to null.
+		/// </summary>
+		/// <param name="values">The source values.</param>
+		/// <returns>A new array containing the results with.</returns>
+		public static object[] DBNullToNull(this object[] values)
+		{
+			var len = values.Length;
+			var result = new object[len];
+			for (var i=0;i < len; i++)
+			{
+				result[i] = DBNullValueToNull(values[i]);
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Replaces any DBNull values in the array with null;
+		/// </summary>
+		/// <param name="values">The source values.</param>
+		/// <returns>The converted enumerable.</returns>
+		public static object[] ReplaceDBNullWithNull(this object[] values)
+		{
+			var len = values.Length;
+			for (var i = 0; i < len; i++)
+			{
+				var value = values[i];
+				if (value == DBNull.Value) values[i] = null;
+			}
+			return values;
+		}
 
 		/// <summary>
 		/// Shortcut for creating an IDbCommand from any IDbConnection.
@@ -149,6 +193,26 @@ namespace Open.Database.Extensions
 		public static void ForEach(this IDataReader reader, Action<IDataRecord> handler)
 		{
 			while (reader.Read()) handler(reader);
+		}
+
+		/// <summary>
+		/// Iterates all records from an IDataReader.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public static async Task ForEachAsync(this DbDataReader reader, Action<IDataRecord> handler)
+		{
+			while (await reader.ReadAsync()) handler(reader);
+		}
+
+		/// <summary>
+		/// Iterates all records from an IDataReader.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public static async Task ForEachAsync(this DbDataReader reader, Func<IDataRecord, Task> handler)
+		{
+			while (await reader.ReadAsync()) await handler(reader);
 		}
 
 		/// <summary>
@@ -280,6 +344,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
@@ -327,6 +392,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
@@ -710,7 +776,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		/// <param name="token">Optional cancellatio token.</param>
-		public static async Task IterateReaderAsync(this DbCommand command, Action<IDataRecord> handler, CancellationToken? token = null)
+		public static async Task ForEachAsync(this DbCommand command, Action<IDataRecord> handler, CancellationToken? token = null)
 		{
 			using (var reader = await command.ExecuteReaderAsync())
 			{
@@ -855,6 +921,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
 		/// <param name="columnMap">The column ids and resultant names to query.</param>
@@ -865,13 +932,14 @@ namespace Open.Database.Extensions
 			if (columnMap != null)
 			{
 				foreach (var c in columnMap)
-					e.Add(c.Value, record.GetValue(c.Key));
+					e.Add(c.Value, DBNullValueToNull(record.GetValue(c.Key)));
 			}
 			return e;
 		}
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
 		/// <param name="columnMap">The column ids and resultant names to query.</param>
@@ -882,13 +950,14 @@ namespace Open.Database.Extensions
 			if (columnMap != null)
 			{
 				foreach (var c in columnMap)
-					e.Add(c.Item2, record.GetValue(c.Item1));
+					e.Add(c.Item2, DBNullValueToNull(record.GetValue(c.Item1)));
 			}
 			return e;
 		}
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
 		/// <param name="columnNames">The column names to query.</param>
@@ -902,7 +971,7 @@ namespace Open.Database.Extensions
 				{
 					var n = record.GetName(i);
 					if (columnNames.Contains(n))
-						e.Add(n, record.GetValue(i));
+						e.Add(n, DBNullValueToNull(record.GetValue(i)));
 				}
 			}
 			return e;
@@ -910,6 +979,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
 		/// <param name="columnNames">The column names to query.  If none specified, the result will contain all columns.</param>
@@ -923,13 +993,14 @@ namespace Open.Database.Extensions
 			for (var i = 0; i < record.FieldCount; i++)
 			{
 				var n = record.GetName(i);
-				e.Add(n, record.GetValue(i));
+				e.Add(n, DBNullValueToNull(record.GetValue(i)));
 			}
 			return e;
 		}
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="record">The IDataRecord to extract values from.</param>
 		/// <param name="columnNames">The column names to query.</param>
@@ -951,6 +1022,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -965,6 +1037,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
@@ -974,6 +1047,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -984,6 +1058,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="columnNames">The column names to select.</param>
@@ -997,6 +1072,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -1007,6 +1083,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -1015,6 +1092,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
@@ -1024,6 +1102,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -1034,6 +1113,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="columnNames">The column names to select.</param>
@@ -1043,6 +1123,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate the reader from.</param>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -1053,6 +1134,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
@@ -1109,6 +1191,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
@@ -1118,6 +1201,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -1128,6 +1212,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="columnNames">The column names to select.</param>
@@ -1145,6 +1230,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -1154,46 +1240,86 @@ namespace Open.Database.Extensions
 			=> RetrieveAsync(reader, new string[1] { c }.Concat(others));
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results as a list.
+		/// Useful extension for dequeuing items from a queue.
+		/// Not thread safe but queueing/dequeueing items in between items is supported.
 		/// </summary>
-		/// <returns>The list of values.</returns>
-		public static List<object> FirstOrdinalResults(this IDataReader reader)
-			=> reader.ToList(r => r.GetValue(0));
-
-		internal static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
+		/// <typeparam name="T">Return type of the source queue</typeparam>
+		/// <returns>An enumerable of the items contained within the queue.</returns>
+		public static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 		{
 			while (source.Count != 0)
 				yield return source.Dequeue();
 		}
 
 		/// <summary>
-		/// Reads the first column from every record.
+		/// Reads the first column from every record and returns the results as a list..
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <returns>The list of values.</returns>
+		public static IEnumerable<object> FirstOrdinalResults(this IDataReader reader)
+		{
+			var results = new Queue<object>(reader.Iterate(r => r.GetValue(0)));
+			return results.DequeueEach().DBNullToNull();
+		}
+
+		/// <summary>
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <returns>The enumerable of casted values.</returns>
+		public static IEnumerable<object> FirstOrdinalResults(this IDbCommand command)
+		{
+			var results = new Queue<object>(IterateReaderInternal(command, CommandBehavior.Default, r => r.GetValue(0)));
+			return results.DequeueEach().DBNullToNull();
+		}
+
+		/// <summary>
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command)
+			=> command.FirstOrdinalResults().Cast<T0>();
+
+		/// <summary>
+		/// Reads the first column from every record and returns the results..
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <returns>The list of values.</returns>
+		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbDataReader reader)
 		{
 			var results = new Queue<object>();
-			command.IterateReader(r => results.Enqueue(r.GetValue(0)));
-			return results.DequeueEach().Cast<T0>();
+			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)));
+			return results.DequeueEach().DBNullToNull();
 		}
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results as a list.
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
 		/// </summary>
-		/// <returns>The list of values.</returns>
-		public static Task<List<object>> FirstOrdinalResultsAsync(this DbDataReader reader)
-			=> reader.ToListAsync(r => r.GetValue(0));
+		/// <returns>The enumerable of casted values.</returns>
+		public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
+			=> reader.FirstOrdinalResults().Cast<T0>();
 
 		/// <summary>
-		/// Reads the first column from every record.
+		/// Reads the first column from every record and returns the results..
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <returns>The list of values.</returns>
+		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command)
+		{
+			var results = new Queue<object>();
+			await command.ForEachAsync(r => results.Enqueue(r.GetValue(0)));
+			return results.DequeueEach().DBNullToNull();
+		}
+
+		/// <summary>
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command)
-		{
-			var results = new Queue<object>();
-			await command.IterateReaderAsync(r => results.Enqueue(r.GetValue(0)));
-			return results.DequeueEach().Cast<T0>();
-		}
+			=> (await command.FirstOrdinalResultsAsync()).Cast<T0>();
 
 		/// <summary>
 		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.

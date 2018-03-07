@@ -175,7 +175,7 @@ namespace Open.Database.Extensions
         /// <param name="token">An optional cancellation token.</param>
         /// <returns></returns>
         public Task IterateReaderAsync(Action<IDataRecord> handler, CancellationToken? token = null)
-            => ExecuteAsync(command => command.IterateReaderAsync(handler, token));
+            => ExecuteAsync(command => command.ForEachAsync(handler, token));
 
         /// <summary>
         /// Iterates asynchronously until the handler returns false.  Then cancels.
@@ -218,15 +218,16 @@ namespace Open.Database.Extensions
 
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results as a list.
+		/// Reads the first column from every record and returns the results as a list..
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The list of transformed records.</returns>
-		public Task<List<object>> FirstOrdinalResultsAsync()
-			=> ToListAsync(r => r.GetValue(0));
-
+		public Task<IEnumerable<object>> FirstOrdinalResultsAsync()
+			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync());
 
 		/// <summary>
-		/// Reads the first column from every record.
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()

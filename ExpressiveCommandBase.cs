@@ -498,6 +498,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve()
@@ -505,6 +506,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -513,6 +515,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
@@ -522,6 +525,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -530,6 +534,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
 		/// </summary>
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
@@ -560,15 +565,17 @@ namespace Open.Database.Extensions
 			=> Execute(command => command.Results<T>(fieldMappingOverrides));
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results as a list.
+		/// Reads the first column from every record and returns the results as a list..
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The list of transformed records.</returns>
-		public List<object> FirstOrdinalResults()
-			=> ToList(r => r.GetValue(0));
+		public IEnumerable<object> FirstOrdinalResults()
+			=> Execute(command => command.FirstOrdinalResults());
 
 
 		/// <summary>
-		/// Reads the first column from every record.
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public IEnumerable<T0> FirstOrdinalResults<T0>()

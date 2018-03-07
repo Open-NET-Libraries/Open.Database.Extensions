@@ -368,12 +368,14 @@
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
+            DBNull values are left unchanged (retained).
             </summary>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -381,6 +383,7 @@
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Int32,System.Int32[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
@@ -389,6 +392,7 @@
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="columnNames">The column names to select.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -396,6 +400,7 @@
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Retrieve(System.String,System.String[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
@@ -421,13 +426,15 @@
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.FirstOrdinalResults">
             <summary>
-            Reads the first column from every record and returns the results as a list.
+            Reads the first column from every record and returns the results as a list..
+            DBNull values are converted to null.
             </summary>
             <returns>The list of transformed records.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.FirstOrdinalResults``1">
             <summary>
-            Reads the first column from every record.
+            Reads the first column from every record..
+            DBNull values are converted to null.
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
@@ -674,13 +681,15 @@
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync">
             <summary>
-            Reads the first column from every record and returns the results as a list.
+            Reads the first column from every record and returns the results as a list..
+            DBNull values are converted to null.
             </summary>
             <returns>The list of transformed records.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync``1">
             <summary>
-            Reads the first column from every record.
+            Reads the first column from every record..
+            DBNull values are converted to null.
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
@@ -799,6 +808,27 @@
             Core non-DB-specific extensions for building a command and retrieving data using best practices.
             </summary>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.DBNullToNull(System.Collections.Generic.IEnumerable{System.Object})">
+            <summary>
+            Any DBNull values are converted to null.
+            </summary>
+            <param name="values">The source values.</param>
+            <returns>The converted enumerable.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.DBNullToNull(System.Object[])">
+            <summary>
+            Returns a copy of this array with any DBNull values converted to null.
+            </summary>
+            <param name="values">The source values.</param>
+            <returns>A new array containing the results with.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ReplaceDBNullWithNull(System.Object[])">
+            <summary>
+            Replaces any DBNull values in the array with null;
+            </summary>
+            <param name="values">The source values.</param>
+            <returns>The converted enumerable.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">
             <summary>
             Shortcut for creating an IDbCommand from any IDbConnection.
@@ -874,6 +904,20 @@
             <param name="reader">The IDataReader to iterate.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord})">
+            <summary>
+            Iterates all records from an IDataReader.
+            </summary>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task})">
+            <summary>
+            Iterates all records from an IDataReader.
+            </summary>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.GetNames(System.Data.IDataRecord)">
             <summary>
             Returns all the column names for the current result set.
@@ -924,6 +968,7 @@
         <member name="M:Open.Database.Extensions.Extensions.AsEnumerable(System.Data.IDataReader)">
             <summary>
             Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <returns>An enumeration of the values returned from a data reader.</returns>
@@ -931,6 +976,7 @@
         <member name="M:Open.Database.Extensions.Extensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
@@ -1166,7 +1212,7 @@
             <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously iterates all records from an IDataReader.
             </summary>
@@ -1260,6 +1306,7 @@
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.Int32,System.String}})">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
+            DBNull values are converted to null.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnMap">The column ids and resultant names to query.</param>
@@ -1268,6 +1315,7 @@
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.ValueTuple{System.Int32,System.String}})">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
+            DBNull values are converted to null.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnMap">The column ids and resultant names to query.</param>
@@ -1276,6 +1324,7 @@
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.ISet{System.String})">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
+            DBNull values are converted to null.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnNames">The column names to query.</param>
@@ -1284,6 +1333,7 @@
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.String[])">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
+            DBNull values are converted to null.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnNames">The column names to query.  If none specified, the result will contain all columns.</param>
@@ -1292,6 +1342,7 @@
         <member name="M:Open.Database.Extensions.Extensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Returns the specified column data of IDataRecord as a Dictionary.
+            DBNull values are converted to null.
             </summary>
             <param name="record">The IDataRecord to extract values from.</param>
             <param name="columnNames">The column names to query.</param>
@@ -1300,6 +1351,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader)">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -1307,6 +1359,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
@@ -1315,6 +1368,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Int32,System.Int32[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -1324,6 +1378,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="columnNames">The column names to select.</param>
@@ -1332,6 +1387,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader,System.String,System.String[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -1341,6 +1397,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand)">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -1348,6 +1405,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
@@ -1356,6 +1414,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Int32,System.Int32[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -1365,6 +1424,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="columnNames">The column names to select.</param>
@@ -1373,6 +1433,7 @@
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDbCommand,System.String,System.String[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="command">The IDbCommand to generate the reader from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -1382,6 +1443,7 @@
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
@@ -1389,6 +1451,7 @@
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
@@ -1397,6 +1460,7 @@
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Int32,System.Int32[])">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -1406,6 +1470,7 @@
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
             <summary>
             Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="columnNames">The column names to select.</param>
@@ -1415,33 +1480,67 @@
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.String,System.String[])">
             <summary>
             Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.DequeueEach``1(System.Collections.Generic.Queue{``0})">
+            <summary>
+            Useful extension for dequeuing items from a queue.
+            Not thread safe but queueing/dequeueing items in between items is supported.
+            </summary>
+            <typeparam name="T">Return type of the source queue</typeparam>
+            <returns>An enumerable of the items contained within the queue.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDataReader)">
             <summary>
-            Reads the first column from every record and returns the results as a list.
+            Reads the first column from every record and returns the results as a list..
+            DBNull values are converted to null.
             </summary>
             <returns>The list of values.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDbCommand)">
+            <summary>
+            Reads the first column from every record..
+            DBNull values are converted to null.
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDbCommand)">
             <summary>
-            Reads the first column from every record.
+            Reads the first column from every record..
+            DBNull values are converted to null.
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)">
             <summary>
-            Reads the first column from every record and returns the results as a list.
+            Reads the first column from every record and returns the results..
+            DBNull values are converted to null.
+            </summary>
+            <returns>The list of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)">
+            <summary>
+            Reads the first column from every record..
+            DBNull values are converted to null.
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)">
+            <summary>
+            Reads the first column from every record and returns the results..
+            DBNull values are converted to null.
             </summary>
             <returns>The list of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)">
             <summary>
-            Reads the first column from every record.
+            Reads the first column from every record..
+            DBNull values are converted to null.
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
@@ -1684,6 +1783,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
@@ -1691,6 +1791,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
@@ -1698,6 +1799,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1706,6 +1808,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1714,6 +1817,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1722,6 +1826,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1730,6 +1835,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
@@ -1737,6 +1843,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Returns a block that attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1745,6 +1852,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Returns a block that attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1753,6 +1861,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.ValueTuple{System.String,System.String}[])">
             <summary>
             Returns a block that attempts to map the fields to type T.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -1761,6 +1870,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
@@ -1768,6 +1878,7 @@
         <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>

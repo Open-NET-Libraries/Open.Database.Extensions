@@ -54,6 +54,7 @@ namespace Open.Database.Extensions
 	{
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
@@ -67,21 +68,23 @@ namespace Open.Database.Extensions
 				var r = q.Dequeue();
 				var d = new Dictionary<string, object>(count);
 				for (var i = 0; i < count; i++)
-					d.Add(names[i], r[i]);
+					d.Add(names[i], Extensions.DBNullValueToNull(r[i]));
 				yield return d;
 			}
 		}
 
-        /// <summary>
-        /// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-        /// </summary>
-        /// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-        /// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        public static async Task<IEnumerable<Dictionary<string, object>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object[]>>> source)
+		/// <summary>
+		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static async Task<IEnumerable<Dictionary<string, object>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object[]>>> source)
             => (await source).DequeueAsMappedDictionaries();
 
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -95,6 +98,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -105,6 +109,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -118,6 +123,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -127,12 +133,13 @@ namespace Open.Database.Extensions
 			=> source.DequeueAs<T>(fieldMappingOverrides?.Select(kvp=>(kvp.Key,kvp.Value)));
 
 
-        /// <summary>
-        /// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-        /// </summary>
-        /// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-        /// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        public static ISourceBlock<Dictionary<string, object>> AsMappedDictionaries(this QueryResult<ISourceBlock<object[]>> source)
+		/// <summary>
+		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static ISourceBlock<Dictionary<string, object>> AsMappedDictionaries(this QueryResult<ISourceBlock<object[]>> source)
         {
             var q = source.Result;
             var names = source.Names;
@@ -142,7 +149,7 @@ namespace Open.Database.Extensions
             {
                 var d = new Dictionary<string, object>(count);
                 for (var i = 0; i < count; i++)
-                    d.Add(names[i], r[i]);
+                    d.Add(names[i], Extensions.DBNullValueToNull(r[i]));
                 return d;
             });
 
@@ -151,13 +158,14 @@ namespace Open.Database.Extensions
             return x;
         }
 
-        /// <summary>
-        /// Returns a block that attempts to map the fields to type T.
-        /// </summary>
-        /// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <summary>
+		/// Returns a block that attempts to map the fields to type T.
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-        /// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
+		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
             where T : new()
         {
             var x = new Transformer<T>(fieldMappingOverrides);
@@ -166,6 +174,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Returns a block that attempts to map the fields to type T.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -174,22 +183,24 @@ namespace Open.Database.Extensions
 			where T : new()
 			=> To<T>(source, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
-        /// <summary>
-        /// Returns a block that attempts to map the fields to type T.
-        /// </summary>
-        /// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-        /// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-        /// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, params (string Field, string Column)[] fieldMappingOverrides)
+		/// <summary>
+		/// Returns a block that attempts to map the fields to type T.
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, params (string Field, string Column)[] fieldMappingOverrides)
             where T : new()
             => To<T>(source, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
-        /// <summary>
-        /// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-        /// </summary>
-        /// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-        /// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        public static IEnumerable<Dictionary<string, object>> AsMappedDictionaries(this QueryResult<IEnumerable<object[]>> source)
+		/// <summary>
+		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+		public static IEnumerable<Dictionary<string, object>> AsMappedDictionaries(this QueryResult<IEnumerable<object[]>> source)
 		{
 			var q = source.Result;
 			var names = source.Names;
@@ -198,13 +209,14 @@ namespace Open.Database.Extensions
 			{
 				var d = new Dictionary<string, object>(count);
 				for (var i = 0; i < count; i++)
-					d.Add(names[i], r[i]);
+					d.Add(names[i], Extensions.DBNullValueToNull(r[i]));
 				yield return d;
 			}
 		}
 
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+		/// DBNull values are converted to null.
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
