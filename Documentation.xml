@@ -192,6 +192,18 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The result of the transform.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReturn">
+            <summary>
+            Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
+            </summary>
+            <returns>The value from the return parameter.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReturn``1">
+            <summary>
+            Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
+            </summary>
+            <returns>The value from the return parameter.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderInternal``1(System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
@@ -302,7 +314,7 @@
             <summary>
             Calls ExecuteNonQuery on the underlying command.
             </summary>
-            <returns>The integer responise from the method.</returns>
+            <returns>The integer response from the method. (Records updated.)</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteScalar">
             <summary>
@@ -567,6 +579,18 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The result of the transform.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync">
+            <summary>
+            Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
+            </summary>
+            <returns>The value from the return parameter.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync``1">
+            <summary>
+            Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
+            </summary>
+            <returns>The value from the return parameter.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior)">
             <summary>

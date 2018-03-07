@@ -84,6 +84,35 @@ namespace Open.Database.Extensions
         }
 
         /// <summary>
+        /// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
+        /// </summary>
+        /// <returns>The value from the return parameter.</returns>
+        public async Task<object> ExecuteReturnAsync()
+        {
+            using (var con = ConnectionFactory.Create())
+            using (var cmd = con.CreateCommand(
+                Type, Command, Timeout))
+            {
+                var c = cmd as TCommand;
+                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                AddParams(c);
+                var returnParameter = c.CreateParameter();
+                returnParameter.Direction = ParameterDirection.ReturnValue;
+                cmd.Parameters.Add(returnParameter);
+                await con.OpenAsync();
+                await c.ExecuteNonQueryAsync();
+                return returnParameter.Value;
+            }
+        }
+
+        /// <summary>
+        /// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
+        /// </summary>
+        /// <returns>The value from the return parameter.</returns>
+        public async Task<T> ExecuteReturnAsync<T>()
+            => (T)(await ExecuteReturnAsync());
+
+        /// <summary>
         /// Asynchronously executes a reader on a command with a handler function.
         /// </summary>
         /// <param name="handler">The handler function for the data reader.</param>
