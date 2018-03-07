@@ -270,13 +270,41 @@ namespace Open.Database.Extensions
 			}
 		}
 
-		/// <summary>
-		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <returns>The results of each transformation.</returns>
-		protected IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform)
+        /// <summary>
+        /// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
+        /// </summary>
+        /// <returns>The value from the return parameter.</returns>
+        public object ExecuteReturn()
+        {
+            using (var con = ConnectionFactory.Create())
+            using (var cmd = con.CreateCommand(Type, Command, Timeout))
+            {
+                var c = cmd as TCommand;
+                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                AddParams(c);
+                var returnParameter = c.CreateParameter();
+                returnParameter.Direction = ParameterDirection.ReturnValue;
+                c.Parameters.Add(returnParameter);
+                con.Open();
+                c.ExecuteNonQuery();
+                return returnParameter.Value;
+            }
+        }
+
+        /// <summary>
+        /// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
+        /// </summary>
+        /// <returns>The value from the return parameter.</returns>
+        public T ExecuteReturn<T>()
+            => (T)ExecuteReturn();
+
+        /// <summary>
+        /// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
+        /// </summary>
+        /// <typeparam name="T">The return type of the transform function.</typeparam>
+        /// <param name="transform">The transform function for each IDataRecord.</param>
+        /// <returns>The results of each transformation.</returns>
+        protected IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform)
 		{
 			using (var con = ConnectionFactory.Create())
 			using (var cmd = con.CreateCommand(Type, Command, Timeout))
@@ -408,15 +436,15 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Calls ExecuteNonQuery on the underlying command.
 		/// </summary>
-		/// <returns>The integer responise from the method.</returns>
+		/// <returns>The integer response from the method. (Records updated.)</returns>
 		public int ExecuteNonQuery()
-			=> Execute(command => command.ExecuteNonQuery());
+			=> Execute(command => command.ExecuteNonQuery());           
 
-		/// <summary>
-		/// Calls ExecuteScalar on the underlying command.
-		/// </summary>
-		/// <returns>The varlue returned from the method.</returns>
-		public object ExecuteScalar()
+        /// <summary>
+        /// Calls ExecuteScalar on the underlying command.
+        /// </summary>
+        /// <returns>The varlue returned from the method.</returns>
+        public object ExecuteScalar()
 			=> Execute(command => command.ExecuteScalar());
 
 		/// <summary>
