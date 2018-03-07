@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -22,6 +24,20 @@ namespace Open.Database.Extensions
 		internal static bool IsStillAlive<T>(this ITargetBlock<T> task)
 		{
 			return IsStillAlive(task.Completion);
+		}
+
+		// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
+		internal static Action<T, object> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)
+		{
+			var targetType = propertyInfo.DeclaringType;
+			var methodInfo = propertyInfo.GetSetMethod();
+			var exTarget = Expression.Parameter(targetType, "t");
+			var exValue = Expression.Parameter(typeof(object), "p");
+			var exBody = Expression.Call(exTarget, methodInfo,
+			   Expression.Convert(exValue, propertyInfo.PropertyType));
+			var lambda = Expression.Lambda<Action<T, object>>(exBody, exTarget, exValue);
+			var action = lambda.Compile();
+			return action;
 		}
 
 		internal static object DBNullValueToNull(object value)
