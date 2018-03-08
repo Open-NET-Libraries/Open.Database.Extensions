@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Open.Database.Extensions </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Open.Database.Extensions ">
+    <meta name="generator" content="docfx 2.32.0.0">
+    
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <meta property="docfx:navrel" content="toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="index.html">
+                <img id="logo" class="svg" src="logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="opendatabaseextensions">Open.Database.Extensions</h1>
+
+<p>Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.</p>
+<p><a href="https://electricessence.github.io/Open.Database.Extensions/Documentation.html">Full API Documentation Click Here</a></p>
+<h2 id="connection-factories">Connection Factories</h2>
+<p>Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.  A <code>SqlConnectionFactory</code> is provided and can be overriden to provide more specific dependency injection configurations.</p>
+<h2 id="expressive-commands">Expressive Commands</h2>
+<p>The provided expressive command classes allow for an expressive means to append parameters and execute the results without lenghty complicated setup.</p>
+<p>Extensions are provied to create commands from connection factories.</p>
+<h5 id="example">Example</h5>
+<pre><code class="lang-cs">var result = connectionFactory
+   .StoredProcedure(&quot;[procedure name]&quot;)
+   .AddParam(&quot;a&quot;,1)
+   .AddParam(&quot;b&quot;,true)
+   .AddParam(&quot;c&quot;,&quot;hello&quot;)
+   .ExecuteScalar();
+</code></pre><h2 id="asynchronous">Asynchronous</h2>
+<p>End-to-end asynchronous methods suffixed with <code>Async</code>.</p>
+<p>When using the SQL Client, asychronous methods are available as well as <code>.ToTargetBlockAsync&lt;T&gt;(target)</code> and <code>.AsSourceBlockAsync&lt;T&gt;()</code> Dataflow methods.</p>
+<h2 id="extensions">Extensions</h2>
+<p>Instead of writing this:</p>
+<pre><code class="lang-cs">var myResult = new List&lt;T&gt;();
+using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+{
+   while(await reader.ReadAsync())
+     list.Add(transform(reader));
+}
+</code></pre><p>Is now simplifed to this:</p>
+<pre><code class="lang-cs">var myResult = await cmd.ToListAsync(transform);
+</code></pre><h2 id="deferred-transformation">Deferred Transformation</h2>
+<p>In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.</p>
+<h4 id="resultst-and-resultsasynct"><code>Results&lt;T&gt;()</code> and <code>ResultsAsync&lt;T&gt;()</code></h4>
+<p>Queues all the data.  Then using the provided type <code>T</code> entity, the data is coerced by which properties intersect with the ones available to the <code>IDataReader</code>.</p>
+<p>Optionally a field to column override map can be passed as a parameter.  If a column is set as <code>null</code> then that field is ignored (not applied to the model).</p>
+<h5 id="examples">Examples</h5>
+<p>If all the columns in the database map exactly to a field: (A column that has no associated field/property is ignored.)</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;();
+</code></pre><p>If the database fields don&#39;t map exactly:</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;(
+ (Field:&quot;FirstName&quot;, Column:&quot;first_name&quot;),
+ (Field:&quot;LastName&quot;, Column:&quot;last_name&quot;)));
+</code></pre><p>or</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;(
+ (&quot;FirstName&quot;, &quot;first_name&quot;),
+ (&quot;LastName&quot;, &quot;last_name&quot;));
+</code></pre><p>or</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;(new Dictionary&lt;string,string&gt;{
+ {&quot;FirstName&quot;, &quot;first_name&quot;},
+ {&quot;LastName&quot;, &quot;last_name&quot;});
+</code></pre><h4 id="retrieve-and-retrieveasync"><code>Retrieve()</code> and <code>RetrieveAsync()</code></h4>
+<p>Queues all the data.  Returns a <code>QueryResult&lt;Queue&lt;object[]&gt;&gt;</code> containing the requested data and column information.  The <code>.AsDequeueingMappedEnumerable()</code> extension will iteratively convert the results to dictionaries for ease of access.</p>
+<h4 id="assourceblockasynct"><code>AsSourceBlockAsync&lt;T&gt;()</code></h4>
+<p>(Fully asynchronous.) Retuns a Dataflow source block.  Then asynchronously buffers and transforms the results allowing for any possible Dataflow configuration.  The source block is marked as complete when there are no more results.  If the block is somehow marked as complete externally, the flow of data will stop and the connection will close.</p>
+<h3 id="assourceblockasynct-versus-resultsasynct"><code>AsSourceBlockAsync&lt;T&gt;()</code> versus <code>ResultsAsync&lt;T&gt;</code></h3>
+<p>Depending on the level of asynchrony in your application, you may want to avoid too much buffering of data. </p>
+<p><code>AsSourceBlockAsync&lt;T&gt;()</code> is fully asynchronous from end-to-end and can keep total buffering to a minimum by consuming (receiving) results as fast as possible, but may incur additional latency between reads.</p>
+<p><code>ResultsAsync&lt;T&gt;()</code> is fully asynchronous from end-to-end but returns an <code>IEnumerable&lt;T&gt;</code> that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.</p>
+<p>Both methods ultimately are using a <code>Queue&lt;object[]&gt;</code> or <code>ConcurrentQueue&lt;object[]&gt;</code> (Dataflow) to buffer the data, but <code>ResultsAsync&lt;T&gt;()</code> buffers the entire data set before dequeuing and transforming the results.</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/README.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
+  </body>
+</html>

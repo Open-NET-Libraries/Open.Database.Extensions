@@ -1,0 +1,284 @@
+{
+  "homepages": [],
+  "source_base_path": "D:/Users/essence/Development/- GitHub/Open.Database.Extensions",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Conceptual",
+      "source_relative_path": "README.md",
+      "output": {
+        ".html": {
+          "relative_path": "README.html",
+          "hash": "7Hf16YqHxpYx2uBGqVYlTA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.html",
+          "hash": "6Fx7HYiRZBK60duXNyEjeQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.DbConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.DbConnectionFactory.html",
+          "hash": "LgByF+FTBdxZO9UWIfSvJg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.html",
+          "hash": "iFHK5kw/DKp8cPmsUtj6Dw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.html",
+          "hash": "0xJUVbAmi2R/6EqIX38gXg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.html",
+          "hash": "Pt4KLzrjPfA/vcnMrc/+2A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html",
+          "hash": "JRtetQaqzrrlse1mIVCuQA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Extensions.html",
+          "hash": "yzHItkGqqeZ3AdjsF9LPiQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.html",
+          "hash": "N8vtwZUVIa3Xune3O56IPg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IDbConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory.html",
+          "hash": "xRDSAdbwppqZh0/ws0CSeA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.QueryResult-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.QueryResult-1.html",
+          "hash": "0vyMQpNlnHOjAIFpJSEQWQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.QueryResultExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.QueryResultExtensions.html",
+          "hash": "YD+BCh1F3sBGFhATsKCcKg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html",
+          "hash": "TVVrZBcN8XTpXf4//3cmiw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.html",
+          "hash": "CbiYtFUW4Ad2T5IqszaRbA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.html",
+          "hash": "emPgprrAY0/vDxuH+NzMvg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.html",
+          "hash": "6PATd3XfiTTnkKjS9FJFAA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.html",
+          "hash": "5oPEiD6g3syXjO3i6RCI1g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "api/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/index.html",
+          "hash": "mkom4i3ikQG/qRwMFfcP6w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "tQwfqXmzCqTtAnwWXnvxig=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "zUEcqxeC8MmPdFio0fKEQA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build"
+      },
+      "processors": {
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot suppport incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
+        "incrementalPhase": "postProcessing"
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

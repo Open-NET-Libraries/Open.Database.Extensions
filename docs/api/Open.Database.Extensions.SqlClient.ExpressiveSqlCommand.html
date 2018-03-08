@@ -1,0 +1,562 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class ExpressiveSqlCommand
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class ExpressiveSqlCommand
+   ">
+    <meta name="generator" content="docfx 2.32.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand">
+  
+  
+  <h1 id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand" class="text-break">Class ExpressiveSqlCommand
+  </h1>
+  <div class="markdown level0 summary"><p>A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html">ExpressiveCommandBase</a>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>, <span class="xref">System.Data.SqlClient.SqlCommand</span>, <span class="xref">System.Data.SqlDbType</span>, <a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a>&gt;</div>
+    <div class="level2"><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html">ExpressiveDbCommandBase</a>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>, <span class="xref">System.Data.SqlClient.SqlCommand</span>, <span class="xref">System.Data.SqlDbType</span>, <a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a>&gt;</div>
+    <div class="level3"><span class="xref">ExpressiveSqlCommand</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_System_Func__1_System_Threading_Tasks_Task__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteAsync(Func&lt;SqlCommand, Task&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync__1_System_Func__1_System_Threading_Tasks_Task___0___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteAsync&lt;T&gt;(Func&lt;SqlCommand, Task&lt;T&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReturnAsync()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync__1">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReturnAsync&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task__System_Data_CommandBehavior_">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReaderAsync(Func&lt;DbDataReader, Task&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync__1_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task___0___System_Data_CommandBehavior_">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReaderAsync&lt;T&gt;(Func&lt;DbDataReader, Task&lt;T&gt;&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteNonQueryAsync()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalarAsync()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object___0__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalarAsync&lt;T&gt;(Func&lt;Object, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalarAsync&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_Task___0___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalarAsync&lt;T&gt;(Func&lt;Object, Task&lt;T&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsync_System_Action_System_Data_IDataRecord__System_Nullable_System_Threading_CancellationToken__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReaderAsync(Action&lt;IDataRecord&gt;, Nullable&lt;CancellationToken&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Boolean__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReaderAsyncWhile(Func&lt;IDataRecord, Boolean&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task_System_Boolean___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReaderAsyncWhile(Func&lt;IDataRecord, Task&lt;Boolean&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_TakeAsync__1_System_Func_System_Data_IDataRecord___0__System_Int32_">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.TakeAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.FirstOrdinalResultsAsync()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync__1">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.FirstOrdinalResultsAsync&lt;T0&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Int32_System_Int32___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.RetrieveAsync(Int32, Int32[])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_String_System_String___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.RetrieveAsync(String, String[])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ToTargetBlockAsync__1_System_Threading_Tasks_Dataflow_ITargetBlock___0__System_Func_System_Data_IDataRecord___0__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ToTargetBlockAsync&lt;T&gt;(ITargetBlock&lt;T&gt;, Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Func_System_Data_IDataRecord___0__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlockAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlockAsync&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_ValueTuple_System_String_System_String____">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlockAsync&lt;T&gt;([])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ToListAsync__1_System_Func_System_Data_IDataRecord___0__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ToListAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ResultsAsync&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_ValueTuple_System_String_System_String____">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ResultsAsync&lt;T&gt;([])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlockAsync&lt;T&gt;(IEnumerable&lt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.RetrieveAsync()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Collections_Generic_IEnumerable_System_Int32__">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.RetrieveAsync(IEnumerable&lt;Int32&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Collections_Generic_IEnumerable_System_String__System_Boolean_">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.RetrieveAsync(IEnumerable&lt;String&gt;, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___">ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ResultsAsync&lt;T&gt;(IEnumerable&lt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ConnectionFactory">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ConnectionFactory</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Command">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Command</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Type">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Type</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Params">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Params</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Timeout">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Timeout</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParam_System_String_System_Object__2_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParam(String, Object, SqlDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParam_System_String_System_Object_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParam(String, Object)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParam__1_System_String_System_Nullable___0___2_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParam&lt;T&gt;(String, Nullable&lt;T&gt;, SqlDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParam__1_System_String_System_Nullable___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParam&lt;T&gt;(String, Nullable&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParam_System_String_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParam(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParamIf__1_System_Boolean_System_String_System_Nullable___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParamIf&lt;T&gt;(Boolean, String, Nullable&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParamIf_System_Boolean_System_String_System_Object_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParamIf(Boolean, String, Object)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParamIf_System_Boolean_System_String_System_Object__2_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParamIf(Boolean, String, Object, SqlDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParamIf__1_System_Boolean_System_String_System_Nullable___0___2_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParamIf&lt;T&gt;(Boolean, String, Nullable&lt;T&gt;, SqlDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParamIf_System_Boolean_System_String_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParamIf(Boolean, String)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_SetTimeout_System_UInt16_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.SetTimeout(UInt16)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParams__1_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AddParams(SqlCommand)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Execute_System_Action__1__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Execute(Action&lt;SqlCommand&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Execute__1_System_Func__1___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Execute&lt;T&gt;(Func&lt;SqlCommand, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteReturn">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReturn()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteReturn__1">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReturn&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_IterateReaderInternal__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReaderInternal&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteReader_System_Action_System_Data_IDataReader__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReader(Action&lt;IDataReader&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteReader__1_System_Func_System_Data_IDataReader___0__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteReader&lt;T&gt;(Func&lt;IDataReader, T&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_IterateReader_System_Action_System_Data_IDataRecord__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReader(Action&lt;IDataRecord&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_IterateReaderWhile_System_Func_System_Data_IDataRecord_System_Boolean__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReaderWhile(Func&lt;IDataRecord, Boolean&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_IterateReader__2_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.IterateReader&lt;TEntity, TResult&gt;(Func&lt;IDataRecord, TEntity&gt;, Func&lt;IEnumerable&lt;TEntity&gt;, TResult&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_First__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.First&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_FirstOrDefault__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.FirstOrDefault&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Single__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Single&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_SingleOrDefault__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.SingleOrDefault&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Take__1_System_Int32_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Take&lt;T&gt;(Int32, Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Skip__1_System_Int32_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Skip&lt;T&gt;(Int32, Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_SkipThenTake__1_System_Int32_System_Int32_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.SkipThenTake&lt;T&gt;(Int32, Int32, Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteNonQuery">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteNonQuery()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteScalar">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalar()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteScalar__1">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalar&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ExecuteScalar__1_System_Func_System_Object___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ExecuteScalar&lt;T&gt;(Func&lt;Object, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_LoadTable">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.LoadTable()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_LoadTables">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.LoadTables()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ToList__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ToList&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ToArray__1_System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ToArray&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Retrieve">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Retrieve()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Retrieve_System_Collections_Generic_IEnumerable_System_Int32__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Retrieve(IEnumerable&lt;Int32&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Retrieve_System_Int32_System_Int32___">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Retrieve(Int32, Int32[])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Retrieve_System_Collections_Generic_IEnumerable_System_String__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Retrieve(IEnumerable&lt;String&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Retrieve_System_String_System_String___">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Retrieve(String, String[])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Results__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Results&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Results__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Results&lt;T&gt;(IEnumerable&lt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_FirstOrdinalResults">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.FirstOrdinalResults()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_FirstOrdinalResults__1">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.FirstOrdinalResults&lt;T0&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Results__1_System_ValueTuple_System_String_System_String____">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Results&lt;T&gt;([])</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ToTargetBlock__1_System_Threading_Tasks_Dataflow_ITargetBlock___0__System_Func_System_Data_IDataRecord___0__">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.ToTargetBlock&lt;T&gt;(ITargetBlock&lt;T&gt;, Func&lt;IDataRecord, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AsSourceBlock__1_System_Func_System_Data_IDataRecord___0__System_Boolean_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlock&lt;T&gt;(Func&lt;IDataRecord, T&gt;, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AsSourceBlock__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___System_Boolean_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlock&lt;T&gt;(IEnumerable&lt;&gt;, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AsSourceBlock__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___System_Boolean_">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlock&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AsSourceBlock__1_System_ValueTuple_System_String_System_String____">ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.AsSourceBlock&lt;T&gt;([])</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.SqlClient.html">Open.Database.Extensions.SqlClient</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.dll</h6>
+  <h5 id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class ExpressiveSqlCommand : ExpressiveDbCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__ctor_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_Data_CommandType_System_String_Open_Database_Extensions_ExpressiveCommandBase_System_Data_SqlClient_SqlConnection_System_Data_SqlClient_SqlCommand_System_Data_SqlDbType_Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__Param___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.%23ctor(Open.Database.Extensions.IDbConnectionFactory%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.Data.CommandType%2CSystem.String%2COpen.Database.Extensions.ExpressiveCommandBase%7BSystem.Data.SqlClient.SqlConnection%2CSystem.Data.SqlClient.SqlCommand%2CSystem.Data.SqlDbType%2COpen.Database.Extensions.SqlClient.ExpressiveSqlCommand%7D.Param%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/ExpressiveSqlCommand.cs/#L29">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__ctor_" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__ctor_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_Data_CommandType_System_String_Open_Database_Extensions_ExpressiveCommandBase_System_Data_SqlClient_SqlConnection_System_Data_SqlClient_SqlCommand_System_Data_SqlDbType_Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__Param___" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param[])">ExpressiveSqlCommand(IDbConnectionFactory&lt;SqlConnection&gt;, CommandType, String, ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Param[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected ExpressiveSqlCommand(IDbConnectionFactory&lt;SqlConnection&gt; connFactory, CommandType type, string command, params ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Param[] params)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>&gt;</td>
+        <td><span class="parametername">connFactory</span></td>
+        <td><p>The factory to generate connections from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type&gt;.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;[]</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__ctor_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_Data_CommandType_System_String_System_Collections_Generic_List_Open_Database_Extensions_ExpressiveCommandBase_System_Data_SqlClient_SqlConnection_System_Data_SqlClient_SqlCommand_System_Data_SqlDbType_Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.%23ctor(Open.Database.Extensions.IDbConnectionFactory%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.List%7BOpen.Database.Extensions.ExpressiveCommandBase%7BSystem.Data.SqlClient.SqlConnection%2CSystem.Data.SqlClient.SqlCommand%2CSystem.Data.SqlDbType%2COpen.Database.Extensions.SqlClient.ExpressiveSqlCommand%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/ExpressiveSqlCommand.cs/#L20">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__ctor_" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__ctor_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_Data_CommandType_System_String_System_Collections_Generic_List_Open_Database_Extensions_ExpressiveCommandBase_System_Data_SqlClient_SqlConnection_System_Data_SqlClient_SqlCommand_System_Data_SqlDbType_Open_Database_Extensions_SqlClient_ExpressiveSqlCommand__Param__" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">ExpressiveSqlCommand(IDbConnectionFactory&lt;SqlConnection&gt;, CommandType, String, List&lt;ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Param&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressiveSqlCommand(IDbConnectionFactory&lt;SqlConnection&gt; connFactory, CommandType type, string command, List&lt;ExpressiveCommandBase&lt;SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand&gt;.Param&gt; params = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>&gt;</td>
+        <td><span class="parametername">connFactory</span></td>
+        <td><p>The factory to generate connections from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type&gt;.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_ExpressiveSqlCommand_AddParams_System_Data_SqlClient_SqlCommand_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.AddParams(System.Data.SqlClient.SqlCommand)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/ExpressiveSqlCommand.cs/#L38">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand_AddParams_" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.AddParams*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_ExpressiveSqlCommand_AddParams_System_Data_SqlClient_SqlCommand_" data-uid="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.AddParams(System.Data.SqlClient.SqlCommand)">AddParams(SqlCommand)</h4>
+  <div class="markdown level1 summary"><p>Handles adding the list of parameters to a new command.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override void AddParams(SqlCommand command)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">Open.Database.Extensions.ExpressiveCommandBase&lt;System.Data.SqlClient.SqlConnection, System.Data.SqlClient.SqlCommand, System.Data.SqlDbType, Open.Database.Extensions.SqlClient.ExpressiveSqlCommand&gt;.AddParams(System.Data.SqlClient.SqlCommand)</span></div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_ExpressiveSqlCommand.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.ExpressiveSqlCommand%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/ExpressiveSqlCommand.cs/#L14" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

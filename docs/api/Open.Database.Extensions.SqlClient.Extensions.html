@@ -1,0 +1,727 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class Extensions
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class Extensions
+   ">
+    <meta name="generator" content="docfx 2.32.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.SqlClient.Extensions">
+  
+  
+  <h1 id="Open_Database_Extensions_SqlClient_Extensions" data-uid="Open.Database.Extensions.SqlClient.Extensions" class="text-break">Class Extensions
+  </h1>
+  <div class="markdown level0 summary"><p>SqlClient extensions for building a command and retrieving data using best practices.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">Extensions</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.SqlClient.html">Open.Database.Extensions.SqlClient</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.dll</h6>
+  <h5 id="Open_Database_Extensions_SqlClient_Extensions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class Extensions</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_AddParameter_System_Data_SqlClient_SqlCommand_System_String_System_Object_System_Data_SqlDbType_System_Data_ParameterDirection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.AddParameter(System.Data.SqlClient.SqlCommand%2CSystem.String%2CSystem.Object%2CSystem.Data.SqlDbType%2CSystem.Data.ParameterDirection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L53">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_AddParameter_" data-uid="Open.Database.Extensions.SqlClient.Extensions.AddParameter*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_AddParameter_System_Data_SqlClient_SqlCommand_System_String_System_Object_System_Data_SqlDbType_System_Data_ParameterDirection_" data-uid="Open.Database.Extensions.SqlClient.Extensions.AddParameter(System.Data.SqlClient.SqlCommand,System.String,System.Object,System.Data.SqlDbType,System.Data.ParameterDirection)">AddParameter(SqlCommand, String, Object, SqlDbType, ParameterDirection)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SqlParameter AddParameter(this SqlCommand target, string name, object value, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">value</span></td>
+        <td><p>The value of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.SqlDbType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The DbType of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.ParameterDirection</span></td>
+        <td><span class="parametername">direction</span></td>
+        <td><p>The direction of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_AddParameterType_System_Data_IDbCommand_System_String_System_Data_SqlDbType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.IDbCommand%2CSystem.String%2CSystem.Data.SqlDbType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L87">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_AddParameterType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.AddParameterType*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_AddParameterType_System_Data_IDbCommand_System_String_System_Data_SqlDbType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.SqlDbType)">AddParameterType(IDbCommand, String, SqlDbType)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command a typed (non-input) parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SqlParameter AddParameterType(this IDbCommand target, string name, SqlDbType type)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.SqlDbType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The SqlDbType of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_AddParameterType_System_Data_SqlClient_SqlCommand_System_String_System_Data_SqlDbType_System_Data_ParameterDirection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.SqlClient.SqlCommand%2CSystem.String%2CSystem.Data.SqlDbType%2CSystem.Data.ParameterDirection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L69">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_AddParameterType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.AddParameterType*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_AddParameterType_System_Data_SqlClient_SqlCommand_System_String_System_Data_SqlDbType_System_Data_ParameterDirection_" data-uid="Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.SqlClient.SqlCommand,System.String,System.Data.SqlDbType,System.Data.ParameterDirection)">AddParameterType(SqlCommand, String, SqlDbType, ParameterDirection)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command a typed (non-input) parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SqlParameter AddParameterType(this SqlCommand target, string name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.SqlDbType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The SqlDbType of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.ParameterDirection</span></td>
+        <td><span class="parametername">direction</span></td>
+        <td><p>The direction of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L99">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_Command_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">Command(IDbConnectionFactory&lt;SqlConnection&gt;, String, CommandType)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveSqlCommand for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveSqlCommand Command(this IDbConnectionFactory&lt;SqlConnection&gt; target, string command, CommandType type = CommandType.Text)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>&gt;</td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The connection factory to generate a commands from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a></td>
+        <td><p>The resultant ExpressiveSqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_Command_System_Func_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.Command(System.Func%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L126">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_Command_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_Command_System_Func_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command(System.Func{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">Command(Func&lt;SqlConnection&gt;, String, CommandType)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveSqlCommand for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveSqlCommand Command(this Func&lt;SqlConnection&gt; target, string command, CommandType type = CommandType.Text)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>&gt;</td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The connection factory to generate a commands from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a></td>
+        <td><p>The resultant ExpressiveSqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_CreateCommand_System_Data_SqlClient_SqlConnection_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.CreateCommand(System.Data.SqlClient.SqlConnection%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L22">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_CreateCommand_" data-uid="Open.Database.Extensions.SqlClient.Extensions.CreateCommand*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_CreateCommand_System_Data_SqlClient_SqlConnection_System_Data_CommandType_System_String_System_Int32_" data-uid="Open.Database.Extensions.SqlClient.Extensions.CreateCommand(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,System.Int32)">CreateCommand(SqlConnection, CommandType, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating an SqlCommand from any SqlConnection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SqlCommand CreateCommand(this SqlConnection connection, CommandType type, string commandText, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.  Text, StoredProcedure, or TableDirect.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">commandText</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_CreateStoredProcedureCommand_System_Data_SqlClient_SqlConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand(System.Data.SqlClient.SqlConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L40">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_CreateStoredProcedureCommand_" data-uid="Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_CreateStoredProcedureCommand_System_Data_SqlClient_SqlConnection_System_String_System_Int32_" data-uid="Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand(System.Data.SqlClient.SqlConnection,System.String,System.Int32)">CreateStoredProcedureCommand(SqlConnection, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating an SqlCommand from any SqlConnection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SqlCommand CreateStoredProcedureCommand(this SqlConnection connection, string commandText, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">commandText</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L112">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String)">StoredProcedure(IDbConnectionFactory&lt;SqlConnection&gt;, String)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveSqlCommand StoredProcedure(this IDbConnectionFactory&lt;SqlConnection&gt; target, string command)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>&gt;</td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The connection factory to generate a commands from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a></td>
+        <td><p>The resultant ExpressiveSqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_System_Func_System_Data_SqlClient_SqlConnection__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Func%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L137">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_System_Func_System_Data_SqlClient_SqlConnection__System_String_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Func{System.Data.SqlClient.SqlConnection},System.String)">StoredProcedure(Func&lt;SqlConnection&gt;, String)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveSqlCommand StoredProcedure(this Func&lt;SqlConnection&gt; target, string command)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.SqlClient.SqlConnection</span>&gt;</td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The connection factory to generate a commands from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a></td>
+        <td><p>The resultant ExpressiveSqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L11" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

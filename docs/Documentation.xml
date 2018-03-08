@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<?xml-stylesheet type="text/xsl" href="Documentation.xsl" ?>
+<?xml version="1.0"?>
 <doc>
     <assembly>
         <name>Open.Database.Extensions</name>
