@@ -1,4 +1,5 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="Documentation.xsl" ?>
 <doc>
     <assembly>
         <name>Open.Database.Extensions</name>
@@ -1749,6 +1750,7 @@
             <summary>
             A container for data reader results that also provides the column names and other helpful data methods.
             </summary>
+            <typeparam name="TResult">The type of the result property.</typeparam>
         </member>
         <member name="M:Open.Database.Extensions.QueryResult`1.#ctor(System.Int32[],System.String[],`0)">
             <param name="ordinals">The ordinal values requested</param>

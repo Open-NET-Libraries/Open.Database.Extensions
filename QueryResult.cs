@@ -9,6 +9,7 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// A container for data reader results that also provides the column names and other helpful data methods.
 	/// </summary>
+	/// <typeparam name="TResult">The type of the result property.</typeparam>
 	public class QueryResult<TResult>
 		where TResult : class
 
