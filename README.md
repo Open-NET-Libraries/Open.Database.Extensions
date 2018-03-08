@@ -2,7 +2,7 @@
  
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 
-[Full API Documentation Click Here](https://electricessence.github.io/Open.Database.Extensions/Documentation.html)
+[Full API Documentation Click Here](https://electricessence.github.io/Open.Database.Extensions/api)
 
 ## Connection Factories
 
