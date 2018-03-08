@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>Documentation.xml</DocumentationFile>
+    <DocumentationFile>docs\Documentation.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

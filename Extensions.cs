@@ -655,7 +655,7 @@ namespace Open.Database.Extensions
 		/// Iterates an IDataReader while the predicate returns true.
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate)
 		{
 			while (reader.Read() && predicate(reader)) { }
@@ -778,7 +778,7 @@ namespace Open.Database.Extensions
 		/// Iterates an IDataReader on a command while the predicate returns true.
 		/// </summary>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
-		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public static void IterateReaderWhile(this IDbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -814,7 +814,7 @@ namespace Open.Database.Extensions
 		/// Asynchronously iterates an IDataReader on a command while the predicate returns true.
 		/// </summary>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -826,7 +826,7 @@ namespace Open.Database.Extensions
 		/// Asynchronously iterates an IDataReader on a command while the predicate returns true.
 		/// </summary>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="predicate">The hanlder function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default)
 		{
