@@ -1504,42 +1504,49 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDataReader)">
             <summary>
-            Reads the first column from every record and returns the results as a list..
-            DBNull values are converted to null.
+            Reads the first column values from every record.
+            DBNull values are then converted to null.
             </summary>
-            <returns>The list of values.</returns>
+            <returns>The enumerable first ordinal values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDbCommand)">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDataReader)">
             <summary>
-            Reads the first column from every record..
-            DBNull values are converted to null.
+            Reads the first column values from every record.
+            Any DBNull values are then converted to null and casted to type T0;
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDbCommand)">
+            <summary>
+            Reads the first column values from every record.
+            DBNull values are then converted to null.
+            </summary>
+            <returns>The enumerable first ordinal values.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDbCommand)">
             <summary>
-            Reads the first column from every record..
-            DBNull values are converted to null.
+            Reads the first column values from every record.
+            Any DBNull values are then converted to null and casted to type T0;
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)">
             <summary>
-            Reads the first column from every record and returns the results..
+            Reads the first column values from every record.
             DBNull values are converted to null.
             </summary>
             <returns>The list of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)">
             <summary>
-            Reads the first column from every record..
-            DBNull values are converted to null.
+            Reads the first column values from every record.
+            Any DBNull values are then converted to null and casted to type T0;
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)">
             <summary>
-            Reads the first column from every record and returns the results..
+            Reads the first column values from every record.
             DBNull values are converted to null.
             </summary>
             <returns>The list of values.</returns>
@@ -1547,7 +1554,7 @@
         <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)">
             <summary>
             Reads the first column from every record..
-            DBNull values are converted to null.
+            Any DBNull values are then converted to null and casted to type T0;
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>

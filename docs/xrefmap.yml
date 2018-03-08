@@ -1691,15 +1691,15 @@ references:
   commentId: Overload:Open.Database.Extensions.Extensions.FirstOrdinalResults
   fullName: Open.Database.Extensions.Extensions.FirstOrdinalResults
   nameWithType: Extensions.FirstOrdinalResults
-- uid: Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)
-  name: FirstOrdinalResults<T0>(DbDataReader)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResults__1_System_Data_Common_DbDataReader_
-  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)
-  name.vb: FirstOrdinalResults(Of T0)(DbDataReader)
-  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResults<T0>(System.Data.Common.DbDataReader)
-  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResults(Of T0)(System.Data.Common.DbDataReader)
-  nameWithType: Extensions.FirstOrdinalResults<T0>(DbDataReader)
-  nameWithType.vb: Extensions.FirstOrdinalResults(Of T0)(DbDataReader)
+- uid: Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDataReader)
+  name: FirstOrdinalResults<T0>(IDataReader)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResults__1_System_Data_IDataReader_
+  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDataReader)
+  name.vb: FirstOrdinalResults(Of T0)(IDataReader)
+  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResults<T0>(System.Data.IDataReader)
+  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResults(Of T0)(System.Data.IDataReader)
+  nameWithType: Extensions.FirstOrdinalResults<T0>(IDataReader)
+  nameWithType.vb: Extensions.FirstOrdinalResults(Of T0)(IDataReader)
 - uid: Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDbCommand)
   name: FirstOrdinalResults<T0>(IDbCommand)
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResults__1_System_Data_IDbCommand_
@@ -1736,6 +1736,15 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(Of T0)(System.Data.Common.DbCommand)
   nameWithType: Extensions.FirstOrdinalResultsAsync<T0>(DbCommand)
   nameWithType.vb: Extensions.FirstOrdinalResultsAsync(Of T0)(DbCommand)
+- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)
+  name: FirstOrdinalResultsAsync<T0>(DbDataReader)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_
+  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)
+  name.vb: FirstOrdinalResultsAsync(Of T0)(DbDataReader)
+  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync<T0>(System.Data.Common.DbDataReader)
+  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(Of T0)(System.Data.Common.DbDataReader)
+  nameWithType: Extensions.FirstOrdinalResultsAsync<T0>(DbDataReader)
+  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(Of T0)(DbDataReader)
 - uid: Open.Database.Extensions.Extensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord})
   name: ForEach(IDataReader, Action<IDataRecord>)
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__

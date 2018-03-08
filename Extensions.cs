@@ -1268,10 +1268,10 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results as a list..
-		/// DBNull values are converted to null.
+		/// Reads the first column values from every record.
+		/// DBNull values are then converted to null.
 		/// </summary>
-		/// <returns>The list of values.</returns>
+		/// <returns>The enumerable first ordinal values.</returns>
 		public static IEnumerable<object> FirstOrdinalResults(this IDataReader reader)
 		{
 			var results = new Queue<object>(reader.Iterate(r => r.GetValue(0)));
@@ -1279,10 +1279,18 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Reads the first column from every record..
-		/// DBNull values are converted to null.
+		/// Reads the first column values from every record.
+		/// Any DBNull values are then converted to null and casted to type T0;
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
+		public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDataReader reader)
+			=> reader.FirstOrdinalResults().Cast<T0>();
+
+		/// <summary>
+		/// Reads the first column values from every record.
+		/// DBNull values are then converted to null.
+		/// </summary>
+		/// <returns>The enumerable first ordinal values.</returns>
 		public static IEnumerable<object> FirstOrdinalResults(this IDbCommand command)
 		{
 			var results = new Queue<object>(IterateReaderInternal(command, CommandBehavior.Default, r => r.GetValue(0)));
@@ -1290,15 +1298,15 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Reads the first column from every record..
-		/// DBNull values are converted to null.
+		/// Reads the first column values from every record.
+		/// Any DBNull values are then converted to null and casted to type T0;
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command)
 			=> command.FirstOrdinalResults().Cast<T0>();
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results..
+		/// Reads the first column values from every record.
 		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The list of values.</returns>
@@ -1310,15 +1318,20 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Reads the first column from every record..
-		/// DBNull values are converted to null.
+		/// Reads the first column values from every record.
+		/// Any DBNull values are then converted to null and casted to type T0;
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
-		public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
-			=> reader.FirstOrdinalResults().Cast<T0>();
+		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader)
+		{
+			var results = new Queue<object>();
+			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)));
+			return results.DequeueEach().DBNullToNull().Cast<T0>(); ;
+		}
+
 
 		/// <summary>
-		/// Reads the first column from every record and returns the results..
+		/// Reads the first column values from every record.
 		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The list of values.</returns>
@@ -1331,7 +1344,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Reads the first column from every record..
-		/// DBNull values are converted to null.
+		/// Any DBNull values are then converted to null and casted to type T0;
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command)

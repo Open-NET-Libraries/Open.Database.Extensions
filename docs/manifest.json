@@ -12,7 +12,7 @@
           "hash": "DR8IDy1DcL4qgg3gSbsLRw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -24,7 +24,7 @@
           "hash": "6Fx7HYiRZBK60duXNyEjeQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -36,7 +36,7 @@
           "hash": "LgByF+FTBdxZO9UWIfSvJg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -48,7 +48,7 @@
           "hash": "cA9Vhd57h8mCRcwzqua/tg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -60,7 +60,7 @@
           "hash": "Ypy+OQLOEcbGTzk23yJTKg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -72,7 +72,7 @@
           "hash": "4hmKe3JeleI7pw3cV+R2Qg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -84,7 +84,7 @@
           "hash": "y+2QvbcO9y56VFh62QW2aQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -93,7 +93,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.Extensions.html",
-          "hash": "yzHItkGqqeZ3AdjsF9LPiQ=="
+          "hash": "Y0CKTbA9g90xpuT/On5wkA=="
         }
       },
       "is_incremental": false,
@@ -156,7 +156,7 @@
           "hash": "FGBtSLNa7fJItA1DPwdq5w=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -168,7 +168,7 @@
           "hash": "CbiYtFUW4Ad2T5IqszaRbA=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -180,7 +180,7 @@
           "hash": "emPgprrAY0/vDxuH+NzMvg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -240,7 +240,7 @@
           "hash": "UIUXF/npMwoOBB9FzQVpHw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -263,11 +263,11 @@
         "incrementalPhase": "build"
       },
       "processors": {
-        "ManagedReferenceDocumentProcessor": {
+        "ConceptualDocumentProcessor": {
           "can_incremental": true,
           "incrementalPhase": "build"
         },
-        "ConceptualDocumentProcessor": {
+        "ManagedReferenceDocumentProcessor": {
           "can_incremental": true,
           "incrementalPhase": "build"
         },
