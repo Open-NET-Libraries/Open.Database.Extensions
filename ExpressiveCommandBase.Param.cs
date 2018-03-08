@@ -3,6 +3,7 @@ using System.Data;
 
 namespace Open.Database.Extensions
 {
+
     public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
 		where TConnection : class, IDbConnection
         where TCommand : class, IDbCommand
@@ -13,6 +14,7 @@ namespace Open.Database.Extensions
 #pragma warning disable CS0661 // Type defines operator == or operator != but does not override Object.GetHashCode()
 		/// <summary>
 		/// A struct that represents the param to be created when the command is exectued.
+		/// TDbType facillitates the difference between DbType and SqlDbType.
 		/// </summary>
 		public struct Param
 #pragma warning restore CS0661 // Type defines operator == or operator != but does not override Object.GetHashCode()

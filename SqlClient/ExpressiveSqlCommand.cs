@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Open.Database.Extensions.SqlClient
 {
 
-    /// <summary>
-    /// A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
-    /// </summary>
-    public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand>
+	/// <summary>
+	/// A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
+	/// </summary>
+	public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand>
     {
         /// <param name="connFactory">The factory to generate connections from.</param>
         /// <param name="type">The command type>.</param>

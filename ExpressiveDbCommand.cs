@@ -7,7 +7,7 @@ namespace Open.Database.Extensions
 {
 
     /// <summary>
-    /// A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
+    /// An abstraction for executing commands on a database using best practices and simplified expressive syntax.
     /// </summary>
     public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbCommand, DbType, ExpressiveDbCommand>
     {

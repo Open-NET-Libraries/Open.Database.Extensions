@@ -84,13 +84,15 @@
       <section><p>Generic connection factory implementation that accepts a factory function.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;</a></h4>
-      <section><p>Base class for developing expressive commands.</p>
+      <section><p>Base class for developing expressive commands.
+Includes methods for use with IDbConnection and IDbCommand types.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommand.html">ExpressiveDbCommand</a></h4>
-      <section><p>A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.</p>
+      <section><p>An abstraction for executing commands on a database using best practices and simplified expressive syntax.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html">ExpressiveDbCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;</a></h4>
-      <section><p>An abstraction for executing commands on a database using best practices and simplified expressive syntax.</p>
+      <section><p>An base class for executing commands on a database using best practices and simplified expressive syntax.
+Includes methods for use with DbConnection and DbCommand types.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.Extensions.html">Extensions</a></h4>
       <section><p>Core non-DB-specific extensions for building a command and retrieving data using best practices.</p>
@@ -104,7 +106,8 @@
     <h3 id="structs">Structs
   </h3>
       <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param</a></h4>
-      <section><p>A struct that represents the param to be created when the command is exectued.</p>
+      <section><p>A struct that represents the param to be created when the command is exectued.
+TDbType facillitates the difference between DbType and SqlDbType.</p>
 </section>
     <h3 id="interfaces">Interfaces
   </h3>

@@ -9,7 +9,7 @@
       "output": {
         ".html": {
           "relative_path": "README.html",
-          "hash": "7Hf16YqHxpYx2uBGqVYlTA=="
+          "hash": "DR8IDy1DcL4qgg3gSbsLRw=="
         }
       },
       "is_incremental": false,
@@ -24,7 +24,7 @@
           "hash": "6Fx7HYiRZBK60duXNyEjeQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -36,7 +36,7 @@
           "hash": "LgByF+FTBdxZO9UWIfSvJg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -45,7 +45,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.html",
-          "hash": "iFHK5kw/DKp8cPmsUtj6Dw=="
+          "hash": "cA9Vhd57h8mCRcwzqua/tg=="
         }
       },
       "is_incremental": false,
@@ -57,7 +57,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.html",
-          "hash": "0xJUVbAmi2R/6EqIX38gXg=="
+          "hash": "Ypy+OQLOEcbGTzk23yJTKg=="
         }
       },
       "is_incremental": false,
@@ -69,7 +69,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.html",
-          "hash": "Pt4KLzrjPfA/vcnMrc/+2A=="
+          "hash": "4hmKe3JeleI7pw3cV+R2Qg=="
         }
       },
       "is_incremental": false,
@@ -81,7 +81,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html",
-          "hash": "JRtetQaqzrrlse1mIVCuQA=="
+          "hash": "y+2QvbcO9y56VFh62QW2aQ=="
         }
       },
       "is_incremental": false,
@@ -108,7 +108,7 @@
           "hash": "N8vtwZUVIa3Xune3O56IPg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -120,7 +120,7 @@
           "hash": "xRDSAdbwppqZh0/ws0CSeA=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -132,7 +132,7 @@
           "hash": "0vyMQpNlnHOjAIFpJSEQWQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -144,7 +144,7 @@
           "hash": "YD+BCh1F3sBGFhATsKCcKg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -153,7 +153,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html",
-          "hash": "TVVrZBcN8XTpXf4//3cmiw=="
+          "hash": "FGBtSLNa7fJItA1DPwdq5w=="
         }
       },
       "is_incremental": false,
@@ -180,7 +180,7 @@
           "hash": "emPgprrAY0/vDxuH+NzMvg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -201,7 +201,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.html",
-          "hash": "5oPEiD6g3syXjO3i6RCI1g=="
+          "hash": "sJrhwhAEm8mLN/NQ4iCRCw=="
         }
       },
       "is_incremental": false,
@@ -216,7 +216,7 @@
           "hash": "mkom4i3ikQG/qRwMFfcP6w=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -249,7 +249,7 @@
       "output": {
         ".html": {
           "relative_path": "toc.html",
-          "hash": "168E4uI2WTQelxZjY6YeDA=="
+          "hash": "cVlSiV4jsxyqb2OPmpaphg=="
         }
       },
       "is_incremental": false,
@@ -259,17 +259,16 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": false,
-        "details": "Disable incremental build by force rebuild option.",
+        "can_incremental": true,
         "incrementalPhase": "build"
       },
       "processors": {
-        "ConceptualDocumentProcessor": {
-          "can_incremental": false,
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
           "incrementalPhase": "build"
         },
-        "ManagedReferenceDocumentProcessor": {
-          "can_incremental": false,
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
           "incrementalPhase": "build"
         },
         "TocDocumentProcessor": {
@@ -281,8 +280,8 @@
     },
     {
       "status": {
-        "can_incremental": false,
-        "details": "Cannot support incremental post processing, the reason is: it's disabled.",
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
         "incrementalPhase": "postProcessing"
       },
       "processors": {}
