@@ -15,8 +15,8 @@ namespace Open.Database.Extensions
         /// <param name="type">The command type>.</param>
         /// <param name="command">The SQL command.</param>
         /// <param name="params">The list of params</param>
-        public ExpressiveDbCommand(IDbConnectionFactory<DbConnection> connFactory, CommandType type, string command, List<Param> @params = null)
-            : base(connFactory, type, command, @params)
+        public ExpressiveDbCommand(IDbConnectionFactory<DbConnection> connFactory, CommandType type, string command, List<Param> @params)
+            : base(connFactory, type, command, @params?.ToList())
         {
         }
 
@@ -24,8 +24,26 @@ namespace Open.Database.Extensions
         /// <param name="type">The command type>.</param>
         /// <param name="command">The SQL command.</param>
         /// <param name="params">The list of params</param>
-        protected ExpressiveDbCommand(IDbConnectionFactory<DbConnection> connFactory, CommandType type, string command, params Param[] @params)
-            : this(connFactory, type, command, @params.ToList())
+        public ExpressiveDbCommand(IDbConnectionFactory<DbConnection> connFactory, CommandType type, string command, params Param[] @params)
+            : base(connFactory, type, command, @params?.ToList())
+        {
+        }
+
+        /// <param name="connection">The connection to execute the command on.</param>
+        /// <param name="type">The command type>.</param>
+        /// <param name="command">The SQL command.</param>
+        /// <param name="params">The list of params</param>
+        public ExpressiveDbCommand(DbConnection connection, CommandType type, string command, List<Param> @params)
+            : base(connection, type, command, @params?.ToList())
+        {
+        }
+
+        /// <param name="connection">The connection to execute the command on.</param>
+        /// <param name="type">The command type>.</param>
+        /// <param name="command">The SQL command.</param>
+        /// <param name="params">The list of params</param>
+        public ExpressiveDbCommand(DbConnection connection, CommandType type, string command, params Param[] @params)
+            : this(connection, type, command, @params?.ToList())
         {
         }
 

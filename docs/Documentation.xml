@@ -44,7 +44,12 @@
         </member>
         <member name="F:Open.Database.Extensions.ExpressiveCommandBase`4.ConnectionFactory">
             <summary>
-            THe connection factory to use to generate connections and commands.
+            The connection factory to use to generate connections and commands.
+            </summary>
+        </member>
+        <member name="F:Open.Database.Extensions.ExpressiveCommandBase`4.Connection">
+            <summary>
+            The connection to execute commands on if not using a connection factory.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
@@ -53,8 +58,8 @@
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param[])">
-            <param name="connFactory">The factory to generate connections from.</param>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+            <param name="connection">The connection to execute the command on.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -177,7 +182,19 @@
             <summary>
             Handles adding the list of parameters to a new command.
             </summary>
-            <param name="command"></param>
+            <param name="command">The command to add parameters to.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.UsingConnection(System.Action{`0})">
+            <summary>
+            Handles providing the connection for use with the command.
+            </summary>
+            <param name="action">The handler for use with the connection.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.UsingConnection``1(System.Func{`0,``0})">
+            <summary>
+            Handles providing the connection for use with the command.
+            </summary>
+            <param name="action">The handler for use with the connection.</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Execute(System.Action{`1})">
             <summary>
@@ -552,6 +569,18 @@
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param[])">
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.AddParams(System.Data.Common.DbCommand)">
             <summary>
             Handles adding the list of parameters to a new command.
@@ -574,8 +603,8 @@
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param[])">
-            <param name="connFactory">The factory to generate connections from.</param>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+            <param name="connection">The connection to execute the command on.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -1355,6 +1384,264 @@
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.DequeueEach``1(System.Collections.Generic.Queue{``0})">
+            <summary>
+            Useful extension for dequeuing items from a queue.
+            Not thread safe but queueing/dequeueing items in between items is supported.
+            </summary>
+            <typeparam name="T">Return type of the source queue</typeparam>
+            <returns>An enumerable of the items contained within the queue.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDataReader)">
+            <summary>
+            Reads the first column values from every record.
+            DBNull values are then converted to null.
+            </summary>
+            <returns>The enumerable first ordinal values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDataReader)">
+            <summary>
+            Reads the first column values from every record.
+            Any DBNull values are then converted to null and casted to type T0;
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDbCommand)">
+            <summary>
+            Reads the first column values from every record.
+            DBNull values are then converted to null.
+            </summary>
+            <returns>The enumerable first ordinal values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDbCommand)">
+            <summary>
+            Reads the first column values from every record.
+            Any DBNull values are then converted to null and casted to type T0;
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)">
+            <summary>
+            Reads the first column values from every record.
+            DBNull values are converted to null.
+            </summary>
+            <returns>The list of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)">
+            <summary>
+            Reads the first column values from every record.
+            Any DBNull values are then converted to null and casted to type T0;
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)">
+            <summary>
+            Reads the first column values from every record.
+            DBNull values are converted to null.
+            </summary>
+            <returns>The list of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)">
+            <summary>
+            Reads the first column from every record..
+            Any DBNull values are then converted to null and casted to type T0;
+            </summary>
+            <returns>The enumerable of casted values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(System.Func{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Func{System.Data.Common.DbConnection},System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader through the transform function and posts each record to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="target">The target block to receivethe results.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The SqlDataReader to read from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader through the transform function and posts each record to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDataReader to iterate.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDbCommand,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsFromDataTable``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsFromDataTable``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
+            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.Retrieve(System.Data.IDataReader)">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
@@ -1494,246 +1781,121 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.DequeueEach``1(System.Collections.Generic.Queue{``0})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Func{``0,System.Boolean})">
             <summary>
-            Useful extension for dequeuing items from a queue.
-            Not thread safe but queueing/dequeueing items in between items is supported.
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <typeparam name="T">Return type of the source queue</typeparam>
-            <returns>An enumerable of the items contained within the queue.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDataReader)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Func{System.Boolean})">
             <summary>
-            Reads the first column values from every record.
-            DBNull values are then converted to null.
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <returns>The enumerable first ordinal values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDataReader)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0})">
             <summary>
-            Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
+            Begins a transaction before executing the handler and then commits if no exceptions are thrown.
+            Rolls-back the transaction if the handler throws.
             </summary>
-            <returns>The enumerable of casted values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults(System.Data.IDbCommand)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action)">
             <summary>
-            Reads the first column values from every record.
-            DBNull values are then converted to null.
+            Begins a transaction before executing the handler and then commits if no exceptions are thrown.
+            Rolls-back the transaction if the handler throws.
             </summary>
-            <returns>The enumerable first ordinal values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResults``1(System.Data.IDbCommand)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Boolean})">
             <summary>
-            Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <returns>The enumerable of casted values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection factory to generate a connection from.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
             <summary>
-            Reads the first column values from every record.
-            DBNull values are converted to null.
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <returns>The list of values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection factory to generate a connection from.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
-            Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <returns>The enumerable of casted values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
-            Reads the first column values from every record.
-            DBNull values are converted to null.
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <returns>The list of values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task})">
             <summary>
-            Reads the first column from every record..
-            Any DBNull values are then converted to null and casted to type T0;
+            Begins a transaction before executing the handler and then commits if no exceptions are thrown.
+            Rolls-back the transaction if the handler throws.
             </summary>
-            <returns>The enumerable of casted values.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{System.Threading.Tasks.Task})">
             <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            Begins a transaction before executing the handler and then commits if no exceptions are thrown.
+            Rolls-back the transaction if the handler throws.
             </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>A task containing the list of results.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>A task containing the list of results.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection factory to generate a connection from.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task})">
             <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            Begins a transaction before executing the handler and then commits if the handler returns true.
+            Rolls-back the transaction if the handler returns false or throws.
             </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>A task containing the list of results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDbCommand,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsFromDataTable``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsFromDataTable``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-            Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Iterates an IDataReader through the transform function and posts each record to the target block.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-            <param name="target">The target block to receivethe results.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The SqlDataReader to read from.</param>
-            <param name="target">The target block to receive the results.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="target">The target block to receive the results.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Iterates an IDataReader through the transform function and posts each record to the target block.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDataReader to iterate.</param>
-            <param name="target">The target block to receive the results.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
-            <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String)">
-            <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Command(System.Func{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
-            <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Func{System.Data.Common.DbConnection},System.String)">
-            <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="target">The connection factory to generate a connection from.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>True if the handler returns true.</returns>
         </member>
         <member name="T:Open.Database.Extensions.IDbConnectionFactory">
             <summary>
@@ -1915,6 +2077,18 @@
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param[])">
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type>.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
         <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.AddParams(System.Data.SqlClient.SqlCommand)">
             <summary>
             Handles adding the list of parameters to a new command.
@@ -1974,6 +2148,23 @@
             <param name="name">The name of the parameter.</param>
             <param name="type">The SqlDbType of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(System.Data.SqlClient.SqlConnection,System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveSqlCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Data.SqlClient.SqlConnection,System.String)">
+            <summary>
+            Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
             <summary>

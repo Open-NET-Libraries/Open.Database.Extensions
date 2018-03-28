@@ -24,8 +24,27 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="type">The command type>.</param>
         /// <param name="command">The SQL command.</param>
         /// <param name="params">The list of params</param>
-        protected ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string command, params Param[] @params)
-            : this(connFactory, type, command, @params.ToList())
+        public ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string command, params Param[] @params)
+            : base(connFactory, type, command, @params.ToList())
+        {
+        }
+
+
+        /// <param name="connection">The connection to execute the command on.</param>
+        /// <param name="type">The command type>.</param>
+        /// <param name="command">The SQL command.</param>
+        /// <param name="params">The list of params</param>
+        public ExpressiveSqlCommand(SqlConnection connection, CommandType type, string command, List<Param> @params)
+            : base(connection, type, command, @params?.ToList())
+        {
+        }
+
+        /// <param name="connection">The connection to execute the command on.</param>
+        /// <param name="type">The command type>.</param>
+        /// <param name="command">The SQL command.</param>
+        /// <param name="params">The list of params</param>
+        public ExpressiveSqlCommand(SqlConnection connection, CommandType type, string command, params Param[] @params)
+            : base(connection, type, command, @params?.ToList())
         {
         }
 

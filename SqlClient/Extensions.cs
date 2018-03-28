@@ -92,6 +92,29 @@ namespace Open.Database.Extensions.SqlClient
         /// <summary>
         /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
         /// </summary>
+        /// <param name="target">The connection to execute the command on.</param>
+        /// <param name="command">The command text or stored procedure name to use.</param>
+        /// <param name="type">The command type.</param>
+        /// <returns>The resultant ExpressiveSqlCommand.</returns>
+        public static ExpressiveSqlCommand Command(
+            this SqlConnection target,
+            string command, CommandType type = CommandType.Text)
+            => new ExpressiveSqlCommand(target, type, command);
+
+        /// <summary>
+        /// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
+        /// </summary>
+        /// <param name="target">The connection to execute the command on.</param>
+        /// <param name="command">The command text or stored procedure name to use.</param>
+        /// <returns>The resultant ExpressiveSqlCommand.</returns>
+        public static ExpressiveSqlCommand StoredProcedure(
+            this SqlConnection target,
+            string command)
+            => new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
+            
+        /// <summary>
+        /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
+        /// </summary>
         /// <param name="target">The connection factory to generate a commands from.</param>
         /// <param name="command">The command text or stored procedure name to use.</param>
         /// <param name="type">The command type.</param>
@@ -99,9 +122,7 @@ namespace Open.Database.Extensions.SqlClient
         public static ExpressiveSqlCommand Command(
             this IDbConnectionFactory<SqlConnection> target,
             string command, CommandType type = CommandType.Text)
-        {
-            return new ExpressiveSqlCommand(target, type, command);
-        }
+            => new ExpressiveSqlCommand(target, type, command);
 
         /// <summary>
         /// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -112,9 +133,7 @@ namespace Open.Database.Extensions.SqlClient
         public static ExpressiveSqlCommand StoredProcedure(
             this IDbConnectionFactory<SqlConnection> target,
             string command)
-        {
-            return new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
-        }
+            => new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
 
         /// <summary>
         /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.

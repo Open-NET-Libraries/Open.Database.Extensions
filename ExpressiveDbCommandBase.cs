@@ -28,27 +28,28 @@ namespace Open.Database.Extensions
         /// <param name="type">The command type>.</param>
         /// <param name="command">The SQL command.</param>
         /// <param name="params">The list of params</param>
-        public ExpressiveDbCommandBase(
-			IDbConnectionFactory<TConnection> connFactory,
-			CommandType type,
-			string command,
-			List<Param> @params = null)
-			: base(connFactory, type, command, @params)
+        protected ExpressiveDbCommandBase(
+            IDbConnectionFactory<TConnection> connFactory,
+            CommandType type,
+            string command,
+            List<Param> @params)
+            : base(connFactory, type, command, @params)
         {
         }
 
-		/// <param name="connFactory">The factory to generate connections from.</param>
-		/// <param name="type">The command type>.</param>
-		/// <param name="command">The SQL command.</param>
-		/// <param name="params">The list of params</param>
-		protected ExpressiveDbCommandBase(
-			IDbConnectionFactory<TConnection> connFactory,
-			CommandType type,
-			string command,
-			params Param[] @params)
-			: this(connFactory, type, command, @params.ToList())
+        /// <param name="connection">The connection to execute the command on.</param>
+        /// <param name="type">The command type>.</param>
+        /// <param name="command">The SQL command.</param>
+        /// <param name="params">The list of params</param>
+        protected ExpressiveDbCommandBase(
+            TConnection connection,
+            CommandType type,
+            string command,
+            List<Param> @params)
+            : base(connection, type, command, @params)
         {
         }
+
 
         /// <summary>
         /// Asynchronously executes a reader on a command with a handler function.
@@ -56,15 +57,22 @@ namespace Open.Database.Extensions
         /// <param name="handler">The handler function for each IDataRecord.</param>
         public async Task ExecuteAsync(Func<TCommand, Task> handler)
         {
-            using (var con = ConnectionFactory.Create())
-            using (var cmd = (TCommand)con.CreateCommand(
-                Type, Command, Timeout))
+            TConnection con = Connection ?? ConnectionFactory.Create();
+            try
             {
-                var c = cmd as TCommand;
-                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                AddParams(c);
-                await con.OpenAsync();
-                await handler(c);
+                using (var cmd = (TCommand)con.CreateCommand(
+                Type, Command, Timeout))
+                {
+                    var c = cmd as TCommand;
+                    if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    AddParams(c);
+                    await con.OpenAsync();
+                    await handler(c);
+                }
+            }
+            finally
+            {
+                if (Connection == null) con.Dispose();
             }
         }
 
@@ -76,15 +84,21 @@ namespace Open.Database.Extensions
         /// <returns>The result of the transform.</returns>
         public async Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> transform)
         {
-            using (var con = ConnectionFactory.Create())
-            using (var cmd = con.CreateCommand(
-                Type, Command, Timeout))
+            TConnection con = Connection ?? ConnectionFactory.Create();
+            try
             {
-                var c = cmd as TCommand;
-                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                AddParams(c);
-                await con.OpenAsync();
-                return await transform(c);
+                using (var cmd = con.CreateCommand(Type, Command, Timeout))
+                {
+                    var c = cmd as TCommand;
+                    if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    AddParams(c);
+                    await con.OpenAsync();
+                    return await transform(c);
+                }
+            }
+            finally
+            {
+                if (Connection == null) con.Dispose();
             }
         }
 
@@ -94,19 +108,25 @@ namespace Open.Database.Extensions
         /// <returns>The value from the return parameter.</returns>
         public async Task<object> ExecuteReturnAsync()
         {
-            using (var con = ConnectionFactory.Create())
-            using (var cmd = con.CreateCommand(
-                Type, Command, Timeout))
+            TConnection con = Connection ?? ConnectionFactory.Create();
+            try
             {
-                var c = cmd as TCommand;
-                if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                AddParams(c);
-                var returnParameter = c.CreateParameter();
-                returnParameter.Direction = ParameterDirection.ReturnValue;
-                cmd.Parameters.Add(returnParameter);
-                await con.OpenAsync();
-                await c.ExecuteNonQueryAsync();
-                return returnParameter.Value;
+                using (var cmd = con.CreateCommand(Type, Command, Timeout))
+                {
+                    var c = cmd as TCommand;
+                    if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    AddParams(c);
+                    var returnParameter = c.CreateParameter();
+                    returnParameter.Direction = ParameterDirection.ReturnValue;
+                    cmd.Parameters.Add(returnParameter);
+                    await con.OpenAsync();
+                    await c.ExecuteNonQueryAsync();
+                    return returnParameter.Value;
+                }
+            }
+            finally
+            {
+                if (Connection == null) con.Dispose();
             }
         }
 
@@ -222,29 +242,29 @@ namespace Open.Database.Extensions
         }
 
 
-		/// <summary>
-		/// Reads the first column from every record and returns the results as a list..
-		/// DBNull values are converted to null.
-		/// </summary>
-		/// <returns>The list of transformed records.</returns>
-		public Task<IEnumerable<object>> FirstOrdinalResultsAsync()
-			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync());
+        /// <summary>
+        /// Reads the first column from every record and returns the results as a list..
+        /// DBNull values are converted to null.
+        /// </summary>
+        /// <returns>The list of transformed records.</returns>
+        public Task<IEnumerable<object>> FirstOrdinalResultsAsync()
+            => ExecuteAsync(command => command.FirstOrdinalResultsAsync());
 
-		/// <summary>
-		/// Reads the first column from every record..
-		/// DBNull values are converted to null.
-		/// </summary>
-		/// <returns>The enumerable of casted values.</returns>
-		public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
-			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync<T0>());
+        /// <summary>
+        /// Reads the first column from every record..
+        /// DBNull values are converted to null.
+        /// </summary>
+        /// <returns>The enumerable of casted values.</returns>
+        public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
+            => ExecuteAsync(command => command.FirstOrdinalResultsAsync<T0>());
 
-		/// <summary>
-		/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// </summary>
-		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public Task<QueryResult<Queue<object[]>>> RetrieveAsync(int n, params int[] others)
+        /// <summary>
+        /// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
+        /// </summary>
+        /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+        /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        public Task<QueryResult<Queue<object[]>>> RetrieveAsync(int n, params int[] others)
             => RetrieveAsync(new int[1] { n }.Concat(others));
 
         /// <summary>

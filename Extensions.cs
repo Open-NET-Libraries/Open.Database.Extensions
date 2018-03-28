@@ -7,7 +7,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
@@ -19,11 +18,6 @@ namespace Open.Database.Extensions
 		internal static bool IsStillAlive(this Task task)
 		{
 			return !task.IsCompleted && !task.IsCanceled && !task.IsFaulted;
-		}
-
-		internal static bool IsStillAlive<T>(this ITargetBlock<T> task)
-		{
-			return IsStillAlive(task.Completion);
 		}
 
 		// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
@@ -199,7 +193,6 @@ namespace Open.Database.Extensions
 			target.Parameters.Add(c);
 			return c;
 		}
-
 
 		/// <summary>
 		/// Iterates all records from an IDataReader.
@@ -1024,237 +1017,6 @@ namespace Open.Database.Extensions
 		public static Dictionary<string, object> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
 			=> ToDictionary(record, new HashSet<string>(columnNames));
 
-		static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, int[] ordinals, string[] columnNames = null, bool readStarted = false)
-		{
-			var fieldCount = ordinals.Length;
-			if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
-			else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
-
-			return new QueryResult<Queue<object[]>>(
-				ordinals,
-				columnNames,
-				new Queue<object[]>(AsEnumerableInternal(reader, ordinals, readStarted)));
-		}
-
-		/// <summary>
-		/// Iterates all records within the first result set using an IDataReader and returns the results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader)
-		{
-			var names = reader.GetNames();
-			return new QueryResult<Queue<object[]>>(
-				Enumerable.Range(0, names.Length).ToArray(),
-				names,
-				new Queue<object[]>(AsEnumerable(reader)));
-		}
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
-			=> RetrieveInternal(reader, ordinals.ToArray());
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, int n, params int[] others)
-			=> Retrieve(reader, new int[1] { n }.Concat(others));
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
-		{
-			var columns = reader.GetOrdinalMapping(columnNames);
-			var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-			return RetrieveInternal(reader, ordinalValues, columns.Select(c => c.Name).ToArray());
-		}
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining column names to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, string c, params string[] others)
-			=> Retrieve(reader, new string[1] { c }.Concat(others));
-
-		/// <summary>
-		/// Iterates all records within the first result set using an IDataReader and returns the results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command)
-			=> ExecuteReader(command, reader => reader.Retrieve());
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, IEnumerable<int> ordinals)
-			=> ExecuteReader(command, reader => reader.Retrieve(ordinals));
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, int n, params int[] others)
-			=> ExecuteReader(command, reader => Retrieve(reader, new int[1] { n }.Concat(others)));
-
-		/// <summary>
-		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
-			=> ExecuteReader(command, reader => reader.Retrieve(columnNames));
-
-		/// <summary>
-		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="command">The IDbCommand to generate the reader from.</param>
-		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining column names to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, string c, params string[] others)
-			=> ExecuteReader(command, reader => Retrieve(reader, new string[1] { c }.Concat(others)));
-
-		/// <summary>
-		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The reader to enumerate.</param>
-		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static async Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader)
-		{
-			var fieldCount = reader.FieldCount;
-			var names = reader.GetNames(); // pull before first read.
-			var buffer = new Queue<object[]>();
-
-			while (await reader.ReadAsync())
-			{
-				var row = new object[fieldCount];
-				reader.GetValues(row);
-				buffer.Enqueue(row);
-			}
-
-			return new QueryResult<Queue<object[]>>(
-				Enumerable.Range(0, names.Length).ToArray(),
-				names,
-				buffer);
-		}
-
-		static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, int[] ordinals, string[] columnNames = null, bool readStarted = false)
-		{
-			var fieldCount = ordinals.Length;
-			if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
-			else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
-
-			Func<IDataRecord, object[]> handler;
-			if (fieldCount == 0) handler = record => Array.Empty<object>();
-			else handler = record =>
-			{
-				var row = new object[fieldCount];
-				for (var i = 0; i < fieldCount; i++)
-					row[i] = reader.GetValue(ordinals[i]);
-				return row;
-			};
-
-			var buffer = new Queue<object[]>();
-			if (readStarted || await reader.ReadAsync())
-			{
-				do
-				{
-					buffer.Enqueue(handler(reader));
-				}
-				while (await reader.ReadAsync());
-			}
-
-			return new QueryResult<Queue<object[]>>(
-				ordinals,
-				columnNames,
-				buffer);
-		}
-
-		/// <summary>
-		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The reader to enumerate.</param>
-		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<int> ordinals)
-			=> RetrieveAsyncInternal(reader, ordinals as int[] ?? ordinals.ToArray());
-
-		/// <summary>
-		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The reader to enumerate.</param>
-		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, int n, params int[] others)
-			=> RetrieveAsync(reader, new int[1] { n }.Concat(others));
-
-		/// <summary>
-		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="columnNames">The column names to select.</param>
-		/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
-		{
-			// Validate columns first.
-			var columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
-
-			return RetrieveAsyncInternal(reader,
-				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray());
-		}
-
-		/// <summary>
-		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-		/// DBNull values are left unchanged (retained).
-		/// </summary>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
-		/// <param name="others">The remaining column names to request from the reader for each record.</param>
-		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, string c, params string[] others)
-			=> RetrieveAsync(reader, new string[1] { c }.Concat(others));
-
 		/// <summary>
 		/// Useful extension for dequeuing items from a queue.
 		/// Not thread safe but queueing/dequeueing items in between items is supported.
@@ -1350,231 +1112,38 @@ namespace Open.Database.Extensions
 		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command)
 			=> (await command.FirstOrdinalResultsAsync()).Cast<T0>();
 
-		/// <summary>
-		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>A task containing the list of results.</returns>
-		public static async Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides) where T : new()
-		{
-			if (!await reader.ReadAsync()) return Enumerable.Empty<T>();
+        /// <summary>
+        /// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+        /// </summary>
+        /// <param name="target">The connection to execute the command on.</param>
+        /// <param name="command">The command text or stored procedure name to use.</param>
+        /// <param name="type">The command type.</param>
+        /// <returns>The resultant ExpressiveDbCommand.</returns>
+        public static ExpressiveDbCommand Command(
+            this DbConnection target,
+            string command,
+            CommandType type = CommandType.Text)
+            => new ExpressiveDbCommand(target, type, command);
 
-			var x = new Transformer<T>(fieldMappingOverrides);
-			// Ignore missing columns.
-			var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
+        /// <summary>
+        /// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+        /// </summary>
+        /// <param name="target">The connection to execute the command on.</param>
+        /// <param name="command">The command text or stored procedure name to use.</param>
+        /// <returns>The resultant ExpressiveDbCommand.</returns>
+        public static ExpressiveDbCommand StoredProcedure(
+            this DbConnection target,
+            string command)
+            => new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
 
-			return x.AsDequeueingEnumerable(await RetrieveAsyncInternal(reader,
-				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray(), readStarted: true));
-		}
-
-		/// <summary>
-		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>A task containing the list of results.</returns>
-		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides) where T : new()
-			=> ResultsAsync<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
-
-		/// <summary>
-		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>A task containing the list of results.</returns>
-		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
-			=> ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
-
-		/// <summary>
-		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
-			where T : new()
-		{
-			if (!reader.Read()) return Enumerable.Empty<T>();
-
-			var x = new Transformer<T>(fieldMappingOverrides);
-			// Ignore missing columns.
-			var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
-
-			return x.AsDequeueingEnumerable(RetrieveInternal(reader,
-				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray(), readStarted: true));
-		}
-
-		/// <summary>
-		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDataReader reader, params (string Field, string Column)[] fieldMappingOverrides)
-			where T : new()
-			=> Results<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
-
-		/// <summary>
-		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
-			where T : new()
-			=> Results<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
-
-		/// <summary>
-		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
-			where T : new()
-			=> command.ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
-
-		/// <summary>
-		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDbCommand command, params (string Field, string Column)[] fieldMappingOverrides)
-			where T : new()
-			=> Results<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
-
-		/// <summary>
-		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
-			where T : new()
-			=> Results<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
-
-
-		// NOTE: The Results<T> methods should be faster than the ResultsFromDataTable<T> variations but are provided for validation of this assumption.
-
-		/// <summary>
-		/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="reader">The IDataReader to read results from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> ResultsFromDataTable<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
-			where T : new()
-			=> reader.ToDataTable().To<T>(fieldMappingOverrides, true);
-
-		/// <summary>
-		/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> ResultsFromDataTable<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides = null)
-			where T : new()
-			=> command.ToDataTable().To<T>(fieldMappingOverrides, true);
-
-		/// <summary>
-		/// Iterates an IDataReader through the transform function and posts each record to the target block.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="target">The target block to receivethe results.</param>
-		public static void ToTargetBlock<T>(this IDataReader reader,
-			ITargetBlock<T> target,
-			Func<IDataRecord, T> transform)
-		{
-			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
-		}
-
-		/// <summary>
-		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The SqlDataReader to read from.</param>
-		/// <param name="target">The target block to receive the results.</param>
-		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		public static async Task ToTargetBlockAsync<T>(this DbDataReader reader,
-			ITargetBlock<T> target,
-			Func<IDataRecord, T> transform)
-		{
-			Task<bool> lastSend = null;
-			while (target.IsStillAlive()
-				&& await reader.ReadAsync()
-				&& (lastSend == null || await lastSend))
-			{
-				// Allows for a premtive read before waiting for the next send.
-				lastSend = target.SendAsync(transform(reader));
-			}
-		}
-
-		/// <summary>
-		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target block to receive the results.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		public static async Task ToTargetBlockAsync<T>(this DbCommand command,
-			ITargetBlock<T> target,
-			Func<IDataRecord, T> transform)
-		{
-			if (target.IsStillAlive())
-			{
-				using (var reader = await command.ExecuteReaderAsync())
-				{
-					if (target.IsStillAlive())
-						await reader.ToTargetBlockAsync(target, transform);
-				}
-			}
-		}
-
-		/// <summary>
-		/// Iterates an IDataReader through the transform function and posts each record to the target block.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The IDataReader to iterate.</param>
-		/// <param name="target">The target block to receive the results.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		public static void ToTargetBlock<T>(this IDbCommand command,
-			ITargetBlock<T> target,
-			Func<IDataRecord, T> transform)
-			=> command.ExecuteReader(reader => reader.ToTargetBlock(target, transform));
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand Command(
+        /// <summary>
+        /// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+        /// </summary>
+        /// <param name="target">The connection factory to generate a commands from.</param>
+        /// <param name="command">The command text or stored procedure name to use.</param>
+        /// <param name="type">The command type.</param>
+        /// <returns>The resultant ExpressiveDbCommand.</returns>
+        public static ExpressiveDbCommand Command(
 			this IDbConnectionFactory<DbConnection> target,
 			string command,
 			CommandType type = CommandType.Text)
@@ -1614,5 +1183,7 @@ namespace Open.Database.Extensions
 			this Func<DbConnection> target,
 			string command)
 			=> StoredProcedure(new DbConnectionFactory(target), command);
+
+
 	}
 }

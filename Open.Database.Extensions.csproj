@@ -8,12 +8,13 @@
     <Product />
     <PackageLicenseUrl>https://github.com/electricessence/Open.Database.Extensions/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
-    <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
+    <Description>Added transaction handling extensions.
+Opened up expressive commands to take connection factories OR connections.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.5.2</Version>
-    <AssemblyVersion>5.5.2.0</AssemblyVersion>
-    <FileVersion>5.5.2.0</FileVersion>
+    <Version>5.6.0</Version>
+    <AssemblyVersion>5.6.0.0</AssemblyVersion>
+    <FileVersion>5.6.0.0</FileVersion>
     <PackageReleaseNotes>Improved documenation.</PackageReleaseNotes>
   </PropertyGroup>
 
