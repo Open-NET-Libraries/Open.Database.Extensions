@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class Extensions
    ">
-    <meta name="generator" content="docfx 2.32.0.0">
+    <meta name="generator" content="docfx 2.33.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -322,7 +322,7 @@
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L99">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L122">View Source</a>
   </span>
   <a id="Open_Database_Extensions_SqlClient_Extensions_Command_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command*"></a>
   <h4 id="Open_Database_Extensions_SqlClient_Extensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">Command(IDbConnectionFactory&lt;SqlConnection&gt;, String, CommandType)</h4>
@@ -381,10 +381,72 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_Command_System_Data_SqlClient_SqlConnection_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.Command(System.Data.SqlClient.SqlConnection%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L99">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_Command_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_Command_System_Data_SqlClient_SqlConnection_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command(System.Data.SqlClient.SqlConnection,System.String,System.Data.CommandType)">Command(SqlConnection, String, CommandType)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveSqlCommand for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveSqlCommand Command(this SqlConnection target, string command, CommandType type = CommandType.Text)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlConnection</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The connection to execute the command on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a></td>
+        <td><p>The resultant ExpressiveSqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_Command_System_Func_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.Command(System.Func%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L126">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L145">View Source</a>
   </span>
   <a id="Open_Database_Extensions_SqlClient_Extensions_Command_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command*"></a>
   <h4 id="Open_Database_Extensions_SqlClient_Extensions_Command_System_Func_System_Data_SqlClient_SqlConnection__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.SqlClient.Extensions.Command(System.Func{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">Command(Func&lt;SqlConnection&gt;, String, CommandType)</h4>
@@ -576,7 +638,7 @@
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L112">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L133">View Source</a>
   </span>
   <a id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_Data_SqlClient_SqlConnection__System_String_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String)">StoredProcedure(IDbConnectionFactory&lt;SqlConnection&gt;, String)</h4>
@@ -629,10 +691,66 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_System_Data_SqlClient_SqlConnection_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Data.SqlClient.SqlConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L110">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure*"></a>
+  <h4 id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_System_Data_SqlClient_SqlConnection_System_String_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Data.SqlClient.SqlConnection,System.String)">StoredProcedure(SqlConnection, String)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveSqlCommand StoredProcedure(this SqlConnection target, string command)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.SqlClient.SqlConnection</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The connection to execute the command on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html">ExpressiveSqlCommand</a></td>
+        <td><p>The resultant ExpressiveSqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_System_Func_System_Data_SqlClient_SqlConnection__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Func%7BSystem.Data.SqlClient.SqlConnection%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L137">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/SqlClient/Extensions.cs/#L156">View Source</a>
   </span>
   <a id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_SqlClient_Extensions_StoredProcedure_System_Func_System_Data_SqlClient_SqlConnection__System_String_" data-uid="Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Func{System.Data.SqlClient.SqlConnection},System.String)">StoredProcedure(Func&lt;SqlConnection&gt;, String)</h4>
@@ -714,7 +832,7 @@
               <a href="#top">Back to top</a>
             </span>
             
-            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+            <span>Generated by <strong>DocFX</strong></span>
           </div>
         </div>
       </footer>

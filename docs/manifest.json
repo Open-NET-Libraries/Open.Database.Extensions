@@ -12,7 +12,199 @@
           "hash": "6ocqwfnmvN3x6/SQ+CDpIA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.html",
+          "hash": "4RlqiHiA5iqsRvC6vpDKfQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.DbConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.DbConnectionFactory.html",
+          "hash": "ChTj7iksSTOurbKucY+/ug=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.html",
+          "hash": "Coj7WNGlp9BL+8gvkvKE6w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.html",
+          "hash": "AA0UtnBymhkqBofwA7ALIA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.html",
+          "hash": "yS0hu5K8ISosdlzCxkHcdg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html",
+          "hash": "hc/x0TzCLDXHoXWYC971CQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Extensions.html",
+          "hash": "+miyyWiHaZPXisnPT8ZtHg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.html",
+          "hash": "LCqHh1GaSDM9I7F8gaoylw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IDbConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory.html",
+          "hash": "A3VhraODRT7pvKt1712GZQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.QueryResult-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.QueryResult-1.html",
+          "hash": "yevdEVJ0GJ9cTx1VSvLGtg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.QueryResultExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.QueryResultExtensions.html",
+          "hash": "JVX8BfVPVpbSKL2msFHeFQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html",
+          "hash": "3ADzQExit9EcZloPnJNG6w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.html",
+          "hash": "3Lcb4bjbDNkuLUZJcc6JuQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.html",
+          "hash": "eE+unU2ebP/eMsBBh4c0/Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.SqlClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.SqlClient.html",
+          "hash": "1A4ytPhaVdWhyy3bq5mHRA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.html",
+          "hash": "32r/OHrhzGg/VsShYpBfyw=="
+        }
+      },
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -21,10 +213,22 @@
       "output": {
         ".html": {
           "relative_path": "api/index.html",
-          "hash": "Ikzr4AkOoelpVXH13xMA6w=="
+          "hash": "bKVRpzOWalf9FPzHQzum9w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "tQwfqXmzCqTtAnwWXnvxig=="
+        }
+      },
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -36,7 +240,7 @@
           "hash": "ck5xQhMX86bJTv1H5AS2+w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -45,7 +249,7 @@
       "output": {
         ".html": {
           "relative_path": "toc.html",
-          "hash": "lgDgHYtjIqqjejbd4Sy5fA=="
+          "hash": "cVlSiV4jsxyqb2OPmpaphg=="
         }
       },
       "is_incremental": false,
@@ -55,25 +259,30 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": true,
+        "can_incremental": false,
+        "details": "Disable incremental build by force rebuild option.",
         "incrementalPhase": "build"
       },
       "processors": {
-        "TocDocumentProcessor": {
+        "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
-          "details": "Processor TocDocumentProcessor cannot suppport incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build"
         },
         "ConceptualDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
+          "incrementalPhase": "build"
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot suppport incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build"
         }
       }
     },
     {
       "status": {
-        "can_incremental": true,
-        "details": "Can support incremental post processing.",
+        "can_incremental": false,
+        "details": "Cannot support incremental post processing, the reason is: it's disabled.",
         "incrementalPhase": "postProcessing"
       },
       "processors": {}

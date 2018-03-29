@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class ExpressiveDbCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;
    ">
-    <meta name="generator" content="docfx 2.32.0.0">
+    <meta name="generator" content="docfx 2.33.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -91,6 +91,9 @@ Includes methods for use with DbConnection and DbCommand types.</p>
       <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_ConnectionFactory">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.ConnectionFactory</a>
     </div>
     <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Connection">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Connection</a>
+    </div>
+    <div>
       <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Command">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Command</a>
     </div>
     <div>
@@ -137,6 +140,12 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     </div>
     <div>
       <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_AddParams__1_">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.AddParams(TCommand)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_UsingConnection_System_Action__0__">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.UsingConnection(Action&lt;TConnection&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_UsingConnection__1_System_Func__0___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.UsingConnection&lt;T&gt;(Func&lt;TConnection, T&gt;)</a>
     </div>
     <div>
       <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html#Open_Database_Extensions_ExpressiveCommandBase_4_Execute_System_Action__1__">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Execute(Action&lt;TCommand&gt;)</a>
@@ -321,18 +330,18 @@ Includes methods for use with DbConnection and DbCommand types.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4__ctor_Open_Database_Extensions_IDbConnectionFactory__0__System_Data_CommandType_System_String_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__Param___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.%23ctor(Open.Database.Extensions.IDbConnectionFactory%7B%600%7D%2CSystem.Data.CommandType%2CSystem.String%2COpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%7D.Param%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4__ctor__0_System_Data_CommandType_System_String_System_Collections_Generic_List_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.%23ctor(%600%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.List%7BOpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L44">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4__ctor_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor*"></a>
-  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4__ctor_Open_Database_Extensions_IDbConnectionFactory__0__System_Data_CommandType_System_String_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__Param___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param[])">ExpressiveDbCommandBase(IDbConnectionFactory&lt;TConnection&gt;, CommandType, String, ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param[])</h4>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4__ctor__0_System_Data_CommandType_System_String_System_Collections_Generic_List_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__Param__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">ExpressiveDbCommandBase(TConnection, CommandType, String, List&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param&gt;)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected ExpressiveDbCommandBase(IDbConnectionFactory&lt;TConnection&gt; connFactory, CommandType type, string command, params ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param[] params)</code></pre>
+    <pre><code class="lang-csharp hljs">protected ExpressiveDbCommandBase(TConnection connection, CommandType type, string command, List&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param&gt; params)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -345,9 +354,9 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;TConnection&gt;</td>
-        <td><span class="parametername">connFactory</span></td>
-        <td><p>The factory to generate connections from.</p>
+        <td><span class="xref">TConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to execute the command on.</p>
 </td>
       </tr>
       <tr>
@@ -363,7 +372,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
 </td>
       </tr>
       <tr>
-        <td><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;[]</td>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
         <td><span class="parametername">params</span></td>
         <td><p>The list of params</p>
 </td>
@@ -383,7 +392,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ExpressiveDbCommandBase(IDbConnectionFactory&lt;TConnection&gt; connFactory, CommandType type, string command, List&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param&gt; params = null)</code></pre>
+    <pre><code class="lang-csharp hljs">protected ExpressiveDbCommandBase(IDbConnectionFactory&lt;TConnection&gt; connFactory, CommandType type, string command, List&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param&gt; params)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -428,7 +437,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.AsSourceBlockAsync%60%601(System.Collections.Generic.IEnumerable%7BSystem.Collections.Generic.KeyValuePair%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L299">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L319">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">AsSourceBlockAsync&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</h4>
@@ -494,7 +503,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.AsSourceBlockAsync%60%601(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L350">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L370">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">AsSourceBlockAsync&lt;T&gt;(IEnumerable&lt;&gt;)</h4>
@@ -560,7 +569,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.AsSourceBlockAsync%60%601(System.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L284">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L304">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Func{System.Data.IDataRecord,``0})">AsSourceBlockAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</h4>
@@ -626,7 +635,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_ValueTuple_System_String_System_String____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.AsSourceBlockAsync%60%601(System.ValueTuple%7BSystem.String%2CSystem.String%7D%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L309">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L329">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_AsSourceBlockAsync__1_System_ValueTuple_System_String_System_String____" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.ValueTuple{System.String,System.String}[])">AsSourceBlockAsync&lt;T&gt;([])</h4>
@@ -692,7 +701,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_System_Func__1_System_Threading_Tasks_Task__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteAsync(System.Func%7B%601%2CSystem.Threading.Tasks.Task%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L57">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L58">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_System_Func__1_System_Threading_Tasks_Task__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task})">ExecuteAsync(Func&lt;TCommand, Task&gt;)</h4>
@@ -741,7 +750,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync__1_System_Func__1_System_Threading_Tasks_Task___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteAsync%60%601(System.Func%7B%601%2CSystem.Threading.Tasks.Task%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L77">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L85">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync__1_System_Func__1_System_Threading_Tasks_Task___0___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync``1(System.Func{`1,System.Threading.Tasks.Task{``0}})">ExecuteAsync&lt;T&gt;(Func&lt;TCommand, Task&lt;T&gt;&gt;)</h4>
@@ -807,7 +816,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteNonQueryAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L142">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L162">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync">ExecuteNonQueryAsync()</h4>
@@ -839,7 +848,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteReaderAsync(System.Func%7BSystem.Data.Common.DbDataReader%2CSystem.Threading.Tasks.Task%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L125">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L145">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior)">ExecuteReaderAsync(Func&lt;DbDataReader, Task&gt;, CommandBehavior)</h4>
@@ -894,7 +903,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync__1_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task___0___System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteReaderAsync%60%601(System.Func%7BSystem.Data.Common.DbDataReader%2CSystem.Threading.Tasks.Task%7B%60%600%7D%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L135">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L155">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync__1_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task___0___System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior)">ExecuteReaderAsync&lt;T&gt;(Func&lt;DbDataReader, Task&lt;T&gt;&gt;, CommandBehavior)</h4>
@@ -966,7 +975,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteReturnAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L95">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L109">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync">ExecuteReturnAsync()</h4>
@@ -998,7 +1007,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync__1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteReturnAsync%60%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L117">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L137">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync__1" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync``1">ExecuteReturnAsync&lt;T&gt;()</h4>
@@ -1045,7 +1054,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteScalarAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L149">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L169">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync">ExecuteScalarAsync()</h4>
@@ -1077,7 +1086,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteScalarAsync%60%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L165">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L185">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1">ExecuteScalarAsync&lt;T&gt;()</h4>
@@ -1125,7 +1134,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteScalarAsync%60%601(System.Func%7BSystem.Object%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L157">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L177">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object___0__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0})">ExecuteScalarAsync&lt;T&gt;(Func&lt;Object, T&gt;)</h4>
@@ -1190,7 +1199,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_Task___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ExecuteScalarAsync%60%601(System.Func%7BSystem.Object%2CSystem.Threading.Tasks.Task%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L173">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L193">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_Task___0___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}})">ExecuteScalarAsync&lt;T&gt;(Func&lt;Object, Task&lt;T&gt;&gt;)</h4>
@@ -1255,7 +1264,7 @@ Includes methods for use with DbConnection and DbCommand types.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.FirstOrdinalResultsAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L230">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L250">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync">FirstOrdinalResultsAsync()</h4>
@@ -1288,7 +1297,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync__1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.FirstOrdinalResultsAsync%60%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L238">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L258">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync__1" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync``1">FirstOrdinalResultsAsync&lt;T0&gt;()</h4>
@@ -1336,7 +1345,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsync_System_Action_System_Data_IDataRecord__System_Nullable_System_Threading_CancellationToken__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.IterateReaderAsync(System.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Nullable%7BSystem.Threading.CancellationToken%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L182">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L202">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsync_System_Action_System_Data_IDataRecord__System_Nullable_System_Threading_CancellationToken__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">IterateReaderAsync(Action&lt;IDataRecord&gt;, Nullable&lt;CancellationToken&gt;)</h4>
@@ -1391,7 +1400,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Boolean__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.IterateReaderAsyncWhile(System.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L190">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L210">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Boolean__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean})">IterateReaderAsyncWhile(Func&lt;IDataRecord, Boolean&gt;)</h4>
@@ -1441,7 +1450,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task_System_Boolean___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.IterateReaderAsyncWhile(System.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.Task%7BSystem.Boolean%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L198">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L218">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task_System_Boolean___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}})">IterateReaderAsyncWhile(Func&lt;IDataRecord, Task&lt;Boolean&gt;&gt;)</h4>
@@ -1491,7 +1500,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ResultsAsync%60%601(System.Collections.Generic.IEnumerable%7BSystem.Collections.Generic.KeyValuePair%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L332">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L352">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">ResultsAsync&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</h4>
@@ -1557,7 +1566,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ResultsAsync%60%601(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L409">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L429">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">ResultsAsync&lt;T&gt;(IEnumerable&lt;&gt;)</h4>
@@ -1623,7 +1632,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_ValueTuple_System_String_System_String____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ResultsAsync%60%601(System.ValueTuple%7BSystem.String%2CSystem.String%7D%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L341">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L361">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ResultsAsync__1_System_ValueTuple_System_String_System_String____" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ResultsAsync``1(System.ValueTuple{System.String,System.String}[])">ResultsAsync&lt;T&gt;([])</h4>
@@ -1689,7 +1698,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.RetrieveAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L382">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L402">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync">RetrieveAsync()</h4>
@@ -1721,7 +1730,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.RetrieveAsync(System.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L390">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L410">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync(System.Collections.Generic.IEnumerable{System.Int32})">RetrieveAsync(IEnumerable&lt;Int32&gt;)</h4>
@@ -1771,7 +1780,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Collections_Generic_IEnumerable_System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.RetrieveAsync(System.Collections.Generic.IEnumerable%7BSystem.String%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L399">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L419">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Collections_Generic_IEnumerable_System_String__System_Boolean_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean)">RetrieveAsync(IEnumerable&lt;String&gt;, Boolean)</h4>
@@ -1827,7 +1836,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.RetrieveAsync(System.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L247">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L267">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_Int32_System_Int32___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync(System.Int32,System.Int32[])">RetrieveAsync(Int32, Int32[])</h4>
@@ -1883,7 +1892,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.RetrieveAsync(System.String%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L256">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L276">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_RetrieveAsync_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync(System.String,System.String[])">RetrieveAsync(String, String[])</h4>
@@ -1939,7 +1948,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_TakeAsync__1_System_Func_System_Data_IDataRecord___0__System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.TakeAsync%60%601(System.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L210">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L230">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_TakeAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.TakeAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_TakeAsync__1_System_Func_System_Data_IDataRecord___0__System_Int32_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.TakeAsync``1(System.Func{System.Data.IDataRecord,``0},System.Int32)">TakeAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;, Int32)</h4>
@@ -2011,7 +2020,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ToListAsync__1_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ToListAsync%60%601(System.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L319">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L339">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ToListAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ToListAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ToListAsync__1_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ToListAsync``1(System.Func{System.Data.IDataRecord,``0})">ToListAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;)</h4>
@@ -2076,7 +2085,7 @@ DBNull values are converted to null.</p>
     <a href="https://github.com/electricessence/Open.Database.Extensions/new/master/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_4_ToTargetBlockAsync__1_System_Threading_Tasks_Dataflow_ITargetBlock___0__System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%604.ToTargetBlockAsync%60%601(System.Threading.Tasks.Dataflow.ITargetBlock%7B%60%600%7D%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L267">View Source</a>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/ExpressiveDbCommandBase.cs/#L287">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ToTargetBlockAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ToTargetBlockAsync*"></a>
   <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_4_ToTargetBlockAsync__1_System_Threading_Tasks_Dataflow_ITargetBlock___0__System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`4.ToTargetBlockAsync``1(System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">ToTargetBlockAsync&lt;T&gt;(ITargetBlock&lt;T&gt;, Func&lt;IDataRecord, T&gt;)</h4>
@@ -2175,7 +2184,7 @@ If .Complete is called on the target block, then the iteration stops.</p>
               <a href="#top">Back to top</a>
             </span>
             
-            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+            <span>Generated by <strong>DocFX</strong></span>
           </div>
         </div>
       </footer>

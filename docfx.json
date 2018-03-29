@@ -5,8 +5,7 @@
         {
           "files": [
             "**.csproj"
-          ],
-          "src": "D:\\Users\\essence\\Development\\- GitHub\\Open.Database.Extensions"
+          ]
         }
       ],
       "dest": "api",
