@@ -56,11 +56,17 @@ namespace Open.Database.Extensions
 						var p = _propertySetters[i];
 						if (p != null)
 						{
-							var name = _names[i];
 							var value = record[i];
 							if (value == DBNull.Value) value = null;
-							p(model, value);
-						}
+                            try
+                            {
+                                p(model, value);
+                            }
+                            catch(Exception ex)
+                            {
+                                throw new InvalidOperationException($"Unable to set value of property '{_names[i]}'.", ex);
+                            }
+                        }
 					}
 
 					return model;
