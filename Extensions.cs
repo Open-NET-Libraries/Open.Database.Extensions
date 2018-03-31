@@ -121,6 +121,75 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
+		/// Generates a connection and executes the action within a using statement.
+		/// Useful for single-line operations.
+		/// </summary>
+		/// <typeparam name="TConn">The connection type.</typeparam>
+		/// <typeparam name="T">The type returned from the action.</typeparam>
+		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
+		/// <param name="action">The action to execute.</param>
+		/// <returns>The value from the action.</returns>
+		public static T Using<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn,T> action)
+			where TConn : IDbConnection
+		{
+			using (var conn = connectionFactory.Create())
+			{
+				return action(conn);
+			}
+		}
+
+		/// <summary>
+		/// Generates a connection and executes the action within a using statement.
+		/// Useful for single-line operations.
+		/// </summary>
+		/// <typeparam name="TConn">The connection type.</typeparam>
+		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
+		/// <param name="action">The action to execute.</param>
+		public static void Using<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Action<TConn> action)
+			where TConn : IDbConnection
+		{
+			using (var conn = connectionFactory.Create())
+			{
+				action(conn);
+			}
+		}
+
+		/// <summary>
+		/// Generates a connection and executes the action within a using statement.
+		/// Useful for single-line operations.
+		/// </summary>
+		/// <typeparam name="TConn">The connection type.</typeparam>
+		/// <typeparam name="T">The type returned from the action.</typeparam>
+		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
+		/// <param name="action">The action to execute.</param>
+		/// <returns>The value from the action.</returns>
+		public static T Using<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, T> action)
+			where TConn : IDbConnection
+		{
+			using (var conn = connectionFactory())
+			{
+				return action(conn);
+			}
+		}
+
+		/// <summary>
+		/// Generates a connection and executes the action within a using statement.
+		/// Useful for single-line operations.
+		/// </summary>
+		/// <typeparam name="TConn">The connection type.</typeparam>
+		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
+		/// <param name="action">The action to execute.</param>
+		public static void Using<TConn>(this Func<TConn> connectionFactory, Action<TConn> action)
+			where TConn : IDbConnection
+		{
+			using (var conn = connectionFactory())
+			{
+				action(conn);
+			}
+		}
+
+
+		/// <summary>
 		/// Shortcut for creating an IDbCommand from any IDbConnection.
 		/// </summary>
 		/// <param name="connection">The connection to create a command from.</param>
