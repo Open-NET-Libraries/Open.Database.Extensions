@@ -17,7 +17,7 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-		/// <returns>True if the transaction was committed.</returns>
+		/// <returns>The value retured from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<TConn, T>(
 			this TConn connection, Func<TConn, (bool Commit, T Value)> conditionalAction, CancellationToken? token = null)
 			where TConn : DbConnection
@@ -64,7 +64,6 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-		/// If the token provided is already cancelled, nothing is done and the default value is returned.
 		/// </summary>
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
@@ -79,7 +78,6 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-		/// If the token provided is already cancelled, nothing is done and the default value is returned.
 		/// </summary>
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
@@ -93,7 +91,6 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-		/// If the token provided is already cancelled, nothing is done and the default value is returned.
 		/// </summary>
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
@@ -134,7 +131,6 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-		/// If the token provided is already cancelled, nothing is done and the default value is returned.
 		/// </summary>
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
@@ -149,7 +145,6 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-		/// If the token provided is already cancelled, nothing is done and the default value is returned.
 		/// </summary>
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
@@ -164,7 +159,6 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-		/// If the token provided is already cancelled, nothing is done and the default value is returned.
 		/// </summary>
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>

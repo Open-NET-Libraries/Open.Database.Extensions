@@ -1870,7 +1870,7 @@
             <param name="connection">The connection to transact with.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-            <returns>True if the transaction was committed.</returns>
+            <returns>The value retured from the conditional action.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(``0,System.Func{``0,System.Boolean},System.Nullable{System.Threading.CancellationToken})">
             <summary>
@@ -1885,7 +1885,6 @@
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``2(``0,System.Func{``0,``1},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-            If the token provided is already cancelled, nothing is done and the default value is returned.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
@@ -1897,7 +1896,6 @@
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-            If the token provided is already cancelled, nothing is done and the default value is returned.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <param name="connection">The connection to transact with.</param>
@@ -1907,7 +1905,6 @@
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``1}}},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-            If the token provided is already cancelled, nothing is done and the default value is returned.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
@@ -1919,7 +1916,6 @@
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-            If the token provided is already cancelled, nothing is done and the default value is returned.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
@@ -1931,7 +1927,6 @@
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{``1}},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-            If the token provided is already cancelled, nothing is done and the default value is returned.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
@@ -1943,7 +1938,6 @@
         <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-            If the token provided is already cancelled, nothing is done and the default value is returned.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <param name="connection">The connection to transact with.</param>
