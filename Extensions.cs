@@ -57,7 +57,7 @@ namespace Open.Database.Extensions
 		{
 			var len = values.Length;
 			var result = new object[len];
-			for (var i=0;i < len; i++)
+			for (var i = 0; i < len; i++)
 			{
 				result[i] = DBNullValueToNull(values[i]);
 			}
@@ -78,6 +78,46 @@ namespace Open.Database.Extensions
 				if (value == DBNull.Value) values[i] = null;
 			}
 			return values;
+		}
+
+		/// <summary>
+		/// If the connection isn't open, opens the connection.
+		/// If the connection is in neither open or close, first closes the connection.
+		/// </summary>
+		/// <returns>The prior connection state.</returns>
+		public static ConnectionState EnsureOpen(this IDbConnection connection)
+		{
+			var state = connection.State;
+			if (state != ConnectionState.Open)
+			{
+				if (connection.State != ConnectionState.Closed)
+					connection.Close();
+				connection.Open();
+			}
+			return state;
+		}
+
+		/// <summary>
+		/// If the connection isn't open, opens the connection.
+		/// If the connection is in neither open or close, first closes the connection.
+		/// </summary>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="token">An optional token to cancel opening.</param>
+		/// <returns>A task containing the prior connection state.</returns>
+		public static async Task<ConnectionState> EnsureOpenAsync(this DbConnection connection, CancellationToken? token = null)
+		{
+			var t = token ?? CancellationToken.None;
+			t.ThrowIfCancellationRequested();
+
+			var state = connection.State;
+			if (state != ConnectionState.Open)
+			{
+				if (connection.State != ConnectionState.Closed)
+					connection.Close();
+
+				await connection.EnsureOpenAsync(t);
+			}
+			return state;
 		}
 
 		/// <summary>
@@ -209,9 +249,11 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static async Task ForEachAsync(this DbDataReader reader, Action<IDataRecord> handler)
+		/// <param name="token">Optional cancellation token.</param>
+		public static async Task ForEachAsync(this DbDataReader reader, Action<IDataRecord> handler, CancellationToken? token = null)
 		{
-			while (await reader.ReadAsync()) handler(reader);
+			var t = token ?? CancellationToken.None;
+			while (await reader.ReadAsync(t)) handler(reader);
 		}
 
 		/// <summary>
@@ -219,9 +261,11 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static async Task ForEachAsync(this DbDataReader reader, Func<IDataRecord, Task> handler)
+		/// <param name="token">Optional cancellation token.</param>
+		public static async Task ForEachAsync(this DbDataReader reader, Func<IDataRecord, Task> handler, CancellationToken? token = null)
 		{
-			while (await reader.ReadAsync()) await handler(reader);
+			var t = token ?? CancellationToken.None;
+			while (await reader.ReadAsync(t)) await handler(reader);
 		}
 
 		/// <summary>
@@ -510,12 +554,14 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The SqlDataReader to read from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>A task containing a list of all results.</returns>
 		public static async Task<List<T>> ToListAsync<T>(this DbDataReader reader,
-			Func<IDataRecord, T> transform)
+			Func<IDataRecord, T> transform, CancellationToken? token = null)
 		{
+			var t = token ?? CancellationToken.None;
 			var list = new List<T>();
-			while (await reader.ReadAsync()) list.Add(transform(reader));
+			while (await reader.ReadAsync(t)) list.Add(transform(reader));
 			return list;
 		}
 
@@ -525,12 +571,14 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>A task containing a list of all results.</returns>
 		public static async Task<List<T>> ToListAsync<T>(this DbCommand command,
-			Func<IDataRecord, T> transform)
+			Func<IDataRecord, T> transform, CancellationToken? token = null)
 		{
-			using (var reader = await command.ExecuteReaderAsync())
-				return await reader.ToListAsync(transform);
+			var t = token ?? CancellationToken.None;
+			using (var reader = await command.ExecuteReaderAsync(t))
+				return await reader.ToListAsync(transform, t);
 		}
 
 		/// <summary>
@@ -784,23 +832,13 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		/// <param name="token">Optional cancellatio token.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		public static async Task ForEachAsync(this DbCommand command, Action<IDataRecord> handler, CancellationToken? token = null)
 		{
-			using (var reader = await command.ExecuteReaderAsync())
-			{
-				if (token.HasValue)
-				{
-					var t = token.Value;
-					while (!t.IsCancellationRequested && await reader.ReadAsync())
-						handler(reader);
-				}
-				else
-				{
-					while (await reader.ReadAsync())
-						handler(reader);
-				}
-			}
+			var t = token ?? CancellationToken.None;
+			using (var reader = await command.ExecuteReaderAsync(t))
+				while (await reader.ReadAsync(t))
+					handler(reader);
 		}
 
 		/// <summary>
@@ -809,10 +847,12 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
+		/// <param name="token">Optional cancellation token.</param>
+		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
 		{
-			using (var reader = await command.ExecuteReaderAsync(behavior))
-				while (await reader.ReadAsync() && predicate(reader)) { }
+			var t = token ?? CancellationToken.None;
+			using (var reader = await command.ExecuteReaderAsync(behavior, t))
+				while (await reader.ReadAsync(t) && predicate(reader)) { }
 		}
 
 		/// <summary>
@@ -821,10 +861,12 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default)
+		/// <param name="token">Optional cancellation token.</param>
+		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
 		{
-			using (var reader = await command.ExecuteReaderAsync(behavior))
-				while (await reader.ReadAsync() && await predicate(reader)) { }
+			var t = token ?? CancellationToken.None;
+			using (var reader = await command.ExecuteReaderAsync(behavior, t))
+				while (await reader.ReadAsync(t) && await predicate(reader)) { }
 		}
 
 		/// <summary>
@@ -1071,11 +1113,13 @@ namespace Open.Database.Extensions
 		/// Reads the first column values from every record.
 		/// DBNull values are converted to null.
 		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The list of values.</returns>
-		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbDataReader reader)
+		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbDataReader reader, CancellationToken? token = null)
 		{
 			var results = new Queue<object>();
-			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)));
+			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)), token);
 			return results.DequeueEach().DBNullToNull();
 		}
 
@@ -1083,11 +1127,13 @@ namespace Open.Database.Extensions
 		/// Reads the first column values from every record.
 		/// Any DBNull values are then converted to null and casted to type T0;
 		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The enumerable of casted values.</returns>
-		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader)
+		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, CancellationToken? token = null)
 		{
 			var results = new Queue<object>();
-			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)));
+			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)), token);
 			return results.DequeueEach().DBNullToNull().Cast<T0>(); ;
 		}
 
@@ -1096,11 +1142,13 @@ namespace Open.Database.Extensions
 		/// Reads the first column values from every record.
 		/// DBNull values are converted to null.
 		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The list of values.</returns>
-		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command)
+		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command, CancellationToken? token = null)
 		{
 			var results = new Queue<object>();
-			await command.ForEachAsync(r => results.Enqueue(r.GetValue(0)));
+			await command.ForEachAsync(r => results.Enqueue(r.GetValue(0)), token);
 			return results.DequeueEach().DBNullToNull();
 		}
 
@@ -1108,42 +1156,44 @@ namespace Open.Database.Extensions
 		/// Reads the first column from every record..
 		/// Any DBNull values are then converted to null and casted to type T0;
 		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The enumerable of casted values.</returns>
-		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command)
-			=> (await command.FirstOrdinalResultsAsync()).Cast<T0>();
+		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CancellationToken? token = null)
+			=> (await command.FirstOrdinalResultsAsync(token)).Cast<T0>();
 
-        /// <summary>
-        /// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection to execute the command on.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <param name="type">The command type.</param>
-        /// <returns>The resultant ExpressiveDbCommand.</returns>
-        public static ExpressiveDbCommand Command(
-            this DbConnection target,
-            string command,
-            CommandType type = CommandType.Text)
-            => new ExpressiveDbCommand(target, type, command);
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The connection to execute the command on.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command(
+			this DbConnection target,
+			string command,
+			CommandType type = CommandType.Text)
+			=> new ExpressiveDbCommand(target, type, command);
 
-        /// <summary>
-        /// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection to execute the command on.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <returns>The resultant ExpressiveDbCommand.</returns>
-        public static ExpressiveDbCommand StoredProcedure(
-            this DbConnection target,
-            string command)
-            => new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
+		/// <summary>
+		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The connection to execute the command on.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand StoredProcedure(
+			this DbConnection target,
+			string command)
+			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
 
-        /// <summary>
-        /// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection factory to generate a commands from.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <param name="type">The command type.</param>
-        /// <returns>The resultant ExpressiveDbCommand.</returns>
-        public static ExpressiveDbCommand Command(
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The connection factory to generate a commands from.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command(
 			this IDbConnectionFactory<DbConnection> target,
 			string command,
 			CommandType type = CommandType.Text)

@@ -1,6 +1,6 @@
 {
   "homepages": [],
-  "source_base_path": "C:/Users/essence/Development/- GitHub/Open.Database.Extensions",
+  "source_base_path": "D:/Users/essence/Development/- GitHub/Open.Database.Extensions",
   "xrefmap": "xrefmap.yml",
   "files": [
     {
@@ -21,7 +21,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.html",
-          "hash": "4RlqiHiA5iqsRvC6vpDKfQ=="
+          "hash": "qJcEQFTwyDrO9DMNGVdsxQ=="
         }
       },
       "is_incremental": false,
@@ -33,7 +33,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory.html",
-          "hash": "ChTj7iksSTOurbKucY+/ug=="
+          "hash": "WcQsbrR43bavxxRjjOauKQ=="
         }
       },
       "is_incremental": false,
@@ -69,7 +69,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.html",
-          "hash": "yS0hu5K8ISosdlzCxkHcdg=="
+          "hash": "dI7o2mKUNDb1c6EGR4IBuw=="
         }
       },
       "is_incremental": false,
@@ -81,7 +81,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html",
-          "hash": "hc/x0TzCLDXHoXWYC971CQ=="
+          "hash": "W5BHQ/b7wNVPtkJUWd+EqA=="
         }
       },
       "is_incremental": false,
@@ -93,7 +93,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.Extensions.html",
-          "hash": "+miyyWiHaZPXisnPT8ZtHg=="
+          "hash": "NV3reRA7tE22hWh/J8qD8A=="
         }
       },
       "is_incremental": false,
@@ -105,7 +105,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.html",
-          "hash": "LCqHh1GaSDM9I7F8gaoylw=="
+          "hash": "2cVH40rD5clfVbVf6c4U+g=="
         }
       },
       "is_incremental": false,
@@ -153,7 +153,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html",
-          "hash": "3ADzQExit9EcZloPnJNG6w=="
+          "hash": "te+yPuJDNsNRZpVc3R2o3A=="
         }
       },
       "is_incremental": false,
@@ -177,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.html",
-          "hash": "eE+unU2ebP/eMsBBh4c0/Q=="
+          "hash": "/jAtATXye9NrsQGxI6DjTQ=="
         }
       },
       "is_incremental": false,
@@ -260,29 +260,29 @@
     {
       "status": {
         "can_incremental": false,
-        "details": "Disable incremental build by force rebuild option.",
+        "details": "Cannot build incrementally because docfx version changed from 2.32.0.0 to 2.33.0.0.",
         "incrementalPhase": "build"
       },
       "processors": {
-        "ManagedReferenceDocumentProcessor": {
+        "TocDocumentProcessor": {
           "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot suppport incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build"
         },
         "ConceptualDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build"
         },
-        "TocDocumentProcessor": {
+        "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
-          "details": "Processor TocDocumentProcessor cannot suppport incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build"
         }
       }
     },
     {
       "status": {
-        "can_incremental": false,
-        "details": "Cannot support incremental post processing, the reason is: it's disabled.",
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
         "incrementalPhase": "postProcessing"
       },
       "processors": {}

@@ -11,12 +11,12 @@
     <Description>Useful set of utilities and abstractions for simplifying modern database operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.6.1</Version>
-    <AssemblyVersion>5.6.0.0</AssemblyVersion>
-    <FileVersion>5.6.0.0</FileVersion>
-    <PackageReleaseNotes>Added transaction handling extensions.
-Opened up expressive commands to take connection factories OR connections.
-Updated documenation.</PackageReleaseNotes>
+    <Version>5.7.0</Version>
+    <AssemblyVersion>5.7.0.0</AssemblyVersion>
+    <FileVersion>5.7.0.0</FileVersion>
+    <PackageReleaseNotes>Updated transaction methods be more controllable and explicit.  Always passing the connection as a parameter for the handler allows for static handler methods.
+
+Added cancellation tokens to all applicable extensions.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

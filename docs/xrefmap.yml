@@ -1200,15 +1200,15 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).AsSourceBlockAsync(Of T)(System.())
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.AsSourceBlockAsync<T>([])
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).AsSourceBlockAsync(Of T)(())
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task})
-  name: ExecuteAsync(Func<TCommand, Task>)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_System_Func__1_System_Threading_Tasks_Task__
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task})
-  name.vb: ExecuteAsync(Func(Of TCommand, Task))
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync(System.Func<TCommand, System.Threading.Tasks.Task>)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(System.Func(Of TCommand, System.Threading.Tasks.Task))
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync(Func<TCommand, Task>)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(Func(Of TCommand, Task))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteAsync(Func<TCommand, Task>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_System_Func__1_System_Threading_Tasks_Task__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteAsync(Func(Of TCommand, Task), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync(System.Func<TCommand, System.Threading.Tasks.Task>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(System.Func(Of TCommand, System.Threading.Tasks.Task), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync(Func<TCommand, Task>, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(Func(Of TCommand, Task), Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync*
   name: ExecuteAsync
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync_
@@ -1218,23 +1218,24 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync``1(System.Func{`1,System.Threading.Tasks.Task{``0}})
-  name: ExecuteAsync<T>(Func<TCommand, Task<T>>)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync__1_System_Func__1_System_Threading_Tasks_Task___0___
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync``1(System.Func{`1,System.Threading.Tasks.Task{``0}})
-  name.vb: ExecuteAsync(Of T)(Func(Of TCommand, Task(Of T)))
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync<T>(System.Func<TCommand, System.Threading.Tasks.Task<T>>)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(Of T)(System.Func(Of TCommand, System.Threading.Tasks.Task(Of T)))
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync<T>(Func<TCommand, Task<T>>)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(Of T)(Func(Of TCommand, Task(Of T)))
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync
-  name: ExecuteNonQueryAsync()
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteNonQueryAsync()
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteNonQueryAsync()
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteNonQueryAsync()
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteNonQueryAsync()
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync``1(System.Func{`1,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteAsync<T>(Func<TCommand, Task<T>>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteAsync__1_System_Func__1_System_Threading_Tasks_Task___0___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync``1(System.Func{`1,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteAsync(Of T)(Func(Of TCommand, Task(Of T)), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync<T>(System.Func<TCommand, System.Threading.Tasks.Task<T>>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(Of T)(System.Func(Of TCommand, System.Threading.Tasks.Task(Of T)), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteAsync<T>(Func<TCommand, Task<T>>, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteAsync(Of T)(Func(Of TCommand, Task(Of T)), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync(System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteNonQueryAsync(Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync(System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteNonQueryAsync(Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteNonQueryAsync(System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteNonQueryAsync(System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteNonQueryAsync(Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteNonQueryAsync(Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteNonQueryAsync*
   name: ExecuteNonQueryAsync
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteNonQueryAsync_
@@ -1244,15 +1245,15 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteNonQueryAsync
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteNonQueryAsync
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteNonQueryAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior)
-  name: ExecuteReaderAsync(Func<DbDataReader, Task>, CommandBehavior)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task__System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior)
-  name.vb: ExecuteReaderAsync(Func(Of DbDataReader, Task), CommandBehavior)
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync(System.Func<System.Data.Common.DbDataReader, System.Threading.Tasks.Task>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(System.Func(Of System.Data.Common.DbDataReader, System.Threading.Tasks.Task), System.Data.CommandBehavior)
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync(Func<DbDataReader, Task>, CommandBehavior)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(Func(Of DbDataReader, Task), CommandBehavior)
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteReaderAsync(Func<DbDataReader, Task>, CommandBehavior, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task__System_Data_CommandBehavior_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteReaderAsync(Func(Of DbDataReader, Task), CommandBehavior, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync(System.Func<System.Data.Common.DbDataReader, System.Threading.Tasks.Task>, System.Data.CommandBehavior, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(System.Func(Of System.Data.Common.DbDataReader, System.Threading.Tasks.Task), System.Data.CommandBehavior, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync(Func<DbDataReader, Task>, CommandBehavior, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(Func(Of DbDataReader, Task), CommandBehavior, Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync*
   name: ExecuteReaderAsync
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync_
@@ -1262,23 +1263,24 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior)
-  name: ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>>, CommandBehavior)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync__1_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task___0___System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior)
-  name.vb: ExecuteReaderAsync(Of T)(Func(Of DbDataReader, Task(Of T)), CommandBehavior)
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync<T>(System.Func<System.Data.Common.DbDataReader, System.Threading.Tasks.Task<T>>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(Of T)(System.Func(Of System.Data.Common.DbDataReader, System.Threading.Tasks.Task(Of T)), System.Data.CommandBehavior)
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>>, CommandBehavior)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(Of T)(Func(Of DbDataReader, Task(Of T)), CommandBehavior)
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync
-  name: ExecuteReturnAsync()
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync()
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync()
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync()
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync()
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>>, CommandBehavior, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReaderAsync__1_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_Task___0___System_Data_CommandBehavior_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteReaderAsync(Of T)(Func(Of DbDataReader, Task(Of T)), CommandBehavior, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync<T>(System.Func<System.Data.Common.DbDataReader, System.Threading.Tasks.Task<T>>, System.Data.CommandBehavior, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(Of T)(System.Func(Of System.Data.Common.DbDataReader, System.Threading.Tasks.Task(Of T)), System.Data.CommandBehavior, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>>, CommandBehavior, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReaderAsync(Of T)(Func(Of DbDataReader, Task(Of T)), CommandBehavior, Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync(System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteReturnAsync(Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync(System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteReturnAsync(Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync(System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync(System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync(Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync(Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync*
   name: ExecuteReturnAsync
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync_
@@ -1288,23 +1290,24 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync``1
-  name: ExecuteReturnAsync<T>()
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync__1
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync``1
-  name.vb: ExecuteReturnAsync(Of T)()
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync<T>()
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync(Of T)()
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync<T>()
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync(Of T)()
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync
-  name: ExecuteScalarAsync()
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync()
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync()
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync()
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync()
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync``1(System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteReturnAsync<T>(Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteReturnAsync__1_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReturnAsync``1(System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteReturnAsync(Of T)(Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync<T>(System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync(Of T)(System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteReturnAsync<T>(Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteReturnAsync(Of T)(Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync(System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteScalarAsync(Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync(System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteScalarAsync(Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync(System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync(Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync*
   name: ExecuteScalarAsync
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync_
@@ -1314,33 +1317,33 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1
-  name: ExecuteScalarAsync<T>()
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1
-  name.vb: ExecuteScalarAsync(Of T)()
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>()
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)()
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>()
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)()
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0})
-  name: ExecuteScalarAsync<T>(Func<Object, T>)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object___0__
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0})
-  name.vb: ExecuteScalarAsync(Of T)(Func(Of Object, T))
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(System.Func<System.Object, T>)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(System.Func(Of System.Object, T))
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(Func<Object, T>)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(Func(Of Object, T))
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}})
-  name: ExecuteScalarAsync<T>(Func<Object, Task<T>>)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_Task___0___
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}})
-  name.vb: ExecuteScalarAsync(Of T)(Func(Of Object, Task(Of T)))
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(System.Func<System.Object, System.Threading.Tasks.Task<T>>)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(System.Func(Of System.Object, System.Threading.Tasks.Task(Of T)))
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(Func<Object, Task<T>>)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(Func(Of Object, Task(Of T)))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteScalarAsync<T>(Func<Object, T>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object___0__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,``0},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteScalarAsync(Of T)(Func(Of Object, T), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(System.Func<System.Object, T>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(System.Func(Of System.Object, T), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(Func<Object, T>, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(Func(Of Object, T), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteScalarAsync<T>(Func<Object, Task<T>>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_Task___0___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteScalarAsync(Of T)(Func(Of Object, Task(Of T)), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(System.Func<System.Object, System.Threading.Tasks.Task<T>>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(System.Func(Of System.Object, System.Threading.Tasks.Task(Of T)), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(Func<Object, Task<T>>, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(Func(Of Object, Task(Of T)), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteScalarAsync<T>(Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_ExecuteScalarAsync__1_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync``1(System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteScalarAsync(Of T)(Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.ExecuteScalarAsync<T>(Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).ExecuteScalarAsync(Of T)(Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync
   name: FirstOrdinalResultsAsync()
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_FirstOrdinalResultsAsync
@@ -1385,15 +1388,15 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).IterateReaderAsync
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.IterateReaderAsync
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).IterateReaderAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean})
-  name: IterateReaderAsyncWhile(Func<IDataRecord, Boolean>)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Boolean__
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean})
-  name.vb: IterateReaderAsyncWhile(Func(Of IDataRecord, Boolean))
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.IterateReaderAsyncWhile(System.Func<System.Data.IDataRecord, System.Boolean>)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).IterateReaderAsyncWhile(System.Func(Of System.Data.IDataRecord, System.Boolean))
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.IterateReaderAsyncWhile(Func<IDataRecord, Boolean>)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).IterateReaderAsyncWhile(Func(Of IDataRecord, Boolean))
+- uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean},System.Nullable{System.Threading.CancellationToken})
+  name: IterateReaderAsyncWhile(Func<IDataRecord, Boolean>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Boolean__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean},System.Nullable{System.Threading.CancellationToken})
+  name.vb: IterateReaderAsyncWhile(Func(Of IDataRecord, Boolean), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.IterateReaderAsyncWhile(System.Func<System.Data.IDataRecord, System.Boolean>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).IterateReaderAsyncWhile(System.Func(Of System.Data.IDataRecord, System.Boolean), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TDbType, TThis>.IterateReaderAsyncWhile(Func<IDataRecord, Boolean>, Nullable<CancellationToken>)
+  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TDbType, TThis).IterateReaderAsyncWhile(Func(Of IDataRecord, Boolean), Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}})
   name: IterateReaderAsyncWhile(Func<IDataRecord, Task<Boolean>>)
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html#Open_Database_Extensions_ExpressiveDbCommandBase_4_IterateReaderAsyncWhile_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task_System_Boolean___
@@ -1746,6 +1749,35 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.DequeueEach(Of T)(System.Collections.Generic.Queue(Of T))
   nameWithType: Extensions.DequeueEach<T>(Queue<T>)
   nameWithType.vb: Extensions.DequeueEach(Of T)(Queue(Of T))
+- uid: Open.Database.Extensions.Extensions.EnsureOpen(System.Data.IDbConnection)
+  name: EnsureOpen(IDbConnection)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_EnsureOpen_System_Data_IDbConnection_
+  commentId: M:Open.Database.Extensions.Extensions.EnsureOpen(System.Data.IDbConnection)
+  fullName: Open.Database.Extensions.Extensions.EnsureOpen(System.Data.IDbConnection)
+  nameWithType: Extensions.EnsureOpen(IDbConnection)
+- uid: Open.Database.Extensions.Extensions.EnsureOpen*
+  name: EnsureOpen
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_EnsureOpen_
+  commentId: Overload:Open.Database.Extensions.Extensions.EnsureOpen
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Extensions.EnsureOpen
+  nameWithType: Extensions.EnsureOpen
+- uid: Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken})
+  name: EnsureOpenAsync(DbConnection, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken})
+  name.vb: EnsureOpenAsync(DbConnection, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.EnsureOpenAsync(DbConnection, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.EnsureOpenAsync(DbConnection, Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.EnsureOpenAsync*
+  name: EnsureOpenAsync
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_EnsureOpenAsync_
+  commentId: Overload:Open.Database.Extensions.Extensions.EnsureOpenAsync
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Extensions.EnsureOpenAsync
+  nameWithType: Extensions.EnsureOpenAsync
 - uid: Open.Database.Extensions.Extensions.ExecuteReader(System.Data.IDbCommand,System.Action{System.Data.IDataReader},System.Data.CommandBehavior)
   name: ExecuteReader(IDbCommand, Action<IDataReader>, CommandBehavior)
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteReader_System_Data_IDbCommand_System_Action_System_Data_IDataReader__System_Data_CommandBehavior_
@@ -1778,60 +1810,24 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Extensions.ExecuteTransaction
   nameWithType: Extensions.ExecuteTransaction
-- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action)
-  name: ExecuteTransaction<TConn>(TConn, Action)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1___0_System_Action_
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action)
-  name.vb: ExecuteTransaction(Of TConn)(TConn, Action)
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(TConn, System.Action)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(TConn, System.Action)
-  nameWithType: Extensions.ExecuteTransaction<TConn>(TConn, Action)
-  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(TConn, Action)
-- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0})
-  name: ExecuteTransaction<TConn>(TConn, Action<TConn>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1___0_System_Action___0__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0})
-  name.vb: ExecuteTransaction(Of TConn)(TConn, Action(Of TConn))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(TConn, System.Action<TConn>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(TConn, System.Action(Of TConn))
-  nameWithType: Extensions.ExecuteTransaction<TConn>(TConn, Action<TConn>)
-  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(TConn, Action(Of TConn))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Func{``0,System.Boolean})
-  name: ExecuteTransaction<TConn>(TConn, Func<TConn, Boolean>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1___0_System_Func___0_System_Boolean__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Func{``0,System.Boolean})
-  name.vb: ExecuteTransaction(Of TConn)(TConn, Func(Of TConn, Boolean))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(TConn, System.Func<TConn, System.Boolean>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(TConn, System.Func(Of TConn, System.Boolean))
-  nameWithType: Extensions.ExecuteTransaction<TConn>(TConn, Func<TConn, Boolean>)
-  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(TConn, Func(Of TConn, Boolean))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Func{System.Boolean})
-  name: ExecuteTransaction<TConn>(TConn, Func<Boolean>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1___0_System_Func_System_Boolean__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Func{System.Boolean})
-  name.vb: ExecuteTransaction(Of TConn)(TConn, Func(Of Boolean))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(TConn, System.Func<System.Boolean>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(TConn, System.Func(Of System.Boolean))
-  nameWithType: Extensions.ExecuteTransaction<TConn>(TConn, Func<Boolean>)
-  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(TConn, Func(Of Boolean))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})
-  name: ExecuteTransaction<TConn>(IDbConnectionFactory<TConn>, Action<TConn>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})
-  name.vb: ExecuteTransaction(Of TConn)(IDbConnectionFactory(Of TConn), Action(Of TConn))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(Open.Database.Extensions.IDbConnectionFactory<TConn>, System.Action<TConn>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(Open.Database.Extensions.IDbConnectionFactory(Of TConn), System.Action(Of TConn))
-  nameWithType: Extensions.ExecuteTransaction<TConn>(IDbConnectionFactory<TConn>, Action<TConn>)
-  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(IDbConnectionFactory(Of TConn), Action(Of TConn))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Boolean})
-  name: ExecuteTransaction<TConn>(IDbConnectionFactory<TConn>, Func<TConn, Boolean>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Boolean__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Boolean})
-  name.vb: ExecuteTransaction(Of TConn)(IDbConnectionFactory(Of TConn), Func(Of TConn, Boolean))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(Open.Database.Extensions.IDbConnectionFactory<TConn>, System.Func<TConn, System.Boolean>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(Open.Database.Extensions.IDbConnectionFactory(Of TConn), System.Func(Of TConn, System.Boolean))
-  nameWithType: Extensions.ExecuteTransaction<TConn>(IDbConnectionFactory<TConn>, Func<TConn, Boolean>)
-  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(IDbConnectionFactory(Of TConn), Func(Of TConn, Boolean))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransaction<TConn>(TConn, Action<TConn>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__1___0_System_Action___0__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransaction(Of TConn)(TConn, Action(Of TConn), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn>(TConn, System.Action<TConn>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn)(TConn, System.Action(Of TConn), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransaction<TConn>(TConn, Action<TConn>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn)(TConn, Action(Of TConn), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransaction``2(``0,System.Func{``0,``1},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransaction<TConn, T>(TConn, Func<TConn, T>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransaction__2___0_System_Func___0___1__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransaction``2(``0,System.Func{``0,``1},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransaction(Of TConn, T)(TConn, Func(Of TConn, T), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransaction<TConn, T>(TConn, System.Func<TConn, T>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransaction(Of TConn, T)(TConn, System.Func(Of TConn, T), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransaction<TConn, T>(TConn, Func<TConn, T>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransaction(Of TConn, T)(TConn, Func(Of TConn, T), Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync*
   name: ExecuteTransactionAsync
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync_
@@ -1839,60 +1835,74 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync
   nameWithType: Extensions.ExecuteTransactionAsync
-- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}})
-  name: ExecuteTransactionAsync<TConn>(TConn, Func<TConn, Task<Boolean>>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1___0_System_Func___0_System_Threading_Tasks_Task_System_Boolean___
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}})
-  name.vb: ExecuteTransactionAsync(Of TConn)(TConn, Func(Of TConn, Task(Of Boolean)))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(TConn, System.Func<TConn, System.Threading.Tasks.Task<System.Boolean>>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(TConn, System.Func(Of TConn, System.Threading.Tasks.Task(Of System.Boolean)))
-  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(TConn, Func<TConn, Task<Boolean>>)
-  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(TConn, Func(Of TConn, Task(Of Boolean)))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task})
-  name: ExecuteTransactionAsync<TConn>(TConn, Func<TConn, Task>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1___0_System_Func___0_System_Threading_Tasks_Task__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task})
-  name.vb: ExecuteTransactionAsync(Of TConn)(TConn, Func(Of TConn, Task))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(TConn, System.Func<TConn, System.Threading.Tasks.Task>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(TConn, System.Func(Of TConn, System.Threading.Tasks.Task))
-  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(TConn, Func<TConn, Task>)
-  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(TConn, Func(Of TConn, Task))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{System.Threading.Tasks.Task{System.Boolean}})
-  name: ExecuteTransactionAsync<TConn>(TConn, Func<Task<Boolean>>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1___0_System_Func_System_Threading_Tasks_Task_System_Boolean___
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{System.Threading.Tasks.Task{System.Boolean}})
-  name.vb: ExecuteTransactionAsync(Of TConn)(TConn, Func(Of Task(Of Boolean)))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(TConn, System.Func<System.Threading.Tasks.Task<System.Boolean>>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(TConn, System.Func(Of System.Threading.Tasks.Task(Of System.Boolean)))
-  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(TConn, Func<Task<Boolean>>)
-  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(TConn, Func(Of Task(Of Boolean)))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{System.Threading.Tasks.Task})
-  name: ExecuteTransactionAsync<TConn>(TConn, Func<Task>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1___0_System_Func_System_Threading_Tasks_Task__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{System.Threading.Tasks.Task})
-  name.vb: ExecuteTransactionAsync(Of TConn)(TConn, Func(Of Task))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(TConn, System.Func<System.Threading.Tasks.Task>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(TConn, System.Func(Of System.Threading.Tasks.Task))
-  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(TConn, Func<Task>)
-  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(TConn, Func(Of Task))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task{System.Boolean}})
-  name: ExecuteTransactionAsync<TConn>(IDbConnectionFactory<TConn>, Func<TConn, Task<Boolean>>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_Task_System_Boolean___
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task{System.Boolean}})
-  name.vb: ExecuteTransactionAsync(Of TConn)(IDbConnectionFactory(Of TConn), Func(Of TConn, Task(Of Boolean)))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(Open.Database.Extensions.IDbConnectionFactory<TConn>, System.Func<TConn, System.Threading.Tasks.Task<System.Boolean>>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(Open.Database.Extensions.IDbConnectionFactory(Of TConn), System.Func(Of TConn, System.Threading.Tasks.Task(Of System.Boolean)))
-  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(IDbConnectionFactory<TConn>, Func<TConn, Task<Boolean>>)
-  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(IDbConnectionFactory(Of TConn), Func(Of TConn, Task(Of Boolean)))
-- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task})
-  name: ExecuteTransactionAsync<TConn>(IDbConnectionFactory<TConn>, Func<TConn, Task>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_Task__
-  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task})
-  name.vb: ExecuteTransactionAsync(Of TConn)(IDbConnectionFactory(Of TConn), Func(Of TConn, Task))
-  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(Open.Database.Extensions.IDbConnectionFactory<TConn>, System.Func<TConn, System.Threading.Tasks.Task>)
-  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(Open.Database.Extensions.IDbConnectionFactory(Of TConn), System.Func(Of TConn, System.Threading.Tasks.Task))
-  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(IDbConnectionFactory<TConn>, Func<TConn, Task>)
-  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(IDbConnectionFactory(Of TConn), Func(Of TConn, Task))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransactionAsync<TConn>(TConn, Func<TConn, Task>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__1___0_System_Func___0_System_Threading_Tasks_Task__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransactionAsync(Of TConn)(TConn, Func(Of TConn, Task), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn>(TConn, System.Func<TConn, System.Threading.Tasks.Task>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn)(TConn, System.Func(Of TConn, System.Threading.Tasks.Task), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransactionAsync<TConn>(TConn, Func<TConn, Task>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn)(TConn, Func(Of TConn, Task), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{``1}},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransactionAsync<TConn, T>(TConn, Func<TConn, Task<T>>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{``1}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransactionAsync(Of TConn, T)(TConn, Func(Of TConn, Task(Of T)), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionAsync<TConn, T>(TConn, System.Func<TConn, System.Threading.Tasks.Task<T>>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionAsync(Of TConn, T)(TConn, System.Func(Of TConn, System.Threading.Tasks.Task(Of T)), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransactionAsync<TConn, T>(TConn, Func<TConn, Task<T>>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransactionAsync(Of TConn, T)(TConn, Func(Of TConn, Task(Of T)), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionConditional*
+  name: ExecuteTransactionConditional
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionConditional_
+  commentId: Overload:Open.Database.Extensions.Extensions.ExecuteTransactionConditional
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionConditional
+  nameWithType: Extensions.ExecuteTransactionConditional
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(``0,System.Func{``0,System.Boolean},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransactionConditional<TConn>(TConn, Func<TConn, Boolean>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionConditional__1___0_System_Func___0_System_Boolean__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(``0,System.Func{``0,System.Boolean},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransactionConditional(Of TConn)(TConn, Func(Of TConn, Boolean), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionConditional<TConn>(TConn, System.Func<TConn, System.Boolean>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionConditional(Of TConn)(TConn, System.Func(Of TConn, System.Boolean), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransactionConditional<TConn>(TConn, Func<TConn, Boolean>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransactionConditional(Of TConn)(TConn, Func(Of TConn, Boolean), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionConditional``2(``0,System.Func{``0,System.ValueTuple{System.Boolean,``1}},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransactionConditional<TConn, T>(TConn, Func<TConn, >, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionConditional__2___0_System_Func___0_System_ValueTuple_System_Boolean___1___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``2(``0,System.Func{``0,System.ValueTuple{System.Boolean,``1}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransactionConditional(Of TConn, T)(TConn, Func(Of TConn, ), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionConditional<TConn, T>(TConn, System.Func<TConn, System.>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionConditional(Of TConn, T)(TConn, System.Func(Of TConn, System.), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransactionConditional<TConn, T>(TConn, Func<TConn, >, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransactionConditional(Of TConn, T)(TConn, Func(Of TConn, ), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync*
+  name: ExecuteTransactionConditionalAsync
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionConditionalAsync_
+  commentId: Overload:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync
+  nameWithType: Extensions.ExecuteTransactionConditionalAsync
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransactionConditionalAsync<TConn, T>(TConn, Func<TConn, Task<Boolean>>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionConditionalAsync__2___0_System_Func___0_System_Threading_Tasks_Task_System_Boolean___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransactionConditionalAsync(Of TConn, T)(TConn, Func(Of TConn, Task(Of Boolean)), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync<TConn, T>(TConn, System.Func<TConn, System.Threading.Tasks.Task<System.Boolean>>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(Of TConn, T)(TConn, System.Func(Of TConn, System.Threading.Tasks.Task(Of System.Boolean)), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransactionConditionalAsync<TConn, T>(TConn, Func<TConn, Task<Boolean>>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransactionConditionalAsync(Of TConn, T)(TConn, Func(Of TConn, Task(Of Boolean)), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``1}}},System.Nullable{System.Threading.CancellationToken})
+  name: ExecuteTransactionConditionalAsync<TConn, T>(TConn, Func<TConn, Task<>>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ExecuteTransactionConditionalAsync__2___0_System_Func___0_System_Threading_Tasks_Task_System_ValueTuple_System_Boolean___1____System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``1}}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ExecuteTransactionConditionalAsync(Of TConn, T)(TConn, Func(Of TConn, Task(Of )), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync<TConn, T>(TConn, System.Func<TConn, System.Threading.Tasks.Task<System.>>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(Of TConn, T)(TConn, System.Func(Of TConn, System.Threading.Tasks.Task(Of System.)), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ExecuteTransactionConditionalAsync<TConn, T>(TConn, Func<TConn, Task<>>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ExecuteTransactionConditionalAsync(Of TConn, T)(TConn, Func(Of TConn, Task(Of )), Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.First*
   name: First
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_First_
@@ -1962,18 +1972,24 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResults(Of T0)(System.Data.IDbCommand)
   nameWithType: Extensions.FirstOrdinalResults<T0>(IDbCommand)
   nameWithType.vb: Extensions.FirstOrdinalResults(Of T0)(IDbCommand)
-- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)
-  name: FirstOrdinalResultsAsync(DbCommand)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync_System_Data_Common_DbCommand_
-  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)
-  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand)
-  nameWithType: Extensions.FirstOrdinalResultsAsync(DbCommand)
-- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)
-  name: FirstOrdinalResultsAsync(DbDataReader)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_
-  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)
-  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader)
-  nameWithType: Extensions.FirstOrdinalResultsAsync(DbDataReader)
+- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken})
+  name: FirstOrdinalResultsAsync(DbCommand, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync_System_Data_Common_DbCommand_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken})
+  name.vb: FirstOrdinalResultsAsync(DbCommand, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.FirstOrdinalResultsAsync(DbCommand, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(DbCommand, Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})
+  name: FirstOrdinalResultsAsync(DbDataReader, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})
+  name.vb: FirstOrdinalResultsAsync(DbDataReader, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.FirstOrdinalResultsAsync(DbDataReader, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(DbDataReader, Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync*
   name: FirstOrdinalResultsAsync
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync_
@@ -1981,24 +1997,24 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync
   nameWithType: Extensions.FirstOrdinalResultsAsync
-- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)
-  name: FirstOrdinalResultsAsync<T0>(DbCommand)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbCommand_
-  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand)
-  name.vb: FirstOrdinalResultsAsync(Of T0)(DbCommand)
-  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync<T0>(System.Data.Common.DbCommand)
-  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(Of T0)(System.Data.Common.DbCommand)
-  nameWithType: Extensions.FirstOrdinalResultsAsync<T0>(DbCommand)
-  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(Of T0)(DbCommand)
-- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)
-  name: FirstOrdinalResultsAsync<T0>(DbDataReader)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_
-  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader)
-  name.vb: FirstOrdinalResultsAsync(Of T0)(DbDataReader)
-  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync<T0>(System.Data.Common.DbDataReader)
-  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(Of T0)(System.Data.Common.DbDataReader)
-  nameWithType: Extensions.FirstOrdinalResultsAsync<T0>(DbDataReader)
-  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(Of T0)(DbDataReader)
+- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken})
+  name: FirstOrdinalResultsAsync<T0>(DbCommand, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbCommand_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken})
+  name.vb: FirstOrdinalResultsAsync(Of T0)(DbCommand, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync<T0>(System.Data.Common.DbCommand, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(Of T0)(System.Data.Common.DbCommand, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.FirstOrdinalResultsAsync<T0>(DbCommand, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(Of T0)(DbCommand, Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})
+  name: FirstOrdinalResultsAsync<T0>(DbDataReader, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})
+  name.vb: FirstOrdinalResultsAsync(Of T0)(DbDataReader, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync<T0>(System.Data.Common.DbDataReader, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(Of T0)(System.Data.Common.DbDataReader, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.FirstOrdinalResultsAsync<T0>(DbDataReader, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.FirstOrdinalResultsAsync(Of T0)(DbDataReader, Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord})
   name: ForEach(IDataReader, Action<IDataRecord>)
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__
@@ -2024,24 +2040,24 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand, System.Action(Of System.Data.IDataRecord), System.Nullable(Of System.Threading.CancellationToken))
   nameWithType: Extensions.ForEachAsync(DbCommand, Action<IDataRecord>, Nullable<CancellationToken>)
   nameWithType.vb: Extensions.ForEachAsync(DbCommand, Action(Of IDataRecord), Nullable(Of CancellationToken))
-- uid: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord})
-  name: ForEachAsync(DbDataReader, Action<IDataRecord>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__
-  commentId: M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord})
-  name.vb: ForEachAsync(DbDataReader, Action(Of IDataRecord))
-  fullName: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Action<System.Data.IDataRecord>)
-  fullName.vb: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Action(Of System.Data.IDataRecord))
-  nameWithType: Extensions.ForEachAsync(DbDataReader, Action<IDataRecord>)
-  nameWithType.vb: Extensions.ForEachAsync(DbDataReader, Action(Of IDataRecord))
-- uid: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task})
-  name: ForEachAsync(DbDataReader, Func<IDataRecord, Task>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task__
-  commentId: M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task})
-  name.vb: ForEachAsync(DbDataReader, Func(Of IDataRecord, Task))
-  fullName: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Func<System.Data.IDataRecord, System.Threading.Tasks.Task>)
-  fullName.vb: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.Task))
-  nameWithType: Extensions.ForEachAsync(DbDataReader, Func<IDataRecord, Task>)
-  nameWithType.vb: Extensions.ForEachAsync(DbDataReader, Func(Of IDataRecord, Task))
+- uid: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})
+  name: ForEachAsync(DbDataReader, Action<IDataRecord>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ForEachAsync(DbDataReader, Action(Of IDataRecord), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Action<System.Data.IDataRecord>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Action(Of System.Data.IDataRecord), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ForEachAsync(DbDataReader, Action<IDataRecord>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ForEachAsync(DbDataReader, Action(Of IDataRecord), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})
+  name: ForEachAsync(DbDataReader, Func<IDataRecord, Task>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ForEachAsync(DbDataReader, Func(Of IDataRecord, Task), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Func<System.Data.IDataRecord, System.Threading.Tasks.Task>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader, System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.Task), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ForEachAsync(DbDataReader, Func<IDataRecord, Task>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ForEachAsync(DbDataReader, Func(Of IDataRecord, Task), Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.ForEachAsync*
   name: ForEachAsync
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ForEachAsync_
@@ -2188,24 +2204,24 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.IterateReader(Of TEntity, TResult)(System.Data.IDbCommand, System.Func(Of System.Data.IDataRecord, TEntity), System.Func(Of System.Collections.Generic.IEnumerable(Of TEntity), TResult))
   nameWithType: Extensions.IterateReader<TEntity, TResult>(IDbCommand, Func<IDataRecord, TEntity>, Func<IEnumerable<TEntity>, TResult>)
   nameWithType.vb: Extensions.IterateReader(Of TEntity, TResult)(IDbCommand, Func(Of IDataRecord, TEntity), Func(Of IEnumerable(Of TEntity), TResult))
-- uid: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
-  name: IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Boolean>, CommandBehavior)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_IterateReaderAsyncWhile_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
-  name.vb: IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Boolean), CommandBehavior)
-  fullName: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func<System.Data.IDataRecord, System.Boolean>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func(Of System.Data.IDataRecord, System.Boolean), System.Data.CommandBehavior)
-  nameWithType: Extensions.IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Boolean>, CommandBehavior)
-  nameWithType.vb: Extensions.IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Boolean), CommandBehavior)
-- uid: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior)
-  name: IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Task<Boolean>>, CommandBehavior)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_IterateReaderAsyncWhile_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task_System_Boolean___System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior)
-  name.vb: IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Task(Of Boolean)), CommandBehavior)
-  fullName: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func<System.Data.IDataRecord, System.Threading.Tasks.Task<System.Boolean>>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.Task(Of System.Boolean)), System.Data.CommandBehavior)
-  nameWithType: Extensions.IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Task<Boolean>>, CommandBehavior)
-  nameWithType.vb: Extensions.IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Task(Of Boolean)), CommandBehavior)
+- uid: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name: IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Boolean>, CommandBehavior, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_IterateReaderAsyncWhile_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name.vb: IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Boolean), CommandBehavior, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func<System.Data.IDataRecord, System.Boolean>, System.Data.CommandBehavior, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func(Of System.Data.IDataRecord, System.Boolean), System.Data.CommandBehavior, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Boolean>, CommandBehavior, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Boolean), CommandBehavior, Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name: IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Task<Boolean>>, CommandBehavior, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_IterateReaderAsyncWhile_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_Task_System_Boolean___System_Data_CommandBehavior_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})
+  name.vb: IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Task(Of Boolean)), CommandBehavior, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func<System.Data.IDataRecord, System.Threading.Tasks.Task<System.Boolean>>, System.Data.CommandBehavior, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand, System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.Task(Of System.Boolean)), System.Data.CommandBehavior, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.IterateReaderAsyncWhile(DbCommand, Func<IDataRecord, Task<Boolean>>, CommandBehavior, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.IterateReaderAsyncWhile(DbCommand, Func(Of IDataRecord, Task(Of Boolean)), CommandBehavior, Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.IterateReaderAsyncWhile*
   name: IterateReaderAsyncWhile
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_IterateReaderAsyncWhile_
@@ -2329,24 +2345,33 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Extensions.ResultsAsync
   nameWithType: Extensions.ResultsAsync
-- uid: Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})
-  name: ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___
-  commentId: M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})
-  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)))
-  fullName: Open.Database.Extensions.Extensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>)
-  fullName.vb: Open.Database.Extensions.Extensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)))
-  nameWithType: Extensions.ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>)
-  nameWithType.vb: Extensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)))
-- uid: Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
-  name: ResultsAsync<T>(DbDataReader, IEnumerable<>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___
-  commentId: M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
-  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of ))
-  fullName: Open.Database.Extensions.Extensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.>)
-  fullName.vb: Open.Database.Extensions.Extensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.))
-  nameWithType: Extensions.ResultsAsync<T>(DbDataReader, IEnumerable<>)
-  nameWithType.vb: Extensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of ))
+- uid: Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})
+  name: ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})
+  name: ResultsAsync<T>(DbDataReader, IEnumerable<>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of ), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ResultsAsync<T>(DbDataReader, IEnumerable<>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of ), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])
+  name: ResultsAsync<T>(DbDataReader, CancellationToken, [])
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Threading_CancellationToken_System_ValueTuple_System_String_System_String____
+  commentId: M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])
+  name.vb: ResultsAsync(Of T)(DbDataReader, CancellationToken, ())
+  fullName: Open.Database.Extensions.Extensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.[])
+  fullName.vb: Open.Database.Extensions.Extensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.())
+  nameWithType: Extensions.ResultsAsync<T>(DbDataReader, CancellationToken, [])
+  nameWithType.vb: Extensions.ResultsAsync(Of T)(DbDataReader, CancellationToken, ())
 - uid: Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])
   name: ResultsAsync<T>(DbDataReader, [])
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_ValueTuple_System_String_System_String____
@@ -2472,30 +2497,24 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Extensions.Retrieve
   nameWithType: Extensions.Retrieve
-- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader)
-  name: RetrieveAsync(DbDataReader)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_
-  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader)
-  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader)
-  nameWithType: Extensions.RetrieveAsync(DbDataReader)
-- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32})
-  name: RetrieveAsync(DbDataReader, IEnumerable<Int32>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Int32__
-  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32})
-  name.vb: RetrieveAsync(DbDataReader, IEnumerable(Of Int32))
-  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Int32>)
-  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Int32))
-  nameWithType: Extensions.RetrieveAsync(DbDataReader, IEnumerable<Int32>)
-  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, IEnumerable(Of Int32))
-- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean)
-  name: RetrieveAsync(DbDataReader, IEnumerable<String>, Boolean)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_String__System_Boolean_
-  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean)
-  name.vb: RetrieveAsync(DbDataReader, IEnumerable(Of String), Boolean)
-  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.String>, System.Boolean)
-  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.String), System.Boolean)
-  nameWithType: Extensions.RetrieveAsync(DbDataReader, IEnumerable<String>, Boolean)
-  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, IEnumerable(Of String), Boolean)
+- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken})
+  name: RetrieveAsync(DbDataReader, IEnumerable<Int32>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Int32__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken})
+  name.vb: RetrieveAsync(DbDataReader, IEnumerable(Of Int32), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Int32>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Int32), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.RetrieveAsync(DbDataReader, IEnumerable<Int32>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, IEnumerable(Of Int32), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken})
+  name: RetrieveAsync(DbDataReader, IEnumerable<String>, Boolean, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_String__System_Boolean_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken})
+  name.vb: RetrieveAsync(DbDataReader, IEnumerable(Of String), Boolean, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.String>, System.Boolean, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.String), System.Boolean, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.RetrieveAsync(DbDataReader, IEnumerable<String>, Boolean, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, IEnumerable(Of String), Boolean, Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Int32,System.Int32[])
   name: RetrieveAsync(DbDataReader, Int32, Int32[])
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Int32_System_Int32___
@@ -2505,6 +2524,15 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Int32, System.Int32())
   nameWithType: Extensions.RetrieveAsync(DbDataReader, Int32, Int32[])
   nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, Int32, Int32())
+- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})
+  name: RetrieveAsync(DbDataReader, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})
+  name.vb: RetrieveAsync(DbDataReader, Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.RetrieveAsync(DbDataReader, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.String,System.String[])
   name: RetrieveAsync(DbDataReader, String, String[])
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_String_System_String___
@@ -2514,6 +2542,24 @@ references:
   fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.String, System.String())
   nameWithType: Extensions.RetrieveAsync(DbDataReader, String, String[])
   nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, String, String())
+- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])
+  name: RetrieveAsync(DbDataReader, CancellationToken, Int32, Int32[])
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Threading_CancellationToken_System_Int32_System_Int32___
+  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])
+  name.vb: RetrieveAsync(DbDataReader, CancellationToken, Int32, Int32())
+  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.Int32, System.Int32[])
+  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.Int32, System.Int32())
+  nameWithType: Extensions.RetrieveAsync(DbDataReader, CancellationToken, Int32, Int32[])
+  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, CancellationToken, Int32, Int32())
+- uid: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.String,System.String[])
+  name: RetrieveAsync(DbDataReader, CancellationToken, String, String[])
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_System_Data_Common_DbDataReader_System_Threading_CancellationToken_System_String_System_String___
+  commentId: M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.String,System.String[])
+  name.vb: RetrieveAsync(DbDataReader, CancellationToken, String, String())
+  fullName: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.String, System.String[])
+  fullName.vb: Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.String, System.String())
+  nameWithType: Extensions.RetrieveAsync(DbDataReader, CancellationToken, String, String[])
+  nameWithType.vb: Extensions.RetrieveAsync(DbDataReader, CancellationToken, String, String())
 - uid: Open.Database.Extensions.Extensions.RetrieveAsync*
   name: RetrieveAsync
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_RetrieveAsync_
@@ -2825,24 +2871,24 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Extensions.ToListAsync
   nameWithType: Extensions.ToListAsync
-- uid: Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0})
-  name: ToListAsync<T>(DbCommand, Func<IDataRecord, T>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ToListAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord___0__
-  commentId: M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0})
-  name.vb: ToListAsync(Of T)(DbCommand, Func(Of IDataRecord, T))
-  fullName: Open.Database.Extensions.Extensions.ToListAsync<T>(System.Data.Common.DbCommand, System.Func<System.Data.IDataRecord, T>)
-  fullName.vb: Open.Database.Extensions.Extensions.ToListAsync(Of T)(System.Data.Common.DbCommand, System.Func(Of System.Data.IDataRecord, T))
-  nameWithType: Extensions.ToListAsync<T>(DbCommand, Func<IDataRecord, T>)
-  nameWithType.vb: Extensions.ToListAsync(Of T)(DbCommand, Func(Of IDataRecord, T))
-- uid: Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0})
-  name: ToListAsync<T>(DbDataReader, Func<IDataRecord, T>)
-  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__
-  commentId: M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0})
-  name.vb: ToListAsync(Of T)(DbDataReader, Func(Of IDataRecord, T))
-  fullName: Open.Database.Extensions.Extensions.ToListAsync<T>(System.Data.Common.DbDataReader, System.Func<System.Data.IDataRecord, T>)
-  fullName.vb: Open.Database.Extensions.Extensions.ToListAsync(Of T)(System.Data.Common.DbDataReader, System.Func(Of System.Data.IDataRecord, T))
-  nameWithType: Extensions.ToListAsync<T>(DbDataReader, Func<IDataRecord, T>)
-  nameWithType.vb: Extensions.ToListAsync(Of T)(DbDataReader, Func(Of IDataRecord, T))
+- uid: Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})
+  name: ToListAsync<T>(DbCommand, Func<IDataRecord, T>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ToListAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord___0__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ToListAsync(Of T)(DbCommand, Func(Of IDataRecord, T), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ToListAsync<T>(System.Data.Common.DbCommand, System.Func<System.Data.IDataRecord, T>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ToListAsync(Of T)(System.Data.Common.DbCommand, System.Func(Of System.Data.IDataRecord, T), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ToListAsync<T>(DbCommand, Func<IDataRecord, T>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ToListAsync(Of T)(DbCommand, Func(Of IDataRecord, T), Nullable(Of CancellationToken))
+- uid: Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})
+  name: ToListAsync<T>(DbDataReader, Func<IDataRecord, T>, Nullable<CancellationToken>)
+  href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__System_Nullable_System_Threading_CancellationToken__
+  commentId: M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})
+  name.vb: ToListAsync(Of T)(DbDataReader, Func(Of IDataRecord, T), Nullable(Of CancellationToken))
+  fullName: Open.Database.Extensions.Extensions.ToListAsync<T>(System.Data.Common.DbDataReader, System.Func<System.Data.IDataRecord, T>, System.Nullable<System.Threading.CancellationToken>)
+  fullName.vb: Open.Database.Extensions.Extensions.ToListAsync(Of T)(System.Data.Common.DbDataReader, System.Func(Of System.Data.IDataRecord, T), System.Nullable(Of System.Threading.CancellationToken))
+  nameWithType: Extensions.ToListAsync<T>(DbDataReader, Func<IDataRecord, T>, Nullable<CancellationToken>)
+  nameWithType.vb: Extensions.ToListAsync(Of T)(DbDataReader, Func(Of IDataRecord, T), Nullable(Of CancellationToken))
 - uid: Open.Database.Extensions.Extensions.ToTargetBlock*
   name: ToTargetBlock
   href: api/Open.Database.Extensions.Extensions.html#Open_Database_Extensions_Extensions_ToTargetBlock_

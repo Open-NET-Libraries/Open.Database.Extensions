@@ -298,7 +298,7 @@ namespace Open.Database.Extensions
                     var c = cmd as TCommand;
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
                     AddParams(c);
-                    con.Open();
+                    con.EnsureOpen();
                     handler(c);
                 }
             });
@@ -318,7 +318,7 @@ namespace Open.Database.Extensions
                     var c = cmd as TCommand;
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
                     AddParams(c);
-                    con.Open();
+                    con.EnsureOpen();
                     return transform(c);
                 }
             });
@@ -339,7 +339,7 @@ namespace Open.Database.Extensions
                     var returnParameter = c.CreateParameter();
                     returnParameter.Direction = ParameterDirection.ReturnValue;
                     c.Parameters.Add(returnParameter);
-                    con.Open();
+                    con.EnsureOpen();
                     c.ExecuteNonQuery();
                     return returnParameter.Value;
                 }
@@ -368,7 +368,7 @@ namespace Open.Database.Extensions
                     var c = cmd as TCommand;
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
                     AddParams(c);
-                    con.Open();
+                    con.EnsureOpen();
                     using (var reader = c.ExecuteReader(CommandBehavior.CloseConnection))
                     {
                         while (reader.Read())
