@@ -11,12 +11,12 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.7.1</Version>
-    <AssemblyVersion>5.7.1.0</AssemblyVersion>
-    <FileVersion>5.7.1.0</FileVersion>
-    <PackageReleaseNotes>Updated transaction methods be more controllable and explicit.  Always passing the connection as a parameter for the handler allows for static handler methods.
-
-Added cancellation tokens to all applicable extensions.</PackageReleaseNotes>
+    <Version>5.8.0</Version>
+    <AssemblyVersion>5.8.0.0</AssemblyVersion>
+    <FileVersion>5.8.0.0</FileVersion>
+    <PackageReleaseNotes>Improved connection state/open intellegence for all connection and command extensions.
+Added missing async extensions for commands. (Was assumed to use expressive commands only.)
+Added more useful connection factory extensions.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -39,6 +39,7 @@ Added cancellation tokens to all applicable extensions.</PackageReleaseNotes>
   <ItemGroup>
     <None Remove=".gitignore" />
     <None Remove="LICENSE" />
+    <None Remove="log.txt" />
     <None Remove="README.md" />
   </ItemGroup>
 

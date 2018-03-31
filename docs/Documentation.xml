@@ -857,6 +857,137 @@
             Core non-DB-specific extensions for building a command and retrieving data using best practices.
             </summary>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.Using``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Using``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Using``2(System.Func{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Using``1(System.Func{``0},System.Action{``0})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task{``1}})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.UsingAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.Task{``1}})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.UsingAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.Task})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(System.Func{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Func{System.Data.Common.DbConnection},System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.DBNullToNull(System.Collections.Generic.IEnumerable{System.Object})">
             <summary>
             Any DBNull values are converted to null.
@@ -1235,6 +1366,26 @@
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <returns>The result of the transform.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Executes a reader on a command with a handler function.
+            </summary>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">Optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>The result of the transform.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.IterateReader``2(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})">
             <summary>
             Executes a reader on a command with a transform function.
@@ -1491,57 +1642,6 @@
             <param name="token">Optional cancellation token.</param>
             <returns>The enumerable of casted values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">
-            <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection to execute the command on.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
-            <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection to execute the command on.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
-            <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String)">
-            <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.Command(System.Func{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
-            <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Func{System.Data.Common.DbConnection},System.String)">
-            <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-            </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
-        </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Iterates an IDataReader through the transform function and posts each record to the target block.
@@ -1577,45 +1677,6 @@
             <param name="command">The IDataReader to iterate.</param>
             <param name="target">The target block to receive the results.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
-            <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="token">Optional cancellation token.</param>
-            <returns>A task containing the list of results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
-            <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="token">Optional cancellation token.</param>
-            <returns>A task containing the list of results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>A task containing the list of results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Asynchronously returns all records and iteratively attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="token">A cancellation token.</param>
-            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>A task containing the list of results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.Results``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
@@ -1676,6 +1737,84 @@
             <param name="command">The command to generate a reader from.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="token">A cancellation token.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously returns all records and iteratively attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="token">A cancellation token.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A task containing the list of results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ResultsFromDataTable``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
@@ -1856,6 +1995,69 @@
             DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The IDataReader to read results from.</param>
+            <param name="token">Optional cancellation token.</param>
+            <param name="c">The first column name to include in the request to the reader for each record.</param>
+            <param name="others">The remaining column names to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are left unchanged (retained).
+            </summary>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Int32,System.Int32[])">
+            <summary>
+            Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are left unchanged (retained).
+            </summary>>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.Int32,System.Int32[])">
+            <summary>
+            Asynchronously enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are left unchanged (retained).
+            </summary>>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="token">A cancellation token.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
+            </summary>>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="columnNames">The column names to select.</param>
+            <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.String,System.String[])">
+            <summary>
+            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
+            </summary>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="c">The first column name to include in the request to the reader for each record.</param>
+            <param name="others">The remaining column names to request from the reader for each record.</param>
+            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.String,System.String[])">
+            <summary>
+            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+            DBNull values are left unchanged (retained).
+            </summary>
+            <param name="command">The command to generate a reader from.</param>
             <param name="token">Optional cancellation token.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>

@@ -61,7 +61,8 @@ namespace Open.Database.Extensions
         {
             if (target.IsStillAlive())
             {
-                using (var reader = await command.ExecuteReaderAsync())
+				if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync();
+				using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (target.IsStillAlive())
                         await reader.ToTargetBlockAsync(target, transform);

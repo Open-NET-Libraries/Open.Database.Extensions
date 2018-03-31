@@ -108,8 +108,12 @@ namespace Open.Database.Extensions
 			var success = false;
 			IDbTransaction transaction = null;
 
-			await connection.EnsureOpenAsync(t); // If the task is cancelled, awaiting will throw.
-			t.ThrowIfCancellationRequested();
+			// Only await if needed...
+			if (connection.State != ConnectionState.Open)
+			{
+				await connection.EnsureOpenAsync(t); // If the task is cancelled, awaiting will throw.
+				t.ThrowIfCancellationRequested();
+			}
 
 			try
 			{

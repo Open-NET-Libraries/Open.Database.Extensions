@@ -121,75 +121,6 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Generates a connection and executes the action within a using statement.
-		/// Useful for single-line operations.
-		/// </summary>
-		/// <typeparam name="TConn">The connection type.</typeparam>
-		/// <typeparam name="T">The type returned from the action.</typeparam>
-		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
-		/// <param name="action">The action to execute.</param>
-		/// <returns>The value from the action.</returns>
-		public static T Using<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn,T> action)
-			where TConn : IDbConnection
-		{
-			using (var conn = connectionFactory.Create())
-			{
-				return action(conn);
-			}
-		}
-
-		/// <summary>
-		/// Generates a connection and executes the action within a using statement.
-		/// Useful for single-line operations.
-		/// </summary>
-		/// <typeparam name="TConn">The connection type.</typeparam>
-		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
-		/// <param name="action">The action to execute.</param>
-		public static void Using<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Action<TConn> action)
-			where TConn : IDbConnection
-		{
-			using (var conn = connectionFactory.Create())
-			{
-				action(conn);
-			}
-		}
-
-		/// <summary>
-		/// Generates a connection and executes the action within a using statement.
-		/// Useful for single-line operations.
-		/// </summary>
-		/// <typeparam name="TConn">The connection type.</typeparam>
-		/// <typeparam name="T">The type returned from the action.</typeparam>
-		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
-		/// <param name="action">The action to execute.</param>
-		/// <returns>The value from the action.</returns>
-		public static T Using<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, T> action)
-			where TConn : IDbConnection
-		{
-			using (var conn = connectionFactory())
-			{
-				return action(conn);
-			}
-		}
-
-		/// <summary>
-		/// Generates a connection and executes the action within a using statement.
-		/// Useful for single-line operations.
-		/// </summary>
-		/// <typeparam name="TConn">The connection type.</typeparam>
-		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
-		/// <param name="action">The action to execute.</param>
-		public static void Using<TConn>(this Func<TConn> connectionFactory, Action<TConn> action)
-			where TConn : IDbConnection
-		{
-			using (var conn = connectionFactory())
-			{
-				action(conn);
-			}
-		}
-
-
-		/// <summary>
 		/// Shortcut for creating an IDbCommand from any IDbConnection.
 		/// </summary>
 		/// <param name="connection">The connection to create a command from.</param>
@@ -646,6 +577,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, T> transform, CancellationToken? token = null)
 		{
 			var t = token ?? CancellationToken.None;
+			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
 			using (var reader = await command.ExecuteReaderAsync(t))
 				return await reader.ToListAsync(transform, t);
 		}
@@ -660,7 +592,6 @@ namespace Open.Database.Extensions
 		public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 			=> reader.Iterate(transform).ToArray();
 
-
 		/// <summary>
 		/// Iterates all records using an IDataReader and returns the desired results as a list.
 		/// </summary>
@@ -670,6 +601,7 @@ namespace Open.Database.Extensions
 		/// <returns>A list of all results.</returns>
 		public static List<T> ToList<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 				return reader.Iterate(transform).ToList();
 		}
@@ -684,6 +616,7 @@ namespace Open.Database.Extensions
 		/// <returns>A list of all results.</returns>
 		public static List<T> ToList<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				return reader.Iterate(transform).ToList();
 		}
@@ -697,6 +630,7 @@ namespace Open.Database.Extensions
 		/// <returns>A list of all results.</returns>
 		public static T[] ToArray<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 				return reader.Iterate(transform).ToArray();
 		}
@@ -711,6 +645,7 @@ namespace Open.Database.Extensions
 		/// <returns>A list of all results.</returns>
 		public static T[] ToArray<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				return reader.Iterate(transform).ToArray();
 		}
@@ -736,6 +671,7 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant DataTable.</returns>
 		public static DataTable ToDataTable(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				return reader.ToDataTable();
 		}
@@ -750,6 +686,7 @@ namespace Open.Database.Extensions
 		public static List<DataTable> ToDataTables(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		{
 			var results = new List<DataTable>();
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 			{
 				do
@@ -779,6 +716,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public static void ExecuteReader(this IDbCommand command, Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				handler(reader);
 		}
@@ -793,9 +731,43 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public static T ExecuteReader<T>(this IDbCommand command, Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				return transform(reader);
 		}
+
+		/// <summary>
+		/// Executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="token">Optional cancellation token.</param>
+		public static async Task ExecuteReaderAsync(this DbCommand command, Func<DbDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+		{
+			var t = token ?? CancellationToken.None;
+			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
+			using (var reader = await command.ExecuteReaderAsync(behavior, t))
+				await handler(reader);
+		}
+
+		/// <summary>
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="token">Optional cancellation token.</param>
+		/// <returns>The result of the transform.</returns>
+		public static async Task<T> ExecuteReaderAsync<T>(this DbCommand command, Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+		{
+			var t = token ?? CancellationToken.None;
+			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
+			using (var reader = await command.ExecuteReaderAsync(behavior, t))
+				return await transform(reader);
+		}
+
 
 		/// <summary>
 		/// Executes a reader on a command with a transform function.
@@ -811,6 +783,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, TEntity> transform,
 			Func<IEnumerable<TEntity>, TResult> selector)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 				return selector(reader.Iterate(transform));
 		}
@@ -831,6 +804,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, TEntity> transform,
 			Func<IEnumerable<TEntity>, TResult> selector)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				return selector(reader.Iterate(transform));
 		}
@@ -842,6 +816,7 @@ namespace Open.Database.Extensions
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public static void IterateReader(this IDbCommand command, Action<IDataRecord> handler)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 				reader.ForEach(handler);
 		}
@@ -854,12 +829,14 @@ namespace Open.Database.Extensions
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public static void IterateReader(this IDbCommand command, CommandBehavior behavior, Action<IDataRecord> handler)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				reader.ForEach(handler);
 		}
 
 		internal static IEnumerable<T> IterateReaderInternal<T>(IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 			{
 				while (reader.Read())
@@ -869,6 +846,7 @@ namespace Open.Database.Extensions
 
 		internal static IEnumerable<object[]> IterateReaderInternal(IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 			{
 				if (reader.Read())
@@ -892,6 +870,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public static void IterateReaderWhile(this IDbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(behavior))
 				reader.IterateWhile(predicate);
 		}
@@ -905,6 +884,7 @@ namespace Open.Database.Extensions
 		public static async Task ForEachAsync(this DbCommand command, Action<IDataRecord> handler, CancellationToken? token = null)
 		{
 			var t = token ?? CancellationToken.None;
+			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
 			using (var reader = await command.ExecuteReaderAsync(t))
 				while (await reader.ReadAsync(t))
 					handler(reader);
@@ -920,6 +900,7 @@ namespace Open.Database.Extensions
 		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
 		{
 			var t = token ?? CancellationToken.None;
+			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
 			using (var reader = await command.ExecuteReaderAsync(behavior, t))
 				while (await reader.ReadAsync(t) && predicate(reader)) { }
 		}
@@ -934,6 +915,7 @@ namespace Open.Database.Extensions
 		public static async Task IterateReaderAsyncWhile(this DbCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
 		{
 			var t = token ?? CancellationToken.None;
+			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
 			using (var reader = await command.ExecuteReaderAsync(behavior, t))
 				while (await reader.ReadAsync(t) && await predicate(reader)) { }
 		}
@@ -947,6 +929,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public static T First<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
 				return reader.Iterate(transform).First();
 		}
@@ -960,6 +943,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public static T FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
 				return reader.Iterate(transform).FirstOrDefault();
 		}
@@ -973,7 +957,8 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public static T Single<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
-			using (var reader = command.ExecuteReader())
+			command.Connection.EnsureOpen();
+			using (var reader = command.ExecuteReader(/* Default mode is used instead of single since .Single() will validate by calling up to 2 entries.*/))
 				return reader.Iterate(transform).Single();
 		}
 
@@ -986,7 +971,8 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public static T SingleOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform)
 		{
-			using (var reader = command.ExecuteReader())
+			command.Connection.EnsureOpen();
+			using (var reader = command.ExecuteReader(/* Default mode is used instead of single since .Single() will validate by calling up to 2 entries.*/))
 				return reader.Iterate(transform).SingleOrDefault();
 		}
 
@@ -1000,6 +986,7 @@ namespace Open.Database.Extensions
 		/// <returns>The results from the transform limited by the take count.</returns>
 		public static List<T> Take<T>(this IDbCommand command, int count, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 				return reader.Iterate(transform).Take(count).ToList();
 		}
@@ -1014,6 +1001,7 @@ namespace Open.Database.Extensions
 		/// <returns>The results from the transform after the skip count.</returns>
 		public static List<T> Skip<T>(this IDbCommand command, int count, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 			{
 				while (0 < count--) reader.Read();
@@ -1032,6 +1020,7 @@ namespace Open.Database.Extensions
 		/// <returns>The results from the skip, transform and take operation.</returns>
 		public static List<T> SkipThenTake<T>(this IDbCommand command, int skip, int take, Func<IDataRecord, T> transform)
 		{
+			command.Connection.EnsureOpen();
 			using (var reader = command.ExecuteReader())
 			{
 				while (0 < skip--) reader.Read();
@@ -1214,12 +1203,8 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The list of values.</returns>
-		public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command, CancellationToken? token = null)
-		{
-			var results = new Queue<object>();
-			await command.ForEachAsync(r => results.Enqueue(r.GetValue(0)), token);
-			return results.DequeueEach().DBNullToNull();
-		}
+		public static Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command, CancellationToken? token = null)
+			=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(token), token: token);
 
 		/// <summary>
 		/// Reads the first column from every record..
@@ -1230,78 +1215,6 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable of casted values.</returns>
 		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CancellationToken? token = null)
 			=> (await command.FirstOrdinalResultsAsync(token)).Cast<T0>();
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand Command(
-			this DbConnection target,
-			string command,
-			CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand(target, type, command);
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand StoredProcedure(
-			this DbConnection target,
-			string command)
-			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand Command(
-			this IDbConnectionFactory<DbConnection> target,
-			string command,
-			CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand(target, type, command);
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand StoredProcedure(
-			this IDbConnectionFactory<DbConnection> target,
-			string command)
-			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand Command(
-			this Func<DbConnection> target,
-			string command,
-			CommandType type = CommandType.Text)
-			=> Command(new DbConnectionFactory(target), command, type);
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand StoredProcedure(
-			this Func<DbConnection> target,
-			string command)
-			=> StoredProcedure(new DbConnectionFactory(target), command);
 
 
 	}

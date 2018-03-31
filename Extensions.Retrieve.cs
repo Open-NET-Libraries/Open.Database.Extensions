@@ -195,6 +195,7 @@ namespace Open.Database.Extensions
                 buffer);
         }
 
+
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
 		/// DBNull values are left unchanged (retained).
@@ -271,5 +272,79 @@ namespace Open.Database.Extensions
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, string c, params string[] others)
 			=> RetrieveAsync(reader, new string[1] { c }.Concat(others), false, token);
+
+
+		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken? token, int[] ordinals, string[] columnNames = null)
+			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames), token: token);
+
+		/// <summary>
+		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+		/// <param name="token">Optional cancellation token.</param>
+		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<int> ordinals, CancellationToken? token = null)
+			=> RetrieveAsyncInternal(command, token, ordinals as int[] ?? ordinals.ToArray());
+
+		/// <summary>
+		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, int n, params int[] others)
+			=> RetrieveAsync(command, new int[1] { n }.Concat(others));
+
+		/// <summary>
+		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="token">A cancellation token.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, int n, params int[] others)
+			=> RetrieveAsync(command, new int[1] { n }.Concat(others), token);
+
+		/// <summary>
+		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+		/// <param name="token">Optional cancellation token.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken? token = null)
+			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, columnNames, normalizeColumnOrder, token), token: token);
+
+		/// <summary>
+		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining column names to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, string c, params string[] others)
+			=> RetrieveAsync(command, new string[1] { c }.Concat(others));
+
+		/// <summary>
+		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining column names to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, string c, params string[] others)
+			=> RetrieveAsync(command, new string[1] { c }.Concat(others), false, token);
+
 	}
 }

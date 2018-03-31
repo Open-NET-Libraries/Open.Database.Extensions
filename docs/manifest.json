@@ -21,7 +21,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.html",
-          "hash": "qJcEQFTwyDrO9DMNGVdsxQ=="
+          "hash": "VtEQXXI+ElbctG02qlc9rQ=="
         }
       },
       "is_incremental": false,
@@ -33,7 +33,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory.html",
-          "hash": "WcQsbrR43bavxxRjjOauKQ=="
+          "hash": "xhMWzNRRpOR+6FeYl4PSfg=="
         }
       },
       "is_incremental": false,
@@ -60,7 +60,7 @@
           "hash": "AA0UtnBymhkqBofwA7ALIA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -72,7 +72,7 @@
           "hash": "dI7o2mKUNDb1c6EGR4IBuw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -84,7 +84,7 @@
           "hash": "W5BHQ/b7wNVPtkJUWd+EqA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -93,7 +93,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.Extensions.html",
-          "hash": "AcIoO2n7BBo3VbcvPWY8ng=="
+          "hash": "Z9uHrmcj3e27gKyLt0N85A=="
         }
       },
       "is_incremental": false,
@@ -105,10 +105,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.html",
-          "hash": "2cVH40rD5clfVbVf6c4U+g=="
+          "hash": "DBC1Y4kREXleorKW0papRw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -156,7 +156,7 @@
           "hash": "te+yPuJDNsNRZpVc3R2o3A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -168,7 +168,7 @@
           "hash": "3Lcb4bjbDNkuLUZJcc6JuQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -177,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.html",
-          "hash": "/jAtATXye9NrsQGxI6DjTQ=="
+          "hash": "7L6Ej6GSdK8o2rUEm+xhLA=="
         }
       },
       "is_incremental": false,

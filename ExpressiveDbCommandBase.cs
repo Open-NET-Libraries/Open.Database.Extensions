@@ -96,7 +96,7 @@ namespace Open.Database.Extensions
 					var c = cmd as TCommand;
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					AddParams(c);
-					await con.EnsureOpenAsync(t);
+					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(t);
 					return await transform(c);
 				}
 			}
@@ -126,7 +126,7 @@ namespace Open.Database.Extensions
 					var returnParameter = c.CreateParameter();
 					returnParameter.Direction = ParameterDirection.ReturnValue;
 					cmd.Parameters.Add(returnParameter);
-					await con.EnsureOpenAsync(t);
+					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(t);
 					await c.ExecuteNonQueryAsync(t);
 					return returnParameter.Value;
 				}
