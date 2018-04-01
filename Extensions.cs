@@ -120,65 +120,6 @@ namespace Open.Database.Extensions
 			return state;
 		}
 
-		/// <summary>
-		/// Shortcut for creating an IDbCommand from any IDbConnection.
-		/// </summary>
-		/// <param name="connection">The connection to create a command from.</param>
-		/// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-		/// <param name="commandText">The command text or stored procedure name to use.</param>
-		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-		/// <returns>The created SqlCommand.</returns>
-		public static IDbCommand CreateCommand(this IDbConnection connection,
-			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
-		{
-			var command = connection.CreateCommand();
-			command.CommandType = type;
-			command.CommandText = commandText;
-			command.CommandTimeout = secondsTimeout;
-
-			return command;
-		}
-
-		/// <summary>
-		/// Shortcut for creating an IDbCommand from any IDbConnection.
-		/// </summary>
-		/// <param name="connection">The connection to create a command from.</param>
-		/// <param name="commandText">The command text or stored procedure name to use.</param>
-		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-		/// <returns>The created SqlCommand.</returns>
-		public static IDbCommand CreateStoredProcedureCommand(this IDbConnection connection,
-			string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
-			=> connection.CreateCommand(CommandType.StoredProcedure, commandText, secondsTimeout);
-
-		/// <summary>
-		/// Shortcut for creating an DbCommand from any DbConnection.
-		/// </summary>
-		/// <param name="connection">The connection to create a command from.</param>
-		/// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-		/// <param name="commandText">The command text or stored procedure name to use.</param>
-		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-		/// <returns>The created SqlCommand.</returns>
-		public static DbCommand CreateCommand(this DbConnection connection,
-			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
-		{
-			var command = connection.CreateCommand();
-			command.CommandType = type;
-			command.CommandText = commandText;
-			command.CommandTimeout = secondsTimeout;
-
-			return command;
-		}
-
-		/// <summary>
-		/// Shortcut for creating an DbCommand from any DbConnection.
-		/// </summary>
-		/// <param name="connection">The connection to create a command from.</param>
-		/// <param name="commandText">The command text or stored procedure name to use.</param>
-		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-		/// <returns>The created SqlCommand.</returns>
-		public static DbCommand CreateStoredProcedureCommand(this DbConnection connection,
-			string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
-			=> connection.CreateCommand(CommandType.StoredProcedure, commandText, secondsTimeout);
 
 		/// <summary>
 		/// Shortcut for adding command parameter.
@@ -197,6 +138,8 @@ namespace Open.Database.Extensions
 			target.Parameters.Add(c);
 			return c;
 		}
+
+		
 
 		/// <summary>
 		/// Shortcut for adding command parameter.

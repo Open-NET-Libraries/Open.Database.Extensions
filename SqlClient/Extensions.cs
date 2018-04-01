@@ -8,49 +8,19 @@ namespace Open.Database.Extensions.SqlClient
     /// <summary>
     /// SqlClient extensions for building a command and retrieving data using best practices.
     /// </summary>
-    public static class Extensions
+    public static partial class Extensions
     {
 
-        /// <summary>
-        /// Shortcut for creating an SqlCommand from any SqlConnection.
-        /// </summary>
-        /// <param name="connection">The connection to create a command from.</param>
-        /// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-        /// <param name="commandText">The command text or stored procedure name to use.</param>
-        /// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-        /// <returns>The created SqlCommand.</returns>
-        public static SqlCommand CreateCommand(this SqlConnection connection,
-            CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
-        {
-            var command = connection.CreateCommand();
-            command.CommandType = type;
-            command.CommandText = commandText;
-            command.CommandTimeout = secondsTimeout;
-
-            return command;
-        }
-
-        /// <summary>
-        /// Shortcut for creating an SqlCommand from any SqlConnection.
-        /// </summary>
-        /// <param name="connection">The connection to create a command from.</param>
-        /// <param name="commandText">The command text or stored procedure name to use.</param>
-        /// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-        /// <returns>The created SqlCommand.</returns>
-        public static SqlCommand CreateStoredProcedureCommand(this SqlConnection connection,
-            string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
-            => connection.CreateCommand(CommandType.StoredProcedure, commandText, secondsTimeout);
-
-        /// <summary>
-        /// Shortcut for adding command parameter.
-        /// </summary>
-        /// <param name="target">The command to add a parameter to.</param>
-        /// <param name="name">The name of the parameter.</param>
-        /// <param name="value">The value of the parameter.</param>
-        /// <param name="type">The DbType of the parameter.</param>
-        /// <param name="direction">The direction of the parameter.</param>
-        /// <returns>The created IDbDataParameter.</returns>
-        public static SqlParameter AddParameter(this SqlCommand target,
+		/// <summary>
+		/// Shortcut for adding command parameter.
+		/// </summary>
+		/// <param name="target">The command to add a parameter to.</param>
+		/// <param name="name">The name of the parameter.</param>
+		/// <param name="value">The value of the parameter.</param>
+		/// <param name="type">The DbType of the parameter.</param>
+		/// <param name="direction">The direction of the parameter.</param>
+		/// <returns>The created IDbDataParameter.</returns>
+		public static SqlParameter AddParameter(this SqlCommand target,
             string name, object value, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
         {
             var p = target.AddParameterType(name, type, direction);
@@ -88,75 +58,6 @@ namespace Open.Database.Extensions.SqlClient
         {
             return AddParameterType((SqlCommand)target, name, type);
         }
-
-        /// <summary>
-        /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection to execute the command on.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <param name="type">The command type.</param>
-        /// <returns>The resultant ExpressiveSqlCommand.</returns>
-        public static ExpressiveSqlCommand Command(
-            this SqlConnection target,
-            string command, CommandType type = CommandType.Text)
-            => new ExpressiveSqlCommand(target, type, command);
-
-        /// <summary>
-        /// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection to execute the command on.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <returns>The resultant ExpressiveSqlCommand.</returns>
-        public static ExpressiveSqlCommand StoredProcedure(
-            this SqlConnection target,
-            string command)
-            => new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
-            
-        /// <summary>
-        /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection factory to generate a commands from.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <param name="type">The command type.</param>
-        /// <returns>The resultant ExpressiveSqlCommand.</returns>
-        public static ExpressiveSqlCommand Command(
-            this IDbConnectionFactory<SqlConnection> target,
-            string command, CommandType type = CommandType.Text)
-            => new ExpressiveSqlCommand(target, type, command);
-
-        /// <summary>
-        /// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection factory to generate a commands from.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <returns>The resultant ExpressiveSqlCommand.</returns>
-        public static ExpressiveSqlCommand StoredProcedure(
-            this IDbConnectionFactory<SqlConnection> target,
-            string command)
-            => new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
-
-        /// <summary>
-        /// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection factory to generate a commands from.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <param name="type">The command type.</param>
-        /// <returns>The resultant ExpressiveSqlCommand.</returns>
-        public static ExpressiveSqlCommand Command(
-            this Func<SqlConnection> target,
-            string command, CommandType type = CommandType.Text)
-            => Command(new DbConnectionFactory<SqlConnection>(target), command, type);
-
-        /// <summary>
-        /// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
-        /// </summary>
-        /// <param name="target">The connection factory to generate a commands from.</param>
-        /// <param name="command">The command text or stored procedure name to use.</param>
-        /// <returns>The resultant ExpressiveSqlCommand.</returns>
-        public static ExpressiveSqlCommand StoredProcedure(
-            this Func<SqlConnection> target,
-            string command)
-            => StoredProcedure(new DbConnectionFactory<SqlConnection>(target), command);
-
+		
     }
 }

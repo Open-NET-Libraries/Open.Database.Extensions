@@ -32,21 +32,23 @@ namespace Open.Database.Extensions
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
 			string command,
-			List<Param> @params)
+			IEnumerable<Param> @params)
 			: base(connFactory, type, command, @params)
 		{
 		}
 
 		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="transaction">The optional transaction to execute the command on.</param>
 		/// <param name="type">The command type>.</param>
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
 		protected ExpressiveDbCommandBase(
 			TConnection connection,
+			IDbTransaction transaction,
 			CommandType type,
 			string command,
-			List<Param> @params)
-			: base(connection, type, command, @params)
+			IEnumerable<Param> @params)
+			: base(connection, transaction, type, command, @params)
 		{
 		}
 
@@ -223,6 +225,7 @@ namespace Open.Database.Extensions
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
 		/// </summary>
 		/// <param name="predicate">If true, the iteration continues.</param>
+		/// <param name="token">An optional cancellation token.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
 		public Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate, CancellationToken? token = null)
 			=> ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate), token);

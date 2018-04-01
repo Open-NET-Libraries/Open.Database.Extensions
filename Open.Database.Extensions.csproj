@@ -11,12 +11,13 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.8.0</Version>
-    <AssemblyVersion>5.8.0.0</AssemblyVersion>
-    <FileVersion>5.8.0.0</FileVersion>
-    <PackageReleaseNotes>Improved connection state/open intellegence for all connection and command extensions.
-Added missing async extensions for commands. (Was assumed to use expressive commands only.)
-Added more useful connection factory extensions.</PackageReleaseNotes>
+    <Version>5.9.0</Version>
+    <AssemblyVersion>5.9.0.0</AssemblyVersion>
+    <FileVersion>5.9.0.0</FileVersion>
+    <PackageReleaseNotes>Implemented correct transaction flow.
+Added extensions for creating commands from transactions.
+Expanded expressive commands to allow for transactions.
+Added examples.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -30,10 +31,13 @@ Added more useful connection factory extensions.</PackageReleaseNotes>
   <ItemGroup>
     <Compile Remove="api\**" />
     <Compile Remove="docs\**" />
+    <Compile Remove="Examples\**" />
     <EmbeddedResource Remove="api\**" />
     <EmbeddedResource Remove="docs\**" />
+    <EmbeddedResource Remove="Examples\**" />
     <None Remove="api\**" />
     <None Remove="docs\**" />
+    <None Remove="Examples\**" />
   </ItemGroup>
 
   <ItemGroup>

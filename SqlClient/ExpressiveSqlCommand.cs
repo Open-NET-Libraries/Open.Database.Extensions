@@ -15,38 +15,30 @@ namespace Open.Database.Extensions.SqlClient
         /// <param name="type">The command type>.</param>
         /// <param name="command">The SQL command.</param>
         /// <param name="params">The list of params</param>
-        public ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string command, List<Param> @params = null)
+        public ExpressiveSqlCommand(
+			IDbConnectionFactory<SqlConnection> connFactory,
+			CommandType type,
+			string command,
+			IEnumerable<Param> @params = null)
             : base(connFactory, type, command, @params)
         {
         }
 
-        /// <param name="connFactory">The factory to generate connections from.</param>
-        /// <param name="type">The command type>.</param>
-        /// <param name="command">The SQL command.</param>
-        /// <param name="params">The list of params</param>
-        public ExpressiveSqlCommand(IDbConnectionFactory<SqlConnection> connFactory, CommandType type, string command, params Param[] @params)
-            : base(connFactory, type, command, @params.ToList())
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="transaction">The optional transaction to execute the command on.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveSqlCommand(
+			SqlConnection connection,
+			SqlTransaction transaction,
+			CommandType type,
+			string command,
+			IEnumerable<Param> @params = null)
+            : base(connection, transaction, type, command, @params)
         {
         }
 
-
-        /// <param name="connection">The connection to execute the command on.</param>
-        /// <param name="type">The command type>.</param>
-        /// <param name="command">The SQL command.</param>
-        /// <param name="params">The list of params</param>
-        public ExpressiveSqlCommand(SqlConnection connection, CommandType type, string command, List<Param> @params)
-            : base(connection, type, command, @params?.ToList())
-        {
-        }
-
-        /// <param name="connection">The connection to execute the command on.</param>
-        /// <param name="type">The command type>.</param>
-        /// <param name="command">The SQL command.</param>
-        /// <param name="params">The list of params</param>
-        public ExpressiveSqlCommand(SqlConnection connection, CommandType type, string command, params Param[] @params)
-            : base(connection, type, command, @params?.ToList())
-        {
-        }
 
         /// <summary>
         /// Handles adding the list of parameters to a new command.

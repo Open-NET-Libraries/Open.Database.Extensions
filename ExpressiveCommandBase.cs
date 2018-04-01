@@ -31,14 +31,19 @@ namespace Open.Database.Extensions
         /// </summary>
         protected readonly TConnection Connection;
 
+		/// <summary>
+		/// The transaction to execute commands on if not using a connection factory.
+		/// </summary>
+		protected readonly IDbTransaction Transaction;
+
         ExpressiveCommandBase(
             CommandType type,
             string command,
-            List<Param> @params = null)
+            IEnumerable<Param> @params)
         {
             Type = type;
             Command = command ?? throw new ArgumentNullException(nameof(command));
-            Params = @params ?? throw new ArgumentNullException(nameof(@params));
+			Params = @params?.ToList() ?? new List<Param>();
             Timeout = CommandTimeout.DEFAULT_SECONDS;
         }
 
@@ -50,25 +55,28 @@ namespace Open.Database.Extensions
             IDbConnectionFactory<TConnection> connFactory,
             CommandType type,
             string command,
-            List<Param> @params)
-            : this(type, command, @params ?? new List<Param>())
+            IEnumerable<Param> @params)
+            : this(type, command, @params)
         {
             ConnectionFactory = connFactory ?? throw new ArgumentNullException(nameof(connFactory));
         }
 
-        /// <param name="connection">The connection to execute the command on.</param>
-        /// <param name="type">The command type>.</param>
-        /// <param name="command">The SQL command.</param>
-        /// <param name="params">The list of params</param>
-        protected ExpressiveCommandBase(
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="transaction">The optional transaction to execute the command on.</param>
+		/// <param name="type">The command type>.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveCommandBase(
             TConnection connection,
+			IDbTransaction transaction,
             CommandType type,
             string command,
-            List<Param> @params)
-            : this(type, command, @params ?? new List<Param>())
+			IEnumerable<Param> @params)
+            : this(type, command, @params)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        }
+			Transaction = transaction;
+		}
 
         /// <summary>
         /// The command text or procedure name to use.
@@ -252,36 +260,36 @@ namespace Open.Database.Extensions
         /// Handles providing the connection for use with the command.
         /// </summary>
         /// <param name="action">The handler for use with the connection.</param>
-        protected void UsingConnection(Action<TConnection> action)
+        protected void UsingConnection(Action<TConnection, IDbTransaction> action)
         {
-            if (ConnectionFactory != null)
-            {
-                using (var conn = ConnectionFactory.Create())
-                {
-                    action(conn);
-                }
-            }
-            else
-            {
-                action(Connection);
-            }
-        }
+			if (Connection != null)
+			{
+				action(Connection, Transaction);
+			}
+			else
+			{
+				using (var conn = ConnectionFactory.Create())
+				{
+					action(conn, null);
+				}
+			}
+		}
 
         /// <summary>
         /// Handles providing the connection for use with the command.
         /// </summary>
         /// <param name="action">The handler for use with the connection.</param>
-        protected T UsingConnection<T>(Func<TConnection, T> action)
+        protected T UsingConnection<T>(Func<TConnection, IDbTransaction, T> action)
         {
             if (Connection != null)
             {
-                return action(Connection);
+                return action(Connection, Transaction);
             }
             else
             {
                 using (var conn = ConnectionFactory.Create())
                 {
-                    return action(conn);
+                    return action(conn, null);
                 }
             }
         }
@@ -291,13 +299,14 @@ namespace Open.Database.Extensions
         /// </summary>
         /// <param name="handler">The handler function for each IDataRecord.</param>
         public void Execute(Action<TCommand> handler)
-            => UsingConnection(con =>
+            => UsingConnection((con,t) =>
             {
                 using (var cmd = con.CreateCommand(Type, Command, Timeout))
                 {
                     var c = cmd as TCommand;
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                    AddParams(c);
+					if (t != null) c.Transaction = t;
+					AddParams(c);
                     con.EnsureOpen();
                     handler(c);
                 }
@@ -311,13 +320,14 @@ namespace Open.Database.Extensions
         /// <param name="transform">The transform function for each IDataRecord.</param>
         /// <returns>The result of the transform.</returns>
         public T Execute<T>(Func<TCommand, T> transform)
-            => UsingConnection(con =>
+            => UsingConnection((con,t) =>
             {
                 using (var cmd = con.CreateCommand(Type, Command, Timeout))
                 {
                     var c = cmd as TCommand;
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                    AddParams(c);
+					if (t != null) c.Transaction = t;
+					AddParams(c);
                     con.EnsureOpen();
                     return transform(c);
                 }
@@ -329,13 +339,14 @@ namespace Open.Database.Extensions
         /// </summary>
         /// <returns>The value from the return parameter.</returns>
         public object ExecuteReturn()
-            => UsingConnection(con =>
+            => UsingConnection((con,t) =>
             {
                 using (var cmd = con.CreateCommand(Type, Command, Timeout))
                 {
                     var c = cmd as TCommand;
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                    AddParams(c);
+					if (t != null) c.Transaction = t;
+					AddParams(c);
                     var returnParameter = c.CreateParameter();
                     returnParameter.Direction = ParameterDirection.ReturnValue;
                     c.Parameters.Add(returnParameter);

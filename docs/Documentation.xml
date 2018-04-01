@@ -52,14 +52,20 @@
             The connection to execute commands on if not using a connection factory.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+        <member name="F:Open.Database.Extensions.ExpressiveCommandBase`4.Transaction">
+            <summary>
+            The transaction to execute commands on if not using a connection factory.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
             <param name="connection">The connection to execute the command on.</param>
+            <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -184,13 +190,13 @@
             </summary>
             <param name="command">The command to add parameters to.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.UsingConnection(System.Action{`0})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.UsingConnection(System.Action{`0,System.Data.IDbTransaction})">
             <summary>
             Handles providing the connection for use with the command.
             </summary>
             <param name="action">The handler for use with the connection.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.UsingConnection``1(System.Func{`0,``0})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.UsingConnection``1(System.Func{`0,System.Data.IDbTransaction,``0})">
             <summary>
             Handles providing the connection for use with the command.
             </summary>
@@ -557,26 +563,15 @@
             An abstraction for executing commands on a database using best practices and simplified expressive syntax.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param[])">
-            <param name="connFactory">The factory to generate connections from.</param>
-            <param name="type">The command type>.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.Common.DbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
             <param name="connection">The connection to execute the command on.</param>
-            <param name="type">The command type>.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param[])">
-            <param name="connection">The connection to execute the command on.</param>
+            <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -597,14 +592,15 @@
             <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
             <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3}.Param})">
             <param name="connection">The connection to execute the command on.</param>
+            <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -710,6 +706,7 @@
             Iterates asynchronously until the handler returns false.  Then cancels.
             </summary>
             <param name="predicate">If true, the iteration continues.</param>
+            <param name="token">An optional cancellation token.</param>
             <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}})">
@@ -946,11 +943,28 @@
             <param name="type">The command type.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.Command(System.Data.Common.DbTransaction,System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The transaction to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
             <summary>
             Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
             <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.StoredProcedure(System.Data.Common.DbTransaction,System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The transaction to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
@@ -988,6 +1002,118 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an IDbCommand from any IDbConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateTextCommand(System.Data.IDbConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a text IDbCommand from any IDbConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.IDbConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an IDbCommand from any IDbConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an DbCommand from any DbConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateTextCommand(System.Data.Common.DbConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a text DbCommand from any DbConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.Common.DbConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a stored procedure DbCommand from any DbConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="procedureName">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an IDbCommand from any IDbTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateTextCommand(System.Data.IDbTransaction,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a text IDbCommand from any IDbTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.IDbTransaction,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a stored procedure IDbCommand from any IDbTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="procedureName">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.Common.DbTransaction,System.Data.CommandType,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an DbCommand from any DbTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateTextCommand(System.Data.Common.DbTransaction,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a text DbCommand from any DbTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.Common.DbTransaction,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a stored procedure DbCommand from any DbTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="procedureName">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.DBNullToNull(System.Collections.Generic.IEnumerable{System.Object})">
             <summary>
             Any DBNull values are converted to null.
@@ -1024,44 +1150,6 @@
             <param name="connection">The connection to transact with.</param>
             <param name="token">An optional token to cancel opening.</param>
             <returns>A task containing the prior connection state.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">
-            <summary>
-            Shortcut for creating an IDbCommand from any IDbConnection.
-            </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.IDbConnection,System.String,System.Int32)">
-            <summary>
-            Shortcut for creating an IDbCommand from any IDbConnection.
-            </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.CreateCommand(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Int32)">
-            <summary>
-            Shortcut for creating an DbCommand from any DbConnection.
-            </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Extensions.CreateStoredProcedureCommand(System.Data.Common.DbConnection,System.String,System.Int32)">
-            <summary>
-            Shortcut for creating an DbCommand from any DbConnection.
-            </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.AddParameter(System.Data.IDbCommand,System.String,System.Object)">
             <summary>
@@ -2063,88 +2151,301 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``2(``0,System.Func{``0,System.ValueTuple{System.Boolean,``1}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value retured from the conditional action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Boolean})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>True if committed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,``0})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.Common.DbTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <returns>The value retured from the conditional action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(``0,System.Func{``0,System.Boolean},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Boolean})">
             <summary>
-            Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional actio returns true.  Otherwise rolls-back the transaction.
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
             <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <returns>True if committed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``2(``0,System.Func{``0,``1},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,``0})">
             <summary>
-            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(``0,System.Action{``0},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Action{System.Data.Common.DbTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value retured from the conditional action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Boolean})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>True if committed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,``0})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
-            <param name="action">The handler to execute while a transaction is pending.</param>
             <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``1}}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.Common.DbTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
             <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-            <returns>The value of the awaited action.</returns>
+            <returns>The value retured from the conditional action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Boolean})">
             <summary>
-            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-            <returns>The value of the awaited action.</returns>
+            <returns>True if committed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``2(``0,System.Func{``0,System.Threading.Tasks.Task{``1}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,``0})">
             <summary>
-            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-            <returns>The value of the awaited action.</returns>
+            <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(``0,System.Func{``0,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Action{System.Data.Common.DbTransaction})">
             <summary>
-            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
             <param name="connection">The connection to transact with.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
-            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
         <member name="T:Open.Database.Extensions.IDbConnectionFactory">
             <summary>
@@ -2314,26 +2615,15 @@
             A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param[])">
-            <param name="connFactory">The factory to generate connections from.</param>
-            <param name="type">The command type>.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
-        </member>
-        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,System.Collections.Generic.List{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">
+        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param})">
             <param name="connection">The connection to execute the command on.</param>
-            <param name="type">The command type>.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
-        </member>
-        <member name="M:Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,Open.Database.Extensions.SqlClient.ExpressiveSqlCommand}.Param[])">
-            <param name="connection">The connection to execute the command on.</param>
+            <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type>.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -2359,12 +2649,49 @@
             <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
             <returns>The created SqlCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand(System.Data.SqlClient.SqlConnection,System.String,System.Int32)">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateTextCommand(System.Data.SqlClient.SqlConnection,System.String,System.Int32)">
             <summary>
-            Shortcut for creating an SqlCommand from any SqlConnection.
+            Shortcut for creating an text SqlCommand from any SqlConnection.
             </summary>
             <param name="connection">The connection to create a command from.</param>
             <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand(System.Data.SqlClient.SqlConnection,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a stored procedure SqlCommand from any SqlConnection.
+            </summary>
+            <param name="connection">The connection to create a command from.</param>
+            <param name="procedureName">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateCommand(System.Data.SqlClient.SqlTransaction,System.Data.CommandType,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating an SqlCommand from any SqlTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="commandText">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateTextCommand(System.Data.SqlClient.SqlTransaction,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a text SqlCommand from any SqlTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="procedureName">The command text or stored procedure name to use.</param>
+            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+            <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.CreateStoredProcedureCommand(System.Data.SqlClient.SqlTransaction,System.String,System.Int32)">
+            <summary>
+            Shortcut for creating a stored procedure SqlCommand from any SqlTransaction.
+            </summary>
+            <param name="transaction">The transaction to create a command from.</param>
+            <param name="procedureName">The command text or stored procedure name to use.</param>
             <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
             <returns>The created SqlCommand.</returns>
         </member>
@@ -2407,11 +2734,28 @@
             <param name="type">The command type.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.Command(System.Data.SqlClient.SqlTransaction,System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveSqlCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The transaction to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Data.SqlClient.SqlConnection,System.String)">
             <summary>
             Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
             <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.StoredProcedure(System.Data.SqlClient.SqlTransaction,System.String)">
+            <summary>
+            Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The transaction to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
@@ -2448,6 +2792,302 @@
             <param name="target">The connection factory to generate a commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value retured from the conditional action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>True if committed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,``0})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.SqlClient.SqlTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value retured from the conditional action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>True if committed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,``0})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Action{System.Data.SqlClient.SqlTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value retured from the conditional action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>True if committed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,``0})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.SqlClient.SqlTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions, the value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value retured from the conditional action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>True if committed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,``0})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Action{System.Data.SqlClient.SqlTransaction})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <typeparam name="T">The value returned from the action.</typeparam>
+            <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
+            <returns>The value of the awaited action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
+            <summary>
+            Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+            </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
         <member name="T:Open.Database.Extensions.SqlClient.SqlConnectionFactory">
             <summary>

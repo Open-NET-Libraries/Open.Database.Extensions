@@ -155,7 +155,20 @@ namespace Open.Database.Extensions
 			this DbConnection target,
 			string command,
 			CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand(target, type, command);
+			=> new ExpressiveDbCommand(target, null, type, command);
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The transaction to execute the command on.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command(
+			this DbTransaction target,
+			string command,
+			CommandType type = CommandType.Text)
+			=> new ExpressiveDbCommand(target.Connection, target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -166,7 +179,18 @@ namespace Open.Database.Extensions
 		public static ExpressiveDbCommand StoredProcedure(
 			this DbConnection target,
 			string command)
-			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
+			=> new ExpressiveDbCommand(target, null, CommandType.StoredProcedure, command);
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The transaction to execute the command on.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand StoredProcedure(
+			this DbTransaction target,
+			string command)
+			=> new ExpressiveDbCommand(target.Connection, target, CommandType.StoredProcedure, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.

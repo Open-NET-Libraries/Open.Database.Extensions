@@ -110,15 +110,22 @@ Example:
 
 ```cs
 	// Returns true if the transaction is successful.
-	public static bool DoTransaction()
+	public static bool TryTransaction()
 	=> ConnectionFactory.Using(connection =>
 		// Open a connection and start a transaction.
-		connection.ExecuteTransactionConditional(c => {
-			/*
-			 * Do some complex data access requring a potential roll-back.
-			 */
+		connection.ExecuteTransactionConditional(transaction => {
 
-			// Commit transation if true.  Roll-back if false.
-			return true;
+			// First procedure does some updates.
+			var count = transaction
+				.StoredProcedure("[Updated Procedure]")
+				.ExecuteNonQuery();
+
+			// Second procedure validates the results.
+			// If it returns true, then the transaction is commited.
+			// If it returns false, then the transaction is rolled back.
+			return transaction
+				.StoredProcedure("[Validation Procedure]")
+				.AddParam("@ExpectedCount", count)
+				.ExecuteScalar<bool>();
 		}));
 ```
