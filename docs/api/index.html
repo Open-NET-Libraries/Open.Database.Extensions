@@ -124,7 +124,28 @@ using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseCo
 <p><code>AsSourceBlockAsync&lt;T&gt;()</code> is fully asynchronous from end-to-end and can keep total buffering to a minimum by consuming (receiving) results as fast as possible, but may incur additional latency between reads.</p>
 <p><code>ResultsAsync&lt;T&gt;()</code> is fully asynchronous from end-to-end but returns an <code>IEnumerable&lt;T&gt;</code> that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.</p>
 <p>Both methods ultimately are using a <code>Queue&lt;object[]&gt;</code> or <code>ConcurrentQueue&lt;object[]&gt;</code> (Dataflow) to buffer the data, but <code>ResultsAsync&lt;T&gt;()</code> buffers the entire data set before dequeuing and transforming the results.</p>
-</article>
+<h2 id="transactions">Transactions</h2>
+<p>Example:</p>
+<pre><code class="lang-cs">    // Returns true if the transaction is successful.
+    public static bool TryTransaction()
+    =&gt; ConnectionFactory.Using(connection =&gt;
+        // Open a connection and start a transaction.
+        connection.ExecuteTransactionConditional(transaction =&gt; {
+
+            // First procedure does some updates.
+            var count = transaction
+                .StoredProcedure(&quot;[Updated Procedure]&quot;)
+                .ExecuteNonQuery();
+
+            // Second procedure validates the results.
+            // If it returns true, then the transaction is commited.
+            // If it returns false, then the transaction is rolled back.
+            return transaction
+                .StoredProcedure(&quot;[Validation Procedure]&quot;)
+                .AddParam(&quot;@ExpectedCount&quot;, count)
+                .ExecuteScalar&lt;bool&gt;();
+        }));
+</code></pre></article>
           </div>
           
           <div class="hidden-sm col-md-2" role="complementary">

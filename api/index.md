@@ -101,3 +101,29 @@ Depending on the level of asynchrony in your application, you may want to avoid 
 `ResultsAsync<T>()` is fully asynchronous from end-to-end but returns an `IEnumerable<T>` that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.
 
 Both methods ultimately are using a `Queue<object[]>` or `ConcurrentQueue<object[]>` (Dataflow) to buffer the data, but `ResultsAsync<T>()` buffers the entire data set before dequeuing and transforming the results.
+
+## Transactions
+
+Example:
+
+```cs
+	// Returns true if the transaction is successful.
+	public static bool TryTransaction()
+	=> ConnectionFactory.Using(connection =>
+		// Open a connection and start a transaction.
+		connection.ExecuteTransactionConditional(transaction => {
+
+			// First procedure does some updates.
+			var count = transaction
+				.StoredProcedure("[Updated Procedure]")
+				.ExecuteNonQuery();
+
+			// Second procedure validates the results.
+			// If it returns true, then the transaction is commited.
+			// If it returns false, then the transaction is rolled back.
+			return transaction
+				.StoredProcedure("[Validation Procedure]")
+				.AddParam("@ExpectedCount", count)
+				.ExecuteScalar<bool>();
+		}));
+```
