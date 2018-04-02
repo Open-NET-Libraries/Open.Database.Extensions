@@ -92,6 +92,7 @@ namespace Open.Database.Extensions
 			{
 				if (connection.State != ConnectionState.Closed)
 					connection.Close();
+
 				connection.Open();
 			}
 			return state;
@@ -115,7 +116,7 @@ namespace Open.Database.Extensions
 				if (connection.State != ConnectionState.Closed)
 					connection.Close();
 
-				await connection.EnsureOpenAsync(t);
+				await connection.OpenAsync(t);
 			}
 			return state;
 		}
