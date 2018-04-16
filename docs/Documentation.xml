@@ -605,6 +605,17 @@
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
+        <member name="F:Open.Database.Extensions.ExpressiveDbCommandBase`4.UseAsyncRead">
+            <summary>
+            By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
+            Using .ReadAsync() can introduce unexpected latency and this should only be set to true if there is a clear reason why and should be profiled before and after.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.EnableAsyncRead(System.Boolean)">
+            <summary>
+            Sets the UseAsyncRead value.
+            </summary>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteAsync(System.Func{`1,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously executes a reader on a command with a handler function.
@@ -635,6 +646,14 @@
             <param name="token">A optional cancellation token.</param>
             <returns>The value from the return parameter.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously executes a reader on a command with a handler function.
+            </summary>
+            <param name="handler">The handler function for the data reader.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">A optional cancellation token.</param>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously executes a reader on a command with a handler function.
@@ -642,6 +661,16 @@
             <param name="handler">The handler function for the data reader.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <param name="token">A optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">A optional cancellation token.</param>
+            <returns>The result of the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteReaderAsync``1(System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
@@ -693,50 +722,57 @@
             <param name="token">A optional cancellation token.</param>
             <returns>The value returned from the method.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Iterates asynchronously and will stop iterating if canceled.
             </summary>
             <param name="handler">The active IDataRecord is passed to this handler.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <param name="token">An optional cancellation token.</param>
-            <returns></returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Boolean},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderWhileAsync(System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Iterates asynchronously until the handler returns false.  Then cancels.
             </summary>
             <param name="predicate">If true, the iteration continues.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <param name="token">An optional cancellation token.</param>
             <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsyncWhile(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderWhileAsync(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Iterates asynchronously until the handler returns false.  Then cancels.
             </summary>
             <param name="predicate">If true, the iteration continues.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">An optional cancellation token.</param>
             <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.TakeAsync``1(System.Func{System.Data.IDataRecord,``0},System.Int32)">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.TakeAsync``1(System.Func{System.Data.IDataRecord,``0},System.Int32,System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously iterates a IDataReader and returns the each result until the count is met.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <param name="count">The maximum number of records before complete.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">An optional cancellation token.</param>
             <returns>The value from the transform.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync(System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Reads the first column from every record and returns the results as a list..
             DBNull values are converted to null.
             </summary>
+            <param name="token">Optional cancellation token.</param>
             <returns>The list of transformed records.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync``1">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.FirstOrdinalResultsAsync``1(System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Reads the first column from every record..
             DBNull values are converted to null.
             </summary>
+            <param name="token">Optional cancellation token.</param>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync(System.Int32,System.Int32[])">
@@ -1142,13 +1178,14 @@
             </summary>
             <returns>The prior connection state.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             If the connection isn't open, opens the connection.
             If the connection is in neither open or close, first closes the connection.
             </summary>
             <param name="connection">The connection to transact with.</param>
             <param name="token">An optional token to cancel opening.</param>
+            <param name="configureAwait">If true (default) will retain the context after opening.</param>
             <returns>A task containing the prior connection state.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.AddParameter(System.Data.IDbCommand,System.String,System.Object)">
@@ -1188,13 +1225,14 @@
             <param name="reader">The IDataReader to iterate.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Iterates all records from an IDataReader.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})">
             <summary>
@@ -1320,22 +1358,24 @@
             <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.Iterate``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.Extensions.Iterate``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Iterates all records from an IDataReader.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="token">Optional cancellation token.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.Extensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Shortcut for .Iterate(transform).ToList();
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="token">Optional cancellation token.</param>
             <returns>A list of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
@@ -1348,7 +1388,17 @@
             <param name="token">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The SqlDataReader to read from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>A task containing a list of all results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -1356,6 +1406,17 @@
             <param name="command">The DbCommand to generate a reader from.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <param name="token">Optional cancellation token.</param>
+            <returns>A task containing a list of all results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+            <summary>
+            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
@@ -1454,6 +1515,15 @@
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <returns>The result of the transform.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Executes a reader on a command with a handler function.
+            </summary>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">Optional cancellation token.</param>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Executes a reader on a command with a handler function.
@@ -1462,6 +1532,17 @@
             <param name="handler">The handler function for each IDataRecord.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <param name="token">Optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Executes a reader on a command with a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">Optional cancellation token.</param>
+            <returns>The result of the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
@@ -1520,15 +1601,26 @@
             <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+            <summary>
+            Asynchronously iterates all records from an IDataReader.
+            </summary>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously iterates all records from an IDataReader.
             </summary>
             <param name="command">The DbCommand to generate a reader from.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously iterates an IDataReader on a command while the predicate returns true.
             </summary>
@@ -1536,8 +1628,9 @@
             <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="behavior">The command behavior for once the command the reader is complete.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateReaderAsyncWhile(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously iterates an IDataReader on a command while the predicate returns true.
             </summary>
@@ -1694,40 +1787,44 @@
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Reads the first column values from every record.
             DBNull values are converted to null.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The list of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Reads the first column values from every record.
             Any DBNull values are then converted to null and casted to type T0;
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The enumerable of casted values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Reads the first column values from every record.
             DBNull values are converted to null.
             </summary>
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The list of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Reads the first column from every record..
             Any DBNull values are then converted to null and casted to type T0;
             </summary>
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
@@ -1739,7 +1836,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <param name="target">The target block to receivethe results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Boolean)">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
             </summary>
@@ -1747,8 +1844,9 @@
             <param name="reader">The SqlDataReader to read from.</param>
             <param name="target">The target block to receive the results.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Boolean)">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
             </summary>
@@ -1756,6 +1854,7 @@
             <param name="command">The DbCommand to generate a reader from.</param>
             <param name="target">The target block to receive the results.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
@@ -1826,7 +1925,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -1834,9 +1933,10 @@
             <param name="reader">The IDataReader to read results from.</param>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -1844,6 +1944,7 @@
             <param name="reader">The IDataReader to read results from.</param>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing the list of results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
@@ -1865,7 +1966,7 @@
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -1873,9 +1974,10 @@
             <param name="command">The command to generate a reader from.</param>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -1883,6 +1985,7 @@
             <param name="command">The command to generate a reader from.</param>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing the list of results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.ValueTuple{System.String,System.String}[])">
@@ -2016,16 +2119,17 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
@@ -2033,6 +2137,7 @@
             <param name="reader">The reader to enumerate.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Int32,System.Int32[])">
@@ -2056,7 +2161,7 @@
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
             DBNull values are left unchanged (retained).
@@ -2065,6 +2170,7 @@
             <param name="columnNames">The column names to select.</param>
             <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.String,System.String[])">
@@ -2088,7 +2194,7 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
@@ -2096,6 +2202,7 @@
             <param name="command">The command to generate a reader from.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Int32,System.Int32[])">
@@ -2119,7 +2226,7 @@
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
             Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
             DBNull values are left unchanged (retained).
@@ -2128,6 +2235,7 @@
             <param name="columnNames">The column names to select.</param>
             <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
             <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.String,System.String[])">
