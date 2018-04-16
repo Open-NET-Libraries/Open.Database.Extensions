@@ -89,7 +89,7 @@ namespace Open.Database.Extensions
 		{
 			using (var conn = connectionFactory.Create())
 			{
-				return await action(conn);
+				return await action(conn).ConfigureAwait(false);
 			}
 		}
 
@@ -105,7 +105,7 @@ namespace Open.Database.Extensions
 		{
 			using (var conn = connectionFactory.Create())
 			{
-				await action(conn);
+				await action(conn).ConfigureAwait(false);
 			}
 		}
 
@@ -123,7 +123,7 @@ namespace Open.Database.Extensions
 		{
 			using (var conn = connectionFactory())
 			{
-				return await action(conn);
+				return await action(conn).ConfigureAwait(false);
 			}
 		}
 
@@ -139,7 +139,7 @@ namespace Open.Database.Extensions
 		{
 			using (var conn = connectionFactory())
 			{
-				await action(conn);
+				await action(conn).ConfigureAwait(false);
 			}
 		}
 

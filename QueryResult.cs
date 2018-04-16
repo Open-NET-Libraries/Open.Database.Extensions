@@ -81,7 +81,7 @@ namespace Open.Database.Extensions
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
 		public static async Task<IEnumerable<Dictionary<string, object>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object[]>>> source)
-            => (await source).DequeueAsMappedDictionaries();
+            => (await source.ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 		/// <summary>
 		/// Returns an enumerable that dequeues the results and attempts to map the fields to type T.
@@ -119,7 +119,7 @@ namespace Open.Database.Extensions
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
-			return x.AsDequeueingEnumerable(await source);
+			return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 		}
 
 		/// <summary>
@@ -222,7 +222,7 @@ namespace Open.Database.Extensions
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
 		public static async Task<IEnumerable<Dictionary<string, object>>> AsMappedDictionaries(this Task<QueryResult<IEnumerable<object[]>>> source)
-			=> AsMappedDictionaries(await source);
+			=> AsMappedDictionaries(await source.ConfigureAwait(false));
 
 	}
 

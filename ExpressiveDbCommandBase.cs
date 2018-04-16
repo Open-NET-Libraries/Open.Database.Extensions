@@ -52,6 +52,20 @@ namespace Open.Database.Extensions
 		{
 		}
 
+		/// <summary>
+		/// By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
+		/// Using .ReadAsync() can introduce unexpected latency and this should only be set to true if there is a clear reason why and should be profiled before and after.
+		/// </summary>
+		public bool UseAsyncRead = false;
+
+		/// <summary>
+		/// Sets the UseAsyncRead value.
+		/// </summary>
+		public TThis EnableAsyncRead(bool value = true)
+		{
+			UseAsyncRead = value;
+			return (TThis)this;
+		}
 
 		/// <summary>
 		/// Asynchronously executes a reader on a command with a handler function.
@@ -70,7 +84,7 @@ namespace Open.Database.Extensions
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					AddParams(c);
 					await con.OpenAsync(token ?? CancellationToken.None);
-					await handler(c);
+					await handler(c).ConfigureAwait(false);
 				}
 			}
 			finally
@@ -99,7 +113,7 @@ namespace Open.Database.Extensions
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					AddParams(c);
 					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(t);
-					return await transform(c);
+					return await transform(c).ConfigureAwait(false);
 				}
 			}
 			finally
@@ -128,8 +142,8 @@ namespace Open.Database.Extensions
 					var returnParameter = c.CreateParameter();
 					returnParameter.Direction = ParameterDirection.ReturnValue;
 					cmd.Parameters.Add(returnParameter);
-					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(t);
-					await c.ExecuteNonQueryAsync(t);
+					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(t, false).ConfigureAwait(false);
+					await c.ExecuteNonQueryAsync(t).ConfigureAwait(false);
 					return returnParameter.Value;
 				}
 			}
@@ -145,7 +159,16 @@ namespace Open.Database.Extensions
 		/// <param name="token">A optional cancellation token.</param>
 		/// <returns>The value from the return parameter.</returns>
 		public async Task<T> ExecuteReturnAsync<T>(CancellationToken? token = null)
-			=> (T)(await ExecuteReturnAsync(token));
+			=> (T)(await ExecuteReturnAsync(token).ConfigureAwait(false));
+
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for the data reader.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="token">A optional cancellation token.</param>
+		public Task ExecuteReaderAsync(Action<DbDataReader> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+			=> ExecuteAsync(async command => handler(await command.ExecuteReaderAsync(behavior, token ?? CancellationToken.None).ConfigureAwait(false)), token);
 
 		/// <summary>
 		/// Asynchronously executes a reader on a command with a handler function.
@@ -154,7 +177,18 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <param name="token">A optional cancellation token.</param>
 		public Task ExecuteReaderAsync(Func<DbDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
-			=> ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior, token ?? CancellationToken.None)), token);
+			=> ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior, token ?? CancellationToken.None).ConfigureAwait(false)), token);
+
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="token">A optional cancellation token.</param>
+		/// <returns>The result of the transform.</returns>
+		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+			=> ExecuteAsync(async command => transform(await command.ExecuteReaderAsync(behavior, token ?? CancellationToken.None).ConfigureAwait(false)), token);
 
 		/// <summary>
 		/// Asynchronously executes a reader on a command with a transform function.
@@ -165,7 +199,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">A optional cancellation token.</param>
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
-			=> ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, token ?? CancellationToken.None)), token);
+			=> ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, token ?? CancellationToken.None).ConfigureAwait(false)), token);
 
 		/// <summary>
 		/// Calls ExecuteNonQueryAsync on the underlying command.
@@ -191,7 +225,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">A optional cancellation token.</param>
 		/// <returns>The value returned from the method.</returns>
 		public async Task<T> ExecuteScalarAsync<T>(Func<object, T> transform, CancellationToken? token = null)
-			=> transform(await ExecuteScalarAsync(token ?? CancellationToken.None));
+			=> transform(await ExecuteScalarAsync(token ?? CancellationToken.None).ConfigureAwait(false));
 
 		/// <summary>
 		/// Asynchronously executes scalar on the underlying command and casts to the expected type.
@@ -200,7 +234,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">A optional cancellation token.</param>
 		/// <returns>The value returned from the method.</returns>
 		public async Task<T> ExecuteScalarAsync<T>(CancellationToken? token = null)
-			=> (T)(await ExecuteScalarAsync(token ?? CancellationToken.None));
+			=> (T)(await ExecuteScalarAsync(token ?? CancellationToken.None).ConfigureAwait(false));
 
 		/// <summary>
 		/// Asynchronously executes scalar on the underlying command.
@@ -210,35 +244,36 @@ namespace Open.Database.Extensions
 		/// <param name="token">A optional cancellation token.</param>
 		/// <returns>The value returned from the method.</returns>
 		public async Task<T> ExecuteScalarAsync<T>(Func<object, Task<T>> transform, CancellationToken? token = null)
-			=> await transform(await ExecuteScalarAsync(token ?? CancellationToken.None));
+			=> await transform(await ExecuteScalarAsync(token ?? CancellationToken.None).ConfigureAwait(false));
 
 		/// <summary>
 		/// Iterates asynchronously and will stop iterating if canceled.
 		/// </summary>
 		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <param name="token">An optional cancellation token.</param>
-		/// <returns></returns>
-		public Task IterateReaderAsync(Action<IDataRecord> handler, CancellationToken? token = null)
-			=> ExecuteAsync(command => command.ForEachAsync(handler, token), token);
+		public Task IterateReaderAsync(Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+			=> ExecuteAsync(command => command.ForEachAsync(handler, behavior, token, UseAsyncRead), token);
 
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
 		/// </summary>
 		/// <param name="predicate">If true, the iteration continues.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <param name="token">An optional cancellation token.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
-		public Task IterateReaderAsyncWhile(Func<IDataRecord, bool> predicate, CancellationToken? token = null)
-			=> ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate), token);
+		public Task IterateReaderWhileAsync(Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, CommandBehavior.Default, token, UseAsyncRead), token);
 
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
 		/// </summary>
 		/// <param name="predicate">If true, the iteration continues.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="token">An optional cancellation token.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
-		public Task IterateReaderAsyncWhile(Func<IDataRecord, Task<bool>> predicate)
-			=> ExecuteAsync(command => command.IterateReaderAsyncWhile(predicate));
-
-
+		public Task IterateReaderWhileAsync(Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, behavior, token));
 
 		/// <summary>
 		/// Asynchronously iterates a IDataReader and returns the each result until the count is met.
@@ -246,37 +281,40 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <param name="count">The maximum number of records before complete.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="token">An optional cancellation token.</param>
 		/// <returns>The value from the transform.</returns>
-		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count)
+		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
 		{
 			if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 			List<T> results = new List<T>();
 			if (count == 0) return Task.FromResult(results);
 
-			return IterateReaderAsyncWhile(record =>
+			return IterateReaderWhileAsync(record =>
 			{
 				results.Add(transform(record));
 				return results.Count < count;
-			})
+			}, behavior, token)
 			.ContinueWith(t => results);
 		}
-
 
 		/// <summary>
 		/// Reads the first column from every record and returns the results as a list..
 		/// DBNull values are converted to null.
 		/// </summary>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The list of transformed records.</returns>
-		public Task<IEnumerable<object>> FirstOrdinalResultsAsync()
-			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync());
+		public Task<IEnumerable<object>> FirstOrdinalResultsAsync(CancellationToken? token = null)
+			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync(token, UseAsyncRead), token);
 
 		/// <summary>
 		/// Reads the first column from every record..
 		/// DBNull values are converted to null.
 		/// </summary>
+		/// <param name="token">Optional cancellation token.</param>
 		/// <returns>The enumerable of casted values.</returns>
-		public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
-			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync<T0>());
+		public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(CancellationToken? token = null)
+			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync<T0>(token, UseAsyncRead), token);
 
 		/// <summary>
 		/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -307,11 +345,15 @@ namespace Open.Database.Extensions
 		public Task ToTargetBlockAsync<T>(ITargetBlock<T> target, Func<IDataRecord, T> transform)
 		{
 			Task<bool> lastSend = null;
-			return IterateReaderAsyncWhile(async r =>
+			return IterateReaderWhileAsync(async r =>
 			{
-				if (lastSend != null && !await lastSend) return false;
-				lastSend = target.SendAsync(transform(r));
-				return true;
+				var ok = lastSend == null || await lastSend;
+				if (ok)
+				{
+					var value = transform(r);
+					lastSend = target.Post(value) ? null : target.SendAsync(value);
+				}
+				return ok;
 			});
 		}
 
@@ -359,7 +401,7 @@ namespace Open.Database.Extensions
 		public async Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform)
 		{
 			var results = new List<T>();
-			await IterateReaderAsync(record => results.Add(transform(record)));
+			await IterateReaderAsync(record => results.Add(transform(record))).ConfigureAwait(false);
 			return results;
 		}
 
@@ -402,12 +444,7 @@ namespace Open.Database.Extensions
 				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
 				initColumnNames(columns.Select(c => c.Name).ToArray());
 
-				Task<bool> lastSend = null;
-				while (await reader.ReadAsync())
-				{
-					if (lastSend != null && !await lastSend) break;
-					lastSend = block.SendAsync(reader.GetValuesFromOrdinals(ordinalValues));
-				}
+				await reader.ToTargetBlockAsync(block, r => r.GetValuesFromOrdinals(ordinalValues), UseAsyncRead);
 
 				block.Complete();
 			});
@@ -420,7 +457,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public Task<QueryResult<Queue<object[]>>> RetrieveAsync()
-			=> ExecuteReaderAsync(reader => reader.RetrieveAsync());
+			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(useReadAsync: UseAsyncRead));
 
 		/// <summary>
 		/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -428,7 +465,7 @@ namespace Open.Database.Extensions
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public Task<QueryResult<Queue<object[]>>> RetrieveAsync(IEnumerable<int> ordinals)
-			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals));
+			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals, useReadAsync: UseAsyncRead));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -437,7 +474,7 @@ namespace Open.Database.Extensions
 		/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public Task<QueryResult<Queue<object[]>>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
-			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder));
+			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
 
 
 		/// <summary>
@@ -448,6 +485,6 @@ namespace Open.Database.Extensions
 		/// <returns>A task containing the list of results.</returns>
 		public Task<IEnumerable<T>> ResultsAsync<T>(IEnumerable<(string Field, string Column)> fieldMappingOverrides)
 			where T : new()
-			=> ExecuteReaderAsync(reader => reader.ResultsAsync<T>(fieldMappingOverrides));
+			=> ExecuteReaderAsync(reader => reader.ResultsAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
 	}
 }

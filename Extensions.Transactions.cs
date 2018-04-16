@@ -131,7 +131,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				transaction = connection.BeginTransaction(isolationLevel);
-				var result = await conditionalAction(transaction); // If the task is cancelled, awaiting will throw.
+				var result = await conditionalAction(transaction).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
 				t.ThrowIfCancellationRequested();
 				success = result.Commit;
 				return result;
@@ -176,7 +176,7 @@ namespace Open.Database.Extensions
 			IsolationLevel isolationLevel,
 			CancellationToken? token,
 			Func<DbTransaction, Task<T>> action)
-			=> (await connection.ExecuteTransactionConditionalAsync(isolationLevel, token, async t => (true, await action(t)))).Value;
+			=> (await connection.ExecuteTransactionConditionalAsync(isolationLevel, token, async t => (true, await action(t))).ConfigureAwait(false)).Value;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.

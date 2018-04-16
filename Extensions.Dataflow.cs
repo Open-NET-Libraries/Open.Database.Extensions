@@ -27,37 +27,53 @@ namespace Open.Database.Extensions
             while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
         }
 
-        /// <summary>
-        /// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="reader">The SqlDataReader to read from.</param>
-        /// <param name="target">The target block to receive the results.</param>
-        /// <param name="transform">The transform function to process each IDataRecord.</param>
-        public static async Task ToTargetBlockAsync<T>(this DbDataReader reader,
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The SqlDataReader to read from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		public static async Task ToTargetBlockAsync<T>(this DbDataReader reader,
             ITargetBlock<T> target,
-            Func<IDataRecord, T> transform)
+            Func<IDataRecord, T> transform,
+			bool useReadAsync = true)
         {
-            Task<bool> lastSend = null;
-            while (target.IsStillAlive()
-                && await reader.ReadAsync()
-                && (lastSend == null || await lastSend))
-            {
-                // Allows for a premtive read before waiting for the next send.
-                lastSend = target.SendAsync(transform(reader));
-            }
+			if (useReadAsync)
+			{
+				Task<bool> lastSend = null;
+				while (target.IsStillAlive()
+					&& await reader.ReadAsync().ConfigureAwait(false)
+					&& (lastSend == null || await lastSend.ConfigureAwait(false)))
+				{
+					var values = transform(reader);
+					lastSend = target.Post(values) ? null : target.SendAsync(values);
+				}
+			}
+			else
+			{
+				bool ok = true;
+				while (ok && target.IsStillAlive() && reader.Read())
+				{
+					var values = transform(reader);
+					ok = target.Post(values) || await target.SendAsync(values);
+				}
+			}
         }
 
-        /// <summary>
-        /// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="command">The DbCommand to generate a reader from.</param>
-        /// <param name="target">The target block to receive the results.</param>
-        /// <param name="transform">The transform function for each IDataRecord.</param>
-        public static async Task ToTargetBlockAsync<T>(this DbCommand command,
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The DbCommand to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		public static async Task ToTargetBlockAsync<T>(this DbCommand command,
             ITargetBlock<T> target,
-            Func<IDataRecord, T> transform)
+            Func<IDataRecord, T> transform,
+			bool useReadAsync = true)
         {
             if (target.IsStillAlive())
             {
@@ -65,7 +81,7 @@ namespace Open.Database.Extensions
 				using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (target.IsStillAlive())
-                        await reader.ToTargetBlockAsync(target, transform);
+                        await reader.ToTargetBlockAsync(target, transform, useReadAsync);
                 }
             }
         }

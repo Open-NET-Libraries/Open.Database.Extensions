@@ -135,7 +135,7 @@ namespace Open.Database.Extensions.SqlClient
 			try
 			{
 				transaction = connection.BeginTransaction(isolationLevel);
-				var result = await conditionalAction(transaction); // If the task is cancelled, awaiting will throw.
+				var result = await conditionalAction(transaction).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
 				t.ThrowIfCancellationRequested();
 				success = result.Commit;
 				return result;
@@ -164,7 +164,7 @@ namespace Open.Database.Extensions.SqlClient
 			CancellationToken? token,
 			Func<SqlTransaction, Task<bool>> conditionalAction)
 			=> (await connection.ExecuteTransactionConditionalAsync(
-				isolationLevel, token, async t => (await conditionalAction(t), true))).Commit;
+				isolationLevel, token, async t => (await conditionalAction(t).ConfigureAwait(false), true)).ConfigureAwait(false)).Commit;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -180,7 +180,7 @@ namespace Open.Database.Extensions.SqlClient
 			IsolationLevel isolationLevel,
 			CancellationToken? token,
 			Func<SqlTransaction, Task<T>> action)
-			=> (await connection.ExecuteTransactionConditionalAsync(isolationLevel, token, async t => (true, await action(t)))).Value;
+			=> (await connection.ExecuteTransactionConditionalAsync(isolationLevel, token, async t => (true, await action(t).ConfigureAwait(false))).ConfigureAwait(false)).Value;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -194,7 +194,7 @@ namespace Open.Database.Extensions.SqlClient
 			IsolationLevel isolationLevel,
 			CancellationToken? token,
 			Func<SqlTransaction, Task> action)
-			=> connection.ExecuteTransactionAsync(isolationLevel, token, async c => { await action(c); return true; });
+			=> connection.ExecuteTransactionAsync(isolationLevel, token, async c => { await action(c).ConfigureAwait(false); return true; });
 
 		#region Overloads
 

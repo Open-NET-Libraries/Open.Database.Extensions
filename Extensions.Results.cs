@@ -98,8 +98,9 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public static async Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides, CancellationToken? token = null) where T : new()
+		public static async Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, IEnumerable<(string Field, string Column)> fieldMappingOverrides, CancellationToken? token = null, bool useReadAsync = true) where T : new()
 		{
 			var t = token ?? CancellationToken.None;
 			if (!await reader.ReadAsync(t)) return Enumerable.Empty<T>(); // else readStarted = true;
@@ -110,7 +111,7 @@ namespace Open.Database.Extensions
 
 			return x.AsDequeueingEnumerable(await RetrieveAsyncInternal(reader, t,
 				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray(), readStarted: true));
+				columns.Select(c => c.Name).ToArray(), readStarted: true, useReadAsync: useReadAsync));
 		}
 
 		/// <summary>
@@ -120,9 +121,10 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, CancellationToken? token = null) where T : new()
-			=> ResultsAsync<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), token);
+		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, CancellationToken? token = null, bool useReadAsync = true) where T : new()
+			=> ResultsAsync<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), token, useReadAsync);
 
 		/// <summary>
 		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
@@ -153,9 +155,10 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<(string Field, string Column)> fieldMappingOverrides, CancellationToken? token = null) where T : new()
-			=> command.ExecuteReaderAsync(reader => reader.ResultsAsync<T>(fieldMappingOverrides, token), token: token);	
+		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<(string Field, string Column)> fieldMappingOverrides, CancellationToken? token = null, bool useReadAsync = true) where T : new()
+			=> command.ExecuteReaderAsync(reader => reader.ResultsAsync<T>(fieldMappingOverrides, token, useReadAsync: useReadAsync), token: token);
 
 		/// <summary>
 		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
@@ -164,8 +167,9 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, CancellationToken? token = null) where T : new()
+		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, CancellationToken? token = null, bool useReadAsync = true) where T : new()
 			=> ResultsAsync<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), token);
 
 		/// <summary>

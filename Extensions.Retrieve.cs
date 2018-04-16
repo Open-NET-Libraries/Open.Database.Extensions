@@ -141,28 +141,31 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static async Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken? token = null)
+		public static async Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken? token = null, bool useReadAsync = true)
         {
 			var t = token ?? CancellationToken.None;
 			var fieldCount = reader.FieldCount;
             var names = reader.GetNames(); // pull before first read.
             var buffer = new Queue<object[]>();
 
-            while (await reader.ReadAsync(t))
+            while (useReadAsync ? await reader.ReadAsync(t) : (!t.IsCancellationRequested && reader.Read()))
             {
                 var row = new object[fieldCount];
                 reader.GetValues(row);
                 buffer.Enqueue(row);
             }
 
-            return new QueryResult<Queue<object[]>>(
+			if(!useReadAsync) t.ThrowIfCancellationRequested();
+
+			return new QueryResult<Queue<object[]>>(
                 Enumerable.Range(0, names.Length).ToArray(),
                 names,
                 buffer);
         }
 
-        static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken? token, int[] ordinals, string[] columnNames = null, bool readStarted = false)
+        static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken? token, int[] ordinals, string[] columnNames = null, bool readStarted = false, bool useReadAsync = true)
         {
             var fieldCount = ordinals.Length;
             if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
@@ -180,16 +183,18 @@ namespace Open.Database.Extensions
 
 			var t = token ?? CancellationToken.None;
 			var buffer = new Queue<object[]>();
-            if (readStarted || await reader.ReadAsync(t))
+            if (readStarted || useReadAsync ? await reader.ReadAsync(t) : (!t.IsCancellationRequested && reader.Read()))
             {
                 do
                 {
                     buffer.Enqueue(handler(reader));
                 }
-                while (await reader.ReadAsync(t));
+                while (useReadAsync ? await reader.ReadAsync(t) : (!t.IsCancellationRequested && reader.Read()));
             }
 
-            return new QueryResult<Queue<object[]>>(
+			if (!useReadAsync) t.ThrowIfCancellationRequested();
+
+			return new QueryResult<Queue<object[]>>(
                 ordinals,
                 columnNames,
                 buffer);
@@ -203,9 +208,10 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken? token = null)
-            => RetrieveAsyncInternal(reader, token, ordinals as int[] ?? ordinals.ToArray());
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken? token = null, bool useReadAsync = true)
+            => RetrieveAsyncInternal(reader, token, ordinals as int[] ?? ordinals.ToArray(), useReadAsync: useReadAsync);
 
         /// <summary>
         /// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -238,8 +244,9 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The column names to select.</param>
 		/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken? token = null)
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken? token = null, bool useReadAsync = true)
         {
             // Validate columns first.
             var columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
@@ -247,7 +254,7 @@ namespace Open.Database.Extensions
             return RetrieveAsyncInternal(reader, token,
 
 				columns.Select(c => c.Ordinal).ToArray(),
-                columns.Select(c => c.Name).ToArray());
+                columns.Select(c => c.Name).ToArray(), useReadAsync: useReadAsync);
         }
 
         /// <summary>
@@ -274,8 +281,8 @@ namespace Open.Database.Extensions
 			=> RetrieveAsync(reader, new string[1] { c }.Concat(others), false, token);
 
 
-		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken? token, int[] ordinals, string[] columnNames = null)
-			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames), token: token);
+		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken? token, int[] ordinals, string[] columnNames = null, bool useReadAsync = true)
+			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames, useReadAsync: useReadAsync), token: token);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -284,9 +291,10 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<int> ordinals, CancellationToken? token = null)
-			=> RetrieveAsyncInternal(command, token, ordinals as int[] ?? ordinals.ToArray());
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<int> ordinals, CancellationToken? token = null, bool useReadAsync = true)
+			=> RetrieveAsyncInternal(command, token, ordinals as int[] ?? ordinals.ToArray(), useReadAsync: useReadAsync);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -319,9 +327,10 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The column names to select.</param>
 		/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken? token = null)
-			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, columnNames, normalizeColumnOrder, token), token: token);
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken? token = null, bool useReadAsync = true)
+			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, columnNames, normalizeColumnOrder, token, useReadAsync: useReadAsync), token: token);
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
