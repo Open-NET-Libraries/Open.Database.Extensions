@@ -54,7 +54,8 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
-		/// Using .ReadAsync() can introduce unexpected latency and this should only be set to true if there is a clear reason why and should be profiled before and after.
+		/// Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
+        /// This should only be set to true if there is a clear reason why and should be profiled before and after.
 		/// </summary>
 		public bool UseAsyncRead = false;
 
