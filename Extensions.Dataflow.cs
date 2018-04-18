@@ -69,16 +69,18 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		public static async Task ToTargetBlockAsync<T>(this DbCommand command,
             ITargetBlock<T> target,
             Func<IDataRecord, T> transform,
+			CommandBehavior behavior = CommandBehavior.Default,
 			bool useReadAsync = true)
         {
             if (target.IsStillAlive())
             {
 				if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync();
-				using (var reader = await command.ExecuteReaderAsync())
+				using (var reader = await command.ExecuteReaderAsync(behavior))
                 {
                     if (target.IsStillAlive())
                         await reader.ToTargetBlockAsync(target, transform, useReadAsync);
@@ -86,17 +88,19 @@ namespace Open.Database.Extensions
             }
         }
 
-        /// <summary>
-        /// Iterates an IDataReader through the transform function and posts each record to the target block.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="command">The IDataReader to iterate.</param>
-        /// <param name="target">The target block to receive the results.</param>
-        /// <param name="transform">The transform function for each IDataRecord.</param>
-        public static void ToTargetBlock<T>(this IDbCommand command,
+		/// <summary>
+		/// Iterates an IDataReader through the transform function and posts each record to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		public static void ToTargetBlock<T>(this IDbCommand command,
             ITargetBlock<T> target,
-            Func<IDataRecord, T> transform)
-            => command.ExecuteReader(reader => reader.ToTargetBlock(target, transform));
+            Func<IDataRecord, T> transform,
+			CommandBehavior behavior = CommandBehavior.Default)
+            => command.ExecuteReader(reader => reader.ToTargetBlock(target, transform), behavior);
 
     }
 }

@@ -11,10 +11,12 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.10.0</Version>
-    <AssemblyVersion>5.10.0.1</AssemblyVersion>
-    <FileVersion>5.10.0.1</FileVersion>
-    <PackageReleaseNotes>Better async behavior options.</PackageReleaseNotes>
+    <Version>5.11.0-beta</Version>
+    <AssemblyVersion>5.11.0.0</AssemblyVersion>
+    <FileVersion>5.11.0.0</FileVersion>
+    <PackageReleaseNotes>Added CancellationToken as a param/option for ExpressiveDbCommands instead of every method.
+Introduced CommandBehavior option to extensions where useful.
+Some defaults to use SequentialAccess.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

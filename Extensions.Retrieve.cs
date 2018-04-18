@@ -84,14 +84,15 @@ namespace Open.Database.Extensions
         public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, string c, params string[] others)
             => Retrieve(reader, new string[1] { c }.Concat(others));
 
-        /// <summary>
-        /// Iterates all records within the first result set using an IDataReader and returns the results.
-        /// DBNull values are left unchanged (retained).
-        /// </summary>
-        /// <param name="command">The IDbCommand to generate the reader from.</param>
-        /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-        public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command)
-            => ExecuteReader(command, reader => reader.Retrieve());
+		/// <summary>
+		/// Iterates all records within the first result set using an IDataReader and returns the results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="command">The IDbCommand to generate the reader from.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
+            => ExecuteReader(command, reader => reader.Retrieve(), behavior);
 
         /// <summary>
         /// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -280,6 +281,16 @@ namespace Open.Database.Extensions
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, string c, params string[] others)
 			=> RetrieveAsync(reader, new string[1] { c }.Concat(others), false, token);
 
+		/// <summary>
+		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken? token = null, bool useReadAsync = true)
+			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, token, useReadAsync), CommandBehavior.SequentialAccess, token);
 
 		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken? token, int[] ordinals, string[] columnNames = null, bool useReadAsync = true)
 			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames, useReadAsync: useReadAsync), token: token);
