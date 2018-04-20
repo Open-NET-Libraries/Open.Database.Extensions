@@ -608,7 +608,8 @@
         <member name="F:Open.Database.Extensions.ExpressiveDbCommandBase`4.UseAsyncRead">
             <summary>
             By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
-            Using .ReadAsync() can introduce unexpected latency and this should only be set to true if there is a clear reason why and should be profiled before and after.
+            Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
+            This should only be set to true if there is a clear reason why and should be profiled before and after.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.EnableAsyncRead(System.Boolean)">
@@ -955,6 +956,86 @@
         <member name="M:Open.Database.Extensions.Extensions.UsingAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.Task})">
             <summary>
             Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Open``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Open``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Open``2(System.Func{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.Open``1(System.Func{``0},System.Action{``0})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task{``1}})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.Task})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.OpenAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.Task{``1}})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.OpenAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.Task})">
+            <summary>
+            Generates a connection, opens it, and executes the action within a using statement.
             Useful for single-line operations.
             </summary>
             <typeparam name="TConn">The connection type.</typeparam>
