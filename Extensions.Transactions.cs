@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +26,10 @@ namespace Open.Database.Extensions
 			CancellationToken? token,
 			Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
 		{
-			var t = token ?? CancellationToken.None;
+            if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+            Contract.EndContractBlock();
+
+            var t = token ?? CancellationToken.None;
 			t.ThrowIfCancellationRequested();
 
 			var success = false;
@@ -114,8 +118,11 @@ namespace Open.Database.Extensions
 			IsolationLevel isolationLevel,
 			CancellationToken? token,
 			Func<DbTransaction, Task<(bool Commit, T Value)>> conditionalAction)
-		{
-			var t = token ?? CancellationToken.None;
+        {
+            if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+            Contract.EndContractBlock();
+
+            var t = token ?? CancellationToken.None;
 			t.ThrowIfCancellationRequested();
 			  
 			var success = false;

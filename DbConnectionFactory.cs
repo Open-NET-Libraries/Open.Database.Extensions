@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.Contracts;
 
 namespace Open.Database.Extensions
 {
@@ -20,6 +21,7 @@ namespace Open.Database.Extensions
         public DbConnectionFactory(Func<TConnection> factory)
         {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            Contract.EndContractBlock();
         }
 
         /// <summary>

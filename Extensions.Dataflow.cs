@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.Contracts;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
@@ -24,6 +25,10 @@ namespace Open.Database.Extensions
             ITargetBlock<T> target,
             Func<IDataRecord, T> transform)
         {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
             while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
         }
 
@@ -40,7 +45,11 @@ namespace Open.Database.Extensions
             Func<IDataRecord, T> transform,
 			bool useReadAsync = true)
         {
-			if (useReadAsync)
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            if (useReadAsync)
 			{
 				Task<bool> lastSend = null;
 				while (target.IsStillAlive()
@@ -77,6 +86,10 @@ namespace Open.Database.Extensions
 			CommandBehavior behavior = CommandBehavior.Default,
 			bool useReadAsync = true)
         {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
             if (target.IsStillAlive())
             {
 				if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync();

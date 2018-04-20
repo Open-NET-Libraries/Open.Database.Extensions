@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Data;
 using System.Data.SqlClient;
 
 namespace Open.Database.Extensions.SqlClient
 {
 
-	/// <summary>
-	/// Default SqlConnectionFactory for generating SqlConnections.
-	/// </summary>
+    /// <summary>
+    /// Default SqlConnectionFactory for generating SqlConnections.
+    /// </summary>
     public class SqlConnectionFactory : DbConnectionFactory<SqlConnection>
     {
         /// <summary>

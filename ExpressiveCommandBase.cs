@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -59,14 +60,15 @@ namespace Open.Database.Extensions
 			: this(type, command, @params)
 		{
 			ConnectionFactory = connFactory ?? throw new ArgumentNullException(nameof(connFactory));
-		}
+            Contract.EndContractBlock();
+        }
 
-		/// <param name="connection">The connection to execute the command on.</param>
-		/// <param name="transaction">The optional transaction to execute the command on.</param>
-		/// <param name="type">The command type>.</param>
-		/// <param name="command">The SQL command.</param>
-		/// <param name="params">The list of params</param>
-		protected ExpressiveCommandBase(
+        /// <param name="connection">The connection to execute the command on.</param>
+        /// <param name="transaction">The optional transaction to execute the command on.</param>
+        /// <param name="type">The command type>.</param>
+        /// <param name="command">The SQL command.</param>
+        /// <param name="params">The list of params</param>
+        protected ExpressiveCommandBase(
 			TConnection connection,
 			IDbTransaction transaction,
 			CommandType type,
@@ -75,6 +77,7 @@ namespace Open.Database.Extensions
 			: this(type, command, @params)
 		{
 			Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            Contract.EndContractBlock();
 			Transaction = transaction;
 		}
 
@@ -107,7 +110,12 @@ namespace Open.Database.Extensions
 		/// <returns>This instance for use in method chaining.</returns>
 		public TThis AddParam(string name, object value, TDbType type)
 		{
-			Params.Add(new Param
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            else if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+            Contract.EndContractBlock();
+
+            Params.Add(new Param
 			{
 				Name = name,
 				Value = value,
@@ -124,8 +132,13 @@ namespace Open.Database.Extensions
 		/// <param name="value">The value of the parameter.</param>
 		/// <returns>This instance for use in method chaining.</returns>
 		public TThis AddParam(string name, object value)
-		{
-			var p = new Param { Name = name };
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            else if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+            Contract.EndContractBlock();
+
+            var p = new Param { Name = name };
 			if (value != null) p.Value = value;
 			else p.Value = DBNull.Value;
 
@@ -143,8 +156,13 @@ namespace Open.Database.Extensions
 		/// <returns>This instance for use in method chaining.</returns>
 		public TThis AddParam<T>(string name, T? value, TDbType type)
 			where T : struct
-		{
-			var p = new Param { Name = name, Type = type };
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            else if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+            Contract.EndContractBlock();
+
+            var p = new Param { Name = name, Type = type };
 			if (value.HasValue) p.Value = value.Value;
 			else p.Value = DBNull.Value;
 
@@ -160,8 +178,11 @@ namespace Open.Database.Extensions
 		/// <returns>This instance for use in method chaining.</returns>
 		public TThis AddParam<T>(string name, T? value)
 			where T : struct
-		{
-			var p = new Param { Name = name };
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            Contract.EndContractBlock();
+
+            var p = new Param { Name = name };
 			if (value.HasValue) p.Value = value.Value;
 			else p.Value = DBNull.Value;
 
@@ -175,8 +196,13 @@ namespace Open.Database.Extensions
 		/// <param name="name">The name of the parameter.</param>
 		/// <returns>This instance for use in method chaining.</returns>
 		public TThis AddParam(string name)
-		{
-			Params.Add(new Param
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            else if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+            Contract.EndContractBlock();
+
+            Params.Add(new Param
 			{
 				Name = name
 			});
@@ -261,8 +287,11 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="action">The handler for use with the connection.</param>
 		protected void UsingConnection(Action<TConnection, IDbTransaction> action)
-		{
-			if (Connection != null)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));            
+            Contract.EndContractBlock();
+
+            if (Connection != null)
 			{
 				action(Connection, Transaction);
 			}
@@ -280,8 +309,11 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="action">The handler for use with the connection.</param>
 		protected T UsingConnection<T>(Func<TConnection, IDbTransaction, T> action)
-		{
-			if (Connection != null)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            Contract.EndContractBlock();
+
+            if (Connection != null)
 			{
 				return action(Connection, Transaction);
 			}
@@ -297,20 +329,25 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Executes a reader on a command with a handler function.
 		/// </summary>
-		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public void Execute(Action<TCommand> handler)
-			=> UsingConnection((con, t) =>
-			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
-				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null) c.Transaction = t;
-					AddParams(c);
-					con.EnsureOpen();
-					handler(c);
-				}
-			});
+		/// <param name="action">The handler function for each IDataRecord.</param>
+		public void Execute(Action<TCommand> action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            Contract.EndContractBlock();
+
+            UsingConnection((con, t) =>
+            {
+                using (var cmd = con.CreateCommand(Type, Command, Timeout))
+                {
+                    var c = cmd as TCommand;
+                    if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    if (t != null) c.Transaction = t;
+                    AddParams(c);
+                    con.EnsureOpen();
+                    action(c);
+                }
+            });
+        }
 
 
 		/// <summary>
@@ -320,18 +357,25 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <returns>The result of the transform.</returns>
 		public T Execute<T>(Func<TCommand, T> transform)
-			=> UsingConnection((con, t) =>
-			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
-				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null) c.Transaction = t;
-					AddParams(c);
-					con.EnsureOpen();
-					return transform(c);
-				}
-			});
+        {
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            return UsingConnection((con, t) =>
+            {
+                using (var cmd = con.CreateCommand(Type, Command, Timeout))
+                {
+                    var c = cmd as TCommand;
+                    if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    if (t != null) c.Transaction = t;
+                    AddParams(c);
+                    con.EnsureOpen();
+                    return transform(c);
+                }
+            });
+
+        }
+
 
 
 		/// <summary>
@@ -347,9 +391,7 @@ namespace Open.Database.Extensions
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					if (t != null) c.Transaction = t;
 					AddParams(c);
-					var returnParameter = c.CreateParameter();
-					returnParameter.Direction = ParameterDirection.ReturnValue;
-					c.Parameters.Add(returnParameter);
+                    var returnParameter = c.AddReturnParameter();
 					con.EnsureOpen();
 					c.ExecuteNonQuery();
 					return returnParameter.Value;
@@ -372,7 +414,10 @@ namespace Open.Database.Extensions
 		/// <returns>The results of each transformation.</returns>
 		protected IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			TConnection con = Connection ?? ConnectionFactory.Create();
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            TConnection con = Connection ?? ConnectionFactory.Create();
 			try
 			{
 				using (var cmd = con.CreateCommand(Type, Command, Timeout))
@@ -686,8 +731,11 @@ namespace Open.Database.Extensions
 		/// If set to false (default) the data is recieved asynchronously (deferred: data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <returns>The buffer block that will contain the results.</returns>
 		public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform, bool synchronousExecution = false)
-		{
-			var source = new BufferBlock<T>();
+        {
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            var source = new BufferBlock<T>();
 			void i()
 			{
 				ToTargetBlock(source, transform);

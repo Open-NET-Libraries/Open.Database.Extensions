@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -88,8 +89,11 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public async Task ExecuteAsync(Func<TCommand, Task> handler)
-		{
-			TConnection con = Connection ?? ConnectionFactory.Create();
+        {
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            Contract.EndContractBlock();
+
+            TConnection con = Connection ?? ConnectionFactory.Create();
 			try
 			{
 				using (var cmd = (TCommand)con.CreateCommand(
@@ -116,7 +120,10 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public async Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> transform)
 		{
-			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 			TConnection con = Connection ?? ConnectionFactory.Create();
 			try
 			{
@@ -283,8 +290,11 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
-			List<T> results = new List<T>();
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
+            Contract.EndContractBlock();
+
+			var results = new List<T>();
 			if (count == 0) return Task.FromResult(results);
 
 			return IterateReaderWhileAsync(record =>
@@ -338,8 +348,11 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the records.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public Task ToTargetBlockAsync<T>(ITargetBlock<T> target, Func<IDataRecord, T> transform)
-		{
-			Task<bool> lastSend = null;
+        {
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            Task<bool> lastSend = null;
 			return IterateReaderWhileAsync(async r =>
 			{
 				var ok = lastSend == null || await lastSend;
@@ -359,8 +372,11 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>A buffer block that is recieving the results.</returns>
 		public ISourceBlock<T> AsSourceBlockAsync<T>(Func<IDataRecord, T> transform)
-		{
-			var source = new BufferBlock<T>();
+        {
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            Contract.EndContractBlock();
+
+            var source = new BufferBlock<T>();
 			ToTargetBlockAsync(source, transform)
 				.ContinueWith(t => source.Complete())
 				.ConfigureAwait(false);
