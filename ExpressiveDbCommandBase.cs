@@ -175,7 +175,7 @@ namespace Open.Database.Extensions
 		/// Asynchronously executes a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="handler">The handler function for the data reader.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task ExecuteReaderAsync(Action<DbDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteAsync(async command => handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 
@@ -183,7 +183,7 @@ namespace Open.Database.Extensions
 		/// Asynchronously executes a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="handler">The handler function for the data reader.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task ExecuteReaderAsync(Func<DbDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 
@@ -192,7 +192,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteAsync(async command => transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
@@ -202,7 +202,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
@@ -251,27 +251,27 @@ namespace Open.Database.Extensions
 		/// Iterates asynchronously and will stop iterating if canceled.
 		/// </summary>
 		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task IterateReaderAsync(Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(command => command.ForEachAsync(handler, behavior, CancellationToken, UseAsyncRead));
+			=> ExecuteAsync(command => command.ForEachAsync(handler, behavior | CommandBehavior.CloseConnection, CancellationToken, UseAsyncRead));
 
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
 		/// </summary>
 		/// <param name="predicate">If true, the iteration continues.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
 		public Task IterateReaderWhileAsync(Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, CommandBehavior.Default, CancellationToken, UseAsyncRead));
+			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, behavior | CommandBehavior.CloseConnection, CancellationToken, UseAsyncRead));
 
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
 		/// </summary>
 		/// <param name="predicate">If true, the iteration continues.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
 		public Task IterateReaderWhileAsync(Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, behavior, CancellationToken));
+			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, behavior | CommandBehavior.CloseConnection, CancellationToken));
 
 		/// <summary>
 		/// Asynchronously iterates a IDataReader and returns the each result until the count is met.
@@ -279,7 +279,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <param name="count">The maximum number of records before complete.</param>
-		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The value from the transform.</returns>
 		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -392,11 +392,12 @@ namespace Open.Database.Extensions
 		/// Asynchronously returns all records via a transform function.
 		/// </summary>
 		/// <param name="transform">The desired column names.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public async Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform)
+		public async Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			var results = new List<T>();
-			await IterateReaderAsync(record => results.Add(transform(record))).ConfigureAwait(false);
+			await IterateReaderAsync(record => results.Add(transform(record)), behavior).ConfigureAwait(false);
 			return results;
 		}
 

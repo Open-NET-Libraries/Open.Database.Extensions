@@ -198,7 +198,7 @@ namespace Open.Database.Extensions
 		public static async Task ForEachAsync(this DbDataReader reader, Action<IDataRecord> handler, CancellationToken? token = null, bool useReadAsync = true)
 		{
 			var t = token ?? CancellationToken.None;
-			if(useReadAsync)
+			if (useReadAsync)
 			{
 				while (await reader.ReadAsync(t)) handler(reader);
 			}
@@ -483,7 +483,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable used to iterate the results.</returns>
 		public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken? token = null)
 		{
-			if(token.HasValue)
+			if (token.HasValue)
 			{
 				var t = token.Value;
 				while (!t.IsCancellationRequested && reader.Read())
@@ -917,7 +917,7 @@ namespace Open.Database.Extensions
 			if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync(t);
 			using (var reader = await command.ExecuteReaderAsync(behavior, t))
 			{
-				if(useReadAsync)
+				if (useReadAsync)
 				{
 					while (await reader.ReadAsync(t))
 						handler(reader);
@@ -963,7 +963,7 @@ namespace Open.Database.Extensions
 				else
 				{
 					while (!t.IsCancellationRequested && reader.Read() && predicate(reader))
-					t.ThrowIfCancellationRequested();
+						t.ThrowIfCancellationRequested();
 				}
 			}
 		}
@@ -989,11 +989,12 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The value from the transform.</returns>
-		public static T First<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+		public static T First<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			command.Connection.EnsureOpen();
-			using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
+			using (var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow))
 				return reader.Iterate(transform).First();
 		}
 
@@ -1003,11 +1004,12 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The value from the transform.</returns>
-		public static T FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+		public static T FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			command.Connection.EnsureOpen();
-			using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
+			using (var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow))
 				return reader.Iterate(transform).FirstOrDefault();
 		}
 
@@ -1017,11 +1019,12 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The value from the transform.</returns>
-		public static T Single<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+		public static T Single<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			command.Connection.EnsureOpen();
-			using (var reader = command.ExecuteReader(/* Default mode is used instead of single since .Single() will validate by calling up to 2 entries.*/))
+			using (var reader = command.ExecuteReader(behavior))
 				return reader.Iterate(transform).Single();
 		}
 
@@ -1031,11 +1034,12 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The value from the transform.</returns>
-		public static T SingleOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform)
+		public static T SingleOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			command.Connection.EnsureOpen();
-			using (var reader = command.ExecuteReader(/* Default mode is used instead of single since .Single() will validate by calling up to 2 entries.*/))
+			using (var reader = command.ExecuteReader(behavior))
 				return reader.Iterate(transform).SingleOrDefault();
 		}
 
@@ -1212,7 +1216,29 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDataReader reader)
-			=> reader.FirstOrdinalResults().Cast<T0>();
+			=> reader is DbDataReader dbr
+			? dbr.FirstOrdinalResults<T0>()
+			: reader.FirstOrdinalResults().Cast<T0>();
+
+		/// <summary>
+		/// Reads the first column values from every record.
+		/// Any DBNull values are then converted to null and casted to type T0;
+		/// </summary>
+		/// <returns>The enumerable of casted values.</returns>
+		public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
+		{
+			var results = new Queue<T0>();
+			while (reader.Read())
+			{
+				results.Enqueue(
+					reader.IsDBNull(0)
+					? default(T0)
+					: reader.GetFieldValue<T0>(0)
+				);
+			}
+
+			return results.DequeueEach();
+		}
 
 		/// <summary>
 		/// Reads the first column values from every record.
@@ -1221,7 +1247,7 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable first ordinal values.</returns>
 		public static IEnumerable<object> FirstOrdinalResults(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		{
-			var results = new Queue<object>(IterateReaderInternal(command, behavior, r => r.GetValue(0)));
+			var results = new Queue<object>(IterateReaderInternal(command, behavior | CommandBehavior.SingleResult, r => r.GetValue(0)));
 			return results.DequeueEach().DBNullToNull();
 		}
 
@@ -1231,7 +1257,20 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
-			=> command.FirstOrdinalResults(behavior).Cast<T0>();
+			=> command is DbCommand dbc
+			? dbc.FirstOrdinalResults<T0>()
+			: command.FirstOrdinalResults(behavior | CommandBehavior.SingleResult).Cast<T0>();
+
+		/// <summary>
+		/// Reads the first column values from every record.
+		/// Any DBNull values are then converted to null and casted to type T0;
+		/// </summary>
+		/// <returns>The enumerable of casted values.</returns>
+		public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
+		{
+			using (var reader = command.ExecuteReader(behavior | CommandBehavior.SingleResult))
+				return reader.FirstOrdinalResults<T0>();
+		}
 
 		/// <summary>
 		/// Reads the first column values from every record.
@@ -1258,9 +1297,33 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable of casted values.</returns>
 		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, CancellationToken? token = null, bool useReadAsync = true)
 		{
-			var results = new Queue<object>();
-			await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)), token, useReadAsync).ConfigureAwait(false);
-			return results.DequeueEach().DBNullToNull().Cast<T0>(); ;
+			var results = new Queue<T0>();
+			var t = token ?? CancellationToken.None;
+			if (useReadAsync)
+			{
+				while (await reader.ReadAsync(t))
+				{
+					results.Enqueue(
+						await reader.IsDBNullAsync(0, t).ConfigureAwait(false)
+						? default(T0)
+						: await reader.GetFieldValueAsync<T0>(0, t).ConfigureAwait(false)
+					);
+				}
+			}
+			else
+			{
+				while (!t.IsCancellationRequested && reader.Read())
+				{
+					results.Enqueue(
+						reader.IsDBNull(0)
+						? default(T0)
+						: reader.GetFieldValue<T0>(0)
+					);
+				}
+				t.ThrowIfCancellationRequested();
+			}
+
+			return results.DequeueEach();
 		}
 
 		/// <summary>
@@ -1273,7 +1336,7 @@ namespace Open.Database.Extensions
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The list of values.</returns>
 		public static Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken? token = null, bool useReadAsync = true)
-			=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(token, useReadAsync), behavior, token);
+			=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(token, useReadAsync), behavior | CommandBehavior.SingleResult, token);
 
 		/// <summary>
 		/// Reads the first column from every record..
@@ -1284,9 +1347,8 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The enumerable of casted values.</returns>
-		public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken? token = null, bool useReadAsync = true)
-			=> (await command.FirstOrdinalResultsAsync(behavior, token, useReadAsync).ConfigureAwait(false)).Cast<T0>();
-
+		public static Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken? token = null, bool useReadAsync = true)
+			=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(token, useReadAsync), behavior | CommandBehavior.SingleResult, token);
 
 	}
 }
