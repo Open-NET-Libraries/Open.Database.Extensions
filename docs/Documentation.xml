@@ -206,7 +206,7 @@
             <summary>
             Executes a reader on a command with a handler function.
             </summary>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="action">The handler function for each IDataRecord.</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.Execute``1(System.Func{`1,``0})">
             <summary>
@@ -1292,6 +1292,23 @@
             <param name="name">The name of the parameter.</param>
             <param name="type">The DbType of the parameter.</param>
             <param name="direction">The direction of the parameter.</param>
+            <returns>The created IDbDataParameter.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.AddReturnParameter(System.Data.IDbCommand,System.Data.DbType,System.String)">
+            <summary>
+            Shortcut for adding command a typed return parameter.
+            </summary>
+            <param name="target">The command to add a parameter to.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="type">The DbType of the parameter.</param>
+            <returns>The created IDbDataParameter.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.AddReturnParameter(System.Data.IDbCommand,System.String)">
+            <summary>
+            Shortcut for adding command a return parameter.
+            </summary>
+            <param name="target">The command to add a parameter to.</param>
+            <param name="name">The name of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord})">
@@ -2945,6 +2962,15 @@
         <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.SqlDbType)">
             <summary>
             Shortcut for adding command a typed (non-input) parameter.
+            </summary>
+            <param name="target">The command to add a parameter to.</param>
+            <param name="name">The name of the parameter.</param>
+            <param name="type">The SqlDbType of the parameter.</param>
+            <returns>The created IDbDataParameter.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.AddReturnParameter(System.Data.SqlClient.SqlCommand,System.Data.SqlDbType,System.String)">
+            <summary>
+            Shortcut for adding command a typed return parameter.
             </summary>
             <param name="target">The command to add a parameter to.</param>
             <param name="name">The name of the parameter.</param>

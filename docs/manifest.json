@@ -1,6 +1,6 @@
 {
   "homepages": [],
-  "source_base_path": "C:/Users/essence/Development/- GitHub/Open.Database.Extensions",
+  "source_base_path": "D:/Users/essence/Development/- GitHub/Open.Database.Extensions",
   "xrefmap": "xrefmap.yml",
   "files": [
     {
@@ -9,10 +9,10 @@
       "output": {
         ".html": {
           "relative_path": "README.html",
-          "hash": "0r4x6OWPVdrfHnwseqEw4g=="
+          "hash": "GqCMaDTHJh20uaYIl6QppA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -21,10 +21,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.html",
-          "hash": "VtEQXXI+ElbctG02qlc9rQ=="
+          "hash": "kjlqHNRkNJSE/ZtoGtuB5g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -33,10 +33,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory.html",
-          "hash": "xhMWzNRRpOR+6FeYl4PSfg=="
+          "hash": "GErldoM4qWFctAdEd4fQYg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -45,10 +45,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.html",
-          "hash": "Coj7WNGlp9BL+8gvkvKE6w=="
+          "hash": "FcP01jQyXwW17eo8uZ6QBA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -57,10 +57,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.html",
-          "hash": "02TqaM4hKkTCgnJEh2iMxA=="
+          "hash": "y9GMGshwW6REo6xRcEq7sA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -69,10 +69,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.html",
-          "hash": "OdAvRJ0OEsYzZnrRBAA8yQ=="
+          "hash": "phR4Cnk1fWQZWLWpFwVHEg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -81,10 +81,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html",
-          "hash": "ha5ywwEkJvoN379fy9yLLw=="
+          "hash": "6jArRlTXLx6u/5ccW4TYOw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -93,10 +93,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.Extensions.html",
-          "hash": "M3ninHB1lHU9JJxR/9WVlQ=="
+          "hash": "5IWF7/TODt/uknF1dYpt2Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -105,10 +105,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.html",
-          "hash": "DBC1Y4kREXleorKW0papRw=="
+          "hash": "yE/CvqJ3Arzkzdr7BhfxEA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -117,10 +117,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory.html",
-          "hash": "A3VhraODRT7pvKt1712GZQ=="
+          "hash": "nD/CKSQNIeAq5mkHpwxTOA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -129,10 +129,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.QueryResult-1.html",
-          "hash": "yevdEVJ0GJ9cTx1VSvLGtg=="
+          "hash": "+/WRxd0AOsGFwc+ZEU5Jlg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -141,10 +141,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.QueryResultExtensions.html",
-          "hash": "JVX8BfVPVpbSKL2msFHeFQ=="
+          "hash": "3ejaIBPYk0LO1pAJLRBe3w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -153,10 +153,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html",
-          "hash": "0qzEXHBBAAW9Oun7akhmyQ=="
+          "hash": "NETPjA1ZOlr/wZ51WAnO3w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -165,10 +165,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.html",
-          "hash": "dC5o+V5YW+fw6rPNA77rEQ=="
+          "hash": "uTsqoZKKus2xZcyV3wHJOQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -177,10 +177,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.html",
-          "hash": "7L6Ej6GSdK8o2rUEm+xhLA=="
+          "hash": "7pypLcZcGrOAKu9uReor/g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -189,10 +189,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.SqlClient.html",
-          "hash": "1A4ytPhaVdWhyy3bq5mHRA=="
+          "hash": "jTZWNRXH3RkyYs/p4pUozA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -201,10 +201,10 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.html",
-          "hash": "32r/OHrhzGg/VsShYpBfyw=="
+          "hash": "gPyxs50A2Gq5OSPrOb6E4Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -213,7 +213,7 @@
       "output": {
         ".html": {
           "relative_path": "api/index.html",
-          "hash": "IU9tgfAKZz1d4E8A9GKEUA=="
+          "hash": "6f/4yWH3MN+NYPjmbXyHWA=="
         }
       },
       "is_incremental": false,
@@ -237,7 +237,7 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "ck5xQhMX86bJTv1H5AS2+w=="
+          "hash": "vZhAr6Wp0joVIW3/jYd5EA=="
         }
       },
       "is_incremental": false,
@@ -259,7 +259,8 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": true,
+        "can_incremental": false,
+        "details": "Cannot build incrementally because docfx version changed from 2.33.0.0 to 2.33.2.0.",
         "incrementalPhase": "build"
       },
       "processors": {
@@ -269,11 +270,11 @@
           "incrementalPhase": "build"
         },
         "ManagedReferenceDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
           "incrementalPhase": "build"
         },
         "ConceptualDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
           "incrementalPhase": "build"
         }
       }
