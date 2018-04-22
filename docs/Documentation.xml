@@ -228,15 +228,6 @@
             </summary>
             <returns>The value from the return parameter.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.IterateReaderInternal``1(System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="transform">The transform function for each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>The results of each transformation.</returns>
-        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteReader(System.Action{System.Data.IDataReader},System.Data.CommandBehavior)">
             <summary>
             Executes a reader on a command with a handler function.
@@ -1570,6 +1561,14 @@
             <param name="reader">The IDataReader to load data from.</param>
             <returns>The resultant DataTable.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ToDataTables(System.Data.IDataReader)">
+            <summary>
+            Loads all data from a command through an IDataReader into a DataTables.
+            Calls .NextResult() to check for more results.
+            </summary>
+            <param name="reader">The IDataReader to load data from.</param>
+            <returns>The resultant list of DataTables.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.ToDataTable(System.Data.IDbCommand,System.Data.CommandBehavior)">
             <summary>
             Loads all data from a command through an IDataReader into a DataTable.
@@ -1718,6 +1717,23 @@
             <param name="handler">The handler function for each IDataRecord.</param>
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})">
+            <summary>
+            Asynchronously iterates an IDataReader while the predicate returns true.
+            </summary>
+            <param name="reader">The DbDataReader to load data from.</param>
+            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="token">Optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+            <summary>
+            Asynchronously iterates an IDataReader on a command while the predicate returns true.
+            </summary>
+            <param name="reader">The DbDataReader to load data from.</param>
+            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
             <summary>
@@ -1971,6 +1987,7 @@
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Boolean)">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The DbCommand to generate a reader from.</param>

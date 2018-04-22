@@ -131,14 +131,12 @@ namespace Open.Database.Extensions.SqlClient
 			SqlTransaction transaction = null;
 
 			// Only await if needed...
-			if (connection.State != ConnectionState.Open)
-			{
-				await connection.EnsureOpenAsync(t); // If the task is cancelled, awaiting will throw.
-				t.ThrowIfCancellationRequested();
-			}
+			var state = await connection.EnsureOpenAsync(t); // If the task is cancelled, awaiting will throw.
 
 			try
 			{
+				t.ThrowIfCancellationRequested();
+
 				transaction = connection.BeginTransaction(isolationLevel);
 				var result = await conditionalAction(transaction).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
 				t.ThrowIfCancellationRequested();
@@ -152,6 +150,8 @@ namespace Open.Database.Extensions.SqlClient
 					if (success) transaction.Commit();
 					else transaction.Rollback();
 				}
+				if (state == ConnectionState.Closed)
+					connection.Close();
 			}
 		}
 

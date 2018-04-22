@@ -343,8 +343,15 @@ namespace Open.Database.Extensions
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
                     if (t != null) c.Transaction = t;
                     AddParams(c);
-                    con.EnsureOpen();
-                    action(c);
+					var state = con.EnsureOpen();
+					try
+					{
+						action(c);
+					}
+					finally
+					{
+						if (state == ConnectionState.Closed) con.Close();
+					}
                 }
             });
         }
@@ -369,14 +376,19 @@ namespace Open.Database.Extensions
                     if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
                     if (t != null) c.Transaction = t;
                     AddParams(c);
-                    con.EnsureOpen();
-                    return transform(c);
-                }
+					var state = con.EnsureOpen();
+					try
+					{
+						return transform(c);
+					}
+					finally
+					{
+						if (state == ConnectionState.Closed) con.Close();
+					}
+				}
             });
 
         }
-
-
 
 		/// <summary>
 		/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
@@ -392,9 +404,16 @@ namespace Open.Database.Extensions
 					if (t != null) c.Transaction = t;
 					AddParams(c);
                     var returnParameter = c.AddReturnParameter();
-					con.EnsureOpen();
-					c.ExecuteNonQuery();
-					return returnParameter.Value;
+					var state = con.EnsureOpen();
+					try
+					{
+						c.ExecuteNonQuery();
+						return returnParameter.Value;
+					}
+					finally
+					{
+						if (state == ConnectionState.Closed) con.Close();
+					}
 				}
 			});
 
@@ -404,48 +423,17 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the return parameter.</returns>
 		public T ExecuteReturn<T>()
 			=> (T)ExecuteReturn();
-
-		/// <summary>
-		/// Internal reader for simplifying iteration.  If exposed publicly could potentially hold connections open because an iteration may have not completed.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <returns>The results of each transformation.</returns>
-		protected IEnumerable<T> IterateReaderInternal<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-		{
-            if (transform == null) throw new ArgumentNullException(nameof(transform));
-            Contract.EndContractBlock();
-
-            TConnection con = Connection ?? ConnectionFactory.Create();
-			try
-			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
-				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					AddParams(c);
-					con.EnsureOpen();
-					using (var reader = c.ExecuteReader(behavior | CommandBehavior.SingleResult | CommandBehavior.CloseConnection))
-					{
-						while (reader.Read())
-							yield return transform(reader);
-					}
-				}
-			}
-			finally
-			{
-				if (Connection == null) con.Dispose();
-			}
-		}
-
+		
 		/// <summary>
 		/// Executes a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="handler">The handler function for the data reader.</param>
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> Execute(command => command.ExecuteReader(handler, behavior | CommandBehavior.CloseConnection));
+		{
+			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			Execute(command => command.ExecuteReader(handler, behavior));
+		}
 
 		/// <summary>
 		/// Executes a reader on a command with a transform function.
@@ -455,21 +443,24 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <returns>The result of the transform.</returns>
 		public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> Execute(command => command.ExecuteReader(transform, behavior | CommandBehavior.CloseConnection));
-
+		{
+			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			return Execute(command => command.ExecuteReader(transform, behavior));
+		}
+		
 		/// <summary>
 		/// Iterates a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public void IterateReader(Action<IDataRecord> handler)
-			=> Execute(command => command.IterateReader(CommandBehavior.SingleResult | CommandBehavior.CloseConnection, handler));
+			=> ExecuteReader(reader => reader.ForEach(handler), CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Iterates a reader on a command while the handler function returns true.
 		/// </summary>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public void IterateReaderWhile(Func<IDataRecord, bool> handler)
-			=> Execute(command => command.IterateReaderWhile(handler, CommandBehavior.SingleResult | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.IterateWhile(handler), CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Executes a reader on a command with a transform function.
@@ -482,7 +473,7 @@ namespace Open.Database.Extensions
 		public TResult IterateReader<TEntity, TResult>(
 			Func<IDataRecord, TEntity> transform,
 			Func<IEnumerable<TEntity>, TResult> selector)
-			=> Execute(command => command.IterateReader(CommandBehavior.SingleResult | CommandBehavior.CloseConnection, transform, selector));
+			=> ExecuteReader(reader => selector(reader.Iterate(transform)), CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Iterates an IDataReader and returns the first result through a transform funciton.  Throws if none.
@@ -528,7 +519,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>The results from the transform limited by the take count.</returns>
 		public List<T> Take<T>(int count, Func<IDataRecord, T> transform)
-			=> Execute(command => command.Take<T>(count, transform, CommandBehavior.SingleResult | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.Iterate(transform).Take(count).ToList(), CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Iterates an IDataReader and skips the first number of results defined by the count.
@@ -538,7 +529,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>The results from the transform after the skip count.</returns>
 		public List<T> Skip<T>(int count, Func<IDataRecord, T> transform)
-			=> Execute(command => command.Skip<T>(count, transform, CommandBehavior.SingleResult | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.Iterate(transform).Skip(count).ToList(), CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
@@ -549,7 +540,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>The results from the skip, transform and take operation.</returns>
 		public List<T> SkipThenTake<T>(int skip, int take, Func<IDataRecord, T> transform)
-			=> Execute(command => command.SkipThenTake<T>(skip, take, transform, CommandBehavior.SingleResult | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.Iterate(transform).Skip(skip).Take(take).ToList(), CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Calls ExecuteNonQuery on the underlying command.
@@ -586,7 +577,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The resultant DataTabel.</returns>
 		public DataTable LoadTable()
-			=> Execute(command => command.ToDataTable(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.ToDataTable(), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Loads all data from a command through an IDataReader into a DataTables.
@@ -594,7 +585,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The resultant list of DataTables.</returns>
 		public List<DataTable> LoadTables()
-			=> Execute(command => command.ToDataTables(CommandBehavior.SequentialAccess | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.ToDataTables(), CommandBehavior.SequentialAccess);
 
 		/// <summary>
 		/// Converts all IDataRecords into a list using a transform function.
@@ -604,7 +595,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <returns>The list of transformed records.</returns>
 		public List<T> ToList<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReader(record => record.Iterate(transform).ToList(), behavior | CommandBehavior.SingleResult);
+			=> ExecuteReader(reader => reader.Iterate(transform).ToList(), behavior | CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Converts all IDataRecords into an array using a transform function.
@@ -614,7 +605,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		/// <returns>The array of transformed records.</returns>
 		public T[] ToArray<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReader(record => record.Iterate(transform).ToArray(), behavior | CommandBehavior.SingleResult);
+			=> ExecuteReader(reader => reader.Iterate(transform).ToArray(), behavior | CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
@@ -622,7 +613,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve()
-			=> Execute(command => command.Retrieve(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.Retrieve(), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -631,7 +622,7 @@ namespace Open.Database.Extensions
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(IEnumerable<int> ordinals)
-			=> Execute(command => command.Retrieve(ordinals));
+			=> ExecuteReader(reader => reader.Retrieve(ordinals));
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -641,7 +632,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(int n, params int[] others)
-			=> Execute(command => command.Retrieve(n, others));
+			=> ExecuteReader(reader => reader.Retrieve(n, others));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -650,7 +641,7 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(IEnumerable<string> columnNames)
-			=> Execute(command => command.Retrieve(columnNames));
+			=> ExecuteReader(reader => reader.Retrieve(columnNames));
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -660,7 +651,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public QueryResult<Queue<object[]>> Retrieve(string c, params string[] others)
-			=> Execute(command => command.Retrieve(c, others));
+			=> ExecuteReader(reader => reader.Retrieve(c, others));
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
@@ -671,7 +662,7 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable to pull the transformed results from.</returns>
 		public IEnumerable<T> Results<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
 			where T : new()
-			=> Execute(command => command.Results<T>(fieldMappingOverrides));
+			=> ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
@@ -682,7 +673,7 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable to pull the transformed results from.</returns>
 		public IEnumerable<T> Results<T>(IEnumerable<(string Field, string Column)> fieldMappingOverrides)
 			where T : new()
-			=> Execute(command => command.Results<T>(fieldMappingOverrides));
+			=> ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
 
 		/// <summary>
 		/// Reads the first column from every record and returns the results as a list..
@@ -690,8 +681,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The list of transformed records.</returns>
 		public IEnumerable<object> FirstOrdinalResults()
-			=> Execute(command => command.FirstOrdinalResults(CommandBehavior.SequentialAccess | CommandBehavior.CloseConnection));
-
+			=> ExecuteReader(reader => reader.FirstOrdinalResults(), CommandBehavior.SequentialAccess);
 
 		/// <summary>
 		/// Reads the first column from every record..
@@ -699,7 +689,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public IEnumerable<T0> FirstOrdinalResults<T0>()
-			=> Execute(command => command.FirstOrdinalResults<T0>(CommandBehavior.SequentialAccess | CommandBehavior.CloseConnection));
+			=> ExecuteReader(reader => reader.FirstOrdinalResults<T0>(), CommandBehavior.SequentialAccess);
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
@@ -710,7 +700,7 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable to pull the transformed results from.</returns>
 		public IEnumerable<T> Results<T>(params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
-			=> Execute(command => command.Results<T>(fieldMappingOverrides));
+			=> ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
 
 		/// <summary>
 		/// Posts all records to a target block using the transform function.

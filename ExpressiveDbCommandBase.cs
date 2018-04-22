@@ -88,28 +88,31 @@ namespace Open.Database.Extensions
 		/// Asynchronously executes a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public async Task ExecuteAsync(Func<TCommand, Task> handler)
+		public Task ExecuteAsync(Func<TCommand, Task> handler)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            TConnection con = Connection ?? ConnectionFactory.Create();
-			try
+			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+
+			return UsingConnection(async (con, t) =>
 			{
-				using (var cmd = (TCommand)con.CreateCommand(
-				Type, Command, Timeout))
+				using (var cmd = (TCommand)con.CreateCommand(Type, Command, Timeout))
 				{
 					var c = cmd as TCommand;
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					AddParams(c);
-					await con.OpenAsync(CancellationToken);
-					await handler(c).ConfigureAwait(false);
+					var state = await con.EnsureOpenAsync(CancellationToken);
+					try
+					{
+						await handler(c).ConfigureAwait(false);
+					}
+					finally
+					{
+						if (state == ConnectionState.Closed) con.Close();
+					}
 				}
-			}
-			finally
-			{
-				if (Connection == null) con.Dispose();
-			}
+			});
 		}
 
 		/// <summary>
@@ -118,57 +121,62 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <returns>The result of the transform.</returns>
-		public async Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> transform)
+		public Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> transform)
 		{
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
-			TConnection con = Connection ?? ConnectionFactory.Create();
-			try
+			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+
+			return UsingConnection(async (con, t) =>
 			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
+				using (var cmd = (TCommand)con.CreateCommand(Type, Command, Timeout))
 				{
 					var c = cmd as TCommand;
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					AddParams(c);
-					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(CancellationToken);
-					return await transform(c).ConfigureAwait(false);
+					var state = await con.EnsureOpenAsync(CancellationToken);
+					try
+					{
+						return await transform(c).ConfigureAwait(false);
+					}
+					finally
+					{
+						if (state == ConnectionState.Closed) con.Close();
+					}
 				}
-			}
-			finally
-			{
-				if (Connection == null) con.Dispose();
-			}
+			});
+
 		}
 
 		/// <summary>
 		/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 		/// </summary>
 		/// <returns>The value from the return parameter.</returns>
-		public async Task<object> ExecuteReturnAsync()
+		public Task<object> ExecuteReturnAsync()
 		{
-			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
-			TConnection con = Connection ?? ConnectionFactory.Create();
-			try
+			CancellationToken.ThrowIfCancellationRequested();
+
+			return UsingConnection(async (con, t) =>
 			{
 				using (var cmd = con.CreateCommand(Type, Command, Timeout))
 				{
 					var c = cmd as TCommand;
 					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 					AddParams(c);
-					var returnParameter = c.CreateParameter();
-					returnParameter.Direction = ParameterDirection.ReturnValue;
-					cmd.Parameters.Add(returnParameter);
-					if (con.State != ConnectionState.Open) await con.EnsureOpenAsync(CancellationToken, false).ConfigureAwait(false);
-					await c.ExecuteNonQueryAsync(CancellationToken).ConfigureAwait(false);
-					return returnParameter.Value;
+					var returnParameter = c.AddReturnParameter();
+					var state = await con.EnsureOpenAsync(CancellationToken, false).ConfigureAwait(false);
+					try
+					{
+						await c.ExecuteNonQueryAsync(CancellationToken).ConfigureAwait(false);
+						return returnParameter.Value;
+					}
+					finally
+					{
+						if (state == ConnectionState.Closed) con.Close();
+					}
 				}
-			}
-			finally
-			{
-				if (Connection == null) con.Dispose();
-			}
+			});
 		}
 
 		/// <summary>
@@ -184,7 +192,10 @@ namespace Open.Database.Extensions
 		/// <param name="handler">The handler function for the data reader.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task ExecuteReaderAsync(Action<DbDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(async command => handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		{
+			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			return ExecuteAsync(async command => handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		}
 
 		/// <summary>
 		/// Asynchronously executes a reader on a command with a handler function.
@@ -192,7 +203,10 @@ namespace Open.Database.Extensions
 		/// <param name="handler">The handler function for the data reader.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task ExecuteReaderAsync(Func<DbDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		{
+			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			return ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		}
 
 		/// <summary>
 		/// Asynchronously executes a reader on a command with a transform function.
@@ -202,7 +216,10 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(async command => transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		{
+			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			return ExecuteAsync(async command => transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		}
 
 		/// <summary>
 		/// Asynchronously executes a reader on a command with a transform function.
@@ -212,7 +229,10 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		{
+			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			return ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
+		}
 
 		/// <summary>
 		/// Calls ExecuteNonQueryAsync on the underlying command.
@@ -260,7 +280,7 @@ namespace Open.Database.Extensions
 		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task IterateReaderAsync(Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(command => command.ForEachAsync(handler, behavior | CommandBehavior.CloseConnection, CancellationToken, UseAsyncRead));
+			=> ExecuteReaderAsync(reader => reader.ForEachAsync(handler, CancellationToken, UseAsyncRead), behavior);
 
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
@@ -269,7 +289,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
 		public Task IterateReaderWhileAsync(Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, behavior | CommandBehavior.CloseConnection, CancellationToken, UseAsyncRead));
+			=> ExecuteReaderAsync(reader => reader.IterateWhileAsync(predicate, CancellationToken, UseAsyncRead), behavior);
 
 		/// <summary>
 		/// Iterates asynchronously until the handler returns false.  Then cancels.
@@ -278,7 +298,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
 		public Task IterateReaderWhileAsync(Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteAsync(command => command.IterateReaderWhileAsync(predicate, behavior | CommandBehavior.CloseConnection, CancellationToken));
+			=> ExecuteReaderAsync(reader => reader.IterateWhileAsync(predicate, CancellationToken), behavior);
 
 		/// <summary>
 		/// Asynchronously iterates a IDataReader and returns the each result until the count is met.
@@ -311,7 +331,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The list of transformed records.</returns>
 		public Task<IEnumerable<object>> FirstOrdinalResultsAsync()
-			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync(CommandBehavior.SequentialAccess, CancellationToken, UseAsyncRead));
+			=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(CancellationToken, UseAsyncRead), CommandBehavior.SequentialAccess);
 
 		/// <summary>
 		/// Reads the first column from every record..
@@ -319,7 +339,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>The enumerable of casted values.</returns>
 		public Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
-			=> ExecuteAsync(command => command.FirstOrdinalResultsAsync<T0>(CommandBehavior.SequentialAccess, CancellationToken, UseAsyncRead));
+			=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(CancellationToken, UseAsyncRead), CommandBehavior.SequentialAccess);
 
 		/// <summary>
 		/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.

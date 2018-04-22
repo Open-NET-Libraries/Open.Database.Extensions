@@ -73,6 +73,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
@@ -92,7 +93,8 @@ namespace Open.Database.Extensions
 
             if (target.IsStillAlive())
             {
-				if (command.Connection.State != ConnectionState.Open) await command.Connection.EnsureOpenAsync();
+				var state = await command.Connection.EnsureOpenAsync();
+				if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
 				using (var reader = await command.ExecuteReaderAsync(behavior))
                 {
                     if (target.IsStillAlive())
