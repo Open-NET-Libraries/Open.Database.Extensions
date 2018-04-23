@@ -57,7 +57,7 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
 		/// Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
-        /// This should only be set to true if there is a clear reason why and should be profiled before and after.
+		/// This should only be set to true if there is a clear reason why and should be profiled before and after.
 		/// </summary>
 		public bool UseAsyncRead = false;
 
@@ -89,13 +89,13 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		public Task ExecuteAsync(Func<TCommand, Task> handler)
-        {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
-            Contract.EndContractBlock();
+		{
+			if (handler == null) throw new ArgumentNullException(nameof(handler));
+			Contract.EndContractBlock();
 
 			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
-			return UsingConnection(async (con, t) =>
+			return UsingConnectionAsync(async (con, t) =>
 			{
 				using (var cmd = (TCommand)con.CreateCommand(Type, Command, Timeout))
 				{
@@ -123,12 +123,12 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteAsync<T>(Func<TCommand, Task<T>> transform)
 		{
-            if (transform == null) throw new ArgumentNullException(nameof(transform));
-            Contract.EndContractBlock();
+			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
 
 			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
-			return UsingConnection(async (con, t) =>
+			return UsingConnectionAsync(async (con, t) =>
 			{
 				using (var cmd = (TCommand)con.CreateCommand(Type, Command, Timeout))
 				{
@@ -193,7 +193,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task ExecuteReaderAsync(Action<DbDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
 			return ExecuteAsync(async command => handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 		}
 
@@ -204,7 +204,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		public Task ExecuteReaderAsync(Func<DbDataReader, Task> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
 			return ExecuteAsync(async command => await handler(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 		}
 
@@ -217,7 +217,7 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
 			return ExecuteAsync(async command => transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 		}
 
@@ -230,7 +230,7 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection != null && Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection==null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
 			return ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 		}
 
@@ -310,9 +310,9 @@ namespace Open.Database.Extensions
 		/// <returns>The value from the transform.</returns>
 		public Task<List<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count, CommandBehavior behavior = CommandBehavior.Default)
 		{
-            if (transform == null) throw new ArgumentNullException(nameof(transform));
-            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
-            Contract.EndContractBlock();
+			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
+			Contract.EndContractBlock();
 
 			var results = new List<T>();
 			if (count == 0) return Task.FromResult(results);
@@ -368,11 +368,11 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the records.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public Task ToTargetBlockAsync<T>(ITargetBlock<T> target, Func<IDataRecord, T> transform)
-        {
-            if (transform == null) throw new ArgumentNullException(nameof(transform));
-            Contract.EndContractBlock();
+		{
+			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
 
-            Task<bool> lastSend = null;
+			Task<bool> lastSend = null;
 			return IterateReaderWhileAsync(async r =>
 			{
 				var ok = lastSend == null || await lastSend;
@@ -392,13 +392,16 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>A buffer block that is recieving the results.</returns>
 		public ISourceBlock<T> AsSourceBlockAsync<T>(Func<IDataRecord, T> transform)
-        {
-            if (transform == null) throw new ArgumentNullException(nameof(transform));
-            Contract.EndContractBlock();
+		{
+			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
 
-            var source = new BufferBlock<T>();
+			var source = new BufferBlock<T>();
 			ToTargetBlockAsync(source, transform)
-				.ContinueWith(t => source.Complete())
+				.ContinueWith(t => {
+					if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
+					else source.Complete();
+				})
 				.ConfigureAwait(false);
 			return source;
 		}

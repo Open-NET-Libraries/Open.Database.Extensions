@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
@@ -123,7 +124,7 @@ namespace Open.Database.Extensions
 				if (connection.State != ConnectionState.Closed)
 					connection.Close();
 
-				var o = connection.OpenAsync(t);
+				var o = connection.OpenAsync();
 				if (configureAwait) await o;
 				else await o.ConfigureAwait(false);
 
