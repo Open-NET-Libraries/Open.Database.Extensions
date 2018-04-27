@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
@@ -90,11 +91,13 @@ namespace Open.Database.Extensions
 		{
 			var state = connection.State;
 
-			if (state == ConnectionState.Broken)
-				connection.Close();
+			if (!state.HasFlag(ConnectionState.Open))
+			{
+				if(state.HasFlag(ConnectionState.Broken))
+					connection.Close();
 
-			if (state == ConnectionState.Closed || state == ConnectionState.Broken)
 				connection.Open();
+			}
 
 			return state;
 		}
@@ -113,16 +116,16 @@ namespace Open.Database.Extensions
 			t.ThrowIfCancellationRequested();
 
 			var state = connection.State;
-			if (state == ConnectionState.Broken)
-				connection.Close();
-
-			if (state == ConnectionState.Closed || state==ConnectionState.Broken)
+			if (!state.HasFlag(ConnectionState.Open))
 			{
+				if (state.HasFlag(ConnectionState.Broken))
+					connection.Close();
+
 				var o = connection.OpenAsync(t);
 				if (configureAwait) await o;
 				else await o.ConfigureAwait(false);
 
-				if (t.IsCancellationRequested && (state == ConnectionState.Closed))
+				if (t.IsCancellationRequested && !state.HasFlag(ConnectionState.Closed))
 					connection.Close(); // Fake finally...
 
 				t.ThrowIfCancellationRequested();

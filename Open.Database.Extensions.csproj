@@ -11,10 +11,10 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.11.3-beta</Version>
-    <AssemblyVersion>5.11.3.0</AssemblyVersion>
-    <FileVersion>5.11.3.0</FileVersion>
-    <PackageReleaseNotes>Added, fixed, and improved smart open and close (restore connection state) to all command based methods.</PackageReleaseNotes>
+    <Version>5.12.1</Version>
+    <AssemblyVersion>5.12.0.0</AssemblyVersion>
+    <FileVersion>5.12.0.0</FileVersion>
+    <PackageReleaseNotes>Improved flag handling.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
