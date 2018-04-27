@@ -89,15 +89,13 @@ namespace Open.Database.Extensions
 		public static ConnectionState EnsureOpen(this IDbConnection connection)
 		{
 			var state = connection.State;
-			if (state == ConnectionState.Broken)
-				throw new InvalidOperationException("Unable to open a broken connection.");
-			if (state != ConnectionState.Open)
-			{
-				if (connection.State != ConnectionState.Closed)
-					connection.Close();
 
+			if (state == ConnectionState.Broken)
+				connection.Close();
+
+			if (state == ConnectionState.Closed || state == ConnectionState.Broken)
 				connection.Open();
-			}
+
 			return state;
 		}
 
@@ -116,13 +114,10 @@ namespace Open.Database.Extensions
 
 			var state = connection.State;
 			if (state == ConnectionState.Broken)
-				throw new InvalidOperationException("Unable to open a broken connection.");
+				connection.Close();
 
-			if (state != ConnectionState.Open)
+			if (state == ConnectionState.Closed || state==ConnectionState.Broken)
 			{
-				if (connection.State != ConnectionState.Closed)
-					connection.Close();
-
 				var o = connection.OpenAsync(t);
 				if (configureAwait) await o;
 				else await o.ConfigureAwait(false);
