@@ -91,13 +91,11 @@ namespace Open.Database.Extensions
 		{
 			var state = connection.State;
 
-			if (!state.HasFlag(ConnectionState.Open))
-			{
-				if(state.HasFlag(ConnectionState.Broken))
-					connection.Close();
+			if (state.HasFlag(ConnectionState.Broken))
+				connection.Close();
 
+			if (!connection.State.HasFlag(ConnectionState.Open))
 				connection.Open();
-			}
 
 			return state;
 		}
@@ -116,11 +114,11 @@ namespace Open.Database.Extensions
 			t.ThrowIfCancellationRequested();
 
 			var state = connection.State;
-			if (!state.HasFlag(ConnectionState.Open))
-			{
-				if (state.HasFlag(ConnectionState.Broken))
-					connection.Close();
+			if (state.HasFlag(ConnectionState.Broken))
+				connection.Close();
 
+			if (!connection.State.HasFlag(ConnectionState.Open))
+			{
 				var o = connection.OpenAsync(t);
 				if (configureAwait) await o;
 				else await o.ConfigureAwait(false);
