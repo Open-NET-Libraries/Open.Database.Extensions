@@ -185,21 +185,21 @@ namespace Open.Database.Extensions
 			var t = token ?? CancellationToken.None;
 			var buffer = new Queue<object[]>();
 
-if (!readStarted)
-	readStarted = useReadAsync
-		? await reader.ReadAsync(t)
-		: (!t.IsCancellationRequested && reader.Read());
+			if (!readStarted)
+				readStarted = useReadAsync
+					? await reader.ReadAsync(t)
+					: (!t.IsCancellationRequested && reader.Read());
 
-if (readStarted)
-{
-	do
-	{
-		buffer.Enqueue(handler(reader));
-	}
-	while (useReadAsync
-		? await reader.ReadAsync(t)
-		: (!t.IsCancellationRequested && reader.Read()));
-}
+			if (readStarted)
+			{
+				do
+				{
+					buffer.Enqueue(handler(reader));
+				}
+				while (useReadAsync
+					? await reader.ReadAsync(t)
+					: (!t.IsCancellationRequested && reader.Read()));
+			}
 
 			if (!useReadAsync)
 				t.ThrowIfCancellationRequested();
