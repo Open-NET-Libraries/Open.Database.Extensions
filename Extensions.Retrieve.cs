@@ -143,7 +143,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static async Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken? token = null, bool useReadAsync = true)
 		{
 			var t = token ?? CancellationToken.None;
@@ -185,21 +185,11 @@ namespace Open.Database.Extensions
 			var t = token ?? CancellationToken.None;
 			var buffer = new Queue<object[]>();
 
-			if (!readStarted)
-				readStarted = useReadAsync
-					? await reader.ReadAsync(t)
-					: (!t.IsCancellationRequested && reader.Read());
-
 			if (readStarted)
-			{
-				do
-				{
-					buffer.Enqueue(handler(reader));
-				}
-				while (useReadAsync
-					? await reader.ReadAsync(t)
-					: (!t.IsCancellationRequested && reader.Read()));
-			}
+				buffer.Enqueue(handler(reader));
+
+			while (useReadAsync ? await reader.ReadAsync(t) : (!t.IsCancellationRequested && reader.Read()))
+				buffer.Enqueue(handler(reader));
 
 			if (!useReadAsync)
 				t.ThrowIfCancellationRequested();
