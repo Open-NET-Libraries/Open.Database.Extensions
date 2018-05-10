@@ -4,7 +4,7 @@ using System.Data.Common;
 namespace Open.Database.Extensions
 {
 	public static partial class Extensions
-    {
+	{
 		/// <summary>
 		/// Shortcut for creating an IDbCommand from any IDbConnection.
 		/// </summary>

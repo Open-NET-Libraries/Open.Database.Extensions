@@ -4,10 +4,10 @@ using System.Data;
 namespace Open.Database.Extensions
 {
 
-    public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
+	public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
 		where TConnection : class, IDbConnection
-        where TCommand : class, IDbCommand
-        where TDbType : struct
+		where TCommand : class, IDbCommand
+		where TDbType : struct
 		where TThis : ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
 	{
 #pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
@@ -49,7 +49,7 @@ namespace Open.Database.Extensions
 			/// Equality operator.
 			/// </summary>
 			public static bool operator ==(Param left, Param right) => left.Equals(right);
-			
+
 			/// <summary>
 			/// Inequality operator.
 			/// </summary>

@@ -30,11 +30,11 @@ namespace Open.Database.Extensions
 			if (overrides != null)
 			{
 				foreach (var (Field, Column) in overrides)
-                {
-                    var cn = Column;
-                    if (cn == null) PropertyMap.Remove(Field); // Null values indicate a desire to 'ignore' a field.
-                    else PropertyMap[Field] = cn;
-                }		
+				{
+					var cn = Column;
+					if (cn == null) PropertyMap.Remove(Field); // Null values indicate a desire to 'ignore' a field.
+					else PropertyMap[Field] = cn;
+				}
 			}
 
 			ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value.ToLowerInvariant(), kvp => pm[kvp.Key]);
@@ -57,15 +57,15 @@ namespace Open.Database.Extensions
 						{
 							var value = record[i];
 							if (value == DBNull.Value) value = null;
-                            try
-                            {
-                                p(model, value);
-                            }
-                            catch(Exception ex)
-                            {
-                                throw new InvalidOperationException($"Unable to set value of property '{_names[i]}'.", ex);
-                            }
-                        }
+							try
+							{
+								p(model, value);
+							}
+							catch (Exception ex)
+							{
+								throw new InvalidOperationException($"Unable to set value of property '{_names[i]}'.", ex);
+							}
+						}
 					}
 
 					return model;
@@ -121,18 +121,18 @@ namespace Open.Database.Extensions
 			return x;
 		}
 
-        public ISourceBlock<T> Results(QueryResult<ISourceBlock<object[]>> source)
-        {
-            var processor = new Processor(this, source.Names);
-            var x = processor.GetBlock();
-            var r = source.Result;
-            r.LinkTo(x);
-            r.Completion.ContinueWith(t => x.Complete()); // Signal that no more results will be coming.
-            x.Completion.ContinueWith(t => r.Complete()); // Signal that no more results can be recieved.
-            return x;
-        }
+		public ISourceBlock<T> Results(QueryResult<ISourceBlock<object[]>> source)
+		{
+			var processor = new Processor(this, source.Names);
+			var x = processor.GetBlock();
+			var r = source.Result;
+			r.LinkTo(x);
+			r.Completion.ContinueWith(t => x.Complete()); // Signal that no more results will be coming.
+			x.Completion.ContinueWith(t => r.Complete()); // Signal that no more results can be recieved.
+			return x;
+		}
 
-        public TransformBlock<object[], T> ResultsBlock(
+		public TransformBlock<object[], T> ResultsBlock(
 			out Action<string[]> initColumnNames)
 		{
 			var processor = new Processor(this);

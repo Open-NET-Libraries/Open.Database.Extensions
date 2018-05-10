@@ -26,10 +26,10 @@ namespace Open.Database.Extensions
 			CancellationToken? token,
 			Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
 		{
-            if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
-            Contract.EndContractBlock();
+			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+			Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
+			var t = token ?? CancellationToken.None;
 			t.ThrowIfCancellationRequested();
 
 			var success = false;
@@ -87,7 +87,7 @@ namespace Open.Database.Extensions
 			CancellationToken? token,
 			Func<DbTransaction, T> action)
 			=> connection.ExecuteTransactionConditional(
-				isolationLevel, token, t =>(true, action(t))).Value;
+				isolationLevel, token, t => (true, action(t))).Value;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -118,13 +118,13 @@ namespace Open.Database.Extensions
 			IsolationLevel isolationLevel,
 			CancellationToken? token,
 			Func<DbTransaction, Task<(bool Commit, T Value)>> conditionalAction)
-        {
-            if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
-            Contract.EndContractBlock();
+		{
+			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+			Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
+			var t = token ?? CancellationToken.None;
 			t.ThrowIfCancellationRequested();
-			  
+
 			var success = false;
 			DbTransaction transaction = null;
 

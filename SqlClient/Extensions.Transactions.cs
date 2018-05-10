@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace Open.Database.Extensions.SqlClient
 {
-    // NOTE: This is simply a copy/paste of th IDb and Db extensions but replacing types with their Sql versions.
-    // Why?  To ensure the Sql types are propagated through the type flow.
+	// NOTE: This is simply a copy/paste of th IDb and Db extensions but replacing types with their Sql versions.
+	// Why?  To ensure the Sql types are propagated through the type flow.
 
-    public static partial class Extensions
+	public static partial class Extensions
 	{
 
 		/// <summary>
@@ -28,10 +28,10 @@ namespace Open.Database.Extensions.SqlClient
 			CancellationToken? token,
 			Func<SqlTransaction, (bool Commit, T Value)> conditionalAction)
 		{
-            if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
-            Contract.EndContractBlock();
+			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+			Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
+			var t = token ?? CancellationToken.None;
 			t.ThrowIfCancellationRequested();
 
 			var success = false;
@@ -120,11 +120,11 @@ namespace Open.Database.Extensions.SqlClient
 			IsolationLevel isolationLevel,
 			CancellationToken? token,
 			Func<SqlTransaction, Task<(bool Commit, T Value)>> conditionalAction)
-        {
-            if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
-            Contract.EndContractBlock();
+		{
+			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+			Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
+			var t = token ?? CancellationToken.None;
 			t.ThrowIfCancellationRequested();
 
 			var success = false;

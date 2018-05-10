@@ -230,7 +230,7 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public Task<T> ExecuteReaderAsync<T>(Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection==null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
 			return ExecuteAsync(async command => await transform(await command.ExecuteReaderAsync(behavior, CancellationToken).ConfigureAwait(false)));
 		}
 
@@ -398,7 +398,8 @@ namespace Open.Database.Extensions
 
 			var source = new BufferBlock<T>();
 			ToTargetBlockAsync(source, transform)
-				.ContinueWith(t => {
+				.ContinueWith(t =>
+				{
 					if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
 					else source.Complete();
 				})
