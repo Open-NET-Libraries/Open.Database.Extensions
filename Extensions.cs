@@ -296,9 +296,9 @@ namespace Open.Database.Extensions
 		/// Returns the (name,ordinal) mapping for current result set.
 		/// </summary>
 		/// <param name="record">The reader to get column names from.</param>
-		/// <returns>The array of mappings.</returns>
-		public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record)
-			=> record.GetNames().Select((n, o) => (Name: n, Ordinal: o)).ToArray();
+		/// <returns>An enumerable of the mappings.</returns>
+		public static IEnumerable<(string Name, int Ordinal)> GetOrdinalMapping(this IDataRecord record)
+			=> record.GetNames().Select((n, o) => (Name: n, Ordinal: o));
 
 		/// <summary>
 		/// Returns an array of name to ordinal mappings.
@@ -323,7 +323,6 @@ namespace Open.Database.Extensions
 					q = q.OrderBy(m => m.Ordinal);
 
 				return q.ToArray();
-
 			}
 			catch (IndexOutOfRangeException iorex)
 			{
@@ -331,7 +330,7 @@ namespace Open.Database.Extensions
 				mismatch.ExceptWith(record.GetNames());
 
 				// Columns not mapped correctly.  Report all columns that are mismatched/missing.
-				throw new IndexOutOfRangeException($"Invalid columns: {String.Join(", ", mismatch.OrderBy(c => c).ToArray())}", iorex);
+				throw new IndexOutOfRangeException($"Invalid columns: {string.Join(", ", mismatch.OrderBy(c => c).ToArray())}", iorex);
 			}
 		}
 
@@ -349,6 +348,7 @@ namespace Open.Database.Extensions
 			var values = new object[count];
 			for (var i = 0; i < count; i++)
 				values[i] = record.GetValue(ordinals[i]);
+
 			return values;
 		}
 
@@ -378,18 +378,24 @@ namespace Open.Database.Extensions
 				var requested = new HashSet<string>(columnNames);
 				// Return actual values based upon if their lower-case counterparts exist in the requested.
 				return actual
-					.Where(m => columnNames.Contains(m.Name.ToLowerInvariant()))
-					.ToArray();
+					.Where(m => requested.Contains(m.Name.ToLowerInvariant()))
+                    .ToArray();
 			}
 			else
 			{
 				// Create a map of lower-case keys to acutal.
 				var actualColumns = actual.ToDictionary(m => m.Name.ToLowerInvariant(), m => m);
-				return columnNames
-					.Where(c => actualColumns.ContainsKey(c)) // Select lower case column names if they exist in the dictionary.
-					.Select(c => actualColumns[c]) // Then select the actual values based upon that key.
-					.ToArray();
+                return columnNames
+                    .Where(c => actualColumns.ContainsKey(c)) // Select lower case column names if they exist in the dictionary.
+                    .Select(c => actualColumns[c]) // Then select the actual values based upon that key.
+                    .ToArray();
 			}
+
+            /* Note:
+             * It is not necessary to call .ToArray() because the names are already pulled from the reader,
+             * and this method could return IEnumerable,
+             * but it's more common use is to have an array so best to keep it an array.
+             */
 		}
 
 		/// <summary>
@@ -1459,7 +1465,7 @@ namespace Open.Database.Extensions
 			{
 				results.Enqueue(
 					reader.IsDBNull(0)
-					? default(T0)
+					? default
 					: reader.GetFieldValue<T0>(0)
 				);
 			}
@@ -1534,7 +1540,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						await reader.IsDBNullAsync(0, t).ConfigureAwait(false)
-						? default(T0)
+						? default
 						: await reader.GetFieldValueAsync<T0>(0, t).ConfigureAwait(false)
 					);
 				}
@@ -1545,7 +1551,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						reader.IsDBNull(0)
-						? default(T0)
+						? default
 						: reader.GetFieldValue<T0>(0)
 					);
 				}

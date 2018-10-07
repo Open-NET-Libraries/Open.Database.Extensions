@@ -382,9 +382,11 @@ namespace Open.Database.Extensions
 			{
 				using (var cmd = con.CreateCommand(Type, Command, Timeout))
 				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null) c.Transaction = t;
+                    if (!(cmd is TCommand c))
+                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    if (t != null)
+                        c.Transaction = t;
+
 					AddParams(c);
 					var state = con.EnsureOpen();
 					try
@@ -415,9 +417,10 @@ namespace Open.Database.Extensions
 			{
 				using (var cmd = con.CreateCommand(Type, Command, Timeout))
 				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null) c.Transaction = t;
+                    if (!(cmd is TCommand c))
+                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    if (t != null)
+                        c.Transaction = t;
 					AddParams(c);
 					var state = con.EnsureOpen();
 					try
@@ -442,9 +445,11 @@ namespace Open.Database.Extensions
 			{
 				using (var cmd = con.CreateCommand(Type, Command, Timeout))
 				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null) c.Transaction = t;
+                    if (!(cmd is TCommand c))
+                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+                    if (t != null)
+                        c.Transaction = t;
+
 					AddParams(c);
 					var returnParameter = c.AddReturnParameter();
 					var state = con.EnsureOpen();
@@ -797,10 +802,8 @@ namespace Open.Database.Extensions
 
 			void i() => ExecuteReader(reader =>
 			{
-				// Ignores fields that don't match.
-				var columns = reader.GetMatchingOrdinals(cn)
-					.OrderBy(c => c.Ordinal)
-					.ToArray();
+                // Ignores fields that don't match.
+                var columns = reader.GetMatchingOrdinals(cn, true);
 
 				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
 				deferred(new QueryResult<IEnumerable<object[]>>(

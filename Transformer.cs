@@ -16,8 +16,8 @@ namespace Open.Database.Extensions
 		// Allow mapping key = object property, value = column name.
 		readonly Dictionary<string, string> PropertyMap;
 		readonly Dictionary<string, PropertyInfo> ColumnToPropertyMap;
-		public HashSet<string> PropertyNames => new HashSet<string>(PropertyMap.Keys);
-		public HashSet<string> ColumnNames => new HashSet<string>(PropertyMap.Values);
+		public IEnumerable<string> PropertyNames => PropertyMap.Keys;
+		public IEnumerable<string> ColumnNames => PropertyMap.Values;
 
 		public Transformer(IEnumerable<(string Field, string Column)> overrides = null)
 		{

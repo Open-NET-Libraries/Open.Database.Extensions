@@ -1350,7 +1350,7 @@
             Returns the (name,ordinal) mapping for current result set.
             </summary>
             <param name="record">The reader to get column names from.</param>
-            <returns>The array of mappings.</returns>
+            <returns>An enumerable of the mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetOrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
             <summary>

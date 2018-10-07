@@ -99,9 +99,10 @@ namespace Open.Database.Extensions
 			{
 				using (var cmd = (TCommand)con.CreateCommand(Type, Command, Timeout))
 				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					AddParams(c);
+                    if (!(cmd is TCommand c))
+                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+
+                    AddParams(c);
 					var state = await con.EnsureOpenAsync(CancellationToken);
 					try
 					{
@@ -132,9 +133,10 @@ namespace Open.Database.Extensions
 			{
 				using (var cmd = (TCommand)con.CreateCommand(Type, Command, Timeout))
 				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					AddParams(c);
+                    if (!(cmd is TCommand c))
+                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+
+                    AddParams(c);
 					var state = await con.EnsureOpenAsync(CancellationToken);
 					try
 					{
@@ -161,9 +163,10 @@ namespace Open.Database.Extensions
 			{
 				using (var cmd = con.CreateCommand(Type, Command, Timeout))
 				{
-					var c = cmd as TCommand;
-					if (c == null) throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					AddParams(c);
+                    if (!(cmd is TCommand c))
+                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+
+                    AddParams(c);
 					var returnParameter = c.AddReturnParameter();
 					var state = await con.EnsureOpenAsync(CancellationToken, false).ConfigureAwait(false);
 					try
