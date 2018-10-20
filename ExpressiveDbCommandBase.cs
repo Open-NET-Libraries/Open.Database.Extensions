@@ -457,14 +457,26 @@ namespace Open.Database.Extensions
 		where T : new()
 			=> AsSourceBlockAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
+        /// <summary>
+        /// Returns a source block as the source of records.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+        /// <returns>A transform block that is receiving the results.</returns>
+        public ISourceBlock<T> AsSourceBlockAsync<T>(
+                ExecutionDataflowBlockOptions options,
+                params (string Field, string Column)[] fieldMappingOverrides)
+        where T : new()
+            => AsSourceBlockAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>, options);
 
-		/// <summary>
-		/// Asynchronously returns all records via a transform function.
-		/// </summary>
-		/// <param name="transform">The desired column names.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <returns>A task containing the list of results.</returns>
-		public async Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+        /// <summary>
+        /// Asynchronously returns all records via a transform function.
+        /// </summary>
+        /// <param name="transform">The desired column names.</param>
+        /// <param name="behavior">The behavior to use with the data reader.</param>
+        /// <returns>A task containing the list of results.</returns>
+        public async Task<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			var results = new List<T>();
 			await IterateReaderAsync(record => results.Add(transform(record)), behavior).ConfigureAwait(false);

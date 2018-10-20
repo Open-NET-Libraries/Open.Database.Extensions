@@ -835,6 +835,15 @@
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A transform block that is receiving the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ToListAsync``1(System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
             Asynchronously returns all records via a transform function.
