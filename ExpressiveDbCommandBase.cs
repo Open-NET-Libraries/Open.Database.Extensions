@@ -416,7 +416,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <param name="options">The optional DataflowBlockOptions to use with the source.</param>
 		/// <returns>A buffer block that is receiving the results.</returns>
-		public ISourceBlock<T> AsSourceBlockAsync<T>(
+		public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions options = null)
 		{
@@ -441,7 +441,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
-		public ISourceBlock<T> AsSourceBlockAsync<T>(
+		public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
 			IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides,
 			ExecutionDataflowBlockOptions options = null)
 		   where T : new()
@@ -453,7 +453,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
-		public ISourceBlock<T> AsSourceBlockAsync<T>(params (string Field, string Column)[] fieldMappingOverrides)
+		public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(params (string Field, string Column)[] fieldMappingOverrides)
 		where T : new()
 			=> AsSourceBlockAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
@@ -464,7 +464,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
         /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
         /// <returns>A transform block that is receiving the results.</returns>
-        public ISourceBlock<T> AsSourceBlockAsync<T>(
+        public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
                 ExecutionDataflowBlockOptions options,
                 params (string Field, string Column)[] fieldMappingOverrides)
         where T : new()
@@ -508,7 +508,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="options"></param>
 		/// <returns>A transform block that is receiving the results.</returns>
-		public ISourceBlock<T> AsSourceBlockAsync<T>(
+		public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
 			IEnumerable<(string Field, string Column)> fieldMappingOverrides,
 			ExecutionDataflowBlockOptions options = null)
 			where T : new()

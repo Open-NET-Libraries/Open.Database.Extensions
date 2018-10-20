@@ -2872,7 +2872,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}})">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
             DBNull values are converted to null.
@@ -2880,7 +2880,7 @@
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>
             Returns a block that attempts to map the fields to type T.
             DBNull values are converted to null.
@@ -2890,7 +2890,7 @@
             <param name="options">The ExecutionDataflowBlockOptions for transforming the data into the source block.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
             Returns a block that attempts to map the fields to type T.
             DBNull values are converted to null.
@@ -2899,7 +2899,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.ValueTuple{System.String,System.String}[])">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}},System.ValueTuple{System.String,System.String}[])">
             <summary>
             Returns a block that attempts to map the fields to type T.
             DBNull values are converted to null.

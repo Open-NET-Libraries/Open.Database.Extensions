@@ -111,7 +111,7 @@ namespace Open.Database.Extensions
 			// By using the above routine, we guarantee as enumeration occurs, references are released (dequeued).
 		}
 
-		public ISourceBlock<T> Results(
+		public IReceivableSourceBlock<T> Results(
 			out Action<QueryResult<IEnumerable<object[]>>> deferred,
 			ExecutionDataflowBlockOptions options = null)
 		{
@@ -129,8 +129,8 @@ namespace Open.Database.Extensions
 			return x;
 		}
 
-		public ISourceBlock<T> Results(
-			QueryResult<ISourceBlock<object[]>> source,
+		public IReceivableSourceBlock<T> Results(
+			QueryResult<IReceivableSourceBlock<object[]>> source,
 			ExecutionDataflowBlockOptions options = null)
 		{
 			var processor = new Processor(this, source.Names);

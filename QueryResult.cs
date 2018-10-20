@@ -143,7 +143,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static ISourceBlock<Dictionary<string, object>> AsMappedDictionaries(this QueryResult<ISourceBlock<object[]>> source)
+		public static IReceivableSourceBlock<Dictionary<string, object>> AsMappedDictionaries(this QueryResult<IReceivableSourceBlock<object[]>> source)
 		{
 			var q = source.Result;
 			var names = source.Names;
@@ -170,8 +170,8 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="options">The ExecutionDataflowBlockOptions for transforming the data into the source block.</param>
 		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static ISourceBlock<T> To<T>(
-			this QueryResult<ISourceBlock<object[]>> source,
+		public static IReceivableSourceBlock<T> To<T>(
+			this QueryResult<IReceivableSourceBlock<object[]>> source,
 			IEnumerable<(string Field, string Column)> fieldMappingOverrides,
 			ExecutionDataflowBlockOptions options = null)
 			where T : new()
@@ -187,7 +187,7 @@ namespace Open.Database.Extensions
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+		public static IReceivableSourceBlock<T> To<T>(this QueryResult<IReceivableSourceBlock<object[]>> source, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
 			where T : new()
 			=> To<T>(source, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
@@ -198,7 +198,7 @@ namespace Open.Database.Extensions
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, params (string Field, string Column)[] fieldMappingOverrides)
+		public static IReceivableSourceBlock<T> To<T>(this QueryResult<IReceivableSourceBlock<object[]>> source, params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
 			=> To<T>(source, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
