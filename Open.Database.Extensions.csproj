@@ -14,7 +14,8 @@
     <Version>5.13.0</Version>
     <AssemblyVersion>5.13.0.0</AssemblyVersion>
     <FileVersion>5.13.0.0</FileVersion>
-    <PackageReleaseNotes>Cleanup and inspection fixes with added Dataflow options.</PackageReleaseNotes>
+    <PackageReleaseNotes>Cleanup and inspection fixes with added Dataflow options.
+Improved Expressive Command DB-Open behavior to occur before command is created to ensure compatibility with other DbCommands like Snowflake.</PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
