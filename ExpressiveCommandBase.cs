@@ -5,6 +5,10 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+// ReSharper disable MemberCanBeProtected.Global
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace Open.Database.Extensions
 {
@@ -138,11 +142,11 @@ namespace Open.Database.Extensions
 				throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
 			Contract.EndContractBlock();
 
-			var p = new Param { Name = name };
-			if (value != null) p.Value = value;
-			else p.Value = DBNull.Value;
-
-			Params.Add(p);
+			Params.Add(new Param
+			{
+				Name = name,
+				Value = value ?? DBNull.Value
+			});
 			return (TThis)this;
 		}
 
@@ -380,23 +384,23 @@ namespace Open.Database.Extensions
 
 			UsingConnection((con, t) =>
 			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
+				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
+				try
 				{
-                    if (!(cmd is TCommand c))
-                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                    if (t != null)
-                        c.Transaction = t;
-
-					AddParams(c);
-					var state = con.EnsureOpen();
-					try
+					using (var cmd = con.CreateCommand(Type, Command, Timeout))
 					{
+						if (!(cmd is TCommand c))
+							throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+						if (t != null)
+							c.Transaction = t;
+
+						AddParams(c);
 						action(c);
 					}
-					finally
-					{
-						if (state == ConnectionState.Closed) con.Close();
-					}
+				}
+				finally
+				{
+					if (state == ConnectionState.Closed) con.Close();
 				}
 			});
 		}
@@ -415,22 +419,24 @@ namespace Open.Database.Extensions
 
 			return UsingConnection((con, t) =>
 			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
+				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
+				try
 				{
-                    if (!(cmd is TCommand c))
-                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                    if (t != null)
-                        c.Transaction = t;
-					AddParams(c);
-					var state = con.EnsureOpen();
-					try
+					using (var cmd = con.CreateCommand(Type, Command, Timeout))
 					{
+						if (!(cmd is TCommand c))
+							throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+						if (t != null)
+							c.Transaction = t;
+						AddParams(c);
+
 						return transform(c);
+
 					}
-					finally
-					{
-						if (state == ConnectionState.Closed) con.Close();
-					}
+				}
+				finally
+				{
+					if (state == ConnectionState.Closed) con.Close();
 				}
 			});
 
@@ -443,25 +449,26 @@ namespace Open.Database.Extensions
 		public object ExecuteReturn()
 			=> UsingConnection((con, t) =>
 			{
-				using (var cmd = con.CreateCommand(Type, Command, Timeout))
+				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
+				try
 				{
-                    if (!(cmd is TCommand c))
-                        throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-                    if (t != null)
-                        c.Transaction = t;
-
-					AddParams(c);
-					var returnParameter = c.AddReturnParameter();
-					var state = con.EnsureOpen();
-					try
+					using (var cmd = con.CreateCommand(Type, Command, Timeout))
 					{
+						if (!(cmd is TCommand c))
+							throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+						if (t != null)
+							c.Transaction = t;
+
+						AddParams(c);
+						var returnParameter = c.AddReturnParameter();
+
 						c.ExecuteNonQuery();
 						return returnParameter.Value;
 					}
-					finally
-					{
-						if (state == ConnectionState.Closed) con.Close();
-					}
+				}
+				finally
+				{
+					if (state == ConnectionState.Closed) con.Close();
 				}
 			});
 
@@ -524,7 +531,7 @@ namespace Open.Database.Extensions
 			=> ExecuteReader(reader => selector(reader.Iterate(transform)), CommandBehavior.SingleResult);
 
 		/// <summary>
-		/// Iterates an IDataReader and returns the first result through a transform funciton.  Throws if none.
+		/// Iterates an IDataReader and returns the first result through a transform function.  Throws if none.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
@@ -533,7 +540,7 @@ namespace Open.Database.Extensions
 			=> ExecuteReader(reader => reader.Iterate(transform).First(), CommandBehavior.SingleRow | CommandBehavior.SingleResult);
 
 		/// <summary>
-		/// Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.
+		/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
@@ -542,7 +549,7 @@ namespace Open.Database.Extensions
 			=> ExecuteReader(reader => reader.Iterate(transform).FirstOrDefault(), CommandBehavior.SingleRow | CommandBehavior.SingleResult);
 
 		/// <summary>
-		/// Iterates a IDataReader and returns the first result through a transform funciton.  Throws if none or more than one entry.
+		/// Iterates a IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
@@ -551,7 +558,7 @@ namespace Open.Database.Extensions
 			=> ExecuteReader(reader => reader.Iterate(transform).Single(), CommandBehavior.SingleResult);
 
 		/// <summary>
-		/// Iterates an IDataReader and returns the first result through a transform funciton.  Returns default(T) if none.  Throws if more than one entry.
+		/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.  Throws if more than one entry.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
@@ -600,7 +607,7 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Calls ExecuteScalar on the underlying command.
 		/// </summary>
-		/// <returns>The varlue returned from the method.</returns>
+		/// <returns>The value returned from the method.</returns>
 		public object ExecuteScalar()
 			=> Execute(command => command.ExecuteScalar());
 
@@ -608,7 +615,7 @@ namespace Open.Database.Extensions
 		/// Calls ExecuteScalar on the underlying command.
 		/// </summary>
 		/// <typeparam name="T">The type expected.</typeparam>
-		/// <returns>The varlue returned from the method.</returns>
+		/// <returns>The value returned from the method.</returns>
 		public T ExecuteScalar<T>()
 			=> (T)ExecuteScalar();
 
@@ -616,14 +623,14 @@ namespace Open.Database.Extensions
 		/// Calls ExecuteScalar on the underlying command.
 		/// </summary>
 		/// <typeparam name="T">The type expected.</typeparam>
-		/// <returns>The varlue returned from the method.</returns>
+		/// <returns>The value returned from the method.</returns>
 		public T ExecuteScalar<T>(Func<object, T> transform)
 			=> transform(ExecuteScalar());
 
 		/// <summary>
 		/// Imports all data using an IDataReader into a DataTable.
 		/// </summary>
-		/// <returns>The resultant DataTabel.</returns>
+		/// <returns>The resultant DataTable.</returns>
 		public DataTable LoadTable()
 			=> ExecuteReader(reader => reader.ToDataTable(), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
@@ -752,6 +759,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Posts all records to a target block using the transform function.
+		/// Stops if the target block rejects.
 		/// </summary>
 		/// <typeparam name="T">The expected type.</typeparam>
 		/// <param name="transform">The transform function.</param>
@@ -765,22 +773,25 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The expected type.</typeparam>
 		/// <param name="transform">The transform function.</param>
 		/// <param name="synchronousExecution">By default the command is deferred.
-		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-		/// If set to false (default) the data is recieved asynchronously (deferred: data will be subsequently posted) and the source block (transform) can be completed early.</param>
+		/// If set to true, the command runs synchronously and all data is acquired before the method returns.
+		/// If set to false (default) the data is received asynchronously (deferred: data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <returns>The buffer block that will contain the results.</returns>
-		public ISourceBlock<T> AsSourceBlock<T>(Func<IDataRecord, T> transform, bool synchronousExecution = false)
+		public ISourceBlock<T> AsSourceBlock<T>(
+			Func<IDataRecord, T> transform,
+			bool synchronousExecution = false)
 		{
 			if (transform == null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			var source = new BufferBlock<T>();
-			void i()
+			void I()
 			{
 				ToTargetBlock(source, transform);
 				source.Complete();
-			};
-			if (synchronousExecution) i();
-			else Task.Run(() => i());
+			}
+
+			if (synchronousExecution) I();
+			else Task.Run(I);
 			return source;
 		}
 
@@ -790,20 +801,25 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="synchronousExecution">By default the command is deferred.
-		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
-		/// <returns>A transform block that is recieving the results.</returns>
-		public ISourceBlock<T> AsSourceBlock<T>(IEnumerable<(string Field, string Column)> fieldMappingOverrides, bool synchronousExecution = false)
+		/// If set to true, the command runs synchronously and all data is acquired before the method returns.
+		/// If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+		/// <returns>A transform block that is receiving the results.</returns>
+		public ISourceBlock<T> AsSourceBlock<T>(
+			IEnumerable<(string Field, string Column)> fieldMappingOverrides,
+			bool synchronousExecution = false,
+			ExecutionDataflowBlockOptions options = null)
 		   where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
 			var cn = x.ColumnNames;
-			var q = x.Results(out Action<QueryResult<IEnumerable<object[]>>> deferred);
+			var q = x.Results(out var deferred, options);
 
-			void i() => ExecuteReader(reader =>
+			void I() => ExecuteReader(reader =>
 			{
-                // Ignores fields that don't match.
-                var columns = reader.GetMatchingOrdinals(cn, true);
+				// Ignores fields that don't match.
+				// ReSharper disable once PossibleMultipleEnumeration
+				var columns = reader.GetMatchingOrdinals(cn, true);
 
 				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
 				deferred(new QueryResult<IEnumerable<object[]>>(
@@ -813,8 +829,8 @@ namespace Open.Database.Extensions
 
 			});
 
-			if (synchronousExecution) i();
-			else Task.Run(() => i());
+			if (synchronousExecution) I();
+			else Task.Run(I);
 			return q;
 		}
 
@@ -824,19 +840,23 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="synchronousExecution">By default the command is deferred.
-		/// If set to true, the command runs synchronusly and all data is acquired before the method returns.
-		/// If set to false (default) the data is recieved asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
-		/// <returns>A transform block that is recieving the results.</returns>
-		public ISourceBlock<T> AsSourceBlock<T>(IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, bool synchronousExecution = false)
+		/// If set to true, the command runs synchronously and all data is acquired before the method returns.
+		/// If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+		/// <returns>A transform block that is receiving the results.</returns>
+		public ISourceBlock<T> AsSourceBlock<T>(
+			IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides,
+			bool synchronousExecution = false,
+			ExecutionDataflowBlockOptions options = null)
 			where T : new()
-			=> AsSourceBlock<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), synchronousExecution);
+			=> AsSourceBlock<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), synchronousExecution, options);
 
 		/// <summary>
 		/// Provides a transform block as the source of records.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <returns>A transform block that is recieving the results.</returns>
+		/// <returns>A transform block that is receiving the results.</returns>
 		public ISourceBlock<T> AsSourceBlock<T>(params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
 			=> AsSourceBlock<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);

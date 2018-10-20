@@ -1,5 +1,7 @@
 ﻿using System.Data;
 using System.Data.Common;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions
 {
@@ -98,7 +100,7 @@ namespace Open.Database.Extensions
 		public static IDbCommand CreateCommand(this IDbTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			var command = transaction.Connection.CreateCommand(CommandType.StoredProcedure, commandText, secondsTimeout);
+			var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
 			command.Transaction = transaction;
 			return command;
 		}
@@ -136,7 +138,7 @@ namespace Open.Database.Extensions
 		public static DbCommand CreateCommand(this DbTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			var command = transaction.Connection.CreateCommand(CommandType.StoredProcedure, commandText, secondsTimeout);
+			var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
 			command.Transaction = transaction;
 			return command;
 		}

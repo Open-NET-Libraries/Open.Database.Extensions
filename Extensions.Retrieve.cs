@@ -5,6 +5,8 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions
 {
@@ -14,7 +16,7 @@ namespace Open.Database.Extensions
 		static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, int[] ordinals, string[] columnNames = null, bool readStarted = false)
 		{
 			var fieldCount = ordinals.Length;
-			if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
+			if (columnNames == null) columnNames = ordinals.Select(reader.GetName).ToArray();
 			else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
 
 			return new QueryResult<Queue<object[]>>(
@@ -57,7 +59,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, int n, params int[] others)
-			=> Retrieve(reader, new int[1] { n }.Concat(others));
+			=> Retrieve(reader, new[] { n }.Concat(others));
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -82,7 +84,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, string c, params string[] others)
-			=> Retrieve(reader, new string[1] { c }.Concat(others));
+			=> Retrieve(reader, new[] { c }.Concat(others));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
@@ -113,7 +115,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, int n, params int[] others)
-			=> ExecuteReader(command, reader => Retrieve(reader, new int[1] { n }.Concat(others)));
+			=> ExecuteReader(command, reader => Retrieve(reader, new[] { n }.Concat(others)));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -134,7 +136,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, string c, params string[] others)
-			=> ExecuteReader(command, reader => Retrieve(reader, new string[1] { c }.Concat(others)));
+			=> ExecuteReader(command, reader => Retrieve(reader, new[] { c }.Concat(others)));
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -169,7 +171,7 @@ namespace Open.Database.Extensions
 		static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken? token, int[] ordinals, string[] columnNames = null, bool readStarted = false, bool useReadAsync = true)
 		{
 			var fieldCount = ordinals.Length;
-			if (columnNames == null) columnNames = ordinals.Select(n => reader.GetName(n)).ToArray();
+			if (columnNames == null) columnNames = ordinals.Select(reader.GetName).ToArray();
 			else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
 
 			Func<IDataRecord, object[]> handler;
@@ -222,7 +224,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, int n, params int[] others)
-			=> RetrieveAsync(reader, new int[1] { n }.Concat(others));
+			=> RetrieveAsync(reader, new[] { n }.Concat(others));
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -234,7 +236,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, int n, params int[] others)
-			=> RetrieveAsync(reader, new int[1] { n }.Concat(others), token);
+			=> RetrieveAsync(reader, new[] { n }.Concat(others), token);
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -266,7 +268,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, string c, params string[] others)
-			=> RetrieveAsync(reader, new string[1] { c }.Concat(others));
+			=> RetrieveAsync(reader, new[] { c }.Concat(others));
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -278,7 +280,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, string c, params string[] others)
-			=> RetrieveAsync(reader, new string[1] { c }.Concat(others), false, token);
+			=> RetrieveAsync(reader, new[] { c }.Concat(others), false, token);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -315,7 +317,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, int n, params int[] others)
-			=> RetrieveAsync(command, new int[1] { n }.Concat(others));
+			=> RetrieveAsync(command, new[] { n }.Concat(others));
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -327,7 +329,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, int n, params int[] others)
-			=> RetrieveAsync(command, new int[1] { n }.Concat(others), token);
+			=> RetrieveAsync(command, new[] { n }.Concat(others), token);
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -351,7 +353,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, string c, params string[] others)
-			=> RetrieveAsync(command, new string[1] { c }.Concat(others));
+			=> RetrieveAsync(command, new[] { c }.Concat(others));
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -363,7 +365,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, string c, params string[] others)
-			=> RetrieveAsync(command, new string[1] { c }.Concat(others), false, token);
+			=> RetrieveAsync(command, new[] { c }.Concat(others), false, token);
 
 	}
 }

@@ -4,6 +4,8 @@ using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions.SqlClient
 {
@@ -21,7 +23,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
 		/// <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-		/// <returns>The value retured from the conditional action.</returns>
+		/// <returns>The value returned from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
@@ -211,7 +213,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-		/// <returns>The value retured from the conditional action.</returns>
+		/// <returns>The value returned from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
@@ -320,7 +322,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-		/// <returns>The value retured from the conditional action.</returns>
+		/// <returns>The value returned from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
 			CancellationToken? token,
@@ -428,7 +430,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-		/// <returns>The value retured from the conditional action.</returns>
+		/// <returns>The value returned from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
 			Func<SqlTransaction, (bool Commit, T Value)> conditionalAction)

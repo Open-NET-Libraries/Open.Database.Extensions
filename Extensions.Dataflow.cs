@@ -4,6 +4,8 @@ using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace Open.Database.Extensions
 {
@@ -20,7 +22,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="target">The target block to receivethe results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		public static void ToTargetBlock<T>(this IDataReader reader,
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform)
@@ -62,7 +64,7 @@ namespace Open.Database.Extensions
 			}
 			else
 			{
-				bool ok = true;
+				var ok = true;
 				while (ok && target.IsStillAlive() && reader.Read())
 				{
 					var values = transform(reader);

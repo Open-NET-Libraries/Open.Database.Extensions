@@ -2,6 +2,8 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions.SqlClient
 {

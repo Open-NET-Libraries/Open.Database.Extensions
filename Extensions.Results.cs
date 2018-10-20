@@ -4,6 +4,8 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace Open.Database.Extensions
 {
@@ -145,7 +147,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
 		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbDataReader reader, CancellationToken token, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
-			=> ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string Column)>, token);
+			=> ResultsAsync<T>(reader, fieldMappingOverrides, token);
 
 
 		/// <summary>
@@ -170,7 +172,7 @@ namespace Open.Database.Extensions
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>A task containing the list of results.</returns>
 		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides, CancellationToken? token = null, bool useReadAsync = true) where T : new()
-			=> ResultsAsync<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), token);
+			=> ResultsAsync<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), token, useReadAsync);
 
 		/// <summary>
 		/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
@@ -191,7 +193,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
 		public static Task<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, CancellationToken token, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
-			=> ResultsAsync<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string Column)>, token);
+			=> ResultsAsync<T>(command, fieldMappingOverrides, token);
 
 
 

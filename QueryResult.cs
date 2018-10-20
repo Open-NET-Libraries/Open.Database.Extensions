@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable NotAccessedField.Global
+// ReSharper disable UnusedMember.Global
 
 namespace Open.Database.Extensions
 {
@@ -42,7 +45,7 @@ namespace Open.Database.Extensions
 		public readonly string[] Names;
 
 		/// <summary>
-		/// The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redunant memory usage.
+		/// The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
 		/// </summary>
 		public readonly TResult Result;
 
@@ -165,12 +168,16 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <param name="options">The ExecutionDataflowBlockOptions for transforming the data into the source block.</param>
 		/// <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static ISourceBlock<T> To<T>(this QueryResult<ISourceBlock<object[]>> source, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
+		public static ISourceBlock<T> To<T>(
+			this QueryResult<ISourceBlock<object[]>> source,
+			IEnumerable<(string Field, string Column)> fieldMappingOverrides,
+			ExecutionDataflowBlockOptions options = null)
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
-			return x.Results(source);
+			return x.Results(source, options);
 		}
 
 		/// <summary>

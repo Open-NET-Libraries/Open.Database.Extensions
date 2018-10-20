@@ -13,8 +13,8 @@ namespace Open.Database.Extensions
 #pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 #pragma warning disable CS0661 // Type defines operator == or operator != but does not override Object.GetHashCode()
 		/// <summary>
-		/// A struct that represents the param to be created when the command is exectued.
-		/// TDbType facillitates the difference between DbType and SqlDbType.
+		/// A struct that represents the param to be created when the command is executed.
+		/// TDbType facilitates the difference between DbType and SqlDbType.
 		/// </summary>
 		public struct Param
 #pragma warning restore CS0661 // Type defines operator == or operator != but does not override Object.GetHashCode()
@@ -40,7 +40,9 @@ namespace Open.Database.Extensions
 			/// </summary>
 			/// <param name="obj">Param to compare against.</param>
 			/// <returns>True if properties are equal.</returns>
+#pragma warning disable 659
 			public override bool Equals(object obj) => obj is Param o
+#pragma warning restore 659
 				&& Name == o.Name
 				&& EqualityComparer<object>.Default.Equals(Value, o.Value)
 				&& EqualityComparer<TDbType?>.Default.Equals(Type, o.Type);

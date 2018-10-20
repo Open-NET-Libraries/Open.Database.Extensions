@@ -1,6 +1,7 @@
 ﻿using System.Data;
-using System.Data.Common;
 using System.Data.SqlClient;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions.SqlClient
 {
@@ -59,7 +60,7 @@ namespace Open.Database.Extensions.SqlClient
 		public static SqlCommand CreateCommand(this SqlTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			var command = transaction.Connection.CreateCommand(CommandType.StoredProcedure, commandText, secondsTimeout);
+			var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
 			command.Transaction = transaction;
 			return command;
 		}

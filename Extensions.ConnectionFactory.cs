@@ -3,6 +3,8 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Threading.Tasks;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions
 {
