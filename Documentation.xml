@@ -348,27 +348,27 @@
             <summary>
             Calls ExecuteScalar on the underlying command.
             </summary>
-            <returns>The varlue returned from the method.</returns>
+            <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteScalar``1">
             <summary>
             Calls ExecuteScalar on the underlying command.
             </summary>
             <typeparam name="T">The type expected.</typeparam>
-            <returns>The varlue returned from the method.</returns>
+            <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ExecuteScalar``1(System.Func{System.Object,``0})">
             <summary>
             Calls ExecuteScalar on the underlying command.
             </summary>
             <typeparam name="T">The type expected.</typeparam>
-            <returns>The varlue returned from the method.</returns>
+            <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.LoadTable">
             <summary>
             Imports all data using an IDataReader into a DataTable.
             </summary>
-            <returns>The resultant DataTabel.</returns>
+            <returns>The resultant DataTable.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.LoadTables">
             <summary>
@@ -480,6 +480,7 @@
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.ToTargetBlock``1(System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Posts all records to a target block using the transform function.
+            Stops if the target block rejects.
             </summary>
             <typeparam name="T">The expected type.</typeparam>
             <param name="transform">The transform function.</param>
@@ -492,30 +493,32 @@
             <typeparam name="T">The expected type.</typeparam>
             <param name="transform">The transform function.</param>
             <param name="synchronousExecution">By default the command is deferred.
-            If set to true, the command runs synchronusly and all data is acquired before the method returns.
+            If set to true, the command runs synchronously and all data is acquired before the method returns.
             If set to false (default) the data is received asynchronously (deferred: data will be subsequently posted) and the source block (transform) can be completed early.</param>
             <returns>The buffer block that will contain the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean)">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>
             Provides a transform block as the source of records.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="synchronousExecution">By default the command is deferred.
-            If set to true, the command runs synchronusly and all data is acquired before the method returns.
+            If set to true, the command runs synchronously and all data is acquired before the method returns.
             If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
             <returns>A transform block that is receiving the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean,System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>
             Provides a transform block as the source of records.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="synchronousExecution">By default the command is deferred.
-            If set to true, the command runs synchronusly and all data is acquired before the method returns.
+            If set to true, the command runs synchronously and all data is acquired before the method returns.
             If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
             <returns>A transform block that is receiving the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`4.AsSourceBlock``1(System.ValueTuple{System.String,System.String}[])">
@@ -528,8 +531,8 @@
         </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommandBase`4.Param">
             <summary>
-            A struct that represents the param to be created when the command is exectued.
-            TDbType facillitates the difference between DbType and SqlDbType.
+            A struct that represents the param to be created when the command is executed.
+            TDbType facilitates the difference between DbType and SqlDbType.
             </summary>
         </member>
         <member name="P:Open.Database.Extensions.ExpressiveCommandBase`4.Param.Name">
@@ -695,7 +698,7 @@
             <summary>
             Calls ExecuteNonQueryAsync on the underlying command.
             </summary>
-            <returns>The integer responise from the method.</returns>
+            <returns>The integer response from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.ExecuteScalarAsync">
             <summary>
@@ -727,6 +730,13 @@
             <returns>The value returned from the method.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)">
+            <summary>
+            Iterates asynchronously and will stop iterating if canceled.
+            </summary>
+            <param name="handler">The active IDataRecord is passed to this handler.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.IterateReaderAsync(System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Data.CommandBehavior)">
             <summary>
             Iterates asynchronously and will stop iterating if canceled.
             </summary>
@@ -799,20 +809,22 @@
             <param name="target">The target block to receive the records.</param>
             <returns>A task that is complete once there are no more results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
             Provides a BufferBlock as the source of records.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="options">The optional DataflowBlockOptions to use with the source.</param>
             <returns>A buffer block that is receiving the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>
             Returns a source block as the source of records.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
             <returns>A transform block that is receiving the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.ValueTuple{System.String,System.String}[])">
@@ -847,12 +859,13 @@
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.AsSourceBlockAsync``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>
             Returns a source block as the source of records.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="options"></param>
             <returns>A transform block that is receiving the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync">
@@ -1427,7 +1440,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean)">
             <summary>
-            Loads all data into a queue before iterating (dequeing) the results as type T.
+            Loads all data into a queue before iterating (dequeuing) the results as type T.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="table">The DataTable to read from.</param>
@@ -1437,7 +1450,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.To``1(System.Data.DataTable,System.ValueTuple{System.String,System.String}[])">
             <summary>
-            Loads all data into a queue before iterating (dequeing) the results as type T.
+            Loads all data into a queue before iterating (dequeuing) the results as type T.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="table">The DataTable to read from.</param>
@@ -1446,7 +1459,7 @@
         </member>
         <member name="M:Open.Database.Extensions.Extensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)">
             <summary>
-            Loads all data into a queue before iterating (dequeing) the results as type T.
+            Loads all data into a queue before iterating (dequeuing) the results as type T.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="table">The DataTable to read from.</param>
@@ -1730,6 +1743,25 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
         </member>
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+            <summary>
+            Asynchronously iterates all records from an IDataReader.
+            </summary>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+            <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+            <summary>
+            Asynchronously iterates all records from an IDataReader.
+            </summary>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="token">Optional cancellation token.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
+        </member>
         <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})">
             <summary>
             Asynchronously iterates an IDataReader while the predicate returns true.
@@ -1984,7 +2016,7 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
-            <param name="target">The target block to receivethe results.</param>
+            <param name="target">The target block to receive the results.</param>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Boolean)">
             <summary>
@@ -2771,7 +2803,7 @@
         </member>
         <member name="F:Open.Database.Extensions.QueryResult`1.Result">
             <summary>
-            The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redunant memory usage.
+            The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
             </summary>
         </member>
         <member name="T:Open.Database.Extensions.QueryResultExtensions">
@@ -2839,13 +2871,14 @@
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>
             Returns a block that attempts to map the fields to type T.
             DBNull values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="options">The ExecutionDataflowBlockOptions for transforming the data into the source block.</param>
             <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
         </member>
         <member name="M:Open.Database.Extensions.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.ISourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
