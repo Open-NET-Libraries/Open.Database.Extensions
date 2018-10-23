@@ -874,7 +874,7 @@
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="options"></param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
             <returns>A transform block that is receiving the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`4.RetrieveAsync">
@@ -2027,7 +2027,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <param name="target">The target block to receive the results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
             </summary>
@@ -2036,8 +2036,9 @@
             <param name="target">The target block to receive the results.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -2048,6 +2049,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+            <param name="cancellationToken"></param>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>

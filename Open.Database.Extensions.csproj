@@ -11,11 +11,10 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.13.2</Version>
-    <AssemblyVersion>5.13.0.0</AssemblyVersion>
-    <FileVersion>5.13.0.0</FileVersion>
-    <PackageReleaseNotes>Cleanup and inspection fixes with added Dataflow options.
-Improved Expressive Command DB-Open behavior to occur before command is created to ensure compatibility with other DbCommands like Snowflake.</PackageReleaseNotes>
+    <Version>5.13.3</Version>
+    <AssemblyVersion>5.13.3.0</AssemblyVersion>
+    <FileVersion>5.13.3.0</FileVersion>
+    <PackageReleaseNotes>Improved Dataflow behavior to include faulting and cancellation.</PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 

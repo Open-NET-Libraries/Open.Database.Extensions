@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 // ReSharper disable MemberCanBePrivate.Global
@@ -429,8 +430,8 @@ namespace Open.Database.Extensions
 				{
 					if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
 					else source.Complete();
-				}, CancellationToken)
-				.ConfigureAwait(false);
+				}, CancellationToken);
+
 			return source;
 		}
 
@@ -501,14 +502,14 @@ namespace Open.Database.Extensions
 		public Task<IEnumerable<T>> ResultsAsync<T>(params (string Field, string Column)[] fieldMappingOverrides) where T : new()
 			=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
-		/// <summary>
-		/// Returns a source block as the source of records.
-		/// </summary>
-		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-		/// <param name="options"></param>
-		/// <returns>A transform block that is receiving the results.</returns>
-		public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
+        /// <summary>
+        /// Returns a source block as the source of records.
+        /// </summary>
+        /// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+        /// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+        /// <returns>A transform block that is receiving the results.</returns>
+        public IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
 			IEnumerable<(string Field, string Column)> fieldMappingOverrides,
 			ExecutionDataflowBlockOptions options = null)
 			where T : new()
@@ -517,22 +518,27 @@ namespace Open.Database.Extensions
 			var cn = x.ColumnNames;
 			var block = x.ResultsBlock(out var initColumnNames, options);
 
-			ExecuteReaderAsync(async reader =>
-			{
-				// Ignores fields that don't match.
-				var columns = reader.GetMatchingOrdinals(cn, true);
+			ExecuteReaderAsync(
+                reader =>
+			    {
+				    // Ignores fields that don't match.
+				    var columns = reader.GetMatchingOrdinals(cn, true);
 
-				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-				initColumnNames(columns.Select(c => c.Name).ToArray());
+				    var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
+				    initColumnNames(columns.Select(c => c.Name).ToArray());
 
-				await reader.ToTargetBlockAsync(block,
-					r => r.GetValuesFromOrdinals(ordinalValues),
-					UseAsyncRead);
+				    return reader.ToTargetBlockAsync(block,
+					    r => r.GetValuesFromOrdinals(ordinalValues),
+					    UseAsyncRead,
+                        CancellationToken);
+			    })
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted) ((ITargetBlock<object[]>)block).Fault(t.Exception);
+                    else block.Complete();
+                }, CancellationToken);
 
-				block.Complete();
-			});
-
-			return block;
+            return block;
 		}
 
 		/// <summary>
