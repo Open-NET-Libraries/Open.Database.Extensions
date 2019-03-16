@@ -486,7 +486,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			Execute(command => command.ExecuteReader(handler, behavior));
 		}
 
@@ -499,7 +499,7 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			return Execute(command => command.ExecuteReader(transform, behavior));
 		}
 

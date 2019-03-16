@@ -107,7 +107,7 @@ namespace Open.Database.Extensions
 			if (target.IsStillAlive())
 			{
 				var state = await command.Connection.EnsureOpenAsync(cancellationToken);
-				if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using (var reader = await command.ExecuteReaderAsync(behavior, cancellationToken))
 				{
 					if (target.IsStillAlive())

@@ -60,7 +60,10 @@ namespace Open.Database.Extensions.SqlClient
 		public static SqlCommand CreateCommand(this SqlTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
+			var command = transaction
+                .Connection
+                .CreateCommand(type, commandText, secondsTimeout);
+
 			command.Transaction = transaction;
 			return command;
 		}

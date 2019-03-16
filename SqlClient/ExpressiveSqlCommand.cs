@@ -47,8 +47,12 @@ namespace Open.Database.Extensions.SqlClient
 		{
 			foreach (var p in Params)
 			{
-				var np = command.Parameters.AddWithValue(p.Name, p.Value);
-				if (p.Type.HasValue) np.SqlDbType = p.Type.Value;
+				var np = command
+                    .Parameters
+                    .AddWithValue(p.Name, p.Value);
+
+				if (p.Type.HasValue)
+                    np.SqlDbType = p.Type.Value;
 			}
 		}
 
