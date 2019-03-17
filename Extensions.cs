@@ -1193,7 +1193,7 @@ namespace Open.Database.Extensions
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var state = await command.Connection.EnsureOpenAsync(t);
+            var state = await command.Connection.EnsureOpenAsync(token);
             if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = await command.ExecuteReaderAsync(behavior, token))
             {

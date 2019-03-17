@@ -272,10 +272,9 @@ namespace Open.Database.Extensions
 
 			using (var conn = connectionFactory.Create())
 			{
-				var c = conn as DbConnection;
-				if (c == null) conn.Open();
-				else await c.OpenAsync();
-				return await action(conn).ConfigureAwait(false);
+                if (conn is DbConnection c) await c.OpenAsync();
+                else conn.Open();
+                return await action(conn).ConfigureAwait(false);
 			}
 		}
 
@@ -294,10 +293,9 @@ namespace Open.Database.Extensions
 
 			using (var conn = connectionFactory.Create())
 			{
-				var c = conn as DbConnection;
-				if (c == null) conn.Open();
-				else await c.OpenAsync();
-				await action(conn).ConfigureAwait(false);
+                if (conn is DbConnection c) await c.OpenAsync();
+                else conn.Open();
+                await action(conn).ConfigureAwait(false);
 			}
 		}
 
@@ -318,10 +316,9 @@ namespace Open.Database.Extensions
 
 			using (var conn = connectionFactory())
 			{
-				var c = conn as DbConnection;
-				if (c == null) conn.Open();
-				else await c.OpenAsync();
-				return await action(conn).ConfigureAwait(false);
+                if (conn is DbConnection c) await c.OpenAsync();
+                else conn.Open();
+                return await action(conn).ConfigureAwait(false);
 			}
 		}
 
@@ -340,14 +337,11 @@ namespace Open.Database.Extensions
 
 			using (var conn = connectionFactory())
 			{
-				var c = conn as DbConnection;
-				if (c == null) conn.Open();
-				else await c.OpenAsync();
-				await action(conn).ConfigureAwait(false);
+                if (conn is DbConnection c) await c.OpenAsync();
+                else conn.Open();
+                await action(conn).ConfigureAwait(false);
 			}
 		}
-
-
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.

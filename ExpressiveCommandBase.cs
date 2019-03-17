@@ -824,9 +824,8 @@ namespace Open.Database.Extensions
 				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
 				deferred(new QueryResult<IEnumerable<object[]>>(
 					ordinalValues,
-					columns.Select(c => c.Name).ToArray(),
+					columns.Select(c => c.Name),
 					reader.AsEnumerable(ordinalValues)));
-
 			});
 
 			if (synchronousExecution) I();

@@ -29,8 +29,8 @@ namespace Open.Database.Extensions
 			var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
 
 			return x.AsDequeueingEnumerable(RetrieveInternal(reader,
-				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray(), readStarted: true));
+				columns.Select(c => c.Ordinal),
+				columns.Select(c => c.Name), readStarted: true));
 		}
 
 		/// <summary>
@@ -111,8 +111,10 @@ namespace Open.Database.Extensions
 			var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
 
 			return x.AsDequeueingEnumerable(await RetrieveAsyncInternal(reader, token,
-				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray(), readStarted: true, useReadAsync: useReadAsync));
+				columns.Select(c => c.Ordinal),
+				columns.Select(c => c.Name),
+                readStarted: true,
+                useReadAsync: useReadAsync));
 		}
 
 		/// <summary>

@@ -46,13 +46,13 @@ namespace Open.Database.Extensions
 
 		class Processor
 		{
-			public Processor(Transformer<T> transformer, string[] names = null)
+			public Processor(Transformer<T> transformer, IList<string> names = null)
 			{
 				Transformer = transformer;
 				Transform = record =>
 				{
 					var model = new T();
-					var count = _names.Length;
+					var count = _names.Count;
 					for (var i = 0; i < count; i++)
 					{
 						var p = _propertySetters[i];
@@ -79,12 +79,12 @@ namespace Open.Database.Extensions
 
 			public readonly Transformer<T> Transformer;
 
-			string[] _names;
+            IList<string> _names;
 			Action<T, object>[] _propertySetters;
 
 			public readonly Func<object[], T> Transform; // Using a Func<object[],T> for better type inference.
 
-			public void SetNames(string[] names)
+			public void SetNames(IList<string> names)
 			{
 				var map = Transformer.ColumnToPropertyMap;
 				_names = names;
@@ -158,10 +158,8 @@ namespace Open.Database.Extensions
 		{
 			var columns = table.Columns.AsEnumerable();
 			var results = new QueryResult<Queue<object[]>>(
-				// ReSharper disable once PossibleMultipleEnumeration
-				columns.Select(c => c.Ordinal).ToArray(),
-				// ReSharper disable once PossibleMultipleEnumeration
-				columns.Select(c => c.ColumnName).ToArray(),
+				columns.Select(c => c.Ordinal),
+				columns.Select(c => c.ColumnName),
 				new Queue<object[]>(table.Rows.AsEnumerable().Select(r => r.ItemArray)));
 			if (clearTable) table.Rows.Clear();
 			return AsDequeueingEnumerable(results);

@@ -13,15 +13,11 @@ namespace Open.Database.Extensions
 	public static partial class Extensions
 	{
 
-		static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, int[] ordinals, string[] columnNames = null, bool readStarted = false)
+		static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, IEnumerable<int> ordinals, IEnumerable<string> columnNames = null, bool readStarted = false)
 		{
-			var fieldCount = ordinals.Length;
-			if (columnNames == null) columnNames = ordinals.Select(reader.GetName).ToArray();
-			else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
-
+            var o = ordinals as IList<int> ?? ordinals.ToArray();
 			return new QueryResult<Queue<object[]>>(
-				ordinals,
-				columnNames,
+				o, columnNames as IList<string> ?? columnNames.ToArray(),
 				new Queue<object[]>(AsEnumerableInternal(reader, ordinals, readStarted)));
 		}
 
@@ -35,8 +31,7 @@ namespace Open.Database.Extensions
 		{
 			var names = reader.GetNames();
 			return new QueryResult<Queue<object[]>>(
-				Enumerable.Range(0, names.Length).ToArray(),
-				names,
+				Enumerable.Range(0, names.Length), names,
 				new Queue<object[]>(AsEnumerable(reader)));
 		}
 
@@ -48,7 +43,7 @@ namespace Open.Database.Extensions
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
-			=> RetrieveInternal(reader, ordinals.ToArray());
+			=> RetrieveInternal(reader, ordinals);
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -71,8 +66,9 @@ namespace Open.Database.Extensions
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 		{
 			var columns = reader.GetOrdinalMapping(columnNames);
-			var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-			return RetrieveInternal(reader, ordinalValues, columns.Select(c => c.Name).ToArray());
+			return RetrieveInternal(reader,
+                columns.Select(c => c.Ordinal),
+                columns.Select(c => c.Name));
 		}
 
 		/// <summary>
@@ -162,16 +158,24 @@ namespace Open.Database.Extensions
 			if (!useReadAsync) token.ThrowIfCancellationRequested();
 
 			return new QueryResult<Queue<object[]>>(
-				Enumerable.Range(0, names.Length).ToArray(),
+				Enumerable.Range(0, names.Length),
 				names,
 				buffer);
 		}
 
-		static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken token, int[] ordinals, string[] columnNames = null, bool readStarted = false, bool useReadAsync = true)
+		static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string> columnNames = null, bool readStarted = false, bool useReadAsync = true)
 		{
-			var fieldCount = ordinals.Length;
-			if (columnNames == null) columnNames = ordinals.Select(reader.GetName).ToArray();
-			else if (columnNames.Length != fieldCount) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
+            var buffer
+                = new Queue<object[]>();
+
+            var result
+                = new QueryResult<Queue<object[]>>(
+                   ordinals,
+                   columnNames ?? ordinals.Select(reader.GetName),
+                   buffer);
+
+            var fieldCount = result.ColumnCount;
+            var o = result.Ordinals;
 
 			Func<IDataRecord, object[]> handler;
 			if (fieldCount == 0) handler = record => Array.Empty<object>();
@@ -179,11 +183,9 @@ namespace Open.Database.Extensions
 			{
 				var row = new object[fieldCount];
 				for (var i = 0; i < fieldCount; i++)
-					row[i] = reader.GetValue(ordinals[i]);
+					row[i] = reader.GetValue(o[i]);
 				return row;
 			};
-
-            var buffer = new Queue<object[]>();
 
 			if (readStarted)
 				buffer.Enqueue(handler(reader));
@@ -194,12 +196,8 @@ namespace Open.Database.Extensions
 			if (!useReadAsync)
 				token.ThrowIfCancellationRequested();
 
-			return new QueryResult<Queue<object[]>>(
-				ordinals,
-				columnNames,
-				buffer);
+			return result;
 		}
-
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -211,7 +209,7 @@ namespace Open.Database.Extensions
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken token = default, bool useReadAsync = true)
-			=> RetrieveAsyncInternal(reader, token, ordinals as int[] ?? ordinals.ToArray(), useReadAsync: useReadAsync);
+			=> RetrieveAsyncInternal(reader, token, ordinals, useReadAsync: useReadAsync);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -250,11 +248,9 @@ namespace Open.Database.Extensions
 		{
 			// Validate columns first.
 			var columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
-
 			return RetrieveAsyncInternal(reader, token,
-
-				columns.Select(c => c.Ordinal).ToArray(),
-				columns.Select(c => c.Name).ToArray(), useReadAsync: useReadAsync);
+				columns.Select(c => c.Ordinal),
+				columns.Select(c => c.Name), useReadAsync: useReadAsync);
 		}
 
 		/// <summary>
@@ -291,7 +287,7 @@ namespace Open.Database.Extensions
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token = default, bool useReadAsync = true)
 			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, token, useReadAsync), CommandBehavior.SequentialAccess, token);
 
-		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken token, int[] ordinals, string[] columnNames = null, bool useReadAsync = true)
+		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string> columnNames = null, bool useReadAsync = true)
 			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames, useReadAsync: useReadAsync), token: token);
 
 		/// <summary>
@@ -304,7 +300,7 @@ namespace Open.Database.Extensions
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<int> ordinals, CancellationToken token = default, bool useReadAsync = true)
-			=> RetrieveAsyncInternal(command, token, ordinals as int[] ?? ordinals.ToArray(), useReadAsync: useReadAsync);
+			=> RetrieveAsyncInternal(command, token, ordinals, useReadAsync: useReadAsync);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
