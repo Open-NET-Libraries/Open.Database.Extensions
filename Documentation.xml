@@ -1279,7 +1279,7 @@
             </summary>
             <returns>The prior connection state.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             If the connection isn't open, opens the connection.
             If the connection is in neither open or close, first closes the connection.
@@ -1343,7 +1343,7 @@
             <param name="reader">The IDataReader to iterate.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Iterates all records from an IDataReader.
             </summary>
@@ -1352,13 +1352,20 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Threading.CancellationToken)">
             <summary>
             Iterates all records from an IDataReader.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
             <param name="token">Optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.ColumnNames(System.Data.IDataRecord)">
+            <summary>
+            Returns all the column names for the current result set.
+            </summary>
+            <param name="record">The reader to get column names from.</param>
+            <returns>The enumerable of column names.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetNames(System.Data.IDataRecord)">
             <summary>
@@ -1367,11 +1374,28 @@
             <param name="record">The reader to get column names from.</param>
             <returns>The array of column names.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.GetOrdinalMapping(System.Data.IDataRecord)">
+        <member name="M:Open.Database.Extensions.Extensions.OrdinalMapping(System.Data.IDataRecord)">
             <summary>
             Returns the (name,ordinal) mapping for current result set.
             </summary>
             <param name="record">The reader to get column names from.</param>
+            <returns>An enumerable of the mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.OrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Returns an array of name to ordinal mappings.
+            </summary>
+            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="columnNames">The requested column names.</param>
+            <returns>An enumerable of the mappings.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.OrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Returns an array of name to ordinal mappings.
+            </summary>
+            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="columnNames">The requested column names.</param>
+            <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns>An enumerable of the mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetOrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
@@ -1383,13 +1407,46 @@
             <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns></returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Int32[])">
+        <member name="M:Open.Database.Extensions.Extensions.EnumerateValues(System.Data.IDataRecord)">
+            <summary>
+            Produces a selective set of column values based upon the desired ordinal positions.
+            </summary>
+            <param name="record">The IDataRecord to query.</param>
+            <returns>An enumerable for iterating the values of a record.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>
+            Produces a selective set of column values based upon the desired ordinal positions.
+            </summary>
+            <param name="record">The IDataRecord to query.</param>
+            <param name="ordinals">The set of ordinals to query.</param>
+            <returns>An enumerable of values matching the ordinal positions requested.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Int32,System.Int32[])">
+            <summary>
+            Produces a selective set of column values based upon the desired ordinal positions.
+            </summary>
+            <param name="record">The IDataRecord to query.</param>
+            <param name="firstOrdinal">The first ordinal to query.</param>
+            <param name="remainingOrdinals">The remaining set of ordinals to query.</param>
+            <returns>An enumerable of values matching the ordinal positions requested.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Produces a selective set of column values based upon the desired ordinal positions.
             </summary>
             <param name="record">The IDataRecord to query.</param>
             <param name="ordinals">The set of ordinals to query.</param>
             <returns>An array of values matching the ordinal positions requested.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.MatchingOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Returns an array of name to ordinal mappings.
+            </summary>
+            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="columnNames">The requested column names.</param>
+            <param name="sort">If true, will order the results by ordinal ascending.</param>
+            <returns></returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetMatchingOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
             <summary>
@@ -1399,6 +1456,13 @@
             <param name="columnNames">The requested column names.</param>
             <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns></returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Extensions.DataTypeNames(System.Data.IDataRecord)">
+            <summary>
+            Returns all the data type names for the columns of current result set.
+            </summary>
+            <param name="reader">The reader to get data type names from.</param>
+            <returns>The enumerable of data type names.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Extensions.GetDataTypeNames(System.Data.IDataRecord)">
             <summary>
@@ -1476,7 +1540,7 @@
             <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.Iterate``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.Iterate``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Iterates all records from an IDataReader.
             </summary>
@@ -1486,7 +1550,7 @@
             <param name="token">Optional cancellation token.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Shortcut for .Iterate(transform).ToList();
             </summary>
@@ -1496,7 +1560,7 @@
             <param name="token">Optional cancellation token.</param>
             <returns>A list of the transformed results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -1506,7 +1570,7 @@
             <param name="token">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{``0}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -1516,7 +1580,7 @@
             <param name="token">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -1527,7 +1591,7 @@
             <param name="token">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -1645,7 +1709,7 @@
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The result of the transform.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
             Executes a reader on a command with a handler function.
             </summary>
@@ -1654,7 +1718,7 @@
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="token">Optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
             Executes a reader on a command with a handler function.
             </summary>
@@ -1663,7 +1727,7 @@
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="token">Optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
             Executes a reader on a command with a transform function.
             </summary>
@@ -1674,7 +1738,7 @@
             <param name="token">Optional cancellation token.</param>
             <returns>The result of the transform.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.Task{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
             Executes a reader on a command with a transform function.
             </summary>
@@ -1733,7 +1797,7 @@
             <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates all records from an IDataReader.
             </summary>
@@ -1743,7 +1807,7 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates all records from an IDataReader.
             </summary>
@@ -1752,7 +1816,7 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Data.CommandBehavior,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates all records from an IDataReader.
             </summary>
@@ -1762,7 +1826,7 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates all records from an IDataReader.
             </summary>
@@ -1771,7 +1835,7 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an IDataReader while the predicate returns true.
             </summary>
@@ -1779,7 +1843,7 @@
             <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
             <param name="token">Optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates an IDataReader on a command while the predicate returns true.
             </summary>
@@ -1788,7 +1852,7 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously iterates an IDataReader on a command while the predicate returns true.
             </summary>
@@ -1798,7 +1862,7 @@
             <param name="token">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken})">
+        <member name="M:Open.Database.Extensions.Extensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.Task{System.Boolean}},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an IDataReader on a command while the predicate returns true.
             </summary>
@@ -1976,7 +2040,7 @@
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Reads the first column values from every record.
             DBNull values are converted to null.
@@ -1986,7 +2050,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The list of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Reads the first column values from every record.
             Any DBNull values are then converted to null and casted to type T0;
@@ -1996,7 +2060,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The enumerable of casted values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Reads the first column values from every record.
             DBNull values are converted to null.
@@ -2007,7 +2071,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The list of values.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Reads the first column from every record..
             Any DBNull values are then converted to null and casted to type T0;
@@ -2121,7 +2185,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -2132,7 +2196,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -2162,7 +2226,7 @@
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -2173,7 +2237,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>A task containing the list of results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously returns all records and iteratively attempts to map the fields to type T.
             </summary>
@@ -2316,7 +2380,7 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
@@ -2326,7 +2390,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
@@ -2358,7 +2422,7 @@
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
             DBNull values are left unchanged (retained).
@@ -2391,7 +2455,7 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
@@ -2401,7 +2465,7 @@
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously enumerates all the remaining values of the current result set of a data reader.
             DBNull values are left unchanged (retained).
@@ -2433,7 +2497,7 @@
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
             <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Nullable{System.Threading.CancellationToken},System.Boolean)">
+        <member name="M:Open.Database.Extensions.Extensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
             DBNull values are left unchanged (retained).
@@ -2466,7 +2530,7 @@
             <param name="others">The remaining column names to request from the reader for each record.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2477,7 +2541,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value returned from the conditional action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Boolean})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Boolean})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2487,7 +2551,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>True if committed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,``0})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,``0})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2498,7 +2562,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.Common.DbTransaction})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Action{System.Data.Common.DbTransaction})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2507,7 +2571,7 @@
             <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2518,7 +2582,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2528,7 +2592,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2539,7 +2603,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2622,7 +2686,7 @@
             <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2632,7 +2696,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value returned from the conditional action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Boolean})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Boolean})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2641,7 +2705,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>True if committed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,``0})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,``0})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2651,7 +2715,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.Common.DbTransaction})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Action{System.Data.Common.DbTransaction})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2659,7 +2723,7 @@
             <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2669,7 +2733,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2678,7 +2742,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task{``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2688,7 +2752,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
+        <member name="M:Open.Database.Extensions.Extensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.Task})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -2792,7 +2856,7 @@
             </summary>
             <typeparam name="TResult">The type of the result property.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.QueryResult`1.#ctor(System.Int32[],System.String[],`0)">
+        <member name="M:Open.Database.Extensions.QueryResult`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`0)">
             <param name="ordinals">The ordinal values requested</param>
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
@@ -3118,7 +3182,7 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3129,7 +3193,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value returned from the conditional action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3139,7 +3203,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>True if committed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,``0})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,``0})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3150,7 +3214,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.SqlClient.SqlTransaction})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Action{System.Data.SqlClient.SqlTransaction})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3159,7 +3223,7 @@
             <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3170,7 +3234,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3180,7 +3244,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3191,7 +3255,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3274,7 +3338,7 @@
             <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional``1(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.ValueTuple{System.Boolean,``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3284,7 +3348,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value returned from the conditional action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditional(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Boolean})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3293,7 +3357,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>True if committed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,``0})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,``0})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3303,7 +3367,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Action{System.Data.SqlClient.SqlTransaction})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Action{System.Data.SqlClient.SqlTransaction})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3311,7 +3375,7 @@
             <param name="token">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <param name="action">The handler to execute while a transaction is pending.</param>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync``1(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.ValueTuple{System.Boolean,``0}}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3321,7 +3385,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionConditionalAsync(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{System.Boolean}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions, the value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3330,7 +3394,7 @@
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync``1(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task{``0}})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
@@ -3340,7 +3404,7 @@
             <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the awaited action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Nullable{System.Threading.CancellationToken},System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
+        <member name="M:Open.Database.Extensions.SqlClient.Extensions.ExecuteTransactionAsync(System.Data.SqlClient.SqlConnection,System.Threading.CancellationToken,System.Func{System.Data.SqlClient.SqlTransaction,System.Threading.Tasks.Task})">
             <summary>
             Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
