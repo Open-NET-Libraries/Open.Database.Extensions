@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -109,10 +110,9 @@ namespace Open.Database.Extensions
         /// <param name="token">An optional token to cancel opening.</param>
         /// <param name="configureAwait">If true (default) will retain the context after opening.</param>
         /// <returns>A task containing the prior connection state.</returns>
-        public static async ValueTask<ConnectionState> EnsureOpenAsync(this DbConnection connection, CancellationToken? token = null, bool configureAwait = true)
+        public static async ValueTask<ConnectionState> EnsureOpenAsync(this DbConnection connection, CancellationToken token = default, bool configureAwait = true)
         {
-            var t = token ?? CancellationToken.None;
-            t.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
 
             var state = connection.State;
             if (state.HasFlag(ConnectionState.Broken))
@@ -120,14 +120,14 @@ namespace Open.Database.Extensions
 
             if (!connection.State.HasFlag(ConnectionState.Open))
             {
-                var o = connection.OpenAsync(t);
+                var o = connection.OpenAsync(token);
                 if (configureAwait) await o;
                 else await o.ConfigureAwait(false);
 
-                if (t.IsCancellationRequested && !state.HasFlag(ConnectionState.Closed))
+                if (token.IsCancellationRequested && !state.HasFlag(ConnectionState.Closed))
                     connection.Close(); // Fake finally...
 
-                t.ThrowIfCancellationRequested();
+                token.ThrowIfCancellationRequested();
             }
 
             return state;
@@ -238,7 +238,8 @@ namespace Open.Database.Extensions
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            while (reader.Read()) handler(reader);
+            while (reader.Read())
+                handler(reader);
         }
 
         /// <summary>
@@ -249,20 +250,27 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         public static async Task ForEachAsync(this DbDataReader reader,
-	        Action<IDataRecord> handler, CancellationToken? token = null, bool useReadAsync = true)
+            Action<IDataRecord> handler, CancellationToken token = default, bool useReadAsync = true)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
             if (useReadAsync)
             {
-                while (await reader.ReadAsync(t)) handler(reader);
+                while (await reader.ReadAsync(token))
+                    handler(reader);
+            }
+            else if (token.CanBeCanceled)
+            {
+                while (!token.IsCancellationRequested && reader.Read())
+                    handler(reader);
+
+                token.ThrowIfCancellationRequested();
             }
             else
             {
-                while (!t.IsCancellationRequested && reader.Read()) handler(reader);
-                t.ThrowIfCancellationRequested();
+                while (reader.Read())
+                    handler(reader);
             }
         }
 
@@ -272,13 +280,25 @@ namespace Open.Database.Extensions
         /// <param name="reader">The IDataReader to iterate.</param>
         /// <param name="handler">The handler function for each IDataRecord.</param>
         /// <param name="token">Optional cancellation token.</param>
-        public static async Task ForEachAsync(this DbDataReader reader, Func<IDataRecord, Task> handler, CancellationToken? token = null)
+        public static async Task ForEachAsync(this DbDataReader reader, Func<IDataRecord, Task> handler, CancellationToken token = default)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            while (await reader.ReadAsync(t)) await handler(reader);
+            while (await reader.ReadAsync(token))
+                await handler(reader);
+        }
+
+        /// <summary>
+        /// Returns all the column names for the current result set.
+        /// </summary>
+        /// <param name="record">The reader to get column names from.</param>
+        /// <returns>The enumerable of column names.</returns>
+        public static IEnumerable<string> ColumnNames(this IDataRecord record)
+        {
+            var fieldCount = record.FieldCount;
+            for (var i = 0; i < fieldCount; i++)
+                yield return record.GetName(i);
         }
 
         /// <summary>
@@ -300,8 +320,40 @@ namespace Open.Database.Extensions
         /// </summary>
         /// <param name="record">The reader to get column names from.</param>
         /// <returns>An enumerable of the mappings.</returns>
-        public static IEnumerable<(string Name, int Ordinal)> GetOrdinalMapping(this IDataRecord record)
+        public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record)
             => record.GetNames().Select((n, o) => (Name: n, Ordinal: o));
+
+        /// <summary>
+        /// Returns an array of name to ordinal mappings.
+        /// </summary>
+        /// <param name="record">The IDataRecord to query the ordinals from.</param>
+        /// <param name="columnNames">The requested column names.</param>
+        /// <returns>An enumerable of the mappings.</returns>
+        public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames)
+        {
+            if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
+            Contract.EndContractBlock();
+
+            return columnNames.Select(n => (Name: n, Ordinal: record.GetOrdinal(n))); // Does do a case-insensitive search after a case-sensitive one.
+        }
+
+        /// <summary>
+        /// Returns an array of name to ordinal mappings.
+        /// </summary>
+        /// <param name="record">The IDataRecord to query the ordinals from.</param>
+        /// <param name="columnNames">The requested column names.</param>
+        /// <param name="sort">If true, will order the results by ordinal ascending.</param>
+        /// <returns>An enumerable of the mappings.</returns>
+        public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort)
+        {
+            if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
+            Contract.EndContractBlock();
+
+            var q = OrdinalMapping(record, columnNames);
+            return sort
+                ? q.OrderBy(m => m.Ordinal)
+                : q;
+        }
 
         /// <summary>
         /// Returns an array of name to ordinal mappings.
@@ -315,21 +367,18 @@ namespace Open.Database.Extensions
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
             Contract.EndContractBlock();
 
-            var cn = columnNames as string[] ?? columnNames.ToArray();
-            if (cn.Length == 0) return Array.Empty<(string Name, int Ordinal)>();
+            if (columnNames is ICollection<string> cn && cn.Count == 0)
+                return Array.Empty<(string Name, int Ordinal)>();
+
             try
             {
-                var q = cn
-                    .Select(n => (Name: n, Ordinal: record.GetOrdinal(n))); // Does do a case-insensitive search after a case-sensitive one.
-
-                if (sort)
-                    q = q.OrderBy(m => m.Ordinal);
-
-                return q.ToArray();
+                return record
+                    .OrdinalMapping(columnNames, sort)
+                    .ToArray();
             }
             catch (IndexOutOfRangeException ex)
             {
-                var mismatch = new HashSet<string>(cn);
+                var mismatch = new HashSet<string>(columnNames);
                 mismatch.ExceptWith(record.GetNames());
 
                 // Columns not mapped correctly.  Report all columns that are mismatched/missing.
@@ -341,11 +390,46 @@ namespace Open.Database.Extensions
         /// Produces a selective set of column values based upon the desired ordinal positions.
         /// </summary>
         /// <param name="record">The IDataRecord to query.</param>
-        /// <param name="ordinals">The set of ordinals to query.</param>
-        /// <returns>An array of values matching the ordinal positions requested.</returns>
-        public static object[] GetValuesFromOrdinals(this IDataRecord record, params int[] ordinals)
+        /// <returns>An enumerable for iterating the values of a record.</returns>
+        public static IEnumerable<object> EnumerateValues(this IDataRecord record)
         {
-            var count = ordinals.Length;
+            var count = record.FieldCount;
+            for (var i = 0; i < count; i++)
+                yield return record.GetValue(i);
+        }
+
+        /// <summary>
+        /// Produces a selective set of column values based upon the desired ordinal positions.
+        /// </summary>
+        /// <param name="record">The IDataRecord to query.</param>
+        /// <param name="ordinals">The set of ordinals to query.</param>
+        /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
+        public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IEnumerable<int> ordinals)
+        {
+            if (ordinals == null) throw new ArgumentNullException(nameof(ordinals));
+            Contract.EndContractBlock();
+
+            var o = ordinals as IList<int> ?? ordinals.ToArray();
+            var count = o.Count;
+            for (var i = 0; i < count; i++)
+                yield return record.GetValue(o[i]);
+        }
+
+        /// <summary>
+        /// Produces a selective set of column values based upon the desired ordinal positions.
+        /// </summary>
+        /// <param name="record">The IDataRecord to query.</param>
+        /// <param name="firstOrdinal">The first ordinal to query.</param>
+        /// <param name="remainingOrdinals">The remaining set of ordinals to query.</param>
+        /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
+        public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)
+            => EnumerateValuesFromOrdinals(record, Enumerable.Repeat(firstOrdinal, 1).Concat(remainingOrdinals));
+
+
+        static object[] GetValuesFromOrdinalsInternal(this IDataRecord record, IList<int> ordinals)
+        {
+
+            var count = ordinals.Count;
             if (count == 0) return Array.Empty<object>();
 
             var values = new object[count];
@@ -356,13 +440,22 @@ namespace Open.Database.Extensions
         }
 
         /// <summary>
+        /// Produces a selective set of column values based upon the desired ordinal positions.
+        /// </summary>
+        /// <param name="record">The IDataRecord to query.</param>
+        /// <param name="ordinals">The set of ordinals to query.</param>
+        /// <returns>An array of values matching the ordinal positions requested.</returns>
+        public static object[] GetValuesFromOrdinals(this IDataRecord record, IEnumerable<int> ordinals)
+            => GetValuesFromOrdinalsInternal(record, ordinals as IList<int> ?? ordinals?.ToArray());
+
+        /// <summary>
         /// Returns an array of name to ordinal mappings.
         /// </summary>
         /// <param name="record">The IDataRecord to query the ordinals from.</param>
         /// <param name="columnNames">The requested column names.</param>
         /// <param name="sort">If true, will order the results by ordinal ascending.</param>
         /// <returns></returns>
-        public static (string Name, int Ordinal)[] GetMatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
+        public static IEnumerable<(string Name, int Ordinal)> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
         {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
             Contract.EndContractBlock();
@@ -375,14 +468,13 @@ namespace Open.Database.Extensions
                 return c.ToLowerInvariant();
             });
 
-            var actual = record.GetOrdinalMapping();
+            var actual = record.OrdinalMapping();
             if (sort)
             {
                 var requested = new HashSet<string>(columnNames);
                 // Return actual values based upon if their lower-case counterparts exist in the requested.
                 return actual
-                    .Where(m => requested.Contains(m.Name.ToLowerInvariant()))
-                    .ToArray();
+                    .Where(m => requested.Contains(m.Name.ToLowerInvariant()));
             }
             else
             {
@@ -390,9 +482,20 @@ namespace Open.Database.Extensions
                 var actualColumns = actual.ToDictionary(m => m.Name.ToLowerInvariant(), m => m);
                 return columnNames
                     .Where(c => actualColumns.ContainsKey(c)) // Select lower case column names if they exist in the dictionary.
-                    .Select(c => actualColumns[c]) // Then select the actual values based upon that key.
-                    .ToArray();
+                    .Select(c => actualColumns[c]); // Then select the actual values based upon that key.
             }
+        }
+
+        /// <summary>
+        /// Returns an array of name to ordinal mappings.
+        /// </summary>
+        /// <param name="record">The IDataRecord to query the ordinals from.</param>
+        /// <param name="columnNames">The requested column names.</param>
+        /// <param name="sort">If true, will order the results by ordinal ascending.</param>
+        /// <returns></returns>
+        public static (string Name, int Ordinal)[] GetMatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
+        {
+            return MatchingOrdinals(record, columnNames, sort).ToArray();
 
             /* Note:
              * It is not necessary to call .ToArray() because the names are already pulled from the reader,
@@ -400,6 +503,19 @@ namespace Open.Database.Extensions
              * but it's more common use is to have an array so best to keep it an array.
              */
         }
+
+        /// <summary>
+        /// Returns all the data type names for the columns of current result set.
+        /// </summary>
+        /// <param name="reader">The reader to get data type names from.</param>
+        /// <returns>The enumerable of data type names.</returns>
+        public static IEnumerable<string> DataTypeNames(this IDataRecord reader)
+        {
+            var fieldCount = reader.FieldCount;
+            for (var i = 0; i < fieldCount; i++)
+                yield return reader.GetDataTypeName(i);
+        }
+
 
         /// <summary>
         /// Returns all the data type names for the columns of current result set.
@@ -442,14 +558,15 @@ namespace Open.Database.Extensions
 
             if (readStarted || reader.Read())
             {
-                var o = ordinals as int[] ?? ordinals.ToArray();
-                var fieldCount = o.Length;
+                var o = ordinals as IList<int> ?? ordinals.ToArray();
+                var fieldCount = o.Count;
                 if (fieldCount == 0)
                 {
                     do
                     {
                         yield return Array.Empty<object>();
-                    } while (reader.Read());
+                    }
+                    while (reader.Read());
                 }
                 else
                 {
@@ -459,7 +576,8 @@ namespace Open.Database.Extensions
                         for (var i = 0; i < fieldCount; i++)
                             row[i] = reader.GetValue(o[i]);
                         yield return row;
-                    } while (reader.Read());
+                    }
+                    while (reader.Read());
                 }
 
             }
@@ -483,7 +601,7 @@ namespace Open.Database.Extensions
         /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
         /// <returns>An enumeration of the values returned from a data reader.</returns>
         public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
-            => AsEnumerable(reader, new[] { n }.Concat(others));
+            => AsEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others));
 
         /// <summary>
         /// Generic enumerable extension for DataColumnCollection.
@@ -553,15 +671,14 @@ namespace Open.Database.Extensions
         /// <param name="transform">The transform function to process each IDataRecord.</param>
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>An enumerable used to iterate the results.</returns>
-        public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken? token = null)
+        public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken token = default)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            if (token.HasValue)
+            if (token.CanBeCanceled)
             {
-                var t = token.Value;
-                while (!t.IsCancellationRequested && reader.Read())
+                while (!token.IsCancellationRequested && reader.Read())
                     yield return transform(reader);
             }
             {
@@ -579,7 +696,7 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>A list of the transformed results.</returns>
         public static List<T> ToList<T>(this IDataReader reader,
-            Func<IDataRecord, T> transform, CancellationToken? token = null)
+            Func<IDataRecord, T> transform, CancellationToken token = default)
             => reader.Iterate(transform, token).ToList();
 
         /// <summary>
@@ -591,14 +708,13 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>A task containing a list of all results.</returns>
         public static async Task<List<T>> ToListAsync<T>(this DbDataReader reader,
-            Func<IDataRecord, T> transform, CancellationToken? token = null)
+            Func<IDataRecord, T> transform, CancellationToken token = default)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
             var list = new List<T>();
-            while (await reader.ReadAsync(t)) list.Add(transform(reader));
+            while (await reader.ReadAsync(token)) list.Add(transform(reader));
             return list;
         }
 
@@ -611,14 +727,13 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>A task containing a list of all results.</returns>
         public static async Task<List<T>> ToListAsync<T>(this DbDataReader reader,
-            Func<IDataRecord, Task<T>> transform, CancellationToken? token = null)
+            Func<IDataRecord, Task<T>> transform, CancellationToken token = default)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
             var list = new List<T>();
-            while (await reader.ReadAsync(t)) list.Add(await transform(reader));
+            while (await reader.ReadAsync(token)) list.Add(await transform(reader));
             return list;
         }
 
@@ -632,16 +747,15 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>A task containing a list of all results.</returns>
         public static async Task<List<T>> ToListAsync<T>(this DbCommand command,
-            Func<IDataRecord, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+            Func<IDataRecord, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
-                return await reader.ToListAsync(transform, t).ConfigureAwait(false);
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
+                return await reader.ToListAsync(transform, token).ConfigureAwait(false);
 
         }
 
@@ -656,25 +770,24 @@ namespace Open.Database.Extensions
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <returns>A task containing a list of all results.</returns>
         public static async Task<List<T>> ToListAsync<T>(this DbCommand command,
-            Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null, bool useReadAsync = true)
+            Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default, bool useReadAsync = true)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
             {
                 if (useReadAsync)
                 {
-                    return await reader.ToListAsync(transform, t).ConfigureAwait(false);
+                    return await reader.ToListAsync(transform, token).ConfigureAwait(false);
                 }
                 else
                 {
-                    var r = reader.ToList(transform, t);
-                    t.ThrowIfCancellationRequested();
+                    var r = reader.ToList(transform, token);
+                    token.ThrowIfCancellationRequested();
                     return r;
                 }
             }
@@ -715,7 +828,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.Iterate(transform).ToList();
         }
@@ -745,7 +858,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.Iterate(transform).ToArray();
         }
@@ -788,7 +901,7 @@ namespace Open.Database.Extensions
         public static DataTable ToDataTable(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
         {
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.ToDataTable();
         }
@@ -803,7 +916,7 @@ namespace Open.Database.Extensions
         public static List<DataTable> ToDataTables(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
         {
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.ToDataTables();
         }
@@ -833,7 +946,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 handler(reader);
         }
@@ -852,7 +965,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return transform(reader);
         }
@@ -865,17 +978,16 @@ namespace Open.Database.Extensions
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="token">Optional cancellation token.</param>
         public static async Task ExecuteReaderAsync(this DbCommand command,
-	        Action<DbDataReader> handler,
-	        CommandBehavior behavior = CommandBehavior.Default,
-	        CancellationToken? token = null)
+            Action<DbDataReader> handler,
+            CommandBehavior behavior = CommandBehavior.Default,
+            CancellationToken token = default)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
                 handler(reader);
         }
 
@@ -886,18 +998,17 @@ namespace Open.Database.Extensions
         /// <param name="handler">The handler function for each IDataRecord.</param>
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="token">Optional cancellation token.</param>
-        public static async Task ExecuteReaderAsync(this DbCommand command, 
-	        Func<DbDataReader, Task> handler,
-	        CommandBehavior behavior = CommandBehavior.Default,
-	        CancellationToken? token = null)
+        public static async Task ExecuteReaderAsync(this DbCommand command,
+            Func<DbDataReader, Task> handler,
+            CommandBehavior behavior = CommandBehavior.Default,
+            CancellationToken token = default)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
                 await handler(reader).ConfigureAwait(false);
         }
 
@@ -910,15 +1021,14 @@ namespace Open.Database.Extensions
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>The result of the transform.</returns>
-        public static async Task<T> ExecuteReaderAsync<T>(this DbCommand command, Func<DbDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+        public static async Task<T> ExecuteReaderAsync<T>(this DbCommand command, Func<DbDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
                 return transform(reader);
         }
 
@@ -931,15 +1041,14 @@ namespace Open.Database.Extensions
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="token">Optional cancellation token.</param>
         /// <returns>The result of the transform.</returns>
-        public static async Task<T> ExecuteReaderAsync<T>(this DbCommand command, Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+        public static async Task<T> ExecuteReaderAsync<T>(this DbCommand command, Func<DbDataReader, Task<T>> transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default)
         {
             if (transform == null) throw new ArgumentNullException(nameof(transform));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
                 return await transform(reader).ConfigureAwait(false);
         }
 
@@ -981,7 +1090,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return selector(reader.Iterate(transform));
         }
@@ -1007,7 +1116,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 reader.ForEach(handler);
         }
@@ -1019,7 +1128,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
             {
                 while (reader.Read())
@@ -1033,7 +1142,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
             {
                 if (reader.Read())
@@ -1061,7 +1170,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 reader.IterateWhile(predicate);
         }
@@ -1078,28 +1187,32 @@ namespace Open.Database.Extensions
         public static async Task ForEachAsync(this DbCommand command,
             Action<IDataRecord> handler,
             CommandBehavior behavior,
-            CancellationToken? token = null,
+            CancellationToken token = default,
             bool useReadAsync = true)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
             var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
             {
                 if (useReadAsync)
                 {
-                    while (await reader.ReadAsync(t))
+                    while (await reader.ReadAsync(token))
                         handler(reader);
+                }
+                else if (token.CanBeCanceled)
+                {
+                    while (!token.IsCancellationRequested && reader.Read())
+                        handler(reader);
+
+                    token.ThrowIfCancellationRequested();
                 }
                 else
                 {
-                    while (!t.IsCancellationRequested && reader.Read())
+                    while (reader.Read())
                         handler(reader);
-
-                    t.ThrowIfCancellationRequested();
                 }
             }
         }
@@ -1113,7 +1226,7 @@ namespace Open.Database.Extensions
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
         public static Task ForEachAsync(this DbCommand command,
             Action<IDataRecord> handler,
-            CancellationToken? token = null,
+            CancellationToken token = default,
             bool useReadAsync = true)
             => ForEachAsync(command, handler, CommandBehavior.Default, token, useReadAsync);
 
@@ -1127,28 +1240,32 @@ namespace Open.Database.Extensions
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         public static async Task ForEachAsync(this DbCommand command,
             Func<IDataRecord, Task> handler, CommandBehavior behavior,
-            CancellationToken? token = null,
+            CancellationToken token = default,
             bool useReadAsync = true)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
             {
                 if (useReadAsync)
                 {
-                    while (await reader.ReadAsync(t))
+                    while (await reader.ReadAsync(token))
                         await handler(reader);
+                }
+                else if(token.CanBeCanceled)
+                {
+                    while (!token.IsCancellationRequested && reader.Read())
+                        await handler(reader);
+
+                    token.ThrowIfCancellationRequested();
                 }
                 else
                 {
-                    while (!t.IsCancellationRequested && reader.Read())
+                    while (reader.Read())
                         await handler(reader);
-
-                    t.ThrowIfCancellationRequested();
                 }
             }
         }
@@ -1162,7 +1279,7 @@ namespace Open.Database.Extensions
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
         public static Task ForEachAsync(this DbCommand command,
             Func<IDataRecord, Task> handler,
-            CancellationToken? token = null,
+            CancellationToken token = default,
             bool useReadAsync = true)
             => ForEachAsync(command, handler, CommandBehavior.Default, token, useReadAsync);
 
@@ -1172,13 +1289,12 @@ namespace Open.Database.Extensions
         /// <param name="reader">The DbDataReader to load data from.</param>
         /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
         /// <param name="token">Optional cancellation token.</param>
-        public static async Task IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, Task<bool>> predicate, CancellationToken? token = null)
+        public static async Task IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, Task<bool>> predicate, CancellationToken token = default)
         {
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            while (await reader.ReadAsync(t) && await predicate(reader)) { }
+            while (await reader.ReadAsync(token) && await predicate(reader)) { }
         }
 
         /// <summary>
@@ -1188,20 +1304,23 @@ namespace Open.Database.Extensions
         /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-        public static async Task IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken? token = null, bool useReadAsync = true)
+        public static async Task IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken token = default, bool useReadAsync = true)
         {
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
             if (useReadAsync)
             {
-                while (await reader.ReadAsync(t) && predicate(reader)) { }
+                while (await reader.ReadAsync(token) && predicate(reader)) { }
+            }
+            else if(token.CanBeCanceled)
+            {
+                while (!token.IsCancellationRequested && reader.Read() && predicate(reader))
+                    token.ThrowIfCancellationRequested();
             }
             else
             {
-                while (!t.IsCancellationRequested && reader.Read() && predicate(reader))
-                    t.ThrowIfCancellationRequested();
+                while (reader.Read() && predicate(reader)) { }
             }
         }
 
@@ -1213,16 +1332,15 @@ namespace Open.Database.Extensions
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-        public static async Task IterateReaderWhileAsync(this DbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null, bool useReadAsync = true)
+        public static async Task IterateReaderWhileAsync(this DbCommand command, Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default, bool useReadAsync = true)
         {
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
-                await reader.IterateWhileAsync(predicate, t, useReadAsync);
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
+                await reader.IterateWhileAsync(predicate, token, useReadAsync);
         }
 
         /// <summary>
@@ -1232,16 +1350,15 @@ namespace Open.Database.Extensions
         /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="token">Optional cancellation token.</param>
-        public static async Task IterateReaderWhileAsync(this DbCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken? token = null)
+        public static async Task IterateReaderWhileAsync(this DbCommand command, Func<IDataRecord, Task<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default)
         {
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
             Contract.EndContractBlock();
 
-            var t = token ?? CancellationToken.None;
-            var state = await command.Connection.EnsureOpenAsync(t);
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
-            using (var reader = await command.ExecuteReaderAsync(behavior, t))
-                await reader.IterateWhileAsync(predicate, t);
+            var state = await command.Connection.EnsureOpenAsync(token);
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+            using (var reader = await command.ExecuteReaderAsync(behavior, token))
+                await reader.IterateWhileAsync(predicate, token);
         }
 
         /// <summary>
@@ -1258,7 +1375,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow))
                 return reader.Iterate(transform).First();
         }
@@ -1277,7 +1394,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow))
                 return reader.Iterate(transform).FirstOrDefault();
         }
@@ -1296,7 +1413,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.Iterate(transform).Single();
         }
@@ -1315,7 +1432,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.Iterate(transform).SingleOrDefault();
         }
@@ -1335,7 +1452,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
                 return reader.Iterate(transform).Take(count).ToList();
         }
@@ -1355,7 +1472,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
             {
                 while (0 < count--) reader.Read();
@@ -1379,7 +1496,7 @@ namespace Open.Database.Extensions
             Contract.EndContractBlock();
 
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior))
             {
                 while (0 < skip--) reader.Read();
@@ -1561,7 +1678,7 @@ namespace Open.Database.Extensions
         public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
         {
             var state = command.Connection.EnsureOpen();
-            if (state == ConnectionState.Closed) behavior = behavior | CommandBehavior.CloseConnection;
+            if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
             using (var reader = command.ExecuteReader(behavior | CommandBehavior.SingleResult))
                 return reader.FirstOrdinalResults<T0>();
         }
@@ -1574,7 +1691,7 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <returns>The list of values.</returns>
-        public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbDataReader reader, CancellationToken? token = null, bool useReadAsync = true)
+        public static async Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbDataReader reader, CancellationToken token = default, bool useReadAsync = true)
         {
             var results = new Queue<object>();
             await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)), token, useReadAsync).ConfigureAwait(false);
@@ -1589,24 +1706,23 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <returns>The enumerable of casted values.</returns>
-        public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, CancellationToken? token = null, bool useReadAsync = true)
+        public static async Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, CancellationToken token = default, bool useReadAsync = true)
         {
             var results = new Queue<T0>();
-            var t = token ?? CancellationToken.None;
             if (useReadAsync)
             {
-                while (await reader.ReadAsync(t))
+                while (await reader.ReadAsync(token))
                 {
                     results.Enqueue(
-                        await reader.IsDBNullAsync(0, t).ConfigureAwait(false)
+                        await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
                         ? default
-                        : await reader.GetFieldValueAsync<T0>(0, t).ConfigureAwait(false)
+                        : await reader.GetFieldValueAsync<T0>(0, token).ConfigureAwait(false)
                     );
                 }
             }
-            else
+            else if(token.CanBeCanceled)
             {
-                while (!t.IsCancellationRequested && reader.Read())
+                while (!token.IsCancellationRequested && reader.Read())
                 {
                     results.Enqueue(
                         reader.IsDBNull(0)
@@ -1614,7 +1730,18 @@ namespace Open.Database.Extensions
                         : reader.GetFieldValue<T0>(0)
                     );
                 }
-                t.ThrowIfCancellationRequested();
+                token.ThrowIfCancellationRequested();
+            }
+            else
+            {
+                while (reader.Read())
+                {
+                    results.Enqueue(
+                        reader.IsDBNull(0)
+                        ? default
+                        : reader.GetFieldValue<T0>(0)
+                    );
+                }
             }
 
             return results.DequeueEach();
@@ -1629,7 +1756,7 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <returns>The list of values.</returns>
-        public static Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken? token = null, bool useReadAsync = true)
+        public static Task<IEnumerable<object>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken token = default, bool useReadAsync = true)
             => command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(token, useReadAsync), behavior | CommandBehavior.SingleResult, token);
 
         /// <summary>
@@ -1641,7 +1768,7 @@ namespace Open.Database.Extensions
         /// <param name="token">Optional cancellation token.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <returns>The enumerable of casted values.</returns>
-        public static Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken? token = null, bool useReadAsync = true)
+        public static Task<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, CancellationToken token = default, bool useReadAsync = true)
             => command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(token, useReadAsync), behavior | CommandBehavior.SingleResult, token);
 
     }

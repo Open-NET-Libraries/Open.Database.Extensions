@@ -25,26 +25,25 @@ namespace Open.Database.Extensions
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
 		{
 			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
 			Contract.EndContractBlock();
 
-			var t = token ?? CancellationToken.None;
-			t.ThrowIfCancellationRequested();
+			token.ThrowIfCancellationRequested();
 
 			var success = false;
 			DbTransaction transaction = null;
 
 			connection.EnsureOpen();
-			t.ThrowIfCancellationRequested();
+			token.ThrowIfCancellationRequested();
 
 			try
 			{
 				transaction = connection.BeginTransaction(isolationLevel);
 				var result = conditionalAction(transaction);
-				t.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 				success = result.Commit;
 				return result;
 			}
@@ -69,7 +68,7 @@ namespace Open.Database.Extensions
 		public static bool ExecuteTransactionConditional(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, bool> conditionalAction)
 			=> connection.ExecuteTransactionConditional(
 				isolationLevel, token, t => (conditionalAction(t), true)).Commit;
@@ -86,7 +85,7 @@ namespace Open.Database.Extensions
 		public static T ExecuteTransaction<T>(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, T> action)
 			=> connection.ExecuteTransactionConditional(
 				isolationLevel, token, t => (true, action(t))).Value;
@@ -101,7 +100,7 @@ namespace Open.Database.Extensions
 		public static void ExecuteTransaction(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Action<DbTransaction> action)
 			=> connection.ExecuteTransaction(isolationLevel, token, t => { action(t); return true; });
 
@@ -118,14 +117,13 @@ namespace Open.Database.Extensions
 		public static async Task<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task<(bool Commit, T Value)>> conditionalAction)
 		{
 			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
 			Contract.EndContractBlock();
 
-			var t = token ?? CancellationToken.None;
-			t.ThrowIfCancellationRequested();
+			token.ThrowIfCancellationRequested();
 
 			var success = false;
 			DbTransaction transaction = null;
@@ -133,15 +131,15 @@ namespace Open.Database.Extensions
 			// Only await if needed...
 			if (connection.State != ConnectionState.Open)
 			{
-				await connection.EnsureOpenAsync(t); // If the task is cancelled, awaiting will throw.
-				t.ThrowIfCancellationRequested();
+				await connection.EnsureOpenAsync(token); // If the task is cancelled, awaiting will throw.
+				token.ThrowIfCancellationRequested();
 			}
 
 			try
 			{
 				transaction = connection.BeginTransaction(isolationLevel);
 				var result = await conditionalAction(transaction).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
-				t.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 				success = result.Commit;
 				return result;
 			}
@@ -166,7 +164,7 @@ namespace Open.Database.Extensions
 		public static async Task<bool> ExecuteTransactionConditionalAsync(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task<bool>> conditionalAction)
 			=> (await connection.ExecuteTransactionConditionalAsync(
 				isolationLevel, token, async t => (await conditionalAction(t), true))).Commit;
@@ -183,7 +181,7 @@ namespace Open.Database.Extensions
 		public static async Task<T> ExecuteTransactionAsync<T>(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task<T>> action)
 			=> (await connection.ExecuteTransactionConditionalAsync(isolationLevel, token, async t => (true, await action(t))).ConfigureAwait(false)).Value;
 
@@ -197,7 +195,7 @@ namespace Open.Database.Extensions
 		public static Task ExecuteTransactionAsync(
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task> action)
 			=> connection.ExecuteTransactionAsync(isolationLevel, token, async c => { await action(c); return true; });
 
@@ -216,7 +214,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
-			=> connection.ExecuteTransactionConditional(isolationLevel, null, conditionalAction);
+			=> connection.ExecuteTransactionConditional(isolationLevel, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
@@ -229,7 +227,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, bool> conditionalAction)
-			=> connection.ExecuteTransactionConditional(isolationLevel, null, conditionalAction);
+			=> connection.ExecuteTransactionConditional(isolationLevel, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -243,7 +241,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, T> action)
-			=> connection.ExecuteTransaction(isolationLevel, null, action);
+			=> connection.ExecuteTransaction(isolationLevel, default, action);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -255,7 +253,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Action<DbTransaction> action)
-			=> connection.ExecuteTransaction(isolationLevel, null, action);
+			=> connection.ExecuteTransaction(isolationLevel, default, action);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
@@ -269,7 +267,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, Task<(bool Commit, T Value)>> conditionalAction)
-			=> connection.ExecuteTransactionConditionalAsync(isolationLevel, null, conditionalAction);
+			=> connection.ExecuteTransactionConditionalAsync(isolationLevel, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
@@ -282,7 +280,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, Task<bool>> conditionalAction)
-			=> connection.ExecuteTransactionConditionalAsync(isolationLevel, null, conditionalAction);
+			=> connection.ExecuteTransactionConditionalAsync(isolationLevel, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -296,7 +294,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, Task<T>> action)
-			=> connection.ExecuteTransactionAsync(isolationLevel, null, action);
+			=> connection.ExecuteTransactionAsync(isolationLevel, default, action);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -308,7 +306,7 @@ namespace Open.Database.Extensions
 			this DbConnection connection,
 			IsolationLevel isolationLevel,
 			Func<DbTransaction, Task> action)
-			=> connection.ExecuteTransactionAsync(isolationLevel, null, action);
+			=> connection.ExecuteTransactionAsync(isolationLevel, default, action);
 
 		#endregion
 
@@ -323,7 +321,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value returned from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
 			=> connection.ExecuteTransactionConditional(IsolationLevel.Unspecified, token, conditionalAction);
 
@@ -336,7 +334,7 @@ namespace Open.Database.Extensions
 		/// <returns>True if committed.</returns>
 		public static bool ExecuteTransactionConditional(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, bool> conditionalAction)
 			=> connection.ExecuteTransactionConditional(IsolationLevel.Unspecified, token, conditionalAction);
 
@@ -350,7 +348,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value of the action.</returns>
 		public static T ExecuteTransaction<T>(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, T> action)
 			=> connection.ExecuteTransaction(IsolationLevel.Unspecified, token, action);
 
@@ -362,7 +360,7 @@ namespace Open.Database.Extensions
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		public static void ExecuteTransaction(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Action<DbTransaction> action)
 			=> connection.ExecuteTransaction(IsolationLevel.Unspecified, token, action);
 
@@ -376,7 +374,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value of the awaited action.</returns>
 		public static Task<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task<(bool Commit, T Value)>> conditionalAction)
 			=> connection.ExecuteTransactionConditionalAsync(IsolationLevel.Unspecified, token, conditionalAction);
 
@@ -389,7 +387,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value of the awaited action.</returns>
 		public static Task<bool> ExecuteTransactionConditionalAsync(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task<bool>> conditionalAction)
 			=> connection.ExecuteTransactionConditionalAsync(IsolationLevel.Unspecified, token, conditionalAction);
 
@@ -403,7 +401,7 @@ namespace Open.Database.Extensions
 		/// <returns>The value of the awaited action.</returns>
 		public static Task<T> ExecuteTransactionAsync<T>(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task<T>> action)
 			=> connection.ExecuteTransactionAsync(IsolationLevel.Unspecified, token, action);
 
@@ -415,7 +413,7 @@ namespace Open.Database.Extensions
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		public static Task ExecuteTransactionAsync(
 			this DbConnection connection,
-			CancellationToken? token,
+			CancellationToken token,
 			Func<DbTransaction, Task> action)
 			=> connection.ExecuteTransactionAsync(IsolationLevel.Unspecified, token, action);
 
@@ -432,7 +430,7 @@ namespace Open.Database.Extensions
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this DbConnection connection,
 			Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
-			=> connection.ExecuteTransactionConditional(IsolationLevel.Unspecified, null, conditionalAction);
+			=> connection.ExecuteTransactionConditional(IsolationLevel.Unspecified, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
@@ -443,7 +441,7 @@ namespace Open.Database.Extensions
 		public static bool ExecuteTransactionConditional(
 			this DbConnection connection,
 			Func<DbTransaction, bool> conditionalAction)
-			=> connection.ExecuteTransactionConditional(IsolationLevel.Unspecified, null, conditionalAction);
+			=> connection.ExecuteTransactionConditional(IsolationLevel.Unspecified, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -455,7 +453,7 @@ namespace Open.Database.Extensions
 		public static T ExecuteTransaction<T>(
 			this DbConnection connection,
 			Func<DbTransaction, T> action)
-			=> connection.ExecuteTransaction(IsolationLevel.Unspecified, null, action);
+			=> connection.ExecuteTransaction(IsolationLevel.Unspecified, default, action);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -465,7 +463,7 @@ namespace Open.Database.Extensions
 		public static void ExecuteTransaction(
 			this DbConnection connection,
 			Action<DbTransaction> action)
-			=> connection.ExecuteTransaction(IsolationLevel.Unspecified, null, action);
+			=> connection.ExecuteTransaction(IsolationLevel.Unspecified, default, action);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
@@ -477,7 +475,7 @@ namespace Open.Database.Extensions
 		public static Task<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 			this DbConnection connection,
 			Func<DbTransaction, Task<(bool Commit, T Value)>> conditionalAction)
-			=> connection.ExecuteTransactionConditionalAsync(IsolationLevel.Unspecified, null, conditionalAction);
+			=> connection.ExecuteTransactionConditionalAsync(IsolationLevel.Unspecified, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
@@ -488,7 +486,7 @@ namespace Open.Database.Extensions
 		public static Task<bool> ExecuteTransactionConditionalAsync(
 			this DbConnection connection,
 			Func<DbTransaction, Task<bool>> conditionalAction)
-			=> connection.ExecuteTransactionConditionalAsync(IsolationLevel.Unspecified, null, conditionalAction);
+			=> connection.ExecuteTransactionConditionalAsync(IsolationLevel.Unspecified, default, conditionalAction);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -500,7 +498,7 @@ namespace Open.Database.Extensions
 		public static Task<T> ExecuteTransactionAsync<T>(
 			this DbConnection connection,
 			Func<DbTransaction, Task<T>> action)
-			=> connection.ExecuteTransactionAsync(IsolationLevel.Unspecified, null, action);
+			=> connection.ExecuteTransactionAsync(IsolationLevel.Unspecified, default, action);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -510,7 +508,7 @@ namespace Open.Database.Extensions
 		public static Task ExecuteTransactionAsync(
 			this DbConnection connection,
 			Func<DbTransaction, Task> action)
-			=> connection.ExecuteTransactionAsync(IsolationLevel.Unspecified, null, action);
+			=> connection.ExecuteTransactionAsync(IsolationLevel.Unspecified, default, action);
 
 		#endregion
 
