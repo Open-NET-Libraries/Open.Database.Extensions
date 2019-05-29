@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 // ReSharper disable MemberCanBePrivate.Local
 // ReSharper disable MemberCanBePrivate.Global
@@ -136,9 +137,8 @@ namespace Open.Database.Extensions
 			var processor = new Processor(this, source.Names);
 			var x = processor.GetBlock(options);
 			var r = source.Result;
-			r.LinkTo(x);
-			r.Completion.ContinueWith(t => x.Complete()); // Signal that no more results will be coming.
-			x.Completion.ContinueWith(t => r.Complete()); // Signal that no more results can be received.
+			r.LinkTo(x, new DataflowLinkOptions { PropagateCompletion = true });
+			x.Completion.ContinueWith(t => r.Complete(), TaskContinuationOptions.ExecuteSynchronously); // Signal that no more results can be received.
 			return x;
 		}
 

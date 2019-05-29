@@ -11,9 +11,9 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>5.14.0</Version>
-    <AssemblyVersion>5.14.0.0</AssemblyVersion>
-    <FileVersion>5.14.0.0</FileVersion>
+    <Version>6.0.0-preview1</Version>
+    <AssemblyVersion>6.0.0.1</AssemblyVersion>
+    <FileVersion>6.0.0.1</FileVersion>
     <PackageReleaseNotes>Reduced array allocation.</PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -49,6 +49,7 @@
   <ItemGroup>
     <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
     <PackageReference Include="System.Memory" Version="4.5.2" />
+    <PackageReference Include="System.Threading.Channels" Version="4.5.0" />
     <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1" />
   </ItemGroup>

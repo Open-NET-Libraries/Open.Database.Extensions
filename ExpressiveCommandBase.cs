@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 // ReSharper disable MemberCanBeProtected.Global
@@ -766,6 +767,16 @@ namespace Open.Database.Extensions
 		/// <param name="target">The target block to receive the results (to be posted to).</param>
 		public void ToTargetBlock<T>(ITargetBlock<T> target, Func<IDataRecord, T> transform)
 			=> IterateReaderWhile(r => target.Post(transform(r)));
+
+		/// <summary>
+		/// Posts all records to a target block using the transform function.
+		/// Stops if the target block rejects.
+		/// </summary>
+		/// <typeparam name="T">The expected type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <param name="target">The target block to receive the results (to be posted to).</param>
+		public Task ToChannelAsync<T>(ChannelWriter<T> target, Func<IDataRecord, T> transform)
+			=> IterateReaderWhile(r => ));
 
 		/// <summary>
 		/// Returns a buffer block that will contain the results.
