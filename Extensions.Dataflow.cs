@@ -44,7 +44,7 @@ namespace Open.Database.Extensions
         /// <param name="transform">The transform function to process each IDataRecord.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public static async Task ToTargetBlockAsync<T>(this DbDataReader reader,
+        public static async ValueTask ToTargetBlockAsync<T>(this DbDataReader reader,
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform,
 			bool useReadAsync = true,
@@ -56,28 +56,33 @@ namespace Open.Database.Extensions
 
 			if (useReadAsync)
 			{
-				Task<bool> lastSend = null;
+				var lastSend = new ValueTask<bool>(true);
 				while (
-                    target.IsStillAlive() && !cancellationToken.IsCancellationRequested
+                    target.IsStillAlive()
                     && await reader.ReadAsync(cancellationToken).ConfigureAwait(false) // Premtively grab next while waiting for previous transform.
-					&& (lastSend == null || await lastSend.ConfigureAwait(false)))
+					&& await lastSend.ConfigureAwait(false))
 				{
 					var values = transform(reader);
-					lastSend = target.Post(values) ? null : target.SendAsync(values);
+					lastSend = target.Post(values)
+						? new ValueTask<bool>(true)
+						: new ValueTask<bool>(target.SendAsync(values, cancellationToken));
 				}
-                // Makes sure we hook up to the last one if the while loop is done to cover any edge cases.
-                if (lastSend != null)
+
+				// Makes sure we hook up to the last one if the while loop is done to cover any edge cases.
+				if (!lastSend.IsCompleted)
                     await lastSend.ConfigureAwait(false);
 			}
 			else
 			{
 				var ok = true;
+				cancellationToken.ThrowIfCancellationRequested();
 				while (ok
-                    && target.IsStillAlive() && !cancellationToken.IsCancellationRequested
+                    && target.IsStillAlive()
                     && reader.Read())
 				{
 					var values = transform(reader);
-					ok = target.Post(values) || await target.SendAsync(values);
+					ok = target.Post(values) || await target.SendAsync(values, cancellationToken);
+					cancellationToken.ThrowIfCancellationRequested();
 				}
 			}
 		}
@@ -93,7 +98,7 @@ namespace Open.Database.Extensions
         /// <param name="behavior">The behavior to use with the data reader.</param>
         /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
         /// <param name="cancellationToken"></param>
-        public static async Task ToTargetBlockAsync<T>(this DbCommand command,
+        public static async ValueTask ToTargetBlockAsync<T>(this DbCommand command,
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default,
@@ -108,11 +113,9 @@ namespace Open.Database.Extensions
 			{
 				var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-				using (var reader = await command.ExecuteReaderAsync(behavior, cancellationToken))
-				{
-					if (target.IsStillAlive())
-						await reader.ToTargetBlockAsync(target, transform, useReadAsync, cancellationToken);
-				}
+				using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken);
+				if (target.IsStillAlive())
+					await reader.ToTargetBlockAsync(target, transform, useReadAsync, cancellationToken);
 			}
 		}
 

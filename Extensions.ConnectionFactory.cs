@@ -25,10 +25,8 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-				return action(conn);
-			}
+			using var conn = connectionFactory.Create();
+			return action(conn);
 		}
 
 		/// <summary>
@@ -44,10 +42,8 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-				action(conn);
-			}
+			using var conn = connectionFactory.Create();
+			action(conn);
 		}
 
 		/// <summary>
@@ -65,10 +61,8 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-				return action(conn);
-			}
+			using var conn = connectionFactory();
+			return action(conn);
 		}
 
 		/// <summary>
@@ -84,10 +78,8 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-				action(conn);
-			}
+			using var conn = connectionFactory();
+			action(conn);
 		}
 
 		/// <summary>
@@ -99,16 +91,14 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async Task<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-				return await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory.Create();
+			return await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -118,16 +108,14 @@ namespace Open.Database.Extensions
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
-		public static async Task UsingAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task> action)
+		public static async ValueTask UsingAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-				await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory.Create();
+			await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -139,16 +127,14 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async Task<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, Task<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-				return await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory();
+			return await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -158,16 +144,14 @@ namespace Open.Database.Extensions
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
-		public static async Task UsingAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, Task> action)
+		public static async ValueTask UsingAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-				await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory();
+			await action(conn).ConfigureAwait(false);
 		}
 
 
@@ -186,11 +170,9 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-				conn.Open();
-				return action(conn);
-			}
+			using var conn = connectionFactory.Create();
+			conn.Open();
+			return action(conn);
 		}
 
 		/// <summary>
@@ -206,11 +188,9 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-				conn.Open();
-				action(conn);
-			}
+			using var conn = connectionFactory.Create();
+			conn.Open();
+			action(conn);
 		}
 
 		/// <summary>
@@ -228,11 +208,9 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-				conn.Open();
-				return action(conn);
-			}
+			using var conn = connectionFactory();
+			conn.Open();
+			return action(conn);
 		}
 
 		/// <summary>
@@ -248,11 +226,9 @@ namespace Open.Database.Extensions
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-				conn.Open();
-				action(conn);
-			}
+			using var conn = connectionFactory();
+			conn.Open();
+			action(conn);
 		}
 
 		/// <summary>
@@ -264,18 +240,16 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async Task<T> OpenAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> OpenAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-                if (conn is DbConnection c) await c.OpenAsync();
-                else conn.Open();
-                return await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory.Create();
+			if (conn is DbConnection c) await c.OpenAsync();
+			else conn.Open();
+			return await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -285,18 +259,16 @@ namespace Open.Database.Extensions
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
-		public static async Task OpenAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task> action)
+		public static async ValueTask OpenAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory.Create())
-			{
-                if (conn is DbConnection c) await c.OpenAsync();
-                else conn.Open();
-                await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory.Create();
+			if (conn is DbConnection c) await c.OpenAsync();
+			else conn.Open();
+			await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -308,18 +280,16 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async Task<T> OpenAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> OpenAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, Task<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-                if (conn is DbConnection c) await c.OpenAsync();
-                else conn.Open();
-                return await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory();
+			if (conn is DbConnection c) await c.OpenAsync();
+			else conn.Open();
+			return await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -329,18 +299,16 @@ namespace Open.Database.Extensions
 		/// <typeparam name="TConn">The connection type.</typeparam>
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
-		public static async Task OpenAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, Task> action)
+		public static async ValueTask OpenAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			using (var conn = connectionFactory())
-			{
-                if (conn is DbConnection c) await c.OpenAsync();
-                else conn.Open();
-                await action(conn).ConfigureAwait(false);
-			}
+			using var conn = connectionFactory();
+			if (conn is DbConnection c) await c.OpenAsync();
+			else conn.Open();
+			await action(conn).ConfigureAwait(false);
 		}
 
 		/// <summary>

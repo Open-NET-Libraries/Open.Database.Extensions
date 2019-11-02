@@ -18,7 +18,7 @@ namespace Open.Database.Extensions.SqlClient
 			IDbConnectionFactory<SqlConnection> connFactory,
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params = null)
+			IEnumerable<Param>? @params = null)
 			: base(connFactory, type, command, @params)
 		{
 		}
@@ -30,10 +30,10 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="params">The list of params</param>
 		public ExpressiveSqlCommand(
 			SqlConnection connection,
-			SqlTransaction transaction,
+			SqlTransaction? transaction,
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params = null)
+			IEnumerable<Param>? @params = null)
 			: base(connection, transaction, type, command, @params)
 		{
 		}

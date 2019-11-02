@@ -13,7 +13,7 @@ namespace Open.Database.Extensions
 	public static partial class Extensions
 	{
 
-		static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, IEnumerable<int> ordinals, IEnumerable<string> columnNames = null, bool readStarted = false)
+		static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false)
 		{
             var o = ordinals as IList<int> ?? ordinals.ToArray();
 			return new QueryResult<Queue<object[]>>(
@@ -142,7 +142,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static async Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token = default, bool useReadAsync = true)
+		public static async ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token = default, bool useReadAsync = true)
 		{
 			var fieldCount = reader.FieldCount;
 			var names = reader.GetNames(); // pull before first read.
@@ -163,7 +163,7 @@ namespace Open.Database.Extensions
 				buffer);
 		}
 
-		static async Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string> columnNames = null, bool readStarted = false, bool useReadAsync = true)
+		static async ValueTask<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
 		{
             var buffer
                 = new Queue<object[]>();
@@ -208,7 +208,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken token = default, bool useReadAsync = true)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken token = default, bool useReadAsync = true)
 			=> RetrieveAsyncInternal(reader, token, ordinals, useReadAsync: useReadAsync);
 
 		/// <summary>
@@ -219,7 +219,7 @@ namespace Open.Database.Extensions
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, int n, params int[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, int n, params int[] others)
 			=> RetrieveAsync(reader, Enumerable.Repeat(n, 1).Concat(others));
 
 		/// <summary>
@@ -231,7 +231,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">A cancellation token.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, int n, params int[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, int n, params int[] others)
 			=> RetrieveAsync(reader, Enumerable.Repeat(n, 1).Concat(others), token);
 
 		/// <summary>
@@ -244,7 +244,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken token = default, bool useReadAsync = true)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken token = default, bool useReadAsync = true)
 		{
 			// Validate columns first.
 			var columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
@@ -261,7 +261,7 @@ namespace Open.Database.Extensions
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, string c, params string[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, string c, params string[] others)
 			=> RetrieveAsync(reader, Enumerable.Repeat(c, 1).Concat(others));
 
 		/// <summary>
@@ -273,7 +273,7 @@ namespace Open.Database.Extensions
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, string c, params string[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken token, string c, params string[] others)
 			=> RetrieveAsync(reader, Enumerable.Repeat(c, 1).Concat(others), false, token);
 
 		/// <summary>
@@ -284,10 +284,10 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token = default, bool useReadAsync = true)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token = default, bool useReadAsync = true)
 			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, token, useReadAsync), CommandBehavior.SequentialAccess, token);
 
-		static Task<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string> columnNames = null, bool useReadAsync = true)
+		static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool useReadAsync = true)
 			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames, useReadAsync: useReadAsync), token: token);
 
 		/// <summary>
@@ -299,7 +299,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<int> ordinals, CancellationToken token = default, bool useReadAsync = true)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<int> ordinals, CancellationToken token = default, bool useReadAsync = true)
 			=> RetrieveAsyncInternal(command, token, ordinals, useReadAsync: useReadAsync);
 
 		/// <summary>
@@ -310,7 +310,7 @@ namespace Open.Database.Extensions
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, int n, params int[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, int n, params int[] others)
 			=> RetrieveAsync(command, Enumerable.Repeat(n, 1).Concat(others));
 
 		/// <summary>
@@ -322,7 +322,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">A cancellation token.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, int n, params int[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, int n, params int[] others)
 			=> RetrieveAsync(command, Enumerable.Repeat(n, 1).Concat(others), token);
 
 		/// <summary>
@@ -335,7 +335,7 @@ namespace Open.Database.Extensions
 		/// <param name="token">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken token = default, bool useReadAsync = true)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, IEnumerable<string> columnNames, bool normalizeColumnOrder = false, CancellationToken token = default, bool useReadAsync = true)
 			=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, columnNames, normalizeColumnOrder, token, useReadAsync: useReadAsync), token: token);
 
 		/// <summary>
@@ -346,7 +346,7 @@ namespace Open.Database.Extensions
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, string c, params string[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, string c, params string[] others)
 			=> RetrieveAsync(command, Enumerable.Repeat(c, 1).Concat(others));
 
 		/// <summary>
@@ -358,7 +358,7 @@ namespace Open.Database.Extensions
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static Task<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, string c, params string[] others)
+		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken token, string c, params string[] others)
 			=> RetrieveAsync(command, Enumerable.Repeat(c, 1).Concat(others), false, token);
 
 	}

@@ -23,7 +23,7 @@ namespace Open.Database.Extensions
 		public IEnumerable<string> PropertyNames => PropertyMap.Keys;
 		public IEnumerable<string> ColumnNames => PropertyMap.Values;
 
-		public Transformer(IEnumerable<(string Field, string Column)> overrides = null)
+		public Transformer(IEnumerable<(string Field, string Column)>? overrides = null)
 		{
 			Type = typeof(T);
 			Properties = Type.GetProperties();
@@ -47,7 +47,7 @@ namespace Open.Database.Extensions
 
 		class Processor
 		{
-			public Processor(Transformer<T> transformer, IList<string> names = null)
+			public Processor(Transformer<T> transformer, IList<string>? names = null)
 			{
 				Transformer = transformer;
 				Transform = record =>
@@ -59,7 +59,7 @@ namespace Open.Database.Extensions
 						var p = _propertySetters[i];
 						if (p != null)
 						{
-							var value = record[i];
+							object? value = record[i];
 							if (value == DBNull.Value) value = null;
 							try
 							{
@@ -80,8 +80,8 @@ namespace Open.Database.Extensions
 
 			public readonly Transformer<T> Transformer;
 
-            IList<string> _names;
-			Action<T, object>[] _propertySetters;
+            IList<string> _names = Array.Empty<string>();
+			Action<T, object?>?[] _propertySetters = Array.Empty<Action<T, object?>?>();
 
 			public readonly Func<object[], T> Transform; // Using a Func<object[],T> for better type inference.
 
@@ -95,7 +95,7 @@ namespace Open.Database.Extensions
 			}
 
 			public TransformBlock<object[], T> GetBlock(
-				ExecutionDataflowBlockOptions options = null)
+				ExecutionDataflowBlockOptions? options = null)
 				=> options==null
 					? new TransformBlock<object[], T>(Transform)
 					: new TransformBlock<object[], T>(Transform, options);
@@ -114,7 +114,7 @@ namespace Open.Database.Extensions
 
 		public IReceivableSourceBlock<T> Results(
 			out Action<QueryResult<IEnumerable<object[]>>> deferred,
-			ExecutionDataflowBlockOptions options = null)
+			ExecutionDataflowBlockOptions? options = null)
 		{
 			var processor = new Processor(this);
 			var x = processor.GetBlock(options);
@@ -130,9 +130,27 @@ namespace Open.Database.Extensions
 			return x;
 		}
 
+		public IReceivableSourceBlock<T> ResultsAsync(
+			out Func<QueryResult<IEnumerable<object[]>>, ValueTask> deferred,
+			ExecutionDataflowBlockOptions? options = null)
+		{
+			var processor = new Processor(this);
+			var x = processor.GetBlock(options);
+
+			deferred = async results =>
+			{
+				processor.SetNames(results.Names);
+				var q = results.Result;
+				foreach (var record in q) if (!await x.SendAsync(record)) break;
+				x.Complete(); // May not be necessary, but we'll call it to ensure the .Completion occurs.
+			};
+
+			return x;
+		}
+
 		public IReceivableSourceBlock<T> Results(
 			QueryResult<IReceivableSourceBlock<object[]>> source,
-			ExecutionDataflowBlockOptions options = null)
+			ExecutionDataflowBlockOptions? options = null)
 		{
 			var processor = new Processor(this, source.Names);
 			var x = processor.GetBlock(options);
@@ -144,7 +162,7 @@ namespace Open.Database.Extensions
 
 		public TransformBlock<object[], T> ResultsBlock(
 			out Action<string[]> initColumnNames,
-			ExecutionDataflowBlockOptions options = null)
+			ExecutionDataflowBlockOptions? options = null)
 		{
 			var processor = new Processor(this);
 			var x = processor.GetBlock(options);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -30,22 +31,22 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// The connection factory to use to generate connections and commands.
 		/// </summary>
-		protected readonly IDbConnectionFactory<TConnection> ConnectionFactory;
+		protected readonly IDbConnectionFactory<TConnection>? ConnectionFactory;
 
 		/// <summary>
 		/// The connection to execute commands on if not using a connection factory.
 		/// </summary>
-		protected readonly TConnection Connection;
+		protected readonly TConnection? Connection;
 
 		/// <summary>
 		/// The transaction to execute commands on if not using a connection factory.
 		/// </summary>
-		protected readonly IDbTransaction Transaction;
+		protected readonly IDbTransaction? Transaction;
 
 		ExpressiveCommandBase(
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params)
+			IEnumerable<Param>? @params)
 		{
 			Type = type;
 			Command = command ?? throw new ArgumentNullException(nameof(command));
@@ -61,7 +62,7 @@ namespace Open.Database.Extensions
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params)
+			IEnumerable<Param>? @params)
 			: this(type, command, @params)
 		{
 			ConnectionFactory = connFactory ?? throw new ArgumentNullException(nameof(connFactory));
@@ -75,10 +76,10 @@ namespace Open.Database.Extensions
 		/// <param name="params">The list of params</param>
 		protected ExpressiveCommandBase(
 			TConnection connection,
-			IDbTransaction transaction,
+			IDbTransaction? transaction,
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params)
+			IEnumerable<Param>? @params)
 			: this(type, command, @params)
 		{
 			Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -269,7 +270,6 @@ namespace Open.Database.Extensions
 		public TThis AddParamIf(bool condition, string name)
 			=> condition ? AddParam(name) : (TThis)this;
 
-
 		/// <summary>
 		/// Sets the timeout value.
 		/// </summary>
@@ -291,7 +291,7 @@ namespace Open.Database.Extensions
 		/// Handles providing the connection for use with the command.
 		/// </summary>
 		/// <param name="action">The handler for use with the connection.</param>
-		protected void UsingConnection(Action<TConnection, IDbTransaction> action)
+		protected void UsingConnection(Action<TConnection, IDbTransaction?> action)
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
@@ -302,10 +302,11 @@ namespace Open.Database.Extensions
 			}
 			else
 			{
-				using (var conn = ConnectionFactory.Create())
-				{
-					action(conn, null);
-				}
+				// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+				using var conn = ConnectionFactory.Create();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+				action(conn, null);
 			}
 		}
 
@@ -313,42 +314,41 @@ namespace Open.Database.Extensions
 		/// Handles providing the connection for use with the command.
 		/// </summary>
 		/// <param name="action">The handler for use with the connection.</param>
-		protected T UsingConnection<T>(Func<TConnection, IDbTransaction, T> action)
+		protected T UsingConnection<T>(Func<TConnection, IDbTransaction?, T> action)
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			if (Connection != null)
-			{
 				return action(Connection, Transaction);
-			}
-			else
-			{
-				using (var conn = ConnectionFactory.Create())
-				{
-					return action(conn, null);
-				}
-			}
+
+			// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+			using var conn = ConnectionFactory.Create();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+			return action(conn, null);
 		}
 
 		/// <summary>
 		/// Handles providing the connection for use with the command.
 		/// </summary>
 		/// <param name="action">The handler for use with the connection.</param>
-		protected async Task UsingConnectionAsync(Func<TConnection, IDbTransaction, Task> action)
+		protected async ValueTask UsingConnectionAsync(Func<TConnection, IDbTransaction?, ValueTask> action)
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
+
 			if (Connection != null)
 			{
 				await action(Connection, Transaction);
 			}
 			else
 			{
-				using (var conn = ConnectionFactory.Create())
-				{
-					await action(conn, null);
-				}
+				// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+				using var conn = ConnectionFactory.Create();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+				await action(conn, null);
 			}
 		}
 
@@ -356,7 +356,7 @@ namespace Open.Database.Extensions
 		/// Handles providing the connection for use with the command.
 		/// </summary>
 		/// <param name="action">The handler for use with the connection.</param>
-		protected async Task<T> UsingConnectionAsync<T>(Func<TConnection, IDbTransaction, Task<T>> action)
+		protected async ValueTask<T> UsingConnectionAsync<T>(Func<TConnection, IDbTransaction?, ValueTask<T>> action)
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
@@ -367,10 +367,11 @@ namespace Open.Database.Extensions
 			}
 			else
 			{
-				using (var conn = ConnectionFactory.Create())
-				{
-					return await action(conn, null);
-				}
+				// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+				using var conn = ConnectionFactory.Create();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+				return await action(conn, null);
 			}
 		}
 
@@ -388,16 +389,14 @@ namespace Open.Database.Extensions
 				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
 				try
 				{
-					using (var cmd = con.CreateCommand(Type, Command, Timeout))
-					{
-						if (!(cmd is TCommand c))
-							throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-						if (t != null)
-							c.Transaction = t;
+					using var cmd = con.CreateCommand(Type, Command, Timeout);
+					if (!(cmd is TCommand c))
+						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+					if (t != null)
+						c.Transaction = t;
 
-						AddParams(c);
-						action(c);
-					}
+					AddParams(c);
+					action(c);
 				}
 				finally
 				{
@@ -405,7 +404,6 @@ namespace Open.Database.Extensions
 				}
 			});
 		}
-
 
 		/// <summary>
 		/// Executes a reader on a command with a transform function.
@@ -423,17 +421,14 @@ namespace Open.Database.Extensions
 				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
 				try
 				{
-					using (var cmd = con.CreateCommand(Type, Command, Timeout))
-					{
-						if (!(cmd is TCommand c))
-							throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-						if (t != null)
-							c.Transaction = t;
-						AddParams(c);
+					using var cmd = con.CreateCommand(Type, Command, Timeout);
+					if (!(cmd is TCommand c))
+						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+					if (t != null)
+						c.Transaction = t;
+					AddParams(c);
 
-						return transform(c);
-
-					}
+					return transform(c);
 				}
 				finally
 				{
@@ -441,6 +436,67 @@ namespace Open.Database.Extensions
 				}
 			});
 
+		}
+
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public virtual ValueTask ExecuteAsync(Func<TCommand, ValueTask> handler)
+		{
+			if (handler == null) throw new ArgumentNullException(nameof(handler));
+			Contract.EndContractBlock();
+
+			return UsingConnectionAsync(async (con, _) =>
+			{
+				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
+				try
+				{
+					using var cmd = con.CreateCommand(Type, Command, Timeout);
+					if (!(cmd is TCommand c))
+						throw new InvalidCastException(
+							$"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+
+					AddParams(c);
+					await handler(c)
+						.ConfigureAwait(false);
+				}
+				finally
+				{
+					if (state == ConnectionState.Closed)
+						con.Close();
+				}
+			});
+		}
+
+		/// <summary>
+		/// Asynchronously executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The result of the transform.</returns>
+		public virtual ValueTask<T> ExecuteAsync<T>(Func<TCommand, ValueTask<T>> transform)
+		{
+			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			return UsingConnectionAsync(async (con, _) =>
+			{
+				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
+				try
+				{
+					using var cmd = con.CreateCommand(Type, Command, Timeout);
+					if (!(cmd is TCommand c))
+						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+
+					AddParams(c);
+					return await transform(c).ConfigureAwait(false);
+				}
+				finally
+				{
+					if (state == ConnectionState.Closed) con.Close();
+				}
+			});
 		}
 
 		/// <summary>
@@ -453,19 +509,17 @@ namespace Open.Database.Extensions
 				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
 				try
 				{
-					using (var cmd = con.CreateCommand(Type, Command, Timeout))
-					{
-						if (!(cmd is TCommand c))
-							throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-						if (t != null)
-							c.Transaction = t;
+					using var cmd = con.CreateCommand(Type, Command, Timeout);
+					if (!(cmd is TCommand c))
+						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+					if (t != null)
+						c.Transaction = t;
 
-						AddParams(c);
-						var returnParameter = c.AddReturnParameter();
+					AddParams(c);
+					var returnParameter = c.AddReturnParameter();
 
-						c.ExecuteNonQuery();
-						return returnParameter.Value;
-					}
+					c.ExecuteNonQuery();
+					return returnParameter.Value;
 				}
 				finally
 				{
@@ -502,6 +556,28 @@ namespace Open.Database.Extensions
 		{
 			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			return Execute(command => command.ExecuteReader(transform, behavior));
+		}
+
+		/// <summary>
+		/// Executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for the data reader.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public ValueTask ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+			return ExecuteAsync(command => command.ExecuteReaderAsync(handler, behavior));
+		}
+
+		/// <summary>
+		/// Executes a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for the data reader.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		public ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+			return ExecuteAsync(command => command.ExecuteReaderAsync(handler, behavior));
 		}
 
 		/// <summary>
@@ -736,7 +812,7 @@ namespace Open.Database.Extensions
 		/// DBNull values are converted to null.
 		/// </summary>
 		/// <returns>The list of transformed records.</returns>
-		public IEnumerable<object> FirstOrdinalResults()
+		public IEnumerable<object?> FirstOrdinalResults()
 			=> ExecuteReader(reader => reader.FirstOrdinalResults(), CommandBehavior.SequentialAccess);
 
 		/// <summary>
@@ -769,14 +845,14 @@ namespace Open.Database.Extensions
 			=> IterateReaderWhile(r => target.Post(transform(r)));
 
 		/// <summary>
-		/// Posts all records to a target block using the transform function.
-		/// Stops if the target block rejects.
+		/// Posts all records to a channel using the transform function.
+		/// Stops if the channel rejects.
 		/// </summary>
 		/// <typeparam name="T">The expected type.</typeparam>
 		/// <param name="transform">The transform function.</param>
 		/// <param name="target">The target block to receive the results (to be posted to).</param>
-		public Task ToChannelAsync<T>(ChannelWriter<T> target, Func<IDataRecord, T> transform)
-			=> IterateReaderWhile(r => ));
+		public void ToChannel<T>(ChannelWriter<T> target, Func<IDataRecord, T> transform)
+			=> IterateReaderWhile(r => target.TryWrite(transform(r)));
 
 		/// <summary>
 		/// Returns a buffer block that will contain the results.
@@ -816,33 +892,52 @@ namespace Open.Database.Extensions
 		/// If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
-		public IReceivableSourceBlock<T> AsSourceBlock<T>(
-			IEnumerable<(string Field, string Column)> fieldMappingOverrides,
+		public virtual IReceivableSourceBlock<T> AsSourceBlock<T>(
+			IEnumerable<(string Field, string Column)>? fieldMappingOverrides,
 			bool synchronousExecution = false,
-			ExecutionDataflowBlockOptions options = null)
+			ExecutionDataflowBlockOptions? options = null)
 		   where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
 			var cn = x.ColumnNames;
-			var q = x.Results(out var deferred, options);
 
-			void I() => ExecuteReader(reader =>
+			if(synchronousExecution)
 			{
-				// Ignores fields that don't match.
-				// ReSharper disable once PossibleMultipleEnumeration
-				var columns = reader.GetMatchingOrdinals(cn, true);
+				var q = x.Results(out var deferred, options);
+				ExecuteReader(reader =>
+				{
+					// Ignores fields that don't match.
+					// ReSharper disable once PossibleMultipleEnumeration
+					var columns = reader.GetMatchingOrdinals(cn, true);
 
-				var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-				deferred(new QueryResult<IEnumerable<object[]>>(
-					ordinalValues,
-					columns.Select(c => c.Name),
-					reader.AsEnumerable(ordinalValues)));
-			});
+					var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
+					deferred(new QueryResult<IEnumerable<object[]>>(
+						ordinalValues,
+						columns.Select(c => c.Name),
+						reader.AsEnumerable(ordinalValues)));
+				});
+				return q;
+			}
+			else
+			{
+				var q = x.ResultsAsync(out var deferred, options);
+				ExecuteReader(reader =>
+				{
+					// Ignores fields that don't match.
+					// ReSharper disable once PossibleMultipleEnumeration
+					var columns = reader.GetMatchingOrdinals(cn, true);
 
-			if (synchronousExecution) I();
-			else Task.Run(I);
-			return q;
+					var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
+					deferred(new QueryResult<IEnumerable<object[]>>(
+						ordinalValues,
+						columns.Select(c => c.Name),
+						reader.AsEnumerable(ordinalValues)));
+				});
+				return q;
+			}
+
 		}
+
 
 		/// <summary>
 		/// Provides a transform block as the source of records.
@@ -855,9 +950,9 @@ namespace Open.Database.Extensions
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
 		public IReceivableSourceBlock<T> AsSourceBlock<T>(
-			IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides,
+			IEnumerable<KeyValuePair<string, string>>? fieldMappingOverrides,
 			bool synchronousExecution = false,
-			ExecutionDataflowBlockOptions options = null)
+			ExecutionDataflowBlockOptions? options = null)
 			where T : new()
 			=> AsSourceBlock<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), synchronousExecution, options);
 
