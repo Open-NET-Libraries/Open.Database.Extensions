@@ -91,7 +91,7 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
@@ -127,7 +127,7 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async ValueTask<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
@@ -240,7 +240,7 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async ValueTask<T> OpenAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> OpenAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));
@@ -280,7 +280,7 @@ namespace Open.Database.Extensions
 		/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 		/// <param name="action">The action to execute.</param>
 		/// <returns>The value from the action.</returns>
-		public static async ValueTask<T> OpenAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, Task<T>> action)
+		public static async ValueTask<T> OpenAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
 			if (action == null) throw new ArgumentNullException(nameof(action));

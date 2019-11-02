@@ -39,7 +39,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="direction">The direction of the parameter.</param>
 		/// <returns>The created IDbDataParameter.</returns>
 		public static SqlParameter AddParameterType(this SqlCommand target,
-			string name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
+			string? name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
 		{
 			if (direction != ParameterDirection.ReturnValue && name == null)
 				throw new ArgumentNullException(nameof(name), "Parameter names can only be null for a return parameter.");
@@ -75,7 +75,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="type">The SqlDbType of the parameter.</param>
 		/// <returns>The created IDbDataParameter.</returns>
 		public static SqlParameter AddReturnParameter(this SqlCommand target,
-			SqlDbType type, string name = null)
+			SqlDbType type, string? name = null)
 			=> target.AddParameterType(name, type, ParameterDirection.ReturnValue);
 
 	}

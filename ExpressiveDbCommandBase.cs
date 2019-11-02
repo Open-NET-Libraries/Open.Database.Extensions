@@ -143,7 +143,8 @@ namespace Open.Database.Extensions
 						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 
 					AddParams(c);
-					return await transform(c).ConfigureAwait(false);
+					return await transform(c)
+						.ConfigureAwait(false);
 				}
                 finally
                 {
@@ -186,7 +187,7 @@ namespace Open.Database.Extensions
         /// </summary>
         /// <returns>The value from the return parameter.</returns>
         public async ValueTask<T> ExecuteReturnAsync<T>()
-            => (T)(await ExecuteReturnAsync().ConfigureAwait(false));
+            => (T)await ExecuteReturnAsync().ConfigureAwait(false);
 
         /// <summary>
         /// Asynchronously executes a reader on a command with a handler function.

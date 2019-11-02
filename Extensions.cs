@@ -19,11 +19,6 @@ namespace Open.Database.Extensions
 	/// </summary>
 	public static partial class Extensions
 	{
-		internal static bool IsStillAlive(this Task task)
-		{
-			return !task.IsCompleted && !task.IsCanceled && !task.IsFaulted;
-		}
-
 		// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
 		internal static Action<T, object?> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)
 		{

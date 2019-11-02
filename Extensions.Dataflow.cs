@@ -12,9 +12,12 @@ namespace Open.Database.Extensions
 {
 	public static partial class Extensions
 	{
-		internal static bool IsStillAlive<T>(this ITargetBlock<T> task)
+
+
+		internal static bool IsStillAlive<T>(this ITargetBlock<T> block)
 		{
-			return IsStillAlive(task.Completion);
+			var completion = block.Completion;
+			return !completion.IsCompleted && !completion.IsCanceled && !completion.IsFaulted;
 		}
 
 		/// <summary>
