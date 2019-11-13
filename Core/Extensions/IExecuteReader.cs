@@ -1,0 +1,300 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Open.Database.Extensions
+{
+	public static partial class Extensions
+	{
+		/// <summary>
+		/// Iterates a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static void IterateReader(this IExecuteReader command, Action<IDataRecord> handler)
+			=> command.ExecuteReader(reader => reader.ForEach(handler), CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates a reader on a command while the handler function returns true.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static void IterateReaderWhile(this IExecuteReader command, Func<IDataRecord, bool> handler)
+			=> command.ExecuteReader(reader => reader.IterateWhile(handler), CommandBehavior.SingleResult);
+
+
+		/// <summary>
+		/// Iterates a reader on a command with a handler function.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static ValueTask IterateReaderAsync<TReader>(this IExecuteReader<TReader> command, Action<IDataRecord> handler, bool useReadAsync = false, CancellationToken cancellationToken = default)
+			where TReader : DbDataReader
+			=> command.ExecuteReaderAsync(reader =>
+				reader.ForEachAsync(handler, useReadAsync, cancellationToken),
+				CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates a reader on a command while the handler function returns true.
+		/// </summary>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static ValueTask IterateReaderWhileAsync<TReader>(this IExecuteReader<TReader> command, Func<IDataRecord, bool> handler, bool useReadAsync = false, CancellationToken cancellationToken = default)
+			where TReader : DbDataReader
+			=> command.ExecuteReaderAsync(async reader =>
+			{
+				if (useReadAsync)
+				{
+					await reader.IterateWhileAsync(handler, cancellationToken);
+					return;
+				}
+				reader.IterateWhile(handler, cancellationToken, true);
+			}, CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Executes a reader on a command with a transform function.
+		/// </summary>
+		/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
+		/// <typeparam name="TResult">The type returned by the selector.</typeparam>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
+		/// <returns>The result of the transform.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static TResult IterateReader<TEntity, TResult>(
+			this IExecuteReader command,
+			Func<IDataRecord, TEntity> transform,
+			Func<IEnumerable<TEntity>, TResult> selector)
+			=> command.ExecuteReader(
+				reader => selector(reader.Iterate(transform)), CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first result through a transform function.  Throws if none.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The value from the transform.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static T First<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(
+				reader => reader.Iterate(transform).First(), CommandBehavior.SingleRow | CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The value from the transform.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static T FirstOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).FirstOrDefault(), CommandBehavior.SingleRow | CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates a IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The value from the transform.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "Conforming to LINQ standards.")]
+		public static T Single<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).Single(), CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.  Throws if more than one entry.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The value from the transform.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static T SingleOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).SingleOrDefault(), CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates an IDataReader and returns the first number of results defined by the count.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="count">The maximum number of records to return.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The results from the transform limited by the take count.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static List<T> Take<T>(this IExecuteReader command, int count, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).Take(count).ToList(), CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates an IDataReader and skips the first number of results defined by the count.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="count">The number of records to skip.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The results from the transform after the skip count.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static List<T> Skip<T>(this IExecuteReader command, int count, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).Skip(count).ToList(), CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="skip">The number of entries to skip before starting to take results.</param>
+		/// <param name="take">The maximum number of records to return.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>The results from the skip, transform and take operation.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static List<T> SkipThenTake<T>(this IExecuteReader command, int skip, int take, Func<IDataRecord, T> transform)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).Skip(skip).Take(take).ToList(), CommandBehavior.SingleResult);
+
+
+
+		/// <summary>
+		/// Converts all IDataRecords into a list using a transform function.
+		/// </summary>
+		/// <typeparam name="T">The expected return type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <returns>The list of transformed records.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static List<T> ToList<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).ToList(), behavior | CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Converts all IDataRecords into an array using a transform function.
+		/// </summary>
+		/// <typeparam name="T">The expected return type.</typeparam>
+		/// <param name="transform">The transform function.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <returns>The array of transformed records.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static T[] ToArray<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> command.ExecuteReader(reader => reader.Iterate(transform).ToArray(), behavior | CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates all records within the first result set using an IDataReader and returns the results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command)
+			=> command.ExecuteReader(reader => reader.Retrieve(), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, IEnumerable<int> ordinals)
+			=> command.ExecuteReader(reader => reader.Retrieve(ordinals));
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, int n, params int[] others)
+			=> command.ExecuteReader(reader => reader.Retrieve(n, others));
+
+		/// <summary>
+		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="columnNames">The column names to select.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, IEnumerable<string> columnNames)
+			=> command.ExecuteReader(reader => reader.Retrieve(columnNames));
+
+		/// <summary>
+		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+		/// DBNull values are left unchanged (retained).
+		/// </summary>
+		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining column names to request from the reader for each record.</param>
+		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, string c, params string[] others)
+			=> command.ExecuteReader(reader => reader.Retrieve(c, others));
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+			where T : new()
+			=> command.ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
+			where T : new()
+			=> command.ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
+
+		/// <summary>
+		/// Reads the first column from every record and returns the results as a list..
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <returns>The list of transformed records.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static IEnumerable<object?> FirstOrdinalResults(this IExecuteReader command)
+			=> command.ExecuteReader(reader => reader.FirstOrdinalResults(), CommandBehavior.SequentialAccess);
+
+		/// <summary>
+		/// Reads the first column from every record..
+		/// DBNull values are converted to null.
+		/// </summary>
+		/// <returns>The enumerable of casted values.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static IEnumerable<T0> FirstOrdinalResults<T0>(this IExecuteReader command)
+			=> command.ExecuteReader(reader => reader.FirstOrdinalResults<T0>(), CommandBehavior.SequentialAccess);
+
+		/// <summary>
+		/// Iterates each record and attempts to map the fields to type T.
+		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// </summary>
+		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		/// <returns>The enumerable to pull the transformed results from.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static IEnumerable<T> Results<T>(this IExecuteReader command, params (string Field, string Column)[] fieldMappingOverrides)
+			where T : new()
+			=> command.ExecuteReader(reader => reader.Results<T>(fieldMappingOverrides));
+
+		/// <summary>
+		/// Imports all data using an IDataReader into a DataTable.
+		/// </summary>
+		/// <returns>The resultant DataTable.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static DataTable LoadTable(this IExecuteReader command)
+			=> command.ExecuteReader(reader => reader.ToDataTable(), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+
+		/// <summary>
+		/// Loads all data from a command through an IDataReader into a DataTables.
+		/// Calls .NextResult() to check for more results.
+		/// </summary>
+		/// <returns>The resultant list of DataTables.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Null check occurs in downstream extension.")]
+		public static List<DataTable> LoadTables(this IExecuteReader command)
+			=> command.ExecuteReader(reader => reader.ToDataTables(), CommandBehavior.SequentialAccess);
+	}
+}
