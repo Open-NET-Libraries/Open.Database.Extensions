@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -39,6 +40,7 @@ namespace Open.Database.Extensions
 		{
 			if (values is null)
 				throw new ArgumentNullException(nameof(values));
+			Contract.EndContractBlock();
 
 			foreach (var v in values)
 				yield return DBNullValueToNull(v);
@@ -53,6 +55,7 @@ namespace Open.Database.Extensions
 		{
 			if (values is null)
 				throw new ArgumentNullException(nameof(values));
+			Contract.EndContractBlock();
 
 			var len = values.Length;
 			var result = new object?[len];
@@ -66,7 +69,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="values">The source values.</param>
 		/// <returns>A new array containing the results with.</returns>
-		public static object?[] DBNullToNull(this ReadOnlySpan<object?> values)
+		public static object?[] DBNullToNull(this in ReadOnlySpan<object?> values)
 		{
 			var len = values.Length;
 			var result = new object?[len];
@@ -80,7 +83,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="values">The source values.</param>
 		/// <returns>A new array containing the results with.</returns>
-		public static object?[] DBNullToNull(this Span<object?> values)
+		public static object?[] DBNullToNull(this in Span<object?> values)
 		{
 			var len = values.Length;
 			var result = new object?[len];
@@ -114,6 +117,7 @@ namespace Open.Database.Extensions
 		{
 			if (values is null)
 				throw new ArgumentNullException(nameof(values));
+			Contract.EndContractBlock();
 
 			values.AsSpan().ReplaceDBNullWithNull();
 
@@ -127,6 +131,10 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of DataColumns.</returns>
 		public static IEnumerable<DataColumn> AsEnumerable(this DataColumnCollection columns)
 		{
+			if (columns is null)
+				throw new ArgumentNullException(nameof(columns));
+			Contract.EndContractBlock();
+
 			foreach (DataColumn c in columns)
 				yield return c;
 		}
@@ -138,6 +146,10 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of DataRows.</returns>
 		public static IEnumerable<DataRow> AsEnumerable(this DataRowCollection rows)
 		{
+			if (rows is null)
+				throw new ArgumentNullException(nameof(rows));
+			Contract.EndContractBlock();
+
 			foreach (DataRow r in rows)
 				yield return r;
 		}
@@ -186,6 +198,10 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of the items contained within the queue.</returns>
 		public static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 		{
+			if (source is null)
+				throw new ArgumentNullException(nameof(source));
+			Contract.EndContractBlock();
+
 			while (source.Count != 0)
 				yield return source.Dequeue();
 		}
