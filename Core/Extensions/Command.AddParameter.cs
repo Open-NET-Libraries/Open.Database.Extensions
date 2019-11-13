@@ -6,6 +6,9 @@ namespace Open.Database.Extensions
 {
 	public static partial class CommandExtensions
 	{
+		private const string ParameterNamesNotEmptyMessage = "Parameter names cannot be empty or white space.";
+		private const string ParameterNamesOnlyNullForReturn = "Parameter names can only be null for a return parameter.";
+
 		/// <summary>
 		/// Shortcut for adding command parameter.
 		/// </summary>
@@ -16,10 +19,12 @@ namespace Open.Database.Extensions
 		public static IDbDataParameter AddParameter(this IDbCommand target,
 			string name, object? value = null)
 		{
+			if (target is null)
+				throw new ArgumentNullException(nameof(target));
 			if (name is null)
 				throw new ArgumentNullException(nameof(name));
 			else if (string.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+				throw new ArgumentException(ParameterNamesNotEmptyMessage, nameof(name));
 			Contract.EndContractBlock();
 
 			var c = target.CreateParameter();
@@ -59,10 +64,12 @@ namespace Open.Database.Extensions
 		public static IDbDataParameter AddParameterType(this IDbCommand target,
 			string? name, DbType type, ParameterDirection direction = ParameterDirection.Input)
 		{
+			if (target is null)
+				throw new ArgumentNullException(nameof(target));
 			if (direction != ParameterDirection.ReturnValue && name == null)
-				throw new ArgumentNullException(nameof(name), "Parameter names can only be null for a return parameter.");
+				throw new ArgumentNullException(nameof(name), ParameterNamesOnlyNullForReturn);
 			else if (name != null && string.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+				throw new ArgumentException(ParameterNamesNotEmptyMessage, nameof(name));
 			Contract.EndContractBlock();
 
 			var c = target.CreateParameter();
@@ -94,6 +101,10 @@ namespace Open.Database.Extensions
 		public static IDbDataParameter AddReturnParameter(this IDbCommand target,
 			string? name = null)
 		{
+			if (target is null)
+				throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
 			var c = target.CreateParameter();
 			if (!string.IsNullOrWhiteSpace(name)) c.ParameterName = name;
 			c.Direction = ParameterDirection.ReturnValue;
