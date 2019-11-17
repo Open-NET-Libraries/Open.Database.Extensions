@@ -160,7 +160,6 @@ namespace Open.Database.Extensions
 			await action(conn).ConfigureAwait(false);
 		}
 
-
 		/// <summary>
 		/// Generates a connection, opens it, and executes the action within a using statement.
 		/// Useful for single-line operations.
@@ -324,32 +323,6 @@ namespace Open.Database.Extensions
 			else conn.Open();
 			await action(conn).ConfigureAwait(false);
 		}
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand Command(
-			this DbConnection target,
-			string command,
-			CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand(target, null, type, command);
-
-		/// <summary>
-		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The transaction to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveDbCommand Command(
-			this DbTransaction target,
-			string command,
-			CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand((target ?? throw new ArgumentNullException(nameof(target))).Connection, target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.

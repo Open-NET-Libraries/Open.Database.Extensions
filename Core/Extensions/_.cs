@@ -38,8 +38,7 @@ namespace Open.Database.Extensions
 		/// <returns>The converted enumerable.</returns>
 		public static IEnumerable<object?> DBNullToNull(this IEnumerable<object?> values)
 		{
-			if (values is null)
-				throw new ArgumentNullException(nameof(values));
+			if (values is null) throw new ArgumentNullException(nameof(values));
 			Contract.EndContractBlock();
 
 			foreach (var v in values)
@@ -53,8 +52,7 @@ namespace Open.Database.Extensions
 		/// <returns>A new array containing the results with.</returns>
 		public static object?[] DBNullToNull(this object?[] values)
 		{
-			if (values is null)
-				throw new ArgumentNullException(nameof(values));
+			if (values is null) throw new ArgumentNullException(nameof(values));
 			Contract.EndContractBlock();
 
 			var len = values.Length;
@@ -115,8 +113,7 @@ namespace Open.Database.Extensions
 		/// <returns>The converted enumerable.</returns>
 		public static object?[] ReplaceDBNullWithNull(this object?[] values)
 		{
-			if (values is null)
-				throw new ArgumentNullException(nameof(values));
+			if (values is null)	throw new ArgumentNullException(nameof(values));
 			Contract.EndContractBlock();
 
 			values.AsSpan().ReplaceDBNullWithNull();
@@ -131,8 +128,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of DataColumns.</returns>
 		public static IEnumerable<DataColumn> AsEnumerable(this DataColumnCollection columns)
 		{
-			if (columns is null)
-				throw new ArgumentNullException(nameof(columns));
+			if (columns is null) throw new ArgumentNullException(nameof(columns));
 			Contract.EndContractBlock();
 
 			foreach (DataColumn c in columns)
@@ -146,8 +142,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of DataRows.</returns>
 		public static IEnumerable<DataRow> AsEnumerable(this DataRowCollection rows)
 		{
-			if (rows is null)
-				throw new ArgumentNullException(nameof(rows));
+			if (rows is null) throw new ArgumentNullException(nameof(rows));
 			Contract.EndContractBlock();
 
 			foreach (DataRow r in rows)
@@ -198,8 +193,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of the items contained within the queue.</returns>
 		public static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 		{
-			if (source is null)
-				throw new ArgumentNullException(nameof(source));
+			if (source is null)	throw new ArgumentNullException(nameof(source));
 			Contract.EndContractBlock();
 
 			while (source.Count != 0)
