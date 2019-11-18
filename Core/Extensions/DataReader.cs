@@ -13,6 +13,9 @@ using System.Runtime.CompilerServices;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Extension methods for Data Readers.
+	/// </summary>
 	public static class DataReaderExtensions
 	{
 		/// <summary>
@@ -325,15 +328,14 @@ namespace Open.Database.Extensions
 		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params int[] others)
 			=> AsAsyncEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others));
 #endif
-
 		/// <summary>
-		/// Iterates all records from an IDataReader.
+		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
@@ -343,7 +345,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates all records from an IDataReader.
+		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
@@ -351,7 +353,7 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
 		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> Iterate<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation = false)
+		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation = false)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
@@ -389,16 +391,28 @@ namespace Open.Database.Extensions
 			}
 		}
 
-#if NETSTANDARD2_1
-
 		/// <summary>
-		/// Asyncronously iterates all records from an IDataReader.
+		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
+		public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
+			=> Select(reader, transform, cancellationToken, throwOnCancellation);
+
+#if NETSTANDARD2_1
+		/// <summary>
+		/// Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The DbDataReader to iterate.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static async IAsyncEnumerable<T> IterateAsync<T>(this DbDataReader reader,
+		public static async IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, T> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -467,7 +481,7 @@ namespace Open.Database.Extensions
 		/// <returns>A list of the transformed results.</returns>
 		public static List<T> ToList<T>(this IDataReader reader,
 			Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
-			=> reader.Iterate(transform, cancellationToken).ToList();
+			=> reader.Select(transform, cancellationToken).ToList();
 
 		/// <summary>
 		/// Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
@@ -515,7 +529,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>An array of the transformed results.</returns>
 		public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
-			=> reader.Iterate(transform).ToArray();
+			=> reader.Select(transform).ToArray();
 
 		/// <summary>
 		/// Loads all remaining data from an IDataReader into a DataTable.
@@ -716,7 +730,7 @@ namespace Open.Database.Extensions
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
 
-			var results = new Queue<object>(reader.Iterate(r => r.GetValue(0)));
+			var results = new Queue<object>(reader.Select(r => r.GetValue(0)));
 			return results.DequeueEach().DBNullToNull();
 		}
 

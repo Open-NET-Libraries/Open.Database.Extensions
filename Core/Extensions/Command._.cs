@@ -30,7 +30,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return reader.Iterate(transform).ToList();
+			return reader.Select(transform).ToList();
 		}
 
 		/// <summary>
@@ -175,7 +175,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return reader.Iterate(transform).ToArray();
+			return reader.Select(transform).ToArray();
 		}
 
 		/// <summary>
@@ -434,7 +434,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return selector(reader.Iterate(transform));
+			return selector(reader.Select(transform));
 		}
 
 		/// <summary>
@@ -634,7 +634,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow);
-			return reader.Iterate(transform).First();
+			return reader.Select(transform).First();
 		}
 
 		/// <summary>
@@ -654,7 +654,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow);
-			return reader.Iterate(transform).FirstOrDefault();
+			return reader.Select(transform).FirstOrDefault();
 		}
 
 
@@ -676,7 +676,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return reader.Iterate(transform).Single();
+			return reader.Select(transform).Single();
 		}
 
 		/// <summary>
@@ -696,7 +696,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return reader.Iterate(transform).SingleOrDefault();
+			return reader.Select(transform).SingleOrDefault();
 		}
 
 		/// <summary>
@@ -717,7 +717,7 @@ namespace Open.Database.Extensions
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return reader.Iterate(transform).Take(count).ToList();
+			return reader.Select(transform).Take(count).ToList();
 		}
 
 		/// <summary>
@@ -739,7 +739,7 @@ namespace Open.Database.Extensions
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
 			while (0 < count--) reader.Read();
-			return reader.Iterate(transform).ToList();
+			return reader.Select(transform).ToList();
 		}
 
 		/// <summary>
@@ -762,7 +762,7 @@ namespace Open.Database.Extensions
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
 			while (0 < skip--) reader.Read();
-			return reader.Iterate(transform).Take(take).ToList();
+			return reader.Select(transform).Take(take).ToList();
 		}
 
 		/// <summary>
