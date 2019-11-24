@@ -9,9 +9,9 @@ using System.Threading.Tasks.Dataflow;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
-namespace Open.Database.Extensions
+namespace Open.Database.Extensions.Core
 {
-	class Transformer<T>
+	public class Transformer<T>
 		where T : new()
 	{
 		public readonly Type Type;

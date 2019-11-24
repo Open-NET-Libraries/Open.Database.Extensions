@@ -1,5 +1,4 @@
-﻿// ReSharper disable UnusedMember.Global
-namespace Open.Database.Extensions
+﻿namespace Open.Database.Extensions
 {
 	internal static class ConnectionTimeout
 	{

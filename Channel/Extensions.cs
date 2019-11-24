@@ -4,15 +4,11 @@ using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-// ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable UnusedMember.Global
 
 namespace Open.Database.Extensions
 {
 	public static partial class Extensions
 	{
-
 
 		internal static bool IsStillAlive<T>(this ITargetBlock<T> block)
 		{
@@ -135,6 +131,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default)
 			=> command.ExecuteReader(reader => reader.ToTargetBlock(target, transform), behavior);
+
 
 	}
 }

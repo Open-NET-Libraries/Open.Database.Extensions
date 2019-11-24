@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0; netstandard2.1</TargetFrameworks>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>electricessence</Authors>
+		<Company />
+		<Product />
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
+		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations with Dataflow and ensuring DI compatibility.</Description>
+		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<Version>6.0.0-preview1</Version>
+		<PackageReleaseNotes></PackageReleaseNotes>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<RootNamespace>Open.Database.Extensions.Dataflow</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview1" />
+		<PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DocumentationFile>Documentation.xml</DocumentationFile>
+	</PropertyGroup>
+
+</Project>

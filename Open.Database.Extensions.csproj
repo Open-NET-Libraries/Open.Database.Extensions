@@ -6,12 +6,12 @@
     <Authors>electricessence</Authors>
     <Company />
     <Product />
-    <PackageLicenseUrl>https://github.com/electricessence/Open.Database.Extensions/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>6.0.0-preview1</Version>
+    <Version>6.0.0-preview2</Version>
     <PackageReleaseNotes></PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
@@ -23,37 +23,46 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>docs\Documentation.xml</DocumentationFile>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="api\**" />
+    <Compile Remove="Core\**" />
+    <Compile Remove="Dataflow\**" />
     <Compile Remove="docs\**" />
     <Compile Remove="Examples\**" />
+    <Compile Remove="SqlClient\**" />
     <EmbeddedResource Remove="api\**" />
+    <EmbeddedResource Remove="Core\**" />
+    <EmbeddedResource Remove="Dataflow\**" />
     <EmbeddedResource Remove="docs\**" />
     <EmbeddedResource Remove="Examples\**" />
+    <EmbeddedResource Remove="SqlClient\**" />
     <None Remove="api\**" />
+    <None Remove="Core\**" />
+    <None Remove="Dataflow\**" />
     <None Remove="docs\**" />
     <None Remove="Examples\**" />
+    <None Remove="SqlClient\**" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove=".gitignore" />
+    <None Remove="docfx.json" />
+    <None Remove="index.md" />
     <None Remove="LICENSE" />
     <None Remove="log.txt" />
     <None Remove="README.md" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
-    <PackageReference Include="System.Threading.Channels" Version="4.5.0" />
-    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
+    <None Remove="toc.yml" />
   </ItemGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
 		<PackageReference Include="System.Memory" Version="4.5.3" />
 		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview1" />
 	</ItemGroup>
 
 </Project>
