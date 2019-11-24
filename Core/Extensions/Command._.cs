@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Core non-DB-specific extensions for retrieving data from a command using best practices.
+	/// </summary>
 	public static partial class CommandExtensions
 	{
 		/// <summary>
@@ -53,21 +56,21 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>A task containing a list of all results.</returns>
 		public static async ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 			CommandBehavior behavior,
 			Func<IDataRecord, ValueTask<T>> transform,
-			CancellationToken token = default)
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(token);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = await command.ExecuteReaderAsync(behavior, token).ConfigureAwait(true);
-			return await reader.ToListAsync(transform, token).ConfigureAwait(false);
+			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+			return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -257,19 +260,19 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 			Action<DbDataReader> handler,
 			CommandBehavior behavior = CommandBehavior.Default,
-			CancellationToken token = default)
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(token);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = await command.ExecuteReaderAsync(behavior, token).ConfigureAwait(true);
+			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			handler(reader);
 		}
 
@@ -305,19 +308,19 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 			Func<DbDataReader, ValueTask> handler,
 			CommandBehavior behavior = CommandBehavior.Default,
-			CancellationToken token = default)
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(token);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = await command.ExecuteReaderAsync(behavior, token).ConfigureAwait(true);
+			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			await handler(reader).ConfigureAwait(false);
 		}
 
@@ -328,20 +331,20 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>The result of the transform.</returns>
 		public static async ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
 			Func<DbDataReader, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default,
-			CancellationToken token = default)
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(token);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = await command.ExecuteReaderAsync(behavior, token).ConfigureAwait(true);
+			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			return transform(reader);
 		}
 
@@ -377,19 +380,19 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <param name="token">Optional cancellation token.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>The result of the transform.</returns>
 		public static async ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
 			Func<DbDataReader, ValueTask<T>> transform,
-			CommandBehavior behavior = CommandBehavior.Default, CancellationToken token = default)
+			CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(token);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = await command.ExecuteReaderAsync(behavior, token).ConfigureAwait(true);
+			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			return await transform(reader).ConfigureAwait(false);
 		}
 
