@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Core non-DB-specific extensions for acquiring and operating on different connection factories.
+	/// </summary>
 	public static class ConnectionFactoryExtensions
 	{
 		/// <summary>

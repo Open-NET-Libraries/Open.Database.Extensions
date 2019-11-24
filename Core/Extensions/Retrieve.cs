@@ -9,9 +9,8 @@ using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
 {
-	public static partial class Extensions
+	public static partial class CoreExtensions
 	{
-
 		internal static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader,
 			IEnumerable<int> ordinals,
 			IEnumerable<string>? columnNames = null,
@@ -54,7 +53,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, int n, params int[] others)
-			=> Retrieve(reader, Enumerable.Repeat(n, 1).Concat(others));
+			=> Retrieve(reader, Concat(n, others));
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -80,7 +79,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, string c, params string[] others)
-			=> Retrieve(reader, Enumerable.Repeat(c, 1).Concat(others));
+			=> Retrieve(reader, Concat(c, others));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
@@ -111,7 +110,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, int n, params int[] others)
-			=> command.ExecuteReader(reader => Retrieve(reader, Enumerable.Repeat(n, 1).Concat(others)));
+			=> command.ExecuteReader(reader => Retrieve(reader, Concat(n, others)));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -132,7 +131,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, string c, params string[] others)
-			=> command.ExecuteReader(reader => Retrieve(reader, Enumerable.Repeat(c, 1).Concat(others)));
+			=> command.ExecuteReader(reader => Retrieve(reader, Concat(c, others)));
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -250,7 +249,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, int n, params int[] others)
-			=> RetrieveAsync(reader, Enumerable.Repeat(n, 1).Concat(others));
+			=> RetrieveAsync(reader, Concat(n, others));
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -263,7 +262,7 @@ namespace Open.Database.Extensions
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken cancellationToken, int n, params int[] others)
-			=> RetrieveAsync(reader, Enumerable.Repeat(n, 1).Concat(others), cancellationToken);
+			=> RetrieveAsync(reader, Concat(n, others), cancellationToken);
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -316,7 +315,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, string c, params string[] others)
-			=> RetrieveAsync(reader, Enumerable.Repeat(c, 1).Concat(others));
+			=> RetrieveAsync(reader, Concat(c, others));
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -329,7 +328,7 @@ namespace Open.Database.Extensions
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbDataReader reader, CancellationToken cancellationToken, string c, params string[] others)
-			=> RetrieveAsync(reader, Enumerable.Repeat(c, 1).Concat(others), cancellationToken);
+			=> RetrieveAsync(reader, Concat(c, others), cancellationToken);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -353,8 +352,8 @@ namespace Open.Database.Extensions
 			=> RetrieveAsync(command, true, cancellationToken);
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
-		static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken token, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool useReadAsync = true)
-			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, token, ordinals, columnNames, useReadAsync: useReadAsync), cancellationToken: token);
+		static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsyncInternal(DbCommand command, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool useReadAsync = true)
+			=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, cancellationToken, ordinals, columnNames, useReadAsync: useReadAsync), cancellationToken: cancellationToken);
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -388,7 +387,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, int n, params int[] others)
-			=> RetrieveAsync(command, Enumerable.Repeat(n, 1).Concat(others));
+			=> RetrieveAsync(command, Concat(n, others));
 
 		/// <summary>
 		/// Asynchronously enumerates all the remaining values of the current result set of a data reader.
@@ -401,7 +400,7 @@ namespace Open.Database.Extensions
 		/// <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken cancellationToken, int n, params int[] others)
-			=> RetrieveAsync(command, Enumerable.Repeat(n, 1).Concat(others), cancellationToken);
+			=> RetrieveAsync(command, Concat(n, others), cancellationToken);
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -448,7 +447,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, string c, params string[] others)
-			=> RetrieveAsync(command, Enumerable.Repeat(c, 1).Concat(others));
+			=> RetrieveAsync(command, Concat(c, others));
 
 		/// <summary>
 		/// Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
@@ -461,7 +460,7 @@ namespace Open.Database.Extensions
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 		public static ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(this DbCommand command, CancellationToken cancellationToken, string c, params string[] others)
-			=> RetrieveAsync(command, Enumerable.Repeat(c, 1).Concat(others), false, cancellationToken);
+			=> RetrieveAsync(command, Concat(c, others), false, cancellationToken);
 
 	}
 }

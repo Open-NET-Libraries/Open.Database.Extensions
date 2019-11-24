@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace Open.Database.Extensions
@@ -18,6 +19,9 @@ namespace Open.Database.Extensions
 		/// <returns>The enumerable of column names.</returns>
 		public static IEnumerable<string> ColumnNames(this IDataRecord record)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			var fieldCount = record.FieldCount;
 			for (var i = 0; i < fieldCount; i++)
 				yield return record.GetName(i);
@@ -30,6 +34,9 @@ namespace Open.Database.Extensions
 		/// <returns>The array of column names.</returns>
 		public static string[] GetNames(this IDataRecord record)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			var fieldCount = record.FieldCount;
 			var columnNames = new string[fieldCount];
 			for (var i = 0; i < fieldCount; i++)
@@ -108,6 +115,9 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable for iterating the values of a record.</returns>
 		public static IEnumerable<object> EnumerateValues(this IDataRecord record)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			var count = record.FieldCount;
 			for (var i = 0; i < count; i++)
 				yield return record.GetValue(i);
@@ -121,6 +131,10 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of values matching the ordinal positions requested.</returns>
 		public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IEnumerable<int> ordinals)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			Contract.EndContractBlock();
+
 			foreach (var i in ordinals)
 				yield return record.GetValue(i);
 		}
@@ -133,6 +147,10 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of values matching the ordinal positions requested.</returns>
 		public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			Contract.EndContractBlock();
+
 			// Avoid creating an another enumerator if possible.
 			var count = ordinals.Count;
 			for (var i = 0; i < count; i++)
@@ -148,6 +166,9 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of values matching the ordinal positions requested.</returns>
 		public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			yield return record.GetValue(firstOrdinal);
 			var len = remainingOrdinals.Length;
 			for (var i = 0; i < len; i++)
@@ -163,6 +184,9 @@ namespace Open.Database.Extensions
 		/// <returns>An array of values matching the ordinal positions requested.</returns>
 		public static Span<object> GetValuesFromOrdinals(this IDataRecord record, in ReadOnlySpan<int> ordinals, Span<object> values)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			var len = ordinals.Length;
 			for (var i = 0; i < len; i++)
 				values[i] = record.GetValue(ordinals[i]);
@@ -179,6 +203,10 @@ namespace Open.Database.Extensions
 		public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IList<int> ordinals, TList values)
 			where TList : IList<object>
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			Contract.EndContractBlock();
+
 			var count = ordinals.Count;
 			for (var i = 0; i < count; i++)
 				values[i] = record.GetValue(ordinals[i]);
@@ -193,6 +221,10 @@ namespace Open.Database.Extensions
 		/// <returns>An array of values matching the ordinal positions requested.</returns>
 		public static object[] GetValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			Contract.EndContractBlock();
+
 			var count = ordinals.Count;
 			if (count == 0) return Array.Empty<object>();
 
@@ -216,7 +248,7 @@ namespace Open.Database.Extensions
 			{
 				if (string.IsNullOrWhiteSpace(c))
 					throw new ArgumentException("Column names cannot be null or whitespace only.");
-				return c.ToLowerInvariant();
+				return c.ToUpperInvariant();
 			});
 
 			var actual = record.OrdinalMapping();
@@ -225,12 +257,12 @@ namespace Open.Database.Extensions
 				var requested = new HashSet<string>(columnNames);
 				// Return actual values based upon if their lower-case counterparts exist in the requested.
 				return actual
-					.Where(m => requested.Contains(m.Name.ToLowerInvariant()));
+					.Where(m => requested.Contains(m.Name.ToUpperInvariant()));
 			}
 			else
 			{
 				// Create a map of lower-case keys to actual.
-				var actualColumns = actual.ToDictionary(m => m.Name.ToLowerInvariant(), m => m);
+				var actualColumns = actual.ToDictionary(m => m.Name.ToUpperInvariant(), m => m);
 				return columnNames
 					.Where(c => actualColumns.ContainsKey(c)) // Select lower case column names if they exist in the dictionary.
 					.Select(c => actualColumns[c]); // Then select the actual values based upon that key.
@@ -250,26 +282,32 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Returns all the data type names for the columns of current result set.
 		/// </summary>
-		/// <param name="reader">The reader to get data type names from.</param>
+		/// <param name="record">The reader to get data type names from.</param>
 		/// <returns>The enumerable of data type names.</returns>
-		public static IEnumerable<string> DataTypeNames(this IDataRecord reader)
+		public static IEnumerable<string> DataTypeNames(this IDataRecord record)
 		{
-			var fieldCount = reader.FieldCount;
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
+			var fieldCount = record.FieldCount;
 			for (var i = 0; i < fieldCount; i++)
-				yield return reader.GetDataTypeName(i);
+				yield return record.GetDataTypeName(i);
 		}
 
 		/// <summary>
 		/// Returns all the data type names for the columns of current result set.
 		/// </summary>
-		/// <param name="reader">The reader to get data type names from.</param>
+		/// <param name="record">The reader to get data type names from.</param>
 		/// <returns>The array of data type names.</returns>
-		public static string[] GetDataTypeNames(this IDataRecord reader)
+		public static string[] GetDataTypeNames(this IDataRecord record)
 		{
-			var fieldCount = reader.FieldCount;
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
+			var fieldCount = record.FieldCount;
 			var results = new string[fieldCount];
 			for (var i = 0; i < fieldCount; i++)
-				results[i] = reader.GetDataTypeName(i);
+				results[i] = record.GetDataTypeName(i);
 			return results;
 		}
 
@@ -284,7 +322,7 @@ namespace Open.Database.Extensions
 			=> columnMap
 			.ToDictionary(
 				c => c.Value,
-				c => Extensions.DBNullValueToNull(record.GetValue(c.Key)));
+				c => CoreExtensions.DBNullValueToNull(record.GetValue(c.Key)));
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
@@ -297,7 +335,7 @@ namespace Open.Database.Extensions
 			=> ordinalMapping
 			.ToDictionary(
 				c => c.Name,
-				c => Extensions.DBNullValueToNull(record.GetValue(c.Ordinal)));
+				c => CoreExtensions.DBNullValueToNull(record.GetValue(c.Ordinal)));
 
 		/// <summary>
 		/// Returns the specified column data of IDataRecord as a Dictionary.
@@ -308,12 +346,16 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant Dictionary of values.</returns>
 		public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<(string Name, int Ordinal)> ordinalMapping)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
+			Contract.EndContractBlock();
+
 			var e = new Dictionary<string, object?>();
 			var count = ordinalMapping.Count;
 			for (var i = 0; i < count; i++)
 			{
 				var (name, ordinal) = ordinalMapping[i];
-				e.Add(name, Extensions.DBNullValueToNull(record[ordinal]));
+				e.Add(name, CoreExtensions.DBNullValueToNull(record[ordinal]));
 			}
 			return e;
 		}
@@ -327,12 +369,15 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant Dictionary of values.</returns>
 		public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			var e = new Dictionary<string, object?>();
 			var count = ordinalMapping.Length;
 			for (var i = 0; i < count; i++)
 			{
 				var (name, ordinal) = ordinalMapping[i];
-				e.Add(name, Extensions.DBNullValueToNull(record[ordinal]));
+				e.Add(name, CoreExtensions.DBNullValueToNull(record[ordinal]));
 			}
 			return e;
 		}
@@ -346,9 +391,13 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant Dictionary of values.</returns>
 		public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
+			Contract.EndContractBlock();
+
 			var e = new Dictionary<string, object?>();
 			foreach (var name in columnNames)
-				e.Add(name, Extensions.DBNullValueToNull(record[name]));
+				e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 			return e;
 		}
 
@@ -361,12 +410,16 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant Dictionary of values.</returns>
 		public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<string> columnNames)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
+			Contract.EndContractBlock();
+
 			var e = new Dictionary<string, object?>();
 			var count = columnNames.Count;
 			for (var i = 0; i < count; i++)
 			{
 				var name = columnNames[i];
-				e.Add(name, Extensions.DBNullValueToNull(record[name]));
+				e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 			}
 			return e;
 		}
@@ -380,12 +433,15 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant Dictionary of values.</returns>
 		public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<string> columnNames)
 		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
 			var e = new Dictionary<string, object?>();
 			var count = columnNames.Length;
 			for (var i = 0; i < count; i++)
 			{
 				var name = columnNames[i];
-				e.Add(name, Extensions.DBNullValueToNull(record[name]));
+				e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 			}
 			return e;
 		}

@@ -337,6 +337,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable used to iterate the results.</returns>
 		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -355,6 +356,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable used to iterate the results.</returns>
 		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation = false)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -538,6 +540,9 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant DataTable.</returns>
 		public static DataTable ToDataTable(this IDataReader reader)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
 			var table = new DataTable();
 			table.Load(reader);
 			return table;

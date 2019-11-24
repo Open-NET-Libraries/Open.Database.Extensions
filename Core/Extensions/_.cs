@@ -12,8 +12,11 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Core non-DB-specific extensions for building a command and retrieving data using best practices.
 	/// </summary>
-	public static partial class Extensions
+	public static partial class CoreExtensions
 	{
+		static IEnumerable<T> Concat<T>(T a, T[] rest)
+			=> rest.Length == 0 ? new T[] { a } : Enumerable.Repeat(a, 1).Concat(rest);
+
 		// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
 		internal static Action<T, object?> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)
 		{

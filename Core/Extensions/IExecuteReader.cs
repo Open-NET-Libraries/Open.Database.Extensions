@@ -9,7 +9,10 @@ using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
 {
-	public static partial class Extensions
+	/// <summary>
+	/// Core non-DB-specific extensions for retrieving data from a command using best practices.
+	/// </summary>
+	public static class IExecuteReaderExtensions
 	{
 		/// <summary>
 		/// Iterates a reader on a command with a handler function.
