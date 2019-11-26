@@ -282,9 +282,11 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		public static async ValueTask ExecuteReaderAsync(this IDbCommand command,
 			Func<IDataReader, ValueTask> handler,
-			CommandBehavior behavior = CommandBehavior.Default)
+			CommandBehavior behavior = CommandBehavior.Default,
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -292,7 +294,7 @@ namespace Open.Database.Extensions
 
 			if (command is DbCommand c)
 			{
-				await c.ExecuteReaderAsync(reader => handler(reader), behavior);
+				await c.ExecuteReaderAsync(reader => handler(reader), behavior, cancellationToken);
 				return;
 			}
 
@@ -355,17 +357,19 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>The result of the transform.</returns>
 		public static async ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
 			Func<IDataReader, ValueTask<T>> transform,
-			CommandBehavior behavior = CommandBehavior.Default)
+			CommandBehavior behavior = CommandBehavior.Default,
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			if (command is DbCommand c)
-				return await ExecuteReaderAsync(c, transform, behavior);
+				return await ExecuteReaderAsync(c, reader => transform(reader), behavior, cancellationToken);
 
 			var state = command.Connection.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
@@ -384,7 +388,8 @@ namespace Open.Database.Extensions
 		/// <returns>The result of the transform.</returns>
 		public static async ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
 			Func<DbDataReader, ValueTask<T>> transform,
-			CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default)
+			CommandBehavior behavior = CommandBehavior.Default,
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -431,7 +436,7 @@ namespace Open.Database.Extensions
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			if (selector == null) throw new ArgumentNullException(nameof(selector));
+			if (selector is null) throw new ArgumentNullException(nameof(selector));
 			Contract.EndContractBlock();
 
 			var state = command.Connection.EnsureOpen();
@@ -446,7 +451,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static void IterateReader(this IDbCommand command, 
+		public static void IterateReader(this IDbCommand command,
 			CommandBehavior behavior,
 			Action<IDataRecord> handler)
 		{
@@ -471,7 +476,7 @@ namespace Open.Database.Extensions
 
 		internal static IEnumerable<T> IterateReaderInternal<T>(IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 		{
-			if (command == null) throw new ArgumentNullException(nameof(command));
+			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -484,7 +489,7 @@ namespace Open.Database.Extensions
 
 		internal static IEnumerable<object[]> IterateReaderInternal(IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		{
-			if (command == null) throw new ArgumentNullException(nameof(command));
+			if (command is null) throw new ArgumentNullException(nameof(command));
 			Contract.EndContractBlock();
 
 			var state = command.Connection.EnsureOpen();

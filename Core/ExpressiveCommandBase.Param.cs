@@ -5,11 +5,12 @@ using System.Data;
 namespace Open.Database.Extensions
 {
 
-	public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
+	public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 		where TConnection : class, IDbConnection
 		where TCommand : class, IDbCommand
+		where TReader : class, IDataReader
 		where TDbType : struct
-		where TThis : ExpressiveCommandBase<TConnection, TCommand, TDbType, TThis>
+		where TThis : ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 	{
 		/// <summary>
 		/// A struct that represents the param to be created when the command is executed.

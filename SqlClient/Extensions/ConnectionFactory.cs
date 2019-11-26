@@ -6,7 +6,7 @@ using System.Data.SqlClient;
 
 namespace Open.Database.Extensions.SqlClient
 {
-	public static partial class Extensions
+	public static class ConnectionFactoryExtensions
 	{
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
@@ -30,7 +30,7 @@ namespace Open.Database.Extensions.SqlClient
 		public static ExpressiveSqlCommand Command(
 			this SqlTransaction target,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveSqlCommand(target.Connection, target, type, command);
+			=> new ExpressiveSqlCommand((target ?? throw new ArgumentNullException(nameof(target))).Connection, target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -52,7 +52,7 @@ namespace Open.Database.Extensions.SqlClient
 		public static ExpressiveSqlCommand StoredProcedure(
 			this SqlTransaction target,
 			string command)
-			=> new ExpressiveSqlCommand(target.Connection, target, CommandType.StoredProcedure, command);
+			=> new ExpressiveSqlCommand((target ?? throw new ArgumentNullException(nameof(target))).Connection, target, CommandType.StoredProcedure, command);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.

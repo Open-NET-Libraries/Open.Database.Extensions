@@ -20,8 +20,8 @@ namespace Open.Database.Extensions
 		/// <param name="result">The result.</param>
 		internal QueryResult(IEnumerable<int> ordinals, IEnumerable<string> names, TResult result)
 		{
-			if (ordinals == null) throw new ArgumentNullException(nameof(ordinals));
-			if (names == null) throw new ArgumentNullException(nameof(names));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			if (names is null) throw new ArgumentNullException(nameof(names));
 			Result = result ?? throw new ArgumentNullException(nameof(result));
 			Contract.EndContractBlock();
 

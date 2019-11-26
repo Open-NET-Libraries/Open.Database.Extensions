@@ -19,7 +19,7 @@ namespace Open.Database.Extensions
 		/// <returns>The prior connection state.</returns>
 		public static ConnectionState EnsureOpen(this IDbConnection connection)
 		{
-			if (connection is null)	throw new ArgumentNullException(nameof(connection));
+			if (connection is null) throw new ArgumentNullException(nameof(connection));
 			Contract.EndContractBlock();
 
 			var state = connection.State;

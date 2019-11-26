@@ -24,8 +24,8 @@ namespace Open.Database.Extensions
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
 		{
-			if (connection == null) throw new ArgumentNullException(nameof(connection));
-			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+			if (connection is null) throw new ArgumentNullException(nameof(connection));
+			if (conditionalAction is null) throw new ArgumentNullException(nameof(conditionalAction));
 			Contract.EndContractBlock();
 
 			cancellationToken.ThrowIfCancellationRequested();
@@ -116,8 +116,8 @@ namespace Open.Database.Extensions
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
 		{
-			if (connection == null) throw new ArgumentNullException(nameof(connection));
-			if (conditionalAction == null) throw new ArgumentNullException(nameof(conditionalAction));
+			if (connection is null) throw new ArgumentNullException(nameof(connection));
+			if (conditionalAction is null) throw new ArgumentNullException(nameof(conditionalAction));
 			Contract.EndContractBlock();
 
 			cancellationToken.ThrowIfCancellationRequested();
@@ -476,7 +476,7 @@ namespace Open.Database.Extensions
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">A optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <returns>True if committed.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]

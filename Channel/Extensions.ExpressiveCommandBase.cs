@@ -43,7 +43,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, T> transform,
 			bool synchronousExecution = false)
 		{
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			var channel = Channel.CreateUnbounded<T>(new UnboundedChannelOptions
@@ -62,6 +62,6 @@ namespace Open.Database.Extensions
 			else Task.Run(I);
 			return channel.Reader;
 		}
-		
+
 	}
 }

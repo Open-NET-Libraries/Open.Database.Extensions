@@ -23,8 +23,8 @@ namespace Open.Database.Extensions
 		public static T Using<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, T> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -41,8 +41,8 @@ namespace Open.Database.Extensions
 		public static void Using<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Action<TConn> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -61,8 +61,8 @@ namespace Open.Database.Extensions
 		public static T Using<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, T> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -79,8 +79,8 @@ namespace Open.Database.Extensions
 		public static void Using<TConn>(this Func<TConn> connectionFactory, Action<TConn> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -99,8 +99,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -117,8 +117,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask UsingAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -137,8 +137,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -155,8 +155,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask UsingAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -175,8 +175,8 @@ namespace Open.Database.Extensions
 		public static T Open<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, T> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -194,8 +194,8 @@ namespace Open.Database.Extensions
 		public static void Open<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Action<TConn> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -215,8 +215,8 @@ namespace Open.Database.Extensions
 		public static T Open<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, T> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -234,8 +234,8 @@ namespace Open.Database.Extensions
 		public static void Open<TConn>(this Func<TConn> connectionFactory, Action<TConn> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -255,8 +255,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask<T> OpenAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -275,8 +275,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask OpenAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory.Create();
@@ -297,8 +297,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask<T> OpenAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -317,8 +317,8 @@ namespace Open.Database.Extensions
 		public static async ValueTask OpenAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, ValueTask> action)
 			where TConn : IDbConnection
 		{
-			if (connectionFactory == null) throw new ArgumentNullException(nameof(connectionFactory));
-			if (action == null) throw new ArgumentNullException(nameof(action));
+			if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
 			using var conn = connectionFactory();
@@ -326,6 +326,31 @@ namespace Open.Database.Extensions
 			else conn.Open();
 			await action(conn).ConfigureAwait(false);
 		}
+
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The connection to execute the command on.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command(
+			this DbConnection target,
+			string command, CommandType type = CommandType.Text)
+			=> new ExpressiveDbCommand(target, null, type, command);
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="target">The transaction to execute the command on.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command(
+			this DbTransaction target,
+			string command, CommandType type = CommandType.Text)
+			=> new ExpressiveDbCommand((target ?? throw new ArgumentNullException(nameof(target))).Connection, target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.

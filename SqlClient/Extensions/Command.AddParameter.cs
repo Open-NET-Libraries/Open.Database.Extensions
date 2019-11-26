@@ -10,7 +10,7 @@ namespace Open.Database.Extensions.SqlClient
 	/// <summary>
 	/// SqlClient extensions for building a command and retrieving data using best practices.
 	/// </summary>
-	public static partial class Extensions
+	public static partial class SqlCommandExtensions
 	{
 
 		/// <summary>
@@ -25,10 +25,14 @@ namespace Open.Database.Extensions.SqlClient
 		public static SqlParameter AddParameter(this SqlCommand target,
 			string name, object value, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
 		{
-			var p = target.AddParameterType(name, type, direction);
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			var p = AddParameterType(target, name, type, direction);
 			p.Value = value;
 			return p;
 		}
+
 
 		/// <summary>
 		/// Shortcut for adding command a typed (non-input) parameter.
@@ -38,9 +42,11 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="type">The SqlDbType of the parameter.</param>
 		/// <param name="direction">The direction of the parameter.</param>
 		/// <returns>The created IDbDataParameter.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Constants are only used once.")]
 		public static SqlParameter AddParameterType(this SqlCommand target,
 			string? name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
 		{
+			if (target is null) throw new ArgumentNullException(nameof(target));
 			if (direction != ParameterDirection.ReturnValue && name == null)
 				throw new ArgumentNullException(nameof(name), "Parameter names can only be null for a return parameter.");
 			else if (name != null && string.IsNullOrWhiteSpace(name))
@@ -62,10 +68,9 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="name">The name of the parameter.</param>
 		/// <param name="type">The SqlDbType of the parameter.</param>
 		/// <returns>The created IDbDataParameter.</returns>
-		public static SqlParameter AddParameterType(this IDbCommand target, string name, SqlDbType type)
-		{
-			return AddParameterType((SqlCommand)target, name, type);
-		}
+		public static SqlParameter AddParameterType(this IDbCommand target,
+			string name, SqlDbType type)
+			=> AddParameterType((SqlCommand)target, name, type);
 
 		/// <summary>
 		/// Shortcut for adding command a typed return parameter.
@@ -76,7 +81,7 @@ namespace Open.Database.Extensions.SqlClient
 		/// <returns>The created IDbDataParameter.</returns>
 		public static SqlParameter AddReturnParameter(this SqlCommand target,
 			SqlDbType type, string? name = null)
-			=> target.AddParameterType(name, type, ParameterDirection.ReturnValue);
+			=> AddParameterType(target, name, type, ParameterDirection.ReturnValue);
 
 	}
 }

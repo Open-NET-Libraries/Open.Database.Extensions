@@ -186,7 +186,7 @@ namespace Open.Database.Extensions
 		internal static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (ordinals == null) throw new ArgumentNullException(nameof(ordinals));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
 			Contract.EndContractBlock();
 
 			if (readStarted || reader.Read())
@@ -265,7 +265,7 @@ namespace Open.Database.Extensions
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (ordinals == null) throw new ArgumentNullException(nameof(ordinals));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
 			Contract.EndContractBlock();
 
 			if (readStarted || !cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(true))

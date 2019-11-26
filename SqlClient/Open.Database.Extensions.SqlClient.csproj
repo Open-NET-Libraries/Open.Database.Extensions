@@ -22,8 +22,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview1" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
+		<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview2" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
 	</ItemGroup>
 
 </Project>

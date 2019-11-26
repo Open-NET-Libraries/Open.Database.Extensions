@@ -116,7 +116,7 @@ namespace Open.Database.Extensions
 		/// <returns>The converted enumerable.</returns>
 		public static object?[] ReplaceDBNullWithNull(this object?[] values)
 		{
-			if (values is null)	throw new ArgumentNullException(nameof(values));
+			if (values is null) throw new ArgumentNullException(nameof(values));
 			Contract.EndContractBlock();
 
 			values.AsSpan().ReplaceDBNullWithNull();
@@ -196,7 +196,7 @@ namespace Open.Database.Extensions
 		/// <returns>An enumerable of the items contained within the queue.</returns>
 		public static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 		{
-			if (source is null)	throw new ArgumentNullException(nameof(source));
+			if (source is null) throw new ArgumentNullException(nameof(source));
 			Contract.EndContractBlock();
 
 			while (source.Count != 0)

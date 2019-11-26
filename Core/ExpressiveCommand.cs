@@ -1,21 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
+using System.Text;
 
 namespace Open.Database.Extensions
 {
-
 	/// <summary>
 	/// An abstraction for executing commands on a database using best practices and simplified expressive syntax.
 	/// </summary>
-	public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbCommand, DbDataReader, DbType, ExpressiveDbCommand>
+	public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand, IDataReader, DbType, ExpressiveCommand>
 	{
+
 		/// <param name="connFactory">The factory to generate connections from.</param>
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
-		public ExpressiveDbCommand(
-			IDbConnectionFactory<DbConnection> connFactory,
+		public ExpressiveCommand(
+			IDbConnectionFactory<IDbConnection> connFactory,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
@@ -28,9 +29,9 @@ namespace Open.Database.Extensions
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
-		public ExpressiveDbCommand(
-			DbConnection connection,
-			DbTransaction? transaction,
+		public ExpressiveCommand(
+			IDbConnection connection,
+			IDbTransaction? transaction,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
@@ -42,8 +43,8 @@ namespace Open.Database.Extensions
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
-		public ExpressiveDbCommand(
-			DbConnection connection,
+		public ExpressiveCommand(
+			IDbConnection connection,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
@@ -52,7 +53,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <inheritdoc />
-		protected override void AddParams(DbCommand command)
+		protected override void AddParams(IDbCommand command)
 		{
 			foreach (var p in Params)
 			{
@@ -60,7 +61,5 @@ namespace Open.Database.Extensions
 				if (p.Type.HasValue) np.DbType = p.Type.Value;
 			}
 		}
-
 	}
-
 }
