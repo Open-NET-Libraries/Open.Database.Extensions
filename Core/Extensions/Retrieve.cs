@@ -15,10 +15,15 @@ namespace Open.Database.Extensions
 			IEnumerable<int> ordinals,
 			IEnumerable<string>? columnNames = null,
 			bool readStarted = false)
-			=> new QueryResult<Queue<object[]>>(
-				ordinals as IList<int> ?? ordinals.ToArray(),
-				columnNames as IList<string> ?? columnNames.ToArray(),
-				new Queue<object[]>(reader.AsEnumerableInternal(ordinals, readStarted)));
+		{
+			var o = ordinals as int[] ?? ordinals.ToArray();
+			return new QueryResult<Queue<object[]>>(
+				o,
+				columnNames == null
+					? reader.GetNames(o)
+					: (columnNames as string[] ?? columnNames.ToArray()),
+				new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted)));
+		}
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the results.
@@ -30,7 +35,7 @@ namespace Open.Database.Extensions
 		{
 			var names = reader.GetNames();
 			return new QueryResult<Queue<object[]>>(
-				Enumerable.Range(0, names.Length), names,
+				Enumerable.Range(0, names.Length).ToArray(), names,
 				new Queue<object[]>(reader.AsEnumerable()));
 		}
 
@@ -53,7 +58,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDataReader reader, int n, params int[] others)
-			=> Retrieve(reader, Concat(n, others));
+			=> RetrieveInternal(reader, Concat(n, others));
 
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -110,7 +115,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 		public static QueryResult<Queue<object[]>> Retrieve(this IDbCommand command, int n, params int[] others)
-			=> command.ExecuteReader(reader => Retrieve(reader, Concat(n, others)));
+			=> command.ExecuteReader(reader => RetrieveInternal(reader, Concat(n, others)));
 
 		/// <summary>
 		/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.

@@ -45,6 +45,20 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
+		/// Returns all the column names for the current result set by index provided by the ordinals.
+		/// </summary>
+		/// <param name="record">The reader to get column names from.</param>
+		/// <param name="ordinals">The list (and order) of ordinals to look up.</param>
+		/// <returns>The array of column names.</returns>
+		public static string[] GetNames(this IDataRecord record, IEnumerable<int> ordinals)
+		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
+			return ordinals.Select(o => record.GetName(o)).ToArray();
+		}
+
+		/// <summary>
 		/// Returns the (name,ordinal) mapping for current result set.
 		/// </summary>
 		/// <param name="record">The reader to get column names from.</param>

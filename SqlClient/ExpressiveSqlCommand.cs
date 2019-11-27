@@ -39,19 +39,6 @@ namespace Open.Database.Extensions.SqlClient
 		{
 		}
 
-		/// <param name="connection">The connection to execute the command on.</param>
-		/// <param name="type">The command type>.</param>
-		/// <param name="command">The SQL command.</param>
-		/// <param name="params">The list of params</param>
-		public ExpressiveSqlCommand(
-			SqlConnection connection,
-			CommandType type,
-			string command,
-			IEnumerable<Param>? @params = null)
-			: base(connection, null, type, command, @params)
-		{
-		}
-
 
 		/// <summary>
 		/// Handles adding the list of parameters to a new command.

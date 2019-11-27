@@ -19,7 +19,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview1" />
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview3" />
 		<PackageReference Include="System.Threading.Channels" Version="4.5.0" />
 	</ItemGroup>
 

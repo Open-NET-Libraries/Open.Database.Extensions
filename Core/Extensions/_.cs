@@ -14,8 +14,8 @@ namespace Open.Database.Extensions
 	/// </summary>
 	public static partial class CoreExtensions
 	{
-		static IEnumerable<T> Concat<T>(T a, T[] rest)
-			=> rest.Length == 0 ? new T[] { a } : Enumerable.Repeat(a, 1).Concat(rest);
+		static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
+			=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
 
 		// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
 		internal static Action<T, object?> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)

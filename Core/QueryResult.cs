@@ -1,6 +1,7 @@
 ﻿using Open.Database.Extensions.Core;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,17 +19,27 @@ namespace Open.Database.Extensions
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
 		/// <param name="result">The result.</param>
-		internal QueryResult(IEnumerable<int> ordinals, IEnumerable<string> names, TResult result)
+		public QueryResult(ImmutableArray<int> ordinals, ImmutableArray<string> names, TResult result)
 		{
-			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
-			if (names is null) throw new ArgumentNullException(nameof(names));
+			if (ordinals.Length != names.Length) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
+			Ordinals = ordinals;
+			Names = names;
 			Result = result ?? throw new ArgumentNullException(nameof(result));
 			Contract.EndContractBlock();
 
-			Ordinals = ordinals as IList<int> ?? ordinals.ToArray();
-			Names = names as IList<string> ?? names.ToArray();
-			if (Ordinals.Count != Names.Count) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
-			ColumnCount = Ordinals.Count;
+			ColumnCount = ordinals.Length;
+		}
+
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResult(IEnumerable<int> ordinals, IEnumerable<string> names, TResult result)
+			: this(
+				  ordinals is ImmutableArray<int> o ? o : ordinals?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(ordinals)),
+				  names is ImmutableArray<string> n ? n : names?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(names)),
+				  result)
+		{
+
 		}
 
 		/// <summary>
@@ -39,13 +50,11 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// The ordinal values requested.
 		/// </summary>
-		public IList<int> Ordinals { get; }
-
+		public ImmutableArray<int> Ordinals { get; }
 		/// <summary>
 		/// The column names requested.
 		/// </summary>
-		public IList<string> Names { get; }
-
+		public ImmutableArray<string> Names { get; }
 		/// <summary>
 		/// The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
 		/// </summary>

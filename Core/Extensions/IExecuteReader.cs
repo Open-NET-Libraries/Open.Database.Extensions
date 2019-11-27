@@ -4,7 +4,6 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
@@ -19,7 +18,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static void IterateReader(this IExecuteReader command, Action<IDataRecord> handler)
+		public static void IterateReader<TReader>(this IExecuteReader command, Action<IDataRecord> handler)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -29,7 +28,6 @@ namespace Open.Database.Extensions
 				reader => reader.ForEach(handler),
 				CommandBehavior.SingleResult);
 		}
-
 
 		/// <summary>
 		/// Iterates a reader on a command while the handler function returns true.
@@ -47,24 +45,26 @@ namespace Open.Database.Extensions
 				CommandBehavior.SingleResult);
 		}
 
-
-
 		/// <summary>
 		/// Iterates a reader on a command with a handler function.
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static ValueTask IterateReaderAsync<TReader>(this IExecuteReader<TReader> command, Action<IDataRecord> handler, bool useReadAsync = false, CancellationToken cancellationToken = default)
-			where TReader : DbDataReader
+		public static ValueTask IterateReaderAsync(this IExecuteReaderAsync command, Action<IDataRecord> handler)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
 			Contract.EndContractBlock();
 
 			return command.ExecuteReaderAsync(
-				reader => reader.ForEachAsync(handler, useReadAsync, cancellationToken),
+				reader =>
+				{
+					if (reader is DbDataReader r)
+						return r.ForEachAsync(handler, command.UseAsyncRead, command.CancellationToken);
+
+					reader.ForEach(handler, true, command.CancellationToken);
+					return new ValueTask();
+				},
 				CommandBehavior.SingleResult);
 		}
 
@@ -73,25 +73,37 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static ValueTask IterateReaderWhileAsync<TReader>(this IExecuteReader<TReader> command, Func<IDataRecord, bool> handler, bool useReadAsync = false, CancellationToken cancellationToken = default)
-			where TReader : DbDataReader
+		public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, bool> handler)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
 			Contract.EndContractBlock();
 
 			return command.ExecuteReaderAsync(
-				async reader =>
+				reader =>
 				{
-					if (useReadAsync)
-					{
-						await reader.IterateWhileAsync(handler, cancellationToken);
-						return;
-					}
-					reader.IterateWhile(handler, cancellationToken, true);
+					if (reader is DbDataReader r)
+						return r.IterateWhileAsync(handler, command.UseAsyncRead, command.CancellationToken);
+
+					reader.IterateWhile(handler, true, command.CancellationToken);
+					return new ValueTask();
 				},
+				CommandBehavior.SingleResult);
+		}
+
+		/// <summary>
+		/// Iterates a reader on a command while the handler function returns true.
+		/// </summary>
+		/// <param name="command">The IExecuteReader to iterate.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
+		public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, ValueTask<bool>> handler)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (handler is null) throw new ArgumentNullException(nameof(handler));
+			Contract.EndContractBlock();
+
+			return command.ExecuteReaderAsync(
+				reader => reader.IterateWhileAsync(handler, command.CancellationToken),
 				CommandBehavior.SingleResult);
 		}
 
@@ -117,7 +129,6 @@ namespace Open.Database.Extensions
 				reader => selector(reader.Select(transform)),
 				CommandBehavior.SingleResult);
 		}
-
 
 		/// <summary>
 		/// Iterates an IDataReader and returns the first result through a transform function.  Throws if none.
@@ -155,7 +166,6 @@ namespace Open.Database.Extensions
 				CommandBehavior.SingleRow | CommandBehavior.SingleResult);
 		}
 
-
 		/// <summary>
 		/// Iterates a IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
 		/// </summary>
@@ -174,7 +184,6 @@ namespace Open.Database.Extensions
 				reader => reader.Select(transform).Single(),
 				CommandBehavior.SingleResult);
 		}
-
 
 		/// <summary>
 		/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.  Throws if more than one entry.
@@ -369,7 +378,6 @@ namespace Open.Database.Extensions
 				CommandBehavior.SingleResult);
 		}
 
-
 		/// <summary>
 		/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 		/// DBNull values are left unchanged (retained).
@@ -389,7 +397,6 @@ namespace Open.Database.Extensions
 				reader => reader.Retrieve(c, others),
 				CommandBehavior.SingleResult);
 		}
-
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.

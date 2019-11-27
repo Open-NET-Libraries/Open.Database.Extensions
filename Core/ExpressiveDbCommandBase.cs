@@ -19,7 +19,7 @@ namespace Open.Database.Extensions
 	/// <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
 	/// <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
 	public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
-			: ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
+			: ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>, IExecuteReaderAsync<TReader>
 			where TConnection : DbConnection
 			where TCommand : DbCommand
 			where TReader : DbDataReader

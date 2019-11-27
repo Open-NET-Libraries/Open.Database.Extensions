@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
 {
-	using CancelToken = System.Threading.CancellationToken;
-
 	/// <summary>
 	/// Base class for developing expressive commands.
 	/// Includes methods for use with IDbConnection and IDbCommand types.
@@ -21,7 +19,7 @@ namespace Open.Database.Extensions
 	/// <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
 	/// <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
 	public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
-		: IExecuteReader<TReader>
+		: IExecuteCommand<TCommand>, IExecuteReader<TReader>
 		where TConnection : class, IDbConnection
 		where TCommand : class, IDbCommand
 		where TReader : class, IDataReader
@@ -35,8 +33,8 @@ namespace Open.Database.Extensions
 		/// <param name="first">The first value.</param>
 		/// <param name="remaining">The remaining values.</param>
 		/// <returns></returns>
-		protected static IEnumerable<T> Concat<T>(T first, T[] remaining)
-			=> (remaining == null || remaining.Length == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
+		protected static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
+			=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
 
 		/// <summary>
 		/// The connection factory to use to generate connections and commands.
@@ -121,12 +119,14 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// The optional cancellation token to use with supported methods.
 		/// </summary>
-		public CancelToken CancellationToken { get; set; } = CancelToken.None;
+		public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
+
+		CancellationToken IExecuteReader.CancellationToken => throw new NotImplementedException();
 
 		/// <summary>
-		/// Sets the UseAsyncRead value.
+		/// Sets the cancellation token.
 		/// </summary>
-		public TThis UseCancellationToken(CancelToken token)
+		public TThis UseCancellationToken(CancellationToken token)
 		{
 			CancellationToken = token;
 			return (TThis)this;
@@ -400,10 +400,7 @@ namespace Open.Database.Extensions
 			}
 		}
 
-		/// <summary>
-		/// Executes a reader on a command with a handler function.
-		/// </summary>
-		/// <param name="action">The handler function for each IDataRecord.</param>
+		/// <inheritdocs />
 		public void Execute(Action<TCommand> action)
 		{
 			if (action is null) throw new ArgumentNullException(nameof(action));
@@ -430,12 +427,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <summary>
-		/// Executes a reader on a command with a transform function.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <returns>The result of the transform.</returns>
+		/// <inheritdocs />
 		public T Execute<T>(Func<TCommand, T> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -463,10 +455,7 @@ namespace Open.Database.Extensions
 
 		}
 
-		/// <summary>
-		/// Asynchronously executes a reader on a command with a handler function.
-		/// </summary>
-		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <inheritdocs />
 		public virtual ValueTask ExecuteAsync(Func<TCommand, ValueTask> handler)
 		{
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -499,12 +488,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <summary>
-		/// Asynchronously executes a reader on a command with a transform function.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <returns>The result of the transform.</returns>
+		/// <inheritdocs />
 		public virtual ValueTask<T> ExecuteAsync<T>(Func<TCommand, ValueTask<T>> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -535,6 +519,18 @@ namespace Open.Database.Extensions
 				}
 			});
 		}
+
+		void IExecuteCommand.Execute(Action<IDbCommand> action)
+			=> Execute(command => action(command));
+
+		T IExecuteCommand.Execute<T>(Func<IDbCommand, T> transform)
+			=> Execute(command => transform(command));
+
+		ValueTask IExecuteCommand.ExecuteAsync(Func<IDbCommand, ValueTask> handler)
+			=> ExecuteAsync(command => handler(command));
+
+		ValueTask<T> IExecuteCommand.ExecuteAsync<T>(Func<IDbCommand, ValueTask<T>> transform)
+			=> ExecuteAsync(command => transform(command));
 
 		/// <summary>
 		/// Validates and properly acquires the expected type of the reader.
@@ -567,7 +563,7 @@ namespace Open.Database.Extensions
 			return ExecuteAsync(command => command.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken));
 
 			ValueTask ExecuteReaderAsyncCore(IDataReader reader)
-			{ 
+			{
 				handler(EnsureReaderType(reader));
 				return new ValueTask();
 			}
@@ -589,6 +585,19 @@ namespace Open.Database.Extensions
 			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			return ExecuteAsync(command => command.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken));
 		}
+
+
+		void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
+			=> ExecuteReader(reader => handler(reader), behavior);
+
+		T IExecuteReader.ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior)
+			=> ExecuteReader(reader => transform(reader), behavior);
+
+		ValueTask IExecuteReader.ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior)
+			=> ExecuteReaderAsync(reader => handler(reader), behavior);
+
+		ValueTask<T> IExecuteReader.ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior)
+			=> ExecuteReaderAsync(reader => transform(reader), behavior);
 
 		/// <inhericdoc />
 		public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, ValueTask<T>> handler, CommandBehavior behavior = CommandBehavior.Default)

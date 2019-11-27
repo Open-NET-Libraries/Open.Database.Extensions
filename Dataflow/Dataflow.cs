@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace Open.Database.Extensions
+namespace Open.Database.Extensions.Dataflow
 {
-	public static partial class Extensions
+	public static partial class DataflowExtensions
 	{
 
 		internal static bool IsStillAlive<T>(this ITargetBlock<T> block)
@@ -81,7 +81,7 @@ namespace Open.Database.Extensions
                     && reader.Read())
 				{
 					var values = transform(reader);
-					ok = target.Post(values) || await target.SendAsync(values, cancellationToken);
+					ok = target.Post(values) || await target.SendAsync(values, cancellationToken).ConfigureAwait(false);
 					cancellationToken.ThrowIfCancellationRequested();
 				}
 			}

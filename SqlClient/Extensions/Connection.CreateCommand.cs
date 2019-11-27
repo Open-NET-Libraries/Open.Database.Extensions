@@ -1,13 +1,11 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics.Contracts;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Open.Database.Extensions.SqlClient
 {
-	public static class ConnectionExtensions
+	public static partial class Extensions
 	{
 
 		/// <summary>
@@ -18,14 +16,9 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="commandText">The command text or stored procedure name to use.</param>
 		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
 		/// <returns>The created SqlCommand.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "No different that if manually inserted.")]
 		public static SqlCommand CreateCommand(this SqlConnection connection,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			if (connection is null) throw new ArgumentNullException(nameof(connection));
-			if (commandText is null) throw new ArgumentNullException(nameof(commandText));
-			Contract.EndContractBlock();
-
 			var command = connection.CreateCommand();
 			command.CommandType = type;
 			command.CommandText = commandText;
@@ -67,9 +60,6 @@ namespace Open.Database.Extensions.SqlClient
 		public static SqlCommand CreateCommand(this SqlTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			if (transaction is null) throw new System.ArgumentNullException(nameof(transaction));
-			Contract.EndContractBlock();
-
 			var command = transaction
 				.Connection
 				.CreateCommand(type, commandText, secondsTimeout);

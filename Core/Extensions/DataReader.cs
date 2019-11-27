@@ -23,24 +23,9 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static void ForEach(this IDataReader reader, Action<IDataRecord> handler)
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (handler is null) throw new ArgumentNullException(nameof(handler));
-			Contract.EndContractBlock();
-
-			while (reader.Read())
-				handler(reader);
-		}
-
-		/// <summary>
-		/// Iterates all records from an IDataReader.
-		/// </summary>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="handler">The handler function for each IDataRecord.</param>
-		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-		public static void ForEach(this IDataReader reader, Action<IDataRecord> handler, CancellationToken cancellationToken, bool throwOnCancellation = false)
+		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+		/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+		public static void ForEach(this IDataReader reader, Action<IDataRecord> handler, bool throwOnCancellation, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -84,6 +69,15 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
+		/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+		public static void ForEach(this IDataReader reader, Action<IDataRecord> handler, CancellationToken cancellationToken = default)
+			=> ForEach(reader, handler, false, cancellationToken);
+
+		/// <summary>
+		/// Iterates all records from an IDataReader.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="handler">The handler function for each IDataRecord.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		public static async ValueTask ForEachAsync(this DbDataReader reader,
@@ -102,7 +96,7 @@ namespace Open.Database.Extensions
 			}
 			else
 			{
-				ForEach(reader, handler, cancellationToken, true);
+				ForEach(reader, handler, true, cancellationToken);
 			}
 		}
 
@@ -236,6 +230,84 @@ namespace Open.Database.Extensions
 		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
 			=> AsEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others));
 
+		/// <summary>
+		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			while (reader.Read())
+				yield return transform(reader);
+		}
+
+		/// <summary>
+		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
+		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation = false)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			if (cancellationToken.CanBeCanceled)
+			{
+				if (throwOnCancellation)
+					cancellationToken.ThrowIfCancellationRequested();
+				else if (cancellationToken.IsCancellationRequested)
+					yield break;
+
+				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
+				var cancelled = false;
+				while (reader.Read())
+				{
+					if (cancelled)
+					{
+						yield return transform(reader); // we recieved the results, might as well use them.
+						if (throwOnCancellation)
+							cancellationToken.ThrowIfCancellationRequested();
+
+						break;
+					}
+					else
+					{
+						cancelled = cancellationToken.IsCancellationRequested;
+						yield return transform(reader);
+					}
+				}
+			}
+			else
+			{
+				while (reader.Read())
+					yield return transform(reader);
+			}
+		}
+
+		/// <summary>
+		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
+		public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
+			=> Select(reader, transform, cancellationToken, throwOnCancellation);
+
 #if NETSTANDARD2_1
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
@@ -305,7 +377,6 @@ namespace Open.Database.Extensions
 		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken cancellationToken = default)
 			=> AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken);
 
-
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
 		/// </summary>
@@ -327,102 +398,6 @@ namespace Open.Database.Extensions
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
 		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params int[] others)
 			=> AsAsyncEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others));
-#endif
-		/// <summary>
-		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			Contract.EndContractBlock();
-
-			while (reader.Read())
-				yield return transform(reader);
-		}
-
-		/// <summary>
-		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation = false)
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			Contract.EndContractBlock();
-
-			if (cancellationToken.CanBeCanceled)
-			{
-				if (throwOnCancellation)
-					cancellationToken.ThrowIfCancellationRequested();
-				else if (cancellationToken.IsCancellationRequested)
-					yield break;
-
-				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-				var cancelled = false;
-				while (reader.Read())
-				{
-					if (cancelled)
-					{
-						yield return transform(reader); // we recieved the results, might as well use them.
-						if (throwOnCancellation)
-							cancellationToken.ThrowIfCancellationRequested();
-
-						break;
-					}
-					else
-					{
-						cancelled = cancellationToken.IsCancellationRequested;
-						yield return transform(reader);
-					}
-				}
-			}
-			else
-			{
-				while (reader.Read())
-					yield return transform(reader);
-			}
-		}
-
-		/// <summary>
-		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-		/// <returns>An enumerable used to iterate the results.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
-		public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
-			=> Select(reader, transform, cancellationToken, throwOnCancellation);
-
-#if NETSTANDARD2_1
-		/// <summary>
-		/// Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The DbDataReader to iterate.</param>
-		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <returns>An enumerable used to iterate the results.</returns>
-		public static async IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
-			Func<IDataRecord, T> transform)
-		{
-			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			Contract.EndContractBlock();
-
-			while (await reader.ReadAsync().ConfigureAwait(true))
-				yield return transform(reader);
-		}
 
 		/// <summary>
 		/// Asyncronously iterates all records from an IDataReader.
@@ -430,47 +405,107 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The DbDataReader to iterate.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
-		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static async IAsyncEnumerable<T> IterateAsync<T>(this DbDataReader reader,
+		public static async IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, T> transform,
-			[EnumeratorCancellation] CancellationToken cancellationToken, bool throwOnCancellation = false)
+			bool throwOnCancellation,
+			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			if (cancellationToken.CanBeCanceled)
+			if (throwOnCancellation)
 			{
-				if (throwOnCancellation)
-					cancellationToken.ThrowIfCancellationRequested();
-				else if (cancellationToken.IsCancellationRequested)
-					yield break;
-
-				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-				var cancelled = false;
-				while (await reader.ReadAsync().ConfigureAwait(true))
-				{
-					if (cancelled)
-					{
-						yield return transform(reader); // we recieved the results, might as well use them.
-						if (throwOnCancellation)
-							cancellationToken.ThrowIfCancellationRequested();
-
-						break;
-					}
-					else
-					{
-						cancelled = cancellationToken.IsCancellationRequested;
-						yield return transform(reader);
-					}
-				}
+				cancellationToken.ThrowIfCancellationRequested();
+				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true))
+					yield return transform(reader);
 			}
+			else
 			{
-				while (await reader.ReadAsync().ConfigureAwait(true))
+				if (cancellationToken.IsCancellationRequested) yield break;
+				while (!cancellationToken.IsCancellationRequested
+					&& await reader.ReadAsync().ConfigureAwait(true))
 					yield return transform(reader);
 			}
 		}
+
+		/// <summary>
+		/// Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The DbDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken = default)
+			=> SelectAsync(reader, transform, false, cancellationToken);
+
+		/// <summary>
+		/// Asyncronously iterates all records from an IDataReader.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The DbDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static async IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
+			Func<IDataRecord, ValueTask<T>> transform,
+			bool throwOnCancellation,
+			[EnumeratorCancellation] CancellationToken cancellationToken = default)
+		{
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			if (throwOnCancellation)
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				if (reader is DbDataReader r)
+				{
+					while (await r.ReadAsync(cancellationToken).ConfigureAwait(true))
+						yield return await transform(r);
+				}
+				else
+				{
+					while (reader.Read())
+					{
+						cancellationToken.ThrowIfCancellationRequested();
+						yield return await transform(reader);
+					}
+				}
+			}
+			else
+			{
+				if (cancellationToken.IsCancellationRequested) yield break;
+				if (reader is DbDataReader r)
+				{
+					while (!cancellationToken.IsCancellationRequested && await r.ReadAsync().ConfigureAwait(true))
+						yield return await transform(r);
+				}
+				else
+				{
+					while (!cancellationToken.IsCancellationRequested && reader.Read())
+						yield return await transform(reader);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The DbDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
+		/// <returns>An enumerable used to iterate the results.</returns>
+		public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
+			Func<IDataRecord, ValueTask<T>> transform,
+			CancellationToken cancellationToken = default)
+			=> SelectAsync(reader, transform, false, cancellationToken);
 #endif
 
 		/// <summary>
@@ -573,23 +608,9 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate)
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-			Contract.EndContractBlock();
-
-			while (reader.Read() && predicate(reader)) { }
-		}
-
-		/// <summary>
-		/// Iterates an IDataReader while the predicate returns true.
-		/// </summary>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-		/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-		/// <param name="throwOnCancellation">If true, when cancelled, will exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken cancellationToken, bool throwOnCancellation = false)
+		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+		/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, bool throwOnCancellation, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -630,6 +651,15 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+		/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+		public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken cancellationToken = default)
+			=> IterateWhile(reader, predicate, false, cancellationToken);
+
+		/// <summary>
+		/// Iterates an IDataReader while the predicate returns true.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
 		public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken cancellationToken = default)
 		{
@@ -641,13 +671,13 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader while the predicate returns true.
+		/// Asynchronously iterates an IDataReader on a command while the predicate returns true.
 		/// </summary>
-		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="reader">The DbDataReader to load data from.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
+		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync = false, CancellationToken cancellationToken = default)
+		public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -655,9 +685,27 @@ namespace Open.Database.Extensions
 
 			if (useReadAsync)
 			{
-				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader)) { }
+				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true) && predicate(reader)) { }
 			}
 			else if (cancellationToken.CanBeCanceled)
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				while (reader.Read() && predicate(reader))
+					cancellationToken.ThrowIfCancellationRequested();
+			}
+			else
+			{
+				while (reader.Read() && predicate(reader)) { }
+			}
+		}
+
+		static async ValueTask IterateWhileAsyncInternal(IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, CancellationToken cancellationToken)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+			Contract.EndContractBlock();
+
+			if (cancellationToken.CanBeCanceled)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
@@ -688,23 +736,32 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The DbDataReader to load data from.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, CancellationToken cancellationToken = default)
+		public static async ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 			Contract.EndContractBlock();
 
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader)) { }
+			if (reader is DbDataReader r)
+			{
+				while (await r.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader)) { }
+			}
+			else
+			{
+				// Does not use .ReadAsync();
+				await IterateWhileAsyncInternal(reader, predicate, cancellationToken);
+			}
+
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an IDataReader on a command while the predicate returns true.
+		/// Iterates an IDataReader while the predicate returns true.
 		/// </summary>
-		/// <param name="reader">The DbDataReader to load data from.</param>
+		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync = true, CancellationToken cancellationToken = default)
+		public static async ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -712,16 +769,12 @@ namespace Open.Database.Extensions
 
 			if (useReadAsync)
 			{
-				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true) && predicate(reader)) { }
-			}
-			else if (cancellationToken.CanBeCanceled)
-			{
-				while (!cancellationToken.IsCancellationRequested && reader.Read() && predicate(reader))
-					cancellationToken.ThrowIfCancellationRequested();
+				await IterateWhileAsync(reader, predicate, cancellationToken);
 			}
 			else
 			{
-				while (reader.Read() && predicate(reader)) { }
+				// Does not use .ReadAsync();
+				await IterateWhileAsyncInternal(reader, predicate, cancellationToken);
 			}
 		}
 
