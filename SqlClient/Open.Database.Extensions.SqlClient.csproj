@@ -15,6 +15,7 @@
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
+		<RootNamespace>Open.Database.Extensions.SqlClient</RootNamespace>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -26,7 +27,7 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview3" />
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview6" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
 	</ItemGroup>
 

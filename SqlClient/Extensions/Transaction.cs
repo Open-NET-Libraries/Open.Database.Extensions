@@ -12,7 +12,7 @@ namespace Open.Database.Extensions.SqlClient
 	// NOTE: This is simply a copy/paste of th IDb and Db extensions but replacing types with their Sql versions.
 	// Why?  To ensure the Sql types are propagated through the type flow.
 
-	public static class TransactionExtensions
+	public static partial class SqlTransactionExtensions
 	{
 
 		/// <summary>

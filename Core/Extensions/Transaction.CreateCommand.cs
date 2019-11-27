@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 
@@ -9,6 +10,8 @@ namespace Open.Database.Extensions
 	/// </summary>
 	public static partial class TransactionExtensions
 	{
+		const string EmptyOrWhiteSpace = "Command is empty or whitespace.";
+
 		/// <summary>
 		/// Shortcut for creating an IDbCommand from any IDbTransaction.
 		/// </summary>
@@ -20,7 +23,9 @@ namespace Open.Database.Extensions
 		public static IDbCommand CreateCommand(this IDbTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			if (transaction is null) throw new System.ArgumentNullException(nameof(transaction));
+			if (transaction is null) throw new ArgumentNullException(nameof(transaction));
+			if (commandText is null) throw new ArgumentNullException(nameof(commandText));
+			if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 			Contract.EndContractBlock();
 
 			var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
@@ -61,7 +66,9 @@ namespace Open.Database.Extensions
 		public static DbCommand CreateCommand(this DbTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
-			if (transaction is null) throw new System.ArgumentNullException(nameof(transaction));
+			if (transaction is null) throw new ArgumentNullException(nameof(transaction));
+			if (commandText is null) throw new ArgumentNullException(nameof(commandText));
+			if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 			Contract.EndContractBlock();
 
 			var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);

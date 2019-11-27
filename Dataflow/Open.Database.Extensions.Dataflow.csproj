@@ -18,20 +18,17 @@
 		<RootNamespace>Open.Database.Extensions.Dataflow</RootNamespace>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview5" />
-		<PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
-	</ItemGroup>
-
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<DocumentationFile>Documentation.xml</DocumentationFile>
 	</PropertyGroup>
-
+	
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-preview6" />
+		<PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
 	</ItemGroup>
 
 </Project>

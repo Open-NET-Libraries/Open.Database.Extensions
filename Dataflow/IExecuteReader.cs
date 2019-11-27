@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using System.Data.Common;
 using System.Threading;
+using System.Collections.Immutable;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
@@ -42,7 +43,7 @@ namespace Open.Database.Extensions.Dataflow
 			Func<IDataRecord, T> transform,
 			bool synchronousExecution = false)
 		{
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			var source = new BufferBlock<T>();
@@ -75,44 +76,28 @@ namespace Open.Database.Extensions.Dataflow
 			ExecutionDataflowBlockOptions? options = null)
 		   where T : new()
 		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
 			var x = new Transformer<T>(fieldMappingOverrides);
 			var cn = x.ColumnNames;
 
-			if (synchronousExecution)
+			var q = x.Results(out var deferred, options);
+			void I()
 			{
-				var q = x.Results(out var deferred, options);
 				command.ExecuteReader(reader =>
 				{
 					// Ignores fields that don't match.
-					// ReSharper disable once PossibleMultipleEnumeration
 					var columns = reader.GetMatchingOrdinals(cn, true);
 
-					var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
+					var ordinalValues = columns.Select(c => c.Ordinal).ToImmutableArray();
 					deferred(new QueryResult<IEnumerable<object[]>>(
 						ordinalValues,
-						columns.Select(c => c.Name),
+						columns.Select(c => c.Name).ToImmutableArray(),
 						reader.AsEnumerable(ordinalValues)));
 				});
-				return q;
 			}
-			else
-			{
-				var q = x.ResultsAsync(out var deferred, options);
-				command.ExecuteReader(reader =>
-				{
-					// Ignores fields that don't match.
-					// ReSharper disable once PossibleMultipleEnumeration
-					var columns = reader.GetMatchingOrdinals(cn, true);
-
-					var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-					deferred(new QueryResult<IEnumerable<object[]>>(
-						ordinalValues,
-						columns.Select(c => c.Name),
-						reader.AsEnumerable(ordinalValues)));
-				});
-				return q;
-			}
-
+			if (synchronousExecution) I();
+			else Task.Run(I);
+			return q;
 		}
 
 
@@ -156,10 +141,11 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="target">The target block to receive the records.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
 		public static ValueTask ToTargetBlockAsync<T>(
-			this IExecuteReader command,
+			this IExecuteReaderAsync command,
 			ITargetBlock<T> target, Func<IDataRecord, T> transform)
 		{
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			var lastSend = new ValueTask<bool>(true);
@@ -185,11 +171,12 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="options">The optional DataflowBlockOptions to use with the source.</param>
 		/// <returns>A buffer block that is receiving the results.</returns>
 		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
-			this IExecuteReader command,
+			this IExecuteReaderAsync command,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null)
 		{
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			var source = options == null
@@ -203,7 +190,7 @@ namespace Open.Database.Extensions.Dataflow
 					if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
 					else source.Complete();
 				},
-				CancellationToken.None,
+				command.CancellationToken,
 				TaskContinuationOptions.ExecuteSynchronously,
 				TaskScheduler.Current);
 
@@ -218,7 +205,7 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
 		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
-			this IExecuteReader command,
+			this IExecuteReaderAsync command,
 			IEnumerable<KeyValuePair<string, string>>? fieldMappingOverrides,
 			ExecutionDataflowBlockOptions? options = null)
 			where T : new()
@@ -231,7 +218,7 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
 		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
-			this IExecuteReader command,
+			this IExecuteReaderAsync command,
 			params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
 			=> AsSourceBlockAsync<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
@@ -243,12 +230,11 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
-		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T, TReader>(
-			this IExecuteReader<TReader> command,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
+			this IExecuteReaderAsync command,
 			ExecutionDataflowBlockOptions options,
 			params (string Field, string Column)[] fieldMappingOverrides)
 			where T : new()
-			where TReader : DbDataReader
 			=> AsSourceBlockAsync<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string Column)>, options);
 
 
@@ -260,7 +246,7 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
 		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T, TReader>(
-			this IExecuteReader<TReader> command,
+			this IExecuteReaderAsync command,
 			IEnumerable<(string Field, string Column)>? fieldMappingOverrides,
 			ExecutionDataflowBlockOptions? options = null)
 			where T : new()

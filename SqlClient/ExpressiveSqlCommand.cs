@@ -9,7 +9,7 @@ namespace Open.Database.Extensions.SqlClient
 	/// <summary>
 	/// A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
 	/// </summary>
-	public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand>
+	public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDataReader, SqlDbType, ExpressiveSqlCommand>
 	{
 		/// <param name="connFactory">The factory to generate connections from.</param>
 		/// <param name="type">The command type>.</param>

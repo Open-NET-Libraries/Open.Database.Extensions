@@ -27,8 +27,8 @@ namespace Open.Database.Extensions
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform)
 		{
-			if (target == null) throw new ArgumentNullException(nameof(target));
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
@@ -49,8 +49,8 @@ namespace Open.Database.Extensions
 			bool useReadAsync = true,
 			CancellationToken cancellationToken = default)
 		{
-			if (target == null) throw new ArgumentNullException(nameof(target));
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			if (useReadAsync)
@@ -104,8 +104,8 @@ namespace Open.Database.Extensions
 			bool useReadAsync = true,
 			CancellationToken cancellationToken = default)
 		{
-			if (target == null) throw new ArgumentNullException(nameof(target));
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			if (target.IsStillAlive())

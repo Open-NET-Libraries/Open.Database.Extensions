@@ -28,8 +28,9 @@ namespace Open.Database.Extensions.Dataflow
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform)
 		{
-			if (target == null) throw new ArgumentNullException(nameof(target));
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
@@ -50,8 +51,9 @@ namespace Open.Database.Extensions.Dataflow
 			bool useReadAsync = true,
             CancellationToken cancellationToken = default)
 		{
-			if (target == null) throw new ArgumentNullException(nameof(target));
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			if (useReadAsync)
@@ -105,15 +107,16 @@ namespace Open.Database.Extensions.Dataflow
 			bool useReadAsync = true,
             CancellationToken cancellationToken = default)
 		{
-			if (target == null) throw new ArgumentNullException(nameof(target));
-			if (transform == null) throw new ArgumentNullException(nameof(transform));
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			if (target.IsStillAlive())
 			{
 				var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-				using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken);
+				using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 				if (target.IsStillAlive())
 					await reader.ToTargetBlockAsync(target, transform, useReadAsync, cancellationToken);
 			}
@@ -132,7 +135,5 @@ namespace Open.Database.Extensions.Dataflow
 			Func<IDataRecord, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default)
 			=> command.ExecuteReader(reader => reader.ToTargetBlock(target, transform), behavior);
-
-
 	}
 }

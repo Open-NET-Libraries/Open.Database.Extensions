@@ -7,6 +7,8 @@ namespace Open.Database.Extensions
 {
 	public static partial class ConnectionExtensions
 	{
+		const string EmptyOrWhiteSpace = "Command is empty or whitespace.";
+
 		/// <summary>
 		/// Shortcut for creating an IDbCommand from any IDbConnection.
 		/// </summary>
@@ -19,6 +21,8 @@ namespace Open.Database.Extensions
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
 			if (connection is null) throw new ArgumentNullException(nameof(connection));
+			if (commandText is null) throw new ArgumentNullException(nameof(commandText));
+			if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 			Contract.EndContractBlock();
 
 			var command = connection.CreateCommand();
@@ -65,6 +69,8 @@ namespace Open.Database.Extensions
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
 			if (connection is null) throw new ArgumentNullException(nameof(connection));
+			if (commandText is null) throw new ArgumentNullException(nameof(commandText));
+			if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 			Contract.EndContractBlock();
 
 			var command = connection.CreateCommand();
@@ -99,3 +105,4 @@ namespace Open.Database.Extensions
 
 	}
 }
+
