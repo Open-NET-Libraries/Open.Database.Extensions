@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29424.173
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions", "Open.Database.Extensions.csproj", "{92B83F94-3EA4-4834-B3B7-1DBE747E336A}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Core", "Core\Open.Database.Extensions.Core.csproj", "{67682996-0680-4D07-A7E9-38D70C999119}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Dataflow", "Dataflow\Open.Database.Extensions.Dataflow.csproj", "{862710B0-C5B4-458D-803E-AD79F70DDEF1}"
@@ -13,16 +11,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Sq
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Channel", "Channel\Open.Database.Extensions.Channel.csproj", "{EE37225F-0B2B-4225-B07D-2BCE007B780C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions", "Open.Database.Extensions\Open.Database.Extensions.csproj", "{4FB33C8D-D70E-4952-9947-A1347BCED665}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{92B83F94-3EA4-4834-B3B7-1DBE747E336A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92B83F94-3EA4-4834-B3B7-1DBE747E336A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92B83F94-3EA4-4834-B3B7-1DBE747E336A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92B83F94-3EA4-4834-B3B7-1DBE747E336A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{67682996-0680-4D07-A7E9-38D70C999119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{67682996-0680-4D07-A7E9-38D70C999119}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67682996-0680-4D07-A7E9-38D70C999119}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +35,10 @@ Global
 		{EE37225F-0B2B-4225-B07D-2BCE007B780C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE37225F-0B2B-4225-B07D-2BCE007B780C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE37225F-0B2B-4225-B07D-2BCE007B780C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

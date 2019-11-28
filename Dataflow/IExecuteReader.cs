@@ -54,7 +54,15 @@ namespace Open.Database.Extensions
 			}
 
 			if (synchronousExecution) I();
-			else Task.Run(I);
+			else
+			{
+				Task.Run(I)
+					.ContinueWith(
+						t => ((IDataflowBlock)source).Fault(t.Exception),
+						CancellationToken.None,
+						TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+						TaskScheduler.Current);
+			}
 
 			return source;
 		}
@@ -101,19 +109,28 @@ namespace Open.Database.Extensions
 			{
 				var q = x.ResultsAsync(out var deferred, options);
 				Task.Run(async () =>
-				{
-					await command.ExecuteReaderAsync(async reader =>
 					{
-						// Ignores fields that don't match.
-						var columns = reader.GetMatchingOrdinals(cn, true);
+						await command.ExecuteReaderAsync(async reader =>
+						{
+							// Ignores fields that don't match.
+							var columns = reader.GetMatchingOrdinals(cn, true);
 
-						var ordinalValues = columns.Select(c => c.Ordinal).ToImmutableArray();
-						await deferred(new QueryResult<IEnumerable<object[]>>(
-							ordinalValues,
-							columns.Select(c => c.Name).ToImmutableArray(),
-							reader.AsEnumerable(ordinalValues)));
-					});
-				});
+							var ordinalValues = columns.Select(c => c.Ordinal).ToImmutableArray();
+							await deferred(new QueryResult<IEnumerable<object[]>>(
+								ordinalValues,
+								columns.Select(c => c.Name).ToImmutableArray(),
+								reader.AsEnumerable(ordinalValues)));
+						});
+					})
+					.ContinueWith(
+						t => {
+							if (t.IsFaulted) q.Fault(t.Exception);
+							else q.Complete();
+						},
+						CancellationToken.None,
+						TaskContinuationOptions.ExecuteSynchronously,
+						TaskScheduler.Current);
+
 				return q;
 			}
 		}
@@ -157,7 +174,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <param name="target">The target block to receive the records.</param>
 		/// <returns>A task that is complete once there are no more results.</returns>
-		public static ValueTask ToTargetBlockAsync<T>(
+		public static async ValueTask ToTargetBlockAsync<T>(
 			this IExecuteReaderAsync command,
 			ITargetBlock<T> target, Func<IDataRecord, T> transform)
 		{
@@ -166,7 +183,7 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var lastSend = Task.FromResult(true);
-			return command.IterateReaderWhileAsync(async r =>
+			await command.IterateReaderWhileAsync(async r =>
 			{
 				if (!await lastSend.ConfigureAwait(false))
 					return false;
@@ -175,6 +192,7 @@ namespace Open.Database.Extensions
 				lastSend = target.SendAsync(value, command.CancellationToken);
 				return true;
 			});
+			await lastSend.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -198,14 +216,14 @@ namespace Open.Database.Extensions
 				: new BufferBlock<T>(options);
 
 			Task.Run(async () => await ToTargetBlockAsync(command, source, transform))
-				.ContinueWith(t =>
-				{
-					if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
-					else source.Complete();
-				},
-				command.CancellationToken,
-				TaskContinuationOptions.ExecuteSynchronously,
-				TaskScheduler.Current);
+				.ContinueWith(
+					t => {
+						if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
+						else source.Complete();
+					},
+					CancellationToken.None,
+					TaskContinuationOptions.ExecuteSynchronously,
+					TaskScheduler.Current);
 
 			return source;
 		}
@@ -271,30 +289,30 @@ namespace Open.Database.Extensions
 			var block = x.ResultsBlock(out var initColumnNames, options);
 
 			Task.Run(async () => await command.ExecuteReaderAsync(reader =>
-				{
-					// Ignores fields that don't match.
-					var columns = reader.GetMatchingOrdinals(cn, true);
+					{
+						// Ignores fields that don't match.
+						var columns = reader.GetMatchingOrdinals(cn, true);
 
-					var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-					initColumnNames(columns.Select(c => c.Name).ToArray());
+						var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
+						initColumnNames(columns.Select(c => c.Name).ToArray());
 
-					return reader is DbDataReader dbr
-						? dbr.ToTargetBlockAsync(block,
-							r => r.GetValuesFromOrdinals(ordinalValues),
-							command.UseAsyncRead,
-							command.CancellationToken)
-						: reader.ToTargetBlockAsync(block,
-							r => r.GetValuesFromOrdinals(ordinalValues),
-							command.CancellationToken);
-				}))
-				.ContinueWith(t =>
-				{
-					if (t.IsFaulted) ((ITargetBlock<object[]>)block).Fault(t.Exception);
-					else block.Complete();
-				},
-				command.CancellationToken,
-				TaskContinuationOptions.ExecuteSynchronously,
-				TaskScheduler.Current);
+						return reader is DbDataReader dbr
+							? dbr.ToTargetBlockAsync(block,
+								r => r.GetValuesFromOrdinals(ordinalValues),
+								command.UseAsyncRead,
+								command.CancellationToken)
+							: reader.ToTargetBlockAsync(block,
+								r => r.GetValuesFromOrdinals(ordinalValues),
+								command.CancellationToken);
+					}))
+				.ContinueWith(
+					t => {
+						if (t.IsFaulted) ((ITargetBlock<object[]>)block).Fault(t.Exception);
+						else block.Complete();
+					},
+					CancellationToken.None,
+					TaskContinuationOptions.ExecuteSynchronously,
+					TaskScheduler.Current);
 
 			return block;
 		}

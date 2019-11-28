@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Data;
 using System.Diagnostics.Contracts;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
 namespace Open.Database.Extensions
 {
-	public static partial class Extensions
+	public static partial class ChannelExtensions
 	{
 
 		/// <summary>
@@ -17,7 +18,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The expected type.</typeparam>
 		/// <param name="transform">The transform function.</param>
 		/// <param name="target">The target block to receive the results (to be posted to).</param>
-		public void ToChannel<T>(ChannelWriter<T> target, Func<IDataRecord, T> transform)
+		public static void ToChannel<T>(this IExecuteReader command, ChannelWriter<T> target, Func<IDataRecord, T> transform)
 			=> IterateReaderWhile(r => target.TryWrite(transform(r)));
 
 		/// <summary>

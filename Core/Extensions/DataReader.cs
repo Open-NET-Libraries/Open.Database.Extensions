@@ -309,6 +309,7 @@ namespace Open.Database.Extensions
 			=> Select(reader, transform, cancellationToken, throwOnCancellation);
 
 #if NETSTANDARD2_1
+
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
 		/// DBNull values are retained.
