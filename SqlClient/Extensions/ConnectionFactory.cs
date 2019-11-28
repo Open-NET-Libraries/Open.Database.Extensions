@@ -6,7 +6,7 @@ using System.Data.SqlClient;
 
 namespace Open.Database.Extensions
 {
-	public static class ConnectionFactoryExtensions
+	public static class SqlConnectionFactoryExtensions
 	{
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
