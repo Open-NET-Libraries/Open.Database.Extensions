@@ -84,7 +84,7 @@ var people = cmd.Results<Person>(new Dictionary<string,string>{
  {"LastName", "last_name"});
 ```
 
-#### `Retrieve()` and `RetrieveAsync()`
+### `Retrieve()` and `RetrieveAsync()`
 
 Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
 
