@@ -72,6 +72,11 @@
             <param name="type">The SqlDbType of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
+        <member name="T:Open.Database.Extensions.SqlConnectionExtensions">
+            <summary>
+            Extensions for SqlConnections.
+            </summary>
+        </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.CreateCommand(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,System.Int32)">
             <summary>
             Shortcut for creating an SqlCommand from any SqlConnection.
@@ -99,6 +104,11 @@
             <param name="procedureName">The command text or stored procedure name to use.</param>
             <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
             <returns>The created SqlCommand.</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.SqlConnectionFactoryExtensions">
+            <summary>
+            Extensions for creating expressive SQL commands from connections and connection factories.
+            </summary>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionFactoryExtensions.Command(System.Data.SqlClient.SqlConnection,System.String,System.Data.CommandType)">
             <summary>
