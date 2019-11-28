@@ -32,14 +32,14 @@ var myResult = new List<T>();
 using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
 {
     while(await reader.ReadAsync())
-        list.Add(transform(reader));
+        myResult.Add(transform(reader));
 }
 ```
 
 Is now simplified to this:
 
 ```cs
-var myResult = await cmd.ToListAsync(transform);
+var myResult = await mySqlCommand.ToListAsync(transform);
 ```
 
 ## Deferred Transformation
