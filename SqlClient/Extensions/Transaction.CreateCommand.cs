@@ -5,7 +5,7 @@ using System.Diagnostics.Contracts;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 	public static partial class SqlTransactionExtensions
 	{
@@ -17,7 +17,6 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="commandText">The command text or stored procedure name to use.</param>
 		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
 		/// <returns>The created SqlCommand.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Locally only used once.")]
 		public static SqlCommand CreateCommand(this SqlTransaction transaction,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{

@@ -27,18 +27,21 @@
 
   <ItemGroup>
     <Compile Remove="api\**" />
+    <Compile Remove="Channel\**" />
     <Compile Remove="Core\**" />
     <Compile Remove="Dataflow\**" />
     <Compile Remove="docs\**" />
     <Compile Remove="Examples\**" />
     <Compile Remove="SqlClient\**" />
     <EmbeddedResource Remove="api\**" />
+    <EmbeddedResource Remove="Channel\**" />
     <EmbeddedResource Remove="Core\**" />
     <EmbeddedResource Remove="Dataflow\**" />
     <EmbeddedResource Remove="docs\**" />
     <EmbeddedResource Remove="Examples\**" />
     <EmbeddedResource Remove="SqlClient\**" />
     <None Remove="api\**" />
+    <None Remove="Channel\**" />
     <None Remove="Core\**" />
     <None Remove="Dataflow\**" />
     <None Remove="docs\**" />

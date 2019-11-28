@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace Open.Database.Extensions.Dataflow
+namespace Open.Database.Extensions
 {
 	public static partial class DataflowExtensions
 	{
@@ -36,16 +36,45 @@ namespace Open.Database.Extensions.Dataflow
 			while (target.IsStillAlive() && reader.Read() && target.Post(transform(reader))) { }
 		}
 
-        /// <summary>
-        /// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="reader">The SqlDataReader to read from.</param>
-        /// <param name="target">The target block to receive the results.</param>
-        /// <param name="transform">The transform function to process each IDataRecord.</param>
-        /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public static async ValueTask ToTargetBlockAsync<T>(this DbDataReader reader,
+		/// <summary>
+		/// Iterates an IDataReader through the transform function and posts each record to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		public static async ValueTask ToTargetBlockAsync<T>(this IDataReader reader,
+			ITargetBlock<T> target,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			var ok = true;
+			cancellationToken.ThrowIfCancellationRequested();
+			while (ok
+				&& target.IsStillAlive()
+				&& reader.Read())
+			{
+				var values = transform(reader);
+				ok = await target.SendAsync(values, cancellationToken).ConfigureAwait(false);
+				cancellationToken.ThrowIfCancellationRequested();
+			}
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The SqlDataReader to read from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		/// <param name="cancellationToken">Optional cancellation token.</param>
+		public static ValueTask ToTargetBlockAsync<T>(this DbDataReader reader,
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform,
 			bool useReadAsync = true,
@@ -56,51 +85,53 @@ namespace Open.Database.Extensions.Dataflow
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			if (useReadAsync)
+			return useReadAsync
+				? ToTargetBlockAsyncCore()
+				: ToTargetBlockAsync((IDataReader)reader, target, transform, cancellationToken);
+
+			async ValueTask ToTargetBlockAsyncCore()
 			{
-				var lastSend = new ValueTask<bool>(true);
+				var lastSend = Task.FromResult(true);
 				while (
-                    target.IsStillAlive()
-                    && await reader.ReadAsync(cancellationToken).ConfigureAwait(false) // Premtively grab next while waiting for previous transform.
+					target.IsStillAlive()
+					&& await reader.ReadAsync(cancellationToken).ConfigureAwait(false) // Premtively grab next while waiting for previous transform.
 					&& await lastSend.ConfigureAwait(false))
 				{
 					var values = transform(reader);
-					lastSend = target.Post(values)
-						? new ValueTask<bool>(true)
-						: new ValueTask<bool>(target.SendAsync(values, cancellationToken));
+					lastSend = target.SendAsync(values, cancellationToken);
 				}
 
 				// Makes sure we hook up to the last one if the while loop is done to cover any edge cases.
-				if (!lastSend.IsCompleted)
-                    await lastSend.ConfigureAwait(false);
-			}
-			else
-			{
-				var ok = true;
-				cancellationToken.ThrowIfCancellationRequested();
-				while (ok
-                    && target.IsStillAlive()
-                    && reader.Read())
-				{
-					var values = transform(reader);
-					ok = target.Post(values) || await target.SendAsync(values, cancellationToken).ConfigureAwait(false);
-					cancellationToken.ThrowIfCancellationRequested();
-				}
+				await lastSend.ConfigureAwait(false);
 			}
 		}
 
-        /// <summary>
-        /// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
-        /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-        /// </summary>
-        /// <typeparam name="T">The return type of the transform function.</typeparam>
-        /// <param name="command">The DbCommand to generate a reader from.</param>
-        /// <param name="target">The target block to receive the results.</param>
-        /// <param name="transform">The transform function for each IDataRecord.</param>
-        /// <param name="behavior">The behavior to use with the data reader.</param>
-        /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-        /// <param name="cancellationToken"></param>
-        public static async ValueTask ToTargetBlockAsync<T>(this DbCommand command,
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The SqlDataReader to read from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		public static ValueTask ToTargetBlockAsync<T>(this DbDataReader reader,
+			ITargetBlock<T> target,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken)
+			=> ToTargetBlockAsync(reader, target, transform, true, cancellationToken);
+
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The DbCommand to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+		/// <param name="cancellationToken"></param>
+		public static async ValueTask ToTargetBlockAsync<T>(this DbCommand command,
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default,
@@ -135,5 +166,23 @@ namespace Open.Database.Extensions.Dataflow
 			Func<IDataRecord, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default)
 			=> command.ExecuteReader(reader => reader.ToTargetBlock(target, transform), behavior);
+
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The DbCommand to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <param name="cancellationToken"></param>
+		public static ValueTask ToTargetBlockAsync<T>(this IDbCommand command,
+			ITargetBlock<T> target,
+			Func<IDataRecord, T> transform,
+			CommandBehavior behavior = CommandBehavior.Default,
+			CancellationToken cancellationToken = default)
+			=> command.ExecuteReaderAsync(reader => reader.ToTargetBlockAsync(target, transform, cancellationToken), behavior, cancellationToken);
+
 	}
 }

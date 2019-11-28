@@ -5,7 +5,7 @@ using System.Diagnostics.Contracts;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 	/// <summary>
 	/// SqlClient extensions for building a command and retrieving data using best practices.
@@ -42,7 +42,6 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="type">The SqlDbType of the parameter.</param>
 		/// <param name="direction">The direction of the parameter.</param>
 		/// <returns>The created IDbDataParameter.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Constants are only used once.")]
 		public static SqlParameter AddParameterType(this SqlCommand target,
 			string? name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
 		{

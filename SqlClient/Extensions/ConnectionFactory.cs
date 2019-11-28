@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 	public static class ConnectionFactoryExtensions
 	{

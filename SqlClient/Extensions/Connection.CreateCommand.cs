@@ -5,7 +5,7 @@ using System.Diagnostics.Contracts;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 	public static class SqlConnectionExtensions
 	{

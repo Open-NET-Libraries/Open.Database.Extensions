@@ -8,14 +8,14 @@ using System.Threading.Tasks.Dataflow;
 using System.Data.Common;
 using System.Threading;
 using System.Collections.Immutable;
+using Open.Database.Extensions.Dataflow;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
-namespace Open.Database.Extensions.Dataflow
+namespace Open.Database.Extensions
 {
 	public static partial class DataflowExtensions
 	{
-
 		/// <summary>
 		/// Posts all records to a target block using the transform function.
 		/// Stops if the target block rejects.
@@ -55,6 +55,7 @@ namespace Open.Database.Extensions.Dataflow
 
 			if (synchronousExecution) I();
 			else Task.Run(I);
+
 			return source;
 		}
 
@@ -80,9 +81,9 @@ namespace Open.Database.Extensions.Dataflow
 			var x = new Transformer<T>(fieldMappingOverrides);
 			var cn = x.ColumnNames;
 
-			var q = x.Results(out var deferred, options);
-			void I()
+			if (synchronousExecution)
 			{
+				var q = x.Results(out var deferred, options);
 				command.ExecuteReader(reader =>
 				{
 					// Ignores fields that don't match.
@@ -94,10 +95,27 @@ namespace Open.Database.Extensions.Dataflow
 						columns.Select(c => c.Name).ToImmutableArray(),
 						reader.AsEnumerable(ordinalValues)));
 				});
+				return q;
 			}
-			if (synchronousExecution) I();
-			else Task.Run(I);
-			return q;
+			else
+			{
+				var q = x.ResultsAsync(out var deferred, options);
+				Task.Run(async () =>
+				{
+					await command.ExecuteReaderAsync(async reader =>
+					{
+						// Ignores fields that don't match.
+						var columns = reader.GetMatchingOrdinals(cn, true);
+
+						var ordinalValues = columns.Select(c => c.Ordinal).ToImmutableArray();
+						await deferred(new QueryResult<IEnumerable<object[]>>(
+							ordinalValues,
+							columns.Select(c => c.Name).ToImmutableArray(),
+							reader.AsEnumerable(ordinalValues)));
+					});
+				});
+				return q;
+			}
 		}
 
 
@@ -131,7 +149,6 @@ namespace Open.Database.Extensions.Dataflow
 			where T : new()
 			=> AsSourceBlock<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
 
-
 		/// <summary>
 		/// Posts all transformed records to the provided target block.
 		/// If .Complete is called on the target block, then the iteration stops.
@@ -148,18 +165,15 @@ namespace Open.Database.Extensions.Dataflow
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var lastSend = new ValueTask<bool>(true);
+			var lastSend = Task.FromResult(true);
 			return command.IterateReaderWhileAsync(async r =>
 			{
-				var ok = await lastSend;
-				if (ok)
-				{
-					var value = transform(r);
-					lastSend = target.Post(value)
-						? new ValueTask<bool>(true)
-						: new ValueTask<bool>(target.SendAsync(value, command.CancellationToken));
-				}
-				return ok;
+				if (!await lastSend.ConfigureAwait(false))
+					return false;
+
+				var value = transform(r);
+				lastSend = target.SendAsync(value, command.CancellationToken);
+				return true;
 			});
 		}
 
@@ -183,8 +197,7 @@ namespace Open.Database.Extensions.Dataflow
 				? new BufferBlock<T>()
 				: new BufferBlock<T>(options);
 
-			ToTargetBlockAsync(command, source, transform)
-				.AsTask()
+			Task.Run(async () => await ToTargetBlockAsync(command, source, transform))
 				.ContinueWith(t =>
 				{
 					if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
@@ -237,7 +250,6 @@ namespace Open.Database.Extensions.Dataflow
 			where T : new()
 			=> AsSourceBlockAsync<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string Column)>, options);
 
-
 		/// <summary>
 		/// Returns a source block as the source of records.
 		/// </summary>
@@ -245,19 +257,20 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
 		/// <returns>A transform block that is receiving the results.</returns>
-		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T, TReader>(
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(
 			this IExecuteReaderAsync command,
 			IEnumerable<(string Field, string Column)>? fieldMappingOverrides,
 			ExecutionDataflowBlockOptions? options = null)
 			where T : new()
-			where TReader : DbDataReader
 		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
 			var x = new Transformer<T>(fieldMappingOverrides);
 			var cn = x.ColumnNames;
 			var block = x.ResultsBlock(out var initColumnNames, options);
 
-			command
-				.ExecuteReaderAsync(reader =>
+			Task.Run(async () => await command.ExecuteReaderAsync(reader =>
 				{
 					// Ignores fields that don't match.
 					var columns = reader.GetMatchingOrdinals(cn, true);
@@ -265,12 +278,15 @@ namespace Open.Database.Extensions.Dataflow
 					var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
 					initColumnNames(columns.Select(c => c.Name).ToArray());
 
-					return reader.ToTargetBlockAsync(block,
-						r => r.GetValuesFromOrdinals(ordinalValues),
-						command.UseAsyncRead,
-						command.CancellationToken);
-				})
-				.AsTask()
+					return reader is DbDataReader dbr
+						? dbr.ToTargetBlockAsync(block,
+							r => r.GetValuesFromOrdinals(ordinalValues),
+							command.UseAsyncRead,
+							command.CancellationToken)
+						: reader.ToTargetBlockAsync(block,
+							r => r.GetValuesFromOrdinals(ordinalValues),
+							command.CancellationToken);
+				}))
 				.ContinueWith(t =>
 				{
 					if (t.IsFaulted) ((ITargetBlock<object[]>)block).Fault(t.Exception);

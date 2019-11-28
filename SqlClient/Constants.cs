@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions.SqlClient
+﻿namespace Open.Database.Extensions
 {
 	internal static class ConnectionTimeout
 	{

@@ -3,7 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 
 	/// <summary>
