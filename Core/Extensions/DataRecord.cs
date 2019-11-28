@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -32,16 +33,16 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="record">The reader to get column names from.</param>
 		/// <returns>The array of column names.</returns>
-		public static string[] GetNames(this IDataRecord record)
+		public static ImmutableArray<string> GetNames(this IDataRecord record)
 		{
 			if (record is null) throw new ArgumentNullException(nameof(record));
 			Contract.EndContractBlock();
 
 			var fieldCount = record.FieldCount;
-			var columnNames = new string[fieldCount];
+			var columnNames = ImmutableArray.CreateBuilder<string>(fieldCount);
 			for (var i = 0; i < fieldCount; i++)
 				columnNames[i] = record.GetName(i);
-			return columnNames;
+			return columnNames.ToImmutable();
 		}
 
 		/// <summary>
@@ -50,12 +51,12 @@ namespace Open.Database.Extensions
 		/// <param name="record">The reader to get column names from.</param>
 		/// <param name="ordinals">The list (and order) of ordinals to look up.</param>
 		/// <returns>The array of column names.</returns>
-		public static string[] GetNames(this IDataRecord record, IEnumerable<int> ordinals)
+		public static ImmutableArray<string> GetNames(this IDataRecord record, IEnumerable<int> ordinals)
 		{
 			if (record is null) throw new ArgumentNullException(nameof(record));
 			Contract.EndContractBlock();
 
-			return ordinals.Select(o => record.GetName(o)).ToArray();
+			return ordinals.Select(o => record.GetName(o)).ToImmutableArray();
 		}
 
 		/// <summary>
@@ -64,7 +65,7 @@ namespace Open.Database.Extensions
 		/// <param name="record">The reader to get column names from.</param>
 		/// <returns>An enumerable of the mappings.</returns>
 		public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record)
-			=> record.GetNames().Select((n, o) => (Name: n, Ordinal: o));
+			=> record.ColumnNames().Select((n, o) => (Name: n, Ordinal: o));
 
 		/// <summary>
 		/// Returns an array of name to ordinal mappings.

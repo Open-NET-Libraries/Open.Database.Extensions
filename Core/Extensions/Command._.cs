@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
@@ -155,17 +156,6 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDbCommand to generate a reader from.</param>
-		/// <param name="transform">The transform function to process each IDataRecord.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <returns>A list of all results.</returns>
-		public static T[] ToArray<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ToArray(command, behavior, transform);
-
-		/// <summary>
-		/// Iterates all records using an IDataReader and returns the desired results as a list.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The IDbCommand to generate a reader from.</param>
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <param name="transform">The transform function to process each IDataRecord.</param>
 		/// <returns>A list of all results.</returns>
@@ -180,6 +170,48 @@ namespace Open.Database.Extensions
 			using var reader = command.ExecuteReader(behavior);
 			return reader.Select(transform).ToArray();
 		}
+
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <returns>A list of all results.</returns>
+		public static T[] ToArray<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> ToArray(command, behavior, transform);
+
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>A list of all results.</returns>
+		public static ImmutableArray<T> ToImmutableArray<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			var state = command.Connection.EnsureOpen();
+			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+			using var reader = command.ExecuteReader(behavior);
+			return reader.Select(transform).ToImmutableArray();
+		}
+
+		/// <summary>
+		/// Iterates all records using an IDataReader and returns the desired results as a list.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDbCommand to generate a reader from.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		/// <returns>A list of all results.</returns>
+		public static ImmutableArray<T> ToImmutableArray<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> ToImmutableArray(command, behavior, transform);
 
 		/// <summary>
 		/// Loads all data from a command through an IDataReader into a DataTable.

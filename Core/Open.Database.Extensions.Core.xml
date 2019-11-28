@@ -739,6 +739,16 @@
             <param name="cancellationToken">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>A list of all results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list.
@@ -749,7 +759,7 @@
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>A list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -757,6 +767,16 @@
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>A list of all results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
+            <summary>
+            Iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
             <returns>A list of all results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToDataTable(System.Data.IDbCommand,System.Data.CommandBehavior)">
@@ -1604,7 +1624,16 @@
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Shortcut for .Iterate(transform).ToArray();
+            Shortcut for .Select(transform).ToArray();
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>An array of the transformed results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.ToImmutableArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Shortcut for .Select(transform).ToImmutableArray();
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -2062,6 +2091,16 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.ToArray``1(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
             Converts all IDataRecords into an array using a transform function.
+            </summary>
+            <typeparam name="T">The expected return type.</typeparam>
+            <param name="command">The IExecuteReader to iterate.</param>
+            <param name="transform">The transform function.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <returns>The array of transformed records.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.ToImmutableArray``1(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
+            <summary>
+            Converts all IDataRecords into an immutable array using a transform function.
             </summary>
             <typeparam name="T">The expected return type.</typeparam>
             <param name="command">The IExecuteReader to iterate.</param>
@@ -3539,7 +3578,13 @@
             A sub class for processing the transformer results.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Generic.IList{System.String})">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0})">
+            <summary>
+            Constructs a processor.
+            </summary>
+            <param name="transformer">The transformer to use.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String})">
             <summary>
             Constructs a processor.
             </summary>
@@ -3556,7 +3601,7 @@
             The resultant transofrm function.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Generic.IList{System.String})">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String})">
             <summary>
             Allows for deferred initialization.
             </summary>

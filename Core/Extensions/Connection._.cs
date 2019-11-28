@@ -58,9 +58,10 @@ namespace Open.Database.Extensions
 			await connection.OpenAsync(cancellationToken).ConfigureAwait(configureAwait);
 
 			if (cancellationToken.IsCancellationRequested && !state.HasFlag(ConnectionState.Closed))
+			{
 				connection.Close(); // Fake finally...
-
-			cancellationToken.ThrowIfCancellationRequested();
+				cancellationToken.ThrowIfCancellationRequested();
+			}
 
 			return state;
 		}

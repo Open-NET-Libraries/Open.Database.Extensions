@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
@@ -11,17 +12,15 @@ namespace Open.Database.Extensions
 {
 	public static partial class CoreExtensions
 	{
-		internal static QueryResult<Queue<object[]>> RetrieveInternal(this IDataReader reader,
+		internal static QueryResult<Queue<object[]>> RetrieveInternal(
+			IDataReader reader,
 			IEnumerable<int> ordinals,
 			IEnumerable<string>? columnNames = null,
 			bool readStarted = false)
 		{
-			var o = ordinals as int[] ?? ordinals.ToArray();
+			var o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
 			return new QueryResult<Queue<object[]>>(
-				o,
-				columnNames == null
-					? reader.GetNames(o)
-					: (columnNames as string[] ?? columnNames.ToArray()),
+				o, columnNames ?? reader.GetNames(o),
 				new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted)));
 		}
 
@@ -35,7 +34,7 @@ namespace Open.Database.Extensions
 		{
 			var names = reader.GetNames();
 			return new QueryResult<Queue<object[]>>(
-				Enumerable.Range(0, names.Length).ToArray(), names,
+				Enumerable.Range(0, names.Length), names,
 				new Queue<object[]>(reader.AsEnumerable()));
 		}
 

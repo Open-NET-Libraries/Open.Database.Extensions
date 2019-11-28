@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -80,14 +81,13 @@ namespace Open.Database.Extensions.Core
 			/// Constructs a processor.
 			/// </summary>
 			/// <param name="transformer">The transformer to use.</param>
-			/// <param name="names">The names of columns/properties to acquire.</param>
-			public Processor(Transformer<T> transformer, IList<string>? names = null)
+			public Processor(Transformer<T> transformer)
 			{
 				Transformer = transformer;
 				Transform = record =>
 				{
 					var model = new T();
-					var count = _names.Count;
+					var count = _names.Length;
 					for (var i = 0; i < count; i++)
 					{
 						var p = _propertySetters[i];
@@ -108,8 +108,17 @@ namespace Open.Database.Extensions.Core
 
 					return model;
 				};
+			}
 
-				if (names != null) SetNames(names);
+			/// <summary>
+			/// Constructs a processor.
+			/// </summary>
+			/// <param name="transformer">The transformer to use.</param>
+			/// <param name="names">The names of columns/properties to acquire.</param>
+			public Processor(Transformer<T> transformer, ImmutableArray<string> names)
+				:this(transformer)
+			{
+				SetNames(names);
 			}
 
 			/// <summary>
@@ -117,7 +126,7 @@ namespace Open.Database.Extensions.Core
 			/// </summary>
 			public Transformer<T> Transformer { get; }
 
-			IList<string> _names = Array.Empty<string>();
+			ImmutableArray<string> _names = ImmutableArray<string>.Empty;
 			Action<T, object?>?[] _propertySetters = Array.Empty<Action<T, object?>?>();
 
 			/// <summary>
@@ -129,7 +138,7 @@ namespace Open.Database.Extensions.Core
 			/// Allows for deferred initialization.
 			/// </summary>
 			/// <param name="names">The column/property names to process.</param>
-			public void SetNames(IList<string> names)
+			public void SetNames(ImmutableArray<string> names)
 			{
 				var map = Transformer.ColumnToPropertyMap;
 				_names = names;
