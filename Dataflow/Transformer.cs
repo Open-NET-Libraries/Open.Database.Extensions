@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,7 +86,7 @@ namespace Open.Database.Extensions.Dataflow
 		}
 
 		public TransformBlock<object[], T> ResultsBlock(
-			out Action<string[]> initColumnNames,
+			out Action<ImmutableArray<string>> initColumnNames,
 			ExecutionDataflowBlockOptions? options = null)
 		{
 			var processor = new DataflowProcessor(this);
