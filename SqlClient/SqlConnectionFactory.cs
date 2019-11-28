@@ -2,7 +2,7 @@
 using System.Data.SqlClient;
 // ReSharper disable UnusedMember.Global
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 
 	/// <summary>

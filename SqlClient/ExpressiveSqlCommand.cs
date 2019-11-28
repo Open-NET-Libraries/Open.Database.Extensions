@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics.Contracts;
 
-namespace Open.Database.Extensions.SqlClient
+namespace Open.Database.Extensions
 {
 
 	/// <summary>
 	/// A specialized for SqlClient abstraction for executing commands on a database using best practices and simplified expressive syntax.
 	/// </summary>
-	public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDbType, ExpressiveSqlCommand>
+	public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDataReader, SqlDbType, ExpressiveSqlCommand>
 	{
 		/// <param name="connFactory">The factory to generate connections from.</param>
 		/// <param name="type">The command type>.</param>
@@ -18,7 +19,7 @@ namespace Open.Database.Extensions.SqlClient
 			IDbConnectionFactory<SqlConnection> connFactory,
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params = null)
+			IEnumerable<Param>? @params = null)
 			: base(connFactory, type, command, @params)
 		{
 		}
@@ -30,10 +31,10 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="params">The list of params</param>
 		public ExpressiveSqlCommand(
 			SqlConnection connection,
-			SqlTransaction transaction,
+			SqlTransaction? transaction,
 			CommandType type,
 			string command,
-			IEnumerable<Param> @params = null)
+			IEnumerable<Param>? @params = null)
 			: base(connection, transaction, type, command, @params)
 		{
 		}
@@ -45,14 +46,17 @@ namespace Open.Database.Extensions.SqlClient
 		/// <param name="command"></param>
 		protected override void AddParams(SqlCommand command)
 		{
+			if (command is null) throw new System.ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
 			foreach (var p in Params)
 			{
 				var np = command
-                    .Parameters
-                    .AddWithValue(p.Name, p.Value);
+					.Parameters
+					.AddWithValue(p.Name, p.Value);
 
 				if (p.Type.HasValue)
-                    np.SqlDbType = p.Type.Value;
+					np.SqlDbType = p.Type.Value;
 			}
 		}
 
