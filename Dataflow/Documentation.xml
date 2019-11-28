@@ -1,0 +1,224 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Open.Database.Extensions.Dataflow</name>
+    </assembly>
+    <members>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates an IDataReader through the transform function and posts each record to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="target">The target block to receive the results.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+            <summary>
+            Iterates an IDataReader through the transform function and posts each record to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="target">The target block to receive the results.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The SqlDataReader to read from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.Common.DbDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The SqlDataReader to read from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.Common.DbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+            <param name="cancellationToken"></param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
+            <summary>
+            Iterates an IDataReader through the transform function and posts each record to the target block.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDataReader to iterate.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+            <param name="cancellationToken"></param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Posts all records to a target block using the transform function.
+            Stops if the target block rejects.
+            </summary>
+            <typeparam name="T">The expected type.</typeparam>
+            <param name="command">The command to execute.</param>
+            <param name="transform">The transform function.</param>
+            <param name="target">The target block to receive the results (to be posted to).</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Boolean)">
+            <summary>
+            Returns a buffer block that will contain the results.
+            </summary>
+            <typeparam name="T">The expected type.</typeparam>
+            <param name="command">The command to execute.</param>
+            <param name="transform">The transform function.</param>
+            <param name="synchronousExecution">By default the command is deferred.
+            If set to true, the command runs synchronously and all data is acquired before the method returns.
+            If set to false (default) the data is received asynchronously (deferred: data will be subsequently posted) and the source block (transform) can be completed early.</param>
+            <returns>The buffer block that will contain the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
+            <summary>
+            Provides a transform block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="command">The command to execute.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="synchronousExecution">By default the command is deferred.
+            If set to true, the command runs synchronously and all data is acquired before the method returns.
+            If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean,System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
+            <summary>
+            Provides a transform block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="synchronousExecution">By default the command is deferred.
+            If set to true, the command runs synchronously and all data is acquired before the method returns.
+            If set to false (default) the data is received asynchronously (data will be subsequently posted) and the source block (transform) can be completed early.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Provides a transform block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Posts all transformed records to the provided target block.
+            If .Complete is called on the target block, then the iteration stops.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="target">The target block to receive the records.</param>
+            <returns>A task that is complete once there are no more results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
+            <summary>
+            Provides a BufferBlock as the source of records.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="options">The optional DataflowBlockOptions to use with the source.</param>
+            <returns>A buffer block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
+            <summary>
+            Returns a source block as the source of records.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="options">The optional ExecutionDataflowBlockOptions to use with the source.</param>
+            <returns>A transform block that is receiving the results.</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.Dataflow.QueryResultExtensions">
+            <summary>
+            A set of extensions for getting column data from a QueryResult.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.Dataflow.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
+            <summary>
+            Returns a block that attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="options">The ExecutionDataflowBlockOptions for transforming the data into the source block.</param>
+            <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Dataflow.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns a block that attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Dataflow.QueryResultExtensions.To``1(Open.Database.Extensions.QueryResult{System.Threading.Tasks.Dataflow.IReceivableSourceBlock{System.Object[]}},System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Returns a block that attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An block that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+    </members>
+</doc>

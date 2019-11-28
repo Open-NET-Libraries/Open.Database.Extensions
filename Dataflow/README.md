@@ -2,9 +2,11 @@
 
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 
+[Full API Documentation Click Here](https://electricessence.github.io/Open.Database.Extensions/api)
+
 ## Connection Factories
 
-Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.
+Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.  A `SqlConnectionFactory` is provided and can be overridden to provide more specific dependency injection configurations.
 
 ## Expressive Commands
 
@@ -22,6 +24,12 @@ var result = connectionFactory
    .AddParam("c","hello")
    .ExecuteScalar();
 ```
+
+## Asynchronous
+
+End-to-end asynchronous methods suffixed with `Async`.
+
+When using the SQL Client, asynchronous methods are available as well as `.ToTargetBlockAsync<T>(target)` and `.AsSourceBlockAsync<T>()` Dataflow methods.
 
 ## Extensions
 
@@ -88,9 +96,21 @@ var people = cmd.Results<Person>(new Dictionary<string,string>{
 
 Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
 
-### `ResultsAsync<T>`
+#### `AsSourceBlockAsync<T>()`
+
+*Include the `Open.Database.Extensions.Dataflow` package for Dataflow extensions.*
+
+(Fully asynchronous.) Returns a Dataflow source block.  Then asynchronously buffers and transforms the results allowing for any possible Dataflow configuration.  The source block is marked as complete when there are no more results.  If the block is somehow marked as complete externally, the flow of data will stop and the connection will close.
+
+### `AsSourceBlockAsync<T>()` versus `ResultsAsync<T>`
+
+Depending on the level of asynchrony in your application, you may want to avoid too much buffering of data.
+
+`AsSourceBlockAsync<T>()` is fully asynchronous from end-to-end and can keep total buffering to a minimum by consuming (receiving) results as fast as possible, but may incur additional latency between reads.
 
 `ResultsAsync<T>()` is fully asynchronous from end-to-end but returns an `IEnumerable<T>` that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.
+
+Both methods ultimately are using a `Queue<object[]>` or `ConcurrentQueue<object[]>` (Dataflow) to buffer the data, but `ResultsAsync<T>()` buffers the entire data set before dequeuing and transforming the results.
 
 ## Transactions
 
