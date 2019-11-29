@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Open.ChannelExtensions;
+using System;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Open.ChannelExtensions;
 
 namespace Open.Database.Extensions
 {
@@ -60,7 +60,7 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			if(!command.Connection.State.HasFlag(ConnectionState.Open))
+			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
 			var state = command.Connection.EnsureOpen();

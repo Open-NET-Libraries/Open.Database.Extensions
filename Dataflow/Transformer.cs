@@ -24,14 +24,14 @@ namespace Open.Database.Extensions.Dataflow
 			}
 
 			public DataflowProcessor(Transformer<T> transformer, ImmutableArray<string> names)
-				:base (transformer, names)
+				: base(transformer, names)
 			{
 
 			}
 
 			public TransformBlock<object[], T> GetBlock(
 				ExecutionDataflowBlockOptions? options = null)
-				=> options==null
+				=> options == null
 					? new TransformBlock<object[], T>(Transform)
 					: new TransformBlock<object[], T>(Transform, options);
 		}

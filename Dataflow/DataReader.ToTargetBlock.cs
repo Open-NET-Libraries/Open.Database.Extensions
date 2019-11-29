@@ -82,7 +82,7 @@ namespace Open.Database.Extensions
 			ITargetBlock<T> target,
 			Func<IDataRecord, T> transform,
 			bool useReadAsync = true,
-            CancellationToken cancellationToken = default)
+			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));

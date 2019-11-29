@@ -116,7 +116,7 @@ namespace Open.Database.Extensions.Core
 			/// <param name="transformer">The transformer to use.</param>
 			/// <param name="names">The names of columns/properties to acquire.</param>
 			public Processor(Transformer<T> transformer, ImmutableArray<string> names)
-				:this(transformer)
+				: this(transformer)
 			{
 				SetNames(names);
 			}

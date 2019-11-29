@@ -29,7 +29,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, T> transform,
 			CommandBehavior behavior = CommandBehavior.Default,
 			bool useReadAsync = true,
-            CancellationToken cancellationToken = default)
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));

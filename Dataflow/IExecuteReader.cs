@@ -1,14 +1,14 @@
-﻿using System;
-using System.Linq;
+﻿using Open.Database.Extensions.Dataflow;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using System.Data.Common;
-using System.Threading;
-using System.Collections.Immutable;
-using Open.Database.Extensions.Dataflow;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
@@ -124,7 +124,8 @@ namespace Open.Database.Extensions
 						});
 					})
 					.ContinueWith(
-						t => {
+						t =>
+						{
 							if (t.IsFaulted) q.Fault(t.Exception);
 							else q.Complete();
 						},
@@ -218,7 +219,8 @@ namespace Open.Database.Extensions
 
 			Task.Run(async () => await ToTargetBlockAsync(command, source, transform))
 				.ContinueWith(
-					t => {
+					t =>
+					{
 						if (t.IsFaulted) ((ITargetBlock<T>)source).Fault(t.Exception);
 						else source.Complete();
 					},
@@ -307,7 +309,8 @@ namespace Open.Database.Extensions
 								command.CancellationToken);
 					}))
 				.ContinueWith(
-					t => {
+					t =>
+					{
 						if (t.IsFaulted) ((ITargetBlock<object[]>)block).Fault(t.Exception);
 						else block.Complete();
 					},
