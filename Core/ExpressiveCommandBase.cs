@@ -46,13 +46,17 @@ namespace Open.Database.Extensions
 		/// </summary>
 		protected IDbTransaction? Transaction { get; }
 
-		ExpressiveCommandBase(
-			IDbConnectionPool<TConnection> connectionProvider,
+		/// <param name="connectionPool">The pool to acquire connections from.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveCommandBase(
+			IDbConnectionPool<TConnection> connectionPool,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params)
 		{
-			ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+			ConnectionProvider = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
 			Type = type;
 			Command = command ?? throw new ArgumentNullException(nameof(command));
 			Params = @params?.ToList() ?? new List<Param>();
