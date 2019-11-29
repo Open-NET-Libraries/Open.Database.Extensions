@@ -17,7 +17,13 @@ namespace Open.Database.Extensions.Dataflow
 
 		class DataflowProcessor : Processor
 		{
-			public DataflowProcessor(Transformer<T> transformer, IList<string>? names = null)
+			public DataflowProcessor(Transformer<T> transformer)
+				: base(transformer)
+			{
+
+			}
+
+			public DataflowProcessor(Transformer<T> transformer, ImmutableArray<string> names)
 				:base (transformer, names)
 			{
 

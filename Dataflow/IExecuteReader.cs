@@ -43,6 +43,7 @@ namespace Open.Database.Extensions
 			Func<IDataRecord, T> transform,
 			bool synchronousExecution = false)
 		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 

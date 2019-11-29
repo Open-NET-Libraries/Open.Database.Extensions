@@ -19,13 +19,12 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="deferredExecution">If true, calls await Task.Yield() before writing.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
 		public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 			ChannelWriter<T> target,
 			Func<IDataRecord, T> transform,
 			bool complete = false,
-			bool deferredExecution = false,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -36,41 +35,24 @@ namespace Open.Database.Extensions
 			return target.WriteAll(
 				reader.Select(transform, cancellationToken),
 				complete,
-				deferredExecution,
+				false,
 				cancellationToken);
-		}
-
-		public static ChannelReader<T> AsChannel<T>(this IDataReader reader,
-			Func<IDataRecord, T> transform,
-			CancellationToken cancellationToken = default)
-		{
-			var channel = Channel.CreateUnbounded<T>(new UnboundedChannelOptions
-				{
-					AllowSynchronousContinuations = true,
-					SingleWriter = true
-				});
-
-			reader.ToChannel(channel.Writer, transform, true, true, cancellationToken);
-
-			return channel.Reader;
 		}
 
 		/// <summary>
 		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-		/// <param name="cancellationToken"></param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
 			ChannelWriter<T> target,
 			Func<IDataRecord, T> transform,
-			CommandBehavior behavior = CommandBehavior.Default,
-			bool deferredExecution = false,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -78,11 +60,40 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			await target.WaitToWriteAndThrowIfClosedAsync(cancellationToken);
+			if(!command.Connection.State.HasFlag(ConnectionState.Open))
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+
 			var state = command.Connection.EnsureOpen();
+			var behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return await reader.ToChannel(target, transform, true, deferredExecution, cancellationToken);
+			return await reader.ToChannel(target, transform, true, cancellationToken);
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannel<T>(this IExecuteReader command,
+			ChannelWriter<T> target,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			return await command.ExecuteReaderAsync(
+				reader => reader.ToChannel(target, transform, true, cancellationToken));
 		}
 
 #if NETSTANDARD2_1
@@ -94,13 +105,11 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="deferredExecution">If true, calls await Task.Yield() before writing.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 			ChannelWriter<T> target,
 			Func<IDataRecord, T> transform,
 			bool complete = false,
-			bool deferredExecution = false,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -111,26 +120,24 @@ namespace Open.Database.Extensions
 			return target.WriteAllAsync(
 				reader.SelectAsync(transform, cancellationToken),
 				complete,
-				deferredExecution,
+				false,
 				cancellationToken);
 		}
 
 		/// <summary>
 		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-		/// <param name="cancellationToken"></param>
-		public static async ValueTask<long> ToChannelAsync<T>(this DbCommand command,
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannel<T>(this DbCommand command,
 			ChannelWriter<T> target,
 			Func<IDataRecord, T> transform,
-			CommandBehavior behavior = CommandBehavior.Default,
-			bool deferredExecution = false,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -138,11 +145,42 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			await target.WaitToWriteAndThrowIfClosedAsync(cancellationToken);
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			if (!command.Connection.State.HasFlag(ConnectionState.Open))
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+
+			var state = command.Connection.EnsureOpen();
+			var behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-			return await reader.ToChannelAsync(target, transform, true, deferredExecution, cancellationToken);
+			using var reader = command.ExecuteReader(behavior);
+			return await reader.ToChannelAsync(target, transform, true, cancellationToken);
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an IDataReader and through the transform function and posts each record it to the target block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
+			ChannelWriter<T> target,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			return await command.ExecuteReaderAsync(reader =>
+				command.UseAsyncRead && reader is DbDataReader r
+				? r.ToChannelAsync(target, transform, true, cancellationToken)
+				: reader.ToChannel(target, transform, true, cancellationToken));
 		}
 #endif
 

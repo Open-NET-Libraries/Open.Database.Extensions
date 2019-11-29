@@ -11,7 +11,7 @@
 		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations with Dataflow and ensuring DI compatibility.</Description>
 		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>6.0.0-preview1</Version>
+		<Version>6.0.1</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
@@ -20,7 +20,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Open.ChannelExtensions" Version="3.1.0" />
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.0-rc1" />
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.0.1" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
