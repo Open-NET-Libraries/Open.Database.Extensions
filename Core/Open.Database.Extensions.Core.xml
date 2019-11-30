@@ -4,40 +4,303 @@
         <name>Open.Database.Extensions.Core</name>
     </assembly>
     <members>
-        <member name="T:Open.Database.Extensions.DbConnectionFactory`1">
+        <member name="T:Open.Database.Extensions.Core.DbConnectionProvider`1">
             <summary>
-            Generic connection factory implementation that accepts a factory function.
+            Simplifies handling connections.
             </summary>
             <typeparam name="TConnection"></typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.DbConnectionFactory`1.#ctor(System.Func{`0})">
-            <summary>
-            Constructs a DbConnectionFactory.
-            </summary>
-            <param name="factory"></param>
+        <member name="M:Open.Database.Extensions.Core.DbConnectionProvider`1.Take">
+            <inheritdocs />
         </member>
-        <member name="M:Open.Database.Extensions.DbConnectionFactory`1.Create">
+        <member name="M:Open.Database.Extensions.Core.DbConnectionProvider`1.Give(System.Data.IDbConnection)">
+            <inheritdocs />
+        </member>
+        <member name="T:Open.Database.Extensions.Core.QueryResult`1">
             <summary>
-            Creates a connection of from the underlying factory function. 
+            A container for data reader results that also provides the column names and other helpful data methods.
             </summary>
+            <typeparam name="TResult">The type of the result property.</typeparam>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)">
+            <param name="ordinals">The ordinal values requested</param>
+            <param name="names">The column names requested.</param>
+            <param name="result">The result.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`0)">
+            <param name="ordinals">The ordinal values requested</param>
+            <param name="names">The column names requested.</param>
+            <param name="result">The result.</param>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.QueryResult`1.ColumnCount">
+            <summary>
+            The number of columns.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.QueryResult`1.Ordinals">
+            <summary>
+            The ordinal values requested.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.QueryResult`1.Names">
+            <summary>
+            The column names requested.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.QueryResult`1.Result">
+            <summary>
+            The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
+            </summary>
+        </member>
+        <member name="T:Open.Database.Extensions.Core.QueryResultExtensions">
+            <summary>
+            A set of extensions for getting column data from a QueryResult.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
+            <summary>
+            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
+            DBNull values are converted to null.
+            </summary>
+            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.Core.Transformer`1">
+            <summary>
+            Utility of transforming retrieved data into models matching the type parameter provided.
+            </summary>
+            <typeparam name="T">The type of the model to create from the data.</typeparam>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.Transformer`1.Type">
+            <summary>
+            The type of <typeparamref name="T"/>.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.Transformer`1.PropertyNames">
+            <summary>
+            The property names.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.Transformer`1.ColumnNames">
+            <summary>
+            The column names.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.#ctor(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Constructs a transformer using the optional field overrides.
+            </summary>
+            <param name="overrides"></param>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Static utility for creating a Transformer <typeparamref name="T"/>.
+            </summary>
+            <param name="overrides"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Open.Database.Extensions.Core.Transformer`1.Processor">
+            <summary>
+            A sub class for processing the transformer results.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0})">
+            <summary>
+            Constructs a processor.
+            </summary>
+            <param name="transformer">The transformer to use.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String})">
+            <summary>
+            Constructs a processor.
+            </summary>
+            <param name="transformer">The transformer to use.</param>
+            <param name="names">The names of columns/properties to acquire.</param>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.Transformer`1.Processor.Transformer">
+            <summary>
+            The transformer being used.
+            </summary>
+        </member>
+        <member name="P:Open.Database.Extensions.Core.Transformer`1.Processor.Transform">
+            <summary>
+            The resultant transofrm function.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String})">
+            <summary>
+            Allows for deferred initialization.
+            </summary>
+            <param name="names">The column/property names to process.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
+            <summary>
+            Dequeues the results and transforms each one by one during enumeration.
+            </summary>
+            <param name="results">The results to process.</param>
+            <returns>A dequeuing enumerable of the transformed results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.DataTable,System.Boolean)">
+            <summary>
+            Processes the data from the data table inot a queue. Then dequeues the results and transforms each one by one during enumeration.
+            </summary>
+            <param name="table">The data to process.</param>
+            <param name="clearTable">If true, will clear the table after buffering the data.</param>
+            <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
         <member name="T:Open.Database.Extensions.DbConnectionFactory">
             <summary>
             DbConnection factory implementation that accepts a factory function.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.DbConnectionFactory.#ctor(System.Func{System.Data.Common.DbConnection})">
+        <member name="M:Open.Database.Extensions.DbConnectionFactory.#ctor(System.Func{System.Data.IDbConnection})">
             <summary>
             Constructs a DbConnectionFactory.
             </summary>
             <param name="factory"></param>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory.Create">
+            <summary>
+            Creates a connection of from the underlying factory function. 
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory.Create(System.Func{System.Data.IDbConnection})">
+            <summary>
+            Creates a Non-Generic DbConnectionFactory.
+            </summary>
+            <param name="factory">The factory function.</param>
+            <returns>A Non-Generic DbConnectionFactory</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory.Create``1(System.Func{``0})">
+            <summary>
+            Creates a Non-Generic DbConnectionFactory.
+            </summary>
+            <param name="factory">The factory function.</param>
+            <returns>A Non-Generic DbConnectionFactory</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.DbConnectionFactory`1">
+            <summary>
+            Generic connection factory implementation that accepts a factory function.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory`1.#ctor(System.Func{`0})">
+            <summary>
+            Constructs a DbConnectionFactory.
+            </summary>
+            <param name="factory">The factory function.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactory`1.Create">
+            <summary>
+            Creates a connection of from the underlying factory function. 
+            </summary>
         </member>
         <member name="T:Open.Database.Extensions.ExpressiveCommand">
             <summary>
             An abstraction for executing commands on a database using best practices and simplified expressive syntax.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.IDbConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(Open.Database.Extensions.IDbConnectionPool,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
+            <param name="connectionPool">The pool to acquire connections from.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
@@ -46,6 +309,12 @@
         <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(System.Data.IDbConnection,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
             <param name="connection">The connection to execute the command on.</param>
             <param name="transaction">The optional transaction to execute the command on.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
+            <param name="transaction">The transaction to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -79,20 +348,21 @@
             <param name="remaining">The remaining values.</param>
             <returns></returns>
         </member>
-        <member name="P:Open.Database.Extensions.ExpressiveCommandBase`5.ConnectionFactory">
+        <member name="P:Open.Database.Extensions.ExpressiveCommandBase`5.ConnectionProvider">
             <summary>
-            The connection factory to use to generate connections and commands.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.ExpressiveCommandBase`5.Connection">
-            <summary>
-            The connection to execute commands on if not using a connection factory.
+            The connection provider to used to acquire connections.
             </summary>
         </member>
         <member name="P:Open.Database.Extensions.ExpressiveCommandBase`5.Transaction">
             <summary>
             The transaction to execute commands on if not using a connection factory.
             </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionPool{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <param name="connectionPool">The pool to acquire connections from.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
@@ -102,6 +372,18 @@
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
             <param name="connection">The connection to execute the command on.</param>
+            <param name="transaction">The optional transaction to execute the command on.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
             <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
@@ -126,6 +408,13 @@
             <summary>
             The command timeout value.
             </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.PrepareCommand(`0)">
+            <summary>
+            Creates the expected command type from the connection provided.
+            </summary>
+            <param name="connection">The connection to create the command from.</param>
+            <returns>The new command to use.</returns>
         </member>
         <member name="P:Open.Database.Extensions.ExpressiveCommandBase`5.CancellationToken">
             <summary>
@@ -224,42 +513,18 @@
             <param name="name">The name of the parameter.</param>
             <returns>This instance for use in method chaining.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.SetTimeout(System.UInt16)">
-            <summary>
-            Sets the timeout value.
-            </summary>
-            <param name="seconds">The number of seconds to wait before the connection times out.</param>
-            <returns>This instance for use in method chaining.</returns>
-        </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.AddParams(`1)">
             <summary>
             Handles adding the list of parameters to a new command.
             </summary>
             <param name="command">The command to add parameters to.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.UsingConnection(System.Action{`0,System.Data.IDbTransaction})">
+        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.SetTimeout(System.UInt16)">
             <summary>
-            Handles providing the connection for use with the command.
+            Sets the timeout value.
             </summary>
-            <param name="action">The handler for use with the connection.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.UsingConnection``1(System.Func{`0,System.Data.IDbTransaction,``0})">
-            <summary>
-            Handles providing the connection for use with the command.
-            </summary>
-            <param name="action">The handler for use with the connection.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.UsingConnectionAsync(System.Func{`0,System.Data.IDbTransaction,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Handles providing the connection for use with the command.
-            </summary>
-            <param name="action">The handler for use with the connection.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.UsingConnectionAsync``1(System.Func{`0,System.Data.IDbTransaction,System.Threading.Tasks.ValueTask{``0}})">
-            <summary>
-            Handles providing the connection for use with the command.
-            </summary>
-            <param name="action">The handler for use with the connection.</param>
+            <param name="seconds">The number of seconds to wait before the connection times out.</param>
+            <returns>This instance for use in method chaining.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.Execute(System.Action{`1})">
             <inheritdocs />
@@ -394,13 +659,19 @@
             An abstraction for executing commands on a database using best practices and simplified expressive syntax.
             </summary>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionPool{System.Data.Common.DbConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+            <param name="connectionPool">The pool to acquire connections from.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
-        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.Common.DbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
             <param name="connection">The connection to execute the command on.</param>
             <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type.</param>
@@ -409,6 +680,12 @@
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
             <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
+            <param name="transaction">The transaction to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -427,6 +704,12 @@
             <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
             <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
         </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionPool{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <param name="connectionPool">The pool to acquire connections from.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type.</param>
@@ -436,6 +719,18 @@
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
             <param name="connection">The connection to execute the command on.</param>
             <param name="transaction">The optional transaction to execute the command on.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="type">The command type.</param>
+            <param name="command">The SQL command.</param>
+            <param name="params">The list of params</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <param name="transaction">The transaction to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
@@ -739,6 +1034,16 @@
             <param name="cancellationToken">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>A list of all results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list.
@@ -749,7 +1054,7 @@
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>A list of all results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Iterates all records using an IDataReader and returns the desired results as a list.
             </summary>
@@ -757,6 +1062,16 @@
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>A list of all results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
+            <summary>
+            Iterates all records using an IDataReader and returns the desired results as a list.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="behavior">The behavior to use with the data reader.</param>
             <returns>A list of all results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToDataTable(System.Data.IDbCommand,System.Data.CommandBehavior)">
@@ -1071,6 +1386,15 @@
             <summary>
             Core non-DB-specific extensions for database connections.
             </summary>
+            <summary>
+            Core non-DB-specific extensions for acquiring and operating on different connection factories.
+            </summary>
+            <summary>
+            Core non-DB-specific extensions for acquiring and operating on different connection factories.
+            </summary>
+            <summary>
+            Core non-DB-specific extensions for acquiring and operating on different connection factories.
+            </summary>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">
             <summary>
@@ -1154,172 +1478,34 @@
             <param name="cancellationToken">An optional token to cancel opening.</param>
             <returns>A task containing the prior connection state.</returns>
         </member>
-        <member name="T:Open.Database.Extensions.ConnectionFactoryExtensions">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.IDbConnection,System.Threading.CancellationToken)">
             <summary>
-            Core non-DB-specific extensions for acquiring and operating on different connection factories.
+            If the connection isn't open, opens the connection.
+            If the connection is in neither open or close, first closes the connection.
             </summary>
+            <param name="connection">The connection to transact with.</param>
+            <param name="cancellationToken">An optional token to cancel opening.</param>
+            <returns>A task containing the prior connection state.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Using``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbConnection,System.String,System.Data.CommandType)">
             <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
+            Creates an ExpressiveCommand for subsequent configuration and execution.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbTransaction,System.String,System.Data.CommandType)">
             <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
+            Creates an ExpressiveCommand for subsequent configuration and execution.
             </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <param name="target">The transaction to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Using``2(System.Func{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Using``1(System.Func{``0},System.Action{``0})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.UsingAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.UsingAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Open``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Open``2(System.Func{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Open``1(System.Func{``0},System.Action{``0})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.OpenAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.OpenAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection, opens it, and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">
             <summary>
             Creates an ExpressiveDbCommand for subsequent configuration and execution.
             </summary>
@@ -1328,7 +1514,7 @@
             <param name="type">The command type.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Command(System.Data.Common.DbTransaction,System.String,System.Data.CommandType)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbTransaction,System.String,System.Data.CommandType)">
             <summary>
             Creates an ExpressiveDbCommand for subsequent configuration and execution.
             </summary>
@@ -1337,7 +1523,23 @@
             <param name="type">The command type.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbConnection,System.String)">
+            <summary>
+            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbTransaction,System.String)">
+            <summary>
+            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The transaction to execute the command on.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
             <summary>
             Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
@@ -1345,7 +1547,7 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.StoredProcedure(System.Data.Common.DbTransaction,System.String)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbTransaction,System.String)">
             <summary>
             Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
@@ -1353,7 +1555,60 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory,System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory,System.String)">
+            <summary>
+            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.String)">
+            <summary>
+            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Func{System.Data.IDbConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveCommand for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Func{System.Data.IDbConnection},System.String)">
+            <summary>
+            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="command">The command text or stored procedure name to use.</param>
+            <returns>The resultant ExpressiveDbCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Command``1(System.Func{``0},System.String,System.Data.CommandType)">
             <summary>
             Creates an ExpressiveDbCommand for subsequent configuration and execution.
             </summary>
@@ -1362,7 +1617,7 @@
             <param name="type">The command type.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.String)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(System.Func{``0},System.String)">
             <summary>
             Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
@@ -1370,22 +1625,419 @@
             <param name="command">The command text or stored procedure name to use.</param>
             <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.Command(System.Func{System.Data.Common.DbConnection},System.String,System.Data.CommandType)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})">
             <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
             </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ConnectionFactoryExtensions.StoredProcedure(System.Func{System.Data.Common.DbConnection},System.String)">
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})">
             <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
             </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,``0})">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection,System.Data.ConnectionState})">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,``1})">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Action{``0,System.Data.ConnectionState})">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``2(System.Func{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(System.Func{``0},System.Action{``0})">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
+            <summary>
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Ensures the connection is returned to the pool when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
+            <summary>
+            Generates a connection. Ensures it's open. Invokes the action.
+            Ensures the connection is disposed of when the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConnection">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,``0})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,``1})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Action{``0})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``2(System.Func{``0},System.Func{``0,``1})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(System.Func{``0},System.Action{``0})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
+            <summary>
+            Acquires a connection from the pool, returning it after the action is complete.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionPool">The connection pool to acquire connections from.</param>
+            <param name="action">The action to execute.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <typeparam name="T">The type returned from the action.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
+            <returns>The value from the action.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
+            <summary>
+            Generates a connection and executes the action within a using statement.
+            Useful for single-line operations.
+            </summary>
+            <typeparam name="TConn">The connection type.</typeparam>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <param name="action">The action to execute.</param>
         </member>
         <member name="T:Open.Database.Extensions.DataReaderExtensions">
             <summary>
@@ -1604,7 +2256,16 @@
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Shortcut for .Iterate(transform).ToArray();
+            Shortcut for .Select(transform).ToArray();
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <returns>An array of the transformed results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.ToImmutableArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
+            <summary>
+            Shortcut for .Select(transform).ToImmutableArray();
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -2062,6 +2723,16 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.ToArray``1(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
             Converts all IDataRecords into an array using a transform function.
+            </summary>
+            <typeparam name="T">The expected return type.</typeparam>
+            <param name="command">The IExecuteReader to iterate.</param>
+            <param name="transform">The transform function.</param>
+            <param name="behavior">The command behavior for once the command the reader is complete.</param>
+            <returns>The array of transformed records.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.ToImmutableArray``1(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
+            <summary>
+            Converts all IDataRecords into an immutable array using a transform function.
             </summary>
             <typeparam name="T">The expected return type.</typeparam>
             <param name="command">The IExecuteReader to iterate.</param>
@@ -3189,7 +3860,7 @@
             <summary>
             Generates a new connection of declared generic type.
             </summary>
-            <returns></returns>
+            <returns>An IDbConnection.</returns>
         </member>
         <member name="T:Open.Database.Extensions.IDbConnectionFactory`1">
             <summary>
@@ -3202,7 +3873,76 @@
             <summary>
             Generates a new connection of declared generic type.
             </summary>
+            <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.DbConnectionFactoryExtensions">
+            <summary>
+            Extensions for converting a connection factory into a pool.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool(Open.Database.Extensions.IDbConnectionFactory)">
+            <summary>
+            Provides a connection pool that simply creates from a connection factory and disposes when returned.
+            </summary>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
             <returns></returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool``1(Open.Database.Extensions.IDbConnectionFactory{``0})">
+            <summary>
+            Provides a connection pool that simply creates from a connection factory and disposes when returned.
+            </summary>
+            <param name="connectionFactory">The connection factory to generate connections from.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DbConnectionFactoryExtensions.AsGeneric(Open.Database.Extensions.IDbConnectionFactory)">
+            <summary>
+            Coerces a non-generic connection factory to a generic one.
+            </summary>
+            <param name="connectionFactory">The source connection factory.</param>
+            <returns>The generic version of the source factory.</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.IDbConnectionPool">
+            <summary>
+            Simplified interface with IDbConnection as the generic type.
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.IDbConnectionPool.Take">
+            <summary>
+            Provides a connection of declared generic type.
+            </summary>
+            <returns>An IDbConnection.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.IDbConnectionPool.Give(System.Data.IDbConnection)">
+            <summary>
+            Gives the connection to the pool.
+            Depending on implementation, the pool could be full, and the connection disposed of immediately.
+            </summary>
+            <param name="connection">The connection to be received by the pool.</param>
+        </member>
+        <member name="T:Open.Database.Extensions.IDbConnectionPool`1">
+            <summary>
+            Base interface for creating connections.
+            Useful for dependency injection.
+            </summary>
+            <typeparam name="TConnection">The actual connection type.</typeparam>
+        </member>
+        <member name="M:Open.Database.Extensions.IDbConnectionPool`1.Take">
+            <summary>
+            Generates a new connection of declared generic type.
+            </summary>
+            <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
+        </member>
+        <member name="T:Open.Database.Extensions.ConnectionPoolExtensions">
+            <summary>
+            Extensions for getting generic versions on non-generic connection pools..
+            </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.ConnectionPoolExtensions.AsGeneric(Open.Database.Extensions.IDbConnectionPool)">
+            <summary>
+            Coerces a non-generic connection factory to a generic one.
+            </summary>
+            <param name="connectionPool">The source connection factory.</param>
+            <returns>The generic version of the source factory.</returns>
         </member>
         <member name="T:Open.Database.Extensions.IExecuteCommand">
             <summary>
@@ -3356,226 +4096,6 @@
         </member>
         <member name="T:Open.Database.Extensions.IExecuteReaderAsync`1">
             <inheritdoc />
-        </member>
-        <member name="T:Open.Database.Extensions.QueryResult`1">
-            <summary>
-            A container for data reader results that also provides the column names and other helpful data methods.
-            </summary>
-            <typeparam name="TResult">The type of the result property.</typeparam>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResult`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`0)">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
-        </member>
-        <member name="P:Open.Database.Extensions.QueryResult`1.ColumnCount">
-            <summary>
-            The number of columns.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.QueryResult`1.Ordinals">
-            <summary>
-            The ordinal values requested.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.QueryResult`1.Names">
-            <summary>
-            The column names requested.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.QueryResult`1.Result">
-            <summary>
-            The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
-            </summary>
-        </member>
-        <member name="T:Open.Database.Extensions.QueryResultExtensions">
-            <summary>
-            A set of extensions for getting column data from a QueryResult.
-            </summary>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.ValueTask{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.ValueTask{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.ValueTask{Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.ValueTask{Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-        </member>
-        <member name="T:Open.Database.Extensions.Core.Transformer`1">
-            <summary>
-            Utility of transforming retrieved data into models matching the type parameter provided.
-            </summary>
-            <typeparam name="T">The type of the model to create from the data.</typeparam>
-        </member>
-        <member name="P:Open.Database.Extensions.Core.Transformer`1.Type">
-            <summary>
-            The type of <typeparamref name="T"/>.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.Core.Transformer`1.PropertyNames">
-            <summary>
-            The property names.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.Core.Transformer`1.ColumnNames">
-            <summary>
-            The column names.
-            </summary>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.#ctor(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Constructs a transformer using the optional field overrides.
-            </summary>
-            <param name="overrides"></param>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Static utility for creating a Transformer <typeparamref name="T"/>.
-            </summary>
-            <param name="overrides"></param>
-            <returns></returns>
-        </member>
-        <member name="T:Open.Database.Extensions.Core.Transformer`1.Processor">
-            <summary>
-            A sub class for processing the transformer results.
-            </summary>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Generic.IList{System.String})">
-            <summary>
-            Constructs a processor.
-            </summary>
-            <param name="transformer">The transformer to use.</param>
-            <param name="names">The names of columns/properties to acquire.</param>
-        </member>
-        <member name="P:Open.Database.Extensions.Core.Transformer`1.Processor.Transformer">
-            <summary>
-            The transformer being used.
-            </summary>
-        </member>
-        <member name="P:Open.Database.Extensions.Core.Transformer`1.Processor.Transform">
-            <summary>
-            The resultant transofrm function.
-            </summary>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Generic.IList{System.String})">
-            <summary>
-            Allows for deferred initialization.
-            </summary>
-            <param name="names">The column/property names to process.</param>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
-            <summary>
-            Dequeues the results and transforms each one by one during enumeration.
-            </summary>
-            <param name="results">The results to process.</param>
-            <returns>A dequeuing enumerable of the transformed results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.DataTable,System.Boolean)">
-            <summary>
-            Processes the data from the data table inot a queue. Then dequeues the results and transforms each one by one during enumeration.
-            </summary>
-            <param name="table">The data to process.</param>
-            <param name="clearTable">If true, will clear the table after buffering the data.</param>
-            <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
     </members>
 </doc>

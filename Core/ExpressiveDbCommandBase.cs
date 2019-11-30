@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Open.Database.Extensions.Core;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -26,15 +27,29 @@ namespace Open.Database.Extensions
 			where TDbType : struct
 			where TThis : ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 	{
+
+		/// <param name="connectionPool">The pool to acquire connections from.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveDbCommandBase(
+			IDbConnectionPool<TConnection> connectionPool,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params = null)
+			: base(connectionPool, type, command, @params)
+		{
+		}
+
 		/// <param name="connFactory">The factory to generate connections from.</param>
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
-		protected ExpressiveDbCommandBase(
+		public ExpressiveDbCommandBase(
 			IDbConnectionFactory<TConnection> connFactory,
 			CommandType type,
 			string command,
-			IEnumerable<Param>? @params)
+			IEnumerable<Param>? @params = null)
 			: base(connFactory, type, command, @params)
 		{
 		}
@@ -44,13 +59,39 @@ namespace Open.Database.Extensions
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
-		protected ExpressiveDbCommandBase(
+		public ExpressiveDbCommandBase(
 			TConnection connection,
 			IDbTransaction? transaction,
 			CommandType type,
 			string command,
-			IEnumerable<Param>? @params)
+			IEnumerable<Param>? @params = null)
 			: base(connection, transaction, type, command, @params)
+		{
+		}
+
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveDbCommandBase(
+			TConnection connection,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params = null)
+			: base(connection, type, command, @params)
+		{
+		}
+
+		/// <param name="transaction">The transaction to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveDbCommandBase(
+			IDbTransaction transaction,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params = null)
+			: base(transaction, type, command, @params)
 		{
 		}
 

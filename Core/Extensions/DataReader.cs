@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
@@ -560,7 +561,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Shortcut for .Iterate(transform).ToArray();
+		/// Shortcut for .Select(transform).ToArray();
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
@@ -568,6 +569,16 @@ namespace Open.Database.Extensions
 		/// <returns>An array of the transformed results.</returns>
 		public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 			=> reader.Select(transform).ToArray();
+
+		/// <summary>
+		/// Shortcut for .Select(transform).ToImmutableArray();
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function to process each IDataRecord.</param>
+		/// <returns>An array of the transformed results.</returns>
+		public static ImmutableArray<T> ToImmutableArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
+			=> reader.Select(transform).ToImmutableArray();
 
 		/// <summary>
 		/// Loads all remaining data from an IDataReader into a DataTable.

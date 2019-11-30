@@ -11,7 +11,7 @@
 		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
 		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>6.0.0</Version>
+		<Version>6.1.0</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
@@ -28,8 +28,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Remove="api\**" />
+	  <EmbeddedResource Remove="api\**" />
+	  <None Remove="api\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="log.txt" />
+	  <None Remove="toc.yml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--<PackageReference Include="docfx.console" Version="2.47.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>-->
 		<PackageReference Include="System.Collections.Immutable" Version="1.6.0" />
-		<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
+		<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>

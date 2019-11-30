@@ -7,6 +7,9 @@ using System.Diagnostics.Contracts;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Extensions for SqlConnections.
+	/// </summary>
 	public static class SqlConnectionExtensions
 	{
 		/// <summary>

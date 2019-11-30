@@ -10,6 +10,19 @@ namespace Open.Database.Extensions
 	/// </summary>
 	public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbCommand, DbDataReader, DbType, ExpressiveDbCommand>
 	{
+		/// <param name="connectionPool">The pool to acquire connections from.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveDbCommand(
+			IDbConnectionPool<DbConnection> connectionPool,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params = null)
+			: base(connectionPool, type, command, @params)
+		{
+		}
+
 		/// <param name="connFactory">The factory to generate connections from.</param>
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>
@@ -30,7 +43,7 @@ namespace Open.Database.Extensions
 		/// <param name="params">The list of params</param>
 		public ExpressiveDbCommand(
 			DbConnection connection,
-			DbTransaction? transaction,
+			IDbTransaction? transaction,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
@@ -47,7 +60,20 @@ namespace Open.Database.Extensions
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
-			: base(connection, null, type, command, @params)
+			: base(connection, type, command, @params)
+		{
+		}
+
+		/// <param name="transaction">The transaction to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveDbCommand(
+			IDbTransaction transaction,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params = null)
+			: base(transaction, type, command, @params)
 		{
 		}
 

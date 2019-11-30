@@ -6,6 +6,9 @@ using System.Data.SqlClient;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Extensions for creating expressive SQL commands from connections and connection factories.
+	/// </summary>
 	public static class SqlConnectionFactoryExtensions
 	{
 		/// <summary>

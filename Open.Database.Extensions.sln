@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Ch
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions", "Open.Database.Extensions\Open.Database.Extensions.csproj", "{4FB33C8D-D70E-4952-9947-A1347BCED665}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Core.Tests", "Tests\Open.Database.Extensions.Core.Tests\Open.Database.Extensions.Core.Tests.csproj", "{B2C2E89F-3B08-4CF8-B363-468C0918F867}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

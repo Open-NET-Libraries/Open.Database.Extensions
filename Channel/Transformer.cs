@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions.Dataflow
 {
@@ -17,14 +16,21 @@ namespace Open.Database.Extensions.Dataflow
 		class DataflowProcessor : Processor
 		{
 			public DataflowProcessor(Transformer<T> transformer, IList<string>? names = null)
+
+/* Unmerged change from project 'Open.Database.Extensions.Channel (netstandard2.1)'
+Before:
 				:base (transformer, names)
+After:
+				: base(transformer, names)
+*/
+				: base(transformer, names)
 			{
 
 			}
 
 			public TransformBlock<object[], T> GetBlock(
 				ExecutionDataflowBlockOptions? options = null)
-				=> options==null
+				=> options == null
 					? new TransformBlock<object[], T>(Transform)
 					: new TransformBlock<object[], T>(Transform, options);
 		}

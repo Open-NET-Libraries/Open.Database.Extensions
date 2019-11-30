@@ -288,3 +288,5 @@ __pycache__/
 *.xsd.cs
 
 log.txt
+.vscode/launch.json
+.vscode/tasks.json

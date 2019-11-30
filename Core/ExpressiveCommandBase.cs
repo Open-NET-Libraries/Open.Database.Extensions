@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Open.Database.Extensions.Core;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -37,27 +38,31 @@ namespace Open.Database.Extensions
 			=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
 
 		/// <summary>
-		/// The connection factory to use to generate connections and commands.
+		/// The connection provider to used to acquire connections.
 		/// </summary>
-		protected IDbConnectionFactory<TConnection>? ConnectionFactory { get; }
-
-		/// <summary>
-		/// The connection to execute commands on if not using a connection factory.
-		/// </summary>
-		protected TConnection? Connection { get; }
+		protected IDbConnectionPool<TConnection> ConnectionProvider { get; }
 
 		/// <summary>
 		/// The transaction to execute commands on if not using a connection factory.
 		/// </summary>
 		protected IDbTransaction? Transaction { get; }
 
-		ExpressiveCommandBase(
+		/// <param name="connectionPool">The pool to acquire connections from.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveCommandBase(
+			IDbConnectionPool<TConnection> connectionPool,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params)
 		{
-			Type = type;
+			ConnectionProvider = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
 			Command = command ?? throw new ArgumentNullException(nameof(command));
+			if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
+			Contract.EndContractBlock();
+
+			Type = type;
 			Params = @params?.ToList() ?? new List<Param>();
 			Timeout = CommandTimeout.DEFAULT_SECONDS;
 		}
@@ -71,10 +76,8 @@ namespace Open.Database.Extensions
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params)
-			: this(type, command, @params)
+			: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command, @params)
 		{
-			ConnectionFactory = connFactory ?? throw new ArgumentNullException(nameof(connFactory));
-			Contract.EndContractBlock();
 		}
 
 		/// <param name="connection">The connection to execute the command on.</param>
@@ -88,11 +91,37 @@ namespace Open.Database.Extensions
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params)
-			: this(type, command, @params)
+			: this(DbConnectionProvider.Create(connection), type, command, @params)
 		{
-			Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-			Contract.EndContractBlock();
 			Transaction = transaction;
+		}
+
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveCommandBase(
+			TConnection connection,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params)
+			: this(connection, null, type, command, @params)
+		{
+		}
+
+		/// <param name="transaction">The optional transaction to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveCommandBase(
+			IDbTransaction transaction,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params)
+			: this(
+				(TConnection)(transaction ?? throw new ArgumentNullException(nameof(transaction))).Connection,
+				transaction, type, command, @params)
+		{
 		}
 
 		/// <summary>
@@ -115,6 +144,21 @@ namespace Open.Database.Extensions
 		/// </summary>
 		public ushort Timeout { get; set; }
 
+		/// <summary>
+		/// Creates the expected command type from the connection provided.
+		/// </summary>
+		/// <param name="connection">The connection to create the command from.</param>
+		/// <returns>The new command to use.</returns>
+		protected TCommand PrepareCommand(TConnection connection)
+		{
+			var cmd = connection.CreateCommand(Type, Command, Timeout);
+			if (!(cmd is TCommand c))
+				throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+			if (Transaction != null)
+				c.Transaction = Transaction;
+			AddParams(c);
+			return c;
+		}
 
 		/// <summary>
 		/// The optional cancellation token to use with supported methods.
@@ -132,6 +176,7 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
+		#region AddParam
 		/// <summary>
 		/// Adds a parameter to the params list.
 		/// </summary>
@@ -241,7 +286,6 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
-
 		/// <summary>
 		/// Conditionally adds a parameter to the params list.
 		/// </summary>
@@ -296,6 +340,13 @@ namespace Open.Database.Extensions
 			=> condition ? AddParam(name) : (TThis)this;
 
 		/// <summary>
+		/// Handles adding the list of parameters to a new command.
+		/// </summary>
+		/// <param name="command">The command to add parameters to.</param>
+		protected abstract void AddParams(TCommand command);
+		#endregion
+
+		/// <summary>
 		/// Sets the timeout value.
 		/// </summary>
 		/// <param name="seconds">The number of seconds to wait before the connection times out.</param>
@@ -306,124 +357,17 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
-		/// <summary>
-		/// Handles adding the list of parameters to a new command.
-		/// </summary>
-		/// <param name="command">The command to add parameters to.</param>
-		protected abstract void AddParams(TCommand command);
-
-		/// <summary>
-		/// Handles providing the connection for use with the command.
-		/// </summary>
-		/// <param name="action">The handler for use with the connection.</param>
-		protected void UsingConnection(Action<TConnection, IDbTransaction?> action)
-		{
-			if (action is null) throw new ArgumentNullException(nameof(action));
-			Contract.EndContractBlock();
-
-			if (Connection != null)
-			{
-				action(Connection, Transaction);
-			}
-			else
-			{
-				// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-				using var conn = ConnectionFactory.Create();
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-				action(conn, null);
-			}
-		}
-
-		/// <summary>
-		/// Handles providing the connection for use with the command.
-		/// </summary>
-		/// <param name="action">The handler for use with the connection.</param>
-		protected T UsingConnection<T>(Func<TConnection, IDbTransaction?, T> action)
-		{
-			if (action is null) throw new ArgumentNullException(nameof(action));
-			Contract.EndContractBlock();
-
-			if (Connection != null)
-				return action(Connection, Transaction);
-
-			// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-			using var conn = ConnectionFactory.Create();
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-			return action(conn, null);
-		}
-
-		/// <summary>
-		/// Handles providing the connection for use with the command.
-		/// </summary>
-		/// <param name="action">The handler for use with the connection.</param>
-		protected async ValueTask UsingConnectionAsync(Func<TConnection, IDbTransaction?, ValueTask> action)
-		{
-			if (action is null) throw new ArgumentNullException(nameof(action));
-			Contract.EndContractBlock();
-
-			if (Connection != null)
-			{
-				await action(Connection, Transaction);
-			}
-			else
-			{
-				// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-				using var conn = ConnectionFactory.Create();
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-				await action(conn, null);
-			}
-		}
-
-		/// <summary>
-		/// Handles providing the connection for use with the command.
-		/// </summary>
-		/// <param name="action">The handler for use with the connection.</param>
-		protected async ValueTask<T> UsingConnectionAsync<T>(Func<TConnection, IDbTransaction?, ValueTask<T>> action)
-		{
-			if (action is null) throw new ArgumentNullException(nameof(action));
-			Contract.EndContractBlock();
-
-			if (Connection != null)
-			{
-				return await action(Connection, Transaction);
-			}
-			else
-			{
-				// The construction configuration will only allow either the Connection or the ConnectionFactory to be null.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-				using var conn = ConnectionFactory.Create();
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-				return await action(conn, null);
-			}
-		}
-
 		/// <inheritdocs />
 		public void Execute(Action<TCommand> action)
 		{
 			if (action is null) throw new ArgumentNullException(nameof(action));
 			Contract.EndContractBlock();
 
-			UsingConnection((con, t) =>
+			// Open MUST occur before command creation as some DbCommands require it.
+			ConnectionProvider.Open((conn, _) =>
 			{
-				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
-				try
-				{
-					using var cmd = con.CreateCommand(Type, Command, Timeout);
-					if (!(cmd is TCommand c))
-						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null)
-						c.Transaction = t;
-
-					AddParams(c);
-					action(c);
-				}
-				finally
-				{
-					if (state == ConnectionState.Closed) con.Close();
-				}
+				using var cmd = PrepareCommand(conn);
+				action(cmd);
 			});
 		}
 
@@ -433,26 +377,12 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			return UsingConnection((con, t) =>
+			// Open MUST occur before command creation as some DbCommands require it.
+			return ConnectionProvider.Open((conn, _) =>
 			{
-				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
-				try
-				{
-					using var cmd = con.CreateCommand(Type, Command, Timeout);
-					if (!(cmd is TCommand c))
-						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null)
-						c.Transaction = t;
-					AddParams(c);
-
-					return transform(c);
-				}
-				finally
-				{
-					if (state == ConnectionState.Closed) con.Close();
-				}
+				using var cmd = PrepareCommand(conn);
+				return transform(cmd);
 			});
-
 		}
 
 		/// <inheritdocs />
@@ -463,28 +393,11 @@ namespace Open.Database.Extensions
 
 			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
-			return UsingConnectionAsync(async (con, _) =>
+			// Open MUST occur before command creation as some DbCommands require it.
+			return ConnectionProvider.OpenAsync(async (conn, _) =>
 			{
-				// MUST occur before command creation as some DbCommands require it.
-				var state = con is DbConnection dbc
-					? await dbc.EnsureOpenAsync(CancellationToken)
-					: con.EnsureOpen();
-
-				try
-				{
-					using var cmd = con.CreateCommand(Type, Command, Timeout);
-					if (!(cmd is TCommand c))
-						throw new InvalidCastException(
-							$"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-
-					AddParams(c);
-					await handler(c).ConfigureAwait(false);
-				}
-				finally
-				{
-					if (state == ConnectionState.Closed)
-						con.Close();
-				}
+				using var cmd = PrepareCommand(conn);
+				await handler(cmd).ConfigureAwait(false);
 			});
 		}
 
@@ -496,27 +409,11 @@ namespace Open.Database.Extensions
 
 			CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
-			return UsingConnectionAsync(async (con, _) =>
+			// Open MUST occur before command creation as some DbCommands require it.
+			return ConnectionProvider.OpenAsync(async (conn, _) =>
 			{
-				// MUST occur before command creation as some DbCommands require it.
-				var state = con is DbConnection dbc
-					? await dbc.EnsureOpenAsync(CancellationToken)
-					: con.EnsureOpen();
-
-				try
-				{
-					using var cmd = con.CreateCommand(Type, Command, Timeout);
-					if (!(cmd is TCommand c))
-						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-
-					AddParams(c);
-					return await transform(c).ConfigureAwait(false);
-				}
-				finally
-				{
-					if (state == ConnectionState.Closed)
-						con.Close();
-				}
+				using var cmd = PrepareCommand(conn);
+				return await transform(cmd).ConfigureAwait(false);
 			});
 		}
 
@@ -545,22 +442,43 @@ namespace Open.Database.Extensions
 		/// <inhericdoc />
 		public void ExecuteReader(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			Execute(command => command.ExecuteReader(reader => handler(EnsureReaderType(reader)), behavior));
+			if (handler is null) throw new ArgumentNullException(nameof(handler));
+			Contract.EndContractBlock();
+
+			// Open MUST occur before command creation as some DbCommands require it.
+			ConnectionProvider.Open((conn, state) =>
+			{
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var cmd = PrepareCommand(conn);
+				cmd.ExecuteReader(reader => handler(EnsureReaderType(reader)), behavior);
+			});
 		}
 
 		/// <inhericdoc />
 		public T ExecuteReader<T>(Func<TReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			return Execute(command => command.ExecuteReader(reader => transform(EnsureReaderType(reader)), behavior));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			return ConnectionProvider.Open((conn, state) =>
+			{
+				// Open MUST occur before command creation as some DbCommands require it.
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var cmd = PrepareCommand(conn);
+				return cmd.ExecuteReader(reader => transform(EnsureReaderType(reader)), behavior);
+			});
 		}
 
 		/// <inhericdoc />
 		public ValueTask ExecuteReaderAsync(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			return ExecuteAsync(command => command.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken));
+			return ConnectionProvider.OpenAsync(async (conn, state) =>
+			{
+				// Open MUST occur before command creation as some DbCommands require it.
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var cmd = PrepareCommand(conn);
+				await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken);
+			});
 
 			ValueTask ExecuteReaderAsyncCore(IDataReader reader)
 			{
@@ -572,8 +490,13 @@ namespace Open.Database.Extensions
 		/// <inhericdoc />
 		public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, T> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			return ExecuteAsync(command => command.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken));
+			return ConnectionProvider.OpenAsync(async (conn, state) =>
+			{
+				// Open MUST occur before command creation as some DbCommands require it.
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var cmd = PrepareCommand(conn);
+				return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken);
+			});
 
 			ValueTask<T> ExecuteReaderAsyncCore(IDataReader reader)
 				=> new ValueTask<T>(handler(EnsureReaderType(reader)));
@@ -581,11 +504,23 @@ namespace Open.Database.Extensions
 
 		/// <inhericdoc />
 		public ValueTask ExecuteReaderAsync(Func<TReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default)
-		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			return ExecuteAsync(command => command.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken));
-		}
+			=> ConnectionProvider.OpenAsync(async (conn, state) =>
+			{
+				// Open MUST occur before command creation as some DbCommands require it.
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var cmd = PrepareCommand(conn);
+				await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken);
+			});
 
+		/// <inhericdoc />
+		public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, ValueTask<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
+			=> ConnectionProvider.OpenAsync(async (conn, state) =>
+			{
+				// Open MUST occur before command creation as some DbCommands require it.
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var cmd = PrepareCommand(conn);
+				return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken);
+			});
 
 		void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
 			=> ExecuteReader(reader => handler(reader), behavior);
@@ -599,39 +534,18 @@ namespace Open.Database.Extensions
 		ValueTask<T> IExecuteReader.ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior)
 			=> ExecuteReaderAsync(reader => transform(reader), behavior);
 
-		/// <inhericdoc />
-		public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, ValueTask<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
-		{
-			if (Connection == null || Connection.State == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			return ExecuteAsync(command => command.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken));
-		}
-
 		/// <summary>
 		/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
 		/// </summary>
 		/// <returns>The value from the return parameter.</returns>
 		public object ExecuteReturn()
-			=> UsingConnection((con, t) =>
+			// Open MUST occur before command creation as some DbCommands require it.
+			=> ConnectionProvider.Open((conn, _) =>
 			{
-				var state = con.EnsureOpen(); // MUST occur before command creation as some DbCommands require it.
-				try
-				{
-					using var cmd = con.CreateCommand(Type, Command, Timeout);
-					if (!(cmd is TCommand c))
-						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-					if (t != null)
-						c.Transaction = t;
-
-					AddParams(c);
-					var returnParameter = c.AddReturnParameter();
-
-					c.ExecuteNonQuery();
-					return returnParameter.Value;
-				}
-				finally
-				{
-					if (state == ConnectionState.Closed) con.Close();
-				}
+				using var cmd = PrepareCommand(conn);
+				var returnParameter = cmd.AddReturnParameter();
+				cmd.ExecuteNonQuery();
+				return returnParameter.Value;
 			});
 
 		/// <summary>
@@ -649,34 +563,18 @@ namespace Open.Database.Extensions
 		{
 			CancellationToken.ThrowIfCancellationRequested();
 
-			return UsingConnectionAsync(async (con, t) =>
+			// Open MUST occur before command creation as some DbCommands require it.
+			return ConnectionProvider.OpenAsync(async (conn, _) =>
 			{
-				// MUST occur before command creation as some DbCommands require it.
-				var state = con is DbConnection dbc
-					? await dbc.EnsureOpenAsync(CancellationToken)
-					: con.EnsureOpen();
+				using var cmd = PrepareCommand(conn);
+				var returnParameter = cmd.AddReturnParameter();
 
-				try
-				{
-					using var cmd = con.CreateCommand(Type, Command, Timeout);
-					if (!(cmd is TCommand c))
-						throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+				if (cmd is DbCommand dbCommand)
+					await dbCommand.ExecuteNonQueryAsync(CancellationToken).ConfigureAwait(false);
+				else
+					cmd.ExecuteNonQuery();
 
-					AddParams(c);
-					var returnParameter = c.AddReturnParameter();
-
-					if (c is DbCommand dbCommand)
-						await dbCommand.ExecuteNonQueryAsync(CancellationToken).ConfigureAwait(false);
-					else
-						c.ExecuteNonQuery();
-
-					return returnParameter.Value;
-				}
-				finally
-				{
-					if (state == ConnectionState.Closed)
-						con.Close();
-				}
+				return returnParameter.Value;
 			});
 		}
 

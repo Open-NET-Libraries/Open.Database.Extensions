@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Open.Database.Extensions.Core;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
@@ -306,6 +308,25 @@ namespace Open.Database.Extensions
 
 			return command.ExecuteReader(
 				reader => reader.Select(transform).ToArray(),
+				behavior | CommandBehavior.SingleResult);
+		}
+
+		/// <summary>
+		/// Converts all IDataRecords into an immutable array using a transform function.
+		/// </summary>
+		/// <typeparam name="T">The expected return type.</typeparam>
+		/// <param name="command">The IExecuteReader to iterate.</param>
+		/// <param name="transform">The transform function.</param>
+		/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+		/// <returns>The array of transformed records.</returns>
+		public static ImmutableArray<T> ToImmutableArray<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			return command.ExecuteReader(
+				reader => reader.Select(transform).ToImmutableArray(),
 				behavior | CommandBehavior.SingleResult);
 		}
 

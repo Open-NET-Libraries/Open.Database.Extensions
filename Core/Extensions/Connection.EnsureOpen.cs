@@ -58,9 +58,10 @@ namespace Open.Database.Extensions
 			await connection.OpenAsync(cancellationToken).ConfigureAwait(configureAwait);
 
 			if (cancellationToken.IsCancellationRequested && !state.HasFlag(ConnectionState.Closed))
+			{
 				connection.Close(); // Fake finally...
-
-			cancellationToken.ThrowIfCancellationRequested();
+				cancellationToken.ThrowIfCancellationRequested();
+			}
 
 			return state;
 		}
@@ -74,5 +75,21 @@ namespace Open.Database.Extensions
 		/// <returns>A task containing the prior connection state.</returns>
 		public static ValueTask<ConnectionState> EnsureOpenAsync(this DbConnection connection, CancellationToken cancellationToken)
 			=> connection.EnsureOpenAsync(true, cancellationToken);
+
+		/// <summary>
+		/// If the connection isn't open, opens the connection.
+		/// If the connection is in neither open or close, first closes the connection.
+		/// </summary>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="cancellationToken">An optional token to cancel opening.</param>
+		/// <returns>A task containing the prior connection state.</returns>
+		internal static async ValueTask<ConnectionState> EnsureOpenAsync(this IDbConnection connection, CancellationToken cancellationToken)
+		{
+			if (connection is DbConnection c)
+				return await c.EnsureOpenAsync(true, cancellationToken);
+
+			cancellationToken.ThrowIfCancellationRequested();
+			return connection.EnsureOpen();
+		}
 	}
 }

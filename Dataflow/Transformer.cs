@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,15 +17,21 @@ namespace Open.Database.Extensions.Dataflow
 
 		class DataflowProcessor : Processor
 		{
-			public DataflowProcessor(Transformer<T> transformer, IList<string>? names = null)
-				:base (transformer, names)
+			public DataflowProcessor(Transformer<T> transformer)
+				: base(transformer)
+			{
+
+			}
+
+			public DataflowProcessor(Transformer<T> transformer, ImmutableArray<string> names)
+				: base(transformer, names)
 			{
 
 			}
 
 			public TransformBlock<object[], T> GetBlock(
 				ExecutionDataflowBlockOptions? options = null)
-				=> options==null
+				=> options == null
 					? new TransformBlock<object[], T>(Transform)
 					: new TransformBlock<object[], T>(Transform, options);
 		}
@@ -85,7 +92,7 @@ namespace Open.Database.Extensions.Dataflow
 		}
 
 		public TransformBlock<object[], T> ResultsBlock(
-			out Action<string[]> initColumnNames,
+			out Action<ImmutableArray<string>> initColumnNames,
 			ExecutionDataflowBlockOptions? options = null)
 		{
 			var processor = new DataflowProcessor(this);

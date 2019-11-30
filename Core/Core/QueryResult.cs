@@ -6,7 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Open.Database.Extensions
+namespace Open.Database.Extensions.Core
 {
 	/// <summary>
 	/// A container for data reader results that also provides the column names and other helpful data methods.
