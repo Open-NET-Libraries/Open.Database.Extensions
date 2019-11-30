@@ -1,0 +1,2014 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class DataReaderExtensions
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class DataReaderExtensions
+   ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.DataReaderExtensions">
+  
+  
+  <h1 id="Open_Database_Extensions_DataReaderExtensions" data-uid="Open.Database.Extensions.DataReaderExtensions" class="text-break">Class DataReaderExtensions
+  </h1>
+  <div class="markdown level0 summary"><p>Extension methods for Data Readers.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">DataReaderExtensions</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.html">Open.Database.Extensions</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.Core.dll</h6>
+  <h5 id="Open_Database_Extensions_DataReaderExtensions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class DataReaderExtensions</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L164">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)">AsEnumerable(IDataReader)</h4>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.
+DBNull values are retained.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; AsEnumerable(this IDataReader reader)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The reader to enumerate.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>[]&gt;</td>
+        <td><p>An enumeration of the values returned from a data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L221">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">AsEnumerable(IDataReader, IEnumerable&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.
+DBNull values are retained.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; AsEnumerable(this IDataReader reader, IEnumerable&lt;int&gt; ordinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The reader to enumerate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>[]&gt;</td>
+        <td><p>An enumeration of the values returned from a data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L231">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Int32_System_Int32___" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Int32,System.Int32[])">AsEnumerable(IDataReader, Int32, Int32[])</h4>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; AsEnumerable(this IDataReader reader, int n, params int[] others)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The reader to enumerate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">n</span></td>
+        <td><p>The first ordinal to include in the request to the reader for each record.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span>[]</td>
+        <td><span class="parametername">others</span></td>
+        <td><p>The remaining ordinals to request from the reader for each record.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>[]&gt;</td>
+        <td><p>An enumeration of the values returned from a data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L798">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults(System.Data.IDataReader)">FirstOrdinalResults(IDataReader)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+DBNull values are then converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object&gt; FirstOrdinalResults(this IDataReader reader)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>The enumerable first ordinal values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_Common_DbDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults%60%601(System.Data.Common.DbDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L822">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_Common_DbDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)">FirstOrdinalResults&lt;T0&gt;(DbDataReader)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+Any DBNull values are then converted to null and casted to type T0;</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T0&gt; FirstOrdinalResults&lt;T0&gt;(this DbDataReader reader)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults%60%601(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L812">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults``1(System.Data.IDataReader)">FirstOrdinalResults&lt;T0&gt;(IDataReader)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+Any DBNull values are then converted to null and casted to type T0;</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T0&gt; FirstOrdinalResults&lt;T0&gt;(this IDataReader reader)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L848">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">FirstOrdinalResultsAsync(DbDataReader, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;IEnumerable&lt;object&gt;&gt; FirstOrdinalResultsAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;&gt;</td>
+        <td><p>The list of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L866">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">FirstOrdinalResultsAsync&lt;T0&gt;(DbDataReader, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+Any DBNull values are then converted to null and casted to type T0;</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;IEnumerable&lt;T0&gt;&gt; FirstOrdinalResultsAsync&lt;T0&gt;(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L29">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ForEach_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">ForEach(IDataReader, Action&lt;IDataRecord&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ForEach(this IDataReader reader, Action&lt;IDataRecord&gt; handler, bool throwOnCancellation, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">throwOnCancellation</span></td>
+        <td><p>If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional cancellation token for stopping the iteration.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L74">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ForEach_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Threading.CancellationToken)">ForEach(IDataReader, Action&lt;IDataRecord&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ForEach(this IDataReader reader, Action&lt;IDataRecord&gt; handler, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional cancellation token for stopping the iteration.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L84">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbDataReader, Action&lt;IDataRecord&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbDataReader reader, Action&lt;IDataRecord&gt; handler, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L111">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbDataReader, Func&lt;IDataRecord, ValueTask&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbDataReader reader, Func&lt;IDataRecord, ValueTask&gt; handler, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L155">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">ForEachAsync(DbDataReader, Func&lt;IDataRecord, ValueTask&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbDataReader reader, Func&lt;IDataRecord, ValueTask&gt; handler, CancellationToken cancellationToken)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L625">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)">IterateWhile(IDataReader, Func&lt;IDataRecord, Boolean&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void IterateWhile(this IDataReader reader, Func&lt;IDataRecord, bool&gt; predicate, bool throwOnCancellation, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">throwOnCancellation</span></td>
+        <td><p>If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional cancellation token for stopping the iteration.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L667">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken)">IterateWhile(IDataReader, Func&lt;IDataRecord, Boolean&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void IterateWhile(this IDataReader reader, Func&lt;IDataRecord, bool&gt; predicate, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional cancellation token for stopping the iteration.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L692">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)">IterateWhileAsync(DbDataReader, Func&lt;IDataRecord, Boolean&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates an IDataReader on a command while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask IterateWhileAsync(this DbDataReader reader, Func&lt;IDataRecord, bool&gt; predicate, bool useReadAsync, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The DbDataReader to load data from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L676">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken)">IterateWhileAsync(DbDataReader, Func&lt;IDataRecord, Boolean&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask IterateWhileAsync(this DbDataReader reader, Func&lt;IDataRecord, bool&gt; predicate, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L776">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Boolean,System.Threading.CancellationToken)">IterateWhileAsync(IDataReader, Func&lt;IDataRecord, ValueTask&lt;Boolean&gt;&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask IterateWhileAsync(this IDataReader reader, Func&lt;IDataRecord, ValueTask&lt;bool&gt;&gt; predicate, bool useReadAsync, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L751">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Threading.CancellationToken)">IterateWhileAsync(IDataReader, Func&lt;IDataRecord, ValueTask&lt;Boolean&gt;&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates an IDataReader while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask IterateWhileAsync(this IDataReader reader, Func&lt;IDataRecord, ValueTask&lt;bool&gt;&gt; predicate, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The DbDataReader to load data from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L241">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_Select_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">Select&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Iterates records from an IDataReader and passes the IDataRecord to a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; Select&lt;T&gt;(this IDataReader reader, Func&lt;IDataRecord, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;</td>
+        <td><p>An enumerable used to iterate the results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L260">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_Select_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_System_Boolean_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken,System.Boolean)">Select&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;, CancellationToken, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Iterates records from an IDataReader and passes the IDataRecord to a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; Select&lt;T&gt;(this IDataReader reader, Func&lt;IDataRecord, T&gt; transform, CancellationToken cancellationToken, bool throwOnCancellation = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A cancellation token for stopping the iteration.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">throwOnCancellation</span></td>
+        <td><p>If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;</td>
+        <td><p>An enumerable used to iterate the results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Threading_CancellationToken_System_Func_System_Data_IDataRecord___0__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L308">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_Select_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Threading_CancellationToken_System_Func_System_Data_IDataRecord___0__System_Boolean_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Threading.CancellationToken,System.Func{System.Data.IDataRecord,``0},System.Boolean)">Select&lt;T&gt;(IDataReader, CancellationToken, Func&lt;IDataRecord, T&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Iterates records from an IDataReader and passes the IDataRecord to a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; Select&lt;T&gt;(this IDataReader reader, CancellationToken cancellationToken, Func&lt;IDataRecord, T&gt; transform, bool throwOnCancellation = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A cancellation token for stopping the iteration.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">throwOnCancellation</span></td>
+        <td><p>If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;</td>
+        <td><p>An enumerable used to iterate the results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToArray%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L570">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToArray_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToArray*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.DataReaderExtensions.ToArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">ToArray&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for .Select(transform).ToArray();</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] ToArray&lt;T&gt;(this IDataReader reader, Func&lt;IDataRecord, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>T[]</td>
+        <td><p>An array of the transformed results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToDataTable_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToDataTable(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L588">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToDataTable_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToDataTable_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTable(System.Data.IDataReader)">ToDataTable(IDataReader)</h4>
+  <div class="markdown level1 summary"><p>Loads all remaining data from an IDataReader into a DataTable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DataTable ToDataTable(this IDataReader reader)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to load data from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.DataTable</span></td>
+        <td><p>The resultant DataTable.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToDataTables_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToDataTables(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L604">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToDataTables_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTables*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToDataTables_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTables(System.Data.IDataReader)">ToDataTables(IDataReader)</h4>
+  <div class="markdown level1 summary"><p>Loads all data from a command through an IDataReader into a DataTables.
+Calls .NextResult() to check for more results.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;DataTable&gt; ToDataTables(this IDataReader reader)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to load data from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.Data.DataTable</span>&gt;</td>
+        <td><p>The resultant list of DataTables.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToImmutableArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToImmutableArray%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L580">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToImmutableArray_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToImmutableArray*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToImmutableArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.DataReaderExtensions.ToImmutableArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">ToImmutableArray&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for .Select(transform).ToImmutableArray();</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ImmutableArray&lt;T&gt; ToImmutableArray&lt;T&gt;(this IDataReader reader, Func&lt;IDataRecord, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Immutable.ImmutableArray</span>&lt;T&gt;</td>
+        <td><p>An array of the transformed results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToList__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToList%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L521">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToList_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToList*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToList__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">ToList&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for .Iterate(transform).ToList();</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;T&gt; ToList&lt;T&gt;(this IDataReader reader, Func&lt;IDataRecord, T&gt; transform, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The IDataReader to iterate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;T&gt;</td>
+        <td><p>A list of the transformed results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToListAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L533">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToListAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbDataReader, Func&lt;IDataRecord, T&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbDataReader reader, Func&lt;IDataRecord, T&gt; transform, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The SqlDataReader to read from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToListAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L552">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_ToListAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbDataReader, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbDataReader reader, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt; transform, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The SqlDataReader to read from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L20" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

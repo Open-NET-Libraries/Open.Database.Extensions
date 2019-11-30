@@ -1,0 +1,1585 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class DataRecordExtensions
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class DataRecordExtensions
+   ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.DataRecordExtensions">
+  
+  
+  <h1 id="Open_Database_Extensions_DataRecordExtensions" data-uid="Open.Database.Extensions.DataRecordExtensions" class="text-break">Class DataRecordExtensions
+  </h1>
+  <div class="markdown level0 summary"><p>Extension methods for IDataRecord access.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">DataRecordExtensions</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.html">Open.Database.Extensions</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.Core.dll</h6>
+  <h5 id="Open_Database_Extensions_DataRecordExtensions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class DataRecordExtensions</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ColumnNames_System_Data_IDataRecord_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ColumnNames(System.Data.IDataRecord)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L21">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ColumnNames_" data-uid="Open.Database.Extensions.DataRecordExtensions.ColumnNames*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ColumnNames_System_Data_IDataRecord_" data-uid="Open.Database.Extensions.DataRecordExtensions.ColumnNames(System.Data.IDataRecord)">ColumnNames(IDataRecord)</h4>
+  <div class="markdown level1 summary"><p>Returns all the column names for the current result set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;string&gt; ColumnNames(this IDataRecord record)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The reader to get column names from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><p>The enumerable of column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_DataTypeNames_System_Data_IDataRecord_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.DataTypeNames(System.Data.IDataRecord)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L302">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_DataTypeNames_" data-uid="Open.Database.Extensions.DataRecordExtensions.DataTypeNames*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_DataTypeNames_System_Data_IDataRecord_" data-uid="Open.Database.Extensions.DataRecordExtensions.DataTypeNames(System.Data.IDataRecord)">DataTypeNames(IDataRecord)</h4>
+  <div class="markdown level1 summary"><p>Returns all the data type names for the columns of current result set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;string&gt; DataTypeNames(this IDataRecord record)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The reader to get data type names from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><p>The enumerable of data type names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_EnumerateValues_System_Data_IDataRecord_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.EnumerateValues(System.Data.IDataRecord)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L131">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_EnumerateValues_" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValues*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_EnumerateValues_System_Data_IDataRecord_" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValues(System.Data.IDataRecord)">EnumerateValues(IDataRecord)</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object&gt; EnumerateValues(this IDataRecord record)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>An enumerable for iterating the values of a record.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L147">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})">EnumerateValuesFromOrdinals(IDataRecord, IEnumerable&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object&gt; EnumerateValuesFromOrdinals(this IDataRecord record, IEnumerable&lt;int&gt; ordinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The set of ordinals to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>An enumerable of values matching the ordinal positions requested.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord%2CSystem.Collections.Generic.IList%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L163">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32__" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32})">EnumerateValuesFromOrdinals(IDataRecord, IList&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object&gt; EnumerateValuesFromOrdinals(this IDataRecord record, IList&lt;int&gt; ordinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The set of ordinals to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>An enumerable of values matching the ordinal positions requested.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_System_Data_IDataRecord_System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord%2CSystem.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L182">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_EnumerateValuesFromOrdinals_System_Data_IDataRecord_System_Int32_System_Int32___" data-uid="Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Int32,System.Int32[])">EnumerateValuesFromOrdinals(IDataRecord, Int32, Int32[])</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object&gt; EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">firstOrdinal</span></td>
+        <td><p>The first ordinal to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span>[]</td>
+        <td><span class="parametername">remainingOrdinals</span></td>
+        <td><p>The remaining set of ordinals to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>An enumerable of values matching the ordinal positions requested.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetDataTypeNames_System_Data_IDataRecord_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetDataTypeNames(System.Data.IDataRecord)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L317">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetDataTypeNames_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetDataTypeNames*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetDataTypeNames_System_Data_IDataRecord_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetDataTypeNames(System.Data.IDataRecord)">GetDataTypeNames(IDataRecord)</h4>
+  <div class="markdown level1 summary"><p>Returns all the data type names for the columns of current result set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string[] GetDataTypeNames(this IDataRecord record)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The reader to get data type names from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span>[]</td>
+        <td><p>The array of data type names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetMatchingOrdinals_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetMatchingOrdinals(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.String%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L294">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetMatchingOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetMatchingOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetMatchingOrdinals_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetMatchingOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">GetMatchingOrdinals(IDataRecord, IEnumerable&lt;String&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Returns an array of name to ordinal mappings.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (string Name, int Ordinal)[] GetMatchingOrdinals(this IDataRecord record, IEnumerable&lt;string&gt; columnNames, bool sort = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query the ordinals from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The requested column names.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">sort</span></td>
+        <td><p>If true, will order the results by ordinal ascending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;[]</td>
+        <td><p>The array of name to ordinal mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetNames_System_Data_IDataRecord_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetNames(System.Data.IDataRecord)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L36">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetNames_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetNames*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetNames_System_Data_IDataRecord_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetNames(System.Data.IDataRecord)">GetNames(IDataRecord)</h4>
+  <div class="markdown level1 summary"><p>Returns all the column names for the current result set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ImmutableArray&lt;string&gt; GetNames(this IDataRecord record)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The reader to get column names from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Immutable.ImmutableArray</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><p>The array of column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetNames_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetNames(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L54">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetNames_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetNames*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetNames_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Open.Database.Extensions.DataRecordExtensions.GetNames(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})">GetNames(IDataRecord, IEnumerable&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns all the column names for the current result set by index provided by the ordinals.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ImmutableArray&lt;string&gt; GetNames(this IDataRecord record, IEnumerable&lt;int&gt; ordinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The reader to get column names from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The list (and order) of ordinals to look up.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Immutable.ImmutableArray</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><p>The array of column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetOrdinalMapping_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.String%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L105">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetOrdinalMapping_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetOrdinalMapping_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">GetOrdinalMapping(IDataRecord, IEnumerable&lt;String&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Returns an array of name to ordinal mappings.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record, IEnumerable&lt;string&gt; columnNames, bool sort = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query the ordinals from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The requested column names.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">sort</span></td>
+        <td><p>If true, will order the results by ordinal ascending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord%2CSystem.Collections.Generic.IList%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L237">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32__" data-uid="Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32})">GetValuesFromOrdinals(IDataRecord, IList&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static object[] GetValuesFromOrdinals(this IDataRecord record, IList&lt;int&gt; ordinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The set of ordinals to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><p>An array of values matching the ordinal positions requested.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_System_Data_IDataRecord_System_ReadOnlySpan_System_Int32___System_Span_System_Object__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord%2CSystem.ReadOnlySpan%7BSystem.Int32%7D%40%2CSystem.Span%7BSystem.Object%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L200">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_System_Data_IDataRecord_System_ReadOnlySpan_System_Int32___System_Span_System_Object__" data-uid="Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.ReadOnlySpan{System.Int32}@,System.Span{System.Object})">GetValuesFromOrdinals(IDataRecord, ReadOnlySpan&lt;Int32&gt;, Span&lt;Object&gt;)</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Span&lt;object&gt; GetValuesFromOrdinals(this IDataRecord record, in ReadOnlySpan&lt;int&gt; ordinals, Span&lt;object&gt; values)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.ReadOnlySpan</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The set of ordinals to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Span</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><span class="parametername">values</span></td>
+        <td><p>The target span to store the values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Span</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>An array of values matching the ordinal positions requested.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals__1_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32____0_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals%60%601(System.Data.IDataRecord%2CSystem.Collections.Generic.IList%7BSystem.Int32%7D%2C%60%600)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L218">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals__1_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32____0_" data-uid="Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals``1(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32},``0)">GetValuesFromOrdinals&lt;TList&gt;(IDataRecord, IList&lt;Int32&gt;, TList)</h4>
+  <div class="markdown level1 summary"><p>Produces a selective set of column values based upon the desired ordinal positions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static TList GetValuesFromOrdinals&lt;TList&gt;(this IDataRecord record, IList&lt;int&gt; ordinals, TList values)
+    where TList : IList&lt;object&gt;</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The set of ordinals to query.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">TList</span></td>
+        <td><span class="parametername">values</span></td>
+        <td><p>The target list to store the values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">TList</span></td>
+        <td><p>An array of values matching the ordinal positions requested.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TList</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_MatchingOrdinals_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.String%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L259">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_MatchingOrdinals_" data-uid="Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_MatchingOrdinals_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_" data-uid="Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">MatchingOrdinals(IDataRecord, IEnumerable&lt;String&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Returns an enumerable of name to ordinal mappings.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;(string Name, int Ordinal)&gt; MatchingOrdinals(this IDataRecord record, IEnumerable&lt;string&gt; columnNames, bool sort = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query the ordinals from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The requested column names.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">sort</span></td>
+        <td><p>If true, will order the results by ordinal ascending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><p>The enumerable of name to ordinal mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_System_Data_IDataRecord_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(System.Data.IDataRecord)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L67">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_" data-uid="Open.Database.Extensions.DataRecordExtensions.OrdinalMapping*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_System_Data_IDataRecord_" data-uid="Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(System.Data.IDataRecord)">OrdinalMapping(IDataRecord)</h4>
+  <div class="markdown level1 summary"><p>Returns the (name,ordinal) mapping for current result set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;(string Name, int Ordinal)&gt; OrdinalMapping(this IDataRecord record)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The reader to get column names from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><p>An enumerable of the mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.String%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L76">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_" data-uid="Open.Database.Extensions.DataRecordExtensions.OrdinalMapping*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__" data-uid="Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String})">OrdinalMapping(IDataRecord, IEnumerable&lt;String&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns an array of name to ordinal mappings.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;(string Name, int Ordinal)&gt; OrdinalMapping(this IDataRecord record, IEnumerable&lt;string&gt; columnNames)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query the ordinals from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The requested column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><p>An enumerable of the mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.String%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L93">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_" data-uid="Open.Database.Extensions.DataRecordExtensions.OrdinalMapping*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_OrdinalMapping_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__System_Boolean_" data-uid="Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">OrdinalMapping(IDataRecord, IEnumerable&lt;String&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Returns an array of name to ordinal mappings.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;(string Name, int Ordinal)&gt; OrdinalMapping(this IDataRecord record, IEnumerable&lt;string&gt; columnNames, bool sort)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to query the ordinals from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The requested column names.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">sort</span></td>
+        <td><p>If true, will order the results by ordinal ascending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><p>An enumerable of the mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_Int32_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.Collections.Generic.KeyValuePair%7BSystem.Int32%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L336">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_Int32_System_String___" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.Int32,System.String}})">ToDictionary(IDataRecord, IEnumerable&lt;KeyValuePair&lt;Int32, String&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, IEnumerable&lt;KeyValuePair&lt;int, string&gt;&gt; columnMap)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Collections.Generic.KeyValuePair</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.String</span>&gt;&gt;</td>
+        <td><span class="parametername">columnMap</span></td>
+        <td><p>The column ids and resultant names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.String%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L407">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_String__" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String})">ToDictionary(IDataRecord, IEnumerable&lt;String&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, IEnumerable&lt;string&gt; columnNames)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The column names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.Int32%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L349">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_Int32___" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.Int32}})">ToDictionary(IDataRecord, IEnumerable&lt;(String Name, Int32 Ordinal)&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, IEnumerable&lt;(string Name, int Ordinal)&gt; ordinalMapping)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><span class="parametername">ordinalMapping</span></td>
+        <td><p>The column ids and resultant names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IList_System_String__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.Collections.Generic.IList%7BSystem.String%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L426">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IList_System_String__" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IList{System.String})">ToDictionary(IDataRecord, IList&lt;String&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, IList&lt;string&gt; columnNames)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The column names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IList_System_ValueTuple_System_String_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.Collections.Generic.IList%7BSystem.ValueTuple%7BSystem.String%2CSystem.Int32%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L362">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_Collections_Generic_IList_System_ValueTuple_System_String_System_Int32___" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IList{System.ValueTuple{System.String,System.Int32}})">ToDictionary(IDataRecord, IList&lt;(String Name, Int32 Ordinal)&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, IList&lt;(string Name, int Ordinal)&gt; ordinalMapping)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><span class="parametername">ordinalMapping</span></td>
+        <td><p>The column ids and resultant names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_ReadOnlySpan_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.ReadOnlySpan%7BSystem.String%7D%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L449">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_ReadOnlySpan_System_String___" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.ReadOnlySpan{System.String}@)">ToDictionary(IDataRecord, ReadOnlySpan&lt;String&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, in ReadOnlySpan&lt;string&gt; columnNames)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.ReadOnlySpan</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The column names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_ReadOnlySpan_System_ValueTuple_System_String_System_Int32____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord%2CSystem.ReadOnlySpan%7BSystem.ValueTuple%7BSystem.String%2CSystem.Int32%7D%7D%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L385">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary*"></a>
+  <h4 id="Open_Database_Extensions_DataRecordExtensions_ToDictionary_System_Data_IDataRecord_System_ReadOnlySpan_System_ValueTuple_System_String_System_Int32____" data-uid="Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.ReadOnlySpan{System.ValueTuple{System.String,System.Int32}}@)">ToDictionary(IDataRecord, ReadOnlySpan&lt;(String Name, Int32 Ordinal)&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returns the specified column data of IDataRecord as a Dictionary.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, object&gt; ToDictionary(this IDataRecord record, in ReadOnlySpan&lt;(string Name, int Ordinal)&gt; ordinalMapping)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataRecord</span></td>
+        <td><span class="parametername">record</span></td>
+        <td><p>The IDataRecord to extract values from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.ReadOnlySpan</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Int32</span>&gt;&gt;</td>
+        <td><span class="parametername">ordinalMapping</span></td>
+        <td><p>The column ids and resultant names to query.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Object</span>&gt;</td>
+        <td><p>The resultant Dictionary of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataRecordExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataRecordExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataRecord.cs/#L14" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

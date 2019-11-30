@@ -1,0 +1,3656 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class CommandExtensions
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class CommandExtensions
+   ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.CommandExtensions">
+  
+  
+  <h1 id="Open_Database_Extensions_CommandExtensions" data-uid="Open.Database.Extensions.CommandExtensions" class="text-break">Class CommandExtensions
+  </h1>
+  <div class="markdown level0 summary"><p>Core non-DB-specific extensions for retrieving data from a command using best practices.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">CommandExtensions</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.html">Open.Database.Extensions</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.Core.dll</h6>
+  <h5 id="Open_Database_Extensions_CommandExtensions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class CommandExtensions</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_AddParameter_System_Data_IDbCommand_System_String_System_Object_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand%2CSystem.String%2CSystem.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command.AddParameter.cs/#L19">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_AddParameter_" data-uid="Open.Database.Extensions.CommandExtensions.AddParameter*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_AddParameter_System_Data_IDbCommand_System_String_System_Object_" data-uid="Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object)">AddParameter(IDbCommand, String, Object)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbDataParameter AddParameter(this IDbCommand target, string name, object value = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">value</span></td>
+        <td><p>The value of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbDataParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_AddParameter_System_Data_IDbCommand_System_String_System_Object_System_Data_DbType_System_Data_ParameterDirection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand%2CSystem.String%2CSystem.Object%2CSystem.Data.DbType%2CSystem.Data.ParameterDirection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command.AddParameter.cs/#L47">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_AddParameter_" data-uid="Open.Database.Extensions.CommandExtensions.AddParameter*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_AddParameter_System_Data_IDbCommand_System_String_System_Object_System_Data_DbType_System_Data_ParameterDirection_" data-uid="Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)">AddParameter(IDbCommand, String, Object, DbType, ParameterDirection)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbDataParameter AddParameter(this IDbCommand target, string name, object value, DbType type, ParameterDirection direction = ParameterDirection.Input)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">value</span></td>
+        <td><p>The value of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.DbType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The DbType of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.ParameterDirection</span></td>
+        <td><span class="parametername">direction</span></td>
+        <td><p>The direction of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbDataParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_AddParameterType_System_Data_IDbCommand_System_String_System_Data_DbType_System_Data_ParameterDirection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.AddParameterType(System.Data.IDbCommand%2CSystem.String%2CSystem.Data.DbType%2CSystem.Data.ParameterDirection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command.AddParameter.cs/#L64">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_AddParameterType_" data-uid="Open.Database.Extensions.CommandExtensions.AddParameterType*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_AddParameterType_System_Data_IDbCommand_System_String_System_Data_DbType_System_Data_ParameterDirection_" data-uid="Open.Database.Extensions.CommandExtensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.DbType,System.Data.ParameterDirection)">AddParameterType(IDbCommand, String, DbType, ParameterDirection)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command a typed (non-input) parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbDataParameter AddParameterType(this IDbCommand target, string name, DbType type, ParameterDirection direction = ParameterDirection.Input)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.DbType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The DbType of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.ParameterDirection</span></td>
+        <td><span class="parametername">direction</span></td>
+        <td><p>The direction of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbDataParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_AddReturnParameter_System_Data_IDbCommand_System_Data_DbType_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand%2CSystem.Data.DbType%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command.AddParameter.cs/#L91">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_AddReturnParameter_" data-uid="Open.Database.Extensions.CommandExtensions.AddReturnParameter*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_AddReturnParameter_System_Data_IDbCommand_System_Data_DbType_System_String_" data-uid="Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand,System.Data.DbType,System.String)">AddReturnParameter(IDbCommand, DbType, String)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command a typed return parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbDataParameter AddReturnParameter(this IDbCommand target, DbType type, string name = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.DbType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The DbType of the parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbDataParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_AddReturnParameter_System_Data_IDbCommand_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command.AddParameter.cs/#L101">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_AddReturnParameter_" data-uid="Open.Database.Extensions.CommandExtensions.AddReturnParameter*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_AddReturnParameter_System_Data_IDbCommand_System_String_" data-uid="Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand,System.String)">AddReturnParameter(IDbCommand, String)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for adding command a return parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbDataParameter AddReturnParameter(this IDbCommand target, string name = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>The command to add a parameter to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">name</span></td>
+        <td><p>The name of the parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbDataParameter</span></td>
+        <td><p>The created IDbDataParameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReader_System_Data_IDbCommand_System_Action_System_Data_IDataReader__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReader(System.Data.IDbCommand%2CSystem.Action%7BSystem.Data.IDataReader%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L257">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReader_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReader*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReader_System_Data_IDbCommand_System_Action_System_Data_IDataReader__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReader(System.Data.IDbCommand,System.Action{System.Data.IDataReader},System.Data.CommandBehavior)">ExecuteReader(IDbCommand, Action&lt;IDataReader&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a handler function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ExecuteReader(this IDbCommand command, Action&lt;IDataReader&gt; handler, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataReader</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReader__1_System_Data_IDbCommand_System_Func_System_Data_IDataReader___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReader%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataReader%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L277">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReader_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReader*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReader__1_System_Data_IDbCommand_System_Func_System_Data_IDataReader___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReader``1(System.Data.IDbCommand,System.Func{System.Data.IDataReader,``0},System.Data.CommandBehavior)">ExecuteReader&lt;T&gt;(IDbCommand, Func&lt;IDataReader, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ExecuteReader&lt;T&gt;(this IDbCommand command, Func&lt;IDataReader, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataReader</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The result of the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_System_Data_Common_DbCommand_System_Action_System_Data_Common_DbDataReader__System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand%2CSystem.Action%7BSystem.Data.Common.DbDataReader%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L296">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_System_Data_Common_DbCommand_System_Action_System_Data_Common_DbDataReader__System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Threading.CancellationToken)">ExecuteReaderAsync(DbCommand, Action&lt;DbDataReader&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a handler function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteReaderAsync(this DbCommand command, Action&lt;DbDataReader&gt; handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.Common.DbDataReader</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_System_Data_Common_DbCommand_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.Common.DbDataReader%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L346">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_System_Data_Common_DbCommand_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior,System.Threading.CancellationToken)">ExecuteReaderAsync(DbCommand, Func&lt;DbDataReader, ValueTask&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a handler function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteReaderAsync(this DbCommand command, Func&lt;DbDataReader, ValueTask&gt; handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbDataReader</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_System_Data_IDbCommand_System_Func_System_Data_IDataReader_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataReader%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L318">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_System_Data_IDbCommand_System_Func_System_Data_IDataReader_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.IDbCommand,System.Func{System.Data.IDataReader,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior,System.Threading.CancellationToken)">ExecuteReaderAsync(IDbCommand, Func&lt;IDataReader, ValueTask&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a handler function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteReaderAsync(this IDbCommand command, Func&lt;IDataReader, ValueTask&gt; handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataReader</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_Common_DbDataReader___0__System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync%60%601(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.Common.DbDataReader%2C%60%600%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L370">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_Common_DbDataReader___0__System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Threading.CancellationToken)">ExecuteReaderAsync&lt;T&gt;(DbCommand, Func&lt;DbDataReader, T&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteReaderAsync&lt;T&gt;(this DbCommand command, Func&lt;DbDataReader, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbDataReader</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The result of the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync%60%601(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.Common.DbDataReader%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L421">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_Common_DbDataReader_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">ExecuteReaderAsync&lt;T&gt;(DbCommand, Func&lt;DbDataReader, ValueTask&lt;T&gt;&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteReaderAsync&lt;T&gt;(this DbCommand command, Func&lt;DbDataReader, ValueTask&lt;T&gt;&gt; transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbDataReader</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The result of the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync__1_System_Data_IDbCommand_System_Func_System_Data_IDataReader_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataReader%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L394">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ExecuteReaderAsync__1_System_Data_IDbCommand_System_Func_System_Data_IDataReader_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.IDbCommand,System.Func{System.Data.IDataReader,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">ExecuteReaderAsync&lt;T&gt;(IDbCommand, Func&lt;IDataReader, ValueTask&lt;T&gt;&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteReaderAsync&lt;T&gt;(this IDbCommand command, Func&lt;IDataReader, ValueTask&lt;T&gt;&gt; transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataReader</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The result of the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_First__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.First%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L668">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_First_" data-uid="Open.Database.Extensions.CommandExtensions.First*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_First__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.First``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">First&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and returns the first result through a transform function.  Throws if none.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T First&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value from the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_FirstOrDefault__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.FirstOrDefault%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L688">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_FirstOrDefault_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrDefault*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_FirstOrDefault__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">FirstOrDefault&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T FirstOrDefault&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value from the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_FirstOrdinalResults_System_Data_IDbCommand_System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.FirstOrdinalResults(System.Data.IDbCommand%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L813">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResults*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResults_System_Data_IDbCommand_System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResults(System.Data.IDbCommand,System.Data.CommandBehavior)">FirstOrdinalResults(IDbCommand, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+DBNull values are then converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object&gt; FirstOrdinalResults(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>The enumerable first ordinal values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_FirstOrdinalResults__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.FirstOrdinalResults%60%601(System.Data.Common.DbCommand%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L834">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResults*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResults__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResults``1(System.Data.Common.DbCommand,System.Data.CommandBehavior)">FirstOrdinalResults&lt;T0&gt;(DbCommand, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+Any DBNull values are then converted to null and casted to type T0;</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T0&gt; FirstOrdinalResults&lt;T0&gt;(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_FirstOrdinalResults__1_System_Data_IDbCommand_System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.FirstOrdinalResults%60%601(System.Data.IDbCommand%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L824">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResults*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResults__1_System_Data_IDbCommand_System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResults``1(System.Data.IDbCommand,System.Data.CommandBehavior)">FirstOrdinalResults&lt;T0&gt;(IDbCommand, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+Any DBNull values are then converted to null and casted to type T0;</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T0&gt; FirstOrdinalResults&lt;T0&gt;(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand%2CSystem.Data.CommandBehavior%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L854">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">FirstOrdinalResultsAsync(DbCommand, CommandBehavior, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column values from every record.
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;IEnumerable&lt;object&gt;&gt; FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;&gt;</td>
+        <td><p>The list of values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync%60%601(System.Data.Common.DbCommand%2CSystem.Data.CommandBehavior%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L866">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">FirstOrdinalResultsAsync&lt;T0&gt;(DbCommand, CommandBehavior, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Reads the first column from every record..
+Any DBNull values are then converted to null and casted to type T0;</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;IEnumerable&lt;T0&gt;&gt; FirstOrdinalResultsAsync&lt;T0&gt;(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L596">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbCommand, Action&lt;IDataRecord&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbCommand command, Action&lt;IDataRecord&gt; handler, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Data.CommandBehavior%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L571">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbCommand, Action&lt;IDataRecord&gt;, CommandBehavior, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbCommand command, Action&lt;IDataRecord&gt; handler, CommandBehavior behavior, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L634">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbCommand, Func&lt;IDataRecord, ValueTask&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbCommand command, Func&lt;IDataRecord, ValueTask&gt; handler, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Data.CommandBehavior%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L610">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ForEachAsync_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbCommand, Func&lt;IDataRecord, ValueTask&gt;, CommandBehavior, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records from an IDataReader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ForEachAsync(this DbCommand command, Func&lt;IDataRecord, ValueTask&gt; handler, CommandBehavior behavior, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_IterateReader_System_Data_IDbCommand_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L506">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_IterateReader_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_IterateReader_System_Data_IDbCommand_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)">IterateReader(IDbCommand, Action&lt;IDataRecord&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates a reader on a command with a handler function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void IterateReader(this IDbCommand command, Action&lt;IDataRecord&gt; handler, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_IterateReader_System_Data_IDbCommand_System_Data_CommandBehavior_System_Action_System_Data_IDataRecord__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand%2CSystem.Data.CommandBehavior%2CSystem.Action%7BSystem.Data.IDataRecord%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L486">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_IterateReader_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_IterateReader_System_Data_IDbCommand_System_Data_CommandBehavior_System_Action_System_Data_IDataRecord__" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand,System.Data.CommandBehavior,System.Action{System.Data.IDataRecord})">IterateReader(IDbCommand, CommandBehavior, Action&lt;IDataRecord&gt;)</h4>
+  <div class="markdown level1 summary"><p>Iterates a reader on a command with a handler function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void IterateReader(this IDbCommand command, CommandBehavior behavior, Action&lt;IDataRecord&gt; handler)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.IDataRecord</span>&gt;</td>
+        <td><span class="parametername">handler</span></td>
+        <td><p>The handler function for each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_IterateReader__2_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.IterateReader%60%602(System.Data.IDbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Func%7BSystem.Collections.Generic.IEnumerable%7B%60%600%7D%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L463">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_IterateReader_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_IterateReader__2_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader``2(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})">IterateReader&lt;TEntity, TResult&gt;(IDbCommand, CommandBehavior, Func&lt;IDataRecord, TEntity&gt;, Func&lt;IEnumerable&lt;TEntity&gt;, TResult&gt;)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static TResult IterateReader&lt;TEntity, TResult&gt;(this IDbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, TEntity&gt; transform, Func&lt;IEnumerable&lt;TEntity&gt;, TResult&gt; selector)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, TEntity&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;TEntity&gt;, TResult&gt;</td>
+        <td><span class="parametername">selector</span></td>
+        <td><p>Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">TResult</span></td>
+        <td><p>The result of the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TEntity</span></td>
+        <td><p>The return type of the transform function applied to each record.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TResult</span></td>
+        <td><p>The type returned by the selector.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_IterateReader__2_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.IterateReader%60%602(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Func%7BSystem.Collections.Generic.IEnumerable%7B%60%600%7D%2C%60%601%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L446">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_IterateReader_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_IterateReader__2_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReader``2(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1},System.Data.CommandBehavior)">IterateReader&lt;TEntity, TResult&gt;(IDbCommand, Func&lt;IDataRecord, TEntity&gt;, Func&lt;IEnumerable&lt;TEntity&gt;, TResult&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Executes a reader on a command with a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static TResult IterateReader&lt;TEntity, TResult&gt;(this IDbCommand command, Func&lt;IDataRecord, TEntity&gt; transform, Func&lt;IEnumerable&lt;TEntity&gt;, TResult&gt; selector, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, TEntity&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;TEntity&gt;, TResult&gt;</td>
+        <td><span class="parametername">selector</span></td>
+        <td><p>Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">TResult</span></td>
+        <td><p>The result of the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TEntity</span></td>
+        <td><p>The return type of the transform function applied to each record.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TResult</span></td>
+        <td><p>The type returned by the selector.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_IterateReaderWhile_System_Data_IDbCommand_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.IterateReaderWhile(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L548">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_IterateReaderWhile_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReaderWhile*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_IterateReaderWhile_System_Data_IDbCommand_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReaderWhile(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)">IterateReaderWhile(IDbCommand, Func&lt;IDataRecord, Boolean&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader on a command while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void IterateReaderWhile(this IDbCommand command, Func&lt;IDataRecord, bool&gt; predicate, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_IterateReaderWhileAsync_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.IterateReaderWhileAsync(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Data.CommandBehavior%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L648">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_IterateReaderWhileAsync_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReaderWhileAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_IterateReaderWhileAsync_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">IterateReaderWhileAsync(DbCommand, Func&lt;IDataRecord, ValueTask&lt;Boolean&gt;&gt;, CommandBehavior, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates an IDataReader on a command while the predicate returns true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask IterateReaderWhileAsync(this DbCommand command, Func&lt;IDataRecord, ValueTask&lt;bool&gt;&gt; predicate, CommandBehavior behavior = CommandBehavior.Default, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">predicate</span></td>
+        <td><p>The handler function that processes each IDataRecord and decides if iteration should continue.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_Single__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.Single%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L709">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_Single_" data-uid="Open.Database.Extensions.CommandExtensions.Single*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_Single__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.Single``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">Single&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T Single&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value from the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_SingleOrDefault__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.SingleOrDefault%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L730">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_SingleOrDefault_" data-uid="Open.Database.Extensions.CommandExtensions.SingleOrDefault*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_SingleOrDefault__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.SingleOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">SingleOrDefault&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.  Throws if more than one entry.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T SingleOrDefault&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value from the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_Skip__1_System_Data_IDbCommand_System_Int32_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.Skip%60%601(System.Data.IDbCommand%2CSystem.Int32%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L772">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_Skip_" data-uid="Open.Database.Extensions.CommandExtensions.Skip*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_Skip__1_System_Data_IDbCommand_System_Int32_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.Skip``1(System.Data.IDbCommand,System.Int32,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">Skip&lt;T&gt;(IDbCommand, Int32, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and skips the first number of results defined by the count.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;T&gt; Skip&lt;T&gt;(this IDbCommand command, int count, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">count</span></td>
+        <td><p>The number of records to skip.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;T&gt;</td>
+        <td><p>The results from the transform after the skip count.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_SkipThenTake__1_System_Data_IDbCommand_System_Int32_System_Int32_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.SkipThenTake%60%601(System.Data.IDbCommand%2CSystem.Int32%2CSystem.Int32%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L795">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_SkipThenTake_" data-uid="Open.Database.Extensions.CommandExtensions.SkipThenTake*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_SkipThenTake__1_System_Data_IDbCommand_System_Int32_System_Int32_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.SkipThenTake``1(System.Data.IDbCommand,System.Int32,System.Int32,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">SkipThenTake&lt;T&gt;(IDbCommand, Int32, Int32, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;T&gt; SkipThenTake&lt;T&gt;(this IDbCommand command, int skip, int take, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">skip</span></td>
+        <td><p>The number of entries to skip before starting to take results.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">take</span></td>
+        <td><p>The maximum number of records to return.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;T&gt;</td>
+        <td><p>The results from the skip, transform and take operation.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_Take__1_System_Data_IDbCommand_System_Int32_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.Take%60%601(System.Data.IDbCommand%2CSystem.Int32%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L751">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_Take_" data-uid="Open.Database.Extensions.CommandExtensions.Take*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_Take__1_System_Data_IDbCommand_System_Int32_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.Take``1(System.Data.IDbCommand,System.Int32,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">Take&lt;T&gt;(IDbCommand, Int32, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates an IDataReader and returns the first number of results defined by the count.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;T&gt; Take&lt;T&gt;(this IDbCommand command, int count, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">count</span></td>
+        <td><p>The maximum number of records to return.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;T&gt;</td>
+        <td><p>The results from the transform limited by the take count.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToArray__1_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToArray%60%601(System.Data.IDbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L162">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToArray_" data-uid="Open.Database.Extensions.CommandExtensions.ToArray*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToArray__1_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">ToArray&lt;T&gt;(IDbCommand, CommandBehavior, Func&lt;IDataRecord, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] ToArray&lt;T&gt;(this IDbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>T[]</td>
+        <td><p>A list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToArray__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToArray%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L182">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToArray_" data-uid="Open.Database.Extensions.CommandExtensions.ToArray*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToArray__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">ToArray&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] ToArray&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>T[]</td>
+        <td><p>A list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToDataTable_System_Data_IDbCommand_System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToDataTable(System.Data.IDbCommand%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L222">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToDataTable_" data-uid="Open.Database.Extensions.CommandExtensions.ToDataTable*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToDataTable_System_Data_IDbCommand_System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ToDataTable(System.Data.IDbCommand,System.Data.CommandBehavior)">ToDataTable(IDbCommand, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Loads all data from a command through an IDataReader into a DataTable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DataTable ToDataTable(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.DataTable</span></td>
+        <td><p>The resultant DataTable.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToDataTables_System_Data_IDbCommand_System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToDataTables(System.Data.IDbCommand%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L240">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToDataTables_" data-uid="Open.Database.Extensions.CommandExtensions.ToDataTables*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToDataTables_System_Data_IDbCommand_System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ToDataTables(System.Data.IDbCommand,System.Data.CommandBehavior)">ToDataTables(IDbCommand, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Loads all data from a command through an IDataReader into a DataTables.
+Calls .NextResult() to check for more results.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;DataTable&gt; ToDataTables(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.Data.DataTable</span>&gt;</td>
+        <td><p>The resultant list of DataTables.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToImmutableArray__1_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToImmutableArray%60%601(System.Data.IDbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L193">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToImmutableArray_" data-uid="Open.Database.Extensions.CommandExtensions.ToImmutableArray*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToImmutableArray__1_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">ToImmutableArray&lt;T&gt;(IDbCommand, CommandBehavior, Func&lt;IDataRecord, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ImmutableArray&lt;T&gt; ToImmutableArray&lt;T&gt;(this IDbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Immutable.ImmutableArray</span>&lt;T&gt;</td>
+        <td><p>A list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToImmutableArray__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToImmutableArray%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L213">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToImmutableArray_" data-uid="Open.Database.Extensions.CommandExtensions.ToImmutableArray*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToImmutableArray__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">ToImmutableArray&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ImmutableArray&lt;T&gt; ToImmutableArray&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Immutable.ImmutableArray</span>&lt;T&gt;</td>
+        <td><p>A list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToList__1_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToList%60%601(System.Data.IDbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L26">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToList_" data-uid="Open.Database.Extensions.CommandExtensions.ToList*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToList__1_System_Data_IDbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.CommandExtensions.ToList``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">ToList&lt;T&gt;(IDbCommand, CommandBehavior, Func&lt;IDataRecord, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;T&gt; ToList&lt;T&gt;(this IDbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;T&gt;</td>
+        <td><p>A list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToList__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToList%60%601(System.Data.IDbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L48">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToList_" data-uid="Open.Database.Extensions.CommandExtensions.ToList*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToList__1_System_Data_IDbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.CommandExtensions.ToList``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">ToList&lt;T&gt;(IDbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static List&lt;T&gt; ToList&lt;T&gt;(this IDbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The IDbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;T&gt;</td>
+        <td><p>A list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToListAsync%60%601(System.Data.Common.DbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L102">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToListAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbCommand, CommandBehavior, Func&lt;IDataRecord, T&gt;, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, T&gt; transform, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToListAsync%60%601(System.Data.Common.DbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L131">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToListAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbCommand, CommandBehavior, Func&lt;IDataRecord, T&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, T&gt; transform, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToListAsync%60%601(System.Data.Common.DbCommand%2CSystem.Data.CommandBehavior%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L62">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToListAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Data_CommandBehavior_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbCommand, CommandBehavior, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbCommand command, CommandBehavior behavior, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt; transform, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToListAsync%60%601(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L147">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToListAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbCommand, Func&lt;IDataRecord, T&gt;, CommandBehavior, Boolean, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbCommand command, Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default, bool useReadAsync = true, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useReadAsync</span></td>
+        <td><p>If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions.ToListAsync%60%601(System.Data.Common.DbCommand%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Data.CommandBehavior%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L86">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_CommandExtensions_ToListAsync_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_CommandExtensions_ToListAsync__1_System_Data_Common_DbCommand_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbCommand, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt;, CommandBehavior, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records using an IDataReader and returns the desired results as a list.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(this DbCommand command, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt; transform, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The DbCommand to generate a reader from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Optional cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing a list of all results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_CommandExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.CommandExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Command._.cs/#L16" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

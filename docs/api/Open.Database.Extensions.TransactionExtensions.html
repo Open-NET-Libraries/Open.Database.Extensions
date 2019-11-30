@@ -1,0 +1,2857 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class TransactionExtensions
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class TransactionExtensions
+   ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.TransactionExtensions">
+  
+  
+  <h1 id="Open_Database_Extensions_TransactionExtensions" data-uid="Open.Database.Extensions.TransactionExtensions" class="text-break">Class TransactionExtensions
+  </h1>
+  <div class="markdown level0 summary"><p>Core non-DB-specific extensions for database transactions.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">TransactionExtensions</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.html">Open.Database.Extensions</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.Core.dll</h6>
+  <h5 id="Open_Database_Extensions_TransactionExtensions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class TransactionExtensions</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_CreateCommand_System_Data_Common_DbTransaction_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.CreateCommand(System.Data.Common.DbTransaction%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.CreateCommand.cs/#L66">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_CreateCommand_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateCommand*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_CreateCommand_System_Data_Common_DbTransaction_System_Data_CommandType_System_String_System_Int32_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateCommand(System.Data.Common.DbTransaction,System.Data.CommandType,System.String,System.Int32)">CreateCommand(DbTransaction, CommandType, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating an DbCommand from any DbTransaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DbCommand CreateCommand(this DbTransaction transaction, CommandType type, string commandText, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.  Text, StoredProcedure, or TableDirect.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">commandText</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_CreateCommand_System_Data_IDbTransaction_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.CreateCommand(System.Data.IDbTransaction%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.CreateCommand.cs/#L23">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_CreateCommand_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateCommand*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_CreateCommand_System_Data_IDbTransaction_System_Data_CommandType_System_String_System_Int32_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateCommand(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Int32)">CreateCommand(IDbTransaction, CommandType, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating an IDbCommand from any IDbTransaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbCommand CreateCommand(this IDbTransaction transaction, CommandType type, string commandText, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.  Text, StoredProcedure, or TableDirect.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">commandText</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_CreateStoredProcedureCommand_System_Data_Common_DbTransaction_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.CreateStoredProcedureCommand(System.Data.Common.DbTransaction%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.CreateCommand.cs/#L97">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_CreateStoredProcedureCommand_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateStoredProcedureCommand*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_CreateStoredProcedureCommand_System_Data_Common_DbTransaction_System_String_System_Int32_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateStoredProcedureCommand(System.Data.Common.DbTransaction,System.String,System.Int32)">CreateStoredProcedureCommand(DbTransaction, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating a stored procedure DbCommand from any DbTransaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DbCommand CreateStoredProcedureCommand(this DbTransaction transaction, string procedureName, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_CreateStoredProcedureCommand_System_Data_IDbTransaction_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.CreateStoredProcedureCommand(System.Data.IDbTransaction%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.CreateCommand.cs/#L54">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_CreateStoredProcedureCommand_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateStoredProcedureCommand*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_CreateStoredProcedureCommand_System_Data_IDbTransaction_System_String_System_Int32_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateStoredProcedureCommand(System.Data.IDbTransaction,System.String,System.Int32)">CreateStoredProcedureCommand(IDbTransaction, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating a stored procedure IDbCommand from any IDbTransaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbCommand CreateStoredProcedureCommand(this IDbTransaction transaction, string procedureName, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_CreateTextCommand_System_Data_Common_DbTransaction_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.CreateTextCommand(System.Data.Common.DbTransaction%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.CreateCommand.cs/#L86">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_CreateTextCommand_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateTextCommand*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_CreateTextCommand_System_Data_Common_DbTransaction_System_String_System_Int32_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateTextCommand(System.Data.Common.DbTransaction,System.String,System.Int32)">CreateTextCommand(DbTransaction, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating a text DbCommand from any DbTransaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DbCommand CreateTextCommand(this DbTransaction transaction, string commandText, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">commandText</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_CreateTextCommand_System_Data_IDbTransaction_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.CreateTextCommand(System.Data.IDbTransaction%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.CreateCommand.cs/#L43">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_CreateTextCommand_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateTextCommand*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_CreateTextCommand_System_Data_IDbTransaction_System_String_System_Int32_" data-uid="Open.Database.Extensions.TransactionExtensions.CreateTextCommand(System.Data.IDbTransaction,System.String,System.Int32)">CreateTextCommand(IDbTransaction, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Shortcut for creating a text IDbCommand from any IDbTransaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IDbCommand CreateTextCommand(this IDbTransaction transaction, string commandText, int secondsTimeout = 60)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to create a command from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">commandText</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">secondsTimeout</span></td>
+        <td><p>The number of seconds to wait before the command times out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbCommand</span></td>
+        <td><p>The created SqlCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Action_System_Data_Common_DbTransaction__System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection%2CSystem.Action%7BSystem.Data.Common.DbTransaction%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L97">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Action_System_Data_Common_DbTransaction__System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Action{System.Data.Common.DbTransaction},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransaction(DbConnection, Action&lt;DbTransaction&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ExecuteTransaction(this DbConnection connection, Action&lt;DbTransaction&gt; action, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Action_System_Data_Common_DbTransaction__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Action%7BSystem.Data.Common.DbTransaction%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L390">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Action_System_Data_Common_DbTransaction__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Action{System.Data.Common.DbTransaction},System.Threading.CancellationToken)">ExecuteTransaction(DbConnection, IsolationLevel, Action&lt;DbTransaction&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ExecuteTransaction(this DbConnection connection, IsolationLevel isolationLevel, Action&lt;DbTransaction&gt; action, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Action_System_Data_Common_DbTransaction__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Action%7BSystem.Data.Common.DbTransaction%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L260">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Action_System_Data_Common_DbTransaction__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Action{System.Data.Common.DbTransaction})">ExecuteTransaction(DbConnection, IsolationLevel, CancellationToken, Action&lt;DbTransaction&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ExecuteTransaction(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Action&lt;DbTransaction&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Action_System_Data_Common_DbTransaction__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Action%7BSystem.Data.Common.DbTransaction%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L510">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Action_System_Data_Common_DbTransaction__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Action{System.Data.Common.DbTransaction})">ExecuteTransaction(DbConnection, CancellationToken, Action&lt;DbTransaction&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ExecuteTransaction(this DbConnection connection, CancellationToken cancellationToken, Action&lt;DbTransaction&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L376">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction___0__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,``0},System.Threading.CancellationToken)">ExecuteTransaction&lt;T&gt;(DbConnection, IsolationLevel, Func&lt;DbTransaction, T&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ExecuteTransaction&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, T&gt; action, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, T&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value of the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L245">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction___0__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,``0})">ExecuteTransaction&lt;T&gt;(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ExecuteTransaction&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, T&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, T&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value of the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction___0__System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction%60%601(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2C%60%600%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L82">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction___0__System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,``0},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransaction&lt;T&gt;(DbConnection, Func&lt;DbTransaction, T&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ExecuteTransaction&lt;T&gt;(this DbConnection connection, Func&lt;DbTransaction, T&gt; action, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, T&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value of the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransaction%60%601(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L497">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransaction__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction___0__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,``0})">ExecuteTransaction&lt;T&gt;(DbConnection, CancellationToken, Func&lt;DbTransaction, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ExecuteTransaction&lt;T&gt;(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, T&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, T&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><p>The value of the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L451">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">ExecuteTransactionAsync(DbConnection, IsolationLevel, Func&lt;DbTransaction, ValueTask&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteTransactionAsync(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, ValueTask&gt; action, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L325">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask})">ExecuteTransactionAsync(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, ValueTask&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteTransactionAsync(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L192">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransactionAsync(DbConnection, Func&lt;DbTransaction, ValueTask&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteTransactionAsync(this DbConnection connection, Func&lt;DbTransaction, ValueTask&gt; action, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L567">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask})">ExecuteTransactionAsync(DbConnection, CancellationToken, Func&lt;DbTransaction, ValueTask&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask ExecuteTransactionAsync(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L437">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">ExecuteTransactionAsync&lt;T&gt;(DbConnection, IsolationLevel, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteTransactionAsync&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt; action, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L310">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{``0}})">ExecuteTransactionAsync&lt;T&gt;(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteTransactionAsync&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync%60%601(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L178">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{``0}},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransactionAsync&lt;T&gt;(DbConnection, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteTransactionAsync&lt;T&gt;(this DbConnection connection, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt; action, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync%60%601(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L554">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionAsync__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask___0___" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{``0}})">ExecuteTransactionAsync&lt;T&gt;(DbConnection, CancellationToken, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;T&gt; ExecuteTransactionAsync&lt;T&gt;(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&lt;T&gt;&gt; action)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">action</span></td>
+        <td><p>The handler to execute while a transaction is pending.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L360">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Boolean__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Boolean},System.Threading.CancellationToken)">ExecuteTransactionConditional(DbConnection, IsolationLevel, Func&lt;DbTransaction, Boolean&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool ExecuteTransactionConditional(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, bool&gt; conditionalAction, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if committed.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Boolean__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Boolean%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L228">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Boolean__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Boolean})">ExecuteTransactionConditional(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, Boolean&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool ExecuteTransactionConditional(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, bool&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if committed.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Boolean__System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Boolean%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L65">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Boolean__System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Boolean},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransactionConditional(DbConnection, Func&lt;DbTransaction, Boolean&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool ExecuteTransactionConditional(this DbConnection connection, Func&lt;DbTransaction, bool&gt; conditionalAction, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if committed.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Boolean__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Boolean%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L482">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Boolean__" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Boolean})">ExecuteTransactionConditional(DbConnection, CancellationToken, Func&lt;DbTransaction, Boolean&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool ExecuteTransactionConditional(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, bool&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if committed.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L345">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}},System.Threading.CancellationToken)">ExecuteTransactionConditional&lt;T&gt;(DbConnection, IsolationLevel, Func&lt;DbTransaction, (Boolean Commit, T Value)&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (bool Commit, T Value) ExecuteTransactionConditional&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, (bool Commit, T Value)&gt; conditionalAction, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;</td>
+        <td><p>The value returned from the conditional action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L212">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">ExecuteTransactionConditional&lt;T&gt;(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, (Boolean Commit, T Value)&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (bool Commit, T Value) ExecuteTransactionConditional&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, (bool Commit, T Value)&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;</td>
+        <td><p>The value returned from the conditional action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional%60%601(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L21">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransactionConditional&lt;T&gt;(DbConnection, Func&lt;DbTransaction, (Boolean Commit, T Value)&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (bool Commit, T Value) ExecuteTransactionConditional&lt;T&gt;(this DbConnection connection, Func&lt;DbTransaction, (bool Commit, T Value)&gt; conditionalAction, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;</td>
+        <td><p>The value returned from the conditional action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional%60%601(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L468">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditional__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_ValueTuple_System_Boolean___0___" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.ValueTuple{System.Boolean,``0}})">ExecuteTransactionConditional&lt;T&gt;(DbConnection, CancellationToken, Func&lt;DbTransaction, (Boolean Commit, T Value)&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (bool Commit, T Value) ExecuteTransactionConditional&lt;T&gt;(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, (bool Commit, T Value)&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;</td>
+        <td><p>The value returned from the conditional action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L421">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.Boolean}},System.Threading.CancellationToken)">ExecuteTransactionConditionalAsync(DbConnection, IsolationLevel, Func&lt;DbTransaction, ValueTask&lt;Boolean&gt;&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;bool&gt; ExecuteTransactionConditionalAsync(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, ValueTask&lt;bool&gt;&gt; conditionalAction, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L293">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.Boolean}})">ExecuteTransactionConditionalAsync(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, ValueTask&lt;Boolean&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;bool&gt; ExecuteTransactionConditionalAsync(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&lt;bool&gt;&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L161">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransactionConditionalAsync(DbConnection, Func&lt;DbTransaction, ValueTask&lt;Boolean&gt;&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;bool&gt; ExecuteTransactionConditionalAsync(this DbConnection connection, Func&lt;DbTransaction, ValueTask&lt;bool&gt;&gt; conditionalAction, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L539">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_Boolean___" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.Boolean}})">ExecuteTransactionConditionalAsync(DbConnection, CancellationToken, Func&lt;DbTransaction, ValueTask&lt;Boolean&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;bool&gt; ExecuteTransactionConditionalAsync(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&lt;bool&gt;&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L406">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.ValueTuple{System.Boolean,``0}}},System.Threading.CancellationToken)">ExecuteTransactionConditionalAsync&lt;T&gt;(DbConnection, IsolationLevel, Func&lt;DbTransaction, ValueTask&lt;(Boolean Commit, T Value)&gt;&gt;, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;(bool Commit, T Value)&gt; ExecuteTransactionConditionalAsync&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, Func&lt;DbTransaction, ValueTask&lt;(bool Commit, T Value)&gt;&gt; conditionalAction, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync%60%601(System.Data.Common.DbConnection%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L277">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Data_IsolationLevel_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Data.IsolationLevel,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.ValueTuple{System.Boolean,``0}}})">ExecuteTransactionConditionalAsync&lt;T&gt;(DbConnection, IsolationLevel, CancellationToken, Func&lt;DbTransaction, ValueTask&lt;(Boolean Commit, T Value)&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;(bool Commit, T Value)&gt; ExecuteTransactionConditionalAsync&lt;T&gt;(this DbConnection connection, IsolationLevel isolationLevel, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&lt;(bool Commit, T Value)&gt;&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____System_Data_IsolationLevel_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync%60%601(System.Data.Common.DbConnection%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D%7D%2CSystem.Data.IsolationLevel%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L113">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____System_Data_IsolationLevel_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.ValueTuple{System.Boolean,``0}}},System.Data.IsolationLevel,System.Threading.CancellationToken)">ExecuteTransactionConditionalAsync&lt;T&gt;(DbConnection, Func&lt;DbTransaction, ValueTask&lt;(Boolean Commit, T Value)&gt;&gt;, IsolationLevel, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;(bool Commit, T Value)&gt; ExecuteTransactionConditionalAsync&lt;T&gt;(this DbConnection connection, Func&lt;DbTransaction, ValueTask&lt;(bool Commit, T Value)&gt;&gt; conditionalAction, IsolationLevel isolationLevel = IsolationLevel.Unspecified, CancellationToken cancellationToken = default(CancellationToken))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IsolationLevel</span></td>
+        <td><span class="parametername">isolationLevel</span></td>
+        <td><p>The isolation level for the transaction.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync%60%601(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.Common.DbTransaction%2CSystem.Threading.Tasks.ValueTask%7BSystem.ValueTuple%7BSystem.Boolean%2C%60%600%7D%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L525">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync_" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync*"></a>
+  <h4 id="Open_Database_Extensions_TransactionExtensions_ExecuteTransactionConditionalAsync__1_System_Data_Common_DbConnection_System_Threading_CancellationToken_System_Func_System_Data_Common_DbTransaction_System_Threading_Tasks_ValueTask_System_ValueTuple_System_Boolean___0____" data-uid="Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync``1(System.Data.Common.DbConnection,System.Threading.CancellationToken,System.Func{System.Data.Common.DbTransaction,System.Threading.Tasks.ValueTask{System.ValueTuple{System.Boolean,``0}}})">ExecuteTransactionConditionalAsync&lt;T&gt;(DbConnection, CancellationToken, Func&lt;DbTransaction, ValueTask&lt;(Boolean Commit, T Value)&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;(bool Commit, T Value)&gt; ExecuteTransactionConditionalAsync&lt;T&gt;(this DbConnection connection, CancellationToken cancellationToken, Func&lt;DbTransaction, ValueTask&lt;(bool Commit, T Value)&gt;&gt; conditionalAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.Common.DbConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to transact with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>A token that if cancelled will cause this transaction to be aborted or rolled-back.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.Common.DbTransaction</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;&gt;</td>
+        <td><span class="parametername">conditionalAction</span></td>
+        <td><p>The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.Boolean</span>, T&gt;&gt;</td>
+        <td><p>The value of the awaited action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The value returned from the action.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_TransactionExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.TransactionExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Transaction.cs/#L10" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
