@@ -18,7 +18,7 @@ public static partial class Examples
 				.ExecuteNonQuery();
 
 			// Second procedure validates the results.
-			// If it returns true, then the transaction is commited.
+			// If it returns true, then the transaction is committed.
 			// If it returns false, then the transaction is rolled back.
 			return transaction
 				.StoredProcedure("[Validation Procedure]")

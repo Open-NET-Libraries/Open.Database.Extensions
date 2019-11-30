@@ -297,7 +297,7 @@ namespace Open.Database.Extensions
 						var columns = reader.GetMatchingOrdinals(cn, true);
 
 						var ordinalValues = columns.Select(c => c.Ordinal).ToArray();
-						initColumnNames(columns.Select(c => c.Name).ToArray());
+						initColumnNames(columns.Select(c => c.Name).ToImmutableArray());
 
 						return reader is DbDataReader dbr
 							? dbr.ToTargetBlockAsync(block,
