@@ -1,6 +1,6 @@
 # Open.Database.Extensions
 
-(Full API Documenation)[]
+[Full API Documentation](https://electricessence.github.io/Open.Database.Extensions/api/index.html)
 
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 
@@ -34,14 +34,14 @@ var myResult = new List<T>();
 using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
 {
     while(await reader.ReadAsync())
-        list.Add(transform(reader));
+        myResult.Add(transform(reader));
 }
 ```
 
 Is now simplified to this:
 
 ```cs
-var myResult = await cmd.ToListAsync(transform);
+var myResult = await mySqlCommand.ToListAsync(transform);
 ```
 
 ## Deferred Transformation
@@ -86,7 +86,7 @@ var people = cmd.Results<Person>(new Dictionary<string,string>{
  {"LastName", "last_name"});
 ```
 
-### `Retrieve()` and `RetrieveAsync()`
+#### `Retrieve()` and `RetrieveAsync()`
 
 Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
 

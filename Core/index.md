@@ -1,6 +1,6 @@
 # Open.Database.Extensions
 
-(Full API Documenation)[]
+[Full API Documentation](https://electricessence.github.io/Open.Database.Extensions/api/index.html)
 
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 

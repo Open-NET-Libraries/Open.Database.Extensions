@@ -62,7 +62,7 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="opendatabaseextensions">Open.Database.Extensions</h1>
 
-<p>(Full API Documenation)[]</p>
+<p><a href="https://electricessence.github.io/Open.Database.Extensions/api/index.html">Full API Documentation</a></p>
 <p>Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.</p>
 <h2 id="connection-factories">Connection Factories</h2>
 <p>Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.</p>
@@ -83,11 +83,11 @@
 using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
 {
     while(await reader.ReadAsync())
-        list.Add(transform(reader));
+        myResult.Add(transform(reader));
 }
 </code></pre>
 <p>Is now simplified to this:</p>
-<pre><code class="lang-cs">var myResult = await cmd.ToListAsync(transform);
+<pre><code class="lang-cs">var myResult = await mySqlCommand.ToListAsync(transform);
 </code></pre>
 <h2 id="deferred-transformation">Deferred Transformation</h2>
 <p>In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.</p>
@@ -113,7 +113,7 @@ using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseCo
  {&quot;FirstName&quot;, &quot;first_name&quot;},
  {&quot;LastName&quot;, &quot;last_name&quot;});
 </code></pre>
-<h3 id="retrieve-and-retrieveasync"><code>Retrieve()</code> and <code>RetrieveAsync()</code></h3>
+<h4 id="retrieve-and-retrieveasync"><code>Retrieve()</code> and <code>RetrieveAsync()</code></h4>
 <p>Queues all the data.  Returns a <code>QueryResult&lt;Queue&lt;object[]&gt;&gt;</code> containing the requested data and column information.  The <code>.AsDequeueingMappedEnumerable()</code> extension will iteratively convert the results to dictionaries for ease of access.</p>
 <h3 id="resultsasynct"><code>ResultsAsync&lt;T&gt;</code></h3>
 <p><code>ResultsAsync&lt;T&gt;()</code> is fully asynchronous from end-to-end but returns an <code>IEnumerable&lt;T&gt;</code> that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.</p>
