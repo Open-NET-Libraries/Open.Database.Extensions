@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Open.Database.Extensions.Core;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -57,8 +58,11 @@ namespace Open.Database.Extensions
 			IEnumerable<Param>? @params)
 		{
 			ConnectionProvider = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
-			Type = type;
 			Command = command ?? throw new ArgumentNullException(nameof(command));
+			if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
+			Contract.EndContractBlock();
+
+			Type = type;
 			Params = @params?.ToList() ?? new List<Param>();
 			Timeout = CommandTimeout.DEFAULT_SECONDS;
 		}
@@ -87,9 +91,22 @@ namespace Open.Database.Extensions
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params)
-			: this(new DbConnectionProvider<TConnection>(connection), type, command, @params)
+			: this(DbConnectionProvider.Create(connection), type, command, @params)
 		{
 			Transaction = transaction;
+		}
+
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		protected ExpressiveCommandBase(
+			TConnection connection,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params)
+			: this(connection, null, type, command, @params)
+		{
 		}
 
 		/// <param name="transaction">The optional transaction to execute the command on.</param>
@@ -101,11 +118,10 @@ namespace Open.Database.Extensions
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params)
-			: this(new DbConnectionProvider<TConnection>(
-				(TConnection)(transaction ?? throw new ArgumentNullException(nameof(transaction))).Connection),
-				type, command, @params)
+			: this(
+				(TConnection)(transaction ?? throw new ArgumentNullException(nameof(transaction))).Connection,
+				transaction, type, command, @params)
 		{
-			Transaction = transaction;
 		}
 
 		/// <summary>

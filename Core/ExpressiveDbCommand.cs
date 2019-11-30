@@ -51,6 +51,19 @@ namespace Open.Database.Extensions
 		{
 		}
 
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="type">The command type.</param>
+		/// <param name="command">The SQL command.</param>
+		/// <param name="params">The list of params</param>
+		public ExpressiveDbCommand(
+			DbConnection connection,
+			CommandType type,
+			string command,
+			IEnumerable<Param>? @params = null)
+			: base(connection, type, command, @params)
+		{
+		}
+
 		/// <param name="transaction">The transaction to execute the command on.</param>
 		/// <param name="type">The command type.</param>
 		/// <param name="command">The SQL command.</param>

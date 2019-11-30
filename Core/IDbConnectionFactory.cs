@@ -53,7 +53,7 @@ namespace Open.Database.Extensions
 			}
 		}
 
-		class PoolFromFactory<TConnection> :  IDbConnectionPool<TConnection>
+		class PoolFromFactory<TConnection> : IDbConnectionPool<TConnection>
 			where TConnection : IDbConnection
 		{
 			private readonly IDbConnectionFactory<TConnection> _connectionFactory;
@@ -91,5 +91,14 @@ namespace Open.Database.Extensions
 		public static IDbConnectionPool<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 			where TConnection : IDbConnection
 			=> new PoolFromFactory<TConnection>(connectionFactory);
+
+		/// <summary>
+		/// Coerces a non-generic connection factory to a generic one.
+		/// </summary>
+		/// <param name="connectionFactory">The source connection factory.</param>
+		/// <returns>The generic version of the source factory.</returns>
+		public static IDbConnectionFactory<IDbConnection> AsGeneric(this IDbConnectionFactory connectionFactory)
+			=> (connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory))) is IDbConnectionFactory<IDbConnection> p ? p
+			: new DbConnectionFactory<IDbConnection>(() => connectionFactory.Create());
 	}
 }

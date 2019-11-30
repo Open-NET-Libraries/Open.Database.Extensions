@@ -14,11 +14,11 @@ namespace Open.Database.Extensions
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
 		public ExpressiveCommand(
-			IDbConnectionPool<IDbConnection> connectionPool,
+			IDbConnectionPool connectionPool,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
-			: base(connectionPool, type, command, @params)
+			: base(connectionPool.AsGeneric(), type, command, @params)
 		{
 		}
 
@@ -27,11 +27,11 @@ namespace Open.Database.Extensions
 		/// <param name="command">The SQL command.</param>
 		/// <param name="params">The list of params</param>
 		public ExpressiveCommand(
-			IDbConnectionFactory<IDbConnection> connFactory,
+			IDbConnectionFactory connFactory,
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
-			: base(connFactory, type, command, @params)
+			: base(connFactory.AsGeneric(), type, command, @params)
 		{
 		}
 
@@ -72,7 +72,7 @@ namespace Open.Database.Extensions
 			CommandType type,
 			string command,
 			IEnumerable<Param>? @params = null)
-			: base(connection, null, type, command, @params)
+			: base(connection, type, command, @params)
 		{
 		}
 

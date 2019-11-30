@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 
 namespace Open.Database.Extensions
 {
@@ -34,5 +35,38 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
 		new TConnection Take();
+	}
+
+	/// <summary>
+	/// Extensions for getting generic versions on non-generic connection pools..
+	/// </summary>
+	public static class ConnectionPoolExtensions {
+
+		class GenericPool : IDbConnectionPool<IDbConnection>
+		{
+			private readonly IDbConnectionPool _source;
+
+			public GenericPool(IDbConnectionPool source)
+			{
+				_source = source ?? throw new ArgumentNullException(nameof(source));
+			}
+
+			public IDbConnection Take()
+				=> _source.Take();
+
+			IDbConnection IDbConnectionPool.Take()
+				=> _source.Take();
+
+			public void Give(IDbConnection connection)
+				=> _source.Give(connection);
+		}
+
+		/// <summary>
+		/// Coerces a non-generic connection factory to a generic one.
+		/// </summary>
+		/// <param name="connectionPool">The source connection factory.</param>
+		/// <returns>The generic version of the source factory.</returns>
+		public static IDbConnectionPool<IDbConnection> AsGeneric(this IDbConnectionPool connectionPool)
+			=> connectionPool is IDbConnectionPool<IDbConnection> p ? p : new GenericPool(connectionPool);
 	}
 }

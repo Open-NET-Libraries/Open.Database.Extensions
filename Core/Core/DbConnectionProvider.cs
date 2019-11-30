@@ -2,13 +2,13 @@
 using System.Data;
 using System.Diagnostics.Contracts;
 
-namespace Open.Database.Extensions
+namespace Open.Database.Extensions.Core
 {
 	/// <summary>
 	/// Simplifies handling connections.
 	/// </summary>
 	/// <typeparam name="TConnection"></typeparam>
-	class DbConnectionProvider<TConnection> : IDbConnectionPool<TConnection>
+	internal class DbConnectionProvider<TConnection> : IDbConnectionPool<TConnection>
 		where TConnection : class, IDbConnection
 	{
 		public DbConnectionProvider(TConnection connection)
@@ -20,6 +20,7 @@ namespace Open.Database.Extensions
 
 		private ConnectionState? TakenConnectionState;
 
+		/// <inheritdocs />
 		public TConnection Take()
 		{
 			if (TakenConnectionState.HasValue)
@@ -31,6 +32,7 @@ namespace Open.Database.Extensions
 
 		IDbConnection IDbConnectionPool.Take() => Take();
 
+		/// <inheritdocs />
 		public void Give(IDbConnection connection)
 		{
 			if (connection is null) throw new ArgumentNullException(nameof(connection));
@@ -42,5 +44,13 @@ namespace Open.Database.Extensions
 
 			TakenConnectionState = null;
 		}
+
+	}
+
+	internal static class DbConnectionProvider
+	{
+		public static DbConnectionProvider<TConnection> Create<TConnection>(TConnection connection)
+			where TConnection : class, IDbConnection
+			=> new DbConnectionProvider<TConnection>(connection);
 	}
 }
