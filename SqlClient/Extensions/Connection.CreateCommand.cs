@@ -10,8 +10,10 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Extensions for SqlConnections.
 	/// </summary>
-	public static class SqlConnectionExtensions
+	public static partial class SqlConnectionExtensions
 	{
+		const string EmptyOrWhiteSpace = "Command is empty or whitespace.";
+
 		/// <summary>
 		/// Shortcut for creating an SqlCommand from any SqlConnection.
 		/// </summary>
@@ -21,13 +23,12 @@ namespace Open.Database.Extensions
 		/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
 		/// <returns>The created SqlCommand.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "No different that if manually inserted.")]
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Locally only used once.")]
 		public static SqlCommand CreateCommand(this SqlConnection connection,
 			CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		{
 			if (connection is null) throw new ArgumentNullException(nameof(connection));
 			if (commandText is null) throw new ArgumentNullException(nameof(commandText));
-			if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException("Command is empty or whitespace.", nameof(commandText));
+			if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 			Contract.EndContractBlock();
 
 			var command = connection.CreateCommand();

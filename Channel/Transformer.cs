@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Open.ChannelExtensions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Open.Database.Extensions.Dataflow
@@ -13,29 +15,29 @@ namespace Open.Database.Extensions.Dataflow
 			: base(overrides)
 		{ }
 
-		class DataflowProcessor : Processor
+		class ChannelProcessor : Processor
 		{
-			public DataflowProcessor(Transformer<T> transformer, IList<string>? names = null)
+			public ChannelProcessor(Transformer<T> transformer, IList<string>? names = null)
 
-/* Unmerged change from project 'Open.Database.Extensions.Channel (netstandard2.1)'
-Before:
-				:base (transformer, names)
-After:
-				: base(transformer, names)
-*/
+				/* Unmerged change from project 'Open.Database.Extensions.Channel (netstandard2.1)'
+				Before:
+								:base (transformer, names)
+				After:
+								: base(transformer, names)
+				*/
 				: base(transformer, names)
 			{
 
 			}
 
-			public TransformBlock<object[], T> GetBlock(
+			public TransformChannel<object[], T> GetBlock(
 				ExecutionDataflowBlockOptions? options = null)
 				=> options == null
-					? new TransformBlock<object[], T>(Transform)
-					: new TransformBlock<object[], T>(Transform, options);
+					? new TransformChannel<object[], T>(Transform)
+					: new TransformChannel<object[], T>(Transform, options);
 		}
 
-		public IReceivableSourceBlock<T> Results(
+		public ChannelReader<T> Results(
 			out Action<QueryResult<IEnumerable<object[]>>> deferred,
 			ExecutionDataflowBlockOptions? options = null)
 		{
@@ -53,7 +55,7 @@ After:
 			return x;
 		}
 
-		public IReceivableSourceBlock<T> ResultsAsync(
+		public ChannelReader<T> ResultsAsync(
 			out Func<QueryResult<IEnumerable<object[]>>, ValueTask> deferred,
 			ExecutionDataflowBlockOptions? options = null)
 		{
@@ -71,7 +73,7 @@ After:
 			return x;
 		}
 
-		public IReceivableSourceBlock<T> Results(
+		public ChannelReader<T> Results(
 			QueryResult<IReceivableSourceBlock<object[]>> source,
 			ExecutionDataflowBlockOptions? options = null)
 		{
@@ -90,7 +92,7 @@ After:
 			return x;
 		}
 
-		public TransformBlock<object[], T> ResultsBlock(
+		public ChannelReader<object[], T> ResultsBlock(
 			out Action<string[]> initColumnNames,
 			ExecutionDataflowBlockOptions? options = null)
 		{

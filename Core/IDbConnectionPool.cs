@@ -40,7 +40,8 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Extensions for getting generic versions on non-generic connection pools..
 	/// </summary>
-	public static class ConnectionPoolExtensions {
+	public static class ConnectionPoolExtensions
+	{
 
 		class GenericPool : IDbConnectionPool<IDbConnection>
 		{

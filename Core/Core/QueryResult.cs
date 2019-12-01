@@ -1,5 +1,5 @@
-﻿using Open.Database.Extensions.Core;
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
@@ -13,8 +13,6 @@ namespace Open.Database.Extensions.Core
 	/// </summary>
 	/// <typeparam name="TResult">The type of the result property.</typeparam>
 	public class QueryResult<TResult>
-		where TResult : class
-
 	{
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
@@ -24,7 +22,7 @@ namespace Open.Database.Extensions.Core
 			if (ordinals.Length != names.Length) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
 			Ordinals = ordinals;
 			Names = names;
-			Result = result ?? throw new ArgumentNullException(nameof(result));
+			Result = result;
 			Contract.EndContractBlock();
 
 			ColumnCount = ordinals.Length;
@@ -51,15 +49,80 @@ namespace Open.Database.Extensions.Core
 		/// The ordinal values requested.
 		/// </summary>
 		public ImmutableArray<int> Ordinals { get; }
+
 		/// <summary>
 		/// The column names requested.
 		/// </summary>
 		public ImmutableArray<string> Names { get; }
+
 		/// <summary>
 		/// The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
 		/// </summary>
 		public TResult Result { get; }
 
+		/// <param name="result">The source of the result.</param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "The result property exists.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1065:Do not raise exceptions in unexpected locations", Justification = "Handle null reference better than just a NullReferenceException.")]
+		public static implicit operator TResult(QueryResult<TResult> result) => (result ?? throw new ArgumentNullException(nameof(result))).Result;
+
+	}
+
+	/// <summary>
+	/// A container for data reader results that also provides the column names and other helpful data methods.
+	/// </summary>
+	/// <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
+	/// <typeparam name="TResult">The type of the result property.</typeparam>
+	public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerable<T>
+		where TResult : IEnumerable<T>
+	{
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResultCollection(ImmutableArray<int> ordinals, ImmutableArray<string> names, TResult result)
+			: base(ordinals, names, result)
+		{
+			if (result == null) throw new ArgumentNullException(nameof(result));
+		}
+
+		/// <inheritdoc />
+		public IEnumerator<T> GetEnumerator()
+			=> Result.GetEnumerator();
+
+		IEnumerator IEnumerable.GetEnumerator()
+			=> GetEnumerator();
+
+	}
+
+	/// <summary>
+	/// A container for data reader results that also provides the column names and other helpful data methods.
+	/// </summary>
+	/// <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
+	public class QueryResultCollection<T> : QueryResultCollection<T, IEnumerable<T>>
+	{
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResultCollection(ImmutableArray<int> ordinals, ImmutableArray<string> names, IEnumerable<T> result)
+			: base(ordinals, names, result)
+		{
+		}
+	}
+
+
+	/// <summary>
+	/// A container for data reader results that also provides the column names and other helpful data methods.
+	/// </summary>
+	/// <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", Justification = "")]
+	public class QueryResultQueue<T> : QueryResultCollection<T, Queue<T>>
+	{
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResultQueue(ImmutableArray<int> ordinals, ImmutableArray<string> names, Queue<T> result)
+			: base(ordinals, names, result)
+		{
+		}
 	}
 
 	/// <summary>

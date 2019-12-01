@@ -9,7 +9,7 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Extensions for creating expressive SQL commands from connections and connection factories.
 	/// </summary>
-	public static class SqlConnectionFactoryExtensions
+	public static partial class SqlConnectionExtensions
 	{
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
@@ -21,7 +21,7 @@ namespace Open.Database.Extensions
 		public static ExpressiveSqlCommand Command(
 			this SqlConnection target,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveSqlCommand(target, null, type, command);
+			=> new ExpressiveSqlCommand(target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
@@ -33,7 +33,7 @@ namespace Open.Database.Extensions
 		public static ExpressiveSqlCommand Command(
 			this SqlTransaction target,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveSqlCommand((target ?? throw new ArgumentNullException(nameof(target))).Connection, target, type, command);
+			=> new ExpressiveSqlCommand(target, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -44,7 +44,7 @@ namespace Open.Database.Extensions
 		public static ExpressiveSqlCommand StoredProcedure(
 			this SqlConnection target,
 			string command)
-			=> new ExpressiveSqlCommand(target, null, CommandType.StoredProcedure, command);
+			=> new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -55,7 +55,7 @@ namespace Open.Database.Extensions
 		public static ExpressiveSqlCommand StoredProcedure(
 			this SqlTransaction target,
 			string command)
-			=> new ExpressiveSqlCommand((target ?? throw new ArgumentNullException(nameof(target))).Connection, target, CommandType.StoredProcedure, command);
+			=> new ExpressiveSqlCommand(target, CommandType.StoredProcedure, command);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand for subsequent configuration and execution.
@@ -66,7 +66,8 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant ExpressiveSqlCommand.</returns>
 		public static ExpressiveSqlCommand Command(
 			this IDbConnectionFactory<SqlConnection> target,
-			string command, CommandType type = CommandType.Text)
+			string command,
+			CommandType type = CommandType.Text)
 			=> new ExpressiveSqlCommand(target, type, command);
 
 		/// <summary>
@@ -89,8 +90,9 @@ namespace Open.Database.Extensions
 		/// <returns>The resultant ExpressiveSqlCommand.</returns>
 		public static ExpressiveSqlCommand Command(
 			this Func<SqlConnection> target,
-			string command, CommandType type = CommandType.Text)
-			=> Command(new DbConnectionFactory<SqlConnection>(target), command, type);
+			string command,
+			CommandType type = CommandType.Text)
+			=> Command(DbConnectionFactory.Create(target), command, type);
 
 		/// <summary>
 		/// Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
@@ -101,7 +103,7 @@ namespace Open.Database.Extensions
 		public static ExpressiveSqlCommand StoredProcedure(
 			this Func<SqlConnection> target,
 			string command)
-			=> StoredProcedure(new DbConnectionFactory<SqlConnection>(target), command);
+			=> StoredProcedure(DbConnectionFactory.Create(target), command);
 
 	}
 }

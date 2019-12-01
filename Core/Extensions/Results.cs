@@ -13,7 +13,7 @@ namespace Open.Database.Extensions
 	{
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="reader">The IDataReader to read results from.</param>
@@ -38,7 +38,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="reader">The IDataReader to read results from.</param>
@@ -50,7 +50,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="reader">The IDataReader to read results from.</param>
@@ -62,7 +62,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
@@ -79,7 +79,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
@@ -91,7 +91,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
@@ -264,7 +264,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="reader">The IDataReader to read results from.</param>
@@ -279,7 +279,7 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>

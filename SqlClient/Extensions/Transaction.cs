@@ -12,9 +12,11 @@ namespace Open.Database.Extensions
 	// NOTE: This is simply a copy/paste of th IDb and Db extensions but replacing types with their Sql versions.
 	// Why?  To ensure the Sql types are propagated through the type flow.
 
+	/// <summary>
+	/// System.Data.SqlClient specific extensions for database transactions.
+	/// </summary>
 	public static partial class SqlTransactionExtensions
 	{
-
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
@@ -22,7 +24,7 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <returns>The value returned from the conditional action.</returns>
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
@@ -64,36 +66,34 @@ namespace Open.Database.Extensions
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <returns>True if committed.</returns>
 		public static bool ExecuteTransactionConditional(
 			this SqlConnection connection,
 			Func<SqlTransaction, bool> conditionalAction,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> ExecuteTransactionConditional(connection,
-				t => (conditionalAction(t), true),
-				isolationLevel, cancellationToken).Commit;
+			=> connection.ExecuteTransactionConditional(
+				isolationLevel, cancellationToken, t => (conditionalAction(t), true)).Commit;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <returns>The value of the action.</returns>
 		public static T ExecuteTransaction<T>(
 			this SqlConnection connection,
 			Func<SqlTransaction, T> action,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> ExecuteTransactionConditional(connection,
-				t => (true, action(t)),
-				isolationLevel, cancellationToken).Value;
+			=> connection.ExecuteTransactionConditional(
+				isolationLevel, cancellationToken, t => (true, action(t))).Value;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -101,15 +101,13 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		public static void ExecuteTransaction(
 			this SqlConnection connection,
 			Action<SqlTransaction> action,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> ExecuteTransaction(connection,
-				t => { action(t); return true; },
-				isolationLevel, cancellationToken);
+			=> connection.ExecuteTransaction(t => { action(t); return true; }, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -118,7 +116,7 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <returns>The value of the awaited action.</returns>
 		public static async ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 			this SqlConnection connection,
@@ -136,12 +134,14 @@ namespace Open.Database.Extensions
 			SqlTransaction? transaction = null;
 
 			// Only await if needed...
-			var state = await connection.EnsureOpenAsync(cancellationToken); // If the task is cancelled, awaiting will throw.
+			if (connection.State != ConnectionState.Open)
+			{
+				await connection.EnsureOpenAsync(cancellationToken); // If the task is cancelled, awaiting will throw.
+				cancellationToken.ThrowIfCancellationRequested();
+			}
 
 			try
 			{
-				cancellationToken.ThrowIfCancellationRequested();
-
 				transaction = connection.BeginTransaction(isolationLevel);
 				var result = await conditionalAction(transaction).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
 				cancellationToken.ThrowIfCancellationRequested();
@@ -155,8 +155,6 @@ namespace Open.Database.Extensions
 					if (success) transaction.Commit();
 					else transaction.Rollback();
 				}
-				if (state == ConnectionState.Closed)
-					connection.Close();
 			}
 		}
 
@@ -166,16 +164,15 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <returns>The value of the awaited action.</returns>
 		public static async ValueTask<bool> ExecuteTransactionConditionalAsync(
 			this SqlConnection connection,
 			Func<SqlTransaction, ValueTask<bool>> conditionalAction,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> (await ExecuteTransactionConditionalAsync(connection,
-				async t => (await conditionalAction(t).ConfigureAwait(false), true),
-				isolationLevel, cancellationToken).ConfigureAwait(false)).Commit;
+			=> (await connection.ExecuteTransactionConditionalAsync(
+				async t => (await conditionalAction(t), true), isolationLevel, cancellationToken)).Commit;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -184,16 +181,14 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <returns>The value of the awaited action.</returns>
 		public static async ValueTask<T> ExecuteTransactionAsync<T>(
 			this SqlConnection connection,
 			Func<SqlTransaction, ValueTask<T>> action,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> (await ExecuteTransactionConditionalAsync(connection,
-				async t => (true, await action(t)),
-				isolationLevel, cancellationToken)).Value;
+			=> (await connection.ExecuteTransactionConditionalAsync(async t => (true, await action(t)), isolationLevel, cancellationToken).ConfigureAwait(false)).Value;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -201,52 +196,50 @@ namespace Open.Database.Extensions
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		public static async ValueTask ExecuteTransactionAsync(
 			this SqlConnection connection,
 			Func<SqlTransaction, ValueTask> action,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> await ExecuteTransactionAsync(connection,
-				async c => { await action(c); return true; },
-				isolationLevel,
-				cancellationToken);
-
+			=> await connection.ExecuteTransactionAsync(async c => { await action(c); return true; }, isolationLevel, cancellationToken);
 
 		#region Overloads
 
+
+		#region No optional params
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <returns>The value returned from the conditional action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, (bool Commit, T Value)> conditionalAction)
-			=> ExecuteTransactionConditional(connection, conditionalAction, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <returns>True if committed.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static bool ExecuteTransactionConditional(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, bool> conditionalAction)
-			=> ExecuteTransactionConditional(connection, conditionalAction, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -254,31 +247,31 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <returns>The value of the action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static T ExecuteTransaction<T>(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, T> action)
-			=> ExecuteTransaction(connection, action, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static void ExecuteTransaction(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Action<SqlTransaction> action)
-			=> ExecuteTransaction(connection, action, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
@@ -286,32 +279,32 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <returns>The value of the awaited action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask<(bool Commit, T Value)>> conditionalAction)
-			=> ExecuteTransactionConditionalAsync(connection, conditionalAction, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <returns>The value of the awaited action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask<bool> ExecuteTransactionConditionalAsync(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask<bool>> conditionalAction)
-			=> ExecuteTransactionConditionalAsync(connection, conditionalAction, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
@@ -319,256 +312,272 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <returns>The value of the awaited action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask<T> ExecuteTransactionAsync<T>(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask<T>> action)
-			=> ExecuteTransactionAsync(connection, action, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
 		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask ExecuteTransactionAsync(
 			this SqlConnection connection,
 			IsolationLevel isolationLevel,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask> action)
-			=> ExecuteTransactionAsync(connection, action, isolationLevel, cancellationToken);
+			=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
+
+		#endregion
+
+		#region Optional Token
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <typeparam name="T">The value returned from the action.</typeparam>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <returns>The value returned from the conditional action.</returns>
+		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, (bool Commit, T Value)> conditionalAction,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <returns>True if committed.</returns>
+		public static bool ExecuteTransactionConditional(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, bool> conditionalAction,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <typeparam name="T">The value returned from the action.</typeparam>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="action">The handler to execute while a transaction is pending.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <returns>The value of the action.</returns>
+		public static T ExecuteTransaction<T>(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, T> action,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="action">The handler to execute while a transaction is pending.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		public static void ExecuteTransaction(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Action<SqlTransaction> action,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <typeparam name="T">The value returned from the action.</typeparam>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <returns>The value of the awaited action.</returns>
+		public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, ValueTask<(bool Commit, T Value)>> conditionalAction,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <returns>The value of the awaited action.</returns>
+		public static ValueTask<bool> ExecuteTransactionConditionalAsync(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, ValueTask<bool>> conditionalAction,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <typeparam name="T">The value returned from the action.</typeparam>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="action">The handler to execute while a transaction is pending.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		/// <returns>The value of the awaited action.</returns>
+		public static ValueTask<T> ExecuteTransactionAsync<T>(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, ValueTask<T>> action,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
+
+		/// <summary>
+		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+		/// </summary>
+		/// <param name="connection">The connection to transact with.</param>
+		/// <param name="isolationLevel">The isolation level for the transaction.</param>
+		/// <param name="action">The handler to execute while a transaction is pending.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+		public static ValueTask ExecuteTransactionAsync(
+			this SqlConnection connection,
+			IsolationLevel isolationLevel,
+			Func<SqlTransaction, ValueTask> action,
+			CancellationToken cancellationToken = default)
+			=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
+		#endregion
 
 		#region Unspecified Isolation Level
-
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <returns>The value returned from the conditional action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, (bool Commit, T Value)> conditionalAction)
-			=> ExecuteTransactionConditional(connection, conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <returns>True if committed.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static bool ExecuteTransactionConditional(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, bool> conditionalAction)
-			=> ExecuteTransactionConditional(connection, conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <returns>The value of the action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static T ExecuteTransaction<T>(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, T> action)
-			=> ExecuteTransaction(connection, action, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static void ExecuteTransaction(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Action<SqlTransaction> action)
-			=> ExecuteTransaction(connection, action, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
 		/// <returns>The value of the awaited action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask<(bool Commit, T Value)>> conditionalAction)
-			=> ExecuteTransactionConditionalAsync(connection, conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions, the value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 		/// <returns>The value of the awaited action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask<bool> ExecuteTransactionConditionalAsync(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask<bool>> conditionalAction)
-			=> ExecuteTransactionConditionalAsync(connection, conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <typeparam name="T">The value returned from the action.</typeparam>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
 		/// <returns>The value of the awaited action.</returns>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask<T> ExecuteTransactionAsync<T>(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask<T>> action)
-			=> ExecuteTransactionAsync(connection, action, IsolationLevel.Unspecified, cancellationToken);
+			=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">The token that if cancelled may cause this transaction to be aborted or rolled-back.</param>
+		/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Provided for aesthetic convenience.")]
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 		public static ValueTask ExecuteTransactionAsync(
 			this SqlConnection connection,
 			CancellationToken cancellationToken,
 			Func<SqlTransaction, ValueTask> action)
-			=> ExecuteTransactionAsync(connection, action, IsolationLevel.Unspecified, cancellationToken);
-
-		#endregion
-
-		#region No Token
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <typeparam name="T">The value returned from the action.</typeparam>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-		/// <returns>The value returned from the conditional action.</returns>
-		public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, (bool Commit, T Value)> conditionalAction)
-			=> ExecuteTransactionConditional(connection, conditionalAction, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-		/// <returns>True if committed.</returns>
-		public static bool ExecuteTransactionConditional(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, bool> conditionalAction)
-			=> ExecuteTransactionConditional(connection, conditionalAction, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <typeparam name="T">The value returned from the action.</typeparam>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		/// <returns>The value of the action.</returns>
-		public static T ExecuteTransaction<T>(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, T> action)
-			=> ExecuteTransaction(connection, action, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		public static void ExecuteTransaction(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Action<SqlTransaction> action)
-			=> ExecuteTransaction(connection, action, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <typeparam name="T">The value returned from the action.</typeparam>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-		/// <returns>The value of the awaited action.</returns>
-		public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, ValueTask<(bool Commit, T Value)>> conditionalAction)
-			=> ExecuteTransactionConditionalAsync(connection, conditionalAction, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-		/// <returns>The value of the awaited action.</returns>
-		public static ValueTask<bool> ExecuteTransactionConditionalAsync(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, ValueTask<bool>> conditionalAction)
-			=> ExecuteTransactionConditionalAsync(connection, conditionalAction, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <typeparam name="T">The value returned from the action.</typeparam>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		/// <returns>The value of the awaited action.</returns>
-		public static ValueTask<T> ExecuteTransactionAsync<T>(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, ValueTask<T>> action)
-			=> ExecuteTransactionAsync(connection, action, isolationLevel);
-
-		/// <summary>
-		/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
-		/// </summary>
-		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="isolationLevel">The isolation level for the transaction.</param>
-		/// <param name="action">The handler to execute while a transaction is pending.</param>
-		public static ValueTask ExecuteTransactionAsync(
-			this SqlConnection connection,
-			IsolationLevel isolationLevel,
-			Func<SqlTransaction, ValueTask> action)
-			=> ExecuteTransactionAsync(connection, action, isolationLevel);
+			=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
 
 		#endregion
 

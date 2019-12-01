@@ -357,7 +357,7 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public void Execute(Action<TCommand> action)
 		{
 			if (action is null) throw new ArgumentNullException(nameof(action));
@@ -371,7 +371,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public T Execute<T>(Func<TCommand, T> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -385,7 +385,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public virtual ValueTask ExecuteAsync(Func<TCommand, ValueTask> handler)
 		{
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -401,7 +401,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public virtual ValueTask<T> ExecuteAsync<T>(Func<TCommand, ValueTask<T>> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));

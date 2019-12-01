@@ -20,7 +20,7 @@ namespace Open.Database.Extensions.Core
 
 		private ConnectionState? TakenConnectionState;
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public TConnection Take()
 		{
 			if (TakenConnectionState.HasValue)
@@ -32,7 +32,7 @@ namespace Open.Database.Extensions.Core
 
 		IDbConnection IDbConnectionPool.Take() => Take();
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public void Give(IDbConnection connection)
 		{
 			if (connection is null) throw new ArgumentNullException(nameof(connection));
