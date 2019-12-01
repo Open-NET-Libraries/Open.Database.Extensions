@@ -278,7 +278,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<KeyValuePair<string, string>>? fieldMappingOverrides) where T : new()
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides) where T : new()
 			=> ResultsAsync<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
 		/// <summary>
@@ -287,8 +287,8 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string Column)[] fieldMappingOverrides) where T : new()
-			=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
+			=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
 
 		/// <summary>
 		/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
@@ -321,7 +321,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<(string Field, string Column)>? fieldMappingOverrides)
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 			where T : new()
 			=> ExecuteReaderAsync(reader => reader.ResultsAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
 	}

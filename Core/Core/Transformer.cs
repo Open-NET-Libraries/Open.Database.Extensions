@@ -40,7 +40,7 @@ namespace Open.Database.Extensions.Core
 		/// Constructs a transformer using the optional field overrides.
 		/// </summary>
 		/// <param name="overrides"></param>
-		public Transformer(IEnumerable<(string Field, string Column)>? overrides = null)
+		public Transformer(IEnumerable<(string Field, string? Column)>? overrides = null)
 		{
 			Type = typeof(T);
 			Properties = Type.GetProperties();
@@ -69,7 +69,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="overrides"></param>
 		/// <returns></returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "This is simply an expressive helper that would seem odd to make another static class to handle.")]
-		public static Transformer<T> Create(IEnumerable<(string Field, string Column)>? overrides = null)
+		public static Transformer<T> Create(IEnumerable<(string Field, string? Column)>? overrides = null)
 			=> new Transformer<T>(overrides);
 
 		/// <summary>

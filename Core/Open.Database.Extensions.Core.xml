@@ -2184,6 +2184,86 @@
             <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="cancellationToken">Optional iteration cancellation token.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+            <param name="cancellationToken">Optional iteration cancellation token.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="cancellationToken">The iteration cancellation token.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Int32,System.Int32[])">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asyncronously iterates all records from an IDataReader.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asyncronously iterates all records from an IDataReader.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Shortcut for .Iterate(transform).ToList();

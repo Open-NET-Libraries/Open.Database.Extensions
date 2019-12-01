@@ -160,7 +160,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string Column)>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
+		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
 			=> Transformer<T>
 			.Create(fieldMappingOverrides)
 			.Results(table, clearSourceTable);
@@ -172,7 +172,7 @@ namespace Open.Database.Extensions
 		/// <param name="table">The DataTable to read from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> To<T>(this DataTable table, params (string Field, string Column)[] fieldMappingOverrides) where T : new()
+		public static IEnumerable<T> To<T>(this DataTable table, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
 			=> Transformer<T>
 			.Create(fieldMappingOverrides)
 			.Results(table, false);
@@ -185,7 +185,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
-		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string>>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
+		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
 			=> table.To<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), clearSourceTable);
 
 		/// <summary>
