@@ -11,7 +11,7 @@
 		<Description>Useful set of utilities and abstractions for simplifying modern SQL Client data-access operations and ensuring DI compatibility.</Description>
 		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>6.1.1</Version>
+		<Version>6.2.1</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
@@ -27,7 +27,7 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.2.0" />
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.2.1" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
 	</ItemGroup>
 

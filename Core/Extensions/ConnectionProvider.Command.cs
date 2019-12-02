@@ -12,195 +12,249 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Creates an ExpressiveCommand for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
+		/// <param name="connection">The connection to execute the command on.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveCommand.</returns>
 		public static ExpressiveCommand Command(
-			this IDbConnection target,
+			this IDbConnection connection,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveCommand(target, type, command);
+			=> new ExpressiveCommand(connection, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveCommand for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The transaction to execute the command on.</param>
+		/// <param name="transaction">The transaction to execute the command on.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveCommand.</returns>
 		public static ExpressiveCommand Command(
-			this IDbTransaction target,
+			this IDbTransaction transaction,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveCommand(target, type, command);
+			=> new ExpressiveCommand(transaction, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
+		/// <param name="connection">The connection to execute the command on.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand Command(
-			this DbConnection target,
+			this DbConnection connection,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand(target, type, command);
+			=> new ExpressiveDbCommand(connection, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The transaction to execute the command on.</param>
+		/// <param name="transaction">The transaction to execute the command on.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand Command(
-			this DbTransaction target,
+			this DbTransaction transaction,
 			string command, CommandType type = CommandType.Text)
-			=> new ExpressiveDbCommand(target, type, command);
+			=> new ExpressiveDbCommand(transaction, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveCommand.</returns>
 		public static ExpressiveCommand StoredProcedure(
-			this IDbConnection target,
-			string command)
-			=> new ExpressiveCommand(target, CommandType.StoredProcedure, command);
+			this IDbConnection connection,
+			string procedureName)
+			=> new ExpressiveCommand(connection, CommandType.StoredProcedure, procedureName);
 
 		/// <summary>
 		/// Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The transaction to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="transaction">The transaction to execute the command on.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveCommand.</returns>
 		public static ExpressiveCommand StoredProcedure(
-			this IDbTransaction target,
-			string command)
-			=> new ExpressiveCommand(target, CommandType.StoredProcedure, command);
+			this IDbTransaction transaction,
+			string procedureName)
+			=> new ExpressiveCommand(transaction, CommandType.StoredProcedure, procedureName);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="connection">The connection to execute the command on.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand StoredProcedure(
-			this DbConnection target,
-			string command)
-			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
+			this DbConnection connection,
+			string procedureName)
+			=> new ExpressiveDbCommand(connection, CommandType.StoredProcedure, procedureName);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The transaction to execute the command on.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="transaction">The transaction to execute the command on.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand StoredProcedure(
-			this DbTransaction target,
-			string command)
-			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
+			this DbTransaction transaction,
+			string procedureName)
+			=> new ExpressiveDbCommand(transaction, CommandType.StoredProcedure, procedureName);
 
 		/// <summary>
 		/// Creates an ExpressiveCommand for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
+		/// <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveCommand.</returns>
 		public static ExpressiveCommand Command(
-			this IDbConnectionFactory target,
+			this IDbConnectionFactory connectionSource,
 			string command,
 			CommandType type = CommandType.Text)
-			=> new ExpressiveCommand(target, type, command);
+			=> new ExpressiveCommand(connectionSource, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveCommand.</returns>
 		public static ExpressiveCommand StoredProcedure(
-			this IDbConnectionFactory target,
-			string command)
-			=> new ExpressiveCommand(target, CommandType.StoredProcedure, command);
+			this IDbConnectionFactory connectionSource,
+			string procedureName)
+			=> new ExpressiveCommand(connectionSource, CommandType.StoredProcedure, procedureName);
+
+		/// <summary>
+		/// Creates an ExpressiveCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="connectionSource">The connection pool to take connections from.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
+		/// <returns>The resultant ExpressiveCommand.</returns>
+		public static ExpressiveCommand Command(
+			this IDbConnectionPool connectionSource,
+			string command,
+			CommandType type = CommandType.Text)
+			=> new ExpressiveCommand(connectionSource, type, command);
+
+		/// <summary>
+		/// Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="connectionSource">The connection pool to take connections from.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
+		/// <returns>The resultant ExpressiveCommand.</returns>
+		public static ExpressiveCommand StoredProcedure(
+			this IDbConnectionPool connectionSource,
+			string procedureName)
+			=> new ExpressiveCommand(connectionSource, CommandType.StoredProcedure, procedureName);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
 		/// </summary>
 		/// <typeparam name="TConnection">The connection type.</typeparam>
-		/// <param name="target">The connection factory to generate a commands from.</param>
+		/// <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand Command<TConnection>(
-			this IDbConnectionFactory<TConnection> target,
+			this IDbConnectionFactory<TConnection> connectionSource,
 			string command,
 			CommandType type = CommandType.Text)
 			where TConnection : DbConnection
-			=> new ExpressiveDbCommand(target, type, command);
+			=> new ExpressiveDbCommand(connectionSource, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
 		/// <typeparam name="TConnection">The connection type.</typeparam>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand StoredProcedure<TConnection>(
-			this IDbConnectionFactory<TConnection> target,
-			string command)
+			this IDbConnectionFactory<TConnection> connectionSource,
+			string procedureName)
 			where TConnection : DbConnection
-			=> new ExpressiveDbCommand(target, CommandType.StoredProcedure, command);
-
-		/// <summary>
-		/// Creates an ExpressiveCommand for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveCommand Command(
-			this Func<IDbConnection> target,
-			string command,
-			CommandType type = CommandType.Text)
-			=> Command(new DbConnectionFactory(target), command, type);
-
-		/// <summary>
-		/// Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
-		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <returns>The resultant ExpressiveDbCommand.</returns>
-		public static ExpressiveCommand StoredProcedure(
-			this Func<IDbConnection> target,
-			string command)
-			=> StoredProcedure(new DbConnectionFactory(target), command);
+			=> new ExpressiveDbCommand(connectionSource, CommandType.StoredProcedure, procedureName);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
+		/// <typeparam name="TConnection">The connection type.</typeparam>
+		/// <param name="connectionSource">The connection pool to take connections from.</param>
 		/// <param name="command">The command text or stored procedure name to use.</param>
-		/// <param name="type">The command type.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand Command<TConnection>(
-			this Func<TConnection> target,
+			this IDbConnectionPool<TConnection> connectionSource,
 			string command,
 			CommandType type = CommandType.Text)
 			where TConnection : DbConnection
-			=> Command(DbConnectionFactory.Create(target), command, type);
+			=> new ExpressiveDbCommand(connectionSource, type, command);
 
 		/// <summary>
 		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
 		/// </summary>
-		/// <param name="target">The connection factory to generate a commands from.</param>
-		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <typeparam name="TConnection">The connection type.</typeparam>
+		/// <param name="connectionSource">The connection pool to take connections from.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
 		/// <returns>The resultant ExpressiveDbCommand.</returns>
 		public static ExpressiveDbCommand StoredProcedure<TConnection>(
-			this Func<TConnection> target,
-			string command)
+			this IDbConnectionPool<TConnection> connectionSource,
+			string procedureName)
 			where TConnection : DbConnection
-			=> StoredProcedure(DbConnectionFactory.Create(target), command);
+			=> new ExpressiveDbCommand(connectionSource, CommandType.StoredProcedure, procedureName);
+
+		/// <summary>
+		/// Creates an ExpressiveCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="connectionSource">The connection factory to generate a commands from.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveCommand Command(
+			this Func<IDbConnection> connectionSource,
+			string command,
+			CommandType type = CommandType.Text)
+			=> Command(DbConnectionFactory.Create(connectionSource), command, type);
+
+		/// <summary>
+		/// Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+		/// </summary>
+		/// <param name="connectionSource">The connection factory to generate a commands from.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveCommand StoredProcedure(
+			this Func<IDbConnection> connectionSource,
+			string procedureName)
+			=> StoredProcedure(DbConnectionFactory.Create(connectionSource), procedureName);
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand for subsequent configuration and execution.
+		/// </summary>
+		/// <typeparam name="TConnection">The connection type.</typeparam>
+		/// <param name="connectionSource">The connection factory to generate a commands from.</param>
+		/// <param name="command">The command text or stored procedure name to use.</param>
+		/// <param name="type">The command type. Default = CommandType.Text.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand Command<TConnection>(
+			this Func<TConnection> connectionSource,
+			string command,
+			CommandType type = CommandType.Text)
+			where TConnection : DbConnection
+			=> Command(DbConnectionFactory.Create(connectionSource), command, type);
+
+		/// <summary>
+		/// Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+		/// </summary>
+		/// <typeparam name="TConnection">The connection type.</typeparam>
+		/// <param name="connectionSource">The connection factory to generate a commands from.</param>
+		/// <param name="procedureName">The stored procedure name to use.</param>
+		/// <returns>The resultant ExpressiveDbCommand.</returns>
+		public static ExpressiveDbCommand StoredProcedure<TConnection>(
+			this Func<TConnection> connectionSource,
+			string procedureName)
+			where TConnection : DbConnection
+			=> StoredProcedure(DbConnectionFactory.Create(connectionSource), procedureName);
 	}
 }
