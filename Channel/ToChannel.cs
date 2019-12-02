@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Open.Database.Extensions
 {
+	/// <summary>
+	/// Extensions for writing data to a channel.
+	/// </summary>
 	public static partial class ChannelExtensions
 	{
 		/// <summary>
@@ -48,11 +51,13 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
 			ChannelWriter<T> target,
 			Func<IDataRecord, T> transform,
+			bool complete = false,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -67,7 +72,7 @@ namespace Open.Database.Extensions
 			var behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return await reader.ToChannel(target, transform, true, cancellationToken);
+			return await reader.ToChannel(target, transform, complete, cancellationToken);
 		}
 
 		/// <summary>
@@ -133,11 +138,13 @@ namespace Open.Database.Extensions
 		/// <param name="command">The DbCommand to generate a reader from.</param>
 		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel<T>(this DbCommand command,
+		public static async ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 			ChannelWriter<T> target,
 			Func<IDataRecord, T> transform,
+			bool complete = false,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -152,7 +159,7 @@ namespace Open.Database.Extensions
 			var behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
-			return await reader.ToChannelAsync(target, transform, true, cancellationToken);
+			return await reader.ToChannelAsync(target, transform, complete, cancellationToken);
 		}
 
 		/// <summary>

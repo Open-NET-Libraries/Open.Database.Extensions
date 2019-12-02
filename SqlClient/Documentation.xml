@@ -95,7 +95,7 @@
             Extensions for SqlConnections.
             </summary>
             <summary>
-            Extensions for creating expressive SQL commands from connections and connection factories.
+            Core non-DB-specific extensions for acquiring and operating on different connection factories.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.CreateCommand(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,System.Int32)">
@@ -130,68 +130,85 @@
             <summary>
             Creates an ExpressiveSqlCommand for subsequent configuration and execution.
             </summary>
-            <param name="target">The connection to execute the command on.</param>
+            <param name="connection">The connection to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
+            <param name="type">The command type. Default = CommandType.Text.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.Command(System.Data.SqlClient.SqlTransaction,System.String,System.Data.CommandType)">
             <summary>
             Creates an ExpressiveSqlCommand for subsequent configuration and execution.
             </summary>
-            <param name="target">The transaction to execute the command on.</param>
+            <param name="transaction">The transaction to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
+            <param name="type">The command type. Default = CommandType.Text.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.StoredProcedure(System.Data.SqlClient.SqlConnection,System.String)">
             <summary>
             Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
-            <param name="target">The connection to execute the command on.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="connection">The connection to execute the command on.</param>
+            <param name="procedureName">The stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.StoredProcedure(System.Data.SqlClient.SqlTransaction,System.String)">
             <summary>
             Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
-            <param name="target">The transaction to execute the command on.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="transaction">The transaction to execute the command on.</param>
+            <param name="procedureName">The stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
             <summary>
             Creates an ExpressiveSqlCommand for subsequent configuration and execution.
             </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
+            <param name="type">The command type. Default = CommandType.Text.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.String)">
             <summary>
             Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
+            <param name="procedureName">The stored procedure name to use.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
+            <summary>
+            Creates an ExpressiveSqlCommand for subsequent configuration and execution.
+            </summary>
+            <param name="connectionSource">The connection pool to take connections from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
+            <param name="type">The command type. Default = CommandType.Text.</param>
+            <returns>The resultant ExpressiveSqlCommand.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.SqlConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool{System.Data.SqlClient.SqlConnection},System.String)">
+            <summary>
+            Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            </summary>
+            <param name="connectionSource">The connection pool to take connections from.</param>
+            <param name="procedureName">The stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.Command(System.Func{System.Data.SqlClient.SqlConnection},System.String,System.Data.CommandType)">
             <summary>
             Creates an ExpressiveSqlCommand for subsequent configuration and execution.
             </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
+            <param name="connectionSource">The connection factory to generate a commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type.</param>
+            <param name="type">The command type. Default = CommandType.Text.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlConnectionExtensions.StoredProcedure(System.Func{System.Data.SqlClient.SqlConnection},System.String)">
             <summary>
             Creates an ExpressiveSqlCommand with command type set to StoredProcedure for subsequent configuration and execution.
             </summary>
-            <param name="target">The connection factory to generate a commands from.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
+            <param name="connectionSource">The connection factory to generate a commands from.</param>
+            <param name="procedureName">The stored procedure name to use.</param>
             <returns>The resultant ExpressiveSqlCommand.</returns>
         </member>
         <member name="T:Open.Database.Extensions.SqlTransactionExtensions">

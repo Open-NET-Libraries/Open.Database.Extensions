@@ -8,10 +8,10 @@
 		<Product />
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
-		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations with Dataflow and ensuring DI compatibility.</Description>
+		<Description>Database extensions for pipelining data through channels.  Includes Open.Database.Extensions.Core.</Description>
 		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>6.0.1</Version>
+		<Version>6.2.1</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
@@ -19,8 +19,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Extensions.ExpressiveCommandBase.cs" />
+	  <Compile Remove="QueryResult.cs" />
+	  <Compile Remove="Transformer.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Open.ChannelExtensions" Version="3.1.1" />
-		<PackageReference Include="Open.Database.Extensions.Core" Version="6.1.0" />
+		<PackageReference Include="Open.Database.Extensions.Core" Version="6.2.1" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
