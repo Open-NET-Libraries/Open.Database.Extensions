@@ -10,20 +10,25 @@ namespace Open.Database.Extensions
 	public static partial class ChannelExtensions
 	{
 		internal static Channel<T> CreateChannel<T>(int capacity = -1, bool singleReader = false, bool singleWriter = true)
-			=> capacity > 0
-			? Channel.CreateBounded<T>(new BoundedChannelOptions(capacity)
-			{
-				SingleWriter = singleWriter,
-				SingleReader = singleReader,
-				AllowSynchronousContinuations = true,
-				FullMode = BoundedChannelFullMode.Wait
-			})
-			: Channel.CreateUnbounded<T>(new UnboundedChannelOptions
-			{
-				SingleWriter = singleWriter,
-				SingleReader = singleReader,
-				AllowSynchronousContinuations = true
-			});
+		{
+			if (capacity == 0) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Cannot be zero.");
+			if (capacity < -1) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Must greater than zero or equal to negative one (unbounded).");
+
+			return capacity > 0
+				? Channel.CreateBounded<T>(new BoundedChannelOptions(capacity)
+				{
+					SingleWriter = singleWriter,
+					SingleReader = singleReader,
+					AllowSynchronousContinuations = true,
+					FullMode = BoundedChannelFullMode.Wait
+				})
+				: Channel.CreateUnbounded<T>(new UnboundedChannelOptions
+				{
+					SingleWriter = singleWriter,
+					SingleReader = singleReader,
+					AllowSynchronousContinuations = true
+				});
+		}
 
 		// NOTE:
 		// Some of these methods are kept internal to avoid the risks involved with leaving a conneciton open while waiting to write to a channel.
@@ -45,8 +50,6 @@ namespace Open.Database.Extensions
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			if (capacity == 0) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Cannot be zero.");
-			if (capacity < -1) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Must greater than zero or equal to negative one (unbounded).");
 			Contract.EndContractBlock();
 
 			var channel = CreateChannel<T>(capacity, singleReader);
@@ -91,8 +94,6 @@ namespace Open.Database.Extensions
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			if (capacity == 0) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Cannot be zero.");
-			if (capacity < -1) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Must greater than zero or equal to negative one (unbounded).");
 			Contract.EndContractBlock();
 
 			var channel = CreateChannel<T>(capacity, singleReader);

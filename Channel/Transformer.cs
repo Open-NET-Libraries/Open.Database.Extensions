@@ -1,48 +1,73 @@
 ﻿using Open.ChannelExtensions;
+using Open.Database.Extensions.Core;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Data;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace Open.Database.Extensions.Dataflow
+namespace Open.Database.Extensions
 {
 	internal class Transformer<T> : Core.Transformer<T>
 		where T : new()
 	{
-		public Transformer(IEnumerable<(string Field, string Column)>? overrides = null)
+		public Transformer(CancellationToken cancellationToken, IEnumerable<(string Field, string? Column)>? overrides = null)
 			: base(overrides)
-		{ }
-
-		class ChannelProcessor : Processor
 		{
-			public ChannelProcessor(Transformer<T> transformer, IList<string>? names = null)
+			CancellationToken = cancellationToken;
+		}
 
-				/* Unmerged change from project 'Open.Database.Extensions.Channel (netstandard2.1)'
-				Before:
-								:base (transformer, names)
-				After:
-								: base(transformer, names)
-				*/
-				: base(transformer, names)
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			if (reader.Read())
 			{
-
+				var fieldCount = reader.FieldCount;
+				do
+				{
+					var row = LocalPool.Rent(fieldCount);
+					reader.GetValues(row);
+					yield return row;
+				} while (reader.Read());
 			}
+		}
 
-			public TransformChannel<object[], T> GetBlock(
-				ExecutionDataflowBlockOptions? options = null)
-				=> options == null
-					? new TransformChannel<object[], T>(Transform)
-					: new TransformChannel<object[], T>(Transform, options);
+		internal static IEnumerable<object[]> AsEnumerableInternal(IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			Contract.EndContractBlock();
+
+			if (readStarted || reader.Read())
+			{
+				var o = ordinals as IList<int> ?? ordinals.ToArray();
+				var fieldCount = o.Count;
+
+				do
+				{
+					var row = LocalPool.Rent(fieldCount);
+					for (var i = 0; i < fieldCount; i++)
+						row[i] = reader.GetValue(o[i]);
+					yield return row;
+				}
+				while (reader.Read());
+			}
 		}
 
 		public ChannelReader<T> Results(
 			out Action<QueryResult<IEnumerable<object[]>>> deferred,
-			ExecutionDataflowBlockOptions? options = null)
+			int capacity = -1, bool singleReader = false)
 		{
-			var processor = new DataflowProcessor(this);
-			var x = processor.GetBlock(options);
+			var channel = ChannelExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+			var processor = new Processor(this);
+			var x = channel.Pipe(processor.Transform, capacity, singleReader, CancellationToken);
 
 			deferred = results =>
 			{
@@ -59,7 +84,7 @@ namespace Open.Database.Extensions.Dataflow
 			out Func<QueryResult<IEnumerable<object[]>>, ValueTask> deferred,
 			ExecutionDataflowBlockOptions? options = null)
 		{
-			var processor = new DataflowProcessor(this);
+			var processor = new Processor(this);
 			var x = processor.GetBlock(options);
 
 			deferred = async results =>
@@ -73,36 +98,6 @@ namespace Open.Database.Extensions.Dataflow
 			return x;
 		}
 
-		public ChannelReader<T> Results(
-			QueryResult<IReceivableSourceBlock<object[]>> source,
-			ExecutionDataflowBlockOptions? options = null)
-		{
-			if (source is null) throw new ArgumentNullException(nameof(source));
-			Contract.EndContractBlock();
-
-			var processor = new DataflowProcessor(this, source.Names);
-			var x = processor.GetBlock(options);
-			var r = source.Result;
-			r.LinkTo(x, new DataflowLinkOptions { PropagateCompletion = true });
-			x.Completion.ContinueWith(
-				t => r.Complete(), // just stop the flow if x has been completed externally.
-				CancellationToken.None,
-				TaskContinuationOptions.ExecuteSynchronously,
-				TaskScheduler.Current); // Signal that no more results can be received.
-			return x;
-		}
-
-		public ChannelReader<object[], T> ResultsBlock(
-			out Action<string[]> initColumnNames,
-			ExecutionDataflowBlockOptions? options = null)
-		{
-			var processor = new DataflowProcessor(this);
-			var x = processor.GetBlock(options);
-
-			initColumnNames = results => processor.SetNames(results);
-
-			return x;
-		}
 
 	}
 }

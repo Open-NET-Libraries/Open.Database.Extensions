@@ -35,7 +35,7 @@ namespace Open.Database.Extensions
 		/// <param name="remaining">The remaining values.</param>
 		/// <returns></returns>
 		protected static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
-			=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
+			=> CoreExtensions.Concat(first, remaining);
 
 		/// <summary>
 		/// The connection provider to used to acquire connections.

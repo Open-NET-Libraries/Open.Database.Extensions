@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
@@ -178,6 +179,31 @@ namespace Open.Database.Extensions
 			}
 		}
 
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object> arrayPool)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			if (reader.Read())
+			{
+				var fieldCount = reader.FieldCount;
+				do
+				{
+					var row = arrayPool.Rent(fieldCount);
+					reader.GetValues(row);
+					yield return row;
+				} while (reader.Read());
+			}
+		}
+
 		internal static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -207,7 +233,31 @@ namespace Open.Database.Extensions
 					}
 					while (reader.Read());
 				}
+			}
+		}
 
+		internal static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object> arrayPool)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			if (readStarted || reader.Read())
+			{
+				var o = ordinals as IList<int> ?? ordinals.ToArray();
+				var fieldCount = o.Count;
+				if (arrayPool != null)
+				{
+					do
+					{
+						var row = arrayPool.Rent(fieldCount);
+						for (var i = 0; i < fieldCount; i++)
+							row[i] = reader.GetValue(o[i]);
+						yield return row;
+					}
+					while (reader.Read());
+				}
 			}
 		}
 
@@ -223,13 +273,35 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object> arrayPool)
+			=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
 		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
-			=> AsEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others));
+			=> AsEnumerable(reader, CoreExtensions.Concat(n, others));
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object> arrayPool, int n, params int[] others)
+			=> AsEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
 		/// <summary>
 		/// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
@@ -336,6 +408,33 @@ namespace Open.Database.Extensions
 			}
 		}
 
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static async IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			if (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(true))
+			{
+				var fieldCount = reader.FieldCount;
+				do
+				{
+					var row = arrayPool.Rent(fieldCount);
+					reader.GetValues(row);
+					yield return row;
+				}
+				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(true));
+			}
+		}
+
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -368,6 +467,28 @@ namespace Open.Database.Extensions
 			}
 		}
 
+		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			if (readStarted || !cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(true))
+			{
+				var o = ordinals as IList<int> ?? ordinals.ToArray();
+				var fieldCount = o.Count;
+				do
+				{
+					var row = arrayPool.Rent(fieldCount);
+					for (var i = 0; i < fieldCount; i++)
+						row[i] = reader.GetValue(o[i]);
+					yield return row;
+				}
+				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(true));
+			}
+		}
+
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
 		/// DBNull values are retained.
@@ -381,6 +502,18 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object> arrayPool, CancellationToken cancellationToken = default)
+			=> AsAsyncEnumerableInternal(reader, ordinals, false, arrayPool, cancellationToken);
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="cancellationToken">The iteration cancellation token.</param>
@@ -389,7 +522,20 @@ namespace Open.Database.Extensions
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
 		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params int[] others)
-			=> AsAsyncEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others), cancellationToken);
+			=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), cancellationToken);
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">The iteration cancellation token.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
+		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, CancellationToken cancellationToken, int n, params int[] others)
+			=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool, cancellationToken);
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
@@ -399,7 +545,18 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
 		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params int[] others)
-			=> AsAsyncEnumerable(reader, Enumerable.Repeat(n, 1).Concat(others));
+			=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others));
+
+		/// <summary>
+		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// </summary>
+		/// <param name="reader">The reader to enumerate.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, int n, params int[] others)
+			=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
 		/// <summary>
 		/// Asyncronously iterates all records from an IDataReader.

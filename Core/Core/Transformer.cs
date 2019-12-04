@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Open.Database.Extensions.Core
 {
@@ -15,6 +19,17 @@ namespace Open.Database.Extensions.Core
 	public class Transformer<T>
 		where T : new()
 	{
+		/// <summary>
+		/// Maximum number of arrays to hold in the local array pool per bucket.
+		/// May also define how many records are pre buffered before transforming.
+		/// </summary>
+		protected const int MaxArrayBuffer = 1024;
+
+		/// <summary>
+		/// Buffers for transforming.
+		/// </summary>
+		protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
+
 		/// <summary>
 		/// The type of <typeparamref name="T"/>.
 		/// </summary>
@@ -40,7 +55,7 @@ namespace Open.Database.Extensions.Core
 		/// Constructs a transformer using the optional field overrides.
 		/// </summary>
 		/// <param name="overrides"></param>
-		public Transformer(IEnumerable<(string Field, string? Column)>? overrides = null)
+		protected internal Transformer(IEnumerable<(string Field, string? Column)>? overrides = null)
 		{
 			Type = typeof(T);
 			Properties = Type.GetProperties();
@@ -161,14 +176,124 @@ namespace Open.Database.Extensions.Core
 			var processor = new Processor(this, results.Names);
 			var q = results.Result;
 
-			while (q.Count != 0)
-				yield return processor.Transform(q.Dequeue());
-
-			// By using the above routine, we guarantee as enumeration occurs, references are released (dequeued).
+			return q.DequeueEach().Select(processor.Transform);
 		}
 
 		/// <summary>
-		/// Processes the data from the data table inot a queue. Then dequeues the results and transforms each one by one during enumeration.
+		/// Dequeues the results and transforms each one by one during enumeration.
+		/// </summary>
+		/// <param name="results">The results to process.</param>
+		/// <param name="arrayPool">The array pool to return the buffers to.</param>
+		/// <returns>A dequeuing enumerable of the transformed results.</returns>
+		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results, ArrayPool<object> arrayPool)
+		{
+			if (results is null) throw new ArgumentNullException(nameof(results));
+			Contract.EndContractBlock();
+
+			var processor = new Processor(this, results.Names);
+			var q = results.Result;
+
+			return q.DequeueEach().Select(a =>
+			{
+				try
+				{
+					return processor.Transform(a);
+				}
+				finally
+				{
+					arrayPool.Return(a);
+				}
+			});
+		}
+
+		/// <summary>
+		/// Transforms the results
+		/// </summary>
+		/// <param name="reader">The reader to read from.</param>
+		/// <returns>An enumerable that transforms the results.</returns>
+		internal IEnumerable<T> Results(IDataReader reader)
+		{
+			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			// Ignore missing columns.
+			var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
+			var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
+
+			return reader
+				.AsEnumerable(columns.Select(m => m.Ordinal), LocalPool)
+				.Select(a =>
+				{
+					try
+					{
+						return processor.Transform(a);
+					}
+					finally
+					{
+						LocalPool.Return(a);
+					}
+				});
+		}
+
+		/// <summary>
+		/// Transforms the results
+		/// </summary>
+		/// <param name="reader">The reader to read from.</param>
+		/// <param name="readStarted"></param>
+		/// <returns>An enumerable that transforms the results.</returns>
+		internal IEnumerable<T> ResultsBuffered(IDataReader reader, bool readStarted)
+		{
+			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			if (!readStarted && !reader.Read())
+				return Enumerable.Empty<T>();
+
+			// Ignore missing columns.
+			var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
+
+			return AsDequeueingEnumerable(
+				CoreExtensions.RetrieveInternal(
+					reader,
+					columns.Select(c => c.Ordinal),
+					columns.Select(c => c.Name),
+					readStarted: readStarted,
+					arrayPool: LocalPool),
+				LocalPool);
+		}
+
+#if NETSTANDARD2_1
+		/// <summary>
+		/// Transforms the results
+		/// </summary>
+		/// <param name="reader">The reader to read from.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <returns>An enumerable that transforms the results.</returns>
+		internal async IAsyncEnumerable<T> ResultsAsync(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
+		{
+			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			// Ignore missing columns.
+			var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
+			var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
+
+			await foreach (var a in reader.AsAsyncEnumerable(columns.Select(m => m.Ordinal), LocalPool, cancellationToken))
+			{
+				try
+				{
+					yield return processor.Transform(a);
+				}
+				finally
+				{
+					LocalPool.Return(a);
+				}
+			}
+		}
+#endif
+
+		/// <summary>
+		/// Processes the data from the data table into a queue. Then dequeues the results and transforms each one by one during enumeration.
 		/// </summary>
 		/// <param name="table">The data to process.</param>
 		/// <param name="clearTable">If true, will clear the table after buffering the data.</param>
@@ -178,13 +303,20 @@ namespace Open.Database.Extensions.Core
 			if (table is null) throw new ArgumentNullException(nameof(table));
 			Contract.EndContractBlock();
 
+			var columnCount = table.Columns.Count;
 			var columns = table.Columns.AsEnumerable();
 			var results = new QueryResult<Queue<object[]>>(
 				columns.Select(c => c.Ordinal),
 				columns.Select(c => c.ColumnName),
-				new Queue<object[]>(table.Rows.AsEnumerable().Select(r => r.ItemArray)));
+				new Queue<object[]>(table.Rows.AsEnumerable().Select(r =>
+				{
+					var a = LocalPool.Rent(columnCount);
+					for (var i = 0; i < columnCount; i++) a[i] = r[i];
+					return a;
+				})));
+
 			if (clearTable) table.Rows.Clear();
-			return AsDequeueingEnumerable(results);
+			return AsDequeueingEnumerable(results, LocalPool);
 		}
 
 	}

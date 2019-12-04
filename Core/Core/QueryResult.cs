@@ -84,13 +84,22 @@ namespace Open.Database.Extensions.Core
 			if (result == null) throw new ArgumentNullException(nameof(result));
 		}
 
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResultCollection(IEnumerable<int> ordinals, IEnumerable<string> names, TResult result)
+			: base(ordinals, names, result)
+		{
+
+		}
+
+
 		/// <inheritdoc />
 		public IEnumerator<T> GetEnumerator()
 			=> Result.GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator()
 			=> GetEnumerator();
-
 	}
 
 	/// <summary>
@@ -106,15 +115,23 @@ namespace Open.Database.Extensions.Core
 			: base(ordinals, names, result)
 		{
 		}
-	}
 
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResultCollection(IEnumerable<int> ordinals, IEnumerable<string> names, IEnumerable<T> result)
+			: base(ordinals, names, result)
+		{
+
+		}
+	}
 
 	/// <summary>
 	/// A container for data reader results that also provides the column names and other helpful data methods.
 	/// </summary>
 	/// <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", Justification = "")]
-	public class QueryResultQueue<T> : QueryResultCollection<T, Queue<T>>
+	public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enumerable to avoid confusion with the queue.
 	{
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
@@ -122,6 +139,15 @@ namespace Open.Database.Extensions.Core
 		public QueryResultQueue(ImmutableArray<int> ordinals, ImmutableArray<string> names, Queue<T> result)
 			: base(ordinals, names, result)
 		{
+		}
+
+		/// <param name="ordinals">The ordinal values requested</param>
+		/// <param name="names">The column names requested.</param>
+		/// <param name="result">The result.</param>
+		public QueryResultQueue(IEnumerable<int> ordinals, IEnumerable<string> names, Queue<T> result)
+			: base(ordinals, names, result)
+		{
+
 		}
 	}
 

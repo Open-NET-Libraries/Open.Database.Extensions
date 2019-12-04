@@ -21,7 +21,6 @@
 	<ItemGroup>
 	  <Compile Remove="Extensions.ExpressiveCommandBase.cs" />
 	  <Compile Remove="QueryResult.cs" />
-	  <Compile Remove="Transformer.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -14,7 +14,7 @@ namespace Open.Database.Extensions
 	/// </summary>
 	public static partial class CoreExtensions
 	{
-		static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
+		internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
 			=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
 
 		// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
@@ -186,7 +186,7 @@ namespace Open.Database.Extensions
 		/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
 		public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
-			=> table.To<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), clearSourceTable);
+			=> To<T>(table, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), clearSourceTable);
 
 		/// <summary>
 		/// Useful extension for dequeuing items from a queue.
@@ -199,8 +199,13 @@ namespace Open.Database.Extensions
 			if (source is null) throw new ArgumentNullException(nameof(source));
 			Contract.EndContractBlock();
 
+#if NETSTANDARD2_1
+			while (source.TryDequeue(out var a))
+				yield return a;
+#else
 			while (source.Count != 0)
 				yield return source.Dequeue();
+#endif
 		}
 
 	}
