@@ -53,12 +53,7 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var channel = CreateChannel<T>(capacity, singleReader);
-#if NETSTANDARD2_1
-			if (reader is DbDataReader r)
-				ToChannelAsync(r, channel.Writer, transform, true, cancellationToken);
-			else
-#endif
-			ToChannel(reader, channel.Writer, transform, true, cancellationToken);
+			_ = ToChannel(reader, channel.Writer, transform, true, cancellationToken);
 			return channel.Reader;
 		}
 
@@ -97,15 +92,8 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var channel = CreateChannel<T>(capacity, singleReader);
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-#if NETSTANDARD2_1
-			if (command is DbCommand c)
-				ToChannelAsync(c, channel.Writer, transform, true, cancellationToken);
-			else
-#endif
-			ToChannel(command, channel.Writer, transform, true, cancellationToken);
+			_ = ToChannel(command, channel.Writer, transform, true, cancellationToken);
 			return channel.Reader;
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
 		/// <summary>
@@ -131,28 +119,44 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static ChannelReader<T> AsChannel<T>(this IExecuteReader command,
-			Func<IDataRecord, T> transform, bool singleReader,
-			CancellationToken cancellationToken = default)
+			Func<IDataRecord, T> transform, bool singleReader)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
+			var cancellationToken = command.CancellationToken;
 			var channel = CreateChannel<T>(-1, singleReader);
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-#if NETSTANDARD2_1
-			if (command is IExecuteReaderAsync c)
-				ToChannelAsync(c, channel.Writer, transform, cancellationToken);
-			else
-#endif
-			ToChannel(command, channel.Writer, transform, cancellationToken);
+			_ = ToChannel(command, channel.Writer, transform, cancellationToken);
 			return channel.Reader;
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
+
+#if NETSTANDARD2_1
+		/// <summary>
+		/// Iterates an IDataReader through the transform function and writes each record to a channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <returns>The number of records processed.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this IExecuteReaderAsync command,
+			Func<IDataRecord, T> transform, bool singleReader)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			var cancellationToken = command.CancellationToken;
+			var channel = CreateChannel<T>(-1, singleReader);			
+			_ = ToChannelAsync(command, channel.Writer, transform, cancellationToken);
+			return channel.Reader;
+		}
+#endif
 
 	}
 }

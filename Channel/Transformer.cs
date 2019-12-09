@@ -1,10 +1,9 @@
 ﻿using Open.ChannelExtensions;
-using Open.Database.Extensions.Core;
-using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading;
@@ -16,87 +15,128 @@ namespace Open.Database.Extensions
 	internal class Transformer<T> : Core.Transformer<T>
 		where T : new()
 	{
-		public Transformer(CancellationToken cancellationToken, IEnumerable<(string Field, string? Column)>? overrides = null)
-			: base(overrides)
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+		public Transformer(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			: base(fieldMappingOverrides)
 		{
-			CancellationToken = cancellationToken;
 		}
 
-		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
+		/// <summary>
+		/// Static utility for creating a Transformer <typeparamref name="T"/>.
+		/// </summary>
+		/// <param name="overrides"></param>
+		/// <returns></returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "This is simply an expressive helper that would seem odd to make another static class to handle.")]
+		public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? overrides = null)
+			=> new Transformer<T>(overrides);
+
+		/// <summary>
+		/// Transforms the results from the reader by first buffering the results and if/when the buffer size is reached, the results are transformed to a channel for reading.
+		/// </summary>
+		/// <param name="reader">The reader to read from.</param>
+		/// <param name="target">The target channel to write to.</param>
+		/// <param name="readStarted">Was the reader already sucessfully read?</param>
+		/// <param name="complete">Will call complete when no more results are avaiable.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <returns>The ChannelReader of the target.</returns>
+		internal async ValueTask<long> PipeResultsTo(IDataReader reader, ChannelWriter<T> target, bool readStarted, bool complete, CancellationToken cancellationToken)
 		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
 
-			if (reader.Read())
-			{
-				var fieldCount = reader.FieldCount;
-				do
-				{
-					var row = LocalPool.Rent(fieldCount);
-					reader.GetValues(row);
-					yield return row;
-				} while (reader.Read());
-			}
-		}
+			if (!readStarted && !reader.Read())
+				return 0;
 
-		internal static IEnumerable<object[]> AsEnumerableInternal(IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
-			Contract.EndContractBlock();
+			var columns = reader.GetMatchingOrdinals(ColumnNames, true);
+			var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
+			var names = columns.Select(m => m.Name).ToImmutableArray();
 
-			if (readStarted || reader.Read())
-			{
-				var o = ordinals as IList<int> ?? ordinals.ToArray();
-				var fieldCount = o.Count;
+			var processor = new Processor(this, names);
+			var transform = processor.Transform;
+			var columnCount = columns.Length;
 
-				do
-				{
-					var row = LocalPool.Rent(fieldCount);
-					for (var i = 0; i < fieldCount; i++)
-						row[i] = reader.GetValue(o[i]);
-					yield return row;
-				}
-				while (reader.Read());
-			}
-		}
-
-		public ChannelReader<T> Results(
-			out Action<QueryResult<IEnumerable<object[]>>> deferred,
-			int capacity = -1, bool singleReader = false)
-		{
 			var channel = ChannelExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
-			var processor = new Processor(this);
-			var x = channel.Pipe(processor.Transform, capacity, singleReader, CancellationToken);
+			var writer = channel.Writer;
 
-			deferred = results =>
-			{
-				processor.SetNames(results.Names);
-				var q = results.Result;
-				foreach (var record in q) if (!x.Post(record)) break;
-				x.Complete(); // May not be necessary, but we'll call it to ensure the .Completion occurs.
-			};
+			var piped = channel
+				.Reader
+				.Transform(a =>
+				{
+					try
+					{
+						return transform(a);
+					}
+					finally
+					{
+						LocalPool.Return(a);
+					}
+				})
+				.PipeTo(target, complete, cancellationToken);
 
-			return x;
+			var written = await writer
+				.WriteAll(
+					reader.AsEnumerable(ordinals, LocalPool),
+					true,
+					cancellationToken);
+
+			var result = await piped;
+			Debug.Assert(written == result);
+			return result;
 		}
 
-		public ChannelReader<T> ResultsAsync(
-			out Func<QueryResult<IEnumerable<object[]>>, ValueTask> deferred,
-			ExecutionDataflowBlockOptions? options = null)
+#if NETSTANDARD2_1
+		/// <summary>
+		/// Transforms the results from the reader by first buffering the results and if/when the buffer size is reached, the results are transformed to a channel for reading.
+		/// </summary>
+		/// <param name="reader">The reader to read from.</param>
+		/// <param name="target">The target channel to write to.</param>
+		/// <param name="readStarted">Was the reader already sucessfully read?</param>
+		/// <param name="complete">Will call complete when no more results are avaiable.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <returns>The ChannelReader of the target.</returns>
+		internal async ValueTask<long> PipeResultsToAsync(DbDataReader reader, ChannelWriter<T> target, bool readStarted, bool complete, CancellationToken cancellationToken)
 		{
-			var processor = new Processor(this);
-			var x = processor.GetBlock(options);
+			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
 
-			deferred = async results =>
-			{
-				processor.SetNames(results.Names);
-				var q = results.Result;
-				foreach (var record in q) if (!await x.SendAsync(record).ConfigureAwait(false)) break;
-				x.Complete(); // May not be necessary, but we'll call it to ensure the .Completion occurs.
-			};
+			if (!readStarted && !reader.Read())
+				return 0;
 
-			return x;
+			var columns = reader.GetMatchingOrdinals(ColumnNames, true);
+			var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
+			var names = columns.Select(m => m.Name).ToImmutableArray();
+
+			var processor = new Processor(this, names);
+			var transform = processor.Transform;
+			var columnCount = columns.Length;
+
+			var channel = ChannelExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+			var writer = channel.Writer;
+
+			var piped = channel
+				.Reader
+				.Transform(a =>
+				{
+					try
+					{
+						return transform(a);
+					}
+					finally
+					{
+						LocalPool.Return(a);
+					}
+				})
+				.PipeTo(target, complete, cancellationToken);
+
+			await writer
+				.WriteAllAsync(
+					reader.AsAsyncEnumerable(ordinals, LocalPool, cancellationToken),
+					true,
+					cancellationToken);
+
+			return await piped;
 		}
+#endif
 
 
 	}

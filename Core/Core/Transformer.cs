@@ -77,7 +77,6 @@ namespace Open.Database.Extensions.Core
 
 		}
 
-
 		/// <summary>
 		/// Static utility for creating a Transformer <typeparamref name="T"/>.
 		/// </summary>
@@ -191,13 +190,14 @@ namespace Open.Database.Extensions.Core
 			Contract.EndContractBlock();
 
 			var processor = new Processor(this, results.Names);
+			var transform = processor.Transform;
 			var q = results.Result;
 
 			return q.DequeueEach().Select(a =>
 			{
 				try
 				{
-					return processor.Transform(a);
+					return transform(a);
 				}
 				finally
 				{
@@ -213,12 +213,13 @@ namespace Open.Database.Extensions.Core
 		/// <returns>An enumerable that transforms the results.</returns>
 		internal IEnumerable<T> Results(IDataReader reader)
 		{
-			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
 
 			// Ignore missing columns.
 			var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
 			var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
+			var transform = processor.Transform;
 
 			return reader
 				.AsEnumerable(columns.Select(m => m.Ordinal), LocalPool)
@@ -226,7 +227,7 @@ namespace Open.Database.Extensions.Core
 				{
 					try
 					{
-						return processor.Transform(a);
+						return transform(a);
 					}
 					finally
 					{
@@ -243,7 +244,7 @@ namespace Open.Database.Extensions.Core
 		/// <returns>An enumerable that transforms the results.</returns>
 		internal IEnumerable<T> ResultsBuffered(IDataReader reader, bool readStarted)
 		{
-			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
 
 			if (!readStarted && !reader.Read())
