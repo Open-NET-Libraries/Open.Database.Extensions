@@ -11,7 +11,7 @@
 		<Description>Database extensions for pipelining data through channels.  Includes Open.Database.Extensions.Core.</Description>
 		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>6.2.1</Version>
+		<Version>6.3.0</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>

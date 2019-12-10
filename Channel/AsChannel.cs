@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
@@ -30,30 +31,50 @@ namespace Open.Database.Extensions
 				});
 		}
 
-		// NOTE:
-		// Some of these methods are kept internal to avoid the risks involved with leaving a conneciton open while waiting to write to a channel.
-
 		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to a channel.
+		/// Iterates an IDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-		/// <param name="capacity">The optional bounded capacity of the channel. Default is unbound.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		internal static ChannelReader<T> AsChannel<T>(this IDataReader reader,
-			Func<IDataRecord, T> transform, bool singleReader, int capacity,
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannel<T>(this IDataReader reader,
+			bool singleReader,
+			Func<IDataRecord, T> transform,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var channel = CreateChannel<T>(capacity, singleReader);
-			_ = ToChannel(reader, channel.Writer, transform, true, cancellationToken);
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannel(reader, channel.Writer, true, transform, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannel<T>(this IDataReader reader,
+			bool singleReader,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannel(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 			return channel.Reader;
 		}
 
@@ -62,98 +83,227 @@ namespace Open.Database.Extensions
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
 		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		public static ChannelReader<T> AsChannel<T>(this IDataReader reader,
-			Func<IDataRecord, T> transform, bool singleReader,
-			CancellationToken cancellationToken = default)
-			=> AsChannel(reader, transform, singleReader, -1, cancellationToken);
-
-		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to a channel.
-		/// Be sure to await the completion.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The IDataReader to iterate.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-		/// <param name="capacity">The optional bounded capacity of the channel. Default is unbound.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		internal static ChannelReader<T> AsChannel<T>(this IDbCommand command,
-			Func<IDataRecord, T> transform, bool singleReader, int capacity,
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannel<T>(this IDbCommand command,
+			bool singleReader,
+			Func<IDataRecord, T> transform,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var channel = CreateChannel<T>(capacity, singleReader);
-			_ = ToChannel(command, channel.Writer, transform, true, cancellationToken);
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true, transform, cancellationToken);
 			return channel.Reader;
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to a channel.
-		/// Be sure to await the completion.
+		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
 		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
+		/// <returns>The channel reader containing the results.</returns>
 		public static ChannelReader<T> AsChannel<T>(this IDbCommand command,
-			Func<IDataRecord, T> transform, bool singleReader,
+			bool singleReader,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
 			CancellationToken cancellationToken = default)
-			=> AsChannel(command, transform, singleReader, -1, cancellationToken);
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+			return channel.Reader;
+		}
 
 		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to a channel.
+		/// Iterates an IDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-		/// <returns>The number of records processed.</returns>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The channel reader containing the results.</returns>
 		public static ChannelReader<T> AsChannel<T>(this IExecuteReader command,
-			Func<IDataRecord, T> transform, bool singleReader)
+			bool singleReader,
+			Func<IDataRecord, T> transform)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
 			var channel = CreateChannel<T>(-1, singleReader);
-			_ = ToChannel(command, channel.Writer, transform, cancellationToken);
+			_ = ToChannel(command, channel.Writer, true, transform);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannel<T>(this IExecuteReader command,
+			bool singleReader,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides);
 			return channel.Reader;
 		}
 
 
 #if NETSTANDARD2_1
 		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to a channel.
+		/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The IDataReader to iterate.</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-		/// <returns>The number of records processed.</returns>
-		public static ChannelReader<T> AsChannelAsync<T>(this IExecuteReaderAsync command,
-			Func<IDataRecord, T> transform, bool singleReader)
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this DbDataReader reader,
+			bool singleReader,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannelAsync(reader, channel.Writer, true, transform, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this DbDataReader reader,
+			bool singleReader,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannelAsync(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this DbCommand command,
+			bool singleReader,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			var channel = CreateChannel<T>(-1, singleReader);			
-			_ = ToChannelAsync(command, channel.Writer, transform, cancellationToken);
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, transform, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this DbCommand command,
+			bool singleReader,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this IExecuteReaderAsync command,
+			bool singleReader,
+			Func<IDataRecord, T> transform)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, transform);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<T> AsChannelAsync<T>(this IExecuteReaderAsync command,
+			bool singleReader,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<T>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides);
 			return channel.Reader;
 		}
 #endif
