@@ -22,7 +22,7 @@
             </summary>
             <typeparam name="TResult">The type of the result property.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)">
+        <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`0)">
             <param name="ordinals">The ordinal values requested</param>
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
@@ -32,22 +32,22 @@
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
         </member>
-        <member name="P:Open.Database.Extensions.Core.QueryResult`1.ColumnCount">
+        <member name="F:Open.Database.Extensions.Core.QueryResult`1.ColumnCount">
             <summary>
             The number of columns.
             </summary>
         </member>
-        <member name="P:Open.Database.Extensions.Core.QueryResult`1.Ordinals">
+        <member name="F:Open.Database.Extensions.Core.QueryResult`1.Ordinals">
             <summary>
             The ordinal values requested.
             </summary>
         </member>
-        <member name="P:Open.Database.Extensions.Core.QueryResult`1.Names">
+        <member name="F:Open.Database.Extensions.Core.QueryResult`1.Names">
             <summary>
             The column names requested.
             </summary>
         </member>
-        <member name="P:Open.Database.Extensions.Core.QueryResult`1.Result">
+        <member name="F:Open.Database.Extensions.Core.QueryResult`1.Result">
             <summary>
             The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
             </summary>
@@ -62,7 +62,7 @@
             <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
             <typeparam name="TResult">The type of the result property.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`1)">
+        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`1)">
             <param name="ordinals">The ordinal values requested</param>
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
@@ -81,7 +81,7 @@
             </summary>
             <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},System.Collections.Generic.IEnumerable{`0})">
+        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.IEnumerable{`0})">
             <param name="ordinals">The ordinal values requested</param>
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
@@ -97,7 +97,7 @@
             </summary>
             <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},System.Collections.Generic.Queue{`0})">
+        <member name="M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.Queue{`0})">
             <param name="ordinals">The ordinal values requested</param>
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
@@ -270,7 +270,7 @@
             </summary>
             <param name="transformer">The transformer to use.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String})">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String}@)">
             <summary>
             Constructs a processor.
             </summary>
@@ -287,7 +287,7 @@
             The resultant transofrm function.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String})">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String}@)">
             <summary>
             Allows for deferred initialization.
             </summary>
@@ -321,6 +321,14 @@
             </summary>
             <param name="reader">The reader to read from.</param>
             <param name="readStarted"></param>
+            <returns>An enumerable that transforms the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.ResultsAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
+            <summary>
+            Transforms the results
+            </summary>
+            <param name="reader">The reader to read from.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <returns>An enumerable that transforms the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.DataTable,System.Boolean)">
@@ -2275,6 +2283,128 @@
             <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="cancellationToken">Optional iteration cancellation token.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="arrayPool">An optional array pool to acquire buffers from.</param>
+            <param name="cancellationToken">Optional iteration cancellation token.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+            <param name="cancellationToken">Optional iteration cancellation token.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+            <param name="arrayPool">The array pool to acquire buffers from.</param>
+            <param name="cancellationToken">Optional iteration cancellation token.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="cancellationToken">The iteration cancellation token.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken,System.Int32,System.Int32[])">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="arrayPool">The array pool to acquire buffers from.</param>
+            <param name="cancellationToken">The iteration cancellation token.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Int32,System.Int32[])">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])">
+            <summary>
+            Enumerates all the remaining values of the current result set of a data reader.
+            </summary>
+            <param name="reader">The reader to enumerate.</param>
+            <param name="arrayPool">The array pool to acquire buffers from.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+            <param name="others">The remaining ordinals to request from the reader for each record.</param>
+            <returns>An enumeration of the values returned from a data reader.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asyncronously iterates all records from an IDataReader.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asyncronously iterates all records from an IDataReader.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The DbDataReader to iterate.</param>
+            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <returns>An enumerable used to iterate the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Shortcut for .Iterate(transform).ToList();
@@ -2434,6 +2564,38 @@
             <summary>
             Extension methods for IDataRecord access.
             </summary>
+        </member>
+        <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord)">
+            <summary>
+            Returns an array of values with the specified field count.
+            </summary>
+            <param name="record">The reader to get column names from.</param>
+            <returns>The array of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)">
+            <summary>
+            Returns an array of values with the specified field count.
+            </summary>
+            <param name="record">The reader to get column names from.</param>
+            <param name="arrayLength">The size of the resultant array.</param>
+            <returns>The array of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32,System.Buffers.ArrayPool{System.Object})">
+            <summary>
+            Returns an array of values with the specified field count.
+            </summary>
+            <param name="record">The reader to get column names from.</param>
+            <param name="minimumArrayLength">The minimum size of the resultant array.</param>
+            <param name="arrayPool">The array pool to acquire buffers from.</param>
+            <returns>The array of values.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Buffers.ArrayPool{System.Object})">
+            <summary>
+            Returns an array of values with the specified field count.
+            </summary>
+            <param name="record">The reader to get column names from.</param>
+            <param name="arrayPool">The array pool to acquire buffers from.</param>
+            <returns>The array of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ColumnNames(System.Data.IDataRecord)">
             <summary>
@@ -2994,6 +3156,45 @@
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="command">The command to generate a reader from.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates each record and attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously iterates each record and attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])">
+            <summary>
+            Asynchronously iterates each record and attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <returns>The enumerable to pull the transformed results from.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)">
+            <summary>
+            Iterates each record and attempts to map the fields to type T.
+            </summary>
+            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+            <param name="reader">The IDataReader to read results from.</param>
+            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)">

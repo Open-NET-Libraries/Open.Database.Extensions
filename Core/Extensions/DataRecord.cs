@@ -14,6 +14,72 @@ namespace Open.Database.Extensions
 	public static partial class DataRecordExtensions
 	{
 		/// <summary>
+		/// Returns an array of values with the specified field count.
+		/// </summary>
+		/// <param name="record">The reader to get column names from.</param>
+		/// <returns>The array of values.</returns>
+		public static object[] GetValues(this IDataRecord record)
+		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
+			var result = new object[record.FieldCount];
+			record.GetValues(result);
+			return result;
+		}
+
+		/// <summary>
+		/// Returns an array of values with the specified field count.
+		/// </summary>
+		/// <param name="record">The reader to get column names from.</param>
+		/// <param name="arrayLength">The size of the resultant array.</param>
+		/// <returns>The array of values.</returns>
+		public static object[] GetValues(this IDataRecord record, int arrayLength)
+		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			Contract.EndContractBlock();
+
+			var result = new object[arrayLength];
+			record.GetValues(result);
+			return result;
+		}
+
+		/// <summary>
+		/// Returns an array of values with the specified field count.
+		/// </summary>
+		/// <param name="record">The reader to get column names from.</param>
+		/// <param name="minimumArrayLength">The minimum size of the resultant array.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>The array of values.</returns>
+		public static object[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object> arrayPool)
+		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+
+			Contract.EndContractBlock();
+			var result = arrayPool.Rent(minimumArrayLength);
+			record.GetValues(result);
+			return result;
+		}
+
+		/// <summary>
+		/// Returns an array of values with the specified field count.
+		/// </summary>
+		/// <param name="record">The reader to get column names from.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>The array of values.</returns>
+		public static object[] GetValues(this IDataRecord record, ArrayPool<object> arrayPool)
+		{
+			if (record is null) throw new ArgumentNullException(nameof(record));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+
+			Contract.EndContractBlock();
+			var result = arrayPool.Rent(record.FieldCount);
+			record.GetValues(result);
+			return result;
+		}
+
+		/// <summary>
 		/// Returns all the column names for the current result set.
 		/// </summary>
 		/// <param name="record">The reader to get column names from.</param>

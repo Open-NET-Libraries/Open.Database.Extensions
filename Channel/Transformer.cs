@@ -1,4 +1,5 @@
 ﻿using Open.ChannelExtensions;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
@@ -24,28 +25,24 @@ namespace Open.Database.Extensions
 		/// <summary>
 		/// Static utility for creating a Transformer <typeparamref name="T"/>.
 		/// </summary>
-		/// <param name="overrides"></param>
+		/// <param name="fieldMappingOverrides"></param>
 		/// <returns></returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "This is simply an expressive helper that would seem odd to make another static class to handle.")]
-		public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? overrides = null)
-			=> new Transformer<T>(overrides);
+		public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			=> new Transformer<T>(fieldMappingOverrides);
 
 		/// <summary>
 		/// Transforms the results from the reader by first buffering the results and if/when the buffer size is reached, the results are transformed to a channel for reading.
 		/// </summary>
 		/// <param name="reader">The reader to read from.</param>
 		/// <param name="target">The target channel to write to.</param>
-		/// <param name="readStarted">Was the reader already sucessfully read?</param>
 		/// <param name="complete">Will call complete when no more results are avaiable.</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>The ChannelReader of the target.</returns>
-		internal async ValueTask<long> PipeResultsTo(IDataReader reader, ChannelWriter<T> target, bool readStarted, bool complete, CancellationToken cancellationToken)
+		internal async ValueTask<long> PipeResultsTo(IDataReader reader, ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
 		{
-			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
-
-			if (!readStarted && !reader.Read())
-				return 0;
 
 			var columns = reader.GetMatchingOrdinals(ColumnNames, true);
 			var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
@@ -73,12 +70,8 @@ namespace Open.Database.Extensions
 				})
 				.PipeTo(target, complete, cancellationToken);
 
-			var written = await writer
-				.WriteAll(
-					reader.AsEnumerable(ordinals, LocalPool),
-					true,
-					cancellationToken);
-
+			var written = await reader
+				.ToChannel(writer, complete, LocalPool, cancellationToken);
 			var result = await piped;
 			Debug.Assert(written == result);
 			return result;
@@ -90,17 +83,13 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="reader">The reader to read from.</param>
 		/// <param name="target">The target channel to write to.</param>
-		/// <param name="readStarted">Was the reader already sucessfully read?</param>
 		/// <param name="complete">Will call complete when no more results are avaiable.</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>The ChannelReader of the target.</returns>
-		internal async ValueTask<long> PipeResultsToAsync(DbDataReader reader, ChannelWriter<T> target, bool readStarted, bool complete, CancellationToken cancellationToken)
+		internal async ValueTask<long> PipeResultsToAsync(DbDataReader reader, ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
 		{
-			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
-
-			if (!readStarted && !reader.Read())
-				return 0;
 
 			var columns = reader.GetMatchingOrdinals(ColumnNames, true);
 			var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
@@ -128,13 +117,11 @@ namespace Open.Database.Extensions
 				})
 				.PipeTo(target, complete, cancellationToken);
 
-			await writer
-				.WriteAllAsync(
-					reader.AsAsyncEnumerable(ordinals, LocalPool, cancellationToken),
-					true,
-					cancellationToken);
-
-			return await piped;
+			var written = await reader
+				.ToChannelAsync(writer, complete, LocalPool, cancellationToken);
+			var result = await piped;
+			Debug.Assert(written == result);
+			return result;
 		}
 #endif
 

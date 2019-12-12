@@ -129,10 +129,10 @@ namespace Open.Database.Extensions.Core
 			/// </summary>
 			/// <param name="transformer">The transformer to use.</param>
 			/// <param name="names">The names of columns/properties to acquire.</param>
-			public Processor(Transformer<T> transformer, ImmutableArray<string> names)
+			public Processor(Transformer<T> transformer, in ImmutableArray<string> names)
 				: this(transformer)
 			{
-				SetNames(names);
+				SetNames(in names);
 			}
 
 			/// <summary>
@@ -152,7 +152,7 @@ namespace Open.Database.Extensions.Core
 			/// Allows for deferred initialization.
 			/// </summary>
 			/// <param name="names">The column/property names to process.</param>
-			public void SetNames(ImmutableArray<string> names)
+			public void SetNames(in ImmutableArray<string> names)
 			{
 				var map = Transformer.ColumnToPropertyMap;
 				_names = names;
@@ -172,7 +172,7 @@ namespace Open.Database.Extensions.Core
 			if (results is null) throw new ArgumentNullException(nameof(results));
 			Contract.EndContractBlock();
 
-			var processor = new Processor(this, results.Names);
+			var processor = new Processor(this, in results.Names);
 			var q = results.Result;
 
 			return q.DequeueEach().Select(processor.Transform);
@@ -189,7 +189,7 @@ namespace Open.Database.Extensions.Core
 			if (results is null) throw new ArgumentNullException(nameof(results));
 			Contract.EndContractBlock();
 
-			var processor = new Processor(this, results.Names);
+			var processor = new Processor(this, in results.Names);
 			var transform = processor.Transform;
 			var q = results.Result;
 
@@ -272,7 +272,7 @@ namespace Open.Database.Extensions.Core
 		/// <returns>An enumerable that transforms the results.</returns>
 		internal async IAsyncEnumerable<T> ResultsAsync(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			if (reader is null) throw new System.ArgumentNullException(nameof(reader));
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
 
 			// Ignore missing columns.

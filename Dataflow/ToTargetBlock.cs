@@ -1,4 +1,4 @@
-﻿using Open.ChannelExtensions;
+﻿using Open.Database.Extensions.Dataflow;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -6,298 +6,195 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
 {
 	/// <summary>
-	/// Extensions for writing data to a channel.
+	/// Extensions for pipelining data with Dataflow blocks.
 	/// </summary>
-	public static partial class ChannelExtensions
+	public static partial class DataflowExtensions
 	{
 		/// <summary>
-		/// Iterates an IDataReader and writes each record as an array to the channel.
+		/// Iterates an IDataReader and posts each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static ValueTask<long> ToChannel(this IDataReader reader,
-			ChannelWriter<object[]> target,
-			bool complete,
-			CancellationToken cancellationToken = default)
+		public static long ToTargetBlock(this IDataReader reader,
+			ITargetBlock<object[]> target,
+			bool complete)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
-			return target.WriteAll(
-				reader.AsEnumerable(),
-				complete,
-				false,
-				cancellationToken);
+			try
+			{
+				var fieldCount = reader.FieldCount;
+				var total = 0;
+				while (reader.Read() && target.Post(reader.GetValues(fieldCount))) total++;
+				if (complete) target.Complete();
+				return total;
+			}
+			catch (Exception ex)
+			{
+				if (complete) target.Fault(ex);
+				throw;
+			}
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader and writes each record as an array to the channel.
+		/// Iterates an IDataReader and posts each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static ValueTask<long> ToChannel(this IDataReader reader,
-			ChannelWriter<object[]> target,
+		public static long ToTargetBlock(this IDataReader reader,
+			ITargetBlock<object[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
-			CancellationToken cancellationToken = default)
+			ArrayPool<object> arrayPool)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 			Contract.EndContractBlock();
 
-			return target.WriteAll(
-				reader.AsEnumerable(arrayPool),
-				complete,
-				false,
-				cancellationToken);
+			try
+			{
+				var fieldCount = reader.FieldCount;
+				var total = 0;
+				while (reader.Read() && target.Post(reader.GetValues(fieldCount, arrayPool))) total++;
+				if (complete) target.Complete();
+				return total;
+			}
+			catch (Exception ex)
+			{
+				if (complete) target.Fault(ex);
+				throw;
+			}
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to the channel.
+		/// Iterates an IDataReader through the transform function and posts each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static ValueTask<long> ToChannel<T>(this IDataReader reader,
-			ChannelWriter<T> target,
+		public static long ToTargetBlock<T>(this IDataReader reader,
+			ITargetBlock<T> target,
 			bool complete,
-			Func<IDataRecord, T> transform,
-			CancellationToken cancellationToken = default)
+			Func<IDataRecord, T> transform)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			return target.WriteAll(
-				reader.Select(transform, cancellationToken),
-				complete,
-				false,
-				cancellationToken);
+			try
+			{
+				var total = 0;
+				while (reader.Read() && target.Post(transform(reader))) total++;
+				if (complete) target.Complete();
+				return total;
+			}
+			catch (Exception ex)
+			{
+				if (complete) target.Fault(ex);
+				throw;
+			}
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static ValueTask<long> ToChannel<T>(this IDataReader reader,
-			ChannelWriter<T> target,
+		public static long ToTargetBlock<T>(this IDataReader reader,
+			ITargetBlock<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
-			CancellationToken cancellationToken = default)
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
 			where T : new()
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			return Transformer<T>
+			=> Transformer<T>
 				.Create(fieldMappingOverrides)
-				.PipeResultsTo(reader, target, complete, cancellationToken);
-		}
+				.PipeResultsTo(reader, target, complete);
 
 		/// <summary>
-		/// Iterates an IDataReader and writes each record as an array to the channel.
-		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
-		/// </summary>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
-		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel(this IDbCommand command,
-			ChannelWriter<object[]> target,
-			bool complete,
-			CancellationToken cancellationToken = default)
-		{
-			if (command is null) throw new ArgumentNullException(nameof(command));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-
-			return await command.ExecuteReader(reader =>
-				ToChannel(reader, target, complete, cancellationToken));
-		}
-
-		/// <summary>
-		/// Iterates an IDataReader and writes each record as an array to the channel.
-		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
-		/// </summary>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
-		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel(this IDbCommand command,
-			ChannelWriter<object[]> target,
-			bool complete,
-			ArrayPool<object> arrayPool,
-			CancellationToken cancellationToken = default)
-		{
-			if (command is null) throw new ArgumentNullException(nameof(command));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-
-			return await command.ExecuteReader(reader =>
-				ToChannel(reader, target, complete, arrayPool, cancellationToken));
-		}
-
-		/// <summary>
-		/// Iterates an IDataReader through the transform function and writes each record to the channel.
-		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
-		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="transform">The transform function for each IDataRecord.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
-			ChannelWriter<T> target,
-			bool complete,
-			Func<IDataRecord, T> transform,
-			CancellationToken cancellationToken = default)
-		{
-			if (command is null) throw new ArgumentNullException(nameof(command));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			if (transform is null) throw new ArgumentNullException(nameof(transform));
-			Contract.EndContractBlock();
-
-			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-
-			var state = command.Connection.EnsureOpen();
-			var behavior = CommandBehavior.SingleResult;
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = command.ExecuteReader(behavior);
-			return await reader.ToChannel(target, complete, transform, cancellationToken);
-		}
-
-		/// <summary>
-		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
-		/// </summary>
-		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
-		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-		/// <param name="cancellationToken">An optional cancellation token.</param>
-		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
-			ChannelWriter<T> target,
-			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
-			CancellationToken cancellationToken = default)
-			where T : new()
-		{
-			if (command is null) throw new ArgumentNullException(nameof(command));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-
-			return await command.ExecuteReader(reader =>
-				ToChannel(reader, target, complete, fieldMappingOverrides, cancellationToken));
-		}
-
-		/// <summary>
-		/// Iterates an IDataReader and writes each record as an array to the channel.
+		/// Iterates an IDataReader and posts each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel(this IExecuteReader command,
-			ChannelWriter<object[]> target,
+		public static long ToTargetBlock(this IDbCommand command,
+			ITargetBlock<object[]> target,
 			bool complete)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, cancellationToken));
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete));
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader and writes each record as an array to the channel.
+		/// Iterates an IDataReader and posts each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
-		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel(this IExecuteReader command,
-			ChannelWriter<object[]> target,
+		public static long ToTargetBlock(this IDbCommand command,
+			ITargetBlock<object[]> target,
 			bool complete,
 			ArrayPool<object> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, arrayPool, cancellationToken));
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete, arrayPool));
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader and through the transform function and posts each record it to the target channel.
+		/// Iterates an IDataReader through the transform function and posts each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel<T>(this IExecuteReader command,
-			ChannelWriter<T> target,
+		public static long ToTargetBlock<T>(this IDbCommand command,
+			ITargetBlock<T> target,
 			bool complete,
 			Func<IDataRecord, T> transform)
 		{
@@ -306,25 +203,24 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, transform, cancellationToken));
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete, transform));
 		}
 
 		/// <summary>
-		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannel<T>(this IExecuteReader command,
-			ChannelWriter<T> target,
+		public static long ToTargetBlock<T>(this IDbCommand command,
+			ITargetBlock<T> target,
 			bool complete,
 			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
 			where T : new()
@@ -333,22 +229,120 @@ namespace Open.Database.Extensions
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, fieldMappingOverrides, cancellationToken));
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete, fieldMappingOverrides));
 		}
 
-#if NETSTANDARD2_1
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+		/// Iterates an IDataReader and posts each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <returns>The number of records processed.</returns>
+		public static long ToTargetBlock(this IExecuteReader command,
+			ITargetBlock<object[]> target,
+			bool complete)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete));
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader and posts each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>The number of records processed.</returns>
+		public static long ToTargetBlock(this IExecuteReader command,
+			ITargetBlock<object[]> target,
+			bool complete,
+			ArrayPool<object> arrayPool)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete, arrayPool));
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader through the transform function and posts each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="transform">The transform function for each IDataRecord.</param>
+		/// <returns>The number of records processed.</returns>
+		public static long ToTargetBlock<T>(this IExecuteReader command,
+			ITargetBlock<T> target,
+			bool complete,
+			Func<IDataRecord, T> transform)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (transform is null) throw new ArgumentNullException(nameof(transform));
+			Contract.EndContractBlock();
+
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete, transform));
+		}
+
+		/// <summary>
+		/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+		/// <returns>The number of records processed.</returns>
+		public static long ToTargetBlock<T>(this IExecuteReader command,
+			ITargetBlock<T> target,
+			bool complete,
+			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			return command.ExecuteReader(reader =>
+				ToTargetBlock(reader, target, complete, fieldMappingOverrides));
+		}
+
+		/// <summary>
+		/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
-			ChannelWriter<object[]> target,
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToTargetBlockAsync(this IDataReader reader,
+			ITargetBlock<object[]> target,
 			bool complete,
 			CancellationToken cancellationToken = default)
 		{
@@ -356,49 +350,96 @@ namespace Open.Database.Extensions
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
-			return target.WriteAllAsync(
-				reader.AsAsyncEnumerable(cancellationToken),
-				complete,
-				false,
-				cancellationToken);
+			try
+			{
+				var fieldCount = reader.FieldCount;
+				var total = 0;
+				if (reader is DbDataReader r)
+				{
+					while (
+						await r.ReadAsync(cancellationToken).ConfigureAwait(false)
+						&& await target.SendAsync(r.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
+						total++;
+				}
+				else
+				{
+					while (
+						reader.Read()
+						&& await target.SendAsync(reader.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
+						total++;
+				}
+				if (complete) target.Complete();
+				return total;
+			}
+			catch (Exception ex)
+			{
+				if (complete) target.Fault(ex);
+				throw;
+			}
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+		/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
-			ChannelWriter<object[]> target,
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToTargetBlockAsync(this IDataReader reader,
+			ITargetBlock<object[]> target,
 			bool complete,
 			ArrayPool<object> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 			Contract.EndContractBlock();
 
-			return target.WriteAllAsync(
-				reader.AsAsyncEnumerable(arrayPool, cancellationToken),
-				complete,
-				false,
-				cancellationToken);
+			try
+			{
+				var fieldCount = reader.FieldCount;
+				var total = 0;
+				if (reader is DbDataReader r)
+				{
+					while (
+						await r.ReadAsync(cancellationToken).ConfigureAwait(false)
+						&& await target.SendAsync(r.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
+						total++;
+				}
+				else
+				{
+					while (
+						reader.Read()
+						&& await target.SendAsync(reader.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
+						total++;
+				}
+				if (complete) target.Complete();
+				return total;
+			}
+			catch (Exception ex)
+			{
+				if (complete) target.Fault(ex);
+				throw;
+			}
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+		/// Iterates a data reader (asynchronous read if possible) through the transform function and asynchronously sends each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
-			ChannelWriter<T> target,
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToTargetBlockAsync<T>(this IDataReader reader,
+			ITargetBlock<T> target,
 			bool complete,
 			Func<IDataRecord, T> transform,
 			CancellationToken cancellationToken = default)
@@ -408,50 +449,66 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			return target.WriteAllAsync(
-				reader.SelectAsync(transform, cancellationToken),
-				complete,
-				false,
-				cancellationToken);
+			try
+			{
+				var total = 0;
+				if (reader is DbDataReader r)
+				{
+					while (
+						await r.ReadAsync(cancellationToken).ConfigureAwait(false)
+						&& await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
+						total++;
+				}
+				else
+				{
+					while (
+						reader.Read()
+						&& await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
+						total++;
+				}
+				if (complete) target.Complete();
+				return total;
+			}
+			catch (Exception ex)
+			{
+				if (complete) target.Fault(ex);
+				throw;
+			}
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
-		public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
-			ChannelWriter<T> target,
+		/// <returns>The number of records processed.</returns>
+		public static ValueTask<long> ToTargetBlockAsync<T>(this IDataReader reader,
+			ITargetBlock<T> target,
 			bool complete,
 			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
 			CancellationToken cancellationToken = default)
 			where T : new()
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			return Transformer<T>
+			=> Transformer<T>
 				.Create(fieldMappingOverrides)
 				.PipeResultsToAsync(reader, target, complete, cancellationToken);
-		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+		/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync(this DbCommand command,
-			ChannelWriter<object[]> target,
+		public static async ValueTask<long> ToTargetBlockAsync(this IDbCommand command,
+			ITargetBlock<object[]> target,
 			bool complete,
 			CancellationToken cancellationToken = default)
 		{
@@ -460,84 +517,84 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await Task.Yield();
 
 			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, cancellationToken), cancellationToken: cancellationToken);
+				ToTargetBlockAsync(reader, target, complete, cancellationToken), cancellationToken: cancellationToken);
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+		/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync(this DbCommand command,
-			ChannelWriter<object[]> target,
+		public static async ValueTask<long> ToTargetBlockAsync(this IDbCommand command,
+			ITargetBlock<object[]> target,
 			bool complete,
 			ArrayPool<object> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			
+				await Task.Yield();
+
 			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, arrayPool, cancellationToken), cancellationToken: cancellationToken);
+				ToTargetBlockAsync(reader, target, complete, arrayPool), cancellationToken: cancellationToken);
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+		/// Iterates a data reader (asynchronous read if possible) through the transform function and asynchronously sends each record to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync<T>(this DbCommand command,
-			ChannelWriter<T> target,
+		public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
+			ITargetBlock<T> target,
 			bool complete,
 			Func<IDataRecord, T> transform,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
-			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await Task.Yield();
 
 			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, transform, cancellationToken), cancellationToken: cancellationToken);
+				ToTargetBlockAsync(reader, target, complete, transform), cancellationToken: cancellationToken);
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
-		/// <param name="command">The DbCommand to generate a reader from.</param>
-		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync<T>(this DbCommand command,
-			ChannelWriter<T> target,
+		public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
+			ITargetBlock<T> target,
 			bool complete,
 			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
 			CancellationToken cancellationToken = default)
@@ -548,106 +605,101 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await Task.Yield();
 
-			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, fieldMappingOverrides, cancellationToken), cancellationToken: cancellationToken);
+			var dbc = command as DbCommand;
+			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken);
+			var behavior = CommandBehavior.SingleResult;
+			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+			using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+			return await ToTargetBlockAsync(reader, target, complete, fieldMappingOverrides, cancellationToken);
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+		/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
-			ChannelWriter<object[]> target,
+		public static async ValueTask<long> ToTargetBlockAsync(this IExecuteReader command,
+			ITargetBlock<object[]> target,
 			bool complete)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await Task.Yield();
 			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, cancellationToken)
-				: reader.ToChannel(target, complete, cancellationToken));
+				ToTargetBlockAsync(reader, target, complete, command.CancellationToken));
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+		/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
-			ChannelWriter<object[]> target,
+		public static async ValueTask<long> ToTargetBlockAsync(this IExecuteReader command,
+			ITargetBlock<object[]> target,
 			bool complete,
 			ArrayPool<object> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await Task.Yield();
 			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, arrayPool, cancellationToken)
-				: reader.ToChannel(target, complete, arrayPool, cancellationToken));
+				ToTargetBlockAsync(reader, target, complete, arrayPool, command.CancellationToken));
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+		/// Iterates a data reader (asynchronous read if possible) through the transform function and asynchronously sends each record to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
-			ChannelWriter<T> target,
+		public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
+			ITargetBlock<T> target,
 			bool complete,
 			Func<IDataRecord, T> transform)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
-			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await Task.Yield();
 			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, transform, cancellationToken)
-				: reader.ToChannel(target, complete, transform, cancellationToken));
+				ToTargetBlockAsync(reader, target, complete, transform, command.CancellationToken));
 		}
 
 		/// <summary>
-		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+		/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
 		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
-		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="target">The target block to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <returns>The number of records processed.</returns>
-		public static async ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
-			ChannelWriter<T> target,
+		public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
+			ITargetBlock<T> target,
 			bool complete,
 			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
 			where T : new()
@@ -656,15 +708,9 @@ namespace Open.Database.Extensions
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
-			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await Task.Yield();
 			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, fieldMappingOverrides, cancellationToken)
-				: reader.ToChannel(target, complete, fieldMappingOverrides, cancellationToken));
+				ToTargetBlockAsync(reader, target, complete, fieldMappingOverrides, command.CancellationToken));
 		}
-#endif
-
-
 	}
 }

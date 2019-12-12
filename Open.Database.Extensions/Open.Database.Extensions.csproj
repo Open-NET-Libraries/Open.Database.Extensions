@@ -11,14 +11,16 @@
     <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>6.0.0-rc1</Version>
+    <Version>6.3.1</Version>
     <PackageReleaseNotes></PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Open.Database.Extensions.SqlClient" Version="6.0.0-preview1" />
-  </ItemGroup>
+    <PackageReference Include="Open.Database.Extensions.Dataflow" Version="6.3.1" />
+    <PackageReference Include="Open.Database.Extensions.SqlClient" Version="6.3.1" />
+		<PackageReference Include="Open.Database.Extensions.Channel" Version="6.4.0" />
+	</ItemGroup>
 
 </Project>

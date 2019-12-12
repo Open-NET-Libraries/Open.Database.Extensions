@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -29,6 +30,49 @@ namespace Open.Database.Extensions
 					SingleReader = singleReader,
 					AllowSynchronousContinuations = true
 				});
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannel(this IDataReader reader,
+			bool singleReader,
+			CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannel(reader, channel.Writer, true, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannel(this IDataReader reader,
+			bool singleReader,
+			ArrayPool<object> arrayPool,
+			CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannel(reader, channel.Writer, true, arrayPool, cancellationToken);
+			return channel.Reader;
 		}
 
 		/// <summary>
@@ -75,6 +119,49 @@ namespace Open.Database.Extensions
 
 			var channel = CreateChannel<T>(-1, singleReader);
 			_ = ToChannel(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannel(this IDbCommand command,
+			bool singleReader,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannel(this IDbCommand command,
+			bool singleReader,
+			ArrayPool<object> arrayPool,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true, arrayPool, cancellationToken);
 			return channel.Reader;
 		}
 
@@ -126,6 +213,45 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
+		/// Iterates an IDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannel<T>(this IExecuteReader command,
+			bool singleReader)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannel<T>(this IExecuteReader command,
+			bool singleReader,
+			ArrayPool<object> arrayPool)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannel(command, channel.Writer, true, arrayPool);
+			return channel.Reader;
+		}
+
+		/// <summary>
 		/// Iterates an IDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
@@ -168,10 +294,53 @@ namespace Open.Database.Extensions
 			return channel.Reader;
 		}
 
-
 #if NETSTANDARD2_1
 		/// <summary>
+		/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
 		/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannelAsync(this DbDataReader reader,
+			bool singleReader,
+			CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannelAsync(reader, channel.Writer, true, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannelAsync(this DbDataReader reader,
+			bool singleReader,
+			ArrayPool<object> arrayPool,
+			CancellationToken cancellationToken = default)
+		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannelAsync(reader, channel.Writer, true, arrayPool, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -195,7 +364,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
@@ -218,7 +387,50 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannelAsync(this DbCommand command,
+			bool singleReader,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The command to acquire a reader from to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannelAsync(this DbCommand command,
+			bool singleReader,
+			ArrayPool<object> arrayPool,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, arrayPool, cancellationToken);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -242,7 +454,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to acquire a reader from to iterate.</param>
@@ -265,7 +477,45 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannelAsync(this IExecuteReaderAsync command,
+			bool singleReader)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+		/// Be sure to await the completion.
+		/// </summary>
+		/// <param name="command">The IDataReader to iterate.</param>
+		/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+		/// <returns>The channel reader containing the results.</returns>
+		public static ChannelReader<object[]> AsChannelAsync(this IExecuteReaderAsync command,
+			bool singleReader,
+			ArrayPool<object> arrayPool)
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			Contract.EndContractBlock();
+
+			var channel = CreateChannel<object[]>(-1, singleReader);
+			_ = ToChannelAsync(command, channel.Writer, true, arrayPool);
+			return channel.Reader;
+		}
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
 		/// Be sure to await the completion.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -287,7 +537,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+		/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The IDataReader to iterate.</param>

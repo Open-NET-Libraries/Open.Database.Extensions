@@ -12,12 +12,13 @@ namespace Open.Database.Extensions.Core
 	/// A container for data reader results that also provides the column names and other helpful data methods.
 	/// </summary>
 	/// <typeparam name="TResult">The type of the result property.</typeparam>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "Ensure single instance.")]
 	public class QueryResult<TResult>
 	{
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
 		/// <param name="result">The result.</param>
-		public QueryResult(ImmutableArray<int> ordinals, ImmutableArray<string> names, TResult result)
+		public QueryResult(in ImmutableArray<int> ordinals, in ImmutableArray<string> names, TResult result)
 		{
 			if (ordinals.Length != names.Length) throw new ArgumentException("Mismatched array lengths of ordinals and names.");
 			Ordinals = ordinals;
@@ -32,33 +33,33 @@ namespace Open.Database.Extensions.Core
 		/// <param name="names">The column names requested.</param>
 		/// <param name="result">The result.</param>
 		public QueryResult(IEnumerable<int> ordinals, IEnumerable<string> names, TResult result)
-			: this(
-				  ordinals is ImmutableArray<int> o ? o : ordinals?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(ordinals)),
-				  names is ImmutableArray<string> n ? n : names?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(names)),
-				  result)
+			: this(Immute(ordinals), Immute(names), result)
 		{
-
 		}
+
+		static ImmutableArray<T> Immute<T>(IEnumerable<T> source)
+			=> source is ImmutableArray<T> o ? o : source?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(source));
 
 		/// <summary>
 		/// The number of columns.
 		/// </summary>
-		public int ColumnCount { get; }
+		public readonly int ColumnCount;
 
 		/// <summary>
 		/// The ordinal values requested.
 		/// </summary>
-		public ImmutableArray<int> Ordinals { get; }
+		public readonly ImmutableArray<int> Ordinals;
+
 
 		/// <summary>
 		/// The column names requested.
 		/// </summary>
-		public ImmutableArray<string> Names { get; }
+		public readonly ImmutableArray<string> Names;
 
 		/// <summary>
 		/// The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
 		/// </summary>
-		public TResult Result { get; }
+		public readonly TResult Result;
 
 		/// <param name="result">The source of the result.</param>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "The result property exists.")]
@@ -78,8 +79,8 @@ namespace Open.Database.Extensions.Core
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
 		/// <param name="result">The result.</param>
-		public QueryResultCollection(ImmutableArray<int> ordinals, ImmutableArray<string> names, TResult result)
-			: base(ordinals, names, result)
+		public QueryResultCollection(in ImmutableArray<int> ordinals, in ImmutableArray<string> names, TResult result)
+			: base(in ordinals, in names, result)
 		{
 			if (result == null) throw new ArgumentNullException(nameof(result));
 		}
@@ -111,8 +112,8 @@ namespace Open.Database.Extensions.Core
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
 		/// <param name="result">The result.</param>
-		public QueryResultCollection(ImmutableArray<int> ordinals, ImmutableArray<string> names, IEnumerable<T> result)
-			: base(ordinals, names, result)
+		public QueryResultCollection(in ImmutableArray<int> ordinals, in ImmutableArray<string> names, IEnumerable<T> result)
+			: base(in ordinals, in names, result)
 		{
 		}
 
@@ -136,8 +137,8 @@ namespace Open.Database.Extensions.Core
 		/// <param name="ordinals">The ordinal values requested</param>
 		/// <param name="names">The column names requested.</param>
 		/// <param name="result">The result.</param>
-		public QueryResultQueue(ImmutableArray<int> ordinals, ImmutableArray<string> names, Queue<T> result)
-			: base(ordinals, names, result)
+		public QueryResultQueue(in ImmutableArray<int> ordinals, in ImmutableArray<string> names, Queue<T> result)
+			: base(in ordinals, in names, result)
 		{
 		}
 
