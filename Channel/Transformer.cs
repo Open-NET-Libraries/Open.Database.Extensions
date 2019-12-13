@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading;
@@ -70,11 +69,22 @@ namespace Open.Database.Extensions
 				})
 				.PipeTo(target, complete, cancellationToken);
 
-			var written = await reader
-				.ToChannel(writer, complete, LocalPool, cancellationToken);
-			var result = await piped;
-			Debug.Assert(written == result);
-			return result;
+			if (complete)
+			{
+				_ = piped
+					.AsTask()
+					.ContinueWith(t =>
+					{
+						if (t.IsFaulted) target.Complete(t.Exception);
+						else target.Complete();
+					},
+					CancellationToken.None,
+					TaskContinuationOptions.ExecuteSynchronously,
+					TaskScheduler.Current);
+			}
+
+			return await reader
+				.ToChannel(writer, false, LocalPool, cancellationToken);
 		}
 
 #if NETSTANDARD2_1
@@ -86,7 +96,7 @@ namespace Open.Database.Extensions
 		/// <param name="complete">Will call complete when no more results are avaiable.</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>The ChannelReader of the target.</returns>
-		internal async ValueTask<long> PipeResultsToAsync(DbDataReader reader, ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
+		internal ValueTask<long> PipeResultsToAsync(DbDataReader reader, ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
@@ -117,11 +127,22 @@ namespace Open.Database.Extensions
 				})
 				.PipeTo(target, complete, cancellationToken);
 
-			var written = await reader
-				.ToChannelAsync(writer, complete, LocalPool, cancellationToken);
-			var result = await piped;
-			Debug.Assert(written == result);
-			return result;
+			if (complete)
+			{
+				_ = piped
+					.AsTask()
+					.ContinueWith(t =>
+					{
+						if (t.IsFaulted) target.Complete(t.Exception);
+						else target.Complete();
+					},
+					CancellationToken.None,
+					TaskContinuationOptions.ExecuteSynchronously,
+					TaskScheduler.Current);
+			}
+
+			return reader
+				.ToChannelAsync(writer, false, LocalPool, cancellationToken);
 		}
 #endif
 

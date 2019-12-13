@@ -101,24 +101,36 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="target">The target channel to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
+		public static ValueTask<long> ToChannel<T>(this IDataReader reader,
+			ChannelWriter<T> target,
+			bool complete,
+			CancellationToken cancellationToken = default)
+			where T : new()
+			=> Transformer<T>
+				.Create()
+				.PipeResultsTo(reader, target, complete, cancellationToken);
+
+		/// <summary>
+		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 			ChannelWriter<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			CancellationToken cancellationToken = default)
 			where T : new()
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			return Transformer<T>
+			=> Transformer<T>
 				.Create(fieldMappingOverrides)
 				.PipeResultsTo(reader, target, complete, cancellationToken);
-		}
 
 		/// <summary>
 		/// Iterates an IDataReader and writes each record as an array to the channel.
@@ -142,8 +154,25 @@ namespace Open.Database.Extensions
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
-			return await command.ExecuteReader(reader =>
-				ToChannel(reader, target, complete, cancellationToken));
+			try
+			{
+				return await command.ExecuteReader(reader =>
+					ToChannel(reader, target, false, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -169,9 +198,26 @@ namespace Open.Database.Extensions
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			try
+			{
+				return await command.ExecuteReader(reader =>
+					ToChannel(reader, target, false, arrayPool, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 
-			return await command.ExecuteReader(reader =>
-				ToChannel(reader, target, complete, arrayPool, cancellationToken));
 		}
 
 		/// <summary>
@@ -200,11 +246,73 @@ namespace Open.Database.Extensions
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
-			var state = command.Connection.EnsureOpen();
-			var behavior = CommandBehavior.SingleResult;
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = command.ExecuteReader(behavior);
-			return await reader.ToChannel(target, complete, transform, cancellationToken);
+			try
+			{
+				var state = command.Connection.EnsureOpen();
+				var behavior = CommandBehavior.SingleResult;
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var reader = command.ExecuteReader(behavior);
+				return await reader.ToChannel(target, false, transform, cancellationToken);
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The DbCommand to generate a reader from.</param>
+		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
+			ChannelWriter<T> target,
+			bool complete,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			if (!command.Connection.State.HasFlag(ConnectionState.Open))
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+
+			try
+			{
+				return await command.ExecuteReader(reader =>
+					ToChannel(reader, target, false, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -222,7 +330,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
 			ChannelWriter<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			CancellationToken cancellationToken = default)
 			where T : new()
 		{
@@ -233,8 +341,25 @@ namespace Open.Database.Extensions
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
-			return await command.ExecuteReader(reader =>
-				ToChannel(reader, target, complete, fieldMappingOverrides, cancellationToken));
+			try
+			{
+				return await command.ExecuteReader(reader =>
+					ToChannel(reader, target, false, fieldMappingOverrides, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -256,8 +381,25 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
+					reader => reader.ToChannel(target, false, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -281,8 +423,25 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, arrayPool, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
+					reader => reader.ToChannel(target, false, arrayPool, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -308,8 +467,67 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, transform, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
+					reader => reader.ToChannel(target, false, transform, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
+		}
+
+		/// <summary>
+		/// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannel<T>(this IExecuteReader command,
+			ChannelWriter<T> target,
+			bool complete)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			var cancellationToken = command.CancellationToken;
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			try
+			{
+				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
+					reader => reader.ToChannel(target, false, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -326,7 +544,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<long> ToChannel<T>(this IExecuteReader command,
 			ChannelWriter<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 			where T : new()
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -335,8 +553,25 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-				reader => reader.ToChannel(target, complete, fieldMappingOverrides, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
+					reader => reader.ToChannel(target, false, fieldMappingOverrides, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 #if NETSTANDARD2_1
@@ -422,23 +657,34 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="target">The target channel to receive the results.</param>
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
+			ChannelWriter<T> target,
+			bool complete,
+			CancellationToken cancellationToken = default)
+			where T : new()
+			=> Transformer<T>
+				.Create()
+				.PipeResultsToAsync(reader, target, complete, cancellationToken);
+
+		/// <summary>
+		/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 			ChannelWriter<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			CancellationToken cancellationToken = default)
 			where T : new()
-		{
-			if (reader is null) throw new ArgumentNullException(nameof(reader));
-			if (target is null) throw new ArgumentNullException(nameof(target));
-			Contract.EndContractBlock();
-
-			return Transformer<T>
+			=> Transformer<T>
 				.Create(fieldMappingOverrides)
 				.PipeResultsToAsync(reader, target, complete, cancellationToken);
-		}
 
 		/// <summary>
 		/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -462,8 +708,25 @@ namespace Open.Database.Extensions
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
-			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, cancellationToken), cancellationToken: cancellationToken);
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					ToChannelAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken);
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -489,9 +752,26 @@ namespace Open.Database.Extensions
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			
-			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, arrayPool, cancellationToken), cancellationToken: cancellationToken);
+
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					ToChannelAsync(reader, target, false, arrayPool, cancellationToken), cancellationToken: cancellationToken);
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -520,8 +800,71 @@ namespace Open.Database.Extensions
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
-			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, transform, cancellationToken), cancellationToken: cancellationToken);
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					ToChannelAsync(reader, target, false, transform, cancellationToken), cancellationToken: cancellationToken);
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
+		}
+
+
+		/// <summary>
+		/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The DbCommand to generate a reader from.</param>
+		/// <param name="target">The target channel to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannelAsync<T>(this DbCommand command,
+			ChannelWriter<T> target,
+			bool complete,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			if (!command.Connection.State.HasFlag(ConnectionState.Open))
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					ToChannelAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken);
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -539,7 +882,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 			ChannelWriter<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			CancellationToken cancellationToken = default)
 			where T : new()
 		{
@@ -550,8 +893,25 @@ namespace Open.Database.Extensions
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
 				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
 
-			return await command.ExecuteReaderAsync(reader =>
-				ToChannelAsync(reader, target, complete, fieldMappingOverrides, cancellationToken), cancellationToken: cancellationToken);
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					ToChannelAsync(reader, target, false, fieldMappingOverrides, cancellationToken), cancellationToken: cancellationToken);
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -573,10 +933,27 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, cancellationToken)
-				: reader.ToChannel(target, complete, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(target, false, cancellationToken)
+					: reader.ToChannel(target, false, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -600,10 +977,27 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, arrayPool, cancellationToken)
-				: reader.ToChannel(target, complete, arrayPool, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(target, false, arrayPool, cancellationToken)
+					: reader.ToChannel(target, false, arrayPool, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -629,10 +1023,72 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, transform, cancellationToken)
-				: reader.ToChannel(target, complete, transform, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(target, false, transform, cancellationToken)
+					: reader.ToChannel(target, false, transform, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
+		}
+
+
+		/// <summary>
+		/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="target">The target channel writer to receive the results.</param>
+		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+		/// <returns>The number of records processed.</returns>
+		public static async ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
+			ChannelWriter<T> target,
+			bool complete)
+			where T : new()
+		{
+			if (command is null) throw new ArgumentNullException(nameof(command));
+			if (target is null) throw new ArgumentNullException(nameof(target));
+			Contract.EndContractBlock();
+
+			var cancellationToken = command.CancellationToken;
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(target, false, cancellationToken)
+					: reader.ToChannel(target, false, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 
 		/// <summary>
@@ -649,7 +1105,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 			ChannelWriter<T> target,
 			bool complete,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 			where T : new()
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -658,10 +1114,27 @@ namespace Open.Database.Extensions
 
 			var cancellationToken = command.CancellationToken;
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
-			return await command.ExecuteReaderAsync(reader =>
-				command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, fieldMappingOverrides, cancellationToken)
-				: reader.ToChannel(target, complete, fieldMappingOverrides, cancellationToken));
+			try
+			{
+				return await command.ExecuteReaderAsync(reader =>
+					command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(target, false, fieldMappingOverrides, cancellationToken)
+					: reader.ToChannel(target, false, fieldMappingOverrides, cancellationToken));
+			}
+			catch (Exception ex)
+			{
+				if (complete)
+				{
+					complete = false;
+					target.Complete(ex);
+				}
+				throw;
+			}
+			finally
+			{
+				if (complete)
+					target.Complete();
+			}
 		}
 #endif
 

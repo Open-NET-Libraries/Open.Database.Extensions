@@ -7,7 +7,6 @@ using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using System.Data.Common;
 
 namespace Open.Database.Extensions.Dataflow
 {
@@ -34,7 +33,6 @@ namespace Open.Database.Extensions.Dataflow
 		/// </summary>
 		/// <param name="reader">The reader to read from.</param>
 		/// <param name="target">The target channel to write to.</param>
-		/// <param name="readStarted">Was the reader already sucessfully read?</param>
 		/// <param name="complete">Will call complete when no more results are avaiable.</param>
 		/// <param name="options">The options to apply to the transform block.</param>
 		/// <returns>The ChannelReader of the target.</returns>
@@ -70,8 +68,22 @@ namespace Open.Database.Extensions.Dataflow
 					SingleProducerConstrained = true
 				});
 
-			using (transformBlock.LinkTo(target))
-				return reader.ToTargetBlock(transformBlock, complete, LocalPool);
+            transformBlock.LinkTo(target);
+            if(complete)
+            {
+                transformBlock
+                    .Completion
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsFaulted) target.Fault(t.Exception);
+                        else target.Complete();
+                    },
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Current);
+            }
+
+            return reader.ToTargetBlock(transformBlock, true, LocalPool);
 		}
 
 		/// <summary>
@@ -115,8 +127,22 @@ namespace Open.Database.Extensions.Dataflow
 					SingleProducerConstrained = true
 				});
 
-			using (transformBlock.LinkTo(target))
-				return await reader.ToTargetBlockAsync(transformBlock, complete, LocalPool, cancellationToken);
+            transformBlock.LinkTo(target);
+            if (complete)
+            {
+                _ = transformBlock
+                    .Completion
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsFaulted) target.Fault(t.Exception);
+                        else target.Complete();
+                    },
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Current);
+            }
+
+            return await reader.ToTargetBlockAsync(transformBlock, true, LocalPool, cancellationToken);
 		}
 
 	}

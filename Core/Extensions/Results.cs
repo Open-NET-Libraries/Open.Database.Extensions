@@ -46,7 +46,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		public static IEnumerable<T> Results<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
 			where T : new()
 			=> Results<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
@@ -91,7 +91,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to read results from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
 			where T : new()
 			=> ResultsBuffered<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
@@ -132,7 +132,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
 			where T : new()
 			=> Results<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 #if NETSTANDARD2_1
@@ -185,7 +185,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IAsyncEnumerable<T> ResultsAsync<T>(this DbDataReader reader, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides, CancellationToken cancellationToken = default)
+		public static IAsyncEnumerable<T> ResultsAsync<T>(this DbDataReader reader, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides, CancellationToken cancellationToken = default)
 			where T : new()
 			=> ResultsAsync<T>(reader, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), cancellationToken);
 #endif
@@ -315,7 +315,7 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public static ValueTask<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides, bool useReadAsync = true, CancellationToken cancellationToken = default)
+		public static ValueTask<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides, bool useReadAsync = true, CancellationToken cancellationToken = default)
 			where T : new()
 			=> ResultsAsync<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), useReadAsync, cancellationToken);
 
@@ -327,7 +327,7 @@ namespace Open.Database.Extensions
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public static ValueTask<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides, CancellationToken cancellationToken)
+		public static ValueTask<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides, CancellationToken cancellationToken)
 			where T : new()
 			=> ResultsAsync<T>(command, fieldMappingOverrides, true, cancellationToken);
 

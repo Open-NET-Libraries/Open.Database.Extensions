@@ -41,6 +41,16 @@
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
             <returns>The source block containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
+            <summary>
+            Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+            <returns>The source block containing the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
             Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
@@ -52,7 +62,7 @@
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
             <returns>The source block containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
             Iterates an IDataReader and posts each record as an array to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
@@ -85,6 +95,18 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The command to generate a reader from.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+            <returns>The source block containing the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
+            <summary>
+            Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
             <returns>The source block containing the results.</returns>
         </member>
@@ -137,6 +159,18 @@
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
             <returns>The source block containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
+            <summary>
+            Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+            <returns>The source block containing the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
             Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
@@ -179,6 +213,17 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The source block containing the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.DataflowBlockOptions,System.Threading.CancellationToken)">
+            <summary>
+            Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The source block containing the results.</returns>
@@ -231,6 +276,19 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The source block containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.DataflowBlockOptions,System.Threading.CancellationToken)">
+            <summary>
+            Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The source block containing the results.</returns>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.DataflowBlockOptions,System.Threading.CancellationToken)">
             <summary>
             Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
@@ -278,6 +336,17 @@
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
             <returns>The source block containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
+            <summary>
+            Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+            <returns>The source block containing the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlockAsync``1(Open.Database.Extensions.IExecuteReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
             Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
@@ -321,6 +390,17 @@
             <param name="target">The target block to receive the results.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The number of records processed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean)">
+            <summary>
+            Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
@@ -372,6 +452,19 @@
             <param name="target">The target block to receive the results.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The number of records processed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean)">
+            <summary>
+            Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
@@ -427,6 +520,19 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The number of records processed.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean)">
+            <summary>
+            Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
@@ -474,6 +580,18 @@
             <param name="target">The target block to receive the results.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The number of records processed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+            Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
@@ -529,6 +647,19 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
@@ -579,6 +710,18 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The number of records processed.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean)">
+            <summary>
+            Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="target">The target block to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlockAsync``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
@@ -608,7 +751,6 @@
             </summary>
             <param name="reader">The reader to read from.</param>
             <param name="target">The target channel to write to.</param>
-            <param name="readStarted">Was the reader already sucessfully read?</param>
             <param name="complete">Will call complete when no more results are avaiable.</param>
             <param name="options">The options to apply to the transform block.</param>
             <returns>The ChannelReader of the target.</returns>

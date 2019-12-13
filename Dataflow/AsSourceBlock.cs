@@ -1,12 +1,8 @@
-﻿using Open.Database.Extensions.Dataflow;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions
@@ -25,7 +21,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlock(this IDataReader reader, DataflowBlockOptions? options = null)
+		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDataReader reader, DataflowBlockOptions? options = null)
 		{
 			var buffer = GetBufferBlock<object[]>(options);
 			ToTargetBlock(reader, buffer, true);
@@ -40,7 +36,7 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlock(this IDataReader reader,
+		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDataReader reader,
 			ArrayPool<object> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
@@ -58,7 +54,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null)
 		{
@@ -73,11 +69,28 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+		/// <returns>The source block containing the results.</returns>
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
+			DataflowBlockOptions? options = null)
+			where T : new()
+		{
+			var buffer = GetBufferBlock<T>(options);
+			ToTargetBlock(reader, buffer, true);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			DataflowBlockOptions? options = null)
 			where T : new()
 		{
@@ -95,7 +108,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlock<T>(this IDbCommand command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDbCommand command,
 			DataflowBlockOptions? options = null)
 		{
 			var buffer = GetBufferBlock<object[]>(options);
@@ -114,7 +127,7 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlock(this IDbCommand command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDbCommand command,
 			ArrayPool<object> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
@@ -134,7 +147,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null)
 		{
@@ -151,11 +164,30 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+		/// <returns>The source block containing the results.</returns>
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
+			DataflowBlockOptions? options = null)
+			where T : new()
+		{
+			var buffer = GetBufferBlock<T>(options);
+			ToTargetBlock(command, buffer, true);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			DataflowBlockOptions? options = null)
 			where T : new()
 		{
@@ -173,7 +205,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 			DataflowBlockOptions? options = null)
 		{
 			var buffer = GetBufferBlock<object[]>(options);
@@ -191,7 +223,7 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 			ArrayPool<object> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
@@ -211,7 +243,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null)
 		{
@@ -228,11 +260,30 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+		/// <returns>The source block containing the results.</returns>
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
+			DataflowBlockOptions? options = null)
+			where T : new()
+		{
+			var buffer = GetBufferBlock<T>(options);
+			ToTargetBlock(command, buffer, true);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+		public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			DataflowBlockOptions? options = null)
 			where T : new()
 		{
@@ -249,7 +300,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
+		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
 		{
@@ -267,7 +318,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
+		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
 			ArrayPool<object> arrayPool,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
@@ -287,7 +338,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
@@ -303,12 +354,31 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="reader">The IDataReader to iterate.</param>
+		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The source block containing the results.</returns>
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
+			DataflowBlockOptions? options = null,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			var buffer = GetBufferBlock<T>(options);
+			_ = ToTargetBlockAsync(reader, buffer, true, cancellationToken);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+		/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="reader">The IDataReader to iterate.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
 			where T : new()
@@ -327,7 +397,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
 		{
@@ -346,7 +416,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
 			ArrayPool<object> arrayPool,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
@@ -367,7 +437,7 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
@@ -384,13 +454,34 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+		/// <param name="cancellationToken">An optional cancellation token.</param>
+		/// <returns>The source block containing the results.</returns>
+		/// <returns>The number of records processed.</returns>
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
+			DataflowBlockOptions? options = null,
+			CancellationToken cancellationToken = default)
+			where T : new()
+		{
+			var buffer = GetBufferBlock<T>(options);
+			_ = ToTargetBlockAsync(command, buffer, true, cancellationToken);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
 		/// <returns>The number of records processed.</returns>
-		public static ISourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
 			where T : new()
@@ -409,7 +500,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
 			DataflowBlockOptions? options = null)
 		{
 			var buffer = GetBufferBlock<object[]>(options);
@@ -426,7 +517,7 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
+		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
 			ArrayPool<object> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
@@ -445,7 +536,7 @@ namespace Open.Database.Extensions
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 			Func<IDataRecord, T> transform,
 			DataflowBlockOptions? options = null)
 		{
@@ -461,11 +552,29 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
 		/// <param name="command">The command to generate a reader from.</param>
+		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+		/// <returns>The source block containing the results.</returns>
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
+			DataflowBlockOptions? options = null)
+			where T : new()
+		{
+			var buffer = GetBufferBlock<T>(options);
+			_ = ToTargetBlockAsync(command, buffer, true);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+		/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+		/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+		/// </summary>
+		/// <typeparam name="T">The return type of the transform function.</typeparam>
+		/// <param name="command">The command to generate a reader from.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static ISourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
-			IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
+		public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
+			IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 			DataflowBlockOptions? options = null)
 			where T : new()
 		{

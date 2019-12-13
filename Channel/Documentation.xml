@@ -42,6 +42,16 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The channel reader containing the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
@@ -86,6 +96,16 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to acquire a reader from to iterate.</param>
+            <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The channel reader containing the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
@@ -97,7 +117,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean)">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -106,7 +126,7 @@
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -125,6 +145,15 @@
             <param name="command">The IDataReader to iterate.</param>
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The channel reader containing the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean)">
+            <summary>
+            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDataReader to iterate.</param>
+            <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
@@ -168,6 +197,16 @@
             <param name="reader">The IDataReader to iterate.</param>
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The channel reader containing the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
@@ -215,6 +254,16 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to acquire a reader from to iterate.</param>
+            <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The channel reader containing the results.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
@@ -254,6 +303,15 @@
             <param name="command">The IDataReader to iterate.</param>
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The channel reader containing the results.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean)">
+            <summary>
+            Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The IDataReader to iterate.</param>
+            <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
@@ -296,6 +354,17 @@
             <param name="target">The target channel to receive the results.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The number of records processed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="target">The target channel to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
@@ -350,6 +419,19 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="target">The target channel to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -400,6 +482,18 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The number of records processed.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
+            <summary>
+            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="target">The target channel writer to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -441,6 +535,16 @@
             <param name="target">The target channel to receive the results.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+        </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="reader">The IDataReader to iterate.</param>
+            <param name="target">The target channel to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="cancellationToken">An optional cancellation token.</param>
         </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
@@ -493,6 +597,19 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="target">The target channel to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <param name="cancellationToken">An optional cancellation token.</param>
+            <returns>The number of records processed.</returns>
+        </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -541,6 +658,18 @@
             <param name="target">The target channel writer to receive the results.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="transform">The transform function for each IDataRecord.</param>
+            <returns>The number of records processed.</returns>
+        </member>
+        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
+            <summary>
+            Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+            If a connection is desired to remain open after completion, you must open the connection before calling this method.
+            If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+            </summary>
+            <typeparam name="T">The return type of the transform function.</typeparam>
+            <param name="command">The command to generate a reader from.</param>
+            <param name="target">The target channel writer to receive the results.</param>
+            <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
