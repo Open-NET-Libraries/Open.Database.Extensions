@@ -165,7 +165,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
 
-		CancellationToken IExecuteReader.CancellationToken => throw new NotImplementedException();
+		CancellationToken IExecuteReader.CancellationToken => CancellationToken;
 
 		/// <summary>
 		/// Sets the cancellation token.
