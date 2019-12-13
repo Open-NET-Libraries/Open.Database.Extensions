@@ -162,40 +162,6 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Iterates asynchronously and will stop iterating if canceled.
-		/// </summary>
-		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		public ValueTask IterateReaderAsync(Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync(reader => reader.ForEachAsync(handler, UseAsyncRead, CancellationToken), behavior | CommandBehavior.SingleResult);
-
-		/// <summary>
-		/// Iterates asynchronously and will stop iterating if canceled.
-		/// </summary>
-		/// <param name="handler">The active IDataRecord is passed to this handler.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		public ValueTask IterateReaderAsync(Func<IDataRecord, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync(reader => reader.ForEachAsync(handler, CancellationToken), behavior | CommandBehavior.SingleResult);
-
-		/// <summary>
-		/// Iterates asynchronously until the handler returns false.  Then cancels.
-		/// </summary>
-		/// <param name="predicate">If true, the iteration continues.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
-		public ValueTask IterateReaderWhileAsync(Func<IDataRecord, bool> predicate, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync(reader => reader.IterateWhileAsync(predicate, UseAsyncRead, CancellationToken), behavior | CommandBehavior.SingleResult);
-
-		/// <summary>
-		/// Iterates asynchronously until the handler returns false.  Then cancels.
-		/// </summary>
-		/// <param name="predicate">If true, the iteration continues.</param>
-		/// <param name="behavior">The behavior to use with the data reader.</param>
-		/// <returns>The task that completes when the iteration is done or the predicate evaluates false.</returns>
-		public ValueTask IterateReaderWhileAsync(Func<IDataRecord, ValueTask<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync(reader => reader.IterateWhileAsync(predicate, CancellationToken), behavior | CommandBehavior.SingleResult);
-
-		/// <summary>
 		/// Asynchronously iterates a IDataReader and returns the each result until the count is met.
 		/// </summary>
 		/// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -216,7 +182,7 @@ namespace Open.Database.Extensions
 			async ValueTask<IList<T>> TakeAsyncCore()
 			{
 				var results = new List<T>();
-				await IterateReaderWhileAsync(record =>
+				await this.IterateReaderWhileAsync(record =>
 				{
 					results.Add(transform(record));
 					return results.Count < count;
@@ -247,7 +213,7 @@ namespace Open.Database.Extensions
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(int n, params int[] others)
+		public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(int n, params int[] others)
 			=> RetrieveAsync(Concat(n, others));
 
 		/// <summary>
@@ -256,7 +222,7 @@ namespace Open.Database.Extensions
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(string c, params string[] others)
+		public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(string c, params string[] others)
 			=> RetrieveAsync(Concat(c, others));
 
 		/// <summary>
@@ -268,7 +234,7 @@ namespace Open.Database.Extensions
 		public async ValueTask<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			var results = new List<T>();
-			await IterateReaderAsync(record => results.Add(transform(record)), behavior).ConfigureAwait(false);
+			await this.IterateReaderAsync(record => results.Add(transform(record)), behavior).ConfigureAwait(false);
 			return results;
 		}
 
@@ -278,7 +244,7 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<KeyValuePair<string, string>>? fieldMappingOverrides) where T : new()
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides) where T : new()
 			=> ResultsAsync<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
 		/// <summary>
@@ -287,14 +253,14 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string Column)[] fieldMappingOverrides) where T : new()
-			=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string Column)>);
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
+			=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
 
 		/// <summary>
 		/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
 		/// </summary>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync()
+		public ValueTask<QueryResultQueue<object[]>> RetrieveAsync()
 			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(useReadAsync: UseAsyncRead), CommandBehavior.SingleResult);
 
 		/// <summary>
@@ -302,7 +268,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(IEnumerable<int> ordinals)
+		public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<int> ordinals)
 			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals, useReadAsync: UseAsyncRead), CommandBehavior.SingleResult);
 
 		/// <summary>
@@ -311,7 +277,7 @@ namespace Open.Database.Extensions
 		/// <param name="columnNames">The column names to select.</param>
 		/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public ValueTask<QueryResult<Queue<object[]>>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
+		public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
 			=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
 
 
@@ -321,8 +287,8 @@ namespace Open.Database.Extensions
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>A task containing the list of results.</returns>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<(string Field, string Column)>? fieldMappingOverrides)
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 			where T : new()
-			=> ExecuteReaderAsync(reader => reader.ResultsAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
+			=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
 	}
 }

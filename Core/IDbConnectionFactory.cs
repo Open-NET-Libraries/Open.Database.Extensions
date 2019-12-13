@@ -4,28 +4,23 @@ using System.Data;
 namespace Open.Database.Extensions
 {
 	/// <summary>
-	/// Simplified interface with IDbConnection as the generic type.
+	/// Common interface for creating a connection.  Can easily be used with dependency injection.
 	/// </summary>
 	public interface IDbConnectionFactory
 	{
 		/// <summary>
-		/// Generates a new connection of declared generic type.
+		/// Creates a new connection ready for use.
 		/// </summary>
 		/// <returns>An IDbConnection.</returns>
 		IDbConnection Create();
 	}
 
-	/// <summary>
-	/// Base interface for creating connections.
-	/// Useful for dependency injection.
-	/// </summary>
+	/// <inheritdoc />
 	/// <typeparam name="TConnection">The actual connection type.</typeparam>
 	public interface IDbConnectionFactory<out TConnection> : IDbConnectionFactory
 		where TConnection : IDbConnection
 	{
-		/// <summary>
-		/// Generates a new connection of declared generic type.
-		/// </summary>
+		/// <inheritdoc />
 		/// <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
 		new TConnection Create();
 	}
@@ -48,9 +43,7 @@ namespace Open.Database.Extensions
 				=> _connectionFactory.Create();
 
 			public void Give(IDbConnection connection)
-			{
-				connection.Dispose();
-			}
+				=> connection.Dispose();
 		}
 
 		class PoolFromFactory<TConnection> : IDbConnectionPool<TConnection>
@@ -66,12 +59,11 @@ namespace Open.Database.Extensions
 			public TConnection Take()
 				=> _connectionFactory.Create();
 
-			IDbConnection IDbConnectionPool.Take() => Take();
+			IDbConnection IDbConnectionPool.Take()
+				=> Take();
 
 			public void Give(IDbConnection connection)
-			{
-				connection.Dispose();
-			}
+				=> connection.Dispose();
 		}
 
 

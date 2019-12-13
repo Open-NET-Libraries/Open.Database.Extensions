@@ -70,7 +70,11 @@ namespace Open.Database.Extensions
 
 			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+#if NETSTANDARD2_1
+			await using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#else
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#endif
 			return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -112,7 +116,11 @@ namespace Open.Database.Extensions
 			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 
-			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD2_1
+			await using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#else
+			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#endif
 			if (useReadAsync) return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 
 			var r = reader.ToList(transform, cancellationToken);
@@ -517,26 +525,6 @@ namespace Open.Database.Extensions
 			using var reader = command.ExecuteReader(behavior);
 			while (reader.Read())
 				yield return transform(reader);
-		}
-
-		internal static IEnumerable<object[]> IterateReaderInternal(IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
-		{
-			if (command is null) throw new ArgumentNullException(nameof(command));
-			Contract.EndContractBlock();
-
-			var state = command.Connection.EnsureOpen();
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = command.ExecuteReader(behavior);
-			if (reader.Read())
-			{
-				var fieldCount = reader.FieldCount;
-				do
-				{
-					var row = new object[fieldCount];
-					reader.GetValues(row);
-					yield return row;
-				} while (reader.Read());
-			}
 		}
 
 		/// <summary>

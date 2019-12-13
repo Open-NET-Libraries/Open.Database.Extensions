@@ -35,7 +35,7 @@ namespace Open.Database.Extensions
 		/// <param name="remaining">The remaining values.</param>
 		/// <returns></returns>
 		protected static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
-			=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
+			=> CoreExtensions.Concat(first, remaining);
 
 		/// <summary>
 		/// The connection provider to used to acquire connections.
@@ -165,7 +165,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
 
-		CancellationToken IExecuteReader.CancellationToken => throw new NotImplementedException();
+		CancellationToken IExecuteReader.CancellationToken => CancellationToken;
 
 		/// <summary>
 		/// Sets the cancellation token.
@@ -357,7 +357,7 @@ namespace Open.Database.Extensions
 			return (TThis)this;
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public void Execute(Action<TCommand> action)
 		{
 			if (action is null) throw new ArgumentNullException(nameof(action));
@@ -371,7 +371,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public T Execute<T>(Func<TCommand, T> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -385,7 +385,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public virtual ValueTask ExecuteAsync(Func<TCommand, ValueTask> handler)
 		{
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -401,7 +401,7 @@ namespace Open.Database.Extensions
 			});
 		}
 
-		/// <inheritdocs />
+		/// <inheritdoc />
 		public virtual ValueTask<T> ExecuteAsync<T>(Func<TCommand, ValueTask<T>> transform)
 		{
 			if (transform is null) throw new ArgumentNullException(nameof(transform));

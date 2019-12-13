@@ -20,7 +20,8 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static void IterateReader<TReader>(this IExecuteReader command, Action<IDataRecord> handler)
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		public static void IterateReader<TReader>(this IExecuteReader command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -28,7 +29,7 @@ namespace Open.Database.Extensions
 
 			command.ExecuteReader(
 				reader => reader.ForEach(handler),
-				CommandBehavior.SingleResult);
+				behavior | CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
@@ -36,7 +37,8 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static void IterateReaderWhile(this IExecuteReader command, Func<IDataRecord, bool> handler)
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		public static void IterateReaderWhile(this IExecuteReader command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -44,7 +46,7 @@ namespace Open.Database.Extensions
 
 			command.ExecuteReader(
 				reader => reader.IterateWhile(handler),
-				CommandBehavior.SingleResult);
+				behavior | CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
@@ -52,7 +54,8 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static ValueTask IterateReaderAsync(this IExecuteReaderAsync command, Action<IDataRecord> handler)
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		public static ValueTask IterateReaderAsync(this IExecuteReaderAsync command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -67,7 +70,7 @@ namespace Open.Database.Extensions
 					reader.ForEach(handler, true, command.CancellationToken);
 					return new ValueTask();
 				},
-				CommandBehavior.SingleResult);
+				behavior | CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
@@ -75,7 +78,8 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, bool> handler)
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -90,7 +94,7 @@ namespace Open.Database.Extensions
 					reader.IterateWhile(handler, true, command.CancellationToken);
 					return new ValueTask();
 				},
-				CommandBehavior.SingleResult);
+				behavior | CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
@@ -98,7 +102,8 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="handler">The handler function for each IDataRecord.</param>
-		public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, ValueTask<bool>> handler)
+		/// <param name="behavior">The behavior to use with the data reader.</param>
+		public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, ValueTask<bool>> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -106,7 +111,7 @@ namespace Open.Database.Extensions
 
 			return command.ExecuteReaderAsync(
 				reader => reader.IterateWhileAsync(handler, command.CancellationToken),
-				CommandBehavior.SingleResult);
+				behavior | CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
@@ -117,11 +122,12 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="transform">The transform function for each IDataRecord.</param>
 		/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
+		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <returns>The result of the transform.</returns>
 		public static TResult IterateReader<TEntity, TResult>(
 			this IExecuteReader command,
 			Func<IDataRecord, TEntity> transform,
-			Func<IEnumerable<TEntity>, TResult> selector)
+			Func<IEnumerable<TEntity>, TResult> selector, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -129,7 +135,7 @@ namespace Open.Database.Extensions
 
 			return command.ExecuteReader(
 				reader => selector(reader.Select(transform)),
-				CommandBehavior.SingleResult);
+				behavior | CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
@@ -336,7 +342,7 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command)
+		public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			Contract.EndContractBlock();
@@ -353,7 +359,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, IEnumerable<int> ordinals)
+		public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, IEnumerable<int> ordinals)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			Contract.EndContractBlock();
@@ -371,7 +377,7 @@ namespace Open.Database.Extensions
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, int n, params int[] others)
+		public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, int n, params int[] others)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			Contract.EndContractBlock();
@@ -388,7 +394,7 @@ namespace Open.Database.Extensions
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <param name="columnNames">The column names to select.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, IEnumerable<string> columnNames)
+		public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, IEnumerable<string> columnNames)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
@@ -407,7 +413,7 @@ namespace Open.Database.Extensions
 		/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining column names to request from the reader for each record.</param>
 		/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-		public static QueryResult<Queue<object[]>> Retrieve(this IExecuteReader command, string c, params string[] others)
+		public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, string c, params string[] others)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			//if (c is null) throw new ArgumentNullException(nameof(c));
@@ -421,13 +427,13 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<KeyValuePair<string, string>> fieldMappingOverrides)
+		public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
 			where T : new()
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -435,19 +441,19 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			return command.ExecuteReader(
-				reader => reader.Results<T>(fieldMappingOverrides),
+				reader => reader.ResultsBuffered<T>(fieldMappingOverrides),
 				CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<(string Field, string Column)> fieldMappingOverrides)
+		public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 			where T : new()
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -455,19 +461,19 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			return command.ExecuteReader(
-				reader => reader.Results<T>(fieldMappingOverrides),
+				reader => reader.ResultsBuffered<T>(fieldMappingOverrides),
 				CommandBehavior.SingleResult);
 		}
 
 		/// <summary>
 		/// Iterates each record and attempts to map the fields to type T.
-		/// Data is temporarily stored (buffered in entirety) in a queue of dictionaries before applying the transform for each iteration.
+		/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 		/// </summary>
 		/// <param name="command">The IExecuteReader to iterate.</param>
 		/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>The enumerable to pull the transformed results from.</returns>
-		public static IEnumerable<T> Results<T>(this IExecuteReader command, params (string Field, string Column)[] fieldMappingOverrides)
+		public static IEnumerable<T> Results<T>(this IExecuteReader command, params (string Field, string? Column)[] fieldMappingOverrides)
 			where T : new()
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -475,7 +481,7 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			return command.ExecuteReader(
-				reader => reader.Results<T>(fieldMappingOverrides),
+				reader => reader.ResultsBuffered<T>(fieldMappingOverrides),
 				CommandBehavior.SingleResult);
 		}
 

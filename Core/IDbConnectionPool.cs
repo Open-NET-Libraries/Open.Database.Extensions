@@ -4,12 +4,14 @@ using System.Data;
 namespace Open.Database.Extensions
 {
 	/// <summary>
-	/// Simplified interface with IDbConnection as the generic type.
+	/// A unifying common interface for creating/managing connections.  Can easily be used with dependency injection.
+	/// Commonly a pool will simply host a single connection for nonconcurrent operations where giving back to the pool guarantees the connection returns to the state it was in before it was taken.
+	/// Connection factories can pose as pools where taking always creates a new connection, and giving back always disposes.
 	/// </summary>
 	public interface IDbConnectionPool
 	{
 		/// <summary>
-		/// Provides a connection of declared generic type.
+		/// Provides a connection ready for use.  The connection state may or may not be closed depending on how the pool is being used.
 		/// </summary>
 		/// <returns>An IDbConnection.</returns>
 		IDbConnection Take();
@@ -22,17 +24,12 @@ namespace Open.Database.Extensions
 		void Give(IDbConnection connection);
 	}
 
-	/// <summary>
-	/// Base interface for creating connections.
-	/// Useful for dependency injection.
-	/// </summary>
+	/// <inheritdoc />
 	/// <typeparam name="TConnection">The actual connection type.</typeparam>
-	public interface IDbConnectionPool<TConnection> : IDbConnectionPool
+	public interface IDbConnectionPool<out TConnection> : IDbConnectionPool
 		where TConnection : IDbConnection
 	{
-		/// <summary>
-		/// Generates a new connection of declared generic type.
-		/// </summary>
+		/// <inheritdoc />
 		/// <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
 		new TConnection Take();
 	}
@@ -40,7 +37,8 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Extensions for getting generic versions on non-generic connection pools..
 	/// </summary>
-	public static class ConnectionPoolExtensions {
+	public static class ConnectionPoolExtensions
+	{
 
 		class GenericPool : IDbConnectionPool<IDbConnection>
 		{
@@ -62,7 +60,7 @@ namespace Open.Database.Extensions
 		}
 
 		/// <summary>
-		/// Coerces a non-generic connection factory to a generic one.
+		/// Converts a non-generic connection factory to a generic one.
 		/// </summary>
 		/// <param name="connectionPool">The source connection factory.</param>
 		/// <returns>The generic version of the source factory.</returns>

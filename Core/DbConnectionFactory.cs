@@ -13,7 +13,7 @@ namespace Open.Database.Extensions
 		/// Constructs a DbConnectionFactory.
 		/// </summary>
 		/// <param name="factory"></param>
-		public DbConnectionFactory(Func<IDbConnection> factory)
+		protected DbConnectionFactory(Func<IDbConnection> factory)
 		{
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			Contract.EndContractBlock();
@@ -31,17 +31,17 @@ namespace Open.Database.Extensions
 		/// </summary>
 		/// <param name="factory">The factory function.</param>
 		/// <returns>A Non-Generic DbConnectionFactory</returns>
-		public static DbConnectionFactory Create(Func<IDbConnection> factory)
-			=> new DbConnectionFactory(factory);
-
-		/// <summary>
-		/// Creates a Non-Generic DbConnectionFactory.
-		/// </summary>
-		/// <param name="factory">The factory function.</param>
-		/// <returns>A Non-Generic DbConnectionFactory</returns>
 		public static DbConnectionFactory<TConnection> Create<TConnection>(Func<TConnection> factory)
 			where TConnection : IDbConnection
 			=> new DbConnectionFactory<TConnection>(factory);
+
+		/// <summary>
+		/// Implicitly converts a connection factory function to a connection factory instance.
+		/// </summary>
+		/// <param name="factory"></param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Create method is availble.")]
+		public static implicit operator DbConnectionFactory(Func<IDbConnection> factory)
+			=> Create(factory);
 	}
 
 	/// <summary>
@@ -70,5 +70,14 @@ namespace Open.Database.Extensions
 		/// Creates a connection of from the underlying factory function. 
 		/// </summary>
 		public new TConnection Create() => _factory();
+
+
+		/// <summary>
+		/// Implicitly converts a connection factory function to a genetic-typed connection factory instance.
+		/// </summary>
+		/// <param name="factory"></param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Create method is availble.")]
+		public static implicit operator DbConnectionFactory<TConnection>(Func<TConnection> factory)
+			=> Create(factory);
 	}
 }
