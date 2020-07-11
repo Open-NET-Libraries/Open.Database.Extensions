@@ -24,7 +24,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Open.ChannelExtensions" Version="3.2.2" />
+		<PackageReference Include="Open.ChannelExtensions" Version="3.4.0" />
 		<PackageReference Include="Open.Database.Extensions.Core" Version="6.5.0" />
 	</ItemGroup>
 
