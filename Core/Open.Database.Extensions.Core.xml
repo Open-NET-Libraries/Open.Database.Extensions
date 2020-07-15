@@ -284,7 +284,7 @@
         </member>
         <member name="P:Open.Database.Extensions.Core.Transformer`1.Processor.Transform">
             <summary>
-            The resultant transofrm function.
+            The resultant transform function.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String}@)">
@@ -2236,6 +2236,7 @@
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Int32,System.Int32[])">
             <summary>
             Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -2245,6 +2246,7 @@
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])">
             <summary>
             Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="arrayPool">The array pool to acquire buffers from.</param>

@@ -206,7 +206,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-		public static IEnumerable<T> DequeueAs<T>(this QueryResult<Queue<object[]>> source, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+		public static IEnumerable<T> DequeueAs<T>(this QueryResult<Queue<object?[]>> source, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
 			where T : new()
 		{
 			if (source is null) throw new ArgumentNullException(nameof(source));
@@ -223,7 +223,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-		public static IEnumerable<T> DequeueAs<T>(this QueryResult<Queue<object[]>> source, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		public static IEnumerable<T> DequeueAs<T>(this QueryResult<Queue<object?[]>> source, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 			where T : new()
 			=> DequeueAs<T>(source, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
@@ -234,7 +234,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-		public static async ValueTask<IEnumerable<T>> DequeueAs<T>(this Task<QueryResult<Queue<object[]>>> source, IEnumerable<(string, string?)>? fieldMappingOverrides = null)
+		public static async ValueTask<IEnumerable<T>> DequeueAs<T>(this Task<QueryResult<Queue<object?[]>>> source, IEnumerable<(string, string?)>? fieldMappingOverrides = null)
 			where T : new()
 		{
 			if (source is null) throw new ArgumentNullException(nameof(source));
@@ -251,7 +251,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-		public static async ValueTask<IEnumerable<T>> DequeueAs<T>(this ValueTask<QueryResult<Queue<object[]>>> source, IEnumerable<(string, string?)>? fieldMappingOverrides = null)
+		public static async ValueTask<IEnumerable<T>> DequeueAs<T>(this ValueTask<QueryResult<Queue<object?[]>>> source, IEnumerable<(string, string?)>? fieldMappingOverrides = null)
 			where T : new()
 		{
 			var x = new Transformer<T>(fieldMappingOverrides);
@@ -266,7 +266,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-		public static ValueTask<IEnumerable<T>> DequeueAs<T>(this Task<QueryResult<Queue<object[]>>> source, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		public static ValueTask<IEnumerable<T>> DequeueAs<T>(this Task<QueryResult<Queue<object?[]>>> source, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 			where T : new()
 			=> DequeueAs<T>(source, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 
@@ -277,7 +277,7 @@ namespace Open.Database.Extensions.Core
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 		/// <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
-		public static ValueTask<IEnumerable<T>> DequeueAs<T>(this ValueTask<QueryResult<Queue<object[]>>> source, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		public static ValueTask<IEnumerable<T>> DequeueAs<T>(this ValueTask<QueryResult<Queue<object?[]>>> source, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 			where T : new()
 			=> DequeueAs<T>(source, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
 

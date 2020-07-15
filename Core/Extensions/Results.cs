@@ -213,12 +213,13 @@ namespace Open.Database.Extensions
 			var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
 
 			return x.AsDequeueingEnumerable(
-				await RetrieveAsyncInternal(reader, cancellationToken,
+				await RetrieveAsyncInternal(
+					Transformer<T>.LocalPool,
+					reader, cancellationToken,
 					columns.Select(c => c.Ordinal),
 					columns.Select(c => c.Name),
 					readStarted: true,
-					useReadAsync: useReadAsync,
-					arrayPool: Transformer<T>.LocalPool).ConfigureAwait(false),
+					useReadAsync: useReadAsync).ConfigureAwait(false),
 				Transformer<T>.LocalPool);
 		}
 

@@ -38,10 +38,10 @@
 	  <Compile Remove="api\**" />
 	  <EmbeddedResource Remove="api\**" />
 	  <None Remove="api\**" />
-	  <None Include="..\..\Open.ChannelExtensions\Open.ChannelExtensions\logo.png">
-	    <Pack>True</Pack>
-	    <PackagePath></PackagePath>
-	  </None>
+		<None Include="..\logo.png">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>

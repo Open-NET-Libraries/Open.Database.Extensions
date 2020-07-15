@@ -2,3 +2,6 @@
 
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = silent
+
+# AD0001: Analyzer Failure
+dotnet_diagnostic.AD0001.severity = silent
