@@ -163,7 +163,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionaries(this QueryResult<Queue<object[]>> source)
+		public static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionaries(this QueryResult<Queue<object?[]>> source)
 		{
 			if (source is null) throw new ArgumentNullException(nameof(source));
 			Contract.EndContractBlock();
@@ -187,7 +187,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object[]>>> source)
+		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object?[]>>> source)
 			=> (await (source ?? throw new ArgumentNullException(nameof(source))).ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 		/// <summary>
@@ -196,7 +196,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this ValueTask<QueryResult<Queue<object[]>>> source)
+		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this ValueTask<QueryResult<Queue<object?[]>>> source)
 			=> (await source.ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 		/// <summary>
@@ -287,7 +287,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static IEnumerable<Dictionary<string, object?>> AsMappedDictionaries(this QueryResult<IEnumerable<object[]>> source)
+		public static IEnumerable<Dictionary<string, object?>> AsMappedDictionaries(this QueryResult<IEnumerable<object?[]>> source)
 		{
 			if (source is null) throw new ArgumentNullException(nameof(source));
 			Contract.EndContractBlock();
@@ -310,7 +310,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> AsMappedDictionaries(this ValueTask<QueryResult<IEnumerable<object[]>>> source)
+		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> AsMappedDictionaries(this ValueTask<QueryResult<IEnumerable<object?[]>>> source)
 			=> AsMappedDictionaries(await source.ConfigureAwait(false));
 
 		/// <summary>
@@ -319,7 +319,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
 		/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
-		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> AsMappedDictionaries(this Task<QueryResult<IEnumerable<object[]>>> source)
+		public static async ValueTask<IEnumerable<Dictionary<string, object?>>> AsMappedDictionaries(this Task<QueryResult<IEnumerable<object?[]>>> source)
 			=> AsMappedDictionaries(await (source ?? throw new ArgumentNullException(nameof(source))).ConfigureAwait(false));
 
 	}

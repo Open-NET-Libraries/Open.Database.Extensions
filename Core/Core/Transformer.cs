@@ -183,8 +183,9 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="results">The results to process.</param>
 		/// <param name="arrayPool">The array pool to return the buffers to.</param>
+		/// <param name="clearArrays">Indicates whether the contents of the buffers should be cleared before reuse.</param>
 		/// <returns>A dequeuing enumerable of the transformed results.</returns>
-		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object?[]>> results, ArrayPool<object?> arrayPool)
+		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object?[]>> results, ArrayPool<object?> arrayPool, bool clearArrays = false)
 		{
 			if (results is null) throw new ArgumentNullException(nameof(results));
 			Contract.EndContractBlock();
@@ -201,7 +202,7 @@ namespace Open.Database.Extensions.Core
 				}
 				finally
 				{
-					arrayPool.Return(a);
+					arrayPool.Return(a, clearArrays);
 				}
 			});
 		}

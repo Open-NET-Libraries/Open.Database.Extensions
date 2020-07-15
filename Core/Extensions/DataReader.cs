@@ -392,6 +392,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -418,6 +419,7 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
 		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -437,6 +439,7 @@ namespace Open.Database.Extensions
 			}
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -469,6 +472,7 @@ namespace Open.Database.Extensions
 			}
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		static async IAsyncEnumerable<object?[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object?> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -569,11 +573,13 @@ namespace Open.Database.Extensions
 		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, T> transform,
 			bool throwOnCancellation,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -614,11 +620,13 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
 			Func<IDataRecord, ValueTask<T>> transform,
 			bool throwOnCancellation,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -692,6 +700,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -711,6 +720,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, ValueTask<T>> transform, CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 

@@ -300,12 +300,13 @@
             <param name="results">The results to process.</param>
             <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)">
             <summary>
             Dequeues the results and transforms each one by one during enumeration.
             </summary>
             <param name="results">The results to process.</param>
             <param name="arrayPool">The array pool to return the buffers to.</param>
+            <param name="clearArrays">Indicates whether the contents of the buffers should be cleared before reuse.</param>
             <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.IDataReader)">
