@@ -136,7 +136,7 @@ namespace Open.Database.Extensions
 			// Only await if needed...
 			if (connection.State != ConnectionState.Open)
 			{
-				await connection.EnsureOpenAsync(cancellationToken); // If the task is cancelled, awaiting will throw.
+				await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true); // If the task is cancelled, awaiting will throw.
 				cancellationToken.ThrowIfCancellationRequested();
 			}
 
@@ -172,7 +172,7 @@ namespace Open.Database.Extensions
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
 			=> (await connection.ExecuteTransactionConditionalAsync(
-				async t => (await conditionalAction(t), true), isolationLevel, cancellationToken)).Commit;
+				async t => (await conditionalAction(t).ConfigureAwait(false), true), isolationLevel, cancellationToken).ConfigureAwait(false)).Commit;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -188,7 +188,7 @@ namespace Open.Database.Extensions
 			Func<SqlTransaction, ValueTask<T>> action,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> (await connection.ExecuteTransactionConditionalAsync(async t => (true, await action(t)), isolationLevel, cancellationToken).ConfigureAwait(false)).Value;
+			=> (await connection.ExecuteTransactionConditionalAsync(async t => (true, await action(t).ConfigureAwait(false)), isolationLevel, cancellationToken).ConfigureAwait(false)).Value;
 
 		/// <summary>
 		/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
@@ -202,7 +202,7 @@ namespace Open.Database.Extensions
 			Func<SqlTransaction, ValueTask> action,
 			IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 			CancellationToken cancellationToken = default)
-			=> await connection.ExecuteTransactionAsync(async c => { await action(c); return true; }, isolationLevel, cancellationToken);
+			=> await connection.ExecuteTransactionAsync(async c => { await action(c).ConfigureAwait(false); return true; }, isolationLevel, cancellationToken).ConfigureAwait(false);
 
 		#region Overloads
 

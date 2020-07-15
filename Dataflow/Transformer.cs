@@ -36,7 +36,11 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="complete">Will call complete when no more results are avaiable.</param>
 		/// <param name="options">The options to apply to the transform block.</param>
 		/// <returns>The ChannelReader of the target.</returns>
-		internal long PipeResultsTo(IDataReader reader, ITargetBlock<T> target, bool complete, ExecutionDataflowBlockOptions? options = null)
+		internal long PipeResultsTo(
+			IDataReader reader,
+			ITargetBlock<T> target,
+			bool complete,
+			ExecutionDataflowBlockOptions? options = null)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
@@ -50,7 +54,7 @@ namespace Open.Database.Extensions.Dataflow
 			var transform = processor.Transform;
 			var columnCount = columns.Length;
 
-			var transformBlock = new TransformBlock<object[], T>(
+			var transformBlock = new TransformBlock<object?[], T>(
 				a =>
 				{
 					try
@@ -95,7 +99,12 @@ namespace Open.Database.Extensions.Dataflow
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <param name="options">The options to apply to the transform block.</param>
 		/// <returns>The ChannelReader of the target.</returns>
-		internal async ValueTask<long> PipeResultsToAsync(IDataReader reader, ITargetBlock<T> target, bool complete, CancellationToken cancellationToken, ExecutionDataflowBlockOptions? options = null)
+		internal async ValueTask<long> PipeResultsToAsync(
+			IDataReader reader,
+			ITargetBlock<T> target,
+			bool complete,
+			CancellationToken cancellationToken,
+			ExecutionDataflowBlockOptions? options = null)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
@@ -109,7 +118,7 @@ namespace Open.Database.Extensions.Dataflow
 			var transform = processor.Transform;
 			var columnCount = columns.Length;
 
-			var transformBlock = new TransformBlock<object[], T>(
+			var transformBlock = new TransformBlock<object?[], T>(
 				a =>
 				{
 					try
@@ -142,7 +151,7 @@ namespace Open.Database.Extensions.Dataflow
                     TaskScheduler.Current);
             }
 
-            return await reader.ToTargetBlockAsync(transformBlock, true, LocalPool, cancellationToken);
+            return await reader.ToTargetBlockAsync(transformBlock, true, LocalPool, cancellationToken).ConfigureAwait(false);
 		}
 
 	}

@@ -57,9 +57,9 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
 		public static long ToTargetBlock(this IDataReader reader,
-			ITargetBlock<object[]> target,
+			ITargetBlock<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool)
+			ArrayPool<object?> arrayPool)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (target is null) throw new ArgumentNullException(nameof(target));
@@ -202,9 +202,9 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
 		public static long ToTargetBlock(this IDbCommand command,
-			ITargetBlock<object[]> target,
+			ITargetBlock<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool)
+			ArrayPool<object?> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
@@ -410,9 +410,9 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
 		public static long ToTargetBlock(this IExecuteReader command,
-			ITargetBlock<object[]> target,
+			ITargetBlock<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool)
+			ArrayPool<object?> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
@@ -624,9 +624,9 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToTargetBlockAsync(this IDataReader reader,
-			ITargetBlock<object[]> target,
+			ITargetBlock<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
+			ArrayPool<object?> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -776,7 +776,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken);
+					ToTargetBlockAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -806,9 +806,9 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToTargetBlockAsync(this IDbCommand command,
-			ITargetBlock<object[]> target,
+			ITargetBlock<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
+			ArrayPool<object?> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -822,7 +822,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, arrayPool), cancellationToken: cancellationToken);
+					ToTargetBlockAsync(reader, target, false, arrayPool), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -868,7 +868,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, transform), cancellationToken: cancellationToken);
+					ToTargetBlockAsync(reader, target, false, transform), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -913,11 +913,11 @@ namespace Open.Database.Extensions
 			try
 			{
 				var dbc = command as DbCommand;
-				var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken);
+				var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 				var behavior = CommandBehavior.SingleResult;
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-				return await ToTargetBlockAsync(reader, target, false, cancellationToken);
+				return await ToTargetBlockAsync(reader, target, false, cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -964,11 +964,11 @@ namespace Open.Database.Extensions
 			try
 			{
 				var dbc = command as DbCommand;
-				var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken);
+				var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 				var behavior = CommandBehavior.SingleResult;
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-				return await ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, cancellationToken);
+				return await ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1007,7 +1007,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, command.CancellationToken));
+					ToTargetBlockAsync(reader, target, false, command.CancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1036,9 +1036,9 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToTargetBlockAsync(this IExecuteReader command,
-			ITargetBlock<object[]> target,
+			ITargetBlock<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool)
+			ArrayPool<object?> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
@@ -1049,7 +1049,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, arrayPool, command.CancellationToken));
+					ToTargetBlockAsync(reader, target, false, arrayPool, command.CancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1091,7 +1091,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, transform, command.CancellationToken));
+					ToTargetBlockAsync(reader, target, false, transform, command.CancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1133,7 +1133,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, command.CancellationToken));
+					ToTargetBlockAsync(reader, target, false, command.CancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1176,7 +1176,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, command.CancellationToken));
+					ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, command.CancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
