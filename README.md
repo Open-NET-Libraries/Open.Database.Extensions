@@ -1,12 +1,15 @@
 # Open.Database.Extensions
 
-[Full API Documentation](https://electricessence.github.io/Open.Database.Extensions/api/index.html)
+[![NuGet](https://img.shields.io/nuget/v/Open.Database.Extensions.Core.svg?style=flat)](https://www.nuget.org/packages/Open.Database.Extensions.Core/)
+
+[Full API Documentation](https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html)
 
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 
 ## Connection Factories
 
 Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.
+A `SqlConnectionFactory` is provided and can be overridden to provide more specific dependency injection configurations.
 
 ## Expressive Commands
 
@@ -86,7 +89,7 @@ var people = cmd.Results<Person>(new Dictionary<string,string>{
  {"LastName", "last_name"});
 ```
 
-#### `Retrieve()` and `RetrieveAsync()`
+### `Retrieve()` and `RetrieveAsync()`
 
 Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
 

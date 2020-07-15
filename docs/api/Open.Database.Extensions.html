@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace Open.Database.Extensions
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -133,19 +133,17 @@ TDbType facilitates the difference between DbType and SqlDbType.</p>
     <h3 id="interfaces">Interfaces
   </h3>
       <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory.html">IDbConnectionFactory</a></h4>
-      <section><p>Simplified interface with IDbConnection as the generic type.</p>
+      <section><p>Common interface for creating a connection.  Can easily be used with dependency injection.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory&lt;TConnection&gt;</a></h4>
-      <section><p>Base interface for creating connections.
-Useful for dependency injection.</p>
-</section>
+      <section></section>
       <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionPool.html">IDbConnectionPool</a></h4>
-      <section><p>Simplified interface with IDbConnection as the generic type.</p>
+      <section><p>A unifying common interface for creating/managing connections.  Can easily be used with dependency injection.
+Commonly a pool will simply host a single connection for nonconcurrent operations where giving back to the pool guarantees the connection returns to the state it was in before it was taken.
+Connection factories can pose as pools where taking always creates a new connection, and giving back always disposes.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionPool-1.html">IDbConnectionPool&lt;TConnection&gt;</a></h4>
-      <section><p>Base interface for creating connections.
-Useful for dependency injection.</p>
-</section>
+      <section></section>
       <h4><a class="xref" href="Open.Database.Extensions.IExecuteCommand.html">IExecuteCommand</a></h4>
       <section><p>Common interface used for expressive commands.</p>
 </section>
