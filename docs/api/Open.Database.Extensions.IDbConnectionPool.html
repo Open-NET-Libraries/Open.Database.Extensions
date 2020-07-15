@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Interface IDbConnectionPool
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,7 +73,9 @@
   
   <h1 id="Open_Database_Extensions_IDbConnectionPool" data-uid="Open.Database.Extensions.IDbConnectionPool" class="text-break">Interface IDbConnectionPool
   </h1>
-  <div class="markdown level0 summary"><p>Simplified interface with IDbConnection as the generic type.</p>
+  <div class="markdown level0 summary"><p>A unifying common interface for creating/managing connections.  Can easily be used with dependency injection.
+Commonly a pool will simply host a single connection for nonconcurrent operations where giving back to the pool guarantees the connection returns to the state it was in before it was taken.
+Connection factories can pose as pools where taking always creates a new connection, and giving back always disposes.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.html">Open.Database.Extensions</a></h6>
@@ -86,10 +88,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_IDbConnectionPool_Give_System_Data_IDbConnection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.IDbConnectionPool.Give(System.Data.IDbConnection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_IDbConnectionPool_Give_System_Data_IDbConnection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.IDbConnectionPool.Give(System.Data.IDbConnection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/IDbConnectionPool.cs/#L22">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/IDbConnectionPool.cs/#L24">View Source</a>
   </span>
   <a id="Open_Database_Extensions_IDbConnectionPool_Give_" data-uid="Open.Database.Extensions.IDbConnectionPool.Give*"></a>
   <h4 id="Open_Database_Extensions_IDbConnectionPool_Give_System_Data_IDbConnection_" data-uid="Open.Database.Extensions.IDbConnectionPool.Give(System.Data.IDbConnection)">Give(IDbConnection)</h4>
@@ -121,14 +123,14 @@ Depending on implementation, the pool could be full, and the connection disposed
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_IDbConnectionPool_Take.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.IDbConnectionPool.Take%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_IDbConnectionPool_Take.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.IDbConnectionPool.Take%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/IDbConnectionPool.cs/#L15">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/IDbConnectionPool.cs/#L17">View Source</a>
   </span>
   <a id="Open_Database_Extensions_IDbConnectionPool_Take_" data-uid="Open.Database.Extensions.IDbConnectionPool.Take*"></a>
   <h4 id="Open_Database_Extensions_IDbConnectionPool_Take" data-uid="Open.Database.Extensions.IDbConnectionPool.Take">Take()</h4>
-  <div class="markdown level1 summary"><p>Provides a connection of declared generic type.</p>
+  <div class="markdown level1 summary"><p>Provides a connection ready for use.  The connection state may or may not be closed depending on how the pool is being used.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -152,6 +154,12 @@ Depending on implementation, the pool could be full, and the connection disposed
     </tbody>
   </table>
   <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionPool_System_String_System_Data_CommandType_">ConnectionExtensions.Command(IDbConnectionPool, String, CommandType)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionPool_System_String_">ConnectionExtensions.StoredProcedure(IDbConnectionPool, String)</a>
+  </div>
   <div>
       <a class="xref" href="Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState___0__">ConnectionExtensions.Open&lt;T&gt;(IDbConnectionPool, Func&lt;IDbConnection, ConnectionState, T&gt;)</a>
   </div>
@@ -187,10 +195,10 @@ Depending on implementation, the pool could be full, and the connection disposed
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_IDbConnectionPool.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.IDbConnectionPool%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_IDbConnectionPool.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.IDbConnectionPool%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/IDbConnectionPool.cs/#L9" class="contribution-link">View Source</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/IDbConnectionPool.cs/#L11" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

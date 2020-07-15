@@ -28,7 +28,7 @@ namespace Open.Database.Extensions.Core
 		/// <summary>
 		/// Buffers for transforming.
 		/// </summary>
-		protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
+		protected internal static readonly ArrayPool<object?> LocalPool = ArrayPool<object?>.Create(1024, MaxArrayBuffer);
 
 		/// <summary>
 		/// The type of <typeparamref name="T"/>.
@@ -144,9 +144,9 @@ namespace Open.Database.Extensions.Core
 			Action<T, object?>?[] _propertySetters = Array.Empty<Action<T, object?>?>();
 
 			/// <summary>
-			/// The resultant transofrm function.
+			/// The resultant transform function.
 			/// </summary>
-			public Func<object[], T> Transform { get; } // Using a Func<object[],T> for better type inference.
+			public Func<object?[], T> Transform { get; } // Using a Func<object?[],T> for better type inference.
 
 			/// <summary>
 			/// Allows for deferred initialization.
@@ -167,7 +167,7 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="results">The results to process.</param>
 		/// <returns>A dequeuing enumerable of the transformed results.</returns>
-		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results)
+		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object?[]>> results)
 		{
 			if (results is null) throw new ArgumentNullException(nameof(results));
 			Contract.EndContractBlock();
@@ -183,8 +183,9 @@ namespace Open.Database.Extensions.Core
 		/// </summary>
 		/// <param name="results">The results to process.</param>
 		/// <param name="arrayPool">The array pool to return the buffers to.</param>
+		/// <param name="clearArrays">Indicates whether the contents of the buffers should be cleared before reuse.</param>
 		/// <returns>A dequeuing enumerable of the transformed results.</returns>
-		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results, ArrayPool<object> arrayPool)
+		public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object?[]>> results, ArrayPool<object?> arrayPool, bool clearArrays = false)
 		{
 			if (results is null) throw new ArgumentNullException(nameof(results));
 			Contract.EndContractBlock();
@@ -201,7 +202,7 @@ namespace Open.Database.Extensions.Core
 				}
 				finally
 				{
-					arrayPool.Return(a);
+					arrayPool.Return(a, clearArrays);
 				}
 			});
 		}
@@ -255,11 +256,11 @@ namespace Open.Database.Extensions.Core
 
 			return AsDequeueingEnumerable(
 				CoreExtensions.RetrieveInternal(
+					LocalPool,
 					reader,
 					columns.Select(c => c.Ordinal),
 					columns.Select(c => c.Name),
-					readStarted: readStarted,
-					arrayPool: LocalPool),
+					readStarted: readStarted),
 				LocalPool);
 		}
 
@@ -306,10 +307,10 @@ namespace Open.Database.Extensions.Core
 
 			var columnCount = table.Columns.Count;
 			var columns = table.Columns.AsEnumerable();
-			var results = new QueryResult<Queue<object[]>>(
+			var results = new QueryResult<Queue<object?[]>>(
 				columns.Select(c => c.Ordinal),
 				columns.Select(c => c.ColumnName),
-				new Queue<object[]>(table.Rows.AsEnumerable().Select(r =>
+				new Queue<object?[]>(table.Rows.AsEnumerable().Select(r =>
 				{
 					var a = LocalPool.Rent(columnCount);
 					for (var i = 0; i < columnCount; i++) a[i] = r[i];

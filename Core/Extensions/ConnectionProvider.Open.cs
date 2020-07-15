@@ -255,7 +255,7 @@ namespace Open.Database.Extensions
 
 			using var conn = connectionFactory.Create();
 			// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-			await conn.EnsureOpenAsync(cancellationToken);
+			await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			return await action(conn).ConfigureAwait(false);
 		}
 
@@ -275,7 +275,7 @@ namespace Open.Database.Extensions
 
 			using var conn = connectionFactory.Create();
 			// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-			await conn.EnsureOpenAsync(cancellationToken);
+			await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			await action(conn).ConfigureAwait(false);
 		}
 
@@ -299,7 +299,7 @@ namespace Open.Database.Extensions
 
 			using var conn = connectionFactory.Create();
 			// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-			await conn.EnsureOpenAsync(cancellationToken);
+			await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			return await action(conn).ConfigureAwait(false);
 		}
 
@@ -321,7 +321,7 @@ namespace Open.Database.Extensions
 
 			using var conn = connectionFactory.Create();
 			// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-			await conn.EnsureOpenAsync(cancellationToken);
+			await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			await action(conn).ConfigureAwait(false);
 		}
 
@@ -345,7 +345,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await action(conn,
-					await conn.EnsureOpenAsync(cancellationToken))
+					await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
 					.ConfigureAwait(false);
 			}
 			finally
@@ -372,7 +372,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				await action(conn,
-					await conn.EnsureOpenAsync(cancellationToken))
+					await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
 					.ConfigureAwait(false);
 			}
 			finally
@@ -403,7 +403,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				return await action(conn,
-					await conn.EnsureOpenAsync(cancellationToken))
+					await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
 					.ConfigureAwait(false);
 			}
 			finally
@@ -432,7 +432,7 @@ namespace Open.Database.Extensions
 			try
 			{
 				await action(conn,
-					await conn.EnsureOpenAsync(cancellationToken))
+					await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
 					.ConfigureAwait(false);
 			}
 			finally
@@ -461,7 +461,7 @@ namespace Open.Database.Extensions
 
 			using var conn = connectionFactory();
 			// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-			await conn.EnsureOpenAsync(cancellationToken);
+			await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			return await action(conn).ConfigureAwait(false);
 		}
 
@@ -483,7 +483,7 @@ namespace Open.Database.Extensions
 
 			using var conn = connectionFactory();
 			// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-			await conn.EnsureOpenAsync(cancellationToken);
+			await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			await action(conn).ConfigureAwait(false);
 		}
 	}

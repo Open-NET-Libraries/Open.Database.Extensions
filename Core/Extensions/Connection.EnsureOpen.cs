@@ -38,8 +38,8 @@ namespace Open.Database.Extensions
 		/// If the connection is in neither open or close, first closes the connection.
 		/// </summary>
 		/// <param name="connection">The connection to transact with.</param>
-		/// <param name="cancellationToken">An optional token to cancel opening.</param>
 		/// <param name="configureAwait">If true (default) will retain the context after opening.</param>
+		/// <param name="cancellationToken">An optional token to cancel opening.</param>
 		/// <returns>A task containing the prior connection state.</returns>
 		public static async ValueTask<ConnectionState> EnsureOpenAsync(this DbConnection connection, bool configureAwait = true, CancellationToken cancellationToken = default)
 		{
@@ -86,7 +86,7 @@ namespace Open.Database.Extensions
 		internal static async ValueTask<ConnectionState> EnsureOpenAsync(this IDbConnection connection, CancellationToken cancellationToken)
 		{
 			if (connection is DbConnection c)
-				return await c.EnsureOpenAsync(true, cancellationToken);
+				return await c.EnsureOpenAsync(true, cancellationToken).ConfigureAwait(true);
 
 			cancellationToken.ThrowIfCancellationRequested();
 			return connection.EnsureOpen();

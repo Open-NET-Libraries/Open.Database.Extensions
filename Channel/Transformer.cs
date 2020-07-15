@@ -49,9 +49,8 @@ namespace Open.Database.Extensions
 
 			var processor = new Processor(this, names);
 			var transform = processor.Transform;
-			var columnCount = columns.Length;
 
-			var channel = ChannelExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+			var channel = ChannelDbExtensions.CreateChannel<object?[]>(MaxArrayBuffer, true);
 			var writer = channel.Writer;
 
 			var piped = channel
@@ -84,7 +83,7 @@ namespace Open.Database.Extensions
 			}
 
 			return await reader
-				.ToChannel(writer, false, LocalPool, cancellationToken);
+				.ToChannel(writer, false, LocalPool, cancellationToken).ConfigureAwait(false);
 		}
 
 #if NETSTANDARD2_1
@@ -107,9 +106,8 @@ namespace Open.Database.Extensions
 
 			var processor = new Processor(this, names);
 			var transform = processor.Transform;
-			var columnCount = columns.Length;
 
-			var channel = ChannelExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+			var channel = ChannelDbExtensions.CreateChannel<object?[]>(MaxArrayBuffer, true);
 			var writer = channel.Writer;
 
 			var piped = channel

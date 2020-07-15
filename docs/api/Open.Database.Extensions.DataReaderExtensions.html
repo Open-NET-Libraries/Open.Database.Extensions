@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class DataReaderExtensions
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -115,10 +115,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L164">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L165">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)">AsEnumerable(IDataReader)</h4>
@@ -166,10 +166,136 @@ DBNull values are retained.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Buffers_ArrayPool_System_Object__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Buffers.ArrayPool%7BSystem.Object%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L221">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L189">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Buffers_ArrayPool_System_Object__" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object})">AsEnumerable(IDataReader, ArrayPool&lt;Object&gt;)</h4>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.
+DBNull values are retained.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; AsEnumerable(this IDataReader reader, ArrayPool&lt;object&gt; arrayPool)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The reader to enumerate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Buffers.ArrayPool</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><span class="parametername">arrayPool</span></td>
+        <td><p>The array pool to acquire buffers from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>[]&gt;</td>
+        <td><p>An enumeration of the values returned from a data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Buffers_ArrayPool_System_Object__System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Buffers.ArrayPool%7BSystem.Object%7D%2CSystem.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L305">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Buffers_ArrayPool_System_Object__System_Int32_System_Int32___" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])">AsEnumerable(IDataReader, ArrayPool&lt;Object&gt;, Int32, Int32[])</h4>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.
+DBNull values are retained.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; AsEnumerable(this IDataReader reader, ArrayPool&lt;object&gt; arrayPool, int n, params int[] others)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The reader to enumerate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Buffers.ArrayPool</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><span class="parametername">arrayPool</span></td>
+        <td><p>The array pool to acquire buffers from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">n</span></td>
+        <td><p>The first ordinal to include in the request to the reader for each record.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span>[]</td>
+        <td><span class="parametername">others</span></td>
+        <td><p>The remaining ordinals to request from the reader for each record.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>[]&gt;</td>
+        <td><p>An enumeration of the values returned from a data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L271">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">AsEnumerable(IDataReader, IEnumerable&lt;Int32&gt;)</h4>
@@ -223,14 +349,78 @@ DBNull values are retained.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__System_Buffers_ArrayPool_System_Object__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Collections.Generic.IEnumerable%7BSystem.Int32%7D%2CSystem.Buffers.ArrayPool%7BSystem.Object%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L231">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L282">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__System_Buffers_ArrayPool_System_Object__" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object})">AsEnumerable(IDataReader, IEnumerable&lt;Int32&gt;, ArrayPool&lt;Object&gt;)</h4>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.
+DBNull values are retained.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; AsEnumerable(this IDataReader reader, IEnumerable&lt;int&gt; ordinals, ArrayPool&lt;object&gt; arrayPool)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDataReader</span></td>
+        <td><span class="parametername">reader</span></td>
+        <td><p>The reader to enumerate.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Buffers.ArrayPool</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><span class="parametername">arrayPool</span></td>
+        <td><p>The array pool to acquire buffers from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>[]&gt;</td>
+        <td><p>An enumeration of the values returned from a data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader%2CSystem.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L293">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Int32_System_Int32___" data-uid="Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Int32,System.Int32[])">AsEnumerable(IDataReader, Int32, Int32[])</h4>
-  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.</p>
+  <div class="markdown level1 summary"><p>Enumerates all the remaining values of the current result set of a data reader.
+DBNull values are retained.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -285,10 +475,10 @@ DBNull values are retained.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L798">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L962">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults(System.Data.IDataReader)">FirstOrdinalResults(IDataReader)</h4>
@@ -335,10 +525,10 @@ DBNull values are then converted to null.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_Common_DbDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults%60%601(System.Data.Common.DbDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_Common_DbDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults%60%601(System.Data.Common.DbDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L822">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L986">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_Common_DbDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)">FirstOrdinalResults&lt;T0&gt;(DbDataReader)</h4>
@@ -400,10 +590,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults%60%601(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults%60%601(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L812">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L976">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResults__1_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults``1(System.Data.IDataReader)">FirstOrdinalResults&lt;T0&gt;(IDataReader)</h4>
@@ -465,10 +655,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L848">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L1012">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">FirstOrdinalResultsAsync(DbDataReader, Boolean, CancellationToken)</h4>
@@ -528,10 +718,10 @@ DBNull values are converted to null.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L866">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L1030">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_FirstOrdinalResultsAsync__1_System_Data_Common_DbDataReader_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">FirstOrdinalResultsAsync&lt;T0&gt;(DbDataReader, Boolean, CancellationToken)</h4>
@@ -606,10 +796,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L29">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L30">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ForEach_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">ForEach(IDataReader, Action&lt;IDataRecord&gt;, Boolean, CancellationToken)</h4>
@@ -658,10 +848,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L74">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L75">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ForEach_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEach_System_Data_IDataReader_System_Action_System_Data_IDataRecord__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Threading.CancellationToken)">ForEach(IDataReader, Action&lt;IDataRecord&gt;, CancellationToken)</h4>
@@ -704,10 +894,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Action%7BSystem.Data.IDataRecord%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L84">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L85">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Action_System_Data_IDataRecord__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbDataReader, Action&lt;IDataRecord&gt;, Boolean, CancellationToken)</h4>
@@ -771,10 +961,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L111">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L112">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Boolean,System.Threading.CancellationToken)">ForEachAsync(DbDataReader, Func&lt;IDataRecord, ValueTask&gt;, Boolean, CancellationToken)</h4>
@@ -838,10 +1028,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L155">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L156">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ForEachAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">ForEachAsync(DbDataReader, Func&lt;IDataRecord, ValueTask&gt;, CancellationToken)</h4>
@@ -899,10 +1089,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L625">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L794">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)">IterateWhile(IDataReader, Func&lt;IDataRecord, Boolean&gt;, Boolean, CancellationToken)</h4>
@@ -951,10 +1141,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L667">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L836">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhile_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken)">IterateWhile(IDataReader, Func&lt;IDataRecord, Boolean&gt;, CancellationToken)</h4>
@@ -997,10 +1187,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L692">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L861">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)">IterateWhileAsync(DbDataReader, Func&lt;IDataRecord, Boolean&gt;, Boolean, CancellationToken)</h4>
@@ -1064,10 +1254,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Boolean%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L676">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L845">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken)">IterateWhileAsync(DbDataReader, Func&lt;IDataRecord, Boolean&gt;, CancellationToken)</h4>
@@ -1125,10 +1315,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L776">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L945">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Boolean,System.Threading.CancellationToken)">IterateWhileAsync(IDataReader, Func&lt;IDataRecord, ValueTask&lt;Boolean&gt;&gt;, Boolean, CancellationToken)</h4>
@@ -1192,10 +1382,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7BSystem.Boolean%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L751">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L920">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_IterateWhileAsync_System_Data_IDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Threading.CancellationToken)">IterateWhileAsync(IDataReader, Func&lt;IDataRecord, ValueTask&lt;Boolean&gt;&gt;, CancellationToken)</h4>
@@ -1253,10 +1443,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L241">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L315">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_Select_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">Select&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;)</h4>
@@ -1325,10 +1515,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L260">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L334">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_Select_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_System_Boolean_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken,System.Boolean)">Select&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;, CancellationToken, Boolean)</h4>
@@ -1409,10 +1599,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Threading_CancellationToken_System_Func_System_Data_IDataRecord___0__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Threading_CancellationToken_System_Func_System_Data_IDataRecord___0__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.Select%60%601(System.Data.IDataReader%2CSystem.Threading.CancellationToken%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L308">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L382">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_Select_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_Select__1_System_Data_IDataReader_System_Threading_CancellationToken_System_Func_System_Data_IDataRecord___0__System_Boolean_" data-uid="Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Threading.CancellationToken,System.Func{System.Data.IDataRecord,``0},System.Boolean)">Select&lt;T&gt;(IDataReader, CancellationToken, Func&lt;IDataRecord, T&gt;, Boolean)</h4>
@@ -1493,10 +1683,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToArray%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToArray%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L570">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L739">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToArray_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToArray*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.DataReaderExtensions.ToArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">ToArray&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;)</h4>
@@ -1565,10 +1755,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToDataTable_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToDataTable(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToDataTable_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToDataTable(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L588">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L757">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToDataTable_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTable*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToDataTable_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTable(System.Data.IDataReader)">ToDataTable(IDataReader)</h4>
@@ -1615,10 +1805,10 @@ Any DBNull values are then converted to null and casted to type T0;</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToDataTables_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToDataTables(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToDataTables_System_Data_IDataReader_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToDataTables(System.Data.IDataReader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L604">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L773">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToDataTables_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTables*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToDataTables_System_Data_IDataReader_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToDataTables(System.Data.IDataReader)">ToDataTables(IDataReader)</h4>
@@ -1666,10 +1856,10 @@ Calls .NextResult() to check for more results.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToImmutableArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToImmutableArray%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToImmutableArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToImmutableArray%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L580">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L749">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToImmutableArray_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToImmutableArray*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToImmutableArray__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__" data-uid="Open.Database.Extensions.DataReaderExtensions.ToImmutableArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">ToImmutableArray&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;)</h4>
@@ -1738,10 +1928,10 @@ Calls .NextResult() to check for more results.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToList__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToList%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToList__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToList%60%601(System.Data.IDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L521">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L688">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToList_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToList*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToList__1_System_Data_IDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">ToList&lt;T&gt;(IDataReader, Func&lt;IDataRecord, T&gt;, CancellationToken)</h4>
@@ -1816,10 +2006,10 @@ Calls .NextResult() to check for more results.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToListAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToListAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L533">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L700">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToListAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord___0__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbDataReader, Func&lt;IDataRecord, T&gt;, CancellationToken)</h4>
@@ -1894,10 +2084,10 @@ Calls .NextResult() to check for more results.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToListAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions.ToListAsync%60%601(System.Data.Common.DbDataReader%2CSystem.Func%7BSystem.Data.IDataRecord%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L552">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L720">View Source</a>
   </span>
   <a id="Open_Database_Extensions_DataReaderExtensions_ToListAsync_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync*"></a>
   <h4 id="Open_Database_Extensions_DataReaderExtensions_ToListAsync__1_System_Data_Common_DbDataReader_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">ToListAsync&lt;T&gt;(DbDataReader, Func&lt;IDataRecord, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
@@ -1978,10 +2168,10 @@ Calls .NextResult() to check for more results.</p>
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_DataReaderExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.DataReaderExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L20" class="contribution-link">View Source</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/DataReader.cs/#L21" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

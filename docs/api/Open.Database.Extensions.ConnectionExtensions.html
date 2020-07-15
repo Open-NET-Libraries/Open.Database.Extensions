@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class ConnectionExtensions
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -115,10 +115,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L111">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L111">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionFactory_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory,System.String,System.Data.CommandType)">Command(IDbConnectionFactory, String, CommandType)</h4>
@@ -127,7 +127,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbConnectionFactory target, string command, CommandType type = CommandType.Text)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbConnectionFactory connectionSource, string command, CommandType type = CommandType.Text)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -141,8 +141,8 @@
     <tbody>
       <tr>
         <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory.html">IDbConnectionFactory</a></td>
-        <td><span class="parametername">target</span></td>
-        <td><p>The connection factory to generate a commands from.</p>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection factory to generate connections and subsequently commands from.</p>
 </td>
       </tr>
       <tr>
@@ -154,7 +154,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -177,10 +177,72 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbConnection_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbConnection%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionPool_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L43">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L135">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
+  <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionPool_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool,System.String,System.Data.CommandType)">Command(IDbConnectionPool, String, CommandType)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveCommand for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbConnectionPool connectionSource, string command, CommandType type = CommandType.Text)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionPool.html">IDbConnectionPool</a></td>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection pool to take connections from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type. Default = CommandType.Text.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.ExpressiveCommand.html">ExpressiveCommand</a></td>
+        <td><p>The resultant ExpressiveCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbConnection_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbConnection%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L43">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbConnection_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">Command(DbConnection, String, CommandType)</h4>
@@ -189,7 +251,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command(this DbConnection target, string command, CommandType type = CommandType.Text)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command(this DbConnection connection, string command, CommandType type = CommandType.Text)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -203,7 +265,7 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Data.Common.DbConnection</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">connection</span></td>
         <td><p>The connection to execute the command on.</p>
 </td>
       </tr>
@@ -216,7 +278,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -239,10 +301,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbTransaction_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbTransaction%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbTransaction_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbTransaction%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L55">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L55">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbTransaction_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbTransaction,System.String,System.Data.CommandType)">Command(DbTransaction, String, CommandType)</h4>
@@ -251,7 +313,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command(this DbTransaction target, string command, CommandType type = CommandType.Text)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command(this DbTransaction transaction, string command, CommandType type = CommandType.Text)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -265,7 +327,7 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Data.Common.DbTransaction</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">transaction</span></td>
         <td><p>The transaction to execute the command on.</p>
 </td>
       </tr>
@@ -278,7 +340,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -301,10 +363,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_IDbConnection_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbConnection%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_IDbConnection_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbConnection%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L19">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L19">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_System_Data_IDbConnection_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbConnection,System.String,System.Data.CommandType)">Command(IDbConnection, String, CommandType)</h4>
@@ -313,7 +375,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbConnection target, string command, CommandType type = CommandType.Text)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbConnection connection, string command, CommandType type = CommandType.Text)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -327,7 +389,7 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Data.IDbConnection</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">connection</span></td>
         <td><p>The connection to execute the command on.</p>
 </td>
       </tr>
@@ -340,7 +402,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -363,10 +425,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_IDbTransaction_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbTransaction%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Data_IDbTransaction_System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbTransaction%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L31">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L31">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_System_Data_IDbTransaction_System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbTransaction,System.String,System.Data.CommandType)">Command(IDbTransaction, String, CommandType)</h4>
@@ -375,7 +437,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbTransaction target, string command, CommandType type = CommandType.Text)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this IDbTransaction transaction, string command, CommandType type = CommandType.Text)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -389,7 +451,7 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Data.IDbTransaction</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">transaction</span></td>
         <td><p>The transaction to execute the command on.</p>
 </td>
       </tr>
@@ -402,7 +464,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -425,10 +487,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Func_System_Data_IDbConnection__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Func%7BSystem.Data.IDbConnection%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command_System_Func_System_Data_IDbConnection__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command(System.Func%7BSystem.Data.IDbConnection%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L163">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L215">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command_System_Func_System_Data_IDbConnection__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command(System.Func{System.Data.IDbConnection},System.String,System.Data.CommandType)">Command(Func&lt;IDbConnection&gt;, String, CommandType)</h4>
@@ -437,7 +499,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this Func&lt;IDbConnection&gt; target, string command, CommandType type = CommandType.Text)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand Command(this Func&lt;IDbConnection&gt; connectionSource, string command, CommandType type = CommandType.Text)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -451,7 +513,7 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDbConnection</span>&gt;</td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">connectionSource</span></td>
         <td><p>The connection factory to generate a commands from.</p>
 </td>
       </tr>
@@ -464,7 +526,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -487,10 +549,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command__1_Open_Database_Extensions_IDbConnectionFactory___0__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command__1_Open_Database_Extensions_IDbConnectionFactory___0__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L136">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L160">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Command__1_Open_Database_Extensions_IDbConnectionFactory___0__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.String,System.Data.CommandType)">Command&lt;TConnection&gt;(IDbConnectionFactory&lt;TConnection&gt;, String, CommandType)</h4>
@@ -499,7 +561,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command&lt;TConnection&gt;(this IDbConnectionFactory&lt;TConnection&gt; target, string command, CommandType type = CommandType.Text)
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command&lt;TConnection&gt;(this IDbConnectionFactory&lt;TConnection&gt; connectionSource, string command, CommandType type = CommandType.Text)
     where TConnection : DbConnection</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -514,8 +576,8 @@
     <tbody>
       <tr>
         <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;TConnection&gt;</td>
-        <td><span class="parametername">target</span></td>
-        <td><p>The connection factory to generate a commands from.</p>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection factory to generate connections and subsequently commands from.</p>
 </td>
       </tr>
       <tr>
@@ -527,7 +589,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -566,19 +628,19 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command__1_System_Func___0__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command%60%601(System.Func%7B%60%600%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command__1_Open_Database_Extensions_IDbConnectionPool___0__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L187">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L188">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
-  <h4 id="Open_Database_Extensions_ConnectionExtensions_Command__1_System_Func___0__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command``1(System.Func{``0},System.String,System.Data.CommandType)">Command&lt;TConnection&gt;(Func&lt;TConnection&gt;, String, CommandType)</h4>
+  <h4 id="Open_Database_Extensions_ConnectionExtensions_Command__1_Open_Database_Extensions_IDbConnectionPool___0__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String,System.Data.CommandType)">Command&lt;TConnection&gt;(IDbConnectionPool&lt;TConnection&gt;, String, CommandType)</h4>
   <div class="markdown level1 summary"><p>Creates an ExpressiveDbCommand for subsequent configuration and execution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command&lt;TConnection&gt;(this Func&lt;TConnection&gt; target, string command, CommandType type = CommandType.Text)
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command&lt;TConnection&gt;(this IDbConnectionPool&lt;TConnection&gt; connectionSource, string command, CommandType type = CommandType.Text)
     where TConnection : DbConnection</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -592,9 +654,9 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;TConnection&gt;</td>
-        <td><span class="parametername">target</span></td>
-        <td><p>The connection factory to generate a commands from.</p>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionPool-1.html">IDbConnectionPool</a>&lt;TConnection&gt;</td>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection pool to take connections from.</p>
 </td>
       </tr>
       <tr>
@@ -606,7 +668,7 @@
       <tr>
         <td><span class="xref">System.Data.CommandType</span></td>
         <td><span class="parametername">type</span></td>
-        <td><p>The command type.</p>
+        <td><p>The command type. Default = CommandType.Text.</p>
 </td>
       </tr>
     </tbody>
@@ -638,16 +700,96 @@
     <tbody>
       <tr>
         <td><span class="parametername">TConnection</span></td>
-        <td></td>
+        <td><p>The connection type.</p>
+</td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateCommand_System_Data_Common_DbConnection_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.Common.DbConnection%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Command__1_System_Func___0__System_String_System_Data_CommandType_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Command%60%601(System.Func%7B%60%600%7D%2CSystem.String%2CSystem.Data.CommandType)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L67">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L240">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ConnectionExtensions_Command_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command*"></a>
+  <h4 id="Open_Database_Extensions_ConnectionExtensions_Command__1_System_Func___0__System_String_System_Data_CommandType_" data-uid="Open.Database.Extensions.ConnectionExtensions.Command``1(System.Func{``0},System.String,System.Data.CommandType)">Command&lt;TConnection&gt;(Func&lt;TConnection&gt;, String, CommandType)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveDbCommand for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand Command&lt;TConnection&gt;(this Func&lt;TConnection&gt; connectionSource, string command, CommandType type = CommandType.Text)
+    where TConnection : DbConnection</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;TConnection&gt;</td>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection factory to generate a commands from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The command text or stored procedure name to use.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type. Default = CommandType.Text.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommand.html">ExpressiveDbCommand</a></td>
+        <td><p>The resultant ExpressiveDbCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TConnection</span></td>
+        <td><p>The connection type.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateCommand_System_Data_Common_DbConnection_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.Common.DbConnection%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L67">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_CreateCommand_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateCommand*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_CreateCommand_System_Data_Common_DbConnection_System_Data_CommandType_System_String_System_Int32_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Int32)">CreateCommand(DbConnection, CommandType, String, Int32)</h4>
@@ -712,10 +854,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateCommand_System_Data_IDbConnection_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateCommand_System_Data_IDbConnection_System_Data_CommandType_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L20">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L20">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_CreateCommand_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateCommand*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_CreateCommand_System_Data_IDbConnection_System_Data_CommandType_System_String_System_Int32_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">CreateCommand(IDbConnection, CommandType, String, Int32)</h4>
@@ -780,10 +922,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_System_Data_Common_DbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.Common.DbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_System_Data_Common_DbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.Common.DbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L102">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L102">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_System_Data_Common_DbConnection_System_String_System_Int32_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.Common.DbConnection,System.String,System.Int32)">CreateStoredProcedureCommand(DbConnection, String, Int32)</h4>
@@ -842,10 +984,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_System_Data_IDbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.IDbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_System_Data_IDbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.IDbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L54">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L54">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_CreateStoredProcedureCommand_System_Data_IDbConnection_System_String_System_Int32_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.IDbConnection,System.String,System.Int32)">CreateStoredProcedureCommand(IDbConnection, String, Int32)</h4>
@@ -904,10 +1046,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_System_Data_Common_DbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.Common.DbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_System_Data_Common_DbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.Common.DbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L91">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L91">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateTextCommand*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_System_Data_Common_DbConnection_System_String_System_Int32_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.Common.DbConnection,System.String,System.Int32)">CreateTextCommand(DbConnection, String, Int32)</h4>
@@ -966,10 +1108,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_System_Data_IDbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.IDbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_System_Data_IDbConnection_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.IDbConnection%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L43">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.CreateCommand.cs/#L43">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateTextCommand*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_CreateTextCommand_System_Data_IDbConnection_System_String_System_Int32_" data-uid="Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.IDbConnection,System.String,System.Int32)">CreateTextCommand(IDbConnection, String, Int32)</h4>
@@ -1028,10 +1170,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_EnsureOpen_System_Data_IDbConnection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.EnsureOpen(System.Data.IDbConnection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_EnsureOpen_System_Data_IDbConnection_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.EnsureOpen(System.Data.IDbConnection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.EnsureOpen.cs/#L20">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.EnsureOpen.cs/#L20">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_EnsureOpen_" data-uid="Open.Database.Extensions.ConnectionExtensions.EnsureOpen*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_EnsureOpen_System_Data_IDbConnection_" data-uid="Open.Database.Extensions.ConnectionExtensions.EnsureOpen(System.Data.IDbConnection)">EnsureOpen(IDbConnection)</h4>
@@ -1078,10 +1220,10 @@ If the connection is in neither open or close, first closes the connection.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.EnsureOpen.cs/#L44">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.EnsureOpen.cs/#L44">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Boolean_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Boolean,System.Threading.CancellationToken)">EnsureOpenAsync(DbConnection, Boolean, CancellationToken)</h4>
@@ -1141,10 +1283,10 @@ If the connection is in neither open or close, first closes the connection.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/Connection.EnsureOpen.cs/#L76">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/Connection.EnsureOpen.cs/#L76">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_EnsureOpenAsync_System_Data_Common_DbConnection_System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken)">EnsureOpenAsync(DbConnection, CancellationToken)</h4>
@@ -1198,10 +1340,10 @@ If the connection is in neither open or close, first closes the connection.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open_Open_Database_Extensions_IDbConnectionFactory_System_Action_System_Data_IDbConnection__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Action%7BSystem.Data.IDbConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open_Open_Database_Extensions_IDbConnectionFactory_System_Action_System_Data_IDbConnection__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Action%7BSystem.Data.IDbConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L41">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L41">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open_Open_Database_Extensions_IDbConnectionFactory_System_Action_System_Data_IDbConnection__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})">Open(IDbConnectionFactory, Action&lt;IDbConnection&gt;)</h4>
@@ -1240,10 +1382,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open_Open_Database_Extensions_IDbConnectionPool_System_Action_System_Data_IDbConnection_System_Data_ConnectionState__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool%2CSystem.Action%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open_Open_Database_Extensions_IDbConnectionPool_System_Action_System_Data_IDbConnection_System_Data_ConnectionState__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool%2CSystem.Action%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L127">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L127">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open_Open_Database_Extensions_IDbConnectionPool_System_Action_System_Data_IDbConnection_System_Data_ConnectionState__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection,System.Data.ConnectionState})">Open(IDbConnectionPool, Action&lt;IDbConnection, ConnectionState&gt;)</h4>
@@ -1282,10 +1424,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L23">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L23">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})">Open&lt;T&gt;(IDbConnectionFactory, Func&lt;IDbConnection, T&gt;)</h4>
@@ -1356,10 +1498,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L82">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L82">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">Open&lt;TConnection&gt;(IDbConnectionFactory&lt;TConnection&gt;, Action&lt;TConnection&gt;)</h4>
@@ -1415,10 +1557,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L103">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L103">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,``0})">Open&lt;T&gt;(IDbConnectionPool, Func&lt;IDbConnection, ConnectionState, T&gt;)</h4>
@@ -1489,10 +1631,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool___0__System_Action___0_System_Data_ConnectionState__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Action%7B%60%600%2CSystem.Data.ConnectionState%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool___0__System_Action___0_System_Data_ConnectionState__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Action%7B%60%600%2CSystem.Data.ConnectionState%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L180">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L180">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__1_Open_Database_Extensions_IDbConnectionPool___0__System_Action___0_System_Data_ConnectionState__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Action{``0,System.Data.ConnectionState})">Open&lt;TConnection&gt;(IDbConnectionPool&lt;TConnection&gt;, Action&lt;TConnection, ConnectionState&gt;)</h4>
@@ -1548,10 +1690,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_System_Func___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(System.Func%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__1_System_Func___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%601(System.Func%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L228">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L228">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__1_System_Func___0__System_Action___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``1(System.Func{``0},System.Action{``0})">Open&lt;TConnection&gt;(Func&lt;TConnection&gt;, Action&lt;TConnection&gt;)</h4>
@@ -1607,10 +1749,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L62">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L62">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0___1__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">Open&lt;TConnection, T&gt;(IDbConnectionFactory&lt;TConnection&gt;, Func&lt;TConnection, T&gt;)</h4>
@@ -1687,10 +1829,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Data.ConnectionState%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Data.ConnectionState%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L154">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L154">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState___1__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,``1})">Open&lt;TConnection, T&gt;(IDbConnectionPool&lt;TConnection&gt;, Func&lt;TConnection, ConnectionState, T&gt;)</h4>
@@ -1767,10 +1909,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__2_System_Func___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Open__2_System_Func___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Open%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L208">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L208">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Open_" data-uid="Open.Database.Extensions.ConnectionExtensions.Open*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Open__2_System_Func___0__System_Func___0___1__" data-uid="Open.Database.Extensions.ConnectionExtensions.Open``2(System.Func{``0},System.Func{``0,``1})">Open&lt;TConnection, T&gt;(Func&lt;TConnection&gt;, Func&lt;TConnection, T&gt;)</h4>
@@ -1847,10 +1989,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L270">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L270">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">OpenAsync(IDbConnectionFactory, Func&lt;IDbConnection, ValueTask&gt;, CancellationToken)</h4>
@@ -1910,10 +2052,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L365">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L365">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">OpenAsync(IDbConnectionPool, Func&lt;IDbConnection, ConnectionState, ValueTask&gt;, CancellationToken)</h4>
@@ -1973,10 +2115,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L250">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L250">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">OpenAsync&lt;T&gt;(IDbConnectionFactory, Func&lt;IDbConnection, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
@@ -2053,10 +2195,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L315">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L315">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">OpenAsync&lt;TConnection&gt;(IDbConnectionFactory&lt;TConnection&gt;, Func&lt;TConnection, ValueTask&gt;, CancellationToken)</h4>
@@ -2133,10 +2275,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L338">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L338">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Data_ConnectionState_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">OpenAsync&lt;T&gt;(IDbConnectionPool, Func&lt;IDbConnection, ConnectionState, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
@@ -2213,10 +2355,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L424">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L424">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">OpenAsync&lt;TConnection&gt;(IDbConnectionPool&lt;TConnection&gt;, Func&lt;TConnection, ConnectionState, ValueTask&gt;, CancellationToken)</h4>
@@ -2293,10 +2435,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%601(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L477">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L477">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__1_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask__System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">OpenAsync&lt;TConnection&gt;(Func&lt;TConnection&gt;, Func&lt;TConnection, ValueTask&gt;, CancellationToken)</h4>
@@ -2373,10 +2515,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L293">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L293">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">OpenAsync&lt;TConnection, T&gt;(IDbConnectionFactory&lt;TConnection&gt;, Func&lt;TConnection, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
@@ -2459,10 +2601,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Data.ConnectionState%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L395">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L395">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Data_ConnectionState_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">OpenAsync&lt;TConnection, T&gt;(IDbConnectionPool&lt;TConnection&gt;, Func&lt;TConnection, ConnectionState, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
@@ -2545,10 +2687,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.OpenAsync%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L455">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Open.cs/#L455">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_OpenAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_OpenAsync__2_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask___1___System_Threading_CancellationToken_" data-uid="Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">OpenAsync&lt;TConnection, T&gt;(Func&lt;TConnection&gt;, Func&lt;TConnection, ValueTask&lt;T&gt;&gt;, CancellationToken)</h4>
@@ -2631,10 +2773,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L123">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L123">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionFactory_System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory,System.String)">StoredProcedure(IDbConnectionFactory, String)</h4>
@@ -2643,7 +2785,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbConnectionFactory target, string command)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbConnectionFactory connectionSource, string procedureName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -2657,14 +2799,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory.html">IDbConnectionFactory</a></td>
-        <td><span class="parametername">target</span></td>
-        <td><p>The connection factory to generate a commands from.</p>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection factory to generate connections and subsequently commands from.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -2687,10 +2829,66 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbConnection_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionPool_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L88">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L147">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
+  <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionPool_System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool,System.String)">StoredProcedure(IDbConnectionPool, String)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbConnectionPool connectionSource, string procedureName)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionPool.html">IDbConnectionPool</a></td>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection pool to take connections from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.ExpressiveCommand.html">ExpressiveCommand</a></td>
+        <td><p>The resultant ExpressiveCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbConnection_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L88">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbConnection_System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">StoredProcedure(DbConnection, String)</h4>
@@ -2699,7 +2897,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure(this DbConnection target, string command)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure(this DbConnection connection, string procedureName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -2713,14 +2911,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.Data.Common.DbConnection</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">connection</span></td>
         <td><p>The connection to execute the command on.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -2743,10 +2941,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbTransaction_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbTransaction%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbTransaction_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbTransaction%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L99">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L99">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbTransaction_System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbTransaction,System.String)">StoredProcedure(DbTransaction, String)</h4>
@@ -2755,7 +2953,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure(this DbTransaction target, string command)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure(this DbTransaction transaction, string procedureName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -2769,14 +2967,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.Data.Common.DbTransaction</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">transaction</span></td>
         <td><p>The transaction to execute the command on.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -2799,10 +2997,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_IDbConnection_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_IDbConnection_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L66">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L66">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_IDbConnection_System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbConnection,System.String)">StoredProcedure(IDbConnection, String)</h4>
@@ -2811,7 +3009,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbConnection target, string command)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbConnection connection, string procedureName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -2825,14 +3023,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.Data.IDbConnection</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">connection</span></td>
         <td><p>The connection to execute the command on.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -2855,10 +3053,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_IDbTransaction_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbTransaction%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_IDbTransaction_System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbTransaction%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L77">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L77">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_IDbTransaction_System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbTransaction,System.String)">StoredProcedure(IDbTransaction, String)</h4>
@@ -2867,7 +3065,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbTransaction target, string command)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this IDbTransaction transaction, string procedureName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -2881,14 +3079,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.Data.IDbTransaction</span></td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">transaction</span></td>
         <td><p>The transaction to execute the command on.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -2911,10 +3109,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Func_System_Data_IDbConnection__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Func%7BSystem.Data.IDbConnection%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Func_System_Data_IDbConnection__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Func%7BSystem.Data.IDbConnection%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L175">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L227">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Func_System_Data_IDbConnection__System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Func{System.Data.IDbConnection},System.String)">StoredProcedure(Func&lt;IDbConnection&gt;, String)</h4>
@@ -2923,7 +3121,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this Func&lt;IDbConnection&gt; target, string command)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ExpressiveCommand StoredProcedure(this Func&lt;IDbConnection&gt; connectionSource, string procedureName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -2937,14 +3135,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDbConnection</span>&gt;</td>
-        <td><span class="parametername">target</span></td>
+        <td><span class="parametername">connectionSource</span></td>
         <td><p>The connection factory to generate a commands from.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -2967,10 +3165,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_Open_Database_Extensions_IDbConnectionFactory___0__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_Open_Database_Extensions_IDbConnectionFactory___0__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L150">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L174">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_Open_Database_Extensions_IDbConnectionFactory___0__System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.String)">StoredProcedure&lt;TConnection&gt;(IDbConnectionFactory&lt;TConnection&gt;, String)</h4>
@@ -2979,7 +3177,7 @@ Useful for single-line operations.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure&lt;TConnection&gt;(this IDbConnectionFactory&lt;TConnection&gt; target, string command)
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure&lt;TConnection&gt;(this IDbConnectionFactory&lt;TConnection&gt; connectionSource, string procedureName)
     where TConnection : DbConnection</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -2994,14 +3192,14 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;TConnection&gt;</td>
-        <td><span class="parametername">target</span></td>
-        <td><p>The connection factory to generate a commands from.</p>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection factory to generate connections and subsequently commands from.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -3040,19 +3238,19 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_System_Func___0__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure%60%601(System.Func%7B%60%600%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_Open_Database_Extensions_IDbConnectionPool___0__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L200">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L202">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
-  <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_System_Func___0__System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(System.Func{``0},System.String)">StoredProcedure&lt;TConnection&gt;(Func&lt;TConnection&gt;, String)</h4>
+  <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_Open_Database_Extensions_IDbConnectionPool___0__System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String)">StoredProcedure&lt;TConnection&gt;(IDbConnectionPool&lt;TConnection&gt;, String)</h4>
   <div class="markdown level1 summary"><p>Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure&lt;TConnection&gt;(this Func&lt;TConnection&gt; target, string command)
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure&lt;TConnection&gt;(this IDbConnectionPool&lt;TConnection&gt; connectionSource, string procedureName)
     where TConnection : DbConnection</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -3066,15 +3264,15 @@ Useful for single-line operations.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;TConnection&gt;</td>
-        <td><span class="parametername">target</span></td>
-        <td><p>The connection factory to generate a commands from.</p>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionPool-1.html">IDbConnectionPool</a>&lt;TConnection&gt;</td>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection pool to take connections from.</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">command</span></td>
-        <td><p>The command text or stored procedure name to use.</p>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
 </td>
       </tr>
     </tbody>
@@ -3106,16 +3304,90 @@ Useful for single-line operations.</p>
     <tbody>
       <tr>
         <td><span class="parametername">TConnection</span></td>
-        <td></td>
+        <td><p>The connection type.</p>
+</td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using_Open_Database_Extensions_IDbConnectionFactory_System_Action_System_Data_IDbConnection__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Action%7BSystem.Data.IDbConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_System_Func___0__System_String_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.StoredProcedure%60%601(System.Func%7B%60%600%7D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L37">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Command.cs/#L254">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure*"></a>
+  <h4 id="Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_System_Func___0__System_String_" data-uid="Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(System.Func{``0},System.String)">StoredProcedure&lt;TConnection&gt;(Func&lt;TConnection&gt;, String)</h4>
+  <div class="markdown level1 summary"><p>Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressiveDbCommand StoredProcedure&lt;TConnection&gt;(this Func&lt;TConnection&gt; connectionSource, string procedureName)
+    where TConnection : DbConnection</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;TConnection&gt;</td>
+        <td><span class="parametername">connectionSource</span></td>
+        <td><p>The connection factory to generate a commands from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">procedureName</span></td>
+        <td><p>The stored procedure name to use.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommand.html">ExpressiveDbCommand</a></td>
+        <td><p>The resultant ExpressiveDbCommand.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TConnection</span></td>
+        <td><p>The connection type.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using_Open_Database_Extensions_IDbConnectionFactory_System_Action_System_Data_IDbConnection__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Action%7BSystem.Data.IDbConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L37">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using_Open_Database_Extensions_IDbConnectionFactory_System_Action_System_Data_IDbConnection__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})">Using(IDbConnectionFactory, Action&lt;IDbConnection&gt;)</h4>
@@ -3153,10 +3425,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using_Open_Database_Extensions_IDbConnectionPool_System_Action_System_Data_IDbConnection__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool%2CSystem.Action%7BSystem.Data.IDbConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using_Open_Database_Extensions_IDbConnectionPool_System_Action_System_Data_IDbConnection__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool%2CSystem.Action%7BSystem.Data.IDbConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L116">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L116">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using_Open_Database_Extensions_IDbConnectionPool_System_Action_System_Data_IDbConnection__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})">Using(IDbConnectionPool, Action&lt;IDbConnection&gt;)</h4>
@@ -3194,10 +3466,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L21">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L21">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})">Using&lt;T&gt;(IDbConnectionFactory, Func&lt;IDbConnection, T&gt;)</h4>
@@ -3267,10 +3539,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L74">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L74">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Action___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">Using&lt;TConn&gt;(IDbConnectionFactory&lt;TConn&gt;, Action&lt;TConn&gt;)</h4>
@@ -3325,10 +3597,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L93">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L93">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,``0})">Using&lt;T&gt;(IDbConnectionPool, Func&lt;IDbConnection, T&gt;)</h4>
@@ -3398,10 +3670,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionPool___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionPool___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L167">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L167">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__1_Open_Database_Extensions_IDbConnectionPool___0__System_Action___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Action{``0})">Using&lt;TConn&gt;(IDbConnectionPool&lt;TConn&gt;, Action&lt;TConn&gt;)</h4>
@@ -3456,10 +3728,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_System_Func___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(System.Func%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__1_System_Func___0__System_Action___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%601(System.Func%7B%60%600%7D%2CSystem.Action%7B%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L212">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L212">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__1_System_Func___0__System_Action___0__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``1(System.Func{``0},System.Action{``0})">Using&lt;TConn&gt;(Func&lt;TConn&gt;, Action&lt;TConn&gt;)</h4>
@@ -3514,10 +3786,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L56">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L56">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0___1__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">Using&lt;TConn, T&gt;(IDbConnectionFactory&lt;TConn&gt;, Func&lt;TConn, T&gt;)</h4>
@@ -3593,10 +3865,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L142">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L142">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0___1__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,``1})">Using&lt;TConn, T&gt;(IDbConnectionPool&lt;TConn&gt;, Func&lt;TConn, T&gt;)</h4>
@@ -3672,10 +3944,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__2_System_Func___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_Using__2_System_Func___0__System_Func___0___1__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.Using%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2C%60%601%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L194">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L194">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_Using_" data-uid="Open.Database.Extensions.ConnectionExtensions.Using*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_Using__2_System_Func___0__System_Func___0___1__" data-uid="Open.Database.Extensions.ConnectionExtensions.Using``2(System.Func{``0},System.Func{``0,``1})">Using&lt;TConn, T&gt;(Func&lt;TConn&gt;, Func&lt;TConn, T&gt;)</h4>
@@ -3751,10 +4023,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L247">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L247">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask})">UsingAsync(IDbConnectionFactory, Func&lt;IDbConnection, ValueTask&gt;)</h4>
@@ -3807,10 +4079,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L326">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L326">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask})">UsingAsync(IDbConnectionPool, Func&lt;IDbConnection, ValueTask&gt;)</h4>
@@ -3863,10 +4135,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L231">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L231">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionFactory_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}})">UsingAsync&lt;T&gt;(IDbConnectionFactory, Func&lt;IDbConnection, ValueTask&lt;T&gt;&gt;)</h4>
@@ -3936,10 +4208,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L284">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L284">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">UsingAsync&lt;TConn&gt;(IDbConnectionFactory&lt;TConn&gt;, Func&lt;TConn, ValueTask&gt;)</h4>
@@ -4009,10 +4281,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionPool%2CSystem.Func%7BSystem.Data.IDbConnection%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L303">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L303">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionPool_System_Func_System_Data_IDbConnection_System_Threading_Tasks_ValueTask___0___" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}})">UsingAsync&lt;T&gt;(IDbConnectionPool, Func&lt;IDbConnection, ValueTask&lt;T&gt;&gt;)</h4>
@@ -4082,10 +4354,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L377">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L377">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">UsingAsync&lt;TConn&gt;(IDbConnectionPool&lt;TConn&gt;, Func&lt;TConn, ValueTask&gt;)</h4>
@@ -4155,10 +4427,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%601(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L422">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L422">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__1_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask__" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">UsingAsync&lt;TConn&gt;(Func&lt;TConn&gt;, Func&lt;TConn, ValueTask&gt;)</h4>
@@ -4228,10 +4500,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask___1___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask___1___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%602(Open.Database.Extensions.IDbConnectionFactory%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L266">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L266">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_Open_Database_Extensions_IDbConnectionFactory___0__System_Func___0_System_Threading_Tasks_ValueTask___1___" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">UsingAsync&lt;TConn, T&gt;(IDbConnectionFactory&lt;TConn&gt;, Func&lt;TConn, ValueTask&lt;T&gt;&gt;)</h4>
@@ -4307,10 +4579,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Threading_Tasks_ValueTask___1___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Threading_Tasks_ValueTask___1___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%602(Open.Database.Extensions.IDbConnectionPool%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L352">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L352">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_Open_Database_Extensions_IDbConnectionPool___0__System_Func___0_System_Threading_Tasks_ValueTask___1___" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">UsingAsync&lt;TConn, T&gt;(IDbConnectionPool&lt;TConn&gt;, Func&lt;TConn, ValueTask&lt;T&gt;&gt;)</h4>
@@ -4386,10 +4658,10 @@ Useful for single-line operations.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask___1___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask___1___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions.UsingAsync%60%602(System.Func%7B%60%600%7D%2CSystem.Func%7B%60%600%2CSystem.Threading.Tasks.ValueTask%7B%60%601%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L404">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L404">View Source</a>
   </span>
   <a id="Open_Database_Extensions_ConnectionExtensions_UsingAsync_" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync*"></a>
   <h4 id="Open_Database_Extensions_ConnectionExtensions_UsingAsync__2_System_Func___0__System_Func___0_System_Threading_Tasks_ValueTask___1___" data-uid="Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">UsingAsync&lt;TConn, T&gt;(Func&lt;TConn&gt;, Func&lt;TConn, ValueTask&lt;T&gt;&gt;)</h4>
@@ -4471,10 +4743,10 @@ Useful for single-line operations.</p>
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ConnectionExtensions.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ConnectionExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L11" class="contribution-link">View Source</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Extensions/ConnectionProvider.Using.cs/#L11" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

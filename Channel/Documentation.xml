@@ -4,12 +4,12 @@
         <name>Open.Database.Extensions.Channel</name>
     </assembly>
     <members>
-        <member name="T:Open.Database.Extensions.ChannelExtensions">
+        <member name="T:Open.Database.Extensions.ChannelDbExtensions">
             <summary>
             Extensions for writing data to a channel.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -19,7 +19,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(System.Data.IDataReader,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDataReader,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -30,7 +30,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -42,7 +42,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -52,7 +52,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -63,7 +63,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -73,7 +73,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(System.Data.IDbCommand,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDbCommand,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -84,7 +84,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -96,7 +96,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -106,7 +106,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -117,7 +117,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean)">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -126,7 +126,7 @@
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
             Iterates an IDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -136,7 +136,7 @@
             <param name="arrayPool">The array pool to acquire buffers from.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Iterates an IDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -147,7 +147,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -156,7 +156,7 @@
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -166,7 +166,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
             Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
@@ -177,7 +177,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync(System.Data.Common.DbDataReader,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync(System.Data.Common.DbDataReader,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -188,7 +188,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -200,7 +200,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -210,7 +210,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -221,7 +221,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -231,7 +231,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync(System.Data.Common.DbCommand,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync(System.Data.Common.DbCommand,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
             Be sure to await the completion.
@@ -242,7 +242,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -254,7 +254,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -264,7 +264,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(System.Data.Common.DbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -275,7 +275,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean)">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -284,7 +284,7 @@
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -294,7 +294,7 @@
             <param name="arrayPool">The array pool to acquire buffers from.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
@@ -305,7 +305,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean)">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -314,7 +314,7 @@
             <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
@@ -324,7 +324,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
             <returns>The channel reader containing the results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to the channel.
             </summary>
@@ -334,7 +334,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to the channel.
             </summary>
@@ -345,7 +345,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader through the transform function and writes each record to the channel.
             </summary>
@@ -357,7 +357,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             </summary>
@@ -368,7 +368,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             </summary>
@@ -380,7 +380,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -392,7 +392,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -405,7 +405,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader through the transform function and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -419,7 +419,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -432,7 +432,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -446,7 +446,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean)">
             <summary>
             Iterates an IDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -457,7 +457,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
             Iterates an IDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -469,7 +469,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Iterates an IDataReader and through the transform function and posts each record it to the target channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -482,7 +482,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -494,7 +494,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -507,7 +507,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
             </summary>
@@ -516,7 +516,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="cancellationToken">An optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
             </summary>
@@ -526,7 +526,7 @@
             <param name="arrayPool">The array pool to acquire buffers from.</param>
             <param name="cancellationToken">An optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
             </summary>
@@ -537,7 +537,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <param name="cancellationToken">An optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             </summary>
@@ -547,7 +547,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <param name="cancellationToken">An optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(System.Data.Common.DbDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             </summary>
@@ -558,7 +558,7 @@
             <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
             <param name="cancellationToken">An optional cancellation token.</param>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -570,7 +570,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -583,7 +583,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -597,7 +597,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -610,7 +610,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(System.Data.Common.DbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
             Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -624,7 +624,7 @@
             <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean)">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -635,7 +635,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
             Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -647,7 +647,7 @@
             <param name="arrayPool">The array pool to acquire buffers from.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -660,7 +660,7 @@
             <param name="transform">The transform function for each IDataRecord.</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -672,7 +672,7 @@
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
             <returns>The number of records processed.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.ChannelExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+        <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannelAsync``1(Open.Database.Extensions.IExecuteReaderAsync,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.

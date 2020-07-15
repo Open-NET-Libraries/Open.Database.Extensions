@@ -51,7 +51,7 @@ namespace Open.Database.Extensions
 		/// <param name="minimumArrayLength">The minimum size of the resultant array.</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The array of values.</returns>
-		public static object[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object> arrayPool)
+		public static object?[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object?> arrayPool)
 		{
 			if (record is null) throw new ArgumentNullException(nameof(record));
 			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -68,7 +68,7 @@ namespace Open.Database.Extensions
 		/// <param name="record">The reader to get column names from.</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The array of values.</returns>
-		public static object[] GetValues(this IDataRecord record, ArrayPool<object> arrayPool)
+		public static object?[] GetValues(this IDataRecord record, ArrayPool<object?> arrayPool)
 		{
 			if (record is null) throw new ArgumentNullException(nameof(record));
 			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));

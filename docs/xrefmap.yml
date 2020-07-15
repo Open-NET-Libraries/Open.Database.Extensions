@@ -598,6 +598,12 @@ references:
   commentId: M:Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory,System.String,System.Data.CommandType)
   fullName: Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory, System.String, System.Data.CommandType)
   nameWithType: ConnectionExtensions.Command(IDbConnectionFactory, String, CommandType)
+- uid: Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool,System.String,System.Data.CommandType)
+  name: Command(IDbConnectionPool, String, CommandType)
+  href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_Command_Open_Database_Extensions_IDbConnectionPool_System_String_System_Data_CommandType_
+  commentId: M:Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool,System.String,System.Data.CommandType)
+  fullName: Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool, System.String, System.Data.CommandType)
+  nameWithType: ConnectionExtensions.Command(IDbConnectionPool, String, CommandType)
 - uid: Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)
   name: Command(DbConnection, String, CommandType)
   href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_Command_System_Data_Common_DbConnection_System_String_System_Data_CommandType_
@@ -647,6 +653,15 @@ references:
   fullName.vb: Open.Database.Extensions.ConnectionExtensions.Command(Of TConnection)(Open.Database.Extensions.IDbConnectionFactory(Of TConnection), System.String, System.Data.CommandType)
   nameWithType: ConnectionExtensions.Command<TConnection>(IDbConnectionFactory<TConnection>, String, CommandType)
   nameWithType.vb: ConnectionExtensions.Command(Of TConnection)(IDbConnectionFactory(Of TConnection), String, CommandType)
+- uid: Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String,System.Data.CommandType)
+  name: Command<TConnection>(IDbConnectionPool<TConnection>, String, CommandType)
+  href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_Command__1_Open_Database_Extensions_IDbConnectionPool___0__System_String_System_Data_CommandType_
+  commentId: M:Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String,System.Data.CommandType)
+  name.vb: Command(Of TConnection)(IDbConnectionPool(Of TConnection), String, CommandType)
+  fullName: Open.Database.Extensions.ConnectionExtensions.Command<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection>, System.String, System.Data.CommandType)
+  fullName.vb: Open.Database.Extensions.ConnectionExtensions.Command(Of TConnection)(Open.Database.Extensions.IDbConnectionPool(Of TConnection), System.String, System.Data.CommandType)
+  nameWithType: ConnectionExtensions.Command<TConnection>(IDbConnectionPool<TConnection>, String, CommandType)
+  nameWithType.vb: ConnectionExtensions.Command(Of TConnection)(IDbConnectionPool(Of TConnection), String, CommandType)
 - uid: Open.Database.Extensions.ConnectionExtensions.Command``1(System.Func{``0},System.String,System.Data.CommandType)
   name: Command<TConnection>(Func<TConnection>, String, CommandType)
   href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_Command__1_System_Func___0__System_String_System_Data_CommandType_
@@ -945,6 +960,12 @@ references:
   commentId: M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory,System.String)
   fullName: Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory, System.String)
   nameWithType: ConnectionExtensions.StoredProcedure(IDbConnectionFactory, String)
+- uid: Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool,System.String)
+  name: StoredProcedure(IDbConnectionPool, String)
+  href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_StoredProcedure_Open_Database_Extensions_IDbConnectionPool_System_String_
+  commentId: M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool,System.String)
+  fullName: Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool, System.String)
+  nameWithType: ConnectionExtensions.StoredProcedure(IDbConnectionPool, String)
 - uid: Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbConnection,System.String)
   name: StoredProcedure(DbConnection, String)
   href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_StoredProcedure_System_Data_Common_DbConnection_System_String_
@@ -994,6 +1015,15 @@ references:
   fullName.vb: Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Of TConnection)(Open.Database.Extensions.IDbConnectionFactory(Of TConnection), System.String)
   nameWithType: ConnectionExtensions.StoredProcedure<TConnection>(IDbConnectionFactory<TConnection>, String)
   nameWithType.vb: ConnectionExtensions.StoredProcedure(Of TConnection)(IDbConnectionFactory(Of TConnection), String)
+- uid: Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String)
+  name: StoredProcedure<TConnection>(IDbConnectionPool<TConnection>, String)
+  href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_Open_Database_Extensions_IDbConnectionPool___0__System_String_
+  commentId: M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String)
+  name.vb: StoredProcedure(Of TConnection)(IDbConnectionPool(Of TConnection), String)
+  fullName: Open.Database.Extensions.ConnectionExtensions.StoredProcedure<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection>, System.String)
+  fullName.vb: Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Of TConnection)(Open.Database.Extensions.IDbConnectionPool(Of TConnection), System.String)
+  nameWithType: ConnectionExtensions.StoredProcedure<TConnection>(IDbConnectionPool<TConnection>, String)
+  nameWithType.vb: ConnectionExtensions.StoredProcedure(Of TConnection)(IDbConnectionPool(Of TConnection), String)
 - uid: Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(System.Func{``0},System.String)
   name: StoredProcedure<TConnection>(Func<TConnection>, String)
   href: api/Open.Database.Extensions.ConnectionExtensions.html#Open_Database_Extensions_ConnectionExtensions_StoredProcedure__1_System_Func___0__System_String_
@@ -1240,15 +1270,15 @@ references:
   fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).QueryResult(System.Collections.Generic.IEnumerable(Of System.Int32), System.Collections.Generic.IEnumerable(Of System.String), TResult)
   nameWithType: QueryResult<TResult>.QueryResult(IEnumerable<Int32>, IEnumerable<String>, TResult)
   nameWithType.vb: QueryResult(Of TResult).QueryResult(IEnumerable(Of Int32), IEnumerable(Of String), TResult)
-- uid: Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)
+- uid: Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`0)
   name: QueryResult(ImmutableArray<Int32>, ImmutableArray<String>, TResult)
-  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1__ctor_System_Collections_Immutable_ImmutableArray_System_Int32__System_Collections_Immutable_ImmutableArray_System_String___0_
-  commentId: M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)
-  name.vb: QueryResult(ImmutableArray(Of Int32), ImmutableArray(Of String), TResult)
+  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1__ctor_System_Collections_Immutable_ImmutableArray_System_Int32___System_Collections_Immutable_ImmutableArray_System_String____0_
+  commentId: M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`0)
+  name.vb: QueryResult(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), TResult)
   fullName: Open.Database.Extensions.Core.QueryResult<TResult>.QueryResult(System.Collections.Immutable.ImmutableArray<System.Int32>, System.Collections.Immutable.ImmutableArray<System.String>, TResult)
-  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).QueryResult(System.Collections.Immutable.ImmutableArray(Of System.Int32), System.Collections.Immutable.ImmutableArray(Of System.String), TResult)
+  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).QueryResult(ByRef System.Collections.Immutable.ImmutableArray(Of System.Int32), ByRef System.Collections.Immutable.ImmutableArray(Of System.String), TResult)
   nameWithType: QueryResult<TResult>.QueryResult(ImmutableArray<Int32>, ImmutableArray<String>, TResult)
-  nameWithType.vb: QueryResult(Of TResult).QueryResult(ImmutableArray(Of Int32), ImmutableArray(Of String), TResult)
+  nameWithType.vb: QueryResult(Of TResult).QueryResult(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), TResult)
 - uid: Open.Database.Extensions.Core.QueryResult`1.#ctor*
   name: QueryResult
   href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1__ctor_
@@ -1261,16 +1291,7 @@ references:
 - uid: Open.Database.Extensions.Core.QueryResult`1.ColumnCount
   name: ColumnCount
   href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_ColumnCount
-  commentId: P:Open.Database.Extensions.Core.QueryResult`1.ColumnCount
-  fullName: Open.Database.Extensions.Core.QueryResult<TResult>.ColumnCount
-  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).ColumnCount
-  nameWithType: QueryResult<TResult>.ColumnCount
-  nameWithType.vb: QueryResult(Of TResult).ColumnCount
-- uid: Open.Database.Extensions.Core.QueryResult`1.ColumnCount*
-  name: ColumnCount
-  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_ColumnCount_
-  commentId: Overload:Open.Database.Extensions.Core.QueryResult`1.ColumnCount
-  isSpec: "True"
+  commentId: F:Open.Database.Extensions.Core.QueryResult`1.ColumnCount
   fullName: Open.Database.Extensions.Core.QueryResult<TResult>.ColumnCount
   fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).ColumnCount
   nameWithType: QueryResult<TResult>.ColumnCount
@@ -1278,33 +1299,34 @@ references:
 - uid: Open.Database.Extensions.Core.QueryResult`1.Names
   name: Names
   href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_Names
-  commentId: P:Open.Database.Extensions.Core.QueryResult`1.Names
+  commentId: F:Open.Database.Extensions.Core.QueryResult`1.Names
   fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Names
   fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Names
   nameWithType: QueryResult<TResult>.Names
   nameWithType.vb: QueryResult(Of TResult).Names
-- uid: Open.Database.Extensions.Core.QueryResult`1.Names*
-  name: Names
-  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_Names_
-  commentId: Overload:Open.Database.Extensions.Core.QueryResult`1.Names
+- uid: Open.Database.Extensions.Core.QueryResult`1.op_Implicit(Open.Database.Extensions.Core.QueryResult{`0})~`0
+  name: Implicit(QueryResult<TResult> to TResult)
+  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_op_Implicit_Open_Database_Extensions_Core_QueryResult__0____0
+  commentId: M:Open.Database.Extensions.Core.QueryResult`1.op_Implicit(Open.Database.Extensions.Core.QueryResult{`0})~`0
+  name.vb: Widening(QueryResult(Of TResult) to TResult)
+  fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Implicit(Open.Database.Extensions.Core.QueryResult<TResult> to TResult)
+  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Widening(Open.Database.Extensions.Core.QueryResult(Of TResult) to TResult)
+  nameWithType: QueryResult<TResult>.Implicit(QueryResult<TResult> to TResult)
+  nameWithType.vb: QueryResult(Of TResult).Widening(QueryResult(Of TResult) to TResult)
+- uid: Open.Database.Extensions.Core.QueryResult`1.op_Implicit*
+  name: Implicit
+  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_op_Implicit_
+  commentId: Overload:Open.Database.Extensions.Core.QueryResult`1.op_Implicit
   isSpec: "True"
-  fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Names
-  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Names
-  nameWithType: QueryResult<TResult>.Names
-  nameWithType.vb: QueryResult(Of TResult).Names
+  name.vb: Widening
+  fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Implicit
+  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Widening
+  nameWithType: QueryResult<TResult>.Implicit
+  nameWithType.vb: QueryResult(Of TResult).Widening
 - uid: Open.Database.Extensions.Core.QueryResult`1.Ordinals
   name: Ordinals
   href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_Ordinals
-  commentId: P:Open.Database.Extensions.Core.QueryResult`1.Ordinals
-  fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Ordinals
-  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Ordinals
-  nameWithType: QueryResult<TResult>.Ordinals
-  nameWithType.vb: QueryResult(Of TResult).Ordinals
-- uid: Open.Database.Extensions.Core.QueryResult`1.Ordinals*
-  name: Ordinals
-  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_Ordinals_
-  commentId: Overload:Open.Database.Extensions.Core.QueryResult`1.Ordinals
-  isSpec: "True"
+  commentId: F:Open.Database.Extensions.Core.QueryResult`1.Ordinals
   fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Ordinals
   fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Ordinals
   nameWithType: QueryResult<TResult>.Ordinals
@@ -1312,20 +1334,119 @@ references:
 - uid: Open.Database.Extensions.Core.QueryResult`1.Result
   name: Result
   href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_Result
-  commentId: P:Open.Database.Extensions.Core.QueryResult`1.Result
+  commentId: F:Open.Database.Extensions.Core.QueryResult`1.Result
   fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Result
   fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Result
   nameWithType: QueryResult<TResult>.Result
   nameWithType.vb: QueryResult(Of TResult).Result
-- uid: Open.Database.Extensions.Core.QueryResult`1.Result*
-  name: Result
-  href: api/Open.Database.Extensions.Core.QueryResult-1.html#Open_Database_Extensions_Core_QueryResult_1_Result_
-  commentId: Overload:Open.Database.Extensions.Core.QueryResult`1.Result
+- uid: Open.Database.Extensions.Core.QueryResultCollection`1
+  name: QueryResultCollection<T>
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-1.html
+  commentId: T:Open.Database.Extensions.Core.QueryResultCollection`1
+  name.vb: QueryResultCollection(Of T)
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T>
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T)
+  nameWithType: QueryResultCollection<T>
+  nameWithType.vb: QueryResultCollection(Of T)
+- uid: Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{`0})
+  name: QueryResultCollection(IEnumerable<Int32>, IEnumerable<String>, IEnumerable<T>)
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-1.html#Open_Database_Extensions_Core_QueryResultCollection_1__ctor_System_Collections_Generic_IEnumerable_System_Int32__System_Collections_Generic_IEnumerable_System_String__System_Collections_Generic_IEnumerable__0__
+  commentId: M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{`0})
+  name.vb: QueryResultCollection(IEnumerable(Of Int32), IEnumerable(Of String), IEnumerable(Of T))
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T>.QueryResultCollection(System.Collections.Generic.IEnumerable<System.Int32>, System.Collections.Generic.IEnumerable<System.String>, System.Collections.Generic.IEnumerable<T>)
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T).QueryResultCollection(System.Collections.Generic.IEnumerable(Of System.Int32), System.Collections.Generic.IEnumerable(Of System.String), System.Collections.Generic.IEnumerable(Of T))
+  nameWithType: QueryResultCollection<T>.QueryResultCollection(IEnumerable<Int32>, IEnumerable<String>, IEnumerable<T>)
+  nameWithType.vb: QueryResultCollection(Of T).QueryResultCollection(IEnumerable(Of Int32), IEnumerable(Of String), IEnumerable(Of T))
+- uid: Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.IEnumerable{`0})
+  name: QueryResultCollection(ImmutableArray<Int32>, ImmutableArray<String>, IEnumerable<T>)
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-1.html#Open_Database_Extensions_Core_QueryResultCollection_1__ctor_System_Collections_Immutable_ImmutableArray_System_Int32___System_Collections_Immutable_ImmutableArray_System_String___System_Collections_Generic_IEnumerable__0__
+  commentId: M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.IEnumerable{`0})
+  name.vb: QueryResultCollection(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), IEnumerable(Of T))
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T>.QueryResultCollection(System.Collections.Immutable.ImmutableArray<System.Int32>, System.Collections.Immutable.ImmutableArray<System.String>, System.Collections.Generic.IEnumerable<T>)
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T).QueryResultCollection(ByRef System.Collections.Immutable.ImmutableArray(Of System.Int32), ByRef System.Collections.Immutable.ImmutableArray(Of System.String), System.Collections.Generic.IEnumerable(Of T))
+  nameWithType: QueryResultCollection<T>.QueryResultCollection(ImmutableArray<Int32>, ImmutableArray<String>, IEnumerable<T>)
+  nameWithType.vb: QueryResultCollection(Of T).QueryResultCollection(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), IEnumerable(Of T))
+- uid: Open.Database.Extensions.Core.QueryResultCollection`1.#ctor*
+  name: QueryResultCollection
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-1.html#Open_Database_Extensions_Core_QueryResultCollection_1__ctor_
+  commentId: Overload:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor
   isSpec: "True"
-  fullName: Open.Database.Extensions.Core.QueryResult<TResult>.Result
-  fullName.vb: Open.Database.Extensions.Core.QueryResult(Of TResult).Result
-  nameWithType: QueryResult<TResult>.Result
-  nameWithType.vb: QueryResult(Of TResult).Result
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T>.QueryResultCollection
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T).QueryResultCollection
+  nameWithType: QueryResultCollection<T>.QueryResultCollection
+  nameWithType.vb: QueryResultCollection(Of T).QueryResultCollection
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2
+  name: QueryResultCollection<T, TResult>
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html
+  commentId: T:Open.Database.Extensions.Core.QueryResultCollection`2
+  name.vb: QueryResultCollection(Of T, TResult)
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult)
+  nameWithType: QueryResultCollection<T, TResult>
+  nameWithType.vb: QueryResultCollection(Of T, TResult)
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`1)
+  name: QueryResultCollection(IEnumerable<Int32>, IEnumerable<String>, TResult)
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2__ctor_System_Collections_Generic_IEnumerable_System_Int32__System_Collections_Generic_IEnumerable_System_String___1_
+  commentId: M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`1)
+  name.vb: QueryResultCollection(IEnumerable(Of Int32), IEnumerable(Of String), TResult)
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.QueryResultCollection(System.Collections.Generic.IEnumerable<System.Int32>, System.Collections.Generic.IEnumerable<System.String>, TResult)
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).QueryResultCollection(System.Collections.Generic.IEnumerable(Of System.Int32), System.Collections.Generic.IEnumerable(Of System.String), TResult)
+  nameWithType: QueryResultCollection<T, TResult>.QueryResultCollection(IEnumerable<Int32>, IEnumerable<String>, TResult)
+  nameWithType.vb: QueryResultCollection(Of T, TResult).QueryResultCollection(IEnumerable(Of Int32), IEnumerable(Of String), TResult)
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`1)
+  name: QueryResultCollection(ImmutableArray<Int32>, ImmutableArray<String>, TResult)
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2__ctor_System_Collections_Immutable_ImmutableArray_System_Int32___System_Collections_Immutable_ImmutableArray_System_String____1_
+  commentId: M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`1)
+  name.vb: QueryResultCollection(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), TResult)
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.QueryResultCollection(System.Collections.Immutable.ImmutableArray<System.Int32>, System.Collections.Immutable.ImmutableArray<System.String>, TResult)
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).QueryResultCollection(ByRef System.Collections.Immutable.ImmutableArray(Of System.Int32), ByRef System.Collections.Immutable.ImmutableArray(Of System.String), TResult)
+  nameWithType: QueryResultCollection<T, TResult>.QueryResultCollection(ImmutableArray<Int32>, ImmutableArray<String>, TResult)
+  nameWithType.vb: QueryResultCollection(Of T, TResult).QueryResultCollection(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), TResult)
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.#ctor*
+  name: QueryResultCollection
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2__ctor_
+  commentId: Overload:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.QueryResultCollection
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).QueryResultCollection
+  nameWithType: QueryResultCollection<T, TResult>.QueryResultCollection
+  nameWithType.vb: QueryResultCollection(Of T, TResult).QueryResultCollection
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.GetEnumerator
+  name: GetEnumerator()
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2_GetEnumerator
+  commentId: M:Open.Database.Extensions.Core.QueryResultCollection`2.GetEnumerator
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.GetEnumerator()
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).GetEnumerator()
+  nameWithType: QueryResultCollection<T, TResult>.GetEnumerator()
+  nameWithType.vb: QueryResultCollection(Of T, TResult).GetEnumerator()
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.GetEnumerator*
+  name: GetEnumerator
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2_GetEnumerator_
+  commentId: Overload:Open.Database.Extensions.Core.QueryResultCollection`2.GetEnumerator
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.GetEnumerator
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).GetEnumerator
+  nameWithType: QueryResultCollection<T, TResult>.GetEnumerator
+  nameWithType.vb: QueryResultCollection(Of T, TResult).GetEnumerator
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.System#Collections#IEnumerable#GetEnumerator
+  name: IEnumerable.GetEnumerator()
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2_System_Collections_IEnumerable_GetEnumerator
+  commentId: M:Open.Database.Extensions.Core.QueryResultCollection`2.System#Collections#IEnumerable#GetEnumerator
+  name.vb: System.Collections.IEnumerable.GetEnumerator()
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.System.Collections.IEnumerable.GetEnumerator()
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).System.Collections.IEnumerable.GetEnumerator()
+  nameWithType: QueryResultCollection<T, TResult>.IEnumerable.GetEnumerator()
+  nameWithType.vb: QueryResultCollection(Of T, TResult).System.Collections.IEnumerable.GetEnumerator()
+- uid: Open.Database.Extensions.Core.QueryResultCollection`2.System#Collections#IEnumerable#GetEnumerator*
+  name: IEnumerable.GetEnumerator
+  href: api/Open.Database.Extensions.Core.QueryResultCollection-2.html#Open_Database_Extensions_Core_QueryResultCollection_2_System_Collections_IEnumerable_GetEnumerator_
+  commentId: Overload:Open.Database.Extensions.Core.QueryResultCollection`2.System#Collections#IEnumerable#GetEnumerator
+  isSpec: "True"
+  name.vb: System.Collections.IEnumerable.GetEnumerator
+  fullName: Open.Database.Extensions.Core.QueryResultCollection<T, TResult>.System.Collections.IEnumerable.GetEnumerator
+  fullName.vb: Open.Database.Extensions.Core.QueryResultCollection(Of T, TResult).System.Collections.IEnumerable.GetEnumerator
+  nameWithType: QueryResultCollection<T, TResult>.IEnumerable.GetEnumerator
+  nameWithType.vb: QueryResultCollection(Of T, TResult).System.Collections.IEnumerable.GetEnumerator
 - uid: Open.Database.Extensions.Core.QueryResultExtensions
   name: QueryResultExtensions
   href: api/Open.Database.Extensions.Core.QueryResultExtensions.html
@@ -1461,6 +1582,42 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries
   nameWithType: QueryResultExtensions.DequeueAsMappedDictionaries
+- uid: Open.Database.Extensions.Core.QueryResultQueue`1
+  name: QueryResultQueue<T>
+  href: api/Open.Database.Extensions.Core.QueryResultQueue-1.html
+  commentId: T:Open.Database.Extensions.Core.QueryResultQueue`1
+  name.vb: QueryResultQueue(Of T)
+  fullName: Open.Database.Extensions.Core.QueryResultQueue<T>
+  fullName.vb: Open.Database.Extensions.Core.QueryResultQueue(Of T)
+  nameWithType: QueryResultQueue<T>
+  nameWithType.vb: QueryResultQueue(Of T)
+- uid: Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.Queue{`0})
+  name: QueryResultQueue(IEnumerable<Int32>, IEnumerable<String>, Queue<T>)
+  href: api/Open.Database.Extensions.Core.QueryResultQueue-1.html#Open_Database_Extensions_Core_QueryResultQueue_1__ctor_System_Collections_Generic_IEnumerable_System_Int32__System_Collections_Generic_IEnumerable_System_String__System_Collections_Generic_Queue__0__
+  commentId: M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.Queue{`0})
+  name.vb: QueryResultQueue(IEnumerable(Of Int32), IEnumerable(Of String), Queue(Of T))
+  fullName: Open.Database.Extensions.Core.QueryResultQueue<T>.QueryResultQueue(System.Collections.Generic.IEnumerable<System.Int32>, System.Collections.Generic.IEnumerable<System.String>, System.Collections.Generic.Queue<T>)
+  fullName.vb: Open.Database.Extensions.Core.QueryResultQueue(Of T).QueryResultQueue(System.Collections.Generic.IEnumerable(Of System.Int32), System.Collections.Generic.IEnumerable(Of System.String), System.Collections.Generic.Queue(Of T))
+  nameWithType: QueryResultQueue<T>.QueryResultQueue(IEnumerable<Int32>, IEnumerable<String>, Queue<T>)
+  nameWithType.vb: QueryResultQueue(Of T).QueryResultQueue(IEnumerable(Of Int32), IEnumerable(Of String), Queue(Of T))
+- uid: Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.Queue{`0})
+  name: QueryResultQueue(ImmutableArray<Int32>, ImmutableArray<String>, Queue<T>)
+  href: api/Open.Database.Extensions.Core.QueryResultQueue-1.html#Open_Database_Extensions_Core_QueryResultQueue_1__ctor_System_Collections_Immutable_ImmutableArray_System_Int32___System_Collections_Immutable_ImmutableArray_System_String___System_Collections_Generic_Queue__0__
+  commentId: M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.Queue{`0})
+  name.vb: QueryResultQueue(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), Queue(Of T))
+  fullName: Open.Database.Extensions.Core.QueryResultQueue<T>.QueryResultQueue(System.Collections.Immutable.ImmutableArray<System.Int32>, System.Collections.Immutable.ImmutableArray<System.String>, System.Collections.Generic.Queue<T>)
+  fullName.vb: Open.Database.Extensions.Core.QueryResultQueue(Of T).QueryResultQueue(ByRef System.Collections.Immutable.ImmutableArray(Of System.Int32), ByRef System.Collections.Immutable.ImmutableArray(Of System.String), System.Collections.Generic.Queue(Of T))
+  nameWithType: QueryResultQueue<T>.QueryResultQueue(ImmutableArray<Int32>, ImmutableArray<String>, Queue<T>)
+  nameWithType.vb: QueryResultQueue(Of T).QueryResultQueue(ByRef ImmutableArray(Of Int32), ByRef ImmutableArray(Of String), Queue(Of T))
+- uid: Open.Database.Extensions.Core.QueryResultQueue`1.#ctor*
+  name: QueryResultQueue
+  href: api/Open.Database.Extensions.Core.QueryResultQueue-1.html#Open_Database_Extensions_Core_QueryResultQueue_1__ctor_
+  commentId: Overload:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor
+  isSpec: "True"
+  fullName: Open.Database.Extensions.Core.QueryResultQueue<T>.QueryResultQueue
+  fullName.vb: Open.Database.Extensions.Core.QueryResultQueue(Of T).QueryResultQueue
+  nameWithType: QueryResultQueue<T>.QueryResultQueue
+  nameWithType.vb: QueryResultQueue(Of T).QueryResultQueue
 - uid: Open.Database.Extensions.Core.Transformer`1
   name: Transformer<T>
   href: api/Open.Database.Extensions.Core.Transformer-1.html
@@ -1497,6 +1654,15 @@ references:
   fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult(Of System.Collections.Generic.Queue(Of System.Object())))
   nameWithType: Transformer<T>.AsDequeueingEnumerable(QueryResult<Queue<Object[]>>)
   nameWithType.vb: Transformer(Of T).AsDequeueingEnumerable(QueryResult(Of Queue(Of Object())))
+- uid: Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)
+  name: AsDequeueingEnumerable(QueryResult<Queue<Object[]>>, ArrayPool<Object>, Boolean)
+  href: api/Open.Database.Extensions.Core.Transformer-1.html#Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_Open_Database_Extensions_Core_QueryResult_System_Collections_Generic_Queue_System_Object_____System_Buffers_ArrayPool_System_Object__System_Boolean_
+  commentId: M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)
+  name.vb: AsDequeueingEnumerable(QueryResult(Of Queue(Of Object())), ArrayPool(Of Object), Boolean)
+  fullName: Open.Database.Extensions.Core.Transformer<T>.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<System.Object[]>>, System.Buffers.ArrayPool<System.Object>, System.Boolean)
+  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult(Of System.Collections.Generic.Queue(Of System.Object())), System.Buffers.ArrayPool(Of System.Object), System.Boolean)
+  nameWithType: Transformer<T>.AsDequeueingEnumerable(QueryResult<Queue<Object[]>>, ArrayPool<Object>, Boolean)
+  nameWithType.vb: Transformer(Of T).AsDequeueingEnumerable(QueryResult(Of Queue(Of Object())), ArrayPool(Of Object), Boolean)
 - uid: Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable*
   name: AsDequeueingEnumerable
   href: api/Open.Database.Extensions.Core.Transformer-1.html#Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_
@@ -1541,6 +1707,22 @@ references:
   fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Create
   nameWithType: Transformer<T>.Create
   nameWithType.vb: Transformer(Of T).Create
+- uid: Open.Database.Extensions.Core.Transformer`1.LocalPool
+  name: LocalPool
+  href: api/Open.Database.Extensions.Core.Transformer-1.html#Open_Database_Extensions_Core_Transformer_1_LocalPool
+  commentId: F:Open.Database.Extensions.Core.Transformer`1.LocalPool
+  fullName: Open.Database.Extensions.Core.Transformer<T>.LocalPool
+  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).LocalPool
+  nameWithType: Transformer<T>.LocalPool
+  nameWithType.vb: Transformer(Of T).LocalPool
+- uid: Open.Database.Extensions.Core.Transformer`1.MaxArrayBuffer
+  name: MaxArrayBuffer
+  href: api/Open.Database.Extensions.Core.Transformer-1.html#Open_Database_Extensions_Core_Transformer_1_MaxArrayBuffer
+  commentId: F:Open.Database.Extensions.Core.Transformer`1.MaxArrayBuffer
+  fullName: Open.Database.Extensions.Core.Transformer<T>.MaxArrayBuffer
+  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).MaxArrayBuffer
+  nameWithType: Transformer<T>.MaxArrayBuffer
+  nameWithType.vb: Transformer(Of T).MaxArrayBuffer
 - uid: Open.Database.Extensions.Core.Transformer`1.Processor
   name: Transformer<T>.Processor
   href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html
@@ -1559,15 +1741,15 @@ references:
   fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Processor.Processor(Open.Database.Extensions.Core.Transformer(Of T))
   nameWithType: Transformer<T>.Processor.Processor(Transformer<T>)
   nameWithType.vb: Transformer(Of T).Processor.Processor(Transformer(Of T))
-- uid: Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String})
+- uid: Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String}@)
   name: Processor(Transformer<T>, ImmutableArray<String>)
-  href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html#Open_Database_Extensions_Core_Transformer_1_Processor__ctor_Open_Database_Extensions_Core_Transformer__0__System_Collections_Immutable_ImmutableArray_System_String__
-  commentId: M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String})
-  name.vb: Processor(Transformer(Of T), ImmutableArray(Of String))
+  href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html#Open_Database_Extensions_Core_Transformer_1_Processor__ctor_Open_Database_Extensions_Core_Transformer__0__System_Collections_Immutable_ImmutableArray_System_String___
+  commentId: M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String}@)
+  name.vb: Processor(Transformer(Of T), ByRef ImmutableArray(Of String))
   fullName: Open.Database.Extensions.Core.Transformer<T>.Processor.Processor(Open.Database.Extensions.Core.Transformer<T>, System.Collections.Immutable.ImmutableArray<System.String>)
-  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Processor.Processor(Open.Database.Extensions.Core.Transformer(Of T), System.Collections.Immutable.ImmutableArray(Of System.String))
+  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Processor.Processor(Open.Database.Extensions.Core.Transformer(Of T), ByRef System.Collections.Immutable.ImmutableArray(Of System.String))
   nameWithType: Transformer<T>.Processor.Processor(Transformer<T>, ImmutableArray<String>)
-  nameWithType.vb: Transformer(Of T).Processor.Processor(Transformer(Of T), ImmutableArray(Of String))
+  nameWithType.vb: Transformer(Of T).Processor.Processor(Transformer(Of T), ByRef ImmutableArray(Of String))
 - uid: Open.Database.Extensions.Core.Transformer`1.Processor.#ctor*
   name: Processor
   href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html#Open_Database_Extensions_Core_Transformer_1_Processor__ctor_
@@ -1577,15 +1759,15 @@ references:
   fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Processor.Processor
   nameWithType: Transformer<T>.Processor.Processor
   nameWithType.vb: Transformer(Of T).Processor.Processor
-- uid: Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String})
+- uid: Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String}@)
   name: SetNames(ImmutableArray<String>)
-  href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html#Open_Database_Extensions_Core_Transformer_1_Processor_SetNames_System_Collections_Immutable_ImmutableArray_System_String__
-  commentId: M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String})
-  name.vb: SetNames(ImmutableArray(Of String))
+  href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html#Open_Database_Extensions_Core_Transformer_1_Processor_SetNames_System_Collections_Immutable_ImmutableArray_System_String___
+  commentId: M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String}@)
+  name.vb: SetNames(ByRef ImmutableArray(Of String))
   fullName: Open.Database.Extensions.Core.Transformer<T>.Processor.SetNames(System.Collections.Immutable.ImmutableArray<System.String>)
-  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Processor.SetNames(System.Collections.Immutable.ImmutableArray(Of System.String))
+  fullName.vb: Open.Database.Extensions.Core.Transformer(Of T).Processor.SetNames(ByRef System.Collections.Immutable.ImmutableArray(Of System.String))
   nameWithType: Transformer<T>.Processor.SetNames(ImmutableArray<String>)
-  nameWithType.vb: Transformer(Of T).Processor.SetNames(ImmutableArray(Of String))
+  nameWithType.vb: Transformer(Of T).Processor.SetNames(ByRef ImmutableArray(Of String))
 - uid: Open.Database.Extensions.Core.Transformer`1.Processor.SetNames*
   name: SetNames
   href: api/Open.Database.Extensions.Core.Transformer-1.Processor.html#Open_Database_Extensions_Core_Transformer_1_Processor_SetNames_
@@ -1911,60 +2093,101 @@ references:
   fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbCommand, System.ValueTuple(Of System.String, System.String)())
   nameWithType: CoreExtensions.ResultsAsync<T>(DbCommand, (String Field, String Column)[])
   nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbCommand, (Field As String, Column As String)())
-- uid: Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
-  name: ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, Boolean, CancellationToken)
-  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___System_Boolean_System_Threading_CancellationToken_
-  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
-  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), Boolean, CancellationToken)
-  fullName: Open.Database.Extensions.CoreExtensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>, System.Boolean, System.Threading.CancellationToken)
-  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)), System.Boolean, System.Threading.CancellationToken)
-  nameWithType: CoreExtensions.ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, Boolean, CancellationToken)
-  nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), Boolean, CancellationToken)
-- uid: Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)
-  name: ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, CancellationToken)
-  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___System_Threading_CancellationToken_
-  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)
-  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), CancellationToken)
-  fullName: Open.Database.Extensions.CoreExtensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>, System.Threading.CancellationToken)
-  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)), System.Threading.CancellationToken)
-  nameWithType: CoreExtensions.ResultsAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, CancellationToken)
-  nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), CancellationToken)
-- uid: Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
-  name: ResultsAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, Boolean, CancellationToken)
-  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___System_Boolean_System_Threading_CancellationToken_
-  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
-  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), Boolean, CancellationToken)
-  fullName: Open.Database.Extensions.CoreExtensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.ValueTuple<System.String, System.String>>, System.Boolean, System.Threading.CancellationToken)
-  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.ValueTuple(Of System.String, System.String)), System.Boolean, System.Threading.CancellationToken)
-  nameWithType: CoreExtensions.ResultsAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, Boolean, CancellationToken)
-  nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), Boolean, CancellationToken)
-- uid: Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)
-  name: ResultsAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, CancellationToken)
-  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___System_Threading_CancellationToken_
-  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)
-  name.vb: ResultsAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), CancellationToken)
-  fullName: Open.Database.Extensions.CoreExtensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.ValueTuple<System.String, System.String>>, System.Threading.CancellationToken)
-  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.ValueTuple(Of System.String, System.String)), System.Threading.CancellationToken)
-  nameWithType: CoreExtensions.ResultsAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, CancellationToken)
-  nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), CancellationToken)
-- uid: Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])
-  name: ResultsAsync<T>(DbDataReader, CancellationToken, (String Field, String Column)[])
-  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_Threading_CancellationToken_System_ValueTuple_System_String_System_String____
-  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])
-  name.vb: ResultsAsync(Of T)(DbDataReader, CancellationToken, (Field As String, Column As String)())
-  fullName: Open.Database.Extensions.CoreExtensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.ValueTuple<System.String, System.String>[])
-  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.ValueTuple(Of System.String, System.String)())
-  nameWithType: CoreExtensions.ResultsAsync<T>(DbDataReader, CancellationToken, (String Field, String Column)[])
-  nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbDataReader, CancellationToken, (Field As String, Column As String)())
-- uid: Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])
-  name: ResultsAsync<T>(DbDataReader, (String Field, String Column)[])
-  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsAsync__1_System_Data_Common_DbDataReader_System_ValueTuple_System_String_System_String____
-  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])
-  name.vb: ResultsAsync(Of T)(DbDataReader, (Field As String, Column As String)())
-  fullName: Open.Database.Extensions.CoreExtensions.ResultsAsync<T>(System.Data.Common.DbDataReader, System.ValueTuple<System.String, System.String>[])
-  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsAsync(Of T)(System.Data.Common.DbDataReader, System.ValueTuple(Of System.String, System.String)())
-  nameWithType: CoreExtensions.ResultsAsync<T>(DbDataReader, (String Field, String Column)[])
-  nameWithType.vb: CoreExtensions.ResultsAsync(Of T)(DbDataReader, (Field As String, Column As String)())
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBuffered*
+  name: ResultsBuffered
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBuffered_
+  commentId: Overload:Open.Database.Extensions.CoreExtensions.ResultsBuffered
+  isSpec: "True"
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBuffered
+  nameWithType: CoreExtensions.ResultsBuffered
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBuffered``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})
+  name: ResultsBuffered<T>(IDataReader, IEnumerable<KeyValuePair<String, String>>)
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBuffered__1_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBuffered``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})
+  name.vb: ResultsBuffered(Of T)(IDataReader, IEnumerable(Of KeyValuePair(Of String, String)))
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBuffered<T>(System.Data.IDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>)
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBuffered(Of T)(System.Data.IDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)))
+  nameWithType: CoreExtensions.ResultsBuffered<T>(IDataReader, IEnumerable<KeyValuePair<String, String>>)
+  nameWithType.vb: CoreExtensions.ResultsBuffered(Of T)(IDataReader, IEnumerable(Of KeyValuePair(Of String, String)))
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBuffered``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
+  name: ResultsBuffered<T>(IDataReader, IEnumerable<(String Field, String Column)>)
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBuffered__1_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBuffered``1(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
+  name.vb: ResultsBuffered(Of T)(IDataReader, IEnumerable(Of (Field As String, Column As String)))
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBuffered<T>(System.Data.IDataReader, System.Collections.Generic.IEnumerable<System.ValueTuple<System.String, System.String>>)
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBuffered(Of T)(System.Data.IDataReader, System.Collections.Generic.IEnumerable(Of System.ValueTuple(Of System.String, System.String)))
+  nameWithType: CoreExtensions.ResultsBuffered<T>(IDataReader, IEnumerable<(String Field, String Column)>)
+  nameWithType.vb: CoreExtensions.ResultsBuffered(Of T)(IDataReader, IEnumerable(Of (Field As String, Column As String)))
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBuffered``1(System.Data.IDataReader,System.ValueTuple{System.String,System.String}[])
+  name: ResultsBuffered<T>(IDataReader, (String Field, String Column)[])
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBuffered__1_System_Data_IDataReader_System_ValueTuple_System_String_System_String____
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBuffered``1(System.Data.IDataReader,System.ValueTuple{System.String,System.String}[])
+  name.vb: ResultsBuffered(Of T)(IDataReader, (Field As String, Column As String)())
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBuffered<T>(System.Data.IDataReader, System.ValueTuple<System.String, System.String>[])
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBuffered(Of T)(System.Data.IDataReader, System.ValueTuple(Of System.String, System.String)())
+  nameWithType: CoreExtensions.ResultsBuffered<T>(IDataReader, (String Field, String Column)[])
+  nameWithType.vb: CoreExtensions.ResultsBuffered(Of T)(IDataReader, (Field As String, Column As String)())
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync*
+  name: ResultsBufferedAsync
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync_
+  commentId: Overload:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync
+  isSpec: "True"
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync
+  nameWithType: CoreExtensions.ResultsBufferedAsync
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
+  name: ResultsBufferedAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, Boolean, CancellationToken)
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___System_Boolean_System_Threading_CancellationToken_
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
+  name.vb: ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), Boolean, CancellationToken)
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>, System.Boolean, System.Threading.CancellationToken)
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)), System.Boolean, System.Threading.CancellationToken)
+  nameWithType: CoreExtensions.ResultsBufferedAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, Boolean, CancellationToken)
+  nameWithType.vb: CoreExtensions.ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), Boolean, CancellationToken)
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)
+  name: ResultsBufferedAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, CancellationToken)
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___System_Threading_CancellationToken_
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)
+  name.vb: ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), CancellationToken)
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.String>>, System.Threading.CancellationToken)
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.Collections.Generic.KeyValuePair(Of System.String, System.String)), System.Threading.CancellationToken)
+  nameWithType: CoreExtensions.ResultsBufferedAsync<T>(DbDataReader, IEnumerable<KeyValuePair<String, String>>, CancellationToken)
+  nameWithType.vb: CoreExtensions.ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of KeyValuePair(Of String, String)), CancellationToken)
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
+  name: ResultsBufferedAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, Boolean, CancellationToken)
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___System_Boolean_System_Threading_CancellationToken_
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)
+  name.vb: ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), Boolean, CancellationToken)
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.ValueTuple<System.String, System.String>>, System.Boolean, System.Threading.CancellationToken)
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.ValueTuple(Of System.String, System.String)), System.Boolean, System.Threading.CancellationToken)
+  nameWithType: CoreExtensions.ResultsBufferedAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, Boolean, CancellationToken)
+  nameWithType.vb: CoreExtensions.ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), Boolean, CancellationToken)
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)
+  name: ResultsBufferedAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, CancellationToken)
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync__1_System_Data_Common_DbDataReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___System_Threading_CancellationToken_
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)
+  name.vb: ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), CancellationToken)
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync<T>(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable<System.ValueTuple<System.String, System.String>>, System.Threading.CancellationToken)
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync(Of T)(System.Data.Common.DbDataReader, System.Collections.Generic.IEnumerable(Of System.ValueTuple(Of System.String, System.String)), System.Threading.CancellationToken)
+  nameWithType: CoreExtensions.ResultsBufferedAsync<T>(DbDataReader, IEnumerable<(String Field, String Column)>, CancellationToken)
+  nameWithType.vb: CoreExtensions.ResultsBufferedAsync(Of T)(DbDataReader, IEnumerable(Of (Field As String, Column As String)), CancellationToken)
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])
+  name: ResultsBufferedAsync<T>(DbDataReader, CancellationToken, (String Field, String Column)[])
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync__1_System_Data_Common_DbDataReader_System_Threading_CancellationToken_System_ValueTuple_System_String_System_String____
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])
+  name.vb: ResultsBufferedAsync(Of T)(DbDataReader, CancellationToken, (Field As String, Column As String)())
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync<T>(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.ValueTuple<System.String, System.String>[])
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync(Of T)(System.Data.Common.DbDataReader, System.Threading.CancellationToken, System.ValueTuple(Of System.String, System.String)())
+  nameWithType: CoreExtensions.ResultsBufferedAsync<T>(DbDataReader, CancellationToken, (String Field, String Column)[])
+  nameWithType.vb: CoreExtensions.ResultsBufferedAsync(Of T)(DbDataReader, CancellationToken, (Field As String, Column As String)())
+- uid: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])
+  name: ResultsBufferedAsync<T>(DbDataReader, (String Field, String Column)[])
+  href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsBufferedAsync__1_System_Data_Common_DbDataReader_System_ValueTuple_System_String_System_String____
+  commentId: M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])
+  name.vb: ResultsBufferedAsync(Of T)(DbDataReader, (Field As String, Column As String)())
+  fullName: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync<T>(System.Data.Common.DbDataReader, System.ValueTuple<System.String, System.String>[])
+  fullName.vb: Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync(Of T)(System.Data.Common.DbDataReader, System.ValueTuple(Of System.String, System.String)())
+  nameWithType: CoreExtensions.ResultsBufferedAsync<T>(DbDataReader, (String Field, String Column)[])
+  nameWithType.vb: CoreExtensions.ResultsBufferedAsync(Of T)(DbDataReader, (Field As String, Column As String)())
 - uid: Open.Database.Extensions.CoreExtensions.ResultsFromDataTable*
   name: ResultsFromDataTable
   href: api/Open.Database.Extensions.CoreExtensions.html#Open_Database_Extensions_CoreExtensions_ResultsFromDataTable_
@@ -2320,6 +2543,24 @@ references:
   commentId: M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)
   fullName: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)
   nameWithType: DataReaderExtensions.AsEnumerable(IDataReader)
+- uid: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object})
+  name: AsEnumerable(IDataReader, ArrayPool<Object>)
+  href: api/Open.Database.Extensions.DataReaderExtensions.html#Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Buffers_ArrayPool_System_Object__
+  commentId: M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object})
+  name.vb: AsEnumerable(IDataReader, ArrayPool(Of Object))
+  fullName: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Buffers.ArrayPool<System.Object>)
+  fullName.vb: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Buffers.ArrayPool(Of System.Object))
+  nameWithType: DataReaderExtensions.AsEnumerable(IDataReader, ArrayPool<Object>)
+  nameWithType.vb: DataReaderExtensions.AsEnumerable(IDataReader, ArrayPool(Of Object))
+- uid: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])
+  name: AsEnumerable(IDataReader, ArrayPool<Object>, Int32, Int32[])
+  href: api/Open.Database.Extensions.DataReaderExtensions.html#Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Buffers_ArrayPool_System_Object__System_Int32_System_Int32___
+  commentId: M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])
+  name.vb: AsEnumerable(IDataReader, ArrayPool(Of Object), Int32, Int32())
+  fullName: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Buffers.ArrayPool<System.Object>, System.Int32, System.Int32[])
+  fullName.vb: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Buffers.ArrayPool(Of System.Object), System.Int32, System.Int32())
+  nameWithType: DataReaderExtensions.AsEnumerable(IDataReader, ArrayPool<Object>, Int32, Int32[])
+  nameWithType.vb: DataReaderExtensions.AsEnumerable(IDataReader, ArrayPool(Of Object), Int32, Int32())
 - uid: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})
   name: AsEnumerable(IDataReader, IEnumerable<Int32>)
   href: api/Open.Database.Extensions.DataReaderExtensions.html#Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__
@@ -2329,6 +2570,15 @@ references:
   fullName.vb: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Collections.Generic.IEnumerable(Of System.Int32))
   nameWithType: DataReaderExtensions.AsEnumerable(IDataReader, IEnumerable<Int32>)
   nameWithType.vb: DataReaderExtensions.AsEnumerable(IDataReader, IEnumerable(Of Int32))
+- uid: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object})
+  name: AsEnumerable(IDataReader, IEnumerable<Int32>, ArrayPool<Object>)
+  href: api/Open.Database.Extensions.DataReaderExtensions.html#Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Collections_Generic_IEnumerable_System_Int32__System_Buffers_ArrayPool_System_Object__
+  commentId: M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object})
+  name.vb: AsEnumerable(IDataReader, IEnumerable(Of Int32), ArrayPool(Of Object))
+  fullName: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Collections.Generic.IEnumerable<System.Int32>, System.Buffers.ArrayPool<System.Object>)
+  fullName.vb: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader, System.Collections.Generic.IEnumerable(Of System.Int32), System.Buffers.ArrayPool(Of System.Object))
+  nameWithType: DataReaderExtensions.AsEnumerable(IDataReader, IEnumerable<Int32>, ArrayPool<Object>)
+  nameWithType.vb: DataReaderExtensions.AsEnumerable(IDataReader, IEnumerable(Of Int32), ArrayPool(Of Object))
 - uid: Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Int32,System.Int32[])
   name: AsEnumerable(IDataReader, Int32, Int32[])
   href: api/Open.Database.Extensions.DataReaderExtensions.html#Open_Database_Extensions_DataReaderExtensions_AsEnumerable_System_Data_IDataReader_System_Int32_System_Int32___
@@ -2804,6 +3054,43 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping
   nameWithType: DataRecordExtensions.GetOrdinalMapping
+- uid: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord)
+  name: GetValues(IDataRecord)
+  href: api/Open.Database.Extensions.DataRecordExtensions.html#Open_Database_Extensions_DataRecordExtensions_GetValues_System_Data_IDataRecord_
+  commentId: M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord)
+  fullName: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord)
+  nameWithType: DataRecordExtensions.GetValues(IDataRecord)
+- uid: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Buffers.ArrayPool{System.Object})
+  name: GetValues(IDataRecord, ArrayPool<Object>)
+  href: api/Open.Database.Extensions.DataRecordExtensions.html#Open_Database_Extensions_DataRecordExtensions_GetValues_System_Data_IDataRecord_System_Buffers_ArrayPool_System_Object__
+  commentId: M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Buffers.ArrayPool{System.Object})
+  name.vb: GetValues(IDataRecord, ArrayPool(Of Object))
+  fullName: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord, System.Buffers.ArrayPool<System.Object>)
+  fullName.vb: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord, System.Buffers.ArrayPool(Of System.Object))
+  nameWithType: DataRecordExtensions.GetValues(IDataRecord, ArrayPool<Object>)
+  nameWithType.vb: DataRecordExtensions.GetValues(IDataRecord, ArrayPool(Of Object))
+- uid: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)
+  name: GetValues(IDataRecord, Int32)
+  href: api/Open.Database.Extensions.DataRecordExtensions.html#Open_Database_Extensions_DataRecordExtensions_GetValues_System_Data_IDataRecord_System_Int32_
+  commentId: M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)
+  fullName: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord, System.Int32)
+  nameWithType: DataRecordExtensions.GetValues(IDataRecord, Int32)
+- uid: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32,System.Buffers.ArrayPool{System.Object})
+  name: GetValues(IDataRecord, Int32, ArrayPool<Object>)
+  href: api/Open.Database.Extensions.DataRecordExtensions.html#Open_Database_Extensions_DataRecordExtensions_GetValues_System_Data_IDataRecord_System_Int32_System_Buffers_ArrayPool_System_Object__
+  commentId: M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32,System.Buffers.ArrayPool{System.Object})
+  name.vb: GetValues(IDataRecord, Int32, ArrayPool(Of Object))
+  fullName: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord, System.Int32, System.Buffers.ArrayPool<System.Object>)
+  fullName.vb: Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord, System.Int32, System.Buffers.ArrayPool(Of System.Object))
+  nameWithType: DataRecordExtensions.GetValues(IDataRecord, Int32, ArrayPool<Object>)
+  nameWithType.vb: DataRecordExtensions.GetValues(IDataRecord, Int32, ArrayPool(Of Object))
+- uid: Open.Database.Extensions.DataRecordExtensions.GetValues*
+  name: GetValues
+  href: api/Open.Database.Extensions.DataRecordExtensions.html#Open_Database_Extensions_DataRecordExtensions_GetValues_
+  commentId: Overload:Open.Database.Extensions.DataRecordExtensions.GetValues
+  isSpec: "True"
+  fullName: Open.Database.Extensions.DataRecordExtensions.GetValues
+  nameWithType: DataRecordExtensions.GetValues
 - uid: Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32})
   name: GetValuesFromOrdinals(IDataRecord, IList<Int32>)
   href: api/Open.Database.Extensions.DataRecordExtensions.html#Open_Database_Extensions_DataRecordExtensions_GetValuesFromOrdinals_System_Data_IDataRecord_System_Collections_Generic_IList_System_Int32__
@@ -2983,15 +3270,6 @@ references:
   commentId: M:Open.Database.Extensions.DbConnectionFactory.Create
   fullName: Open.Database.Extensions.DbConnectionFactory.Create()
   nameWithType: DbConnectionFactory.Create()
-- uid: Open.Database.Extensions.DbConnectionFactory.Create(System.Func{System.Data.IDbConnection})
-  name: Create(Func<IDbConnection>)
-  href: api/Open.Database.Extensions.DbConnectionFactory.html#Open_Database_Extensions_DbConnectionFactory_Create_System_Func_System_Data_IDbConnection__
-  commentId: M:Open.Database.Extensions.DbConnectionFactory.Create(System.Func{System.Data.IDbConnection})
-  name.vb: Create(Func(Of IDbConnection))
-  fullName: Open.Database.Extensions.DbConnectionFactory.Create(System.Func<System.Data.IDbConnection>)
-  fullName.vb: Open.Database.Extensions.DbConnectionFactory.Create(System.Func(Of System.Data.IDbConnection))
-  nameWithType: DbConnectionFactory.Create(Func<IDbConnection>)
-  nameWithType.vb: DbConnectionFactory.Create(Func(Of IDbConnection))
 - uid: Open.Database.Extensions.DbConnectionFactory.Create*
   name: Create
   href: api/Open.Database.Extensions.DbConnectionFactory.html#Open_Database_Extensions_DbConnectionFactory_Create_
@@ -3008,6 +3286,25 @@ references:
   fullName.vb: Open.Database.Extensions.DbConnectionFactory.Create(Of TConnection)(System.Func(Of TConnection))
   nameWithType: DbConnectionFactory.Create<TConnection>(Func<TConnection>)
   nameWithType.vb: DbConnectionFactory.Create(Of TConnection)(Func(Of TConnection))
+- uid: Open.Database.Extensions.DbConnectionFactory.op_Implicit(System.Func{System.Data.IDbConnection})~Open.Database.Extensions.DbConnectionFactory
+  name: Implicit(Func<IDbConnection> to DbConnectionFactory)
+  href: api/Open.Database.Extensions.DbConnectionFactory.html#Open_Database_Extensions_DbConnectionFactory_op_Implicit_System_Func_System_Data_IDbConnection___Open_Database_Extensions_DbConnectionFactory
+  commentId: M:Open.Database.Extensions.DbConnectionFactory.op_Implicit(System.Func{System.Data.IDbConnection})~Open.Database.Extensions.DbConnectionFactory
+  name.vb: Widening(Func(Of IDbConnection) to DbConnectionFactory)
+  fullName: Open.Database.Extensions.DbConnectionFactory.Implicit(System.Func<System.Data.IDbConnection> to Open.Database.Extensions.DbConnectionFactory)
+  fullName.vb: Open.Database.Extensions.DbConnectionFactory.Widening(System.Func(Of System.Data.IDbConnection) to Open.Database.Extensions.DbConnectionFactory)
+  nameWithType: DbConnectionFactory.Implicit(Func<IDbConnection> to DbConnectionFactory)
+  nameWithType.vb: DbConnectionFactory.Widening(Func(Of IDbConnection) to DbConnectionFactory)
+- uid: Open.Database.Extensions.DbConnectionFactory.op_Implicit*
+  name: Implicit
+  href: api/Open.Database.Extensions.DbConnectionFactory.html#Open_Database_Extensions_DbConnectionFactory_op_Implicit_
+  commentId: Overload:Open.Database.Extensions.DbConnectionFactory.op_Implicit
+  isSpec: "True"
+  name.vb: Widening
+  fullName: Open.Database.Extensions.DbConnectionFactory.Implicit
+  fullName.vb: Open.Database.Extensions.DbConnectionFactory.Widening
+  nameWithType: DbConnectionFactory.Implicit
+  nameWithType.vb: DbConnectionFactory.Widening
 - uid: Open.Database.Extensions.DbConnectionFactory`1
   name: DbConnectionFactory<TConnection>
   href: api/Open.Database.Extensions.DbConnectionFactory-1.html
@@ -3052,6 +3349,25 @@ references:
   fullName.vb: Open.Database.Extensions.DbConnectionFactory(Of TConnection).Create
   nameWithType: DbConnectionFactory<TConnection>.Create
   nameWithType.vb: DbConnectionFactory(Of TConnection).Create
+- uid: Open.Database.Extensions.DbConnectionFactory`1.op_Implicit(System.Func{`0})~Open.Database.Extensions.DbConnectionFactory{`0}
+  name: Implicit(Func<TConnection> to DbConnectionFactory<TConnection>)
+  href: api/Open.Database.Extensions.DbConnectionFactory-1.html#Open_Database_Extensions_DbConnectionFactory_1_op_Implicit_System_Func__0___Open_Database_Extensions_DbConnectionFactory__0_
+  commentId: M:Open.Database.Extensions.DbConnectionFactory`1.op_Implicit(System.Func{`0})~Open.Database.Extensions.DbConnectionFactory{`0}
+  name.vb: Widening(Func(Of TConnection) to DbConnectionFactory(Of TConnection))
+  fullName: Open.Database.Extensions.DbConnectionFactory<TConnection>.Implicit(System.Func<TConnection> to Open.Database.Extensions.DbConnectionFactory<TConnection>)
+  fullName.vb: Open.Database.Extensions.DbConnectionFactory(Of TConnection).Widening(System.Func(Of TConnection) to Open.Database.Extensions.DbConnectionFactory(Of TConnection))
+  nameWithType: DbConnectionFactory<TConnection>.Implicit(Func<TConnection> to DbConnectionFactory<TConnection>)
+  nameWithType.vb: DbConnectionFactory(Of TConnection).Widening(Func(Of TConnection) to DbConnectionFactory(Of TConnection))
+- uid: Open.Database.Extensions.DbConnectionFactory`1.op_Implicit*
+  name: Implicit
+  href: api/Open.Database.Extensions.DbConnectionFactory-1.html#Open_Database_Extensions_DbConnectionFactory_1_op_Implicit_
+  commentId: Overload:Open.Database.Extensions.DbConnectionFactory`1.op_Implicit
+  isSpec: "True"
+  name.vb: Widening
+  fullName: Open.Database.Extensions.DbConnectionFactory<TConnection>.Implicit
+  fullName.vb: Open.Database.Extensions.DbConnectionFactory(Of TConnection).Widening
+  nameWithType: DbConnectionFactory<TConnection>.Implicit
+  nameWithType.vb: DbConnectionFactory(Of TConnection).Widening
 - uid: Open.Database.Extensions.DbConnectionFactory`1.Open#Database#Extensions#IDbConnectionFactory#Create
   name: IDbConnectionFactory.Create()
   href: api/Open.Database.Extensions.DbConnectionFactory-1.html#Open_Database_Extensions_DbConnectionFactory_1_Open_Database_Extensions_IDbConnectionFactory_Create
@@ -4309,60 +4625,6 @@ references:
   fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).FirstOrdinalResultsAsync(Of T0)()
   nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.FirstOrdinalResultsAsync<T0>()
   nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).FirstOrdinalResultsAsync(Of T0)()
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)
-  name: IterateReaderAsync(Action<IDataRecord>, CommandBehavior)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_IterateReaderAsync_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderAsync(System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)
-  name.vb: IterateReaderAsync(Action(Of IDataRecord), CommandBehavior)
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderAsync(System.Action<System.Data.IDataRecord>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderAsync(System.Action(Of System.Data.IDataRecord), System.Data.CommandBehavior)
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderAsync(Action<IDataRecord>, CommandBehavior)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderAsync(Action(Of IDataRecord), CommandBehavior)
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderAsync(System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior)
-  name: IterateReaderAsync(Func<IDataRecord, ValueTask>, CommandBehavior)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_IterateReaderAsync_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderAsync(System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior)
-  name.vb: IterateReaderAsync(Func(Of IDataRecord, ValueTask), CommandBehavior)
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderAsync(System.Func<System.Data.IDataRecord, System.Threading.Tasks.ValueTask>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderAsync(System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.ValueTask), System.Data.CommandBehavior)
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderAsync(Func<IDataRecord, ValueTask>, CommandBehavior)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderAsync(Func(Of IDataRecord, ValueTask), CommandBehavior)
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderAsync*
-  name: IterateReaderAsync
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_IterateReaderAsync_
-  commentId: Overload:Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderAsync
-  isSpec: "True"
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderAsync
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderAsync
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderAsync
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderAsync
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderWhileAsync(System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
-  name: IterateReaderWhileAsync(Func<IDataRecord, Boolean>, CommandBehavior)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_IterateReaderWhileAsync_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderWhileAsync(System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
-  name.vb: IterateReaderWhileAsync(Func(Of IDataRecord, Boolean), CommandBehavior)
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderWhileAsync(System.Func<System.Data.IDataRecord, System.Boolean>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderWhileAsync(System.Func(Of System.Data.IDataRecord, System.Boolean), System.Data.CommandBehavior)
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderWhileAsync(Func<IDataRecord, Boolean>, CommandBehavior)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderWhileAsync(Func(Of IDataRecord, Boolean), CommandBehavior)
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderWhileAsync(System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.CommandBehavior)
-  name: IterateReaderWhileAsync(Func<IDataRecord, ValueTask<Boolean>>, CommandBehavior)
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_IterateReaderWhileAsync_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_CommandBehavior_
-  commentId: M:Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderWhileAsync(System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.CommandBehavior)
-  name.vb: IterateReaderWhileAsync(Func(Of IDataRecord, ValueTask(Of Boolean)), CommandBehavior)
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderWhileAsync(System.Func<System.Data.IDataRecord, System.Threading.Tasks.ValueTask<System.Boolean>>, System.Data.CommandBehavior)
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderWhileAsync(System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.ValueTask(Of System.Boolean)), System.Data.CommandBehavior)
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderWhileAsync(Func<IDataRecord, ValueTask<Boolean>>, CommandBehavior)
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderWhileAsync(Func(Of IDataRecord, ValueTask(Of Boolean)), CommandBehavior)
-- uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderWhileAsync*
-  name: IterateReaderWhileAsync
-  href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_IterateReaderWhileAsync_
-  commentId: Overload:Open.Database.Extensions.ExpressiveDbCommandBase`5.IterateReaderWhileAsync
-  isSpec: "True"
-  fullName: Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderWhileAsync
-  fullName.vb: Open.Database.Extensions.ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderWhileAsync
-  nameWithType: ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.IterateReaderWhileAsync
-  nameWithType.vb: ExpressiveDbCommandBase(Of TConnection, TCommand, TReader, TDbType, TThis).IterateReaderWhileAsync
 - uid: Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync*
   name: ResultsAsync
   href: api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html#Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync_
@@ -4954,33 +5216,33 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader
   nameWithType: IExecuteReaderExtensions.IterateReader
-- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``1(Open.Database.Extensions.IExecuteReader,System.Action{System.Data.IDataRecord})
-  name: IterateReader<TReader>(IExecuteReader, Action<IDataRecord>)
-  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReader__1_Open_Database_Extensions_IExecuteReader_System_Action_System_Data_IDataRecord__
-  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``1(Open.Database.Extensions.IExecuteReader,System.Action{System.Data.IDataRecord})
-  name.vb: IterateReader(Of TReader)(IExecuteReader, Action(Of IDataRecord))
-  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader<TReader>(Open.Database.Extensions.IExecuteReader, System.Action<System.Data.IDataRecord>)
-  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader(Of TReader)(Open.Database.Extensions.IExecuteReader, System.Action(Of System.Data.IDataRecord))
-  nameWithType: IExecuteReaderExtensions.IterateReader<TReader>(IExecuteReader, Action<IDataRecord>)
-  nameWithType.vb: IExecuteReaderExtensions.IterateReader(Of TReader)(IExecuteReader, Action(Of IDataRecord))
-- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``2(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})
-  name: IterateReader<TEntity, TResult>(IExecuteReader, Func<IDataRecord, TEntity>, Func<IEnumerable<TEntity>, TResult>)
-  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReader__2_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__
-  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``2(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})
-  name.vb: IterateReader(Of TEntity, TResult)(IExecuteReader, Func(Of IDataRecord, TEntity), Func(Of IEnumerable(Of TEntity), TResult))
-  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader<TEntity, TResult>(Open.Database.Extensions.IExecuteReader, System.Func<System.Data.IDataRecord, TEntity>, System.Func<System.Collections.Generic.IEnumerable<TEntity>, TResult>)
-  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader(Of TEntity, TResult)(Open.Database.Extensions.IExecuteReader, System.Func(Of System.Data.IDataRecord, TEntity), System.Func(Of System.Collections.Generic.IEnumerable(Of TEntity), TResult))
-  nameWithType: IExecuteReaderExtensions.IterateReader<TEntity, TResult>(IExecuteReader, Func<IDataRecord, TEntity>, Func<IEnumerable<TEntity>, TResult>)
-  nameWithType.vb: IExecuteReaderExtensions.IterateReader(Of TEntity, TResult)(IExecuteReader, Func(Of IDataRecord, TEntity), Func(Of IEnumerable(Of TEntity), TResult))
-- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Action{System.Data.IDataRecord})
-  name: IterateReaderAsync(IExecuteReaderAsync, Action<IDataRecord>)
-  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Action_System_Data_IDataRecord__
-  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Action{System.Data.IDataRecord})
-  name.vb: IterateReaderAsync(IExecuteReaderAsync, Action(Of IDataRecord))
-  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Action<System.Data.IDataRecord>)
-  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Action(Of System.Data.IDataRecord))
-  nameWithType: IExecuteReaderExtensions.IterateReaderAsync(IExecuteReaderAsync, Action<IDataRecord>)
-  nameWithType.vb: IExecuteReaderExtensions.IterateReaderAsync(IExecuteReaderAsync, Action(Of IDataRecord))
+- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``1(Open.Database.Extensions.IExecuteReader,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)
+  name: IterateReader<TReader>(IExecuteReader, Action<IDataRecord>, CommandBehavior)
+  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReader__1_Open_Database_Extensions_IExecuteReader_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_
+  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``1(Open.Database.Extensions.IExecuteReader,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)
+  name.vb: IterateReader(Of TReader)(IExecuteReader, Action(Of IDataRecord), CommandBehavior)
+  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader<TReader>(Open.Database.Extensions.IExecuteReader, System.Action<System.Data.IDataRecord>, System.Data.CommandBehavior)
+  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader(Of TReader)(Open.Database.Extensions.IExecuteReader, System.Action(Of System.Data.IDataRecord), System.Data.CommandBehavior)
+  nameWithType: IExecuteReaderExtensions.IterateReader<TReader>(IExecuteReader, Action<IDataRecord>, CommandBehavior)
+  nameWithType.vb: IExecuteReaderExtensions.IterateReader(Of TReader)(IExecuteReader, Action(Of IDataRecord), CommandBehavior)
+- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``2(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1},System.Data.CommandBehavior)
+  name: IterateReader<TEntity, TResult>(IExecuteReader, Func<IDataRecord, TEntity>, Func<IEnumerable<TEntity>, TResult>, CommandBehavior)
+  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReader__2_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__System_Data_CommandBehavior_
+  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``2(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1},System.Data.CommandBehavior)
+  name.vb: IterateReader(Of TEntity, TResult)(IExecuteReader, Func(Of IDataRecord, TEntity), Func(Of IEnumerable(Of TEntity), TResult), CommandBehavior)
+  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader<TEntity, TResult>(Open.Database.Extensions.IExecuteReader, System.Func<System.Data.IDataRecord, TEntity>, System.Func<System.Collections.Generic.IEnumerable<TEntity>, TResult>, System.Data.CommandBehavior)
+  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReader(Of TEntity, TResult)(Open.Database.Extensions.IExecuteReader, System.Func(Of System.Data.IDataRecord, TEntity), System.Func(Of System.Collections.Generic.IEnumerable(Of TEntity), TResult), System.Data.CommandBehavior)
+  nameWithType: IExecuteReaderExtensions.IterateReader<TEntity, TResult>(IExecuteReader, Func<IDataRecord, TEntity>, Func<IEnumerable<TEntity>, TResult>, CommandBehavior)
+  nameWithType.vb: IExecuteReaderExtensions.IterateReader(Of TEntity, TResult)(IExecuteReader, Func(Of IDataRecord, TEntity), Func(Of IEnumerable(Of TEntity), TResult), CommandBehavior)
+- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)
+  name: IterateReaderAsync(IExecuteReaderAsync, Action<IDataRecord>, CommandBehavior)
+  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_
+  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)
+  name.vb: IterateReaderAsync(IExecuteReaderAsync, Action(Of IDataRecord), CommandBehavior)
+  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Action<System.Data.IDataRecord>, System.Data.CommandBehavior)
+  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Action(Of System.Data.IDataRecord), System.Data.CommandBehavior)
+  nameWithType: IExecuteReaderExtensions.IterateReaderAsync(IExecuteReaderAsync, Action<IDataRecord>, CommandBehavior)
+  nameWithType.vb: IExecuteReaderExtensions.IterateReaderAsync(IExecuteReaderAsync, Action(Of IDataRecord), CommandBehavior)
 - uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync*
   name: IterateReaderAsync
   href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderAsync_
@@ -4988,15 +5250,15 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderAsync
   nameWithType: IExecuteReaderExtensions.IterateReaderAsync
-- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,System.Boolean})
-  name: IterateReaderWhile(IExecuteReader, Func<IDataRecord, Boolean>)
-  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhile_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord_System_Boolean__
-  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,System.Boolean})
-  name.vb: IterateReaderWhile(IExecuteReader, Func(Of IDataRecord, Boolean))
-  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader, System.Func<System.Data.IDataRecord, System.Boolean>)
-  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader, System.Func(Of System.Data.IDataRecord, System.Boolean))
-  nameWithType: IExecuteReaderExtensions.IterateReaderWhile(IExecuteReader, Func<IDataRecord, Boolean>)
-  nameWithType.vb: IExecuteReaderExtensions.IterateReaderWhile(IExecuteReader, Func(Of IDataRecord, Boolean))
+- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
+  name: IterateReaderWhile(IExecuteReader, Func<IDataRecord, Boolean>, CommandBehavior)
+  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhile_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_
+  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
+  name.vb: IterateReaderWhile(IExecuteReader, Func(Of IDataRecord, Boolean), CommandBehavior)
+  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader, System.Func<System.Data.IDataRecord, System.Boolean>, System.Data.CommandBehavior)
+  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile(Open.Database.Extensions.IExecuteReader, System.Func(Of System.Data.IDataRecord, System.Boolean), System.Data.CommandBehavior)
+  nameWithType: IExecuteReaderExtensions.IterateReaderWhile(IExecuteReader, Func<IDataRecord, Boolean>, CommandBehavior)
+  nameWithType.vb: IExecuteReaderExtensions.IterateReaderWhile(IExecuteReader, Func(Of IDataRecord, Boolean), CommandBehavior)
 - uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile*
   name: IterateReaderWhile
   href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhile_
@@ -5004,24 +5266,24 @@ references:
   isSpec: "True"
   fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhile
   nameWithType: IExecuteReaderExtensions.IterateReaderWhile
-- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Boolean})
-  name: IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, Boolean>)
-  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Func_System_Data_IDataRecord_System_Boolean__
-  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Boolean})
-  name.vb: IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, Boolean))
-  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func<System.Data.IDataRecord, System.Boolean>)
-  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func(Of System.Data.IDataRecord, System.Boolean))
-  nameWithType: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, Boolean>)
-  nameWithType.vb: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, Boolean))
-- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}})
-  name: IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, ValueTask<Boolean>>)
-  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___
-  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}})
-  name.vb: IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, ValueTask(Of Boolean)))
-  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func<System.Data.IDataRecord, System.Threading.Tasks.ValueTask<System.Boolean>>)
-  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.ValueTask(Of System.Boolean)))
-  nameWithType: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, ValueTask<Boolean>>)
-  nameWithType.vb: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, ValueTask(Of Boolean)))
+- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
+  name: IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, Boolean>, CommandBehavior)
+  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_
+  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)
+  name.vb: IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, Boolean), CommandBehavior)
+  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func<System.Data.IDataRecord, System.Boolean>, System.Data.CommandBehavior)
+  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func(Of System.Data.IDataRecord, System.Boolean), System.Data.CommandBehavior)
+  nameWithType: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, Boolean>, CommandBehavior)
+  nameWithType.vb: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, Boolean), CommandBehavior)
+- uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.CommandBehavior)
+  name: IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, ValueTask<Boolean>>, CommandBehavior)
+  href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_CommandBehavior_
+  commentId: M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.CommandBehavior)
+  name.vb: IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, ValueTask(Of Boolean)), CommandBehavior)
+  fullName: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func<System.Data.IDataRecord, System.Threading.Tasks.ValueTask<System.Boolean>>, System.Data.CommandBehavior)
+  fullName.vb: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync(Open.Database.Extensions.IExecuteReaderAsync, System.Func(Of System.Data.IDataRecord, System.Threading.Tasks.ValueTask(Of System.Boolean)), System.Data.CommandBehavior)
+  nameWithType: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func<IDataRecord, ValueTask<Boolean>>, CommandBehavior)
+  nameWithType.vb: IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func(Of IDataRecord, ValueTask(Of Boolean)), CommandBehavior)
 - uid: Open.Database.Extensions.IExecuteReaderExtensions.IterateReaderWhileAsync*
   name: IterateReaderWhileAsync
   href: api/Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_

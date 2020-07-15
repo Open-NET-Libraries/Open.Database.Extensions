@@ -18,15 +18,25 @@ namespace Open.Database.Extensions
 			IDataReader reader,
 			IEnumerable<int> ordinals,
 			IEnumerable<string>? columnNames = null,
-			bool readStarted = false,
-			ArrayPool<object>? arrayPool = null)
+			bool readStarted = false)
 		{
 			var o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
 			return new QueryResultQueue<object[]>(
 				o, columnNames ?? reader.GetNames(o),
-				new Queue<object[]>(arrayPool == null
-					? reader.AsEnumerableInternal(o, readStarted)
-					: reader.AsEnumerableInternal(o, readStarted, arrayPool)));
+				new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted)));
+		}
+
+		internal static QueryResultQueue<object?[]> RetrieveInternal(
+			ArrayPool<object?> arrayPool,
+			IDataReader reader,
+			IEnumerable<int> ordinals,
+			IEnumerable<string>? columnNames = null,
+			bool readStarted = false)
+		{
+			var o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
+			return new QueryResultQueue<object?[]>(
+				o, columnNames ?? reader.GetNames(o),
+				new Queue<object?[]>(reader.AsEnumerableInternal(o, readStarted, arrayPool)));
 		}
 
 		/// <summary>
@@ -185,16 +195,20 @@ namespace Open.Database.Extensions
 			=> RetrieveAsync(reader, true, cancellationToken);
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
-		static async ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true, ArrayPool<object>? arrayPool = null)
+		static ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
+			=> RetrieveAsyncInternal(null, reader, cancellationToken, ordinals, columnNames, readStarted, useReadAsync)!;
+
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
+		static async ValueTask<QueryResultQueue<object?[]>> RetrieveAsyncInternal(ArrayPool<object?>? arrayPool, DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			Contract.EndContractBlock();
 
 			var buffer
-				= new Queue<object[]>();
+				= new Queue<object?[]>();
 
 			var result
-				= new QueryResultQueue<object[]>(
+				= new QueryResultQueue<object?[]>(
 				   ordinals,
 				   columnNames ?? ordinals.Select(reader.GetName),
 				   buffer);
@@ -202,7 +216,7 @@ namespace Open.Database.Extensions
 			var fieldCount = result.ColumnCount;
 			var o = result.Ordinals;
 
-			Func<IDataRecord, object[]> handler;
+			Func<IDataRecord, object?[]> handler;
 			if (arrayPool != null) handler = record =>
 			   {
 				   var row = arrayPool.Rent(fieldCount);

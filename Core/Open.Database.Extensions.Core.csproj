@@ -1,36 +1,47 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<RootNamespace>Open.Database.Extensions</RootNamespace>
 		<TargetFrameworks>netstandard2.0; netstandard2.1</TargetFrameworks>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Authors>electricessence</Authors>
-		<Company />
-		<Product />
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
-		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
-		<RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<Version>6.5.0</Version>
-		<PackageReleaseNotes></PackageReleaseNotes>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
-		<RootNamespace>Open.Database.Extensions</RootNamespace>
+		<Authors>electricessence</Authors>
+		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.</Description>
+		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
+		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>6.6.1</Version>
+		<PackageReleaseNotes></PackageReleaseNotes>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PackageIcon>logo.png</PackageIcon>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+	</ItemGroup>
+	
 	<PropertyGroup>
 		<DocumentationFile>Open.Database.Extensions.Core.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-		<PackageReference Include="System.Memory" Version="4.5.3" />
-		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" />
+		<PackageReference Include="System.Memory" Version="4.5.4" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Compile Remove="api\**" />
 	  <EmbeddedResource Remove="api\**" />
 	  <None Remove="api\**" />
+		<None Include="..\logo.png">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -39,12 +50,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--<PackageReference Include="docfx.console" Version="2.47.0">
+		<!--<PackageReference Include="docfx.console" Version="2.56.1">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>-->
 		<PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
-		<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+		<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.0-beta2.final">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>

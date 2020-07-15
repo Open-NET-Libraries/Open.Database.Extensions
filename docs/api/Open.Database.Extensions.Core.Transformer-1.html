@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class Transformer&lt;T&gt;
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -132,10 +132,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1__ctor_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.%23ctor(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1__ctor_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.%23ctor(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L43">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L58">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1__ctor_" data-uid="Open.Database.Extensions.Core.Transformer`1.#ctor*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1__ctor_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Open.Database.Extensions.Core.Transformer`1.#ctor(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">Transformer(IEnumerable&lt;(String Field, String Column)&gt;)</h4>
@@ -144,7 +144,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Transformer(IEnumerable&lt;(string Field, string Column)&gt; overrides = null)</code></pre>
+    <pre><code class="lang-csharp hljs">protected Transformer(IEnumerable&lt;(string Field, string Column)&gt; overrides = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -163,14 +163,77 @@
       </tr>
     </tbody>
   </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_LocalPool.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.LocalPool%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L31">View Source</a>
+  </span>
+  <h4 id="Open_Database_Extensions_Core_Transformer_1_LocalPool" data-uid="Open.Database.Extensions.Core.Transformer`1.LocalPool">LocalPool</h4>
+  <div class="markdown level1 summary"><p>Buffers for transforming.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected static readonly ArrayPool&lt;object&gt; LocalPool</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Buffers.ArrayPool</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_MaxArrayBuffer.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.MaxArrayBuffer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L26">View Source</a>
+  </span>
+  <h4 id="Open_Database_Extensions_Core_Transformer_1_MaxArrayBuffer" data-uid="Open.Database.Extensions.Core.Transformer`1.MaxArrayBuffer">MaxArrayBuffer</h4>
+  <div class="markdown level1 summary"><p>Maximum number of arrays to hold in the local array pool per bucket.
+May also define how many records are pre buffered before transforming.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected const int MaxArrayBuffer = 1024</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="properties">Properties
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_ColumnNames.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.ColumnNames%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_ColumnNames.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.ColumnNames%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L37">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L52">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1_ColumnNames_" data-uid="Open.Database.Extensions.Core.Transformer`1.ColumnNames*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1_ColumnNames" data-uid="Open.Database.Extensions.Core.Transformer`1.ColumnNames">ColumnNames</h4>
@@ -198,10 +261,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_PropertyNames.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.PropertyNames%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_PropertyNames.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.PropertyNames%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L32">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L47">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1_PropertyNames_" data-uid="Open.Database.Extensions.Core.Transformer`1.PropertyNames*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1_PropertyNames" data-uid="Open.Database.Extensions.Core.Transformer`1.PropertyNames">PropertyNames</h4>
@@ -229,10 +292,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_Type.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.Type%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_Type.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.Type%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L21">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L36">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1_Type_" data-uid="Open.Database.Extensions.Core.Transformer`1.Type*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1_Type" data-uid="Open.Database.Extensions.Core.Transformer`1.Type">Type</h4>
@@ -262,10 +325,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_Open_Database_Extensions_Core_QueryResult_System_Collections_Generic_Queue_System_Object_____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult%7BSystem.Collections.Generic.Queue%7BSystem.Object%5B%5D%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_Open_Database_Extensions_Core_QueryResult_System_Collections_Generic_Queue_System_Object_____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult%7BSystem.Collections.Generic.Queue%7BSystem.Object%5B%5D%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L156">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L170">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_" data-uid="Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_Open_Database_Extensions_Core_QueryResult_System_Collections_Generic_Queue_System_Object_____" data-uid="Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">AsDequeueingEnumerable(QueryResult&lt;Queue&lt;Object[]&gt;&gt;)</h4>
@@ -312,10 +375,72 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.Create(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_Open_Database_Extensions_Core_QueryResult_System_Collections_Generic_Queue_System_Object_____System_Buffers_ArrayPool_System_Object__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult%7BSystem.Collections.Generic.Queue%7BSystem.Object%5B%5D%7D%7D%2CSystem.Buffers.ArrayPool%7BSystem.Object%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L71">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L188">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_" data-uid="Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable*"></a>
+  <h4 id="Open_Database_Extensions_Core_Transformer_1_AsDequeueingEnumerable_Open_Database_Extensions_Core_QueryResult_System_Collections_Generic_Queue_System_Object_____System_Buffers_ArrayPool_System_Object__System_Boolean_" data-uid="Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)">AsDequeueingEnumerable(QueryResult&lt;Queue&lt;Object[]&gt;&gt;, ArrayPool&lt;Object&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Dequeues the results and transforms each one by one during enumeration.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerable&lt;T&gt; AsDequeueingEnumerable(QueryResult&lt;Queue&lt;object[]&gt;&gt; results, ArrayPool&lt;object&gt; arrayPool, bool clearArrays = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.Core.QueryResult-1.html">QueryResult</a>&lt;<span class="xref">System.Collections.Generic.Queue</span>&lt;<span class="xref">System.Object</span>[]&gt;&gt;</td>
+        <td><span class="parametername">results</span></td>
+        <td><p>The results to process.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Buffers.ArrayPool</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><span class="parametername">arrayPool</span></td>
+        <td><p>The array pool to return the buffers to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">clearArrays</span></td>
+        <td><p>Indicates whether the contents of the buffers should be cleared before reuse.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;</td>
+        <td><p>A dequeuing enumerable of the transformed results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.Create(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L85">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1_Create_" data-uid="Open.Database.Extensions.Core.Transformer`1.Create*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Open.Database.Extensions.Core.Transformer`1.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">Create(IEnumerable&lt;(String Field, String Column)&gt;)</h4>
@@ -360,14 +485,14 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_Results_System_Data_DataTable_System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.Results(System.Data.DataTable%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1_Results_System_Data_DataTable_System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601.Results(System.Data.DataTable%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L176">View Source</a>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L303">View Source</a>
   </span>
   <a id="Open_Database_Extensions_Core_Transformer_1_Results_" data-uid="Open.Database.Extensions.Core.Transformer`1.Results*"></a>
   <h4 id="Open_Database_Extensions_Core_Transformer_1_Results_System_Data_DataTable_System_Boolean_" data-uid="Open.Database.Extensions.Core.Transformer`1.Results(System.Data.DataTable,System.Boolean)">Results(DataTable, Boolean)</h4>
-  <div class="markdown level1 summary"><p>Processes the data from the data table inot a queue. Then dequeues the results and transforms each one by one during enumeration.</p>
+  <div class="markdown level1 summary"><p>Processes the data from the data table into a queue. Then dequeues the results and transforms each one by one during enumeration.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -422,10 +547,10 @@
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_Core_Transformer_1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.Core.Transformer%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L15" class="contribution-link">View Source</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/Core/Transformer.cs/#L19" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

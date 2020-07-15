@@ -477,7 +477,7 @@ namespace Open.Database.Extensions
 				// Open MUST occur before command creation as some DbCommands require it.
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var cmd = PrepareCommand(conn);
-				await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken);
+				await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(true);
 			});
 
 			ValueTask ExecuteReaderAsyncCore(IDataReader reader)
@@ -495,7 +495,7 @@ namespace Open.Database.Extensions
 				// Open MUST occur before command creation as some DbCommands require it.
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var cmd = PrepareCommand(conn);
-				return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken);
+				return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(true);
 			});
 
 			ValueTask<T> ExecuteReaderAsyncCore(IDataReader reader)
@@ -509,7 +509,7 @@ namespace Open.Database.Extensions
 				// Open MUST occur before command creation as some DbCommands require it.
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var cmd = PrepareCommand(conn);
-				await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken);
+				await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(true);
 			});
 
 		/// <inhericdoc />
@@ -519,7 +519,7 @@ namespace Open.Database.Extensions
 				// Open MUST occur before command creation as some DbCommands require it.
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var cmd = PrepareCommand(conn);
-				return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken);
+				return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(true);
 			});
 
 		void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)

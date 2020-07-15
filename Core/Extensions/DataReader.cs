@@ -118,7 +118,7 @@ namespace Open.Database.Extensions
 			if (useReadAsync)
 			{
 				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true))
-					await handler(reader);
+					await handler(reader).ConfigureAwait(false);
 			}
 			else if (cancellationToken.CanBeCanceled)
 			{
@@ -130,20 +130,20 @@ namespace Open.Database.Extensions
 				{
 					if (cancelled)
 					{
-						await handler(reader); // we recieved the results, might as well use them.
+						await handler(reader).ConfigureAwait(false); // we recieved the results, might as well use them.
 						cancellationToken.ThrowIfCancellationRequested();
 					}
 					else
 					{
 						cancelled = cancellationToken.IsCancellationRequested;
-						await handler(reader);
+						await handler(reader).ConfigureAwait(false);
 					}
 				}
 			}
 			else
 			{
 				while (reader.Read())
-					await handler(reader);
+					await handler(reader).ConfigureAwait(false);
 			}
 		}
 
@@ -186,7 +186,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
-		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object> arrayPool)
+		public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, ArrayPool<object?> arrayPool)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -236,7 +236,7 @@ namespace Open.Database.Extensions
 			}
 		}
 
-		internal static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object> arrayPool)
+		internal static IEnumerable<object?[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object?> arrayPool)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
@@ -279,11 +279,12 @@ namespace Open.Database.Extensions
 		/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
-		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object> arrayPool)
+		public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object?> arrayPool)
 			=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -294,13 +295,14 @@ namespace Open.Database.Extensions
 
 		/// <summary>
 		/// Enumerates all the remaining values of the current result set of a data reader.
+		/// DBNull values are retained.
 		/// </summary>
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
-		public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object> arrayPool, int n, params int[] others)
+		public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, ArrayPool<object?> arrayPool, int n, params int[] others)
 			=> AsEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
 		/// <summary>
@@ -390,6 +392,7 @@ namespace Open.Database.Extensions
 		/// <param name="reader">The reader to enumerate.</param>
 		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -416,7 +419,8 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
 		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
-		public static async IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
+		public static async IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -435,6 +439,7 @@ namespace Open.Database.Extensions
 			}
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -467,7 +472,8 @@ namespace Open.Database.Extensions
 			}
 		}
 
-		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken)
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
+		static async IAsyncEnumerable<object?[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object?> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
@@ -509,7 +515,7 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
-		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object> arrayPool, CancellationToken cancellationToken = default)
+		public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object?> arrayPool, CancellationToken cancellationToken = default)
 			=> AsAsyncEnumerableInternal(reader, ordinals, false, arrayPool, cancellationToken);
 
 		/// <summary>
@@ -534,7 +540,7 @@ namespace Open.Database.Extensions
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
-		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, CancellationToken cancellationToken, int n, params int[] others)
+		public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, CancellationToken cancellationToken, int n, params int[] others)
 			=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool, cancellationToken);
 
 		/// <summary>
@@ -555,7 +561,7 @@ namespace Open.Database.Extensions
 		/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 		/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 		/// <returns>An enumeration of the values returned from a data reader.</returns>
-		public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, int n, params int[] others)
+		public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, int n, params int[] others)
 			=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
 		/// <summary>
@@ -567,11 +573,13 @@ namespace Open.Database.Extensions
 		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, T> transform,
 			bool throwOnCancellation,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -612,11 +620,13 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
 		/// <returns>An enumerable used to iterate the results.</returns>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 		public static async IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
 			Func<IDataRecord, ValueTask<T>> transform,
 			bool throwOnCancellation,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -626,14 +636,14 @@ namespace Open.Database.Extensions
 				if (reader is DbDataReader r)
 				{
 					while (await r.ReadAsync(cancellationToken).ConfigureAwait(true))
-						yield return await transform(r);
+						yield return await transform(r).ConfigureAwait(false);
 				}
 				else
 				{
 					while (reader.Read())
 					{
 						cancellationToken.ThrowIfCancellationRequested();
-						yield return await transform(reader);
+						yield return await transform(reader).ConfigureAwait(false);
 					}
 				}
 			}
@@ -643,12 +653,12 @@ namespace Open.Database.Extensions
 				if (reader is DbDataReader r)
 				{
 					while (!cancellationToken.IsCancellationRequested && await r.ReadAsync().ConfigureAwait(true))
-						yield return await transform(r);
+						yield return await transform(r).ConfigureAwait(false);
 				}
 				else
 				{
 					while (!cancellationToken.IsCancellationRequested && reader.Read())
-						yield return await transform(reader);
+						yield return await transform(reader).ConfigureAwait(false);
 				}
 			}
 		}
@@ -690,6 +700,7 @@ namespace Open.Database.Extensions
 		public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
@@ -709,11 +720,12 @@ namespace Open.Database.Extensions
 		public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 			Func<IDataRecord, ValueTask<T>> transform, CancellationToken cancellationToken = default)
 		{
+			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
 			var list = new List<T>();
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true)) list.Add(await transform(reader));
+			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true)) list.Add(await transform(reader).ConfigureAwait(false));
 			return list;
 		}
 
@@ -880,7 +892,7 @@ namespace Open.Database.Extensions
 
 				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
 				var cancelled = false;
-				while (reader.Read() && await predicate(reader))
+				while (reader.Read() && await predicate(reader).ConfigureAwait(true))
 				{
 					if (cancelled)
 					{
@@ -895,7 +907,7 @@ namespace Open.Database.Extensions
 			}
 			else
 			{
-				while (reader.Read() && await predicate(reader)) { }
+				while (reader.Read() && await predicate(reader).ConfigureAwait(true)) { }
 			}
 		}
 
@@ -913,12 +925,12 @@ namespace Open.Database.Extensions
 
 			if (reader is DbDataReader r)
 			{
-				while (await r.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader)) { }
+				while (await r.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader).ConfigureAwait(true)) { }
 			}
 			else
 			{
 				// Does not use .ReadAsync();
-				await IterateWhileAsyncInternal(reader, predicate, cancellationToken);
+				await IterateWhileAsyncInternal(reader, predicate, cancellationToken).ConfigureAwait(false);
 			}
 
 		}
@@ -930,21 +942,16 @@ namespace Open.Database.Extensions
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static async ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
+		public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 			Contract.EndContractBlock();
 
-			if (useReadAsync)
-			{
-				await IterateWhileAsync(reader, predicate, cancellationToken);
-			}
-			else
-			{
+			return useReadAsync
+				? IterateWhileAsync(reader, predicate, cancellationToken)
 				// Does not use .ReadAsync();
-				await IterateWhileAsyncInternal(reader, predicate, cancellationToken);
-			}
+				: IterateWhileAsyncInternal(reader, predicate, cancellationToken);
 		}
 
 		/// <summary>
@@ -986,7 +993,7 @@ namespace Open.Database.Extensions
 			{
 				results.Enqueue(
 					reader.IsDBNull(0)
-					? default
+					? default!
 					: reader.GetFieldValue<T0>(0)
 				);
 			}
@@ -1032,7 +1039,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						await reader.IsDBNullAsync(0, cancellationToken).ConfigureAwait(false)
-						? default
+						? default!
 						: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false)
 					);
 				}
@@ -1043,7 +1050,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						reader.IsDBNull(0)
-						? default
+						? default!
 						: reader.GetFieldValue<T0>(0)
 					);
 				}
@@ -1055,7 +1062,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						reader.IsDBNull(0)
-						? default
+						? default!
 						: reader.GetFieldValue<T0>(0)
 					);
 				}

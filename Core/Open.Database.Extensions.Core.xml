@@ -284,7 +284,7 @@
         </member>
         <member name="P:Open.Database.Extensions.Core.Transformer`1.Processor.Transform">
             <summary>
-            The resultant transofrm function.
+            The resultant transform function.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String}@)">
@@ -300,12 +300,13 @@
             <param name="results">The results to process.</param>
             <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object})">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)">
             <summary>
             Dequeues the results and transforms each one by one during enumeration.
             </summary>
             <param name="results">The results to process.</param>
             <param name="arrayPool">The array pool to return the buffers to.</param>
+            <param name="clearArrays">Indicates whether the contents of the buffers should be cleared before reuse.</param>
             <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.IDataReader)">
@@ -1537,8 +1538,8 @@
             If the connection is in neither open or close, first closes the connection.
             </summary>
             <param name="connection">The connection to transact with.</param>
-            <param name="cancellationToken">An optional token to cancel opening.</param>
             <param name="configureAwait">If true (default) will retain the context after opening.</param>
+            <param name="cancellationToken">An optional token to cancel opening.</param>
             <returns>A task containing the prior connection state.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken)">
@@ -2236,6 +2237,7 @@
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Int32,System.Int32[])">
             <summary>
             Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -2245,6 +2247,7 @@
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])">
             <summary>
             Enumerates all the remaining values of the current result set of a data reader.
+            DBNull values are retained.
             </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="arrayPool">The array pool to acquire buffers from.</param>

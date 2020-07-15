@@ -10,6 +10,7 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Extensions for pipelining data with Dataflow blocks.
 	/// </summary>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
 	public static partial class DataflowExtensions
 	{
 		static BufferBlock<T> GetBufferBlock<T>(DataflowBlockOptions? options = null)
@@ -36,11 +37,11 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDataReader reader,
-			ArrayPool<object> arrayPool,
+		public static IReceivableSourceBlock<object?[]> AsSourceBlock(this IDataReader reader,
+			ArrayPool<object?> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
-			var buffer = GetBufferBlock<object[]>(options);
+			var buffer = GetBufferBlock<object?[]>(options);
 			ToTargetBlock(reader, buffer, true, arrayPool);
 			return buffer;
 		}
@@ -127,11 +128,11 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDbCommand command,
-			ArrayPool<object> arrayPool,
+		public static IReceivableSourceBlock<object?[]> AsSourceBlock(this IDbCommand command,
+			ArrayPool<object?> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
-			var buffer = GetBufferBlock<object[]>(options);
+			var buffer = GetBufferBlock<object?[]>(options);
 			ToTargetBlock(command, buffer, true, arrayPool);
 			return buffer;
 		}
@@ -223,11 +224,11 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
-			ArrayPool<object> arrayPool,
+		public static IReceivableSourceBlock<object?[]> AsSourceBlock(this IExecuteReader command,
+			ArrayPool<object?> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
-			var buffer = GetBufferBlock<object[]>(options);
+			var buffer = GetBufferBlock<object?[]>(options);
 			ToTargetBlock(command, buffer, true, arrayPool);
 			return buffer;
 		}
@@ -318,12 +319,12 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
-			ArrayPool<object> arrayPool,
+		public static IReceivableSourceBlock<object?[]> AsSourceBlockAsync(this IDataReader reader,
+			ArrayPool<object?> arrayPool,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
 		{
-			var buffer = GetBufferBlock<object[]>(options);
+			var buffer = GetBufferBlock<object?[]>(options);
 			_ = ToTargetBlockAsync(reader, buffer, true, arrayPool, cancellationToken);
 			return buffer;
 		}
@@ -416,12 +417,12 @@ namespace Open.Database.Extensions
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
-			ArrayPool<object> arrayPool,
+		public static IReceivableSourceBlock<object?[]> AsSourceBlockAsync(this IDbCommand command,
+			ArrayPool<object?> arrayPool,
 			DataflowBlockOptions? options = null,
 			CancellationToken cancellationToken = default)
 		{
-			var buffer = GetBufferBlock<object[]>(options);
+			var buffer = GetBufferBlock<object?[]>(options);
 			_ = ToTargetBlockAsync(command, buffer, true, arrayPool, cancellationToken);
 			return buffer;
 		}
@@ -517,11 +518,11 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 		/// <returns>The source block containing the results.</returns>
-		public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
-			ArrayPool<object> arrayPool,
+		public static IReceivableSourceBlock<object?[]> AsSourceBlockAsync(this IExecuteReader command,
+			ArrayPool<object?> arrayPool,
 			DataflowBlockOptions? options = null)
 		{
-			var buffer = GetBufferBlock<object[]>(options);
+			var buffer = GetBufferBlock<object?[]>(options);
 			_ = ToTargetBlockAsync(command, buffer, true, arrayPool);
 			return buffer;
 		}

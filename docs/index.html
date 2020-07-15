@@ -8,7 +8,7 @@
     <title>Open.Database.Extensions </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Open.Database.Extensions ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="styles/docfx.vendor.css">
@@ -62,10 +62,12 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="opendatabaseextensions">Open.Database.Extensions</h1>
 
-<p><a href="https://electricessence.github.io/Open.Database.Extensions/api/index.html">Full API Documentation</a></p>
+<p><a href="https://www.nuget.org/packages/Open.Database.Extensions.Core/"><img src="https://img.shields.io/nuget/v/Open.Database.Extensions.Core.svg?style=flat" alt="NuGet"></a></p>
+<p><a href="https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html">Full API Documentation</a></p>
 <p>Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.</p>
 <h2 id="connection-factories">Connection Factories</h2>
-<p>Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.</p>
+<p>Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.
+A <code>SqlConnectionFactory</code> is provided and can be overridden to provide more specific dependency injection configurations.</p>
 <h2 id="expressive-commands">Expressive Commands</h2>
 <p>The provided expressive command classes allow for an expressive means to append parameters and execute the results without lengthy complicated setup.</p>
 <p>Extensions are provided to create commands from connection factories.</p>
@@ -83,11 +85,11 @@
 using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
 {
     while(await reader.ReadAsync())
-        list.Add(transform(reader));
+        myResult.Add(transform(reader));
 }
 </code></pre>
 <p>Is now simplified to this:</p>
-<pre><code class="lang-cs">var myResult = await cmd.ToListAsync(transform);
+<pre><code class="lang-cs">var myResult = await mySqlCommand.ToListAsync(transform);
 </code></pre>
 <h2 id="deferred-transformation">Deferred Transformation</h2>
 <p>In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.</p>
@@ -147,7 +149,7 @@ public static bool TryTransaction()
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/development/Core/index.md/#L1" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/index.md/#L1" class="contribution-link">Improve this Doc</a>
                   </li>
                 </ul>
               </div>
