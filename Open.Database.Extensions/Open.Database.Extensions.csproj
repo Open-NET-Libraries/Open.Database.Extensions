@@ -8,10 +8,9 @@
     <Product />
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/electricessence/Open.Database.Extensions</PackageProjectUrl>
-    <Description>
-			Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.
-			This now is a meta-package containing a collection of extensions.
-		</Description>
+    <Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.
+This now is a meta-package containing a collection of extensions.</Description>
+		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
     <RepositoryUrl>https://github.com/electricessence/Open.Database.Extensions</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Version>6.5.0</Version>
