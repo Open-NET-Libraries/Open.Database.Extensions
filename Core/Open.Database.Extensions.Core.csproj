@@ -12,7 +12,7 @@
 		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>6.5.0</Version>
+		<Version>6.5.1</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
