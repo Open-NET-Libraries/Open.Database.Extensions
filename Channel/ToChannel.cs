@@ -14,7 +14,7 @@ namespace Open.Database.Extensions
 	/// <summary>
 	/// Extensions for writing data to a channel.
 	/// </summary>
-	public static partial class ChannelExtensions
+	public static partial class ChannelDbExtensions
 	{
 		/// <summary>
 		/// Iterates an IDataReader and writes each record as an array to the channel.
@@ -50,9 +50,9 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static ValueTask<long> ToChannel(this IDataReader reader,
-			ChannelWriter<object[]> target,
+			ChannelWriter<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
+			ArrayPool<object?> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -152,12 +152,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReader(reader =>
-					ToChannel(reader, target, false, cancellationToken));
+					ToChannel(reader, target, false, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -187,9 +187,9 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToChannel(this IDbCommand command,
-			ChannelWriter<object[]> target,
+			ChannelWriter<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
+			ArrayPool<object?> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -197,11 +197,11 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReader(reader =>
-					ToChannel(reader, target, false, arrayPool, cancellationToken));
+					ToChannel(reader, target, false, arrayPool, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -244,7 +244,7 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
@@ -252,7 +252,7 @@ namespace Open.Database.Extensions
 				var behavior = CommandBehavior.SingleResult;
 				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 				using var reader = command.ExecuteReader(behavior);
-				return await reader.ToChannel(target, false, transform, cancellationToken);
+				return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -292,12 +292,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReader(reader =>
-					ToChannel(reader, target, false, cancellationToken));
+					ToChannel(reader, target, false, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -339,12 +339,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReader(reader =>
-					ToChannel(reader, target, false, fieldMappingOverrides, cancellationToken));
+					ToChannel(reader, target, false, fieldMappingOverrides, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -380,11 +380,11 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-					reader => reader.ToChannel(target, false, cancellationToken));
+					reader => reader.ToChannel(target, false, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -413,20 +413,20 @@ namespace Open.Database.Extensions
 		/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToChannel(this IExecuteReader command,
-			ChannelWriter<object[]> target,
+			ChannelWriter<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool)
+			ArrayPool<object?> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-					reader => reader.ToChannel(target, false, arrayPool, cancellationToken));
+					reader => reader.ToChannel(target, false, arrayPool, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -466,11 +466,11 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-					reader => reader.ToChannel(target, false, transform, cancellationToken));
+					reader => reader.ToChannel(target, false, transform, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -508,11 +508,11 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-					reader => reader.ToChannel(target, false, cancellationToken));
+					reader => reader.ToChannel(target, false, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -552,11 +552,11 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync( // Must be ExecuteReaderAsync to await the to channel completion.
-					reader => reader.ToChannel(target, false, fieldMappingOverrides, cancellationToken));
+					reader => reader.ToChannel(target, false, fieldMappingOverrides, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -607,9 +607,9 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
-			ChannelWriter<object[]> target,
+			ChannelWriter<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
+			ArrayPool<object?> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -706,12 +706,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToChannelAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken);
+					ToChannelAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -741,9 +741,9 @@ namespace Open.Database.Extensions
 		/// <param name="cancellationToken">An optional cancellation token.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToChannelAsync(this DbCommand command,
-			ChannelWriter<object[]> target,
+			ChannelWriter<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool,
+			ArrayPool<object?> arrayPool,
 			CancellationToken cancellationToken = default)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
@@ -751,12 +751,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToChannelAsync(reader, target, false, arrayPool, cancellationToken), cancellationToken: cancellationToken);
+					ToChannelAsync(reader, target, false, arrayPool, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -798,12 +798,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToChannelAsync(reader, target, false, transform, cancellationToken), cancellationToken: cancellationToken);
+					ToChannelAsync(reader, target, false, transform, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -844,12 +844,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToChannelAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken);
+					ToChannelAsync(reader, target, false, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -891,12 +891,12 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			if (!command.Connection.State.HasFlag(ConnectionState.Open))
-				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+				await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
-					ToChannelAsync(reader, target, false, fieldMappingOverrides, cancellationToken), cancellationToken: cancellationToken);
+					ToChannelAsync(reader, target, false, fieldMappingOverrides, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -932,13 +932,13 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
 					command.UseAsyncRead && reader is DbDataReader r
 					? r.ToChannelAsync(target, false, cancellationToken)
-					: reader.ToChannel(target, false, cancellationToken));
+					: reader.ToChannel(target, false, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -967,22 +967,22 @@ namespace Open.Database.Extensions
 		/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 		/// <returns>The number of records processed.</returns>
 		public static async ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
-			ChannelWriter<object[]> target,
+			ChannelWriter<object?[]> target,
 			bool complete,
-			ArrayPool<object> arrayPool)
+			ArrayPool<object?> arrayPool)
 		{
 			if (command is null) throw new ArgumentNullException(nameof(command));
 			if (target is null) throw new ArgumentNullException(nameof(target));
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
 					command.UseAsyncRead && reader is DbDataReader r
 					? r.ToChannelAsync(target, false, arrayPool, cancellationToken)
-					: reader.ToChannel(target, false, arrayPool, cancellationToken));
+					: reader.ToChannel(target, false, arrayPool, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1022,13 +1022,13 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
 					command.UseAsyncRead && reader is DbDataReader r
 					? r.ToChannelAsync(target, false, transform, cancellationToken)
-					: reader.ToChannel(target, false, transform, cancellationToken));
+					: reader.ToChannel(target, false, transform, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1067,13 +1067,13 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
 					command.UseAsyncRead && reader is DbDataReader r
 					? r.ToChannelAsync(target, false, cancellationToken)
-					: reader.ToChannel(target, false, cancellationToken));
+					: reader.ToChannel(target, false, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1113,13 +1113,13 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var cancellationToken = command.CancellationToken;
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken);
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 			try
 			{
 				return await command.ExecuteReaderAsync(reader =>
 					command.UseAsyncRead && reader is DbDataReader r
 					? r.ToChannelAsync(target, false, fieldMappingOverrides, cancellationToken)
-					: reader.ToChannel(target, false, fieldMappingOverrides, cancellationToken));
+					: reader.ToChannel(target, false, fieldMappingOverrides, cancellationToken)).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
