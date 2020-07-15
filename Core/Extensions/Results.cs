@@ -218,7 +218,7 @@ namespace Open.Database.Extensions
 					columns.Select(c => c.Name),
 					readStarted: true,
 					useReadAsync: useReadAsync,
-					arrayPool: Transformer<T>.LocalPool),
+					arrayPool: Transformer<T>.LocalPool).ConfigureAwait(false),
 				Transformer<T>.LocalPool);
 		}
 

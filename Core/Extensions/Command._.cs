@@ -68,7 +68,7 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_1
 			await using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
@@ -113,7 +113,7 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 
 #if NETSTANDARD2_1
@@ -310,7 +310,7 @@ namespace Open.Database.Extensions
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			handler(reader);
@@ -334,7 +334,7 @@ namespace Open.Database.Extensions
 
 			if (command is DbCommand c)
 			{
-				await c.ExecuteReaderAsync(reader => handler(reader), behavior, cancellationToken);
+				await c.ExecuteReaderAsync(reader => handler(reader), behavior, cancellationToken).ConfigureAwait(true);
 				return;
 			}
 
@@ -360,7 +360,7 @@ namespace Open.Database.Extensions
 			if (handler is null) throw new ArgumentNullException(nameof(handler));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			await handler(reader).ConfigureAwait(false);
@@ -384,7 +384,7 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			return transform(reader);
@@ -399,7 +399,7 @@ namespace Open.Database.Extensions
 		/// <param name="behavior">The behavior to use with the data reader.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
 		/// <returns>The result of the transform.</returns>
-		public static async ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
+		public static ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
 			Func<IDataReader, ValueTask<T>> transform,
 			CommandBehavior behavior = CommandBehavior.Default,
 			CancellationToken cancellationToken = default)
@@ -408,13 +408,17 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			if (command is DbCommand c)
-				return await ExecuteReaderAsync(c, reader => transform(reader), behavior, cancellationToken);
+			return command is DbCommand c
+				? ExecuteReaderAsync(c, reader => transform(reader), behavior, cancellationToken)
+				: ExecuteReaderAsyncCore();
 
-			var state = command.Connection.EnsureOpen();
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = command.ExecuteReader(behavior);
-			return await transform(reader).ConfigureAwait(false);
+			async ValueTask<T> ExecuteReaderAsyncCore()
+			{
+				var state = command.Connection.EnsureOpen();
+				if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+				using var reader = command.ExecuteReader(behavior);
+				return await transform(reader).ConfigureAwait(false);
+			}
 		}
 
 		/// <summary>
@@ -435,7 +439,7 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
 			return await transform(reader).ConfigureAwait(false);
@@ -568,10 +572,10 @@ namespace Open.Database.Extensions
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
-			await reader.ForEachAsync(handler, useReadAsync, cancellationToken);
+			await reader.ForEachAsync(handler, useReadAsync, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -606,10 +610,10 @@ namespace Open.Database.Extensions
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
-			await reader.ForEachAsync(handler, useReadAsync, cancellationToken);
+			await reader.ForEachAsync(handler, useReadAsync, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -639,10 +643,10 @@ namespace Open.Database.Extensions
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 			Contract.EndContractBlock();
 
-			var state = await command.Connection.EnsureOpenAsync(cancellationToken);
+			var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
-			await reader.IterateWhileAsync(predicate, useReadAsync, cancellationToken);
+			await reader.IterateWhileAsync(predicate, useReadAsync, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>

@@ -118,7 +118,7 @@ namespace Open.Database.Extensions
 			if (useReadAsync)
 			{
 				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true))
-					await handler(reader);
+					await handler(reader).ConfigureAwait(false);
 			}
 			else if (cancellationToken.CanBeCanceled)
 			{
@@ -130,20 +130,20 @@ namespace Open.Database.Extensions
 				{
 					if (cancelled)
 					{
-						await handler(reader); // we recieved the results, might as well use them.
+						await handler(reader).ConfigureAwait(false); // we recieved the results, might as well use them.
 						cancellationToken.ThrowIfCancellationRequested();
 					}
 					else
 					{
 						cancelled = cancellationToken.IsCancellationRequested;
-						await handler(reader);
+						await handler(reader).ConfigureAwait(false);
 					}
 				}
 			}
 			else
 			{
 				while (reader.Read())
-					await handler(reader);
+					await handler(reader).ConfigureAwait(false);
 			}
 		}
 
@@ -626,14 +626,14 @@ namespace Open.Database.Extensions
 				if (reader is DbDataReader r)
 				{
 					while (await r.ReadAsync(cancellationToken).ConfigureAwait(true))
-						yield return await transform(r);
+						yield return await transform(r).ConfigureAwait(false);
 				}
 				else
 				{
 					while (reader.Read())
 					{
 						cancellationToken.ThrowIfCancellationRequested();
-						yield return await transform(reader);
+						yield return await transform(reader).ConfigureAwait(false);
 					}
 				}
 			}
@@ -643,12 +643,12 @@ namespace Open.Database.Extensions
 				if (reader is DbDataReader r)
 				{
 					while (!cancellationToken.IsCancellationRequested && await r.ReadAsync().ConfigureAwait(true))
-						yield return await transform(r);
+						yield return await transform(r).ConfigureAwait(false);
 				}
 				else
 				{
 					while (!cancellationToken.IsCancellationRequested && reader.Read())
-						yield return await transform(reader);
+						yield return await transform(reader).ConfigureAwait(false);
 				}
 			}
 		}
@@ -713,7 +713,7 @@ namespace Open.Database.Extensions
 			Contract.EndContractBlock();
 
 			var list = new List<T>();
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true)) list.Add(await transform(reader));
+			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true)) list.Add(await transform(reader).ConfigureAwait(false));
 			return list;
 		}
 
@@ -880,7 +880,7 @@ namespace Open.Database.Extensions
 
 				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
 				var cancelled = false;
-				while (reader.Read() && await predicate(reader))
+				while (reader.Read() && await predicate(reader).ConfigureAwait(true))
 				{
 					if (cancelled)
 					{
@@ -895,7 +895,7 @@ namespace Open.Database.Extensions
 			}
 			else
 			{
-				while (reader.Read() && await predicate(reader)) { }
+				while (reader.Read() && await predicate(reader).ConfigureAwait(true)) { }
 			}
 		}
 
@@ -913,12 +913,12 @@ namespace Open.Database.Extensions
 
 			if (reader is DbDataReader r)
 			{
-				while (await r.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader)) { }
+				while (await r.ReadAsync(cancellationToken).ConfigureAwait(true) && await predicate(reader).ConfigureAwait(true)) { }
 			}
 			else
 			{
 				// Does not use .ReadAsync();
-				await IterateWhileAsyncInternal(reader, predicate, cancellationToken);
+				await IterateWhileAsyncInternal(reader, predicate, cancellationToken).ConfigureAwait(false);
 			}
 
 		}
@@ -930,21 +930,16 @@ namespace Open.Database.Extensions
 		/// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
 		/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
 		/// <param name="cancellationToken">Optional cancellation token.</param>
-		public static async ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
+		public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 		{
 			if (reader is null) throw new ArgumentNullException(nameof(reader));
 			if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 			Contract.EndContractBlock();
 
-			if (useReadAsync)
-			{
-				await IterateWhileAsync(reader, predicate, cancellationToken);
-			}
-			else
-			{
+			return useReadAsync
+				? IterateWhileAsync(reader, predicate, cancellationToken)
 				// Does not use .ReadAsync();
-				await IterateWhileAsyncInternal(reader, predicate, cancellationToken);
-			}
+				: IterateWhileAsyncInternal(reader, predicate, cancellationToken);
 		}
 
 		/// <summary>
@@ -986,7 +981,7 @@ namespace Open.Database.Extensions
 			{
 				results.Enqueue(
 					reader.IsDBNull(0)
-					? default
+					? default!
 					: reader.GetFieldValue<T0>(0)
 				);
 			}
@@ -1032,7 +1027,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						await reader.IsDBNullAsync(0, cancellationToken).ConfigureAwait(false)
-						? default
+						? default!
 						: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false)
 					);
 				}
@@ -1043,7 +1038,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						reader.IsDBNull(0)
-						? default
+						? default!
 						: reader.GetFieldValue<T0>(0)
 					);
 				}
@@ -1055,7 +1050,7 @@ namespace Open.Database.Extensions
 				{
 					results.Enqueue(
 						reader.IsDBNull(0)
-						? default
+						? default!
 						: reader.GetFieldValue<T0>(0)
 					);
 				}

@@ -158,7 +158,7 @@ namespace Open.Database.Extensions
 			if (transform is null) throw new ArgumentNullException(nameof(transform));
 			Contract.EndContractBlock();
 
-			return await transform(await ExecuteScalarAsync().ConfigureAwait(false));
+			return await transform(await ExecuteScalarAsync().ConfigureAwait(false)).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -186,7 +186,7 @@ namespace Open.Database.Extensions
 				{
 					results.Add(transform(record));
 					return results.Count < count;
-				}, behavior);
+				}, behavior).ConfigureAwait(false);
 				return results;
 			}
 		}
