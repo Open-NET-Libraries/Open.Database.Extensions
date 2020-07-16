@@ -31,10 +31,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="DataReader.ToTargetBlock.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<None Include="..\logo.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
