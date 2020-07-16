@@ -6,7 +6,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
     <Authors>electricessence</Authors>
-		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
+		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
@@ -32,9 +32,9 @@ This now is a meta-package containing a collection of extensions.</Description>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Open.Database.Extensions.Channel" Version="6.6.1" />
-	  <PackageReference Include="Open.Database.Extensions.Dataflow" Version="6.6.1" />
-	  <PackageReference Include="Open.Database.Extensions.SqlClient" Version="6.6.1" />
+	  <PackageReference Include="Open.Database.Extensions.Channel" Version="6.6.2" />
+	  <PackageReference Include="Open.Database.Extensions.Dataflow" Version="6.6.2" />
+	  <PackageReference Include="Open.Database.Extensions.SqlClient" Version="6.6.2" />
 	</ItemGroup>
 
 </Project>
