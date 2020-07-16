@@ -2,8 +2,6 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Open.Database.Extensions.Core.svg?style=flat)](https://www.nuget.org/packages/Open.Database.Extensions.Core/)
 
-[Full API Documentation](https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html)
-
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 
 ## Connection Factories
