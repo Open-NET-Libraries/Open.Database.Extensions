@@ -6,7 +6,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<Authors>electricessence</Authors>
-		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
+		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
 		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations with Dataflow and ensuring DI compatibility.</Description>

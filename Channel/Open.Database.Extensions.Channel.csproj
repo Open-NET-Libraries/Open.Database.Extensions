@@ -6,7 +6,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<Authors>electricessence</Authors>
-		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
+		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
 		<Description>Database extensions for pipelining data through channels.  Includes Open.Database.Extensions.Core.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
