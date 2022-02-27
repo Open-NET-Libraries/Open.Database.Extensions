@@ -15,11 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Core.Tests", "Tests\Open.Database.Extensions.Core.Tests\Open.Database.Extensions.Core.Tests.csproj", "{B2C2E89F-3B08-4CF8-B363-468C0918F867}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E04DB27B-7665-4DDC-8AAC-20134537AB0A}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B4ADB121-1900-4CB4-905C-A7B1F640BA8A}"
 EndProject
 Global
