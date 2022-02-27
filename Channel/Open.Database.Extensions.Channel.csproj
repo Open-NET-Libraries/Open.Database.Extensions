@@ -6,19 +6,22 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<Authors>electricessence</Authors>
-		<Description>Database extensions for pipelining data through channels.  Includes Open.Database.Extensions.Core.</Description>
+		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
+		<Description>Database extensions for pipelining data through channels.  Includes Open.Database.Extensions.Core.</Description>
+		<PackageTags>ado;ado extensions;sql;connection factory;extensions;channel;channels</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<RepositoryType>git</RepositoryType>
 		<Version>6.6.1</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<PackageIcon>logo.png</PackageIcon>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<EnableNETAnalyzers>True</EnableNETAnalyzers>
 	</PropertyGroup>
 
 	<ItemGroup>
