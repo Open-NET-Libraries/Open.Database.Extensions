@@ -8,10 +8,8 @@ namespace Open.Database.Extensions;
 /// </summary>
 public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand, IDataReader, DbType, ExpressiveCommand>
 {
-    /// <param name="connectionPool">The pool to acquire connections from.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
+    /// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
+    /// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(IDbConnectionPool{TConnection}, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
     public ExpressiveCommand(
         IDbConnectionPool connectionPool,
         CommandType type,
@@ -21,10 +19,8 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
     {
     }
 
-    /// <param name="connFactory">The factory to generate connections from.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
+    /// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
+    /// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(IDbConnectionFactory{TConnection}, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
     public ExpressiveCommand(
         IDbConnectionFactory connFactory,
         CommandType type,
@@ -34,11 +30,8 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
     {
     }
 
-    /// <param name="connection">The connection to execute the command on.</param>
-    /// <param name="transaction">The optional transaction to execute the command on.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
+    /// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
+    /// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(TConnection, IDbTransaction?, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
     public ExpressiveCommand(
         IDbConnection connection,
         IDbTransaction? transaction,
@@ -49,10 +42,8 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
     {
     }
 
-    /// <param name="transaction">The transaction to execute the command on.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
+    /// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
+    /// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(IDbTransaction, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
     public ExpressiveCommand(
         IDbTransaction transaction,
         CommandType type,
@@ -62,10 +53,8 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
     {
     }
 
-    /// <param name="connection">The connection to execute the command on.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
+    /// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
+    /// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(TConnection, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
     public ExpressiveCommand(
         IDbConnection connection,
         CommandType type,
