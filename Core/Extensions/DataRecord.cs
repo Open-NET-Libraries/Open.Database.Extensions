@@ -325,12 +325,10 @@ public static partial class DataRecordExtensions
     public static IEnumerable<(string Name, int Ordinal)> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
     {
         // Normalize the requested column names to be lowercase.
-        columnNames = columnNames.Select(c =>
-        {
-            if (string.IsNullOrWhiteSpace(c))
-                throw new ArgumentException("Column names cannot be null or whitespace only.");
-            return c.ToUpperInvariant();
-        });
+        columnNames = columnNames.Select(c
+            => string.IsNullOrWhiteSpace(c)
+				? throw new ArgumentException("Column names cannot be null or whitespace only.")
+				: c.ToUpperInvariant());
 
         var actual = record.OrdinalMapping();
         if (sort)
@@ -367,13 +365,19 @@ public static partial class DataRecordExtensions
     /// <returns>The enumerable of data type names.</returns>
     public static IEnumerable<string> DataTypeNames(this IDataRecord record)
     {
-        if (record is null) throw new ArgumentNullException(nameof(record));
-        Contract.EndContractBlock();
+		return record is null
+            ? throw new ArgumentNullException(nameof(record))
+            : DataTypeNamesCore(record);
 
-        var fieldCount = record.FieldCount;
-        for (var i = 0; i < fieldCount; i++)
-            yield return record.GetDataTypeName(i);
-    }
+		static IEnumerable<string> DataTypeNamesCore(IDataRecord record)
+		{
+			Contract.EndContractBlock();
+
+			var fieldCount = record.FieldCount;
+			for (var i = 0; i < fieldCount; i++)
+				yield return record.GetDataTypeName(i);
+		}
+	}
 
     /// <summary>
     /// Returns all the data type names for the columns of current result set.

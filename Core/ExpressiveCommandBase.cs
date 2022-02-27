@@ -19,6 +19,7 @@ namespace Open.Database.Extensions;
 /// <typeparam name="TReader">The type of reader created by the command.</typeparam>
 /// <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
 /// <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0045:Convert to conditional expression", Justification = "<Pending>")]
 public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
         : IExecuteCommand<TCommand>, IExecuteReader<TReader>
         where TConnection : class, IDbConnection
@@ -156,7 +157,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
     protected TCommand PrepareCommand(TConnection connection)
     {
         var cmd = connection.CreateCommand(Type, Command, Timeout);
-        if (!(cmd is TCommand c))
+        if (cmd is not TCommand c)
             throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
         if (Transaction != null)
             c.Transaction = Transaction;
@@ -226,14 +227,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
         return (TThis)this;
     }
 
-    /// <summary>
-    /// Adds a parameter to the params list.
-    /// </summary>
-    /// <param name="name">The name of the parameter.</param>
-    /// <param name="value">The value of the parameter.</param>
-    /// <param name="type">The database type of the parameter.</param>
-    /// <returns>This instance for use in method chaining.</returns>
-    public TThis AddParam<T>(string name, T? value, TDbType type)
+
+
+	/// <summary>
+	/// Adds a parameter to the params list.
+	/// </summary>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <param name="type">The database type of the parameter.</param>
+	/// <returns>This instance for use in method chaining.</returns>
+	public TThis AddParam<T>(string name, T? value, TDbType type)
         where T : struct
     {
         if (name is null) throw new ArgumentNullException(nameof(name));

@@ -151,11 +151,11 @@ public static class QueryResultExtensions
     /// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
     public static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionaries(this QueryResult<Queue<object?[]>> source)
     {
-        if (source is null) throw new ArgumentNullException(nameof(source));
+		return source is null
+            ? throw new ArgumentNullException(nameof(source))
+            : DequeueAsMappedDictionariesCore(source);
 
-        return DequeueAsMappedDictionariesCore(source);
-
-        static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionariesCore(QueryResult<Queue<object?[]>> source)
+		static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionariesCore(QueryResult<Queue<object?[]>> source)
         {
             Contract.EndContractBlock();
 
@@ -240,11 +240,11 @@ public static class QueryResultExtensions
     /// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
     public static IEnumerable<Dictionary<string, object?>> AsMappedDictionaries(this QueryResult<IEnumerable<object?[]>> source)
     {
-        if (source is null) throw new ArgumentNullException(nameof(source));
+		return source is null
+            ? throw new ArgumentNullException(nameof(source))
+            : AsMappedDictionariesCore(source);
 
-        return AsMappedDictionariesCore(source);
-
-        static IEnumerable<Dictionary<string, object?>> AsMappedDictionariesCore(QueryResult<IEnumerable<object?[]>> source)
+		static IEnumerable<Dictionary<string, object?>> AsMappedDictionariesCore(QueryResult<IEnumerable<object?[]>> source)
         {
             Contract.EndContractBlock();
 

@@ -277,6 +277,7 @@ public static partial class CommandExtensions
     /// <summary>
     /// Executes a reader on a command with a transform function.
     /// </summary>
+	/// <remarks>The default <see cref="CommandBehavior"/> will open a connection, execute the reader and close the connection it if was not already open.</remarks>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="command">The IDbCommand to generate a reader from.</param>
     /// <param name="transform">The transform function for each IDataRecord.</param>
