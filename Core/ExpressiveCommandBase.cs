@@ -19,7 +19,6 @@ namespace Open.Database.Extensions;
 /// <typeparam name="TReader">The type of reader created by the command.</typeparam>
 /// <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
 /// <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0045:Convert to conditional expression", Justification = "<Pending>")]
 public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
         : IExecuteCommand<TCommand>, IExecuteReader<TReader>
         where TConnection : class, IDbConnection
@@ -227,8 +226,6 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
         return (TThis)this;
     }
 
-
-
 	/// <summary>
 	/// Adds a parameter to the params list.
 	/// </summary>
@@ -245,10 +242,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
         Contract.EndContractBlock();
 
         var p = new Param { Name = name, Type = type };
-        if (value.HasValue) p.Value = value.Value;
-        else p.Value = DBNull.Value;
+		p.Value = value ?? (object)DBNull.Value;
 
-        Params.Add(p);
+		Params.Add(p);
         return (TThis)this;
     }
 
@@ -265,10 +261,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
         Contract.EndContractBlock();
 
         var p = new Param { Name = name };
-        if (value.HasValue) p.Value = value.Value;
-        else p.Value = DBNull.Value;
+		p.Value = value ?? (object)DBNull.Value;
 
-        Params.Add(p);
+		Params.Add(p);
         return (TThis)this;
     }
 

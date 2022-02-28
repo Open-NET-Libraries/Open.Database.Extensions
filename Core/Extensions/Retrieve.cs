@@ -361,7 +361,6 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
         => RetrieveAsyncInternal(command, cancellationToken, ordinals);
     /// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
-
     /// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, int, int[])"/>
     public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,

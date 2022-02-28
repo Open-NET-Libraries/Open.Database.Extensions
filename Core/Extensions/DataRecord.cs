@@ -86,13 +86,17 @@ public static partial class DataRecordExtensions
     /// <returns>The enumerable of column names.</returns>
     public static IEnumerable<string> ColumnNames(this IDataRecord record)
     {
-        if (record is null) throw new ArgumentNullException(nameof(record));
-        Contract.EndContractBlock();
+		return record is null
+            ? throw new ArgumentNullException(nameof(record))
+            : ColumnNamesCore(record);
 
-        var fieldCount = record.FieldCount;
-        for (var i = 0; i < fieldCount; i++)
-            yield return record.GetName(i);
-    }
+		static IEnumerable<string> ColumnNamesCore(IDataRecord record)
+		{
+			var fieldCount = record.FieldCount;
+			for (var i = 0; i < fieldCount; i++)
+				yield return record.GetName(i);
+		}
+	}
 
     /// <summary>
     /// Returns all the column names for the current result set.
@@ -196,13 +200,17 @@ public static partial class DataRecordExtensions
     /// <returns>An enumerable for iterating the values of a record.</returns>
     public static IEnumerable<object> EnumerateValues(this IDataRecord record)
     {
-        if (record is null) throw new ArgumentNullException(nameof(record));
-        Contract.EndContractBlock();
+		return record is null
+            ? throw new ArgumentNullException(nameof(record))
+            : EnumerateValuesCore(record);
 
-        var count = record.FieldCount;
-        for (var i = 0; i < count; i++)
-            yield return record.GetValue(i);
-    }
+		static IEnumerable<object> EnumerateValuesCore(IDataRecord record)
+		{
+			var count = record.FieldCount;
+			for (var i = 0; i < count; i++)
+				yield return record.GetValue(i);
+		}
+	}
 
     /// <summary>
     /// Produces a selective set of column values based upon the desired ordinal positions.
@@ -212,13 +220,18 @@ public static partial class DataRecordExtensions
     /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
     public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IEnumerable<int> ordinals)
     {
-        if (record is null) throw new ArgumentNullException(nameof(record));
-        if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
-        Contract.EndContractBlock();
+		return record is null
+			? throw new ArgumentNullException(nameof(record))
+			: ordinals is null
+            ? throw new ArgumentNullException(nameof(ordinals))
+            : EnumerateValuesFromOrdinalsCore(record, ordinals);
 
-        foreach (var i in ordinals)
-            yield return record.GetValue(i);
-    }
+		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, IEnumerable<int> ordinals)
+		{
+			foreach (var i in ordinals)
+				yield return record.GetValue(i);
+		}
+	}
 
     /// <summary>
     /// Produces a selective set of column values based upon the desired ordinal positions.
@@ -228,15 +241,20 @@ public static partial class DataRecordExtensions
     /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
     public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
     {
-        if (record is null) throw new ArgumentNullException(nameof(record));
-        if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
-        Contract.EndContractBlock();
+		return record is null
+			? throw new ArgumentNullException(nameof(record))
+			: ordinals is null
+            ? throw new ArgumentNullException(nameof(ordinals))
+            : EnumerateValuesFromOrdinalsCore(record, ordinals);
 
-        // Avoid creating an another enumerator if possible.
-        var count = ordinals.Count;
-        for (var i = 0; i < count; i++)
-            yield return record.GetValue(ordinals[i]);
-    }
+		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, IList<int> ordinals)
+		{
+			// Avoid creating an another enumerator if possible.
+			var count = ordinals.Count;
+			for (var i = 0; i < count; i++)
+				yield return record.GetValue(ordinals[i]);
+		}
+	}
 
     /// <summary>
     /// Produces a selective set of column values based upon the desired ordinal positions.
@@ -247,14 +265,18 @@ public static partial class DataRecordExtensions
     /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
     public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)
     {
-        if (record is null) throw new ArgumentNullException(nameof(record));
-        Contract.EndContractBlock();
+		return record is null
+			? throw new ArgumentNullException(nameof(record))
+			: EnumerateValuesFromOrdinalsCore(record, firstOrdinal, remainingOrdinals);
 
-        yield return record.GetValue(firstOrdinal);
-        var len = remainingOrdinals.Length;
-        for (var i = 0; i < len; i++)
-            yield return record.GetValue(remainingOrdinals[i]);
-    }
+		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, int firstOrdinal, int[] remainingOrdinals)
+		{
+			yield return record.GetValue(firstOrdinal);
+			var len = remainingOrdinals.Length;
+			for (var i = 0; i < len; i++)
+				yield return record.GetValue(remainingOrdinals[i]);
+		}
+	}
 
     /// <summary>
     /// Produces a selective set of column values based upon the desired ordinal positions.
@@ -371,8 +393,6 @@ public static partial class DataRecordExtensions
 
 		static IEnumerable<string> DataTypeNamesCore(IDataRecord record)
 		{
-			Contract.EndContractBlock();
-
 			var fieldCount = record.FieldCount;
 			for (var i = 0; i < fieldCount; i++)
 				yield return record.GetDataTypeName(i);

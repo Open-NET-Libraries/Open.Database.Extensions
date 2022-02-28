@@ -63,7 +63,6 @@ public static partial class ConnectionExtensions
     /// <param name="commandText">The command text or stored procedure name to use.</param>
     /// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
     /// <returns>The created SqlCommand.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "No different that if manually inserted.")]
     public static DbCommand CreateCommand(this DbConnection connection,
         CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
     {

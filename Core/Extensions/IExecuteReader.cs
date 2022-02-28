@@ -21,7 +21,7 @@ public static class IExecuteReaderExtensions
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <param name="handler">The handler function for each IDataRecord.</param>
     /// <param name="behavior">The behavior to use with the data reader.</param>
-    public static void IterateReader<TReader>(this IExecuteReader command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
+    public static void IterateReader(this IExecuteReader command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
     {
         if (command is null) throw new ArgumentNullException(nameof(command));
         if (handler is null) throw new ArgumentNullException(nameof(handler));

@@ -12,7 +12,7 @@ public class DbConnectionFactory : IDbConnectionFactory
     /// <summary>
     /// Constructs a DbConnectionFactory.
     /// </summary>
-    /// <param name="factory"></param>
+    /// <param name="factory">The factory function.</param>
     protected DbConnectionFactory(Func<IDbConnection> factory)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -22,7 +22,7 @@ public class DbConnectionFactory : IDbConnectionFactory
     readonly Func<IDbConnection> _factory;
 
     /// <summary>
-    /// Creates a connection of from the underlying factory function. 
+    /// Creates a connection of from the underlying factory function.
     /// </summary>
     public IDbConnection Create() => _factory();
 
@@ -38,8 +38,7 @@ public class DbConnectionFactory : IDbConnectionFactory
     /// <summary>
     /// Implicitly converts a connection factory function to a connection factory instance.
     /// </summary>
-    /// <param name="factory"></param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Create method is availble.")]
+    /// <param name="factory">The factory function.</param>
     public static implicit operator DbConnectionFactory(Func<IDbConnection> factory)
         => Create(factory);
 }
@@ -67,7 +66,7 @@ public class DbConnectionFactory<TConnection> : DbConnectionFactory, IDbConnecti
     IDbConnection IDbConnectionFactory.Create() => Create();
 
     /// <summary>
-    /// Creates a connection of from the underlying factory function. 
+    /// Creates a connection of from the underlying factory function.
     /// </summary>
     public new TConnection Create() => _factory();
 
@@ -75,7 +74,6 @@ public class DbConnectionFactory<TConnection> : DbConnectionFactory, IDbConnecti
     /// Implicitly converts a connection factory function to a genetic-typed connection factory instance.
     /// </summary>
     /// <param name="factory"></param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Create method is availble.")]
     public static implicit operator DbConnectionFactory<TConnection>(Func<TConnection> factory)
         => Create(factory);
 }

@@ -35,8 +35,10 @@ internal class DbConnectionProvider<TConnection> : IDbConnectionPool<TConnection
     /// <inheritdoc />
     public void Give(IDbConnection connection)
     {
-        if (connection is null) throw new ArgumentNullException(nameof(connection));
-        if (connection != Connection) throw new ArgumentException("Does not belong to this provider.", nameof(connection));
+        if (connection is null)
+			throw new ArgumentNullException(nameof(connection));
+        if (connection != Connection)
+			throw new ArgumentException("Does not belong to this provider.", nameof(connection));
         Contract.EndContractBlock();
 
         if (TakenConnectionState == ConnectionState.Closed)

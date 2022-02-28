@@ -18,19 +18,19 @@
         </member>
         <member name="T:Open.Database.Extensions.Core.QueryResult`1">
             <summary>
-            A container for data reader results that also provides the column names and other helpful data methods.
+            A container for data reader results that also provides the column names
+            and other helpful data methods.
             </summary>
             <typeparam name="TResult">The type of the result property.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`0)">
+        <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.Core.QueryResult`1"/>.</summary>
             <param name="ordinals">The ordinal values requested</param>
             <param name="names">The column names requested.</param>
             <param name="result">The result.</param>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`0)">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResult`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`0)" />
         </member>
         <member name="F:Open.Database.Extensions.Core.QueryResult`1.ColumnCount">
             <summary>
@@ -49,63 +49,62 @@
         </member>
         <member name="F:Open.Database.Extensions.Core.QueryResult`1.Result">
             <summary>
-            The values requested.  A Queue is used since values are typically used first in first out and dequeuing results helps reduced redundant memory usage.
+            The values requested.  A Queue is used since values are typically used
+            first in first out and dequeuing results helps reduced redundant memory
+            usage.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResult`1.op_Implicit(Open.Database.Extensions.Core.QueryResult{`0})~`0">
+            <summary>Implicity returns the result from this instance.</summary>
             <param name="result">The source of the result.</param>
         </member>
         <member name="T:Open.Database.Extensions.Core.QueryResultCollection`2">
             <summary>
-            A container for data reader results that also provides the column names and other helpful data methods.
+            A container for data reader results that also provides the column names and
+            other helpful data methods.
             </summary>
-            <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
+            <typeparam name="T">The type of the items in the resultant
+            enumerble.</typeparam>
             <typeparam name="TResult">The type of the result property.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,`1)">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`1)">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.Core.QueryResultCollection`2"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},`1)">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`1)" />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultCollection`2.GetEnumerator">
             <inheritdoc />
         </member>
         <member name="T:Open.Database.Extensions.Core.QueryResultCollection`1">
             <summary>
-            A container for data reader results that also provides the column names and other helpful data methods.
+            A container for data reader results that also provides the column names and
+            other helpful data methods.
             </summary>
             <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.IEnumerable{`0})">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+        <member name="M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},System.Collections.Generic.IEnumerable{`0})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.Core.QueryResultCollection`1"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultCollection`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{`0})">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultCollection`2.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},`1)" />
         </member>
         <member name="T:Open.Database.Extensions.Core.QueryResultQueue`1">
             <summary>
-            A container for data reader results that also provides the column names and other helpful data methods.
+            A container for data reader results that also provides the column names and
+            other helpful data methods.
             </summary>
-            <typeparam name="T">The type of the items in the resultant enumerble.</typeparam>
+            <typeparam name="T">The type of the items in the resultant
+            enumerble.</typeparam>
         </member>
-        <member name="M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32}@,System.Collections.Immutable.ImmutableArray{System.String}@,System.Collections.Generic.Queue{`0})">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+        <member name="M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},System.Collections.Generic.Queue{`0})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.Core.QueryResult`1"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.Queue{`0})">
-            <param name="ordinals">The ordinal values requested</param>
-            <param name="names">The column names requested.</param>
-            <param name="result">The result.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultQueue`1.#ctor(System.Collections.Immutable.ImmutableArray{System.Int32},System.Collections.Immutable.ImmutableArray{System.String},System.Collections.Generic.Queue{`0})" />
         </member>
         <member name="T:Open.Database.Extensions.Core.QueryResultExtensions">
             <summary>
@@ -114,105 +113,68 @@
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
             <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
+            Returns an enumerable that dequeues the results and returns a column
+            mapped dictionary for each entry. DBNull values are converted to null.
             </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+            <param name="source">The query result.  Typically produced by a
+            .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column
+            mapped dictionary for each entry</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+            <inheritdoc
+            cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})"/>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+            <inheritdoc
+            cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})"/>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})" />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
             <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
+            Returns an enumerable that dequeues the results and attempts to map the
+            fields to type T.
             </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+            <remarks>DBNull values are converted to null.</remarks>
+            <param name="source">The query result.  Typically produced by a
+            .Retrieve method.</param>
+            <param name="fieldMappingOverrides">An optional override map of field
+            names to column names where the keys are the property names, and values
+            are the column names.</param>
+            <returns>An enumerable that dequeues the results and returns an entity
+            of type T.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})" />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})" />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})" />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
-            <summary>
-            Returns an enumerable that dequeues the results and attempts to map the fields to type T.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable that dequeues the results and returns an entity of type T.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs``1(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})" />
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
             <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
+            Returns an enumerable that dequeues the results and returns a column
+            mapped dictionary for each entry. DBNull values are converted to null.
             </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+            <param name="source">The query result.  Typically produced by a
+            .Retrieve method.</param>
+            <returns>An enumerable that dequeues the results and returns a column
+            mapped dictionary for each entry</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.ValueTask{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+            <inheritdoc
+            cref="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})"/>
         </member>
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(System.Threading.Tasks.Task{Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}}})">
-            <summary>
-            Returns an enumerable that dequeues the results and returns a column mapped dictionary for each entry.
-            DBNull values are converted to null.
-            </summary>
-            <param name="source">The query result.  Typically produced by a .Retrieve method.</param>
-            <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry</returns>
+            <inheritdoc
+            cref="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})"/>
         </member>
         <member name="T:Open.Database.Extensions.Core.Transformer`1">
             <summary>
@@ -250,14 +212,12 @@
             <summary>
             Constructs a transformer using the optional field overrides.
             </summary>
-            <param name="overrides"></param>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Static utility for creating a Transformer <typeparamref name="T"/>.
             </summary>
             <param name="overrides"></param>
-            <returns></returns>
         </member>
         <member name="T:Open.Database.Extensions.Core.Transformer`1.Processor">
             <summary>
@@ -270,7 +230,7 @@
             </summary>
             <param name="transformer">The transformer to use.</param>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String}@)">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.#ctor(Open.Database.Extensions.Core.Transformer{`0},System.Collections.Immutable.ImmutableArray{System.String})">
             <summary>
             Constructs a processor.
             </summary>
@@ -287,18 +247,14 @@
             The resultant transform function.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String}@)">
+        <member name="M:Open.Database.Extensions.Core.Transformer`1.Processor.SetNames(System.Collections.Immutable.ImmutableArray{System.String})">
             <summary>
             Allows for deferred initialization.
             </summary>
             <param name="names">The column/property names to process.</param>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
-            <summary>
-            Dequeues the results and transforms each one by one during enumeration.
-            </summary>
-            <param name="results">The results to process.</param>
-            <returns>A dequeuing enumerable of the transformed results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)" />
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.AsDequeueingEnumerable(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}},System.Buffers.ArrayPool{System.Object},System.Boolean)">
             <summary>
@@ -310,11 +266,7 @@
             <returns>A dequeuing enumerable of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.IDataReader)">
-            <summary>
-            Transforms the results
-            </summary>
-            <param name="reader">The reader to read from.</param>
-            <returns>An enumerable that transforms the results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.Transformer`1.ResultsBuffered(System.Data.IDataReader,System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.ResultsBuffered(System.Data.IDataReader,System.Boolean)">
             <summary>
@@ -325,12 +277,9 @@
             <returns>An enumerable that transforms the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.ResultsAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
-            <summary>
-            Transforms the results
-            </summary>
             <param name="reader">The reader to read from.</param>
             <param name="cancellationToken">The cancellation token.</param>
-            <returns>An enumerable that transforms the results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.Core.Transformer`1.ResultsBuffered(System.Data.IDataReader,System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.DataTable,System.Boolean)">
             <summary>
@@ -349,11 +298,11 @@
             <summary>
             Constructs a DbConnectionFactory.
             </summary>
-            <param name="factory"></param>
+            <param name="factory">The factory function.</param>
         </member>
         <member name="M:Open.Database.Extensions.DbConnectionFactory.Create">
             <summary>
-            Creates a connection of from the underlying factory function. 
+            Creates a connection of from the underlying factory function.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.DbConnectionFactory.Create``1(System.Func{``0})">
@@ -367,7 +316,7 @@
             <summary>
             Implicitly converts a connection factory function to a connection factory instance.
             </summary>
-            <param name="factory"></param>
+            <param name="factory">The factory function.</param>
         </member>
         <member name="T:Open.Database.Extensions.DbConnectionFactory`1">
             <summary>
@@ -383,7 +332,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DbConnectionFactory`1.Create">
             <summary>
-            Creates a connection of from the underlying factory function. 
+            Creates a connection of from the underlying factory function.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.DbConnectionFactory`1.op_Implicit(System.Func{`0})~Open.Database.Extensions.DbConnectionFactory{`0}">
@@ -398,35 +347,24 @@
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(Open.Database.Extensions.IDbConnectionPool,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
-            <param name="connectionPool">The pool to acquire connections from.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommand"/>.</summary>
+            <inheritdoc cref="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionPool{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})" />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
-            <param name="connFactory">The factory to generate connections from.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommand"/>.</summary>
+            <inheritdoc cref="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})" />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(System.Data.IDbConnection,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="transaction">The optional transaction to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommand"/>.</summary>
+            <inheritdoc cref="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})" />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
-            <param name="transaction">The transaction to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommand"/>.</summary>
+            <inheritdoc cref="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})" />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommand.#ctor(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.IDbConnection,System.Data.IDbCommand,System.Data.IDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveCommand}.Param})">
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommand"/>.</summary>
+            <inheritdoc cref="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})" />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommand.AddParams(System.Data.IDbCommand)">
             <inheritdoc />
@@ -449,7 +387,6 @@
             <typeparam name="T">The type of the enumerable.</typeparam>
             <param name="first">The first value.</param>
             <param name="remaining">The remaining values.</param>
-            <returns></returns>
         </member>
         <member name="P:Open.Database.Extensions.ExpressiveCommandBase`5.ConnectionProvider">
             <summary>
@@ -462,18 +399,21 @@
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionPool{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommandBase`5"/>.</summary>
             <param name="connectionPool">The pool to acquire connections from.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommandBase`5"/>.</summary>
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommandBase`5"/>.</summary>
             <param name="connection">The connection to execute the command on.</param>
             <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type.</param>
@@ -481,12 +421,14 @@
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommandBase`5"/>.</summary>
             <param name="connection">The connection to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveCommandBase`5"/>.</summary>
             <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
@@ -650,22 +592,22 @@
             <returns>The expected reader.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReader(System.Action{`2},System.Data.CommandBehavior)">
-            <inhericdoc />
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReader``1(System.Func{`2,``0},System.Data.CommandBehavior)">
-            <inhericdoc />
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReaderAsync(System.Action{`2},System.Data.CommandBehavior)">
-            <inhericdoc />
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReaderAsync``1(System.Func{`2,``0},System.Data.CommandBehavior)">
-            <inhericdoc />
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReaderAsync(System.Func{`2,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior)">
-            <inhericdoc />
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReaderAsync``1(System.Func{`2,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior)">
-            <inhericdoc />
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveCommandBase`5.ExecuteReturn">
             <summary>
@@ -763,35 +705,24 @@
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionPool{System.Data.Common.DbConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
-            <param name="connectionPool">The pool to acquire connections from.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.Common.DbConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
-            <param name="connFactory">The factory to generate connections from.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="transaction">The optional transaction to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.Common.DbConnection,System.Data.Common.DbCommand,System.Data.Common.DbDataReader,System.Data.DbType,Open.Database.Extensions.ExpressiveDbCommand}.Param})">
-            <param name="transaction">The transaction to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommand.AddParams(System.Data.Common.DbCommand)">
             <inheritdoc />
@@ -808,18 +739,21 @@
             <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionPool{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a an expressive command.</summary>
             <param name="connectionPool">The pool to acquire connections from.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a an expressive command.</summary>
             <param name="connFactory">The factory to generate connections from.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a an expressive command.</summary>
             <param name="connection">The connection to execute the command on.</param>
             <param name="transaction">The optional transaction to execute the command on.</param>
             <param name="type">The command type.</param>
@@ -827,12 +761,14 @@
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a an expressive command.</summary>
             <param name="connection">The connection to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
             <param name="params">The list of params</param>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">
+            <summary>Constructs a an expressive command.</summary>
             <param name="transaction">The transaction to execute the command on.</param>
             <param name="type">The command type.</param>
             <param name="command">The SQL command.</param>
@@ -1018,8 +954,8 @@
             Shortcut for adding command a typed return parameter.
             </summary>
             <param name="target">The command to add a parameter to.</param>
-            <param name="name">The name of the parameter.</param>
             <param name="type">The DbType of the parameter.</param>
+            <param name="name">The name of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand,System.String)">
@@ -1176,6 +1112,7 @@
             <summary>
             Executes a reader on a command with a transform function.
             </summary>
+            <remarks>The default <see cref="T:System.Data.CommandBehavior"/> will open a connection, execute the reader and close the connection it if was not already open.</remarks>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The IDbCommand to generate a reader from.</param>
             <param name="transform">The transform function for each IDataRecord.</param>
@@ -2178,8 +2115,8 @@
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -2394,8 +2331,8 @@
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The DbDataReader to iterate.</param>
             <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="cancellationToken">The cancellation token.</param>
             <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
@@ -2813,7 +2750,7 @@
             Core non-DB-specific extensions for retrieving data from a command using best practices.
             </summary>
         </member>
-        <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReader``1(Open.Database.Extensions.IExecuteReader,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)">
+        <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.IterateReader(Open.Database.Extensions.IExecuteReader,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)">
             <summary>
             Iterates a reader on a command with a handler function.
             </summary>
@@ -3289,8 +3226,8 @@
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="command">The command to generate a reader from.</param>
             <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+            <param name="cancellationToken">Optional cancellation token.</param>
             <returns>A task containing the list of results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)">
@@ -3343,327 +3280,176 @@
             <returns>The enumerable to pull the transformed results from.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader)">
-            <summary>
-            Iterates all records within the first result set using an IDataReader and returns the results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-            DBNull values are left unchanged (retained).
+            Iterates all records within the current result set using an <see cref="T:System.Data.IDataReader"/> and returns the desired results.
             </summary>
-            <param name="reader">The IDataReader to read results from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are left unchanged (retained).</remarks>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to read results from.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <returns>The query result that contains all the results and the column mappings.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Int32,System.Int32[])">
-            <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to read results from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to read results from.</param>
             <param name="columnNames">The column names to select.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.String,System.String[])">
-            <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to read results from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Data.CommandBehavior)">
-            <summary>
-            Iterates all records within the first result set using an IDataReader and returns the results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate the reader from.</param>
+            <param name="behavior">The <see cref="T:System.Data.CommandBehavior"/> flags to use with the data reader.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
+            Executes a reader and iterates all records within the remaining result set using an <see cref="T:System.Data.IDataReader"/> and returns the desired results.
             </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
+            <remarks>
+            <para><see cref="T:System.DBNull"/> values are left unchanged (retained).</para>
+            <para>The default behavior will open a connection, execute the reader and close the connection it if was not already open.</para></remarks>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate the reader from.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Int32,System.Int32[])">
-            <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate the reader from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate the reader from.</param>
             <param name="columnNames">The column names to select.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.String,System.String[])">
-            <summary>
-            Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The IDbCommand to generate the reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate the reader from.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="cancellationToken">The cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Boolean,System.Threading.CancellationToken)" />
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Int32,System.Int32[])">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])" />
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
             <param name="reader">The reader to enumerate.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="cancellationToken">A cancellation token.</param>
+            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Boolean,System.Threading.CancellationToken)" />
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
+            Asynchronously enumerates all records within the current result set using an <see cref="T:System.Data.Common.DbDataReader"/> and returns the desired results.
             </summary>
-            <param name="reader">The IDataReader to read results from.</param>
+            <param name="reader">The <see cref="T:System.Data.Common.DbDataReader"/> to read results from.</param>
             <param name="columnNames">The column names to select.</param>
             <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="columnNames">The column names to select.</param>
-            <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="columnNames">The column names to select.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.String,System.String[])">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="c">The first column name to include in the request to the reader for each record.</param>
-            <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.String,System.String[])"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.String,System.String[])">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to read results from.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
             <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
+            Asynchronously executes a reader and enumerates all the remaining values of the current result set and returns the desired results.
             </summary>
             <param name="command">The command to generate a reader from.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.Retrieve(System.Data.IDbCommand,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
             <param name="command">The command to generate a reader from.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.Int32},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Int32,System.Int32[])">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.Int32,System.Int32[])"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.Int32,System.Int32[])">
-            <summary>
-            Asynchronously enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are left unchanged (retained).
-            </summary>>
             <param name="command">The command to generate a reader from.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="cancellationToken">A cancellation token.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>The QueryResult that contains a buffer block of the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>>
-            <param name="command">The command to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
             <param name="columnNames">The column names to select.</param>
             <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="columnNames">The column names to select.</param>
-            <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="columnNames">The column names to select.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.String,System.String[])">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="c">The first column name to include in the request to the reader for each record.</param>
-            <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.String,System.String[])"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Threading.CancellationToken,System.String,System.String[])">
-            <summary>
-            Asynchronously enumerates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
-            </summary>
-            <param name="command">The command to generate a reader from.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <param name="c">The first column name to include in the request to the reader for each record.</param>
-            <param name="others">The remaining column names to request from the reader for each record.</param>
-            <returns>The QueryResult that contains all the results and the column mappings.</returns>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <param name="columnName">The first column name to include in the request to the reader for each record.</param>
+            <param name="otherColumnNames">The remaining column names to request from the reader for each record.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.RetrieveAsync(System.Data.Common.DbCommand,System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNull(System.Collections.Generic.IEnumerable{System.Object})">
             <summary>
@@ -3835,9 +3621,9 @@
             Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
             <param name="connection">The connection to transact with.</param>
-            <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <returns>True if committed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.TransactionExtensions.ExecuteTransaction``1(System.Data.Common.DbConnection,System.Func{System.Data.Common.DbTransaction,``0},System.Data.IsolationLevel,System.Threading.CancellationToken)">
@@ -3846,9 +3632,9 @@
             </summary>
             <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
             <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-            <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the action.</returns>
         </member>
         <member name="M:Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(System.Data.Common.DbConnection,System.Action{System.Data.Common.DbTransaction},System.Data.IsolationLevel,System.Threading.CancellationToken)">
@@ -4186,21 +3972,26 @@
         </member>
         <member name="T:Open.Database.Extensions.IDbConnectionPool">
             <summary>
-            A unifying common interface for creating/managing connections.  Can easily be used with dependency injection.
-            Commonly a pool will simply host a single connection for nonconcurrent operations where giving back to the pool guarantees the connection returns to the state it was in before it was taken.
-            Connection factories can pose as pools where taking always creates a new connection, and giving back always disposes.
+            A unifying common interface for creating/managing connections. Can easily be
+            used with dependency injection. Commonly a pool will simply host a single
+            connection for nonconcurrent operations where giving back to the pool
+            guarantees the connection returns to the state it was in before it was
+            taken. Connection factories can pose as pools where taking always creates a
+            new connection, and giving back always disposes.
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.IDbConnectionPool.Take">
             <summary>
             Provides a connection ready for use.  The connection state may or may not be closed depending on how the pool is being used.
             </summary>
-            <returns>An IDbConnection.</returns>
+            <returns>An <see cref="T:System.Data.IDbConnection"/>.</returns>
         </member>
         <member name="M:Open.Database.Extensions.IDbConnectionPool.Give(System.Data.IDbConnection)">
             <summary>
             Gives the connection to the pool.
-            Depending on implementation, the pool could be full, and the connection disposed of immediately.
+            Depending on implementation,
+            the pool could be full,
+            and the connection disposed of immediately.
             </summary>
             <param name="connection">The connection to be received by the pool.</param>
         </member>

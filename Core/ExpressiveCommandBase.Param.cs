@@ -11,12 +11,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
         where TDbType : struct
         where TThis : ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
-    /// <summary>
-    /// A struct that represents the param to be created when the command is executed.
-    /// TDbType facilitates the difference between DbType and SqlDbType.
-    /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "The type parameters here are too complex to not make a sub class.")]
-    public struct Param : IEquatable<Param>
+	/// <summary>
+	/// A struct that represents the param to be created when the command is executed.
+	/// TDbType facilitates the difference between DbType and SqlDbType.
+	/// </summary>
+	public struct Param : IEquatable<Param>
 
     {
         /// <summary>

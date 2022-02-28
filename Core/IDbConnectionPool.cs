@@ -4,21 +4,26 @@ using System.Data;
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// A unifying common interface for creating/managing connections.  Can easily be used with dependency injection.
-/// Commonly a pool will simply host a single connection for nonconcurrent operations where giving back to the pool guarantees the connection returns to the state it was in before it was taken.
-/// Connection factories can pose as pools where taking always creates a new connection, and giving back always disposes.
+/// A unifying common interface for creating/managing connections. Can easily be
+/// used with dependency injection. Commonly a pool will simply host a single
+/// connection for nonconcurrent operations where giving back to the pool
+/// guarantees the connection returns to the state it was in before it was
+/// taken. Connection factories can pose as pools where taking always creates a
+/// new connection, and giving back always disposes.
 /// </summary>
 public interface IDbConnectionPool
 {
-    /// <summary>
-    /// Provides a connection ready for use.  The connection state may or may not be closed depending on how the pool is being used.
-    /// </summary>
-    /// <returns>An IDbConnection.</returns>
-    IDbConnection Take();
+	/// <summary>
+	/// Provides a connection ready for use.  The connection state may or may not be closed depending on how the pool is being used.
+	/// </summary>
+	/// <returns>An <see cref="IDbConnection"/>.</returns>
+	IDbConnection Take();
 
     /// <summary>
     /// Gives the connection to the pool.
-    /// Depending on implementation, the pool could be full, and the connection disposed of immediately.
+    /// Depending on implementation,
+	/// the pool could be full,
+	/// and the connection disposed of immediately.
     /// </summary>
     /// <param name="connection">The connection to be received by the pool.</param>
     void Give(IDbConnection connection);
