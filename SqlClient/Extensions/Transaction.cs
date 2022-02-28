@@ -83,8 +83,8 @@ public static partial class SqlTransactionExtensions
     /// </summary>
     /// <typeparam name="T">The value returned from the action.</typeparam>
     /// <param name="connection">The connection to transact with.</param>
-    /// <param name="isolationLevel">The isolation level for the transaction.</param>
     /// <param name="action">The handler to execute while a transaction is pending.</param>
+    /// <param name="isolationLevel">The isolation level for the transaction.</param>
     /// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
     /// <returns>The value of the action.</returns>
     public static T ExecuteTransaction<T>(

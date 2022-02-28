@@ -10,41 +10,29 @@
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionPool{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlClient.SqlDataReader,System.Data.SqlDbType,Open.Database.Extensions.ExpressiveSqlCommand}.Param})">
-            <param name="connectionPool">The pool to acquire connections from.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveSqlCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveSqlCommand.#ctor(Open.Database.Extensions.IDbConnectionFactory{System.Data.SqlClient.SqlConnection},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlClient.SqlDataReader,System.Data.SqlDbType,Open.Database.Extensions.ExpressiveSqlCommand}.Param})">
-            <param name="connFactory">The factory to generate connections from.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveSqlCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlClient.SqlDataReader,System.Data.SqlDbType,Open.Database.Extensions.ExpressiveSqlCommand}.Param})">
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="transaction">The optional transaction to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveSqlCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveSqlCommand.#ctor(System.Data.SqlClient.SqlConnection,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlClient.SqlDataReader,System.Data.SqlDbType,Open.Database.Extensions.ExpressiveSqlCommand}.Param})">
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveSqlCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveSqlCommand.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{System.Data.SqlClient.SqlConnection,System.Data.SqlClient.SqlCommand,System.Data.SqlClient.SqlDataReader,System.Data.SqlDbType,Open.Database.Extensions.ExpressiveSqlCommand}.Param})">
-            <param name="transaction">The transaction to execute the command on.</param>
-            <param name="type">The command type.</param>
-            <param name="command">The SQL command.</param>
-            <param name="params">The list of params</param>
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.ExpressiveSqlCommand"/>.</summary>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveSqlCommand.AddParams(System.Data.SqlClient.SqlCommand)">
             <summary>
             Handles adding the list of parameters to a new command.
             </summary>
-            <param name="command"></param>
         </member>
         <member name="T:Open.Database.Extensions.SqlCommandExtensions">
             <summary>
@@ -86,8 +74,8 @@
             Shortcut for adding command a typed return parameter.
             </summary>
             <param name="target">The command to add a parameter to.</param>
-            <param name="name">The name of the parameter.</param>
             <param name="type">The SqlDbType of the parameter.</param>
+            <param name="name">The name of the parameter.</param>
             <returns>The created IDbDataParameter.</returns>
         </member>
         <member name="T:Open.Database.Extensions.SqlConnectionExtensions">
@@ -260,9 +248,9 @@
             Begins a transaction before executing the action.  Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.  Otherwise rolls-back the transaction.
             </summary>
             <param name="connection">The connection to transact with.</param>
-            <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
             <param name="isolationLevel">The isolation level for the transaction.</param>
+            <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
             <returns>True if committed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlTransactionExtensions.ExecuteTransaction``1(System.Data.SqlClient.SqlConnection,System.Func{System.Data.SqlClient.SqlTransaction,``0},System.Data.IsolationLevel,System.Threading.CancellationToken)">
@@ -271,9 +259,9 @@
             </summary>
             <typeparam name="T">The value returned from the action.</typeparam>
             <param name="connection">The connection to transact with.</param>
+            <param name="action">The handler to execute while a transaction is pending.</param>
             <param name="isolationLevel">The isolation level for the transaction.</param>
             <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-            <param name="action">The handler to execute while a transaction is pending.</param>
             <returns>The value of the action.</returns>
         </member>
         <member name="M:Open.Database.Extensions.SqlTransactionExtensions.ExecuteTransaction(System.Data.SqlClient.SqlConnection,System.Action{System.Data.SqlClient.SqlTransaction},System.Data.IsolationLevel,System.Threading.CancellationToken)">

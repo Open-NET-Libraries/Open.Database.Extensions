@@ -11,10 +11,7 @@ namespace Open.Database.Extensions;
 public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDataReader, SqlDbType, ExpressiveSqlCommand>
 {
     /// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
-    /// <param name="connectionPool">The pool to acquire connections from.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
+    /// <inheritdoc />
     public ExpressiveSqlCommand(
         IDbConnectionPool<SqlConnection> connectionPool,
         CommandType type,
@@ -24,12 +21,9 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
     {
     }
 
-    /// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
-    /// <param name="connFactory">The factory to generate connections from.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
-    public ExpressiveSqlCommand(
+	/// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
+	/// <inheritdoc />
+	public ExpressiveSqlCommand(
         IDbConnectionFactory<SqlConnection> connFactory,
         CommandType type,
         string command,
@@ -38,13 +32,9 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
     {
     }
 
-    /// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
-    /// <param name="connection">The connection to execute the command on.</param>
-    /// <param name="transaction">The optional transaction to execute the command on.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
-    public ExpressiveSqlCommand(
+	/// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
+	/// <inheritdoc />
+	public ExpressiveSqlCommand(
         SqlConnection connection,
         IDbTransaction? transaction,
         CommandType type,
@@ -54,12 +44,9 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
     {
     }
 
-    /// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
-    /// <param name="connection">The connection to execute the command on.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
-    public ExpressiveSqlCommand(
+	/// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
+	/// <inheritdoc />
+	public ExpressiveSqlCommand(
         SqlConnection connection,
         CommandType type,
         string command,
@@ -68,12 +55,9 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
     {
     }
 
-    /// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
-    /// <param name="transaction">The transaction to execute the command on.</param>
-    /// <param name="type">The command type.</param>
-    /// <param name="command">The SQL command.</param>
-    /// <param name="params">The list of params</param>
-    public ExpressiveSqlCommand(
+	/// <summary>Constructs a <see cref="ExpressiveSqlCommand"/>.</summary>
+	/// <inheritdoc />
+	public ExpressiveSqlCommand(
         IDbTransaction transaction,
         CommandType type,
         string command,
@@ -85,7 +69,6 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
     /// <summary>
     /// Handles adding the list of parameters to a new command.
     /// </summary>
-    /// <param name="command"></param>
     protected override void AddParams(SqlCommand command)
     {
         if (command is null) throw new System.ArgumentNullException(nameof(command));

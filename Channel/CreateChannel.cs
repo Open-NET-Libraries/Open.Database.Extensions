@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Threading.Channels;
 
 namespace Open.Database.Extensions;
@@ -9,6 +10,7 @@ public static partial class ChannelDbExtensions
     {
         if (capacity == 0) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Cannot be zero.");
         if (capacity < -1) throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Must greater than zero or equal to negative one (unbounded).");
+		Contract.EndContractBlock();
 
         return capacity > 0
             ? Channel.CreateBounded<T>(new BoundedChannelOptions(capacity)

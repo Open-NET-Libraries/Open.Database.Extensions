@@ -21,13 +21,17 @@ namespace Open.Database.Extensions;
 public static class DataReaderExtensions
 {
     /// <summary>
-    /// Iterates all records from an IDataReader.
+    /// Iterates all records from an <see cref="IDataReader"/>.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="handler">The handler function for each IDataRecord.</param>
+    /// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
     /// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
     /// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
-    public static void ForEach(this IDataReader reader, Action<IDataRecord> handler, bool throwOnCancellation, CancellationToken cancellationToken = default)
+    public static void ForEach(
+		this IDataReader reader,
+		Action<IDataRecord> handler,
+		bool throwOnCancellation,
+		CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -66,23 +70,21 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Iterates all records from an IDataReader.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="handler">The handler function for each IDataRecord.</param>
-    /// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
-    public static void ForEach(this IDataReader reader, Action<IDataRecord> handler, CancellationToken cancellationToken = default)
+    /// <inheritdoc cref="ForEach(IDataReader, Action{IDataRecord}, bool, CancellationToken)"/>
+    public static void ForEach(
+		this IDataReader reader,
+		Action<IDataRecord> handler,
+		CancellationToken cancellationToken = default)
         => ForEach(reader, handler, false, cancellationToken);
 
-    /// <summary>
-    /// Iterates all records from an IDataReader.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="handler">The handler function for each IDataRecord.</param>
-    /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static async ValueTask ForEachAsync(this DbDataReader reader,
+	/// <summary>
+	/// Iterates all records from an <see cref="DbDataReader"/>.
+	/// </summary>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
+	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+	/// <param name="cancellationToken">Optional cancellation token.</param>
+	public static async ValueTask ForEachAsync(this DbDataReader reader,
         Action<IDataRecord> handler,
         bool useReadAsync = true,
         CancellationToken cancellationToken = default)
@@ -102,14 +104,12 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Iterates all records from an IDataReader.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="handler">The handler function for each IDataRecord.</param>
-    /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static async ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, bool useReadAsync = true, CancellationToken cancellationToken = default)
+	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)"/>
+	public static async ValueTask ForEachAsync(
+		this DbDataReader reader,
+		Func<IDataRecord, ValueTask> handler,
+		bool useReadAsync = true,
+		CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (handler is null) throw new ArgumentNullException(nameof(handler));
@@ -147,21 +147,11 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Iterates all records from an IDataReader.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="handler">The handler function for each IDataRecord.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, CancellationToken cancellationToken)
+	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)"/>
+	public static ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, CancellationToken cancellationToken)
         => ForEachAsync(reader, handler, true, cancellationToken);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
+    /// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
     public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
     {
         return reader is null
@@ -183,14 +173,8 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, ArrayPool<object?> arrayPool)
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, ArrayPool<object?> arrayPool)
     {
         return reader is null
             ? throw new ArgumentNullException(nameof(reader))
@@ -276,57 +260,37 @@ public static class DataReaderExtensions
         }
 	}
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
+	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object?})"/>
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
         => AsEnumerableInternal(reader, ordinals, false);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object?> arrayPool)
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object?> arrayPool)
         => AsEnumerableInternal(reader, ordinals, false, arrayPool);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-    /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
         => AsEnumerable(reader, CoreExtensions.Concat(n, others));
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-    /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, ArrayPool<object?> arrayPool, int n, params int[] others)
+	/// <summary>
+	/// Provides an enumerable for iterating all the remaining values of the current result set of a data reader.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are retained.</remarks>
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+	/// <returns>An enumerable of the values returned from a data reader.</returns>
+	public static IEnumerable<object?[]> AsEnumerable(this IDataReader reader, ArrayPool<object?> arrayPool, int n, params int[] others)
         => AsEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
-    /// <summary>
-    /// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <returns>An enumerable used to iterate the results.</returns>
+    /// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
     public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
     {
 		return reader is null
@@ -343,11 +307,11 @@ public static class DataReaderExtensions
 	}
 
     /// <summary>
-    /// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
+    /// Iterates records from an <see cref="IDataReader"/> and passes the IDataRecord to a transform function.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
+    /// <param name="reader">The reader to iterate.</param>
+    /// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
     /// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
     /// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
     /// <returns>An enumerable used to iterate the results.</returns>
@@ -395,30 +359,20 @@ public static class DataReaderExtensions
 		}
 	}
 
-    /// <summary>
-    /// Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-    /// <returns>An enumerable used to iterate the results.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
+	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
     public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
         => Select(reader, transform, cancellationToken, throwOnCancellation);
 
 #if NETSTANDARD2_1
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="cancellationToken">Optional iteration cancellation token.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
-    public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken = default)
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
+    public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
+		this DbDataReader reader,
+		CancellationToken cancellationToken = default)
     {
 		return reader is null
             ? throw new ArgumentNullException(nameof(reader))
@@ -442,15 +396,11 @@ public static class DataReaderExtensions
 		}
 	}
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
-    /// <param name="cancellationToken">Optional iteration cancellation token.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
+	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
     public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, CancellationToken cancellationToken = default)
     {
 		return reader is null
@@ -552,85 +502,55 @@ public static class DataReaderExtensions
 		}
 	}
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-    /// <param name="cancellationToken">Optional iteration cancellation token.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken cancellationToken = default)
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken cancellationToken = default)
         => AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// DBNull values are retained.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <param name="cancellationToken">Optional iteration cancellation token.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object?> arrayPool, CancellationToken cancellationToken = default)
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
+	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object?> arrayPool, CancellationToken cancellationToken = default)
         => AsAsyncEnumerableInternal(reader, ordinals, false, arrayPool, cancellationToken);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="cancellationToken">The iteration cancellation token.</param>
-    /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-    /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="cancellationToken">The iteration cancellation token.</param>
+	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
     public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params int[] others)
         => AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), cancellationToken);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <param name="cancellationToken">The iteration cancellation token.</param>
-    /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-    /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
+	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+	/// <param name="cancellationToken">The iteration cancellation token.</param>
+	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
     public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, CancellationToken cancellationToken, int n, params int[] others)
         => AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool, cancellationToken);
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-    /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params int[] others)
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, int[])"/>
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params int[] others)
         => AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others));
 
-    /// <summary>
-    /// Enumerates all the remaining values of the current result set of a data reader.
-    /// </summary>
-    /// <param name="reader">The reader to enumerate.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-    /// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-    /// <returns>An enumeration of the values returned from a data reader.</returns>
-    public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, int n, params int[] others)
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, int[])"/>
+	public static IAsyncEnumerable<object?[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object?> arrayPool, int n, params int[] others)
         => AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
-    /// <summary>
-    /// Asyncronously iterates all records from an IDataReader.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The DbDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>An enumerable used to iterate the results.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
+	/// <summary>
+	/// Asyncronously iterates all records from a data reader..]
+	/// </summary>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The DbDataReader to iterate.</param>
+	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
+	/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <returns>An enumerable used to iterate the results.</returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
     public static IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
         Func<IDataRecord, T> transform,
         bool throwOnCancellation,
@@ -659,29 +579,14 @@ public static class DataReaderExtensions
 		}
 	}
 
-    /// <summary>
-    /// Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The DbDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>An enumerable used to iterate the results.</returns>
+    /// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
     public static IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
         Func<IDataRecord, T> transform,
         CancellationToken cancellationToken = default)
         => SelectAsync(reader, transform, false, cancellationToken);
 
-    /// <summary>
-    /// Asyncronously iterates all records from an IDataReader.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The DbDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>An enumerable used to iterate the results.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
+	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
     public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
         Func<IDataRecord, ValueTask<T>> transform,
         bool throwOnCancellation,
@@ -729,15 +634,8 @@ public static class DataReaderExtensions
 		}
 	}
 
-    /// <summary>
-    /// Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The DbDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>An enumerable used to iterate the results.</returns>
-    public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
+	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
         Func<IDataRecord, ValueTask<T>> transform,
         CancellationToken cancellationToken = default)
         => SelectAsync(reader, transform, false, cancellationToken);
@@ -748,7 +646,7 @@ public static class DataReaderExtensions
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
+    /// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>A list of the transformed results.</returns>
     public static List<T> ToList<T>(this IDataReader reader,
@@ -756,11 +654,11 @@ public static class DataReaderExtensions
         => reader.Select(transform, cancellationToken).ToList();
 
     /// <summary>
-    /// Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
+    /// Asynchronously iterates all records using the data reader and returns the desired results as a list.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The SqlDataReader to read from.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
+    /// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>A task containing a list of all results.</returns>
     public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
@@ -775,14 +673,7 @@ public static class DataReaderExtensions
         return list;
     }
 
-    /// <summary>
-    /// Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="reader">The SqlDataReader to read from.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>A task containing a list of all results.</returns>
+    /// <inheritdoc cref="ToListAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)"/>
     public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
         Func<IDataRecord, ValueTask<T>> transform, CancellationToken cancellationToken = default)
     {
@@ -800,7 +691,7 @@ public static class DataReaderExtensions
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
+    /// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
     /// <returns>An array of the transformed results.</returns>
     public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
         => reader.Select(transform).ToArray();
@@ -810,13 +701,13 @@ public static class DataReaderExtensions
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <returns>An array of the transformed results.</returns>
+    /// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
+    /// <returns>An immutable array of the transformed results.</returns>
     public static ImmutableArray<T> ToImmutableArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
         => reader.Select(transform).ToImmutableArray();
 
     /// <summary>
-    /// Loads all remaining data from an IDataReader into a DataTable.
+    /// Loads all remaining data from an <see cref="IDataReader"/> into a DataTable.
     /// </summary>
     /// <param name="reader">The IDataReader to load data from.</param>
     /// <returns>The resultant DataTable.</returns>
@@ -831,7 +722,7 @@ public static class DataReaderExtensions
     }
 
     /// <summary>
-    /// Loads all data from a command through an IDataReader into a DataTables.
+    /// Loads all data from a command through an <see cref="IDataReader"/> into a DataTables.
     /// Calls .NextResult() to check for more results.
     /// </summary>
     /// <param name="reader">The IDataReader to load data from.</param>
@@ -850,14 +741,14 @@ public static class DataReaderExtensions
         return results;
     }
 
-    /// <summary>
-    /// Iterates an IDataReader while the predicate returns true.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-    /// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-    /// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
-    public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, bool throwOnCancellation, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> while the predicate returns true.
+	/// </summary>
+	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
+	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
+	/// <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
+	/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+	public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, bool throwOnCancellation, CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -893,22 +784,15 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Iterates an IDataReader while the predicate returns true.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-    /// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+    /// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
     public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken cancellationToken = default)
         => IterateWhile(reader, predicate, false, cancellationToken);
 
-    /// <summary>
-    /// Iterates an IDataReader while the predicate returns true.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken cancellationToken = default)
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	public static async ValueTask IterateWhileAsync(
+		this DbDataReader reader,
+		Func<IDataRecord, bool> predicate,
+		CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -917,14 +801,12 @@ public static class DataReaderExtensions
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(true) && predicate(reader)) { }
     }
 
-    /// <summary>
-    /// Asynchronously iterates an IDataReader on a command while the predicate returns true.
-    /// </summary>
-    /// <param name="reader">The DbDataReader to load data from.</param>
-    /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-    /// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
+	/// <param name="reader">The DbDataReader to load data from.</param>
+	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
+	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
+	/// <param name="cancellationToken">Optional cancellation token.</param>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -977,13 +859,11 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Asynchronously iterates an IDataReader while the predicate returns true.
-    /// </summary>
-    /// <param name="reader">The DbDataReader to load data from.</param>
-    /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static async ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, CancellationToken cancellationToken = default)
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	public static async ValueTask IterateWhileAsync(
+		this IDataReader reader,
+		Func<IDataRecord, ValueTask<bool>> predicate,
+		CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -1000,14 +880,12 @@ public static class DataReaderExtensions
         }
     }
 
-    /// <summary>
-    /// Iterates an IDataReader while the predicate returns true.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-    /// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
+	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
+	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
+	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
+	/// <param name="cancellationToken">Optional cancellation token.</param>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
         if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -1021,7 +899,7 @@ public static class DataReaderExtensions
 
     /// <summary>
     /// Reads the first column values from every record.
-    /// DBNull values are then converted to null.
+    /// <see cref="DBNull"/> values are then converted to null.
     /// </summary>
     /// <returns>The enumerable first ordinal values.</returns>
     public static IEnumerable<object?> FirstOrdinalResults(this IDataReader reader)
@@ -1035,7 +913,7 @@ public static class DataReaderExtensions
 
     /// <summary>
     /// Reads the first column values from every record.
-    /// Any DBNull values are then converted to null and casted to type T0;
+    /// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
     /// </summary>
     /// <returns>The enumerable of casted values.</returns>
     public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDataReader reader)
@@ -1045,7 +923,7 @@ public static class DataReaderExtensions
 
     /// <summary>
     /// Reads the first column values from every record.
-    /// Any DBNull values are then converted to null and casted to type T0;
+    /// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
     /// </summary>
     /// <returns>The enumerable of casted values.</returns>
     public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
@@ -1068,7 +946,7 @@ public static class DataReaderExtensions
 
     /// <summary>
     /// Reads the first column values from every record.
-    /// DBNull values are converted to null.
+    /// <see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
     /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
@@ -1086,7 +964,7 @@ public static class DataReaderExtensions
 
     /// <summary>
     /// Reads the first column values from every record.
-    /// Any DBNull values are then converted to null and casted to type T0;
+    /// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
     /// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>

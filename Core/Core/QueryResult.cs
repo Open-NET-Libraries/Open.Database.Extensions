@@ -175,7 +175,7 @@ public static class QueryResultExtensions
 {
     /// <summary>
     /// Returns an enumerable that dequeues the results and returns a column
-    /// mapped dictionary for each entry. DBNull values are converted to null.
+    /// mapped dictionary for each entry.<see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <param name="source">The query result.  Typically produced by a
     /// .Retrieve method.</param>
@@ -278,7 +278,7 @@ public static class QueryResultExtensions
 
     /// <summary>
     /// Returns an enumerable that dequeues the results and returns a column
-    /// mapped dictionary for each entry. DBNull values are converted to null.
+    /// mapped dictionary for each entry.<see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <param name="source">The query result.  Typically produced by a
     /// .Retrieve method.</param>

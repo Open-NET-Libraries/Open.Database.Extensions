@@ -114,7 +114,7 @@
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.Queue{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column
-            mapped dictionary for each entry. DBNull values are converted to null.
+            mapped dictionary for each entry.<see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a
             .Retrieve method.</param>
@@ -161,7 +161,7 @@
         <member name="M:Open.Database.Extensions.Core.QueryResultExtensions.AsMappedDictionaries(Open.Database.Extensions.Core.QueryResult{System.Collections.Generic.IEnumerable{System.Object[]}})">
             <summary>
             Returns an enumerable that dequeues the results and returns a column
-            mapped dictionary for each entry. DBNull values are converted to null.
+            mapped dictionary for each entry.<see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <param name="source">The query result.  Typically produced by a
             .Retrieve method.</param>
@@ -275,11 +275,6 @@
             <param name="reader">The reader to read from.</param>
             <param name="readStarted"></param>
             <returns>An enumerable that transforms the results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.Core.Transformer`1.ResultsAsync(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
-            <param name="reader">The reader to read from.</param>
-            <param name="cancellationToken">The cancellation token.</param>
-            <inheritdoc cref="M:Open.Database.Extensions.Core.Transformer`1.ResultsBuffered(System.Data.IDataReader,System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.Core.Transformer`1.Results(System.Data.DataTable,System.Boolean)">
             <summary>
@@ -834,14 +829,14 @@
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.FirstOrdinalResultsAsync">
             <summary>
             Reads the first column from every record and returns the results as a list..
-            DBNull values are converted to null.
+            <see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <returns>The list of transformed records.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ExpressiveDbCommandBase`5.FirstOrdinalResultsAsync``1">
             <summary>
             Reads the first column from every record..
-            DBNull values are converted to null.
+            <see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
@@ -920,183 +915,105 @@
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object)">
-            <summary>
-            Shortcut for adding command parameter.
-            </summary>
-            <param name="target">The command to add a parameter to.</param>
-            <param name="name">The name of the parameter.</param>
-            <param name="value">The value of the parameter.</param>
-            <returns>The created IDbDataParameter.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)">
             <summary>
-            Shortcut for adding command parameter.
+            Shortcut for adding a command parameter.
             </summary>
             <param name="target">The command to add a parameter to.</param>
             <param name="name">The name of the parameter.</param>
             <param name="value">The value of the parameter.</param>
-            <param name="type">The DbType of the parameter.</param>
+            <param name="type">The <see cref="T:System.Data.DbType"/> of the parameter.</param>
             <param name="direction">The direction of the parameter.</param>
-            <returns>The created IDbDataParameter.</returns>
+            <returns>The created <see cref="T:System.Data.IDbDataParameter"/>.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.AddParameterType(System.Data.IDbCommand,System.String,System.Data.DbType,System.Data.ParameterDirection)">
             <summary>
-            Shortcut for adding command a typed (non-input) parameter.
+            Shortcut for adding a typed (non-input) command parameter.
             </summary>
-            <param name="target">The command to add a parameter to.</param>
-            <param name="name">The name of the parameter.</param>
-            <param name="type">The DbType of the parameter.</param>
-            <param name="direction">The direction of the parameter.</param>
-            <returns>The created IDbDataParameter.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand,System.Data.DbType,System.String)">
             <summary>
             Shortcut for adding command a typed return parameter.
             </summary>
-            <param name="target">The command to add a parameter to.</param>
-            <param name="type">The DbType of the parameter.</param>
-            <param name="name">The name of the parameter.</param>
-            <returns>The created IDbDataParameter.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.AddReturnParameter(System.Data.IDbCommand,System.String)">
             <summary>
             Shortcut for adding command a return parameter.
             </summary>
-            <param name="target">The command to add a parameter to.</param>
-            <param name="name">The name of the parameter.</param>
-            <returns>The created IDbDataParameter.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.AddParameter(System.Data.IDbCommand,System.String,System.Object,System.Data.DbType,System.Data.ParameterDirection)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToList``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list.
+            Iterates all records using an <see cref="T:System.Data.IDataReader"/> and returns the desired results as a list.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <returns>A list of all results.</returns>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToList``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>A list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToList``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>A task containing a list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>A task containing a list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
+            Asynchronously iterates all records using an <see cref="T:System.Data.IDataReader"/> and returns the desired results as a list.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The DbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>A task containing a list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>A task containing a list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToListAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list.
+            Iterates all records using an <see cref="T:System.Data.IDataReader"/> and returns the desired results as an array.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <returns>A list of all results.</returns>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>A list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})" />
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <returns>A list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})" />
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToImmutableArray``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>A list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ToArray``1(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0})" />
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToDataTable(System.Data.IDbCommand,System.Data.CommandBehavior)">
             <summary>
-            Loads all data from a command through an IDataReader into a DataTable.
+            Loads all data from a command through an <see cref="T:System.Data.IDataReader"/> into a DataTable.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The resultant DataTable.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ToDataTables(System.Data.IDbCommand,System.Data.CommandBehavior)">
             <summary>
-            Loads all data from a command through an IDataReader into a DataTables.
+            Loads all data from a command through an <see cref="T:System.Data.IDataReader"/> into a DataTables.
             Calls .NextResult() to check for more results.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The resultant list of DataTables.</returns>
         </member>
@@ -1104,92 +1021,70 @@
             <summary>
             Executes a reader on a command with a handler function.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReader``1(System.Data.IDbCommand,System.Func{System.Data.IDataReader,``0},System.Data.CommandBehavior)">
             <summary>
             Executes a reader on a command with a transform function.
             </summary>
-            <remarks>The default <see cref="T:System.Data.CommandBehavior"/> will open a connection, execute the reader and close the connection it if was not already open.</remarks>
+            <remarks>The default behavior will open a connection, execute the reader and close the connection it if was not already open.</remarks>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
+            <param name="transform">The transform function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The result of the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
-            Executes a reader on a command with a handler function.
+            Asynchronously executes a reader on a command with a handler function.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.IDbCommand,System.Func{System.Data.IDataReader,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
-            Executes a reader on a command with a handler function.
+            Asynchronously executes a reader on a command with a handler function.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior,System.Threading.CancellationToken)">
-            <summary>
-            Executes a reader on a command with a handler function.
-            </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Action{System.Data.Common.DbDataReader},System.Data.CommandBehavior,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Threading.CancellationToken)">
             <summary>
-            Executes a reader on a command with a transform function.
+            Asynchronously executes a reader on a command with a transform function.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
+            <param name="transform">The transform function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <returns>The result of the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.IDbCommand,System.Func{System.Data.IDataReader,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">
-            <summary>
-            Executes a reader on a command with a transform function.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
+            <param name="transform">The transform function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The result of the transform.</returns>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,System.Threading.Tasks.ValueTask{``0}},System.Data.CommandBehavior,System.Threading.CancellationToken)">
-            <summary>
-            Executes a reader on a command with a transform function.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The result of the transform.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ExecuteReaderAsync``1(System.Data.Common.DbCommand,System.Func{System.Data.Common.DbDataReader,``0},System.Data.CommandBehavior,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.IterateReader``2(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1},System.Data.CommandBehavior)">
-            <summary>
-            Executes a reader on a command with a transform function.
-            </summary>
-            <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
-            <typeparam name="TResult">The type returned by the selector.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
-            <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>The result of the transform.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.IterateReader``2(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.IterateReader``2(System.Data.IDbCommand,System.Data.CommandBehavior,System.Func{System.Data.IDataRecord,``0},System.Func{System.Collections.Generic.IEnumerable{``0},``1})">
             <summary>
@@ -1197,199 +1092,145 @@
             </summary>
             <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
             <typeparam name="TResult">The type returned by the selector.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="transform">The transform function for each IDataRecord.</param>
+            <param name="transform">The transform function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
-            <returns>The result of the transform.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ExecuteReader``1(System.Data.IDbCommand,System.Func{System.Data.IDataReader,``0},System.Data.CommandBehavior)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand,System.Data.CommandBehavior,System.Action{System.Data.IDataRecord})">
             <summary>
-            Iterates a reader on a command with a handler function.
+            Iterates an <see cref="T:System.Data.IDataReader"/> on a command with a handler function.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior)">
-            <summary>
-            Iterates a reader on a command with a handler function.
-            </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.IterateReader(System.Data.IDbCommand,System.Data.CommandBehavior,System.Action{System.Data.IDataRecord})"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.IterateReaderWhile(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,System.Boolean},System.Data.CommandBehavior)">
             <summary>
-            Iterates an IDataReader on a command while the predicate returns true.
+            Iterates an <see cref="T:System.Data.IDataReader"/> on a command while the predicate returns true.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
+            <param name="predicate">The handler function that processes each <see cref="T:System.Data.IDataRecord"/> and decides if iteration should continue.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Asynchronously iterates all records from an IDataReader.
+            Asynchronously iterates all records from an <see cref="T:System.Data.IDataReader"/>.
             </summary>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records from an IDataReader.
-            </summary>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records from an IDataReader.
-            </summary>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records from an IDataReader.
-            </summary>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.ForEachAsync(System.Data.Common.DbCommand,System.Action{System.Data.IDataRecord},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.IterateReaderWhileAsync(System.Data.Common.DbCommand,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Asynchronously iterates an IDataReader on a command while the predicate returns true.
+            Asynchronously iterates an <see cref="T:System.Data.IDataReader"/> on a command while the predicate returns true.
             </summary>
-            <param name="command">The DbCommand to generate a reader from.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="command">The <see cref="T:System.Data.Common.DbCommand"/> to generate a reader from.</param>
+            <param name="predicate">The handler function that processes each <see cref="T:System.Data.IDataRecord"/> and decides if iteration should continue.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.First``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
-            Iterates an IDataReader and returns the first result through a transform function.  Throws if none.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and returns the first result through a transform function.
             </summary>
+            <remarks>Throws an <see cref="T:System.InvalidOperationException"/> if there are no results.</remarks>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The value from the transform.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.FirstOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>The value from the transform.</returns>
+            <remarks>Returns <c>default(T)</c> if thre are no results.</remarks>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.First``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.Single``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Iterates an IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>The value from the transform.</returns>
+            <remarks>Throws an <see cref="T:System.InvalidOperationException"/> if there is anything other than a single result.</remarks>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.First``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.SingleOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
-            <summary>
-            Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.  Throws if more than one entry.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <returns>The value from the transform.</returns>
+            <remarks>
+            Returns <c>default(T)</c> if thre are no results.
+            Throws an <see cref="T:System.InvalidOperationException"/> if there is more than one result.
+            </remarks>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.FirstOrDefault``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.Take``1(System.Data.IDbCommand,System.Int32,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
-            Iterates an IDataReader and returns the first number of results defined by the count.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and returns the first number of results defined by the count.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="count">The maximum number of records to return.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The results from the transform limited by the take count.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.Skip``1(System.Data.IDbCommand,System.Int32,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
-            Iterates an IDataReader and skips the first number of results defined by the count.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and skips the first number of results defined by the count.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="count">The number of records to skip.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The results from the transform after the skip count.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.SkipThenTake``1(System.Data.IDbCommand,System.Int32,System.Int32,System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">
             <summary>
-            Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and skips by the skip parameter returns the maximum remaining defined by the take parameter.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="skip">The number of entries to skip before starting to take results.</param>
             <param name="take">The maximum number of records to return.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <returns>The results from the skip, transform and take operation.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResults(System.Data.IDbCommand,System.Data.CommandBehavior)">
-            <summary>
-            Reads the first column values from every record.
-            DBNull values are then converted to null.
-            </summary>
-            <returns>The enumerable first ordinal values.</returns>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResults``1(System.Data.IDbCommand,System.Data.CommandBehavior)">
-            <summary>
-            Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
-            </summary>
-            <returns>The enumerable of casted values.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResults``1(System.Data.Common.DbCommand,System.Data.CommandBehavior)">
-            <summary>
-            Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
-            </summary>
-            <returns>The enumerable of casted values.</returns>
+            <typeparam name="T0">The expected type of the first ordinal.</typeparam>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Reads the first column values from every record.
-            DBNull values are converted to null.
-            </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
-            <param name="behavior">The behavior to use with the data reader.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>The list of values.</returns>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <inheritdoc cref="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.CommandExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbCommand,System.Data.CommandBehavior,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Reads the first column from every record..
-            Any DBNull values are then converted to null and casted to type T0;
+            Reads the first column from every record.
             </summary>
-            <param name="command">The IDbCommand to generate a reader from.</param>
+            <typeparam name="T0">The expected type of the first ordinal.</typeparam>
+            <remarks>Any <see cref="T:System.DBNull"/> values are then converted to null and casted to type <typeparamref name="T0"/>.</remarks>
+            <param name="command">The <see cref="T:System.Data.IDbCommand"/> to generate a reader from.</param>
             <param name="behavior">The behavior to use with the data reader.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="T:Open.Database.Extensions.ConnectionExtensions">
@@ -1408,210 +1249,161 @@
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)">
             <summary>
-            Shortcut for creating an IDbCommand from any IDbConnection.
+            Shortcut for creating an <see cref="T:System.Data.IDbCommand"/> from any <see cref="T:System.Data.IDbConnection"/>.
             </summary>
             <param name="connection">The connection to create a command from.</param>
-            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+            <param name="type">The command type.  <see cref="F:System.Data.CommandType.Text"/>, <see cref="F:System.Data.CommandType.StoredProcedure"/>, or <see cref="F:System.Data.CommandType.TableDirect"/>.</param>
             <param name="commandText">The command text or stored procedure name to use.</param>
             <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.IDbConnection,System.String,System.Int32)">
             <summary>
-            Shortcut for creating a text IDbCommand from any IDbConnection.
+            Shortcut for creating a text <see cref="T:System.Data.IDbCommand"/> from any <see cref="T:System.Data.IDbConnection"/>.
             </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.IDbConnection,System.String,System.Int32)">
             <summary>
-            Shortcut for creating an IDbCommand from any IDbConnection.
+            Shortcut for creating a stored procedure <see cref="T:System.Data.IDbCommand"/> from any <see cref="T:System.Data.IDbConnection"/>.
             </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.Common.DbConnection,System.Data.CommandType,System.String,System.Int32)">
             <summary>
-            Shortcut for creating an DbCommand from any DbConnection.
+            Shortcut for creating an <see cref="T:System.Data.Common.DbCommand"/> from any <see cref="T:System.Data.Common.DbConnection"/>.
             </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateTextCommand(System.Data.Common.DbConnection,System.String,System.Int32)">
             <summary>
-            Shortcut for creating a text DbCommand from any DbConnection.
+            Shortcut for creating a text <see cref="T:System.Data.Common.DbCommand"/> from any <see cref="T:System.Data.Common.DbConnection"/>.
             </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="commandText">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.CreateStoredProcedureCommand(System.Data.Common.DbConnection,System.String,System.Int32)">
             <summary>
-            Shortcut for creating a stored procedure DbCommand from any DbConnection.
+            Shortcut for creating a stored procedure <see cref="T:System.Data.Common.DbCommand"/> from any <see cref="T:System.Data.Common.DbConnection"/>.s
             </summary>
-            <param name="connection">The connection to create a command from.</param>
-            <param name="procedureName">The command text or stored procedure name to use.</param>
-            <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-            <returns>The created SqlCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.CreateCommand(System.Data.IDbConnection,System.Data.CommandType,System.String,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpen(System.Data.IDbConnection)">
-            <summary>
-            If the connection isn't open, opens the connection.
-            If the connection is in neither open or close, first closes the connection.
-            </summary>
             <returns>The prior connection state.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            If the connection isn't open, opens the connection.
-            If the connection is in neither open or close, first closes the connection.
+            If the connection isn't open, opens the connection.<br/>
+            If the connection is in neither open or close, first closes the connection, then opens it.
             </summary>
             <param name="connection">The connection to transact with.</param>
             <param name="configureAwait">If true (default) will retain the context after opening.</param>
-            <param name="cancellationToken">An optional token to cancel opening.</param>
+            <param name="cancellationToken">An cancellation token to cancel opening.</param>
             <returns>A task containing the prior connection state.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Threading.CancellationToken)">
-            <summary>
-            If the connection isn't open, opens the connection.
-            If the connection is in neither open or close, first closes the connection.
-            </summary>
-            <param name="connection">The connection to transact with.</param>
-            <param name="cancellationToken">An optional token to cancel opening.</param>
-            <returns>A task containing the prior connection state.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.IDbConnection,System.Threading.CancellationToken)">
-            <summary>
-            If the connection isn't open, opens the connection.
-            If the connection is in neither open or close, first closes the connection.
-            </summary>
-            <param name="connection">The connection to transact with.</param>
-            <param name="cancellationToken">An optional token to cancel opening.</param>
-            <returns>A task containing the prior connection state.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(System.Data.Common.DbConnection,System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbConnection,System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> for subsequent configuration and execution.
             </summary>
             <param name="connection">The connection to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
+            <param name="type">The command type. The default is <see cref="F:System.Data.CommandType.Text"/>.</param>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbTransaction,System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> for subsequent configuration and execution.
             </summary>
             <param name="transaction">The transaction to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
+            <param name="type">The command type. The default is <see cref="F:System.Data.CommandType.Text"/>.</param>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbConnection,System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> for subsequent configuration and execution.
             </summary>
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="command">The command text or stored procedure name to use.</param>
-            <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.IDbConnection,System.String,System.Data.CommandType)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Data.Common.DbTransaction,System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> for subsequent configuration and execution.
             </summary>
             <param name="transaction">The transaction to execute the command on.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbConnection,System.String)">
             <summary>
-            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <param name="connection">The connection to execute the command on.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbTransaction,System.String)">
             <summary>
-            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <param name="transaction">The transaction to execute the command on.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbConnection,System.String)">
             <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
-            <param name="connection">The connection to execute the command on.</param>
-            <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbConnection,System.String)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.Common.DbTransaction,System.String)">
             <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
-            <param name="transaction">The transaction to execute the command on.</param>
-            <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Data.IDbTransaction,System.String)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionFactory,System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> for subsequent configuration and execution.
             </summary>
             <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionFactory,System.String)">
             <summary>
-            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(Open.Database.Extensions.IDbConnectionPool,System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> for subsequent configuration and execution.
             </summary>
             <param name="connectionSource">The connection pool to take connections from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(Open.Database.Extensions.IDbConnectionPool,System.String)">
             <summary>
-            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <param name="connectionSource">The connection pool to take connections from.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> for subsequent configuration and execution.
             </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.String)">
             <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionSource">The connection factory to generate connections and subsequently commands from.</param>
@@ -1620,256 +1412,158 @@
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> for subsequent configuration and execution.
             </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionSource">The connection pool to take connections from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(Open.Database.Extensions.IDbConnectionPool{``0},System.String)">
             <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionSource">The connection pool to take connections from.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command(System.Func{System.Data.IDbConnection},System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> for subsequent configuration and execution.
             </summary>
             <param name="connectionSource">The connection factory to generate a commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure(System.Func{System.Data.IDbConnection},System.String)">
             <summary>
-            Creates an ExpressiveCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <param name="connectionSource">The connection factory to generate a commands from.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Command``1(System.Func{``0},System.String,System.Data.CommandType)">
             <summary>
-            Creates an ExpressiveDbCommand for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> for subsequent configuration and execution.
             </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionSource">The connection factory to generate a commands from.</param>
             <param name="command">The command text or stored procedure name to use.</param>
             <param name="type">The command type. Default = CommandType.Text.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.StoredProcedure``1(System.Func{``0},System.String)">
             <summary>
-            Creates an ExpressiveDbCommand with command type set to StoredProcedure for subsequent configuration and execution.
+            Creates an <see cref="T:Open.Database.Extensions.ExpressiveDbCommand"/> with command type set to <see cref="F:System.Data.CommandType.StoredProcedure"/> for subsequent configuration and execution.
             </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionSource">The connection factory to generate a commands from.</param>
             <param name="procedureName">The stored procedure name to use.</param>
-            <returns>The resultant ExpressiveDbCommand.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})">
             <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
+            Generates a connection. Ensures it's open. Invokes the action.<br/>
             Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
             </summary>
+            <remarks>Useful for single-line operations.</remarks>
             <param name="connectionFactory">The connection factory to generate connections from.</param>
             <param name="action">The action to execute.</param>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
             <param name="connectionFactory">The connection factory to generate connections from.</param>
             <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <param name="connectionFactory">The connection factory to generate connections from.</param>
             <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,``0})">
-            <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
-            Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection,System.Data.ConnectionState})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection,System.Data.ConnectionState})">
             <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.<br/>
             Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
             </summary>
             <param name="connectionPool">The connection pool to acquire connections from.</param>
             <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,``1})">
-            <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
-            Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection,System.Data.ConnectionState})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Action{``0,System.Data.ConnectionState})">
-            <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
-            Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection,System.Data.ConnectionState})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``2(System.Func{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConnection">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open``1(System.Func{``0},System.Action{``0})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Open``1(System.Func{``0},System.Action{``0})">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConnection">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
             <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
+            Generates a connection. Ensures it's open. Invokes the action.<br/>
             Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
             </summary>
             <param name="connectionFactory">The connection factory to generate connections from.</param>
             <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
             <returns>The value from the action.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConnection">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
-            <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
-            Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
             <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
+            Acquires a connection from the pool. Ensures it's open. Invokes the action.<br/>
             Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
             </summary>
             <param name="connectionPool">The connection pool to acquire connections from.</param>
             <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Open``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">
-            <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
-            Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
-            <summary>
-            Acquires a connection from the pool. Ensures it's open. Invokes the action.
-            Ensures the connection is returned to the pool when the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConnection">The connection type.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Data.ConnectionState,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}},System.Threading.CancellationToken)">
             <summary>
@@ -1885,207 +1579,105 @@
             <returns>The value from the action.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
-            <summary>
-            Generates a connection. Ensures it's open. Invokes the action.
-            Ensures the connection is disposed of when the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConnection">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.OpenAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})">
             <summary>
             Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
             </summary>
+            <remarks>Useful for single-line operations.</remarks>
             <param name="connectionFactory">The connection factory to generate connections from.</param>
             <param name="action">The action to execute.</param>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Action{``0})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,``0})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})">
             <summary>
             Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
+            <remarks>Useful for single-line operations.</remarks>
             </summary>
             <param name="connectionPool">The connection pool to acquire connections from.</param>
             <param name="action">The action to execute.</param>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,``1})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Action{``0})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``2(System.Func{``0},System.Func{``0,``1})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.Using``1(System.Func{``0},System.Action{``0})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
-            <typeparam name="TConn">The connection type.</typeparam>
-            <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionFactory{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask{``0}})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync(Open.Database.Extensions.IDbConnectionPool,System.Func{System.Data.IDbConnection,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
             <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(Open.Database.Extensions.IDbConnectionPool{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Acquires a connection from the pool, returning it after the action is complete.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionPool">The connection pool to acquire connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionPool,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``2(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask{``1}})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
             <typeparam name="T">The type returned from the action.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
-            <returns>The value from the action.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using``1(Open.Database.Extensions.IDbConnectionFactory,System.Func{System.Data.IDbConnection,``0})"/>
         </member>
         <member name="M:Open.Database.Extensions.ConnectionExtensions.UsingAsync``1(System.Func{``0},System.Func{``0,System.Threading.Tasks.ValueTask})">
-            <summary>
-            Generates a connection and executes the action within a using statement.
-            Useful for single-line operations.
-            </summary>
             <typeparam name="TConn">The connection type.</typeparam>
-            <param name="connectionFactory">The connection factory to generate connections from.</param>
-            <param name="action">The action to execute.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.ConnectionExtensions.Using(Open.Database.Extensions.IDbConnectionFactory,System.Action{System.Data.IDbConnection})"/>
         </member>
         <member name="T:Open.Database.Extensions.DataReaderExtensions">
             <summary>
@@ -2094,256 +1686,79 @@
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates all records from an IDataReader.
+            Iterates all records from an <see cref="T:System.Data.IDataReader"/>.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
             <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Threading.CancellationToken)">
-            <summary>
-            Iterates all records from an IDataReader.
-            </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.ForEach(System.Data.IDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates all records from an IDataReader.
+            Iterates all records from an <see cref="T:System.Data.Common.DbDataReader"/>.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
+            <param name="handler">The handler function for each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <param name="cancellationToken">Optional cancellation token.</param>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Iterates all records from an IDataReader.
-            </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)">
-            <summary>
-            Iterates all records from an IDataReader.
-            </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="handler">The handler function for each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.ForEachAsync(System.Data.Common.DbDataReader,System.Action{System.Data.IDataRecord},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader)">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object})">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32})">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object})">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
             <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Int32,System.Int32[])">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
             <param name="reader">The reader to enumerate.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.AsEnumerable(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])">
             <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
+            Provides an enumerable for iterating all the remaining values of the current result set of a data reader.
             </summary>
+            <remarks><see cref="T:System.DBNull"/> values are retained.</remarks>
             <param name="reader">The reader to enumerate.</param>
             <param name="arrayPool">The array pool to acquire buffers from.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
             <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
+            <returns>An enumerable of the values returned from a data reader.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
-            <summary>
-            Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <returns>An enumerable used to iterate the results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken,System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken,System.Boolean)">
             <summary>
-            Iterates records from an IDataReader and passes the IDataRecord to a transform function.
+            Iterates records from an <see cref="T:System.Data.IDataReader"/> and passes the IDataRecord to a transform function.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="reader">The reader to iterate.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
             <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
             <returns>An enumerable used to iterate the results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Threading.CancellationToken,System.Func{System.Data.IDataRecord,``0},System.Boolean)">
-            <summary>
-            Iterates records from an IDataReader and passes the IDataRecord to a transform function.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-            <returns>An enumerable used to iterate the results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Threading.CancellationToken)">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="cancellationToken">Optional iteration cancellation token.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="arrayPool">An optional array pool to acquire buffers from.</param>
-            <param name="cancellationToken">Optional iteration cancellation token.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Threading.CancellationToken)">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-            <param name="cancellationToken">Optional iteration cancellation token.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Int32},System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            DBNull values are retained.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-            <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <param name="cancellationToken">Optional iteration cancellation token.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.Int32,System.Int32[])">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="cancellationToken">The iteration cancellation token.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken,System.Int32,System.Int32[])">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <param name="cancellationToken">The iteration cancellation token.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Int32,System.Int32[])">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(System.Data.Common.DbDataReader,System.Buffers.ArrayPool{System.Object},System.Int32,System.Int32[])">
-            <summary>
-            Enumerates all the remaining values of the current result set of a data reader.
-            </summary>
-            <param name="reader">The reader to enumerate.</param>
-            <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-            <param name="others">The remaining ordinals to request from the reader for each record.</param>
-            <returns>An enumeration of the values returned from a data reader.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asyncronously iterates all records from an IDataReader.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The DbDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>An enumerable used to iterate the results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The DbDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>An enumerable used to iterate the results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asyncronously iterates all records from an IDataReader.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The DbDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
-            <param name="cancellationToken">The cancellation token.</param>
-            <returns>An enumerable used to iterate the results.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.DataReaderExtensions.SelectAsync``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates records from an DbDataReader and passes the IDataRecord to a transform function.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The DbDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>An enumerable used to iterate the results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.Select``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken,System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToList``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
@@ -2351,29 +1766,22 @@
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="cancellationToken">Optional cancellation token.</param>
             <returns>A list of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
+            Asynchronously iterates all records using the data reader and returns the desired results as a list.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The SqlDataReader to read from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <param name="cancellationToken">Optional cancellation token.</param>
             <returns>A task containing a list of all results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates all records using an IDataReader and returns the desired results as a list.
-            </summary>
-            <typeparam name="T">The return type of the transform function.</typeparam>
-            <param name="reader">The SqlDataReader to read from.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
-            <returns>A task containing a list of all results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.ToListAsync``1(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
             <summary>
@@ -2381,7 +1789,7 @@
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
             <returns>An array of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToImmutableArray``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0})">
@@ -2390,19 +1798,19 @@
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
-            <param name="transform">The transform function to process each IDataRecord.</param>
-            <returns>An array of the transformed results.</returns>
+            <param name="transform">The transform function to process each <see cref="T:System.Data.IDataRecord"/>.</param>
+            <returns>An immutable array of the transformed results.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToDataTable(System.Data.IDataReader)">
             <summary>
-            Loads all remaining data from an IDataReader into a DataTable.
+            Loads all remaining data from an <see cref="T:System.Data.IDataReader"/> into a DataTable.
             </summary>
             <param name="reader">The IDataReader to load data from.</param>
             <returns>The resultant DataTable.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.ToDataTables(System.Data.IDataReader)">
             <summary>
-            Loads all data from a command through an IDataReader into a DataTables.
+            Loads all data from a command through an <see cref="T:System.Data.IDataReader"/> into a DataTables.
             Calls .NextResult() to check for more results.
             </summary>
             <param name="reader">The IDataReader to load data from.</param>
@@ -2410,80 +1818,61 @@
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader while the predicate returns true.
+            Iterates an <see cref="T:System.Data.IDataReader"/> while the predicate returns true.
             </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to iterate.</param>
+            <param name="predicate">The handler function that processes each <see cref="T:System.Data.IDataRecord"/> and decides if iteration should continue.</param>
             <param name="throwOnCancellation">If true, when cancelled, may exit the iteration via an exception. Otherwise when cancelled will simply stop iterating and return without exception.</param>
             <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken)">
-            <summary>
-            Iterates an IDataReader while the predicate returns true.
-            </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-            <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Threading.CancellationToken)">
-            <summary>
-            Iterates an IDataReader while the predicate returns true.
-            </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.Common.DbDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates an IDataReader on a command while the predicate returns true.
-            </summary>
             <param name="reader">The DbDataReader to load data from.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="predicate">The handler function that processes each <see cref="T:System.Data.IDataRecord"/> and decides if iteration should continue.</param>
             <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
             <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates an IDataReader while the predicate returns true.
-            </summary>
-            <param name="reader">The DbDataReader to load data from.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
-            <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.IterateWhileAsync(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Threading.Tasks.ValueTask{System.Boolean}},System.Boolean,System.Threading.CancellationToken)">
-            <summary>
-            Iterates an IDataReader while the predicate returns true.
-            </summary>
-            <param name="reader">The IDataReader to iterate.</param>
-            <param name="predicate">The handler function that processes each IDataRecord and decides if iteration should continue.</param>
+            <param name="reader">The <see cref="T:System.Data.IDataReader"/> to iterate.</param>
+            <param name="predicate">The handler function that processes each <see cref="T:System.Data.IDataRecord"/> and decides if iteration should continue.</param>
             <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
             <param name="cancellationToken">Optional cancellation token.</param>
+            <inheritdoc cref="M:Open.Database.Extensions.DataReaderExtensions.IterateWhile(System.Data.IDataReader,System.Func{System.Data.IDataRecord,System.Boolean},System.Boolean,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults(System.Data.IDataReader)">
             <summary>
             Reads the first column values from every record.
-            DBNull values are then converted to null.
+            <see cref="T:System.DBNull"/> values are then converted to null.
             </summary>
             <returns>The enumerable first ordinal values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults``1(System.Data.IDataReader)">
             <summary>
             Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
+            Any<see cref="T:System.DBNull"/> values are then converted to null and casted to type T0;
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResults``1(System.Data.Common.DbDataReader)">
             <summary>
             Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
+            Any<see cref="T:System.DBNull"/> values are then converted to null and casted to type T0;
             </summary>
             <returns>The enumerable of casted values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Reads the first column values from every record.
-            DBNull values are converted to null.
+            <see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
@@ -2493,7 +1882,7 @@
         <member name="M:Open.Database.Extensions.DataReaderExtensions.FirstOrdinalResultsAsync``1(System.Data.Common.DbDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Reads the first column values from every record.
-            Any DBNull values are then converted to null and casted to type T0;
+            Any<see cref="T:System.DBNull"/> values are then converted to null and casted to type T0;
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
@@ -2506,11 +1895,7 @@
             </summary>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord)">
-            <summary>
-            Returns an array of values with the specified field count.
-            </summary>
-            <param name="record">The reader to get column names from.</param>
-            <returns>The array of values.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)">
             <summary>
@@ -2521,21 +1906,15 @@
             <returns>The array of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32,System.Buffers.ArrayPool{System.Object})">
-            <summary>
-            Returns an array of values with the specified field count.
-            </summary>
             <param name="record">The reader to get column names from.</param>
             <param name="minimumArrayLength">The minimum size of the resultant array.</param>
             <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <returns>The array of values.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Buffers.ArrayPool{System.Object})">
-            <summary>
-            Returns an array of values with the specified field count.
-            </summary>
             <param name="record">The reader to get column names from.</param>
             <param name="arrayPool">The array pool to acquire buffers from.</param>
-            <returns>The array of values.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.GetValues(System.Data.IDataRecord,System.Int32)"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ColumnNames(System.Data.IDataRecord)">
             <summary>
@@ -2570,7 +1949,7 @@
             <summary>
             Returns an array of name to ordinal mappings.
             </summary>
-            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query the ordinals from.</param>
             <param name="columnNames">The requested column names.</param>
             <returns>An enumerable of the mappings.</returns>
         </member>
@@ -2578,7 +1957,7 @@
             <summary>
             Returns an array of name to ordinal mappings.
             </summary>
-            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query the ordinals from.</param>
             <param name="columnNames">The requested column names.</param>
             <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns>An enumerable of the mappings.</returns>
@@ -2587,74 +1966,54 @@
             <summary>
             Returns an array of name to ordinal mappings.
             </summary>
-            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query the ordinals from.</param>
             <param name="columnNames">The requested column names.</param>
             <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns></returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValues(System.Data.IDataRecord)">
             <summary>
-            Produces a selective set of column values based upon the desired ordinal positions.
+            Produces an array of values based upon their ordinal positions.
             </summary>
-            <param name="record">The IDataRecord to query.</param>
-            <returns>An enumerable for iterating the values of a record.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Produces a selective set of column values based upon the desired ordinal positions.
             </summary>
-            <param name="record">The IDataRecord to query.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query.</param>
             <param name="ordinals">The set of ordinals to query.</param>
             <returns>An enumerable of values matching the ordinal positions requested.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32})">
-            <summary>
-            Produces a selective set of column values based upon the desired ordinal positions.
-            </summary>
-            <param name="record">The IDataRecord to query.</param>
-            <param name="ordinals">The set of ordinals to query.</param>
-            <returns>An enumerable of values matching the ordinal positions requested.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Int32,System.Int32[])">
-            <summary>
-            Produces a selective set of column values based upon the desired ordinal positions.
-            </summary>
-            <param name="record">The IDataRecord to query.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query.</param>
             <param name="firstOrdinal">The first ordinal to query.</param>
             <param name="remainingOrdinals">The remaining set of ordinals to query.</param>
-            <returns>An enumerable of values matching the ordinal positions requested.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.ReadOnlySpan{System.Int32}@,System.Span{System.Object})">
-            <summary>
-            Produces a selective set of column values based upon the desired ordinal positions.
-            </summary>
-            <param name="record">The IDataRecord to query.</param>
-            <param name="ordinals">The set of ordinals to query.</param>
-            <param name="values">The target span to store the values.</param>
-            <returns>An array of values matching the ordinal positions requested.</returns>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query.</param>
+            <param name="ordinals">The list of ordinals to query.</param>
+            <param name="values">The target to store the values.</param>
+            <returns>The provided span, updated with values matching the ordinal positions requested.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Int32})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals``1(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32},``0)">
-            <summary>
-            Produces a selective set of column values based upon the desired ordinal positions.
-            </summary>
-            <param name="record">The IDataRecord to query.</param>
-            <param name="ordinals">The set of ordinals to query.</param>
-            <param name="values">The target list to store the values.</param>
-            <returns>An array of values matching the ordinal positions requested.</returns>
+            <returns>The provided list, updated with values matching the ordinal positions requested.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.ReadOnlySpan{System.Int32}@,System.Span{System.Object})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.Collections.Generic.IList{System.Int32})">
-            <summary>
-            Produces a selective set of column values based upon the desired ordinal positions.
-            </summary>
-            <param name="record">The IDataRecord to query.</param>
-            <param name="ordinals">The set of ordinals to query.</param>
             <returns>An array of values matching the ordinal positions requested.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(System.Data.IDataRecord,System.ReadOnlySpan{System.Int32}@,System.Span{System.Object})"/>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
             <summary>
             Returns an enumerable of name to ordinal mappings.
             </summary>
-            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query the ordinals from.</param>
             <param name="columnNames">The requested column names.</param>
             <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns>The enumerable of name to ordinal mappings.</returns>
@@ -2663,7 +2022,7 @@
             <summary>
             Returns an array of name to ordinal mappings.
             </summary>
-            <param name="record">The IDataRecord to query the ordinals from.</param>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to query the ordinals from.</param>
             <param name="columnNames">The requested column names.</param>
             <param name="sort">If true, will order the results by ordinal ascending.</param>
             <returns>The array of name to ordinal mappings.</returns>
@@ -2684,64 +2043,64 @@
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.Int32,System.String}})">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="columnMap">The column ids and resultant names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.Int32}})">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="ordinalMapping">The column ids and resultant names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IList{System.ValueTuple{System.String,System.Int32}})">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="ordinalMapping">The column ids and resultant names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.ReadOnlySpan{System.ValueTuple{System.String,System.Int32}}@)">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="ordinalMapping">The column ids and resultant names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.Collections.Generic.IList{System.String})">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
         <member name="M:Open.Database.Extensions.DataRecordExtensions.ToDictionary(System.Data.IDataRecord,System.ReadOnlySpan{System.String}@)">
             <summary>
-            Returns the specified column data of IDataRecord as a Dictionary.
-            DBNull values are converted to null.
+            Returns the specified column data of <see cref="T:System.Data.IDataRecord"/> as a Dictionary.
             </summary>
-            <param name="record">The IDataRecord to extract values from.</param>
+            <remarks><see cref="T:System.DBNull"/> values are converted to null.</remarks>
+            <param name="record">The <see cref="T:System.Data.IDataRecord"/> to extract values from.</param>
             <param name="columnNames">The column names to query.</param>
             <returns>The resultant Dictionary of values.</returns>
         </member>
@@ -2902,7 +2261,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.Retrieve(Open.Database.Extensions.IExecuteReader)">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the results.
-            DBNull values are left unchanged (retained).
+            <see cref="T:System.DBNull"/> values are left unchanged (retained).
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -2910,7 +2269,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.Retrieve(Open.Database.Extensions.IExecuteReader,System.Collections.Generic.IEnumerable{System.Int32})">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
+            <see cref="T:System.DBNull"/> values are left unchanged (retained).
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <param name="ordinals">The ordinals to request from the reader for each record.</param>
@@ -2919,7 +2278,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.Retrieve(Open.Database.Extensions.IExecuteReader,System.Int32,System.Int32[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
+            <see cref="T:System.DBNull"/> values are left unchanged (retained).
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -2929,7 +2288,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.Retrieve(Open.Database.Extensions.IExecuteReader,System.Collections.Generic.IEnumerable{System.String})">
             <summary>
             Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-            DBNull values are left unchanged (retained).
+            <see cref="T:System.DBNull"/> values are left unchanged (retained).
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <param name="columnNames">The column names to select.</param>
@@ -2938,7 +2297,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.Retrieve(Open.Database.Extensions.IExecuteReader,System.String,System.String[])">
             <summary>
             Iterates all records within the current result set using an IDataReader and returns the desired results.
-            DBNull values are left unchanged (retained).
+            <see cref="T:System.DBNull"/> values are left unchanged (retained).
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -2978,7 +2337,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.FirstOrdinalResults(Open.Database.Extensions.IExecuteReader)">
             <summary>
             Reads the first column from every record and returns the results as a list..
-            DBNull values are converted to null.
+            <see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <returns>The list of transformed records.</returns>
@@ -2986,7 +2345,7 @@
         <member name="M:Open.Database.Extensions.IExecuteReaderExtensions.FirstOrdinalResults``1(Open.Database.Extensions.IExecuteReader)">
             <summary>
             Reads the first column from every record..
-            DBNull values are converted to null.
+            <see cref="T:System.DBNull"/> values are converted to null.
             </summary>
             <param name="command">The IExecuteReader to iterate.</param>
             <returns>The enumerable of casted values.</returns>
@@ -3096,45 +2455,6 @@
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
             <param name="command">The command to generate a reader from.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
-            <summary>
-            Asynchronously iterates each record and attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Asynchronously iterates each record and attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Threading.CancellationToken,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Asynchronously iterates each record and attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="cancellationToken">The cancellation token.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>The enumerable to pull the transformed results from.</returns>
-        </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.ResultsAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Threading.CancellationToken)">
-            <summary>
-            Iterates each record and attempts to map the fields to type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="reader">The IDataReader to read results from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="cancellationToken">An optional cancellation token.</param>
             <returns>The enumerable to pull the transformed results from.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.ResultsBufferedAsync``1(System.Data.Common.DbDataReader,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean,System.Threading.CancellationToken)">
@@ -3453,85 +2773,60 @@
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNull(System.Collections.Generic.IEnumerable{System.Object})">
             <summary>
-            Any DBNull values are converted to null.
+            Any <see cref="T:System.DBNull"/> values are yielded as null.
             </summary>
-            <param name="values">The source values.</param>
-            <returns>The converted enumerable.</returns>
+            <param name="values">The source enumerable.</param>
         </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNull(System.Object[])">
+        <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNullCopy(System.Object[])">
             <summary>
-            Returns a copy of this array with any DBNull values converted to null.
+            Returns a copy of <paramref name="values"/> with any <see cref="T:System.DBNull"/> values converted to null.
             </summary>
             <param name="values">The source values.</param>
-            <returns>A new array containing the results with.</returns>
         </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNull(System.ReadOnlySpan{System.Object}@)">
+        <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNullCopy(System.ReadOnlySpan{System.Object}@)">
             <summary>
-            Returns a copy of this array with any DBNull values converted to null.
+            Returns a copy of the contents of this span as an array with any <see cref="T:System.DBNull"/> values converted to null.
             </summary>
-            <param name="values">The source values.</param>
-            <returns>A new array containing the results with.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.DBNullToNullCopy(System.Object[])"/>
         </member>
-        <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNull(System.Span{System.Object}@)">
-            <summary>
-            Returns a copy of this array with any DBNull values converted to null.
-            </summary>
-            <param name="values">The source values.</param>
-            <returns>A new array containing the results with.</returns>
+        <member name="M:Open.Database.Extensions.CoreExtensions.DBNullToNullCopy(System.Span{System.Object}@)">
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.DBNullToNullCopy(System.ReadOnlySpan{System.Object}@)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.ReplaceDBNullWithNull(System.Span{System.Object})">
             <summary>
-            Replaces any DBNull values in the array with null;
+            Replaces any <see cref="T:System.DBNull"/> in the <paramref name="values"/> with null;
             </summary>
             <param name="values">The source values.</param>
-            <returns>The converted enumerable.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.ReplaceDBNullWithNull(System.Object[])">
-            <summary>
-            Replaces any DBNull values in the array with null;
-            </summary>
-            <param name="values">The source values.</param>
-            <returns>The converted enumerable.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.ReplaceDBNullWithNull(System.Span{System.Object})"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.AsEnumerable(System.Data.DataColumnCollection)">
             <summary>
-            Generic enumerable extension for DataColumnCollection.
+            Generic enumerable extension for <see cref="T:System.Data.DataColumnCollection"/>.
             </summary>
             <param name="columns">The column collection.</param>
-            <returns>An enumerable of DataColumns.</returns>
+            <returns>An enumerable of <see cref="T:System.Data.DataColumn"/>s.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.AsEnumerable(System.Data.DataRowCollection)">
             <summary>
-            Generic enumerable extension for DataRowCollection.
+            Generic enumerable extension for <see cref="T:System.Data.DataRowCollection"/>.
             </summary>
             <param name="rows">The row collection.</param>
-            <returns>An enumerable of DataRows.</returns>
+            <returns>An enumerable of <see cref="T:System.Data.DataRow"/>s.</returns>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Boolean)">
-            <summary>
-            Loads all data into a queue before iterating (dequeuing) the results as type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="table">The DataTable to read from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
-            <returns>An enumerable used to iterate the results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.To``1(System.Data.DataTable,System.ValueTuple{System.String,System.String}[])">
-            <summary>
-            Loads all data into a queue before iterating (dequeuing) the results as type T.
-            </summary>
-            <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="table">The DataTable to read from.</param>
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-            <returns>An enumerable used to iterate the results.</returns>
+            <inheritdoc cref="M:Open.Database.Extensions.CoreExtensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)"/>
         </member>
         <member name="M:Open.Database.Extensions.CoreExtensions.To``1(System.Data.DataTable,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}},System.Boolean)">
             <summary>
-            Loads all data into a queue before iterating (dequeuing) the results as type T.
+            Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
             </summary>
             <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-            <param name="table">The DataTable to read from.</param>
+            <param name="table">The <see cref="T:System.Data.DataTable"/> to read from.</param>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
             <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
             <returns>An enumerable used to iterate the results.</returns>

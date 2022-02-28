@@ -10,15 +10,10 @@ namespace Open.Database.Extensions;
 /// </summary>
 public static partial class ConnectionExtensions
 {
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static T Using<T>(this IDbConnectionFactory connectionFactory, Func<IDbConnection, T> action)
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static T Using<T>(this IDbConnectionFactory connectionFactory, Func<IDbConnection, T> action)
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -28,13 +23,13 @@ public static partial class ConnectionExtensions
         return action(conn);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static void Using(this IDbConnectionFactory connectionFactory, Action<IDbConnection> action)
+	/// <summary>
+	/// Generates a connection and executes the action within a using statement.
+	/// </summary>
+	/// <remarks>Useful for single-line operations.</remarks>
+	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
+	/// <param name="action">The action to execute.</param>
+	public static void Using(this IDbConnectionFactory connectionFactory, Action<IDbConnection> action)
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -44,16 +39,11 @@ public static partial class ConnectionExtensions
         action(conn);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static T Using<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, T> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static T Using<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, T> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -64,14 +54,9 @@ public static partial class ConnectionExtensions
         return action(conn);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static void Using<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Action<TConn> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static void Using<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Action<TConn> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -82,14 +67,9 @@ public static partial class ConnectionExtensions
         action(conn);
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
     /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
     /// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
     public static T Using<T>(this IDbConnectionPool connectionPool, Func<IDbConnection, T> action)
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -107,13 +87,13 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static void Using(this IDbConnectionPool connectionPool, Action<IDbConnection> action)
+	/// <summary>
+	/// Acquires a connection from the pool, returning it after the action is complete.
+	/// <remarks>Useful for single-line operations.</remarks>
+	/// </summary>
+	/// <param name="connectionPool">The connection pool to acquire connections from.</param>
+	/// <param name="action">The action to execute.</param>
+	public static void Using(this IDbConnectionPool connectionPool, Action<IDbConnection> action)
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -130,16 +110,11 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static T Using<TConn, T>(this IDbConnectionPool<TConn> connectionPool, Func<TConn, T> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
+	public static T Using<TConn, T>(this IDbConnectionPool<TConn> connectionPool, Func<TConn, T> action)
         where TConn : IDbConnection
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -157,14 +132,9 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static void Using<TConn>(this IDbConnectionPool<TConn> connectionPool, Action<TConn> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
+	public static void Using<TConn>(this IDbConnectionPool<TConn> connectionPool, Action<TConn> action)
         where TConn : IDbConnection
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -182,16 +152,11 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static T Using<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, T> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static T Using<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, T> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -202,14 +167,9 @@ public static partial class ConnectionExtensions
         return action(conn);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static void Using<TConn>(this Func<TConn> connectionFactory, Action<TConn> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static void Using<TConn>(this Func<TConn> connectionFactory, Action<TConn> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -220,15 +180,10 @@ public static partial class ConnectionExtensions
         action(conn);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static async ValueTask<T> UsingAsync<T>(this IDbConnectionFactory connectionFactory, Func<IDbConnection, ValueTask<T>> action)
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static async ValueTask<T> UsingAsync<T>(this IDbConnectionFactory connectionFactory, Func<IDbConnection, ValueTask<T>> action)
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -238,13 +193,8 @@ public static partial class ConnectionExtensions
         return await action(conn).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static async ValueTask UsingAsync(this IDbConnectionFactory connectionFactory, Func<IDbConnection, ValueTask> action)
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static async ValueTask UsingAsync(this IDbConnectionFactory connectionFactory, Func<IDbConnection, ValueTask> action)
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -254,16 +204,8 @@ public static partial class ConnectionExtensions
         await action(conn).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
+	/// <inheritdoc cref="Using{T}(IDbConnectionFactory, Func{IDbConnection, T})"/>
+	public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -274,14 +216,9 @@ public static partial class ConnectionExtensions
         return await action(conn).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static async ValueTask UsingAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static async ValueTask UsingAsync<TConn>(this IDbConnectionFactory<TConn> connectionFactory, Func<TConn, ValueTask> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -292,15 +229,10 @@ public static partial class ConnectionExtensions
         await action(conn).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static async ValueTask<T> UsingAsync<T>(this IDbConnectionPool connectionPool, Func<IDbConnection, ValueTask<T>> action)
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
+	public static async ValueTask<T> UsingAsync<T>(this IDbConnectionPool connectionPool, Func<IDbConnection, ValueTask<T>> action)
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -317,13 +249,8 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static async ValueTask UsingAsync(this IDbConnectionPool connectionPool, Func<IDbConnection, ValueTask> action)
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
+	public static async ValueTask UsingAsync(this IDbConnectionPool connectionPool, Func<IDbConnection, ValueTask> action)
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
         if (action is null) throw new ArgumentNullException(nameof(action));
@@ -340,16 +267,11 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionPool<TConn> connectionPool, Func<TConn, ValueTask<T>> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <returns>The value from the action.</returns>
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
+	public static async ValueTask<T> UsingAsync<TConn, T>(this IDbConnectionPool<TConn> connectionPool, Func<TConn, ValueTask<T>> action)
         where TConn : IDbConnection
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -367,14 +289,9 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Acquires a connection from the pool, returning it after the action is complete.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <param name="connectionPool">The connection pool to acquire connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static async ValueTask UsingAsync<TConn>(this IDbConnectionPool<TConn> connectionPool, Func<TConn, ValueTask> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <inheritdoc cref="Using(IDbConnectionPool, Action{IDbConnection})"/>
+	public static async ValueTask UsingAsync<TConn>(this IDbConnectionPool<TConn> connectionPool, Func<TConn, ValueTask> action)
         where TConn : IDbConnection
     {
         if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -392,16 +309,10 @@ public static partial class ConnectionExtensions
         }
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <typeparam name="T">The type returned from the action.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>The value from the action.</returns>
-    public static async ValueTask<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <typeparam name="T">The type returned from the action.</typeparam>
+	/// <inheritdoc cref="Using{T}(IDbConnectionFactory, Func{IDbConnection, T})"/>
+	public static async ValueTask<T> UsingAsync<TConn, T>(this Func<TConn> connectionFactory, Func<TConn, ValueTask<T>> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -412,14 +323,9 @@ public static partial class ConnectionExtensions
         return await action(conn).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Generates a connection and executes the action within a using statement.
-    /// Useful for single-line operations.
-    /// </summary>
-    /// <typeparam name="TConn">The connection type.</typeparam>
-    /// <param name="connectionFactory">The connection factory to generate connections from.</param>
-    /// <param name="action">The action to execute.</param>
-    public static async ValueTask UsingAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, ValueTask> action)
+	/// <typeparam name="TConn">The connection type.</typeparam>
+	/// <inheritdoc cref="Using(IDbConnectionFactory, Action{IDbConnection})"/>
+	public static async ValueTask UsingAsync<TConn>(this Func<TConn> connectionFactory, Func<TConn, ValueTask> action)
         where TConn : IDbConnection
     {
         if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));

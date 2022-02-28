@@ -9,15 +9,11 @@ public static partial class CommandExtensions
     private const string ParameterNamesNotEmptyMessage = "Parameter names cannot be empty or white space.";
     private const string ParameterNamesOnlyNullForReturn = "Parameter names can only be null for a return parameter.";
 
-    /// <summary>
-    /// Shortcut for adding command parameter.
-    /// </summary>
-    /// <param name="target">The command to add a parameter to.</param>
-    /// <param name="name">The name of the parameter.</param>
-    /// <param name="value">The value of the parameter.</param>
-    /// <returns>The created IDbDataParameter.</returns>
-    public static IDbDataParameter AddParameter(this IDbCommand target,
-        string name, object? value = null)
+    /// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+    public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		object? value = null)
     {
         if (target is null)
             throw new ArgumentNullException(nameof(target));
@@ -35,17 +31,21 @@ public static partial class CommandExtensions
         return c;
     }
 
-    /// <summary>
-    /// Shortcut for adding command parameter.
-    /// </summary>
-    /// <param name="target">The command to add a parameter to.</param>
-    /// <param name="name">The name of the parameter.</param>
-    /// <param name="value">The value of the parameter.</param>
-    /// <param name="type">The DbType of the parameter.</param>
-    /// <param name="direction">The direction of the parameter.</param>
-    /// <returns>The created IDbDataParameter.</returns>
-    public static IDbDataParameter AddParameter(this IDbCommand target,
-        string name, object value, DbType type, ParameterDirection direction = ParameterDirection.Input)
+	/// <summary>
+	/// Shortcut for adding a command parameter.
+	/// </summary>
+	/// <param name="target">The command to add a parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
+	/// <param name="direction">The direction of the parameter.</param>
+	/// <returns>The created <see cref="IDbDataParameter"/>.</returns>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		object value,
+		DbType type,
+		ParameterDirection direction = ParameterDirection.Input)
     {
         var p = target.AddParameterType(name, type);
         p.Value = value;
@@ -53,16 +53,15 @@ public static partial class CommandExtensions
         return p;
     }
 
-    /// <summary>
-    /// Shortcut for adding command a typed (non-input) parameter.
-    /// </summary>
-    /// <param name="target">The command to add a parameter to.</param>
-    /// <param name="name">The name of the parameter.</param>
-    /// <param name="type">The DbType of the parameter.</param>
-    /// <param name="direction">The direction of the parameter.</param>
-    /// <returns>The created IDbDataParameter.</returns>
-    public static IDbDataParameter AddParameterType(this IDbCommand target,
-        string? name, DbType type, ParameterDirection direction = ParameterDirection.Input)
+	/// <summary>
+	/// Shortcut for adding a typed (non-input) command parameter.
+	/// </summary>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameterType(
+		this IDbCommand target,
+		string? name,
+		DbType type,
+		ParameterDirection direction = ParameterDirection.Input)
     {
         if (target is null)
             throw new ArgumentNullException(nameof(target));
@@ -80,24 +79,21 @@ public static partial class CommandExtensions
         return c;
     }
 
-    /// <summary>
-    /// Shortcut for adding command a typed return parameter.
-    /// </summary>
-    /// <param name="target">The command to add a parameter to.</param>
-    /// <param name="type">The DbType of the parameter.</param>
-    /// <param name="name">The name of the parameter.</param>
-    /// <returns>The created IDbDataParameter.</returns>
-    public static IDbDataParameter AddReturnParameter(this IDbCommand target,
-        DbType type, string? name = null)
+	/// <summary>
+	/// Shortcut for adding command a typed return parameter.
+	/// </summary>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddReturnParameter(
+		this IDbCommand target,
+		DbType type,
+		string? name = null)
         => target.AddParameterType(name, type, ParameterDirection.ReturnValue);
 
-    /// <summary>
-    /// Shortcut for adding command a return parameter.
-    /// </summary>
-    /// <param name="target">The command to add a parameter to.</param>
-    /// <param name="name">The name of the parameter.</param>
-    /// <returns>The created IDbDataParameter.</returns>
-    public static IDbDataParameter AddReturnParameter(this IDbCommand target,
+	/// <summary>
+	/// Shortcut for adding command a return parameter.
+	/// </summary>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddReturnParameter(this IDbCommand target,
         string? name = null)
     {
         if (target is null)

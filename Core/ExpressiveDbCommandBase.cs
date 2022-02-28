@@ -196,7 +196,7 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 
     /// <summary>
     /// Reads the first column from every record and returns the results as a list..
-    /// DBNull values are converted to null.
+    /// <see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <returns>The list of transformed records.</returns>
     public ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync()
@@ -204,7 +204,7 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 
     /// <summary>
     /// Reads the first column from every record..
-    /// DBNull values are converted to null.
+    /// <see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <returns>The enumerable of casted values.</returns>
     public ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()

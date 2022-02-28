@@ -17,7 +17,7 @@ namespace Open.Database.Extensions;
 public static partial class ChannelDbExtensions
 {
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to the channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
     /// <param name="target">The target channel to receive the results.</param>
@@ -41,7 +41,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to the channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
     /// <param name="target">The target channel to receive the results.</param>
@@ -67,7 +67,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to the channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -95,7 +95,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -113,7 +113,7 @@ public static partial class ChannelDbExtensions
             .PipeResultsTo(reader, target, complete, cancellationToken);
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -133,7 +133,7 @@ public static partial class ChannelDbExtensions
             .PipeResultsTo(reader, target, complete, cancellationToken);
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to the channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -176,7 +176,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to the channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -220,7 +220,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -270,7 +270,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -315,7 +315,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -362,7 +362,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to the channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -402,7 +402,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to the channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -444,7 +444,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and through the transform function and posts each record it to the target channel.
+    /// Iterates an <see cref="IDataReader"/> and through the transform function and posts each record it to the target channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -488,7 +488,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>
@@ -530,7 +530,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
     /// </summary>

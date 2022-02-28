@@ -13,19 +13,17 @@ namespace Open.Database.Extensions.Dataflow;
 internal class Transformer<T> : Core.Transformer<T>
         where T : new()
 {
-    /// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+	/// <inheritdoc />
     public Transformer(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
         : base(fieldMappingOverrides)
     {
     }
 
-    /// <summary>
-    /// Static utility for creating a Transformer <typeparamref name="T"/>.
-    /// </summary>
-    /// <param name="fieldMappingOverrides"></param>
-    /// <returns></returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "This is simply an expressive helper that would seem odd to make another static class to handle.")]
-    public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+	/// <summary>
+	/// Static utility for creating a Transformer <typeparamref name="T"/>.
+	/// </summary>
+	/// <param name="fieldMappingOverrides"></param>
+	public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
         => new(fieldMappingOverrides);
 
     /// <summary>

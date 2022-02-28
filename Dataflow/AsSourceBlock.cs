@@ -11,13 +11,14 @@ namespace Open.Database.Extensions;
 /// Extensions for pipelining data with Dataflow blocks.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
 public static partial class DataflowExtensions
 {
     static BufferBlock<T> GetBufferBlock<T>(DataflowBlockOptions? options = null)
         => options == null ? new BufferBlock<T>() : new BufferBlock<T>(options);
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
     /// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
@@ -30,7 +31,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -47,7 +48,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and posts each record to the block.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and posts each record to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -101,7 +102,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -118,7 +119,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -137,7 +138,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and posts each record to the block.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and posts each record to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -197,7 +198,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -214,7 +215,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -233,7 +234,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and posts each record to the block.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and posts each record to the block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -292,15 +293,15 @@ public static partial class DataflowExtensions
         return buffer;
     }
 
-    /// <summary>
-    /// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the block.
-    /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>The source block containing the results.</returns>
-    public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// </summary>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The source block containing the results.</returns>
+	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDataReader reader,
         DataflowBlockOptions? options = null,
         CancellationToken cancellationToken = default)
     {

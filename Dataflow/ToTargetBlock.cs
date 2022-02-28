@@ -17,7 +17,7 @@ namespace Open.Database.Extensions;
 public static partial class DataflowExtensions
 {
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the target block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -48,7 +48,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the target block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -82,7 +82,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and posts each record to the target block.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and posts each record to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -152,7 +152,7 @@ public static partial class DataflowExtensions
             .PipeResultsTo(reader, target, complete);
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the target block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -191,7 +191,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the target block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -233,7 +233,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and posts each record to the target block.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and posts each record to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -360,7 +360,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the target block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -399,7 +399,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and posts each record as an array to the target block.
+    /// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -441,7 +441,7 @@ public static partial class DataflowExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and posts each record to the target block.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and posts each record to the target block.
     /// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
     /// If a connection is desired to remain open after completion, you must open the connection before calling this method.
     /// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -594,15 +594,19 @@ public static partial class DataflowExtensions
                 while (
                     await r.ReadAsync(cancellationToken).ConfigureAwait(false)
                     && await target.SendAsync(r.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
-                    total++;
-            }
+				{
+					total++;
+				}
+			}
             else
             {
                 while (
                     reader.Read()
                     && await target.SendAsync(reader.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
-                    total++;
-            }
+				{
+					total++;
+				}
+			}
             if (complete) target.Complete();
             return total;
         }
@@ -643,15 +647,19 @@ public static partial class DataflowExtensions
                 while (
                     await r.ReadAsync(cancellationToken).ConfigureAwait(false)
                     && await target.SendAsync(r.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
-                    total++;
-            }
+				{
+					total++;
+				}
+			}
             else
             {
                 while (
                     reader.Read()
                     && await target.SendAsync(reader.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
-                    total++;
-            }
+				{
+					total++;
+				}
+			}
             if (complete) target.Complete();
             return total;
         }
@@ -692,15 +700,19 @@ public static partial class DataflowExtensions
                 while (
                     await r.ReadAsync(cancellationToken).ConfigureAwait(false)
                     && await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
-                    total++;
-            }
+				{
+					total++;
+				}
+			}
             else
             {
                 while (
                     reader.Read()
                     && await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
-                    total++;
-            }
+				{
+					total++;
+				}
+			}
             if (complete) target.Complete();
             return total;
         }

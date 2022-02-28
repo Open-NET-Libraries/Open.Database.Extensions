@@ -13,11 +13,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 public static partial class DataRecordExtensions
 {
-    /// <summary>
-    /// Returns an array of values with the specified field count.
-    /// </summary>
-    /// <param name="record">The reader to get column names from.</param>
-    /// <returns>The array of values.</returns>
+    /// <inheritdoc cref="GetValues(IDataRecord, int)"/>
     public static object[] GetValues(this IDataRecord record)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
@@ -44,14 +40,11 @@ public static partial class DataRecordExtensions
         return result;
     }
 
-    /// <summary>
-    /// Returns an array of values with the specified field count.
-    /// </summary>
-    /// <param name="record">The reader to get column names from.</param>
-    /// <param name="minimumArrayLength">The minimum size of the resultant array.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <returns>The array of values.</returns>
-    public static object?[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object?> arrayPool)
+	/// <param name="record">The reader to get column names from.</param>
+	/// <param name="minimumArrayLength">The minimum size of the resultant array.</param>
+	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+	/// <inheritdoc cref="GetValues(IDataRecord, int)"/>
+	public static object?[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object?> arrayPool)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -61,14 +54,10 @@ public static partial class DataRecordExtensions
         record.GetValues(result);
         return result;
     }
-
-    /// <summary>
-    /// Returns an array of values with the specified field count.
-    /// </summary>
-    /// <param name="record">The reader to get column names from.</param>
-    /// <param name="arrayPool">The array pool to acquire buffers from.</param>
-    /// <returns>The array of values.</returns>
-    public static object?[] GetValues(this IDataRecord record, ArrayPool<object?> arrayPool)
+	/// <param name="record">The reader to get column names from.</param>
+	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
+	/// <inheritdoc cref="GetValues(IDataRecord, int)"/>
+	public static object?[] GetValues(this IDataRecord record, ArrayPool<object?> arrayPool)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -140,7 +129,7 @@ public static partial class DataRecordExtensions
     /// <summary>
     /// Returns an array of name to ordinal mappings.
     /// </summary>
-    /// <param name="record">The IDataRecord to query the ordinals from.</param>
+    /// <param name="record">The <see cref="IDataRecord"/> to query the ordinals from.</param>
     /// <param name="columnNames">The requested column names.</param>
     /// <returns>An enumerable of the mappings.</returns>
     public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames)
@@ -156,7 +145,7 @@ public static partial class DataRecordExtensions
     /// <summary>
     /// Returns an array of name to ordinal mappings.
     /// </summary>
-    /// <param name="record">The IDataRecord to query the ordinals from.</param>
+    /// <param name="record">The <see cref="IDataRecord"/> to query the ordinals from.</param>
     /// <param name="columnNames">The requested column names.</param>
     /// <param name="sort">If true, will order the results by ordinal ascending.</param>
     /// <returns>An enumerable of the mappings.</returns>
@@ -168,7 +157,7 @@ public static partial class DataRecordExtensions
     /// <summary>
     /// Returns an array of name to ordinal mappings.
     /// </summary>
-    /// <param name="record">The IDataRecord to query the ordinals from.</param>
+    /// <param name="record">The <see cref="IDataRecord"/> to query the ordinals from.</param>
     /// <param name="columnNames">The requested column names.</param>
     /// <param name="sort">If true, will order the results by ordinal ascending.</param>
     /// <returns></returns>
@@ -193,12 +182,11 @@ public static partial class DataRecordExtensions
         }
     }
 
-    /// <summary>
-    /// Produces a selective set of column values based upon the desired ordinal positions.
-    /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
-    /// <returns>An enumerable for iterating the values of a record.</returns>
-    public static IEnumerable<object> EnumerateValues(this IDataRecord record)
+	/// <summary>
+	/// Produces an array of values based upon their ordinal positions.
+	/// </summary>
+	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
+	public static IEnumerable<object> EnumerateValues(this IDataRecord record)
     {
 		return record is null
             ? throw new ArgumentNullException(nameof(record))
@@ -215,7 +203,7 @@ public static partial class DataRecordExtensions
     /// <summary>
     /// Produces a selective set of column values based upon the desired ordinal positions.
     /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
+    /// <param name="record">The <see cref="IDataRecord"/> to query.</param>
     /// <param name="ordinals">The set of ordinals to query.</param>
     /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
     public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IEnumerable<int> ordinals)
@@ -233,12 +221,7 @@ public static partial class DataRecordExtensions
 		}
 	}
 
-    /// <summary>
-    /// Produces a selective set of column values based upon the desired ordinal positions.
-    /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
-    /// <param name="ordinals">The set of ordinals to query.</param>
-    /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
+    /// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
     public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
     {
 		return record is null
@@ -256,14 +239,11 @@ public static partial class DataRecordExtensions
 		}
 	}
 
-    /// <summary>
-    /// Produces a selective set of column values based upon the desired ordinal positions.
-    /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
-    /// <param name="firstOrdinal">The first ordinal to query.</param>
-    /// <param name="remainingOrdinals">The remaining set of ordinals to query.</param>
-    /// <returns>An enumerable of values matching the ordinal positions requested.</returns>
-    public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)
+	/// <param name="record">The <see cref="IDataRecord"/> to query.</param>
+	/// <param name="firstOrdinal">The first ordinal to query.</param>
+	/// <param name="remainingOrdinals">The remaining set of ordinals to query.</param>
+	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
+	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)
     {
 		return record is null
 			? throw new ArgumentNullException(nameof(record))
@@ -278,14 +258,12 @@ public static partial class DataRecordExtensions
 		}
 	}
 
-    /// <summary>
-    /// Produces a selective set of column values based upon the desired ordinal positions.
-    /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
-    /// <param name="ordinals">The set of ordinals to query.</param>
-    /// <param name="values">The target span to store the values.</param>
-    /// <returns>An array of values matching the ordinal positions requested.</returns>
-    public static Span<object> GetValuesFromOrdinals(this IDataRecord record, in ReadOnlySpan<int> ordinals, Span<object> values)
+	/// <param name="record">The <see cref="IDataRecord"/> to query.</param>
+	/// <param name="ordinals">The list of ordinals to query.</param>
+	/// <param name="values">The target to store the values.</param>
+	/// <returns>The provided span, updated with values matching the ordinal positions requested.</returns>
+	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
+	public static Span<object> GetValuesFromOrdinals(this IDataRecord record, in ReadOnlySpan<int> ordinals, Span<object> values)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         Contract.EndContractBlock();
@@ -296,14 +274,9 @@ public static partial class DataRecordExtensions
         return values;
     }
 
-    /// <summary>
-    /// Produces a selective set of column values based upon the desired ordinal positions.
-    /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
-    /// <param name="ordinals">The set of ordinals to query.</param>
-    /// <param name="values">The target list to store the values.</param>
-    /// <returns>An array of values matching the ordinal positions requested.</returns>
-    public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IList<int> ordinals, TList values)
+	/// <returns>The provided list, updated with values matching the ordinal positions requested.</returns>
+	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, in ReadOnlySpan{int}, Span{object})"/>
+	public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IList<int> ordinals, TList values)
         where TList : IList<object>
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
@@ -316,13 +289,9 @@ public static partial class DataRecordExtensions
         return values;
     }
 
-    /// <summary>
-    /// Produces a selective set of column values based upon the desired ordinal positions.
-    /// </summary>
-    /// <param name="record">The IDataRecord to query.</param>
-    /// <param name="ordinals">The set of ordinals to query.</param>
-    /// <returns>An array of values matching the ordinal positions requested.</returns>
-    public static object[] GetValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
+	/// <returns>An array of values matching the ordinal positions requested.</returns>
+	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, in ReadOnlySpan{int}, Span{object})"/>
+	public static object[] GetValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
@@ -340,7 +309,7 @@ public static partial class DataRecordExtensions
     /// <summary>
     /// Returns an enumerable of name to ordinal mappings.
     /// </summary>
-    /// <param name="record">The IDataRecord to query the ordinals from.</param>
+    /// <param name="record">The <see cref="IDataRecord"/> to query the ordinals from.</param>
     /// <param name="columnNames">The requested column names.</param>
     /// <param name="sort">If true, will order the results by ordinal ascending.</param>
     /// <returns>The enumerable of name to ordinal mappings.</returns>
@@ -373,7 +342,7 @@ public static partial class DataRecordExtensions
     /// <summary>
     /// Returns an array of name to ordinal mappings.
     /// </summary>
-    /// <param name="record">The IDataRecord to query the ordinals from.</param>
+    /// <param name="record">The <see cref="IDataRecord"/> to query the ordinals from.</param>
     /// <param name="columnNames">The requested column names.</param>
     /// <param name="sort">If true, will order the results by ordinal ascending.</param>
     /// <returns>The array of name to ordinal mappings.</returns>
@@ -416,40 +385,40 @@ public static partial class DataRecordExtensions
         return results;
     }
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="columnMap">The column ids and resultant names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<KeyValuePair<int, string>> columnMap)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="columnMap">The column ids and resultant names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<KeyValuePair<int, string>> columnMap)
         => columnMap
         .ToDictionary(
             c => c.Value,
             c => CoreExtensions.DBNullValueToNull(record.GetValue(c.Key)));
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="ordinalMapping">The column ids and resultant names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<(string Name, int Ordinal)> ordinalMapping)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="ordinalMapping">The column ids and resultant names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<(string Name, int Ordinal)> ordinalMapping)
         => ordinalMapping
         .ToDictionary(
             c => c.Name,
             c => CoreExtensions.DBNullValueToNull(record.GetValue(c.Ordinal)));
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="ordinalMapping">The column ids and resultant names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<(string Name, int Ordinal)> ordinalMapping)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="ordinalMapping">The column ids and resultant names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<(string Name, int Ordinal)> ordinalMapping)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
@@ -465,14 +434,14 @@ public static partial class DataRecordExtensions
         return e;
     }
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="ordinalMapping">The column ids and resultant names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="ordinalMapping">The column ids and resultant names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         Contract.EndContractBlock();
@@ -487,14 +456,14 @@ public static partial class DataRecordExtensions
         return e;
     }
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="columnNames">The column names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="columnNames">The column names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<string> columnNames)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
@@ -506,14 +475,14 @@ public static partial class DataRecordExtensions
         return e;
     }
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="columnNames">The column names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<string> columnNames)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="columnNames">The column names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<string> columnNames)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
@@ -529,14 +498,14 @@ public static partial class DataRecordExtensions
         return e;
     }
 
-    /// <summary>
-    /// Returns the specified column data of IDataRecord as a Dictionary.
-    /// DBNull values are converted to null.
-    /// </summary>
-    /// <param name="record">The IDataRecord to extract values from.</param>
-    /// <param name="columnNames">The column names to query.</param>
-    /// <returns>The resultant Dictionary of values.</returns>
-    public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<string> columnNames)
+	/// <summary>
+	/// Returns the specified column data of <see cref="IDataRecord"/> as a Dictionary.
+	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
+	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
+	/// <param name="columnNames">The column names to query.</param>
+	/// <returns>The resultant Dictionary of values.</returns>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<string> columnNames)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         Contract.EndContractBlock();

@@ -14,16 +14,15 @@ public static partial class SqlConnectionExtensions
 {
     const string EmptyOrWhiteSpace = "Command is empty or whitespace.";
 
-    /// <summary>
-    /// Shortcut for creating an SqlCommand from any SqlConnection.
-    /// </summary>
-    /// <param name="connection">The connection to create a command from.</param>
-    /// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-    /// <param name="commandText">The command text or stored procedure name to use.</param>
-    /// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-    /// <returns>The created SqlCommand.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "No different that if manually inserted.")]
-    public static SqlCommand CreateCommand(this SqlConnection connection,
+	/// <summary>
+	/// Shortcut for creating an SqlCommand from any SqlConnection.
+	/// </summary>
+	/// <param name="connection">The connection to create a command from.</param>
+	/// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
+	/// <param name="commandText">The command text or stored procedure name to use.</param>
+	/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
+	/// <returns>The created SqlCommand.</returns>
+	public static SqlCommand CreateCommand(this SqlConnection connection,
         CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
     {
         if (connection is null) throw new ArgumentNullException(nameof(connection));

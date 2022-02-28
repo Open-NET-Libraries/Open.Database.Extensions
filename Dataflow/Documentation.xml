@@ -14,7 +14,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(System.Data.IDataReader,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the block.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
@@ -22,7 +22,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(System.Data.IDataReader,System.Buffers.ArrayPool{System.Object},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
@@ -32,7 +32,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(System.Data.IDataReader,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader through the transform function and posts each record to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and posts each record to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
@@ -64,7 +64,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -75,7 +75,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(System.Data.IDbCommand,System.Buffers.ArrayPool{System.Object},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -87,7 +87,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(System.Data.IDbCommand,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader through the transform function and posts each record to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and posts each record to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -125,7 +125,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -136,7 +136,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock(Open.Database.Extensions.IExecuteReader,System.Buffers.ArrayPool{System.Object},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -148,7 +148,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.AsSourceBlock``1(Open.Database.Extensions.IExecuteReader,System.Func{System.Data.IDataRecord,``0},System.Threading.Tasks.Dataflow.DataflowBlockOptions)">
             <summary>
-            Iterates an IDataReader through the transform function and posts each record to the block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and posts each record to the block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -361,7 +361,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{System.Object[]},System.Boolean)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
@@ -371,7 +371,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
@@ -382,7 +382,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates an IDataReader through the transform function and posts each record to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and posts each record to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
@@ -417,7 +417,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{System.Object[]},System.Boolean)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -429,7 +429,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -442,7 +442,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(System.Data.IDbCommand,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates an IDataReader through the transform function and posts each record to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and posts each record to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -483,7 +483,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{System.Object[]},System.Boolean)">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -495,7 +495,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
-            Iterates an IDataReader and posts each record as an array to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and posts each record as an array to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -508,7 +508,7 @@
         </member>
         <member name="M:Open.Database.Extensions.DataflowExtensions.ToTargetBlock``1(Open.Database.Extensions.IExecuteReader,System.Threading.Tasks.Dataflow.ITargetBlock{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates an IDataReader through the transform function and posts each record to the target block.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and posts each record to the target block.
             Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
@@ -736,14 +736,13 @@
             <returns>The number of records processed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Dataflow.Transformer`1.#ctor(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
-            <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+            <inheritdoc />
         </member>
         <member name="M:Open.Database.Extensions.Dataflow.Transformer`1.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
             Static utility for creating a Transformer <typeparamref name="T"/>.
             </summary>
             <param name="fieldMappingOverrides"></param>
-            <returns></returns>
         </member>
         <member name="M:Open.Database.Extensions.Dataflow.Transformer`1.PipeResultsTo(System.Data.IDataReader,System.Threading.Tasks.Dataflow.ITargetBlock{`0},System.Boolean,System.Threading.Tasks.Dataflow.ExecutionDataflowBlockOptions)">
             <summary>

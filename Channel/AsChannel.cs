@@ -10,10 +10,11 @@ using System.Threading.Channels;
 namespace Open.Database.Extensions;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
 public static partial class ChannelDbExtensions
 {
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -33,7 +34,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -56,7 +57,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and writes each record to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -80,7 +81,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -101,7 +102,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="reader">The IDataReader to iterate.</param>
@@ -124,7 +125,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <param name="command">The command to acquire a reader from to iterate.</param>
@@ -144,7 +145,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <param name="command">The command to acquire a reader from to iterate.</param>
@@ -167,7 +168,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and writes each record to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -191,7 +192,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="command">The command to acquire a reader from to iterate.</param>
@@ -212,7 +213,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="command">The command to acquire a reader from to iterate.</param>
@@ -235,7 +236,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <param name="command">The IDataReader to iterate.</param>
@@ -253,7 +254,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader and writes each record as an array to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <param name="command">The IDataReader to iterate.</param>
@@ -274,7 +275,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader through the transform function and writes each record to an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to an unbound channel.
     /// Be sure to await the completion.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
@@ -296,7 +297,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="command">The IDataReader to iterate.</param>
@@ -315,7 +316,7 @@ public static partial class ChannelDbExtensions
     }
 
     /// <summary>
-    /// Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+    /// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
     /// </summary>
     /// <typeparam name="T">The return type of the transform function.</typeparam>
     /// <param name="command">The IDataReader to iterate.</param>
@@ -336,16 +337,16 @@ public static partial class ChannelDbExtensions
     }
 
 #if NETSTANDARD2_1
-    /// <summary>
-    /// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
-    /// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
-    /// Be sure to await the completion.
-    /// </summary>
-    /// <param name="reader">The IDataReader to iterate.</param>
-    /// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>The channel reader containing the results.</returns>
-    public static ChannelReader<object[]> AsChannelAsync(this DbDataReader reader,
+	/// <summary>
+	/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
+	/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
+	/// Be sure to await the completion.
+	/// </summary>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	public static ChannelReader<object[]> AsChannelAsync(this DbDataReader reader,
         bool singleReader,
         CancellationToken cancellationToken = default)
     {

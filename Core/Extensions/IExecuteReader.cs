@@ -338,7 +338,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Iterates all records within the first result set using an IDataReader and returns the results.
-    /// DBNull values are left unchanged (retained).
+    /// <see cref="DBNull"/> values are left unchanged (retained).
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <returns>The QueryResult that contains all the results and the column mappings.</returns>
@@ -354,7 +354,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Iterates all records within the current result set using an IDataReader and returns the desired results.
-    /// DBNull values are left unchanged (retained).
+    /// <see cref="DBNull"/> values are left unchanged (retained).
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <param name="ordinals">The ordinals to request from the reader for each record.</param>
@@ -371,7 +371,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Iterates all records within the current result set using an IDataReader and returns the desired results.
-    /// DBNull values are left unchanged (retained).
+    /// <see cref="DBNull"/> values are left unchanged (retained).
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -389,7 +389,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
-    /// DBNull values are left unchanged (retained).
+    /// <see cref="DBNull"/> values are left unchanged (retained).
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <param name="columnNames">The column names to select.</param>
@@ -407,7 +407,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Iterates all records within the current result set using an IDataReader and returns the desired results.
-    /// DBNull values are left unchanged (retained).
+    /// <see cref="DBNull"/> values are left unchanged (retained).
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <param name="c">The first column name to include in the request to the reader for each record.</param>
@@ -487,7 +487,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Reads the first column from every record and returns the results as a list..
-    /// DBNull values are converted to null.
+    /// <see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <returns>The list of transformed records.</returns>
@@ -503,7 +503,7 @@ public static class IExecuteReaderExtensions
 
     /// <summary>
     /// Reads the first column from every record..
-    /// DBNull values are converted to null.
+    /// <see cref="DBNull"/> values are converted to null.
     /// </summary>
     /// <param name="command">The IExecuteReader to iterate.</param>
     /// <returns>The enumerable of casted values.</returns>

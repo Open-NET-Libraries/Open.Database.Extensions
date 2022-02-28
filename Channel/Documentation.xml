@@ -11,7 +11,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to an unbound channel.
             Be sure to await the completion.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
@@ -21,7 +21,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDataReader,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to an unbound channel.
             Be sure to await the completion.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
@@ -32,7 +32,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader through the transform function and writes each record to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
@@ -44,7 +44,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -54,7 +54,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDataReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -65,7 +65,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to an unbound channel.
             Be sure to await the completion.
             </summary>
             <param name="command">The command to acquire a reader from to iterate.</param>
@@ -75,7 +75,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(System.Data.IDbCommand,System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to an unbound channel.
             Be sure to await the completion.
             </summary>
             <param name="command">The command to acquire a reader from to iterate.</param>
@@ -86,7 +86,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader through the transform function and writes each record to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
@@ -98,7 +98,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The command to acquire a reader from to iterate.</param>
@@ -108,7 +108,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(System.Data.IDbCommand,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The command to acquire a reader from to iterate.</param>
@@ -119,7 +119,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to an unbound channel.
             Be sure to await the completion.
             </summary>
             <param name="command">The IDataReader to iterate.</param>
@@ -128,7 +128,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
-            Iterates an IDataReader and writes each record as an array to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to an unbound channel.
             Be sure to await the completion.
             </summary>
             <param name="command">The IDataReader to iterate.</param>
@@ -138,7 +138,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates an IDataReader through the transform function and writes each record to an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and writes each record to an unbound channel.
             Be sure to await the completion.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
@@ -149,7 +149,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The IDataReader to iterate.</param>
@@ -158,7 +158,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.AsChannel``1(Open.Database.Extensions.IExecuteReader,System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="command">The IDataReader to iterate.</param>
@@ -326,7 +326,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to the channel.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="target">The target channel to receive the results.</param>
@@ -336,7 +336,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to the channel.
             </summary>
             <param name="reader">The IDataReader to iterate.</param>
             <param name="target">The target channel to receive the results.</param>
@@ -347,7 +347,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader through the transform function and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and writes each record to the channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -359,7 +359,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -370,7 +370,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             </summary>
             <typeparam name="T">The return type of the transform function.</typeparam>
             <param name="reader">The IDataReader to iterate.</param>
@@ -382,7 +382,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -394,7 +394,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -407,7 +407,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader through the transform function and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> through the transform function and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -421,7 +421,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -434,7 +434,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(System.Data.IDbCommand,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}},System.Threading.CancellationToken)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -448,7 +448,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean)">
             <summary>
-            Iterates an IDataReader and writes each record as an array to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -459,19 +459,19 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{System.Object[]},System.Boolean,System.Buffers.ArrayPool{System.Object})">
             <summary>
-            Iterates an IDataReader and writes each record as an array to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and writes each record as an array to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
             <param name="command">The command to generate a reader from.</param>
             <param name="target">The target channel writer to receive the results.</param>
-            <param name="arrayPool">The array pool to acquire buffers from.</param>
             <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+            <param name="arrayPool">The array pool to acquire buffers from.</param>
             <returns>The number of records processed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Func{System.Data.IDataRecord,``0})">
             <summary>
-            Iterates an IDataReader and through the transform function and posts each record it to the target channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> and through the transform function and posts each record it to the target channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -484,7 +484,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean)">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -496,7 +496,7 @@
         </member>
         <member name="M:Open.Database.Extensions.ChannelDbExtensions.ToChannel``1(Open.Database.Extensions.IExecuteReader,System.Threading.Channels.ChannelWriter{``0},System.Boolean,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
             <summary>
-            Iterates an IDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+            Iterates an <see cref="T:System.Data.IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
             If a connection is desired to remain open after completion, you must open the connection before calling this method.
             If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
             </summary>
@@ -686,6 +686,7 @@
             <returns>The number of records processed.</returns>
         </member>
         <member name="M:Open.Database.Extensions.Transformer`1.#ctor(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>Constructs a <see cref="T:Open.Database.Extensions.Transformer`1"/>.</summary>
             <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
         </member>
         <member name="M:Open.Database.Extensions.Transformer`1.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
@@ -693,7 +694,6 @@
             Static utility for creating a Transformer <typeparamref name="T"/>.
             </summary>
             <param name="fieldMappingOverrides"></param>
-            <returns></returns>
         </member>
         <member name="M:Open.Database.Extensions.Transformer`1.PipeResultsTo(System.Data.IDataReader,System.Threading.Channels.ChannelWriter{`0},System.Boolean,System.Threading.CancellationToken)">
             <summary>

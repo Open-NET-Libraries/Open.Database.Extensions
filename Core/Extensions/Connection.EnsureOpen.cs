@@ -12,12 +12,9 @@ namespace Open.Database.Extensions;
 /// </summary>
 public static partial class ConnectionExtensions
 {
-    /// <summary>
-    /// If the connection isn't open, opens the connection.
-    /// If the connection is in neither open or close, first closes the connection.
-    /// </summary>
-    /// <returns>The prior connection state.</returns>
-    public static ConnectionState EnsureOpen(this IDbConnection connection)
+	/// <returns>The prior connection state.</returns>
+	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, bool, CancellationToken)"/>
+	public static ConnectionState EnsureOpen(this IDbConnection connection)
     {
         if (connection is null) throw new ArgumentNullException(nameof(connection));
         Contract.EndContractBlock();
@@ -34,14 +31,17 @@ public static partial class ConnectionExtensions
     }
 
     /// <summary>
-    /// If the connection isn't open, opens the connection.
-    /// If the connection is in neither open or close, first closes the connection.
+    /// If the connection isn't open, opens the connection.<br/>
+    /// If the connection is in neither open or close, first closes the connection, then opens it.
     /// </summary>
     /// <param name="connection">The connection to transact with.</param>
     /// <param name="configureAwait">If true (default) will retain the context after opening.</param>
-    /// <param name="cancellationToken">An optional token to cancel opening.</param>
+    /// <param name="cancellationToken">An cancellation token to cancel opening.</param>
     /// <returns>A task containing the prior connection state.</returns>
-    public static async ValueTask<ConnectionState> EnsureOpenAsync(this DbConnection connection, bool configureAwait = true, CancellationToken cancellationToken = default)
+    public static async ValueTask<ConnectionState> EnsureOpenAsync(
+		this DbConnection connection,
+		bool configureAwait = true,
+		CancellationToken cancellationToken = default)
     {
         if (connection is null) throw new ArgumentNullException(nameof(connection));
         Contract.EndContractBlock();
@@ -66,24 +66,16 @@ public static partial class ConnectionExtensions
         return state;
     }
 
-    /// <summary>
-    /// If the connection isn't open, opens the connection.
-    /// If the connection is in neither open or close, first closes the connection.
-    /// </summary>
-    /// <param name="connection">The connection to transact with.</param>
-    /// <param name="cancellationToken">An optional token to cancel opening.</param>
-    /// <returns>A task containing the prior connection state.</returns>
-    public static ValueTask<ConnectionState> EnsureOpenAsync(this DbConnection connection, CancellationToken cancellationToken)
+	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, bool, CancellationToken)"/>
+	public static ValueTask<ConnectionState> EnsureOpenAsync(
+		this DbConnection connection,
+		CancellationToken cancellationToken)
         => connection.EnsureOpenAsync(true, cancellationToken);
 
-    /// <summary>
-    /// If the connection isn't open, opens the connection.
-    /// If the connection is in neither open or close, first closes the connection.
-    /// </summary>
-    /// <param name="connection">The connection to transact with.</param>
-    /// <param name="cancellationToken">An optional token to cancel opening.</param>
-    /// <returns>A task containing the prior connection state.</returns>
-    internal static async ValueTask<ConnectionState> EnsureOpenAsync(this IDbConnection connection, CancellationToken cancellationToken)
+	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, bool, CancellationToken)"/>
+	internal static async ValueTask<ConnectionState> EnsureOpenAsync(
+		this IDbConnection connection,
+		CancellationToken cancellationToken)
     {
         if (connection is DbConnection c)
             return await c.EnsureOpenAsync(true, cancellationToken).ConfigureAwait(true);

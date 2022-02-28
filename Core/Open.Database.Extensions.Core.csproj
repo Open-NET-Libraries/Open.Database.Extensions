@@ -26,6 +26,7 @@
 
 	<PropertyGroup>
 		<DocumentationFile>Open.Database.Extensions.Core.xml</DocumentationFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -45,6 +46,10 @@
 		<None Include="..\logo.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
+		</None>
+		<None Include="..\README.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
 
