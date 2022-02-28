@@ -174,15 +174,14 @@ public static class IExecuteReaderExtensions
             CommandBehavior.SingleRow | CommandBehavior.SingleResult);
     }
 
-    /// <summary>
-    /// Iterates a IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
-    /// </summary>
-    /// <typeparam name="T">The return type of the transform function.</typeparam>
-    /// <param name="command">The IExecuteReader to iterate.</param>
-    /// <param name="transform">The transform function to process each IDataRecord.</param>
-    /// <returns>The value from the transform.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "Conforming to LINQ standards.")]
-    public static T Single<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+	/// <summary>
+	/// Iterates a IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
+	/// </summary>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <param name="transform">The transform function to process each IDataRecord.</param>
+	/// <returns>The value from the transform.</returns>
+	public static T Single<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
     {
         if (command is null) throw new ArgumentNullException(nameof(command));
         if (transform is null) throw new ArgumentNullException(nameof(transform));

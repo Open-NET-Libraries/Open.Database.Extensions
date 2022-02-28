@@ -22,11 +22,11 @@
 		<PackageIcon>logo.png</PackageIcon>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
-	<PropertyGroup>
-		<DocumentationFile>Open.Database.Extensions.Core.xml</DocumentationFile>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DocumentationFile>Documentation.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -40,22 +40,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Remove="api\**" />
-		<EmbeddedResource Remove="api\**" />
-		<None Remove="api\**" />
 		<None Include="..\logo.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
 		<None Include="..\README.md">
-		  <Pack>True</Pack>
-		  <PackagePath>\</PackagePath>
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
 		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Remove="log.txt" />
-		<None Remove="toc.yml" />
 	</ItemGroup>
 
 </Project>

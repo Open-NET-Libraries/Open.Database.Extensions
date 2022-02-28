@@ -22,26 +22,28 @@
 		<PackageIcon>logo.png</PackageIcon>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-	</ItemGroup>
 	
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<DocumentationFile>Documentation.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+		<PackageReference Include="Open.Database.Extensions.Core" Version="7.0.0" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Include="..\logo.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Open.Database.Extensions.Core" Version="7.0.0" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+		<None Include="..\README.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
 
 </Project>
