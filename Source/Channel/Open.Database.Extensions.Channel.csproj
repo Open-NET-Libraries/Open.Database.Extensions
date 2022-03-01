@@ -36,11 +36,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="..\logo.png">
+		<None Include="..\..\logo.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
-		<None Include="..\README.md">
+		<None Include="..\..\README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
