@@ -8,7 +8,7 @@
     <title>Open.Database.Extensions </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Open.Database.Extensions ">
-    <meta name="generator" content="docfx 2.33.2.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="styles/docfx.vendor.css">
@@ -20,7 +20,7 @@
     
     
   </head>
-  <body data-spy="scroll" data-target="#affix">
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -62,7 +62,85 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="opendatabaseextensions">Open.Database.Extensions</h1>
 
-<p><a href="api/index.html">Click Here For API Documenation</a></p>
+<p><a href="https://www.nuget.org/packages/Open.Database.Extensions.Core/"><img src="https://img.shields.io/nuget/v/Open.Database.Extensions.Core.svg?style=flat" alt="NuGet"></a></p>
+<p><a href="https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html">Full API Documentation</a></p>
+<p>Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.</p>
+<h2 id="connection-factories">Connection Factories</h2>
+<p>Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.
+A <code>SqlConnectionFactory</code> is provided and can be overridden to provide more specific dependency injection configurations.</p>
+<h2 id="expressive-commands">Expressive Commands</h2>
+<p>The provided expressive command classes allow for an expressive means to append parameters and execute the results without lengthy complicated setup.</p>
+<p>Extensions are provided to create commands from connection factories.</p>
+<h3 id="example">Example</h3>
+<pre><code class="lang-cs">var result = connectionFactory
+   .StoredProcedure(&quot;[procedure name]&quot;)
+   .AddParam(&quot;a&quot;,1)
+   .AddParam(&quot;b&quot;,true)
+   .AddParam(&quot;c&quot;,&quot;hello&quot;)
+   .ExecuteScalar();
+</code></pre>
+<h2 id="extensions">Extensions</h2>
+<p>Instead of writing this:</p>
+<pre><code class="lang-cs">var myResult = new List&lt;T&gt;();
+using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+{
+    while(await reader.ReadAsync())
+        myResult.Add(transform(reader));
+}
+</code></pre>
+<p>Is now simplified to this:</p>
+<pre><code class="lang-cs">var myResult = await mySqlCommand.ToListAsync(transform);
+</code></pre>
+<h2 id="deferred-transformation">Deferred Transformation</h2>
+<p>In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.</p>
+<h3 id="resultst-and-resultsasynct"><code>Results&lt;T&gt;()</code> and <code>ResultsAsync&lt;T&gt;()</code></h3>
+<p>Queues all the data.  Then using the provided type <code>T</code> entity, the data is coerced by which properties intersect with the ones available to the <code>IDataReader</code>.</p>
+<p>Optionally a field to column override map can be passed as a parameter.  If a column is set as <code>null</code> then that field is ignored (not applied to the model).</p>
+<h3 id="examples">Examples</h3>
+<p>If all the columns in the database map exactly to a field: (A column that has no associated field/property is ignored.)</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;();
+</code></pre>
+<p>If the database fields don't map exactly:</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;(
+ (Field:&quot;FirstName&quot;, Column:&quot;first_name&quot;),
+ (Field:&quot;LastName&quot;, Column:&quot;last_name&quot;)));
+</code></pre>
+<p>or</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;(
+ (&quot;FirstName&quot;, &quot;first_name&quot;),
+ (&quot;LastName&quot;, &quot;last_name&quot;));
+</code></pre>
+<p>or</p>
+<pre><code class="lang-cs">var people = cmd.Results&lt;Person&gt;(new Dictionary&lt;string,string&gt;{
+ {&quot;FirstName&quot;, &quot;first_name&quot;},
+ {&quot;LastName&quot;, &quot;last_name&quot;});
+</code></pre>
+<h3 id="retrieve-and-retrieveasync"><code>Retrieve()</code> and <code>RetrieveAsync()</code></h3>
+<p>Queues all the data.  Returns a <code>QueryResult&lt;Queue&lt;object[]&gt;&gt;</code> containing the requested data and column information.  The <code>.AsDequeueingMappedEnumerable()</code> extension will iteratively convert the results to dictionaries for ease of access.</p>
+<h3 id="resultsasynct"><code>ResultsAsync&lt;T&gt;</code></h3>
+<p><code>ResultsAsync&lt;T&gt;()</code> is fully asynchronous from end-to-end but returns an <code>IEnumerable&lt;T&gt;</code> that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.</p>
+<h2 id="transactions">Transactions</h2>
+<p>Example:</p>
+<pre><code class="lang-cs">// Returns true if the transaction is successful.
+public static bool TryTransaction()
+=&gt; ConnectionFactory.Using(connection =&gt;
+    // Open a connection and start a transaction.
+    connection.ExecuteTransactionConditional(transaction =&gt; {
+
+        // First procedure does some updates.
+        var count = transaction
+            .StoredProcedure(&quot;[Updated Procedure]&quot;)
+            .ExecuteNonQuery();
+
+        // Second procedure validates the results.
+        // If it returns true, then the transaction is committed.
+        // If it returns false, then the transaction is rolled back.
+        return transaction
+            .StoredProcedure(&quot;[Validation Procedure]&quot;)
+            .AddParam(&quot;@ExpectedCount&quot;, count)
+            .ExecuteScalar&lt;bool&gt;();
+    }));
+</code></pre>
 </article>
           </div>
           
@@ -71,7 +149,7 @@
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/electricessence/Open.Database.Extensions/blob/master/index.md/#L1" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/index.md/#L1" class="contribution-link">Improve this Doc</a>
                   </li>
                 </ul>
               </div>

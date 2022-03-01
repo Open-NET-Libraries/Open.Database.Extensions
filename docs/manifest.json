@@ -1,15 +1,171 @@
 {
   "homepages": [],
-  "source_base_path": "D:/Users/essence/Development/- GitHub/Open.Database.Extensions",
+  "source_base_path": "D:/Users/essence/Development/- GitHub/Open.Database.Extensions/Core",
   "xrefmap": "xrefmap.yml",
   "files": [
     {
-      "type": "Conceptual",
-      "source_relative_path": "README.md",
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.CommandExtensions.yml",
       "output": {
         ".html": {
-          "relative_path": "README.html",
-          "hash": "GqCMaDTHJh20uaYIl6QppA=="
+          "relative_path": "api/Open.Database.Extensions.CommandExtensions.html",
+          "hash": "UE4evwIbaUttrKayUhxO+A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ConnectionExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ConnectionExtensions.html",
+          "hash": "/g4xFISLRVE/6RxlbTO86g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ConnectionPoolExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ConnectionPoolExtensions.html",
+          "hash": "g3e5uu4SKbbaRM1BjrvduA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.QueryResult-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.QueryResult-1.html",
+          "hash": "/iMTMLobBWVM2bDlrcf7Pg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.QueryResultCollection-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.QueryResultCollection-1.html",
+          "hash": "y7O4jRW3o6jKfLQezjqZGA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.QueryResultCollection-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.QueryResultCollection-2.html",
+          "hash": "XF5eoCrX37AK2y/1evhVbA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.QueryResultExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.QueryResultExtensions.html",
+          "hash": "eUDNAWI8rjq09EtDPiB8jQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.QueryResultQueue-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.QueryResultQueue-1.html",
+          "hash": "o8jbzDCr0UBuzavdn8nX7g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.Transformer-1.Processor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.Transformer-1.Processor.html",
+          "hash": "E7yPTPvJWUAXRMsPKhUYug=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.Transformer-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.Transformer-1.html",
+          "hash": "XFg+K0AZ7ltnm0u75rKOPQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.Core.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.Core.html",
+          "hash": "0b6ckq4aImCMHGZADLOoHQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.CoreExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.CoreExtensions.html",
+          "hash": "iqhf7wM4zrsI7VMOoE3v4w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.DataReaderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.DataReaderExtensions.html",
+          "hash": "qC5MP2YRjewCFRPEZ08ksA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.DataRecordExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.DataRecordExtensions.html",
+          "hash": "Wm9PdY7OYEH3eZLYcgoHTQ=="
         }
       },
       "is_incremental": false,
@@ -21,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory-1.html",
-          "hash": "kjlqHNRkNJSE/ZtoGtuB5g=="
+          "hash": "NRmGxioUs8bSletb5910OA=="
         }
       },
       "is_incremental": false,
@@ -33,7 +189,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.DbConnectionFactory.html",
-          "hash": "GErldoM4qWFctAdEd4fQYg=="
+          "hash": "e859traEkE+dVPVnHP7kTw=="
         }
       },
       "is_incremental": false,
@@ -41,11 +197,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.yml",
+      "source_relative_path": "api/Open.Database.Extensions.DbConnectionFactoryExtensions.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.Param.html",
-          "hash": "FcP01jQyXwW17eo8uZ6QBA=="
+          "relative_path": "api/Open.Database.Extensions.DbConnectionFactoryExtensions.html",
+          "hash": "7Qgtu0iKajcEE1sGYGaePw=="
         }
       },
       "is_incremental": false,
@@ -53,11 +209,35 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.yml",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommand.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-4.html",
-          "hash": "y9GMGshwW6REo6xRcEq7sA=="
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommand.html",
+          "hash": "0gbn0Pw8BZVpKAxTUsRuFQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-5.Param.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-5.Param.html",
+          "hash": "0ureE1LttukMW+hxdyAeVQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-5.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.ExpressiveCommandBase-5.html",
+          "hash": "Vyq6rH+NmqjRXoNv8a+Fng=="
         }
       },
       "is_incremental": false,
@@ -69,7 +249,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommand.html",
-          "hash": "phR4Cnk1fWQZWLWpFwVHEg=="
+          "hash": "che1vYssYZbuqwdqZWdwZw=="
         }
       },
       "is_incremental": false,
@@ -77,23 +257,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.yml",
+      "source_relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-5.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-4.html",
-          "hash": "6jArRlTXLx6u/5ccW4TYOw=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.Extensions.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Open.Database.Extensions.Extensions.html",
-          "hash": "5IWF7/TODt/uknF1dYpt2Q=="
+          "relative_path": "api/Open.Database.Extensions.ExpressiveDbCommandBase-5.html",
+          "hash": "M6BrMJE9bmkQR1/wegokEA=="
         }
       },
       "is_incremental": false,
@@ -105,7 +273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory-1.html",
-          "hash": "yE/CvqJ3Arzkzdr7BhfxEA=="
+          "hash": "/zywIkUnpLV6B13Bu9OOZg=="
         }
       },
       "is_incremental": false,
@@ -117,7 +285,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.IDbConnectionFactory.html",
-          "hash": "nD/CKSQNIeAq5mkHpwxTOA=="
+          "hash": "ffZFvuNJynxFyFNO6b1BXg=="
         }
       },
       "is_incremental": false,
@@ -125,11 +293,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.QueryResult-1.yml",
+      "source_relative_path": "api/Open.Database.Extensions.IDbConnectionPool-1.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.QueryResult-1.html",
-          "hash": "+/WRxd0AOsGFwc+ZEU5Jlg=="
+          "relative_path": "api/Open.Database.Extensions.IDbConnectionPool-1.html",
+          "hash": "HpRY5tusjoSjxp1Gj6QiOw=="
         }
       },
       "is_incremental": false,
@@ -137,11 +305,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.QueryResultExtensions.yml",
+      "source_relative_path": "api/Open.Database.Extensions.IDbConnectionPool.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.QueryResultExtensions.html",
-          "hash": "3ejaIBPYk0LO1pAJLRBe3w=="
+          "relative_path": "api/Open.Database.Extensions.IDbConnectionPool.html",
+          "hash": "9R/46GXTRqZEwdF6hzfxPg=="
         }
       },
       "is_incremental": false,
@@ -149,11 +317,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.yml",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteCommand-1.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html",
-          "hash": "NETPjA1ZOlr/wZ51WAnO3w=="
+          "relative_path": "api/Open.Database.Extensions.IExecuteCommand-1.html",
+          "hash": "PIVnF9xOLXsdv1z6ceRrrA=="
         }
       },
       "is_incremental": false,
@@ -161,11 +329,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.yml",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteCommand.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.SqlClient.Extensions.html",
-          "hash": "uTsqoZKKus2xZcyV3wHJOQ=="
+          "relative_path": "api/Open.Database.Extensions.IExecuteCommand.html",
+          "hash": "qY/gDlsCL1l4qYDUJawJWA=="
         }
       },
       "is_incremental": false,
@@ -173,11 +341,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.yml",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteReader-1.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.SqlClient.SqlConnectionFactory.html",
-          "hash": "7pypLcZcGrOAKu9uReor/g=="
+          "relative_path": "api/Open.Database.Extensions.IExecuteReader-1.html",
+          "hash": "qFb7n2dbmGRLjJOMH/vwCw=="
         }
       },
       "is_incremental": false,
@@ -185,11 +353,59 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Open.Database.Extensions.SqlClient.yml",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteReader.yml",
       "output": {
         ".html": {
-          "relative_path": "api/Open.Database.Extensions.SqlClient.html",
-          "hash": "jTZWNRXH3RkyYs/p4pUozA=="
+          "relative_path": "api/Open.Database.Extensions.IExecuteReader.html",
+          "hash": "fU/BddDhMZcxN9/aJeVn8A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteReaderAsync-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IExecuteReaderAsync-1.html",
+          "hash": "VYGdnyIls+yzpCTOM7oEdw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteReaderAsync.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IExecuteReaderAsync.html",
+          "hash": "ry3wCFDkfliSanNruyH3+Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.IExecuteReaderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.IExecuteReaderExtensions.html",
+          "hash": "/F2txoKtFgagtbl3j4YTBA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Open.Database.Extensions.TransactionExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Open.Database.Extensions.TransactionExtensions.html",
+          "hash": "Fzxl26kZP4Ca6yaLzYjXxw=="
         }
       },
       "is_incremental": false,
@@ -201,7 +417,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Open.Database.Extensions.html",
-          "hash": "gPyxs50A2Gq5OSPrOb6E4Q=="
+          "hash": "kZEJGxZsL7T0NqnCGDf4Ng=="
         }
       },
       "is_incremental": false,
@@ -213,7 +429,7 @@
       "output": {
         ".html": {
           "relative_path": "api/index.html",
-          "hash": "6f/4yWH3MN+NYPjmbXyHWA=="
+          "hash": "sNeiZy8Lv30+piK2r9+8Zw=="
         }
       },
       "is_incremental": false,
@@ -225,7 +441,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "tQwfqXmzCqTtAnwWXnvxig=="
+          "hash": "wbGmiqWvyWycjHI9mjOJZA=="
         }
       },
       "is_incremental": false,
@@ -237,7 +453,7 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "vZhAr6Wp0joVIW3/jYd5EA=="
+          "hash": "Idvc4Gc2czvs3s3aU3VrIw=="
         }
       },
       "is_incremental": false,
@@ -249,7 +465,7 @@
       "output": {
         ".html": {
           "relative_path": "toc.html",
-          "hash": "cVlSiV4jsxyqb2OPmpaphg=="
+          "hash": "EIhwD2+o19OxxQFCB6JJTg=="
         }
       },
       "is_incremental": false,
@@ -260,30 +476,41 @@
     {
       "status": {
         "can_incremental": false,
-        "details": "Cannot build incrementally because docfx version changed from 2.33.0.0 to 2.33.2.0.",
-        "incrementalPhase": "build"
+        "details": "Disable incremental build by force rebuild option.",
+        "incrementalPhase": "build",
+        "total_file_count": 0,
+        "skipped_file_count": 0,
+        "full_build_reason_code": "ForceRebuild"
       },
       "processors": {
-        "TocDocumentProcessor": {
+        "ConceptualDocumentProcessor": {
           "can_incremental": false,
-          "details": "Processor TocDocumentProcessor cannot suppport incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
-          "incrementalPhase": "build"
+          "incrementalPhase": "build",
+          "total_file_count": 2,
+          "skipped_file_count": 0
         },
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
-          "incrementalPhase": "build"
+          "incrementalPhase": "build",
+          "total_file_count": 35,
+          "skipped_file_count": 0
         },
-        "ConceptualDocumentProcessor": {
+        "TocDocumentProcessor": {
           "can_incremental": false,
-          "incrementalPhase": "build"
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
         }
       }
     },
     {
       "status": {
-        "can_incremental": true,
-        "details": "Can support incremental post processing.",
-        "incrementalPhase": "postProcessing"
+        "can_incremental": false,
+        "details": "Cannot support incremental post processing, the reason is: it's disabled.",
+        "incrementalPhase": "postProcessing",
+        "total_file_count": 0,
+        "skipped_file_count": 0
       },
       "processors": {}
     }

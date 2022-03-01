@@ -286,6 +286,7 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
-Open.Database.Extensions.sln
 
 log.txt
+.vscode/launch.json
+.vscode/tasks.json

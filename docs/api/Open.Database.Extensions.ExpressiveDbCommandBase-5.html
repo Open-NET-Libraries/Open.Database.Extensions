@@ -1,0 +1,1730 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;
+   ">
+    <meta name="generator" content="docfx 2.56.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5">
+  
+  
+  <h1 id="Open_Database_Extensions_ExpressiveDbCommandBase_5" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5" class="text-break">Class ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;
+  </h1>
+  <div class="markdown level0 summary"><p>An base class for executing commands on a database using best practices and simplified expressive syntax.
+Includes methods for use with DbConnection and DbCommand types.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html">ExpressiveCommandBase</a>&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</div>
+    <div class="level2"><span class="xref">ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</span></div>
+      <div class="level3"><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommand.html">ExpressiveDbCommand</a></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><a class="xref" href="Open.Database.Extensions.IExecuteCommand-1.html">IExecuteCommand</a>&lt;TCommand&gt;</div>
+    <div><a class="xref" href="Open.Database.Extensions.IExecuteCommand.html">IExecuteCommand</a></div>
+    <div><a class="xref" href="Open.Database.Extensions.IExecuteReaderAsync-1.html">IExecuteReaderAsync</a>&lt;TReader&gt;</div>
+    <div><a class="xref" href="Open.Database.Extensions.IExecuteReaderAsync.html">IExecuteReaderAsync</a></div>
+    <div><a class="xref" href="Open.Database.Extensions.IExecuteReader-1.html">IExecuteReader</a>&lt;TReader&gt;</div>
+    <div><a class="xref" href="Open.Database.Extensions.IExecuteReader.html">IExecuteReader</a></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Concat__1___0_System_Collections_Generic_ICollection___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Concat&lt;T&gt;(T, ICollection&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ConnectionProvider">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ConnectionProvider</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Transaction">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Transaction</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Command">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Command</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Type">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Type</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Params">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Params</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Timeout">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Timeout</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_PrepareCommand__0_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.PrepareCommand(TConnection)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_CancellationToken">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.CancellationToken</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteReader_CancellationToken">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteReader.CancellationToken</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_UseCancellationToken_System_Threading_CancellationToken_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.UseCancellationToken(CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParam_System_String_System_Object__3_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParam(String, Object, TDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParam_System_String_System_Object_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParam(String, Object)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParam__1_System_String_System_Nullable___0___3_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParam&lt;T&gt;(String, Nullable&lt;T&gt;, TDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParam__1_System_String_System_Nullable___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParam&lt;T&gt;(String, Nullable&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParam_System_String_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParam(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParamIf__1_System_Boolean_System_String_System_Nullable___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParamIf&lt;T&gt;(Boolean, String, Nullable&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParamIf_System_Boolean_System_String_System_Object_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParamIf(Boolean, String, Object)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParamIf_System_Boolean_System_String_System_Object__3_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParamIf(Boolean, String, Object, TDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParamIf__1_System_Boolean_System_String_System_Nullable___0___3_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParamIf&lt;T&gt;(Boolean, String, Nullable&lt;T&gt;, TDbType)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParamIf_System_Boolean_System_String_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParamIf(Boolean, String)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_AddParams__1_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.AddParams(TCommand)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_SetTimeout_System_UInt16_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.SetTimeout(UInt16)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Execute_System_Action__1__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Execute(Action&lt;TCommand&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Execute__1_System_Func__1___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Execute&lt;T&gt;(Func&lt;TCommand, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteAsync_System_Func__1_System_Threading_Tasks_ValueTask__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteAsync(Func&lt;TCommand, ValueTask&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteAsync__1_System_Func__1_System_Threading_Tasks_ValueTask___0___">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteAsync&lt;T&gt;(Func&lt;TCommand, ValueTask&lt;T&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteCommand_Execute_System_Action_System_Data_IDbCommand__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteCommand.Execute(Action&lt;IDbCommand&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteCommand_Execute__1_System_Func_System_Data_IDbCommand___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteCommand.Execute&lt;T&gt;(Func&lt;IDbCommand, T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteCommand_ExecuteAsync_System_Func_System_Data_IDbCommand_System_Threading_Tasks_ValueTask__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteCommand.ExecuteAsync(Func&lt;IDbCommand, ValueTask&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteCommand_ExecuteAsync__1_System_Func_System_Data_IDbCommand_System_Threading_Tasks_ValueTask___0___">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteCommand.ExecuteAsync&lt;T&gt;(Func&lt;IDbCommand, ValueTask&lt;T&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_EnsureReaderType__1___0_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.EnsureReaderType&lt;TActual&gt;(TActual)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReader_System_Action__2__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReader(Action&lt;TReader&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReader__1_System_Func__2___0__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReader&lt;T&gt;(Func&lt;TReader, T&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReaderAsync_System_Action__2__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReaderAsync(Action&lt;TReader&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReaderAsync__1_System_Func__2___0__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReaderAsync&lt;T&gt;(Func&lt;TReader, T&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReaderAsync_System_Func__2_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReaderAsync(Func&lt;TReader, ValueTask&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReaderAsync__1_System_Func__2_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReaderAsync&lt;T&gt;(Func&lt;TReader, ValueTask&lt;T&gt;&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteReader_ExecuteReader_System_Action_System_Data_IDataReader__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteReader.ExecuteReader(Action&lt;IDataReader&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteReader_ExecuteReader__1_System_Func_System_Data_IDataReader___0__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteReader.ExecuteReader&lt;T&gt;(Func&lt;IDataReader, T&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteReader_ExecuteReaderAsync_System_Func_System_Data_IDataReader_System_Threading_Tasks_ValueTask__System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteReader.ExecuteReaderAsync(Func&lt;IDataReader, ValueTask&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_Open_Database_Extensions_IExecuteReader_ExecuteReaderAsync__1_System_Func_System_Data_IDataReader_System_Threading_Tasks_ValueTask___0___System_Data_CommandBehavior_">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.IExecuteReader.ExecuteReaderAsync&lt;T&gt;(Func&lt;IDataReader, ValueTask&lt;T&gt;&gt;, CommandBehavior)</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReturn">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReturn()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReturn__1">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReturn&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReturnAsync">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReturnAsync()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteReturnAsync__1">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteReturnAsync&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteNonQuery">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteNonQuery()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteScalar">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteScalar()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteScalar__1">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteScalar&lt;T&gt;()</a>
+    </div>
+    <div>
+      <a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html#Open_Database_Extensions_ExpressiveCommandBase_5_ExecuteScalar__1_System_Func_System_Object___0__">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.ExecuteScalar&lt;T&gt;(Func&lt;Object, T&gt;)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Open.Database.Extensions.html">Open.Database.Extensions</a></h6>
+  <h6><strong>Assembly</strong>: Open.Database.Extensions.Core.dll</h6>
+  <h5 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract class ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt; : ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;, IExecuteCommand&lt;TCommand&gt;, IExecuteCommand, IExecuteReaderAsync&lt;TReader&gt;, IExecuteReaderAsync, IExecuteReader&lt;TReader&gt;, IExecuteReader where TConnection : DbConnection where TCommand : DbCommand where TReader : DbDataReader where TDbType : struct where TThis : ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</code></pre>
+  </div>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TConnection</span></td>
+        <td><p>The type of the connection to be used.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TCommand</span></td>
+        <td><p>The type of the commands generated by the connection.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TReader</span></td>
+        <td><p>The type of reader created by the command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TDbType</span></td>
+        <td><p>The DB type enum to use for parameters.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TThis</span></td>
+        <td><p>The type of this class in order to facilitate proper expressive notation.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor__0_System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.%23ctor(%600%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.IEnumerable%7BOpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%2C%604%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L76">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor__0_System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(`0,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">ExpressiveDbCommandBase(TConnection, CommandType, String, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressiveDbCommandBase(TConnection connection, CommandType type, string command, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt; params = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">TConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to execute the command on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor__0_System_Data_IDbTransaction_System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.%23ctor(%600%2CSystem.Data.IDbTransaction%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.IEnumerable%7BOpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%2C%604%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L62">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor__0_System_Data_IDbTransaction_System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(`0,System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">ExpressiveDbCommandBase(TConnection, IDbTransaction, CommandType, String, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressiveDbCommandBase(TConnection connection, IDbTransaction transaction, CommandType type, string command, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt; params = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">TConnection</span></td>
+        <td><span class="parametername">connection</span></td>
+        <td><p>The connection to execute the command on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.IDbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The optional transaction to execute the command on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_Open_Database_Extensions_IDbConnectionFactory__0__System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.%23ctor(Open.Database.Extensions.IDbConnectionFactory%7B%600%7D%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.IEnumerable%7BOpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%2C%604%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L48">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_Open_Database_Extensions_IDbConnectionFactory__0__System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionFactory{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">ExpressiveDbCommandBase(IDbConnectionFactory&lt;TConnection&gt;, CommandType, String, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressiveDbCommandBase(IDbConnectionFactory&lt;TConnection&gt; connFactory, CommandType type, string command, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt; params = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory</a>&lt;TConnection&gt;</td>
+        <td><span class="parametername">connFactory</span></td>
+        <td><p>The factory to generate connections from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_Open_Database_Extensions_IDbConnectionPool__0__System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.%23ctor(Open.Database.Extensions.IDbConnectionPool%7B%600%7D%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.IEnumerable%7BOpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%2C%604%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L35">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_Open_Database_Extensions_IDbConnectionPool__0__System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(Open.Database.Extensions.IDbConnectionPool{`0},System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">ExpressiveDbCommandBase(IDbConnectionPool&lt;TConnection&gt;, CommandType, String, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressiveDbCommandBase(IDbConnectionPool&lt;TConnection&gt; connectionPool, CommandType type, string command, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt; params = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Open.Database.Extensions.IDbConnectionPool-1.html">IDbConnectionPool</a>&lt;TConnection&gt;</td>
+        <td><span class="parametername">connectionPool</span></td>
+        <td><p>The pool to acquire connections from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_System_Data_IDbTransaction_System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.%23ctor(System.Data.IDbTransaction%2CSystem.Data.CommandType%2CSystem.String%2CSystem.Collections.Generic.IEnumerable%7BOpen.Database.Extensions.ExpressiveCommandBase%7B%600%2C%601%2C%602%2C%603%2C%604%7D.Param%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L89">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5__ctor_System_Data_IDbTransaction_System_Data_CommandType_System_String_System_Collections_Generic_IEnumerable_Open_Database_Extensions_ExpressiveCommandBase__0__1__2__3__4__Param__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.#ctor(System.Data.IDbTransaction,System.Data.CommandType,System.String,System.Collections.Generic.IEnumerable{Open.Database.Extensions.ExpressiveCommandBase{`0,`1,`2,`3,`4}.Param})">ExpressiveDbCommandBase(IDbTransaction, CommandType, String, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt;)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressiveDbCommandBase(IDbTransaction transaction, CommandType type, string command, IEnumerable&lt;ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param&gt; params = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Data.IDbTransaction</span></td>
+        <td><span class="parametername">transaction</span></td>
+        <td><p>The transaction to execute the command on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandType</span></td>
+        <td><span class="parametername">type</span></td>
+        <td><p>The command type.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">command</span></td>
+        <td><p>The SQL command.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html">ExpressiveCommandBase.Param</a>&lt;&gt;&gt;</td>
+        <td><span class="parametername">params</span></td>
+        <td><p>The list of params</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_UseAsyncRead.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.UseAsyncRead%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L103">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_UseAsyncRead_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.UseAsyncRead*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_UseAsyncRead" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.UseAsyncRead">UseAsyncRead</h4>
+  <div class="markdown level1 summary"><p>By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
+Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
+This should only be set to true if there is a clear reason why and should be profiled before and after.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool UseAsyncRead { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_EnableAsyncRead_System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.EnableAsyncRead(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L108">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_EnableAsyncRead_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.EnableAsyncRead*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_EnableAsyncRead_System_Boolean_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.EnableAsyncRead(System.Boolean)">EnableAsyncRead(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Sets the UseAsyncRead value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TThis EnableAsyncRead(bool value = true)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">value</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">TThis</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteNonQueryAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ExecuteNonQueryAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L118">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteNonQueryAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteNonQueryAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteNonQueryAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteNonQueryAsync">ExecuteNonQueryAsync()</h4>
+  <div class="markdown level1 summary"><p>Calls ExecuteNonQueryAsync on the underlying command.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;int&gt; ExecuteNonQueryAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><p>The integer response from the method.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ExecuteScalarAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L125">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync">ExecuteScalarAsync()</h4>
+  <div class="markdown level1 summary"><p>Calls ExecuteScalarAsync on the underlying command.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;object&gt; ExecuteScalarAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Object</span>&gt;</td>
+        <td><p>The value returned from the method.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync__1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ExecuteScalarAsync%60%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L147">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync__1" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync``1">ExecuteScalarAsync&lt;T&gt;()</h4>
+  <div class="markdown level1 summary"><p>Asynchronously executes scalar on the underlying command and casts to the expected type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;T&gt; ExecuteScalarAsync&lt;T&gt;()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value returned from the method.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The type expected.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync__1_System_Func_System_Object___0__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ExecuteScalarAsync%60%601(System.Func%7BSystem.Object%2C%60%600%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L134">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync__1_System_Func_System_Object___0__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync``1(System.Func{System.Object,``0})">ExecuteScalarAsync&lt;T&gt;(Func&lt;Object, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously executes scalar on the underlying command.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;T&gt; ExecuteScalarAsync&lt;T&gt;(Func&lt;object, T&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Object</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function for the result.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value returned from the method.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The type expected.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_ValueTask___0___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ExecuteScalarAsync%60%601(System.Func%7BSystem.Object%2CSystem.Threading.Tasks.ValueTask%7B%60%600%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L156">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ExecuteScalarAsync__1_System_Func_System_Object_System_Threading_Tasks_ValueTask___0___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ExecuteScalarAsync``1(System.Func{System.Object,System.Threading.Tasks.ValueTask{``0}})">ExecuteScalarAsync&lt;T&gt;(Func&lt;Object, ValueTask&lt;T&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously executes scalar on the underlying command.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;T&gt; ExecuteScalarAsync&lt;T&gt;(Func&lt;object, ValueTask&lt;T&gt;&gt; transform)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Object</span>, <span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function (task) for the result.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;T&gt;</td>
+        <td><p>The value returned from the method.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The type expected.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_FirstOrdinalResultsAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.FirstOrdinalResultsAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L199">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.FirstOrdinalResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_FirstOrdinalResultsAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.FirstOrdinalResultsAsync">FirstOrdinalResultsAsync()</h4>
+  <div class="markdown level1 summary"><p>Reads the first column from every record and returns the results as a list..
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IEnumerable&lt;object&gt;&gt; FirstOrdinalResultsAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Object</span>&gt;&gt;</td>
+        <td><p>The list of transformed records.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_FirstOrdinalResultsAsync__1.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.FirstOrdinalResultsAsync%60%601%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L207">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_FirstOrdinalResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.FirstOrdinalResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_FirstOrdinalResultsAsync__1" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.FirstOrdinalResultsAsync``1">FirstOrdinalResultsAsync&lt;T0&gt;()</h4>
+  <div class="markdown level1 summary"><p>Reads the first column from every record..
+DBNull values are converted to null.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IEnumerable&lt;T0&gt;&gt; FirstOrdinalResultsAsync&lt;T0&gt;()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T0&gt;&gt;</td>
+        <td><p>The enumerable of casted values.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T0</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ResultsAsync%60%601(System.Collections.Generic.IEnumerable%7BSystem.Collections.Generic.KeyValuePair%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L247">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">ResultsAsync&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously returns all records and iteratively attempts to map the fields to type T.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IEnumerable&lt;T&gt;&gt; ResultsAsync&lt;T&gt;(IEnumerable&lt;KeyValuePair&lt;string, string&gt;&gt; fieldMappingOverrides)
+    where T : new()</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Collections.Generic.KeyValuePair</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.String</span>&gt;&gt;</td>
+        <td><span class="parametername">fieldMappingOverrides</span></td>
+        <td><p>An override map of field names to column names where the keys are the property names, and values are the column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing the list of results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The model type to map the values to (using reflection).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ResultsAsync%60%601(System.Collections.Generic.IEnumerable%7BSystem.ValueTuple%7BSystem.String%2CSystem.String%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L290">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync__1_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync``1(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">ResultsAsync&lt;T&gt;(IEnumerable&lt;(String Field, String Column)&gt;)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously returns all records and iteratively attempts to map the fields to type T.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IEnumerable&lt;T&gt;&gt; ResultsAsync&lt;T&gt;(IEnumerable&lt;(string Field, string Column)&gt; fieldMappingOverrides)
+    where T : new()</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.String</span>&gt;&gt;</td>
+        <td><span class="parametername">fieldMappingOverrides</span></td>
+        <td><p>An override map of field names to column names where the keys are the property names, and values are the column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing the list of results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The model type to map the values to (using reflection).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync__1_System_ValueTuple_System_String_System_String____.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ResultsAsync%60%601(System.ValueTuple%7BSystem.String%2CSystem.String%7D%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L256">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ResultsAsync__1_System_ValueTuple_System_String_System_String____" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ResultsAsync``1(System.ValueTuple{System.String,System.String}[])">ResultsAsync&lt;T&gt;((String Field, String Column)[])</h4>
+  <div class="markdown level1 summary"><p>Asynchronously returns all records and iteratively attempts to map the fields to type T.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IEnumerable&lt;T&gt;&gt; ResultsAsync&lt;T&gt;(params (string Field, string Column)[] fieldMappingOverrides)
+    where T : new()</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.String</span>&gt;[]</td>
+        <td><span class="parametername">fieldMappingOverrides</span></td>
+        <td><p>An override map of field names to column names where the keys are the property names, and values are the column names.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing the list of results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The model type to map the values to (using reflection).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.RetrieveAsync%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L263">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync">RetrieveAsync()</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records within the first result set using an IDataReader and returns the results.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;QueryResultQueue&lt;object[]&gt;&gt; RetrieveAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<a class="xref" href="Open.Database.Extensions.Core.QueryResultQueue-1.html">QueryResultQueue</a>&lt;<span class="xref">System.Object</span>[]&gt;&gt;</td>
+        <td><p>The QueryResult that contains all the results and the column mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_Collections_Generic_IEnumerable_System_Int32__.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.RetrieveAsync(System.Collections.Generic.IEnumerable%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L271">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync(System.Collections.Generic.IEnumerable{System.Int32})">RetrieveAsync(IEnumerable&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;QueryResultQueue&lt;object[]&gt;&gt; RetrieveAsync(IEnumerable&lt;int&gt; ordinals)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">ordinals</span></td>
+        <td><p>The ordinals to request from the reader for each record.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<a class="xref" href="Open.Database.Extensions.Core.QueryResultQueue-1.html">QueryResultQueue</a>&lt;<span class="xref">System.Object</span>[]&gt;&gt;</td>
+        <td><p>The QueryResult that contains all the results and the column mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_Collections_Generic_IEnumerable_System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.RetrieveAsync(System.Collections.Generic.IEnumerable%7BSystem.String%7D%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L280">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_Collections_Generic_IEnumerable_System_String__System_Boolean_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean)">RetrieveAsync(IEnumerable&lt;String&gt;, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;QueryResultQueue&lt;object[]&gt;&gt; RetrieveAsync(IEnumerable&lt;string&gt; columnNames, bool normalizeColumnOrder = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="parametername">columnNames</span></td>
+        <td><p>The column names to select.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">normalizeColumnOrder</span></td>
+        <td><p>Orders the results arrays by ordinal.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<a class="xref" href="Open.Database.Extensions.Core.QueryResultQueue-1.html">QueryResultQueue</a>&lt;<span class="xref">System.Object</span>[]&gt;&gt;</td>
+        <td><p>The QueryResult that contains all the results and the column mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_Int32_System_Int32___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.RetrieveAsync(System.Int32%2CSystem.Int32%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L216">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_Int32_System_Int32___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync(System.Int32,System.Int32[])">RetrieveAsync(Int32, Int32[])</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;QueryResultQueue&lt;object[]&gt;&gt; RetrieveAsync(int n, params int[] others)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">n</span></td>
+        <td><p>The first ordinal to include in the request to the reader for each record.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span>[]</td>
+        <td><span class="parametername">others</span></td>
+        <td><p>The remaining ordinals to request from the reader for each record.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<a class="xref" href="Open.Database.Extensions.Core.QueryResultQueue-1.html">QueryResultQueue</a>&lt;<span class="xref">System.Object</span>[]&gt;&gt;</td>
+        <td><p>The QueryResult that contains all the results and the column mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_String_System_String___.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.RetrieveAsync(System.String%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L225">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_RetrieveAsync_System_String_System_String___" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.RetrieveAsync(System.String,System.String[])">RetrieveAsync(String, String[])</h4>
+  <div class="markdown level1 summary"><p>Iterates all records within the current result set using an IDataReader and returns the desired results.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;QueryResultQueue&lt;object[]&gt;&gt; RetrieveAsync(string c, params string[] others)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">c</span></td>
+        <td><p>The first column name to include in the request to the reader for each record.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span>[]</td>
+        <td><span class="parametername">others</span></td>
+        <td><p>The remaining column names to request from the reader for each record.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<a class="xref" href="Open.Database.Extensions.Core.QueryResultQueue-1.html">QueryResultQueue</a>&lt;<span class="xref">System.Object</span>[]&gt;&gt;</td>
+        <td><p>The QueryResult that contains all the results and the column mappings.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_TakeAsync__1_System_Func_System_Data_IDataRecord___0__System_Int32_System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.TakeAsync%60%601(System.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Int32%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L172">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_TakeAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.TakeAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_TakeAsync__1_System_Func_System_Data_IDataRecord___0__System_Int32_System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.TakeAsync``1(System.Func{System.Data.IDataRecord,``0},System.Int32,System.Data.CommandBehavior)">TakeAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;, Int32, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously iterates a IDataReader and returns the each result until the count is met.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IList&lt;T&gt;&gt; TakeAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt; transform, int count, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The transform function to process each IDataRecord.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">count</span></td>
+        <td><p>The maximum number of records before complete.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.IList</span>&lt;T&gt;&gt;</td>
+        <td><p>The value from the transform.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td><p>The return type of the transform function.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5_ToListAsync__1_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605.ToListAsync%60%601(System.Func%7BSystem.Data.IDataRecord%2C%60%600%7D%2CSystem.Data.CommandBehavior)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L234">View Source</a>
+  </span>
+  <a id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ToListAsync_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ToListAsync*"></a>
+  <h4 id="Open_Database_Extensions_ExpressiveDbCommandBase_5_ToListAsync__1_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_" data-uid="Open.Database.Extensions.ExpressiveDbCommandBase`5.ToListAsync``1(System.Func{System.Data.IDataRecord,``0},System.Data.CommandBehavior)">ToListAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt;, CommandBehavior)</h4>
+  <div class="markdown level1 summary"><p>Asynchronously returns all records via a transform function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;List&lt;T&gt;&gt; ToListAsync&lt;T&gt;(Func&lt;IDataRecord, T&gt; transform, CommandBehavior behavior = CommandBehavior.Default)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Data.IDataRecord</span>, T&gt;</td>
+        <td><span class="parametername">transform</span></td>
+        <td><p>The desired column names.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Data.CommandBehavior</span></td>
+        <td><span class="parametername">behavior</span></td>
+        <td><p>The behavior to use with the data reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.ValueTask</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;T&gt;&gt;</td>
+        <td><p>A task containing the list of results.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteCommand-1.html">IExecuteCommand&lt;TCommand&gt;</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteCommand.html">IExecuteCommand</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderAsync-1.html">IExecuteReaderAsync&lt;TReader&gt;</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderAsync.html">IExecuteReaderAsync</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReader-1.html">IExecuteReader&lt;TReader&gt;</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReader.html">IExecuteReader</a>
+  </div>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReader__1_Open_Database_Extensions_IExecuteReader_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_">IExecuteReaderExtensions.IterateReader&lt;TReader&gt;(IExecuteReader, Action&lt;IDataRecord&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhile_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_">IExecuteReaderExtensions.IterateReaderWhile(IExecuteReader, Func&lt;IDataRecord, Boolean&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Action_System_Data_IDataRecord__System_Data_CommandBehavior_">IExecuteReaderExtensions.IterateReaderAsync(IExecuteReaderAsync, Action&lt;IDataRecord&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Func_System_Data_IDataRecord_System_Boolean__System_Data_CommandBehavior_">IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func&lt;IDataRecord, Boolean&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReaderWhileAsync_Open_Database_Extensions_IExecuteReaderAsync_System_Func_System_Data_IDataRecord_System_Threading_Tasks_ValueTask_System_Boolean___System_Data_CommandBehavior_">IExecuteReaderExtensions.IterateReaderWhileAsync(IExecuteReaderAsync, Func&lt;IDataRecord, ValueTask&lt;Boolean&gt;&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_IterateReader__2_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__System_Func_System_Collections_Generic_IEnumerable___0____1__System_Data_CommandBehavior_">IExecuteReaderExtensions.IterateReader&lt;TEntity, TResult&gt;(IExecuteReader, Func&lt;IDataRecord, TEntity&gt;, Func&lt;IEnumerable&lt;TEntity&gt;, TResult&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_First__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.First&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_FirstOrDefault__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.FirstOrDefault&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Single__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.Single&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_SingleOrDefault__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.SingleOrDefault&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Take__1_Open_Database_Extensions_IExecuteReader_System_Int32_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.Take&lt;T&gt;(IExecuteReader, Int32, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Skip__1_Open_Database_Extensions_IExecuteReader_System_Int32_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.Skip&lt;T&gt;(IExecuteReader, Int32, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_SkipThenTake__1_Open_Database_Extensions_IExecuteReader_System_Int32_System_Int32_System_Func_System_Data_IDataRecord___0__">IExecuteReaderExtensions.SkipThenTake&lt;T&gt;(IExecuteReader, Int32, Int32, Func&lt;IDataRecord, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_ToList__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_">IExecuteReaderExtensions.ToList&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_ToArray__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_">IExecuteReaderExtensions.ToArray&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_ToImmutableArray__1_Open_Database_Extensions_IExecuteReader_System_Func_System_Data_IDataRecord___0__System_Data_CommandBehavior_">IExecuteReaderExtensions.ToImmutableArray&lt;T&gt;(IExecuteReader, Func&lt;IDataRecord, T&gt;, CommandBehavior)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Retrieve_Open_Database_Extensions_IExecuteReader_">IExecuteReaderExtensions.Retrieve(IExecuteReader)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Retrieve_Open_Database_Extensions_IExecuteReader_System_Collections_Generic_IEnumerable_System_Int32__">IExecuteReaderExtensions.Retrieve(IExecuteReader, IEnumerable&lt;Int32&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Retrieve_Open_Database_Extensions_IExecuteReader_System_Int32_System_Int32___">IExecuteReaderExtensions.Retrieve(IExecuteReader, Int32, Int32[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Retrieve_Open_Database_Extensions_IExecuteReader_System_Collections_Generic_IEnumerable_System_String__">IExecuteReaderExtensions.Retrieve(IExecuteReader, IEnumerable&lt;String&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Retrieve_Open_Database_Extensions_IExecuteReader_System_String_System_String___">IExecuteReaderExtensions.Retrieve(IExecuteReader, String, String[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Results__1_Open_Database_Extensions_IExecuteReader_System_Collections_Generic_IEnumerable_System_Collections_Generic_KeyValuePair_System_String_System_String___">IExecuteReaderExtensions.Results&lt;T&gt;(IExecuteReader, IEnumerable&lt;KeyValuePair&lt;String, String&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Results__1_Open_Database_Extensions_IExecuteReader_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___">IExecuteReaderExtensions.Results&lt;T&gt;(IExecuteReader, IEnumerable&lt;(String Field, String Column)&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_Results__1_Open_Database_Extensions_IExecuteReader_System_ValueTuple_System_String_System_String____">IExecuteReaderExtensions.Results&lt;T&gt;(IExecuteReader, (String Field, String Column)[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_FirstOrdinalResults_Open_Database_Extensions_IExecuteReader_">IExecuteReaderExtensions.FirstOrdinalResults(IExecuteReader)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_FirstOrdinalResults__1_Open_Database_Extensions_IExecuteReader_">IExecuteReaderExtensions.FirstOrdinalResults&lt;T0&gt;(IExecuteReader)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_LoadTable_Open_Database_Extensions_IExecuteReader_">IExecuteReaderExtensions.LoadTable(IExecuteReader)</a>
+  </div>
+  <div>
+      <a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html#Open_Database_Extensions_IExecuteReaderExtensions_LoadTables_Open_Database_Extensions_IExecuteReader_">IExecuteReaderExtensions.LoadTables(IExecuteReader)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/new/development/apiSpec/new?filename=Open_Database_Extensions_ExpressiveDbCommandBase_5.md&amp;value=---%0Auid%3A%20Open.Database.Extensions.ExpressiveDbCommandBase%605%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/development/Core/ExpressiveDbCommandBase.cs/#L22" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

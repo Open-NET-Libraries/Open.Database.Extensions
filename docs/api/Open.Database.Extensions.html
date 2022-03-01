@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace Open.Database.Extensions
    ">
-    <meta name="generator" content="docfx 2.33.2.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -22,7 +22,7 @@
     
     
   </head>
-  <body data-spy="scroll" data-target="#affix">
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -77,47 +77,89 @@
   <div class="markdown level0 remarks"></div>
     <h3 id="classes">Classes
   </h3>
+      <h4><a class="xref" href="Open.Database.Extensions.CommandExtensions.html">CommandExtensions</a></h4>
+      <section><p>Core non-DB-specific extensions for retrieving data from a command using best practices.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.ConnectionExtensions.html">ConnectionExtensions</a></h4>
+      <section><p>Core non-DB-specific extensions for database connections.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.ConnectionPoolExtensions.html">ConnectionPoolExtensions</a></h4>
+      <section><p>Extensions for getting generic versions on non-generic connection pools..</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.CoreExtensions.html">CoreExtensions</a></h4>
+      <section><p>Core non-DB-specific extensions for building a command and retrieving data using best practices.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.DataReaderExtensions.html">DataReaderExtensions</a></h4>
+      <section><p>Extension methods for Data Readers.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.DataRecordExtensions.html">DataRecordExtensions</a></h4>
+      <section><p>Extension methods for IDataRecord access.</p>
+</section>
       <h4><a class="xref" href="Open.Database.Extensions.DbConnectionFactory.html">DbConnectionFactory</a></h4>
       <section><p>DbConnection factory implementation that accepts a factory function.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.DbConnectionFactory-1.html">DbConnectionFactory&lt;TConnection&gt;</a></h4>
       <section><p>Generic connection factory implementation that accepts a factory function.</p>
 </section>
-      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.html">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;</a></h4>
+      <h4><a class="xref" href="Open.Database.Extensions.DbConnectionFactoryExtensions.html">DbConnectionFactoryExtensions</a></h4>
+      <section><p>Extensions for converting a connection factory into a pool.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommand.html">ExpressiveCommand</a></h4>
+      <section><p>An abstraction for executing commands on a database using best practices and simplified expressive syntax.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.html">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</a></h4>
       <section><p>Base class for developing expressive commands.
 Includes methods for use with IDbConnection and IDbCommand types.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommand.html">ExpressiveDbCommand</a></h4>
       <section><p>An abstraction for executing commands on a database using best practices and simplified expressive syntax.</p>
 </section>
-      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html">ExpressiveDbCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;</a></h4>
+      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveDbCommandBase-5.html">ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</a></h4>
       <section><p>An base class for executing commands on a database using best practices and simplified expressive syntax.
 Includes methods for use with DbConnection and DbCommand types.</p>
 </section>
-      <h4><a class="xref" href="Open.Database.Extensions.Extensions.html">Extensions</a></h4>
-      <section><p>Core non-DB-specific extensions for building a command and retrieving data using best practices.</p>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteReaderExtensions.html">IExecuteReaderExtensions</a></h4>
+      <section><p>Core non-DB-specific extensions for retrieving data from a command using best practices.</p>
 </section>
-      <h4><a class="xref" href="Open.Database.Extensions.QueryResult-1.html">QueryResult&lt;TResult&gt;</a></h4>
-      <section><p>A container for data reader results that also provides the column names and other helpful data methods.</p>
-</section>
-      <h4><a class="xref" href="Open.Database.Extensions.QueryResultExtensions.html">QueryResultExtensions</a></h4>
-      <section><p>A set of extensions for getting column data from a QueryResult.</p>
+      <h4><a class="xref" href="Open.Database.Extensions.TransactionExtensions.html">TransactionExtensions</a></h4>
+      <section><p>Core non-DB-specific extensions for database transactions.</p>
 </section>
     <h3 id="structs">Structs
   </h3>
-      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param</a></h4>
-      <section><p>A struct that represents the param to be created when the command is exectued.
-TDbType facillitates the difference between DbType and SqlDbType.</p>
+      <h4><a class="xref" href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param</a></h4>
+      <section><p>A struct that represents the param to be created when the command is executed.
+TDbType facilitates the difference between DbType and SqlDbType.</p>
 </section>
     <h3 id="interfaces">Interfaces
   </h3>
       <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory.html">IDbConnectionFactory</a></h4>
-      <section><p>Simplified interface with IDbConnection as the generic type.</p>
+      <section><p>Common interface for creating a connection.  Can easily be used with dependency injection.</p>
 </section>
       <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionFactory-1.html">IDbConnectionFactory&lt;TConnection&gt;</a></h4>
-      <section><p>Base interface for creating connections.
-Useful for dependency injection.</p>
+      <section></section>
+      <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionPool.html">IDbConnectionPool</a></h4>
+      <section><p>A unifying common interface for creating/managing connections.  Can easily be used with dependency injection.
+Commonly a pool will simply host a single connection for nonconcurrent operations where giving back to the pool guarantees the connection returns to the state it was in before it was taken.
+Connection factories can pose as pools where taking always creates a new connection, and giving back always disposes.</p>
 </section>
+      <h4><a class="xref" href="Open.Database.Extensions.IDbConnectionPool-1.html">IDbConnectionPool&lt;TConnection&gt;</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteCommand.html">IExecuteCommand</a></h4>
+      <section><p>Common interface used for expressive commands.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteCommand-1.html">IExecuteCommand&lt;TCommand&gt;</a></h4>
+      <section><p>Common interface used for expressive commands.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteReader.html">IExecuteReader</a></h4>
+      <section><p>Common interface used for expressive commands when dealing with a data reader.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteReader-1.html">IExecuteReader&lt;TReader&gt;</a></h4>
+      <section><p>Common interface used for expressive commands when dealing with a data reader.</p>
+</section>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteReaderAsync.html">IExecuteReaderAsync</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Open.Database.Extensions.IExecuteReaderAsync-1.html">IExecuteReaderAsync&lt;TReader&gt;</a></h4>
+      <section></section>
 </article>
           </div>
           

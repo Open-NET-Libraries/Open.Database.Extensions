@@ -4,6 +4,7 @@
     <div class="sidefilter">
       <form class="toc-filter">
         <span class="glyphicon glyphicon-filter filter-icon"></span>
+        <span class="glyphicon glyphicon-remove clear-icon" id="toc_filter_clear"></span>
         <input type="text" id="toc_filter_input" placeholder="Enter here to filter..." onkeypress="if(event.keyCode==13) {return false;}">
       </form>
     </div>
@@ -11,61 +12,121 @@
       <div class="toc" id="toc">
           
           <ul class="nav level1">
-            <li>
-              <span class="expand-stub"></span>
-              <a href="Open.Database.Extensions.html" name="" title="Open.Database.Extensions">Open.Database.Extensions</a>
-                
-                <ul class="nav level2">
-                  <li>
-                    <a href="Open.Database.Extensions.DbConnectionFactory.html" name="" title="DbConnectionFactory">DbConnectionFactory</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.DbConnectionFactory-1.html" name="" title="DbConnectionFactory&lt;TConnection&gt;">DbConnectionFactory&lt;TConnection&gt;</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.ExpressiveCommandBase-4.html" name="" title="ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.ExpressiveCommandBase-4.Param.html" name="" title="ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param">ExpressiveCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;.Param</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.ExpressiveDbCommand.html" name="" title="ExpressiveDbCommand">ExpressiveDbCommand</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.ExpressiveDbCommandBase-4.html" name="" title="ExpressiveDbCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;">ExpressiveDbCommandBase&lt;TConnection, TCommand, TDbType, TThis&gt;</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.Extensions.html" name="" title="Extensions">Extensions</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.IDbConnectionFactory.html" name="" title="IDbConnectionFactory">IDbConnectionFactory</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.IDbConnectionFactory-1.html" name="" title="IDbConnectionFactory&lt;TConnection&gt;">IDbConnectionFactory&lt;TConnection&gt;</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.QueryResult-1.html" name="" title="QueryResult&lt;TResult&gt;">QueryResult&lt;TResult&gt;</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.QueryResultExtensions.html" name="" title="QueryResultExtensions">QueryResultExtensions</a>
-                  </li>
-                </ul>  </li>
-            <li>
-              <span class="expand-stub"></span>
-              <a href="Open.Database.Extensions.SqlClient.html" name="" title="Open.Database.Extensions.SqlClient">Open.Database.Extensions.SqlClient</a>
-                
-                <ul class="nav level2">
-                  <li>
-                    <a href="Open.Database.Extensions.SqlClient.ExpressiveSqlCommand.html" name="" title="ExpressiveSqlCommand">ExpressiveSqlCommand</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.SqlClient.Extensions.html" name="" title="Extensions">Extensions</a>
-                  </li>
-                  <li>
-                    <a href="Open.Database.Extensions.SqlClient.SqlConnectionFactory.html" name="" title="SqlConnectionFactory">SqlConnectionFactory</a>
-                  </li>
-                </ul>  </li>
-          </ul>      </div>
+                <li>
+                    <span class="expand-stub"></span>
+                    <a href="Open.Database.Extensions.html" name="" title="Open.Database.Extensions">Open.Database.Extensions</a>
+                    
+                    <ul class="nav level2">
+                          <li>
+                              <a href="Open.Database.Extensions.CommandExtensions.html" name="" title="CommandExtensions">CommandExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ConnectionExtensions.html" name="" title="ConnectionExtensions">ConnectionExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ConnectionPoolExtensions.html" name="" title="ConnectionPoolExtensions">ConnectionPoolExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.CoreExtensions.html" name="" title="CoreExtensions">CoreExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.DataReaderExtensions.html" name="" title="DataReaderExtensions">DataReaderExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.DataRecordExtensions.html" name="" title="DataRecordExtensions">DataRecordExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.DbConnectionFactory.html" name="" title="DbConnectionFactory">DbConnectionFactory</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.DbConnectionFactory-1.html" name="" title="DbConnectionFactory&lt;TConnection&gt;">DbConnectionFactory&lt;TConnection&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.DbConnectionFactoryExtensions.html" name="" title="DbConnectionFactoryExtensions">DbConnectionFactoryExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ExpressiveCommand.html" name="" title="ExpressiveCommand">ExpressiveCommand</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ExpressiveCommandBase-5.html" name="" title="ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ExpressiveCommandBase-5.Param.html" name="" title="ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param">ExpressiveCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;.Param</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ExpressiveDbCommand.html" name="" title="ExpressiveDbCommand">ExpressiveDbCommand</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.ExpressiveDbCommandBase-5.html" name="" title="ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;">ExpressiveDbCommandBase&lt;TConnection, TCommand, TReader, TDbType, TThis&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IDbConnectionFactory.html" name="" title="IDbConnectionFactory">IDbConnectionFactory</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IDbConnectionFactory-1.html" name="" title="IDbConnectionFactory&lt;TConnection&gt;">IDbConnectionFactory&lt;TConnection&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IDbConnectionPool.html" name="" title="IDbConnectionPool">IDbConnectionPool</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IDbConnectionPool-1.html" name="" title="IDbConnectionPool&lt;TConnection&gt;">IDbConnectionPool&lt;TConnection&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteCommand.html" name="" title="IExecuteCommand">IExecuteCommand</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteCommand-1.html" name="" title="IExecuteCommand&lt;TCommand&gt;">IExecuteCommand&lt;TCommand&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteReader.html" name="" title="IExecuteReader">IExecuteReader</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteReader-1.html" name="" title="IExecuteReader&lt;TReader&gt;">IExecuteReader&lt;TReader&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteReaderAsync.html" name="" title="IExecuteReaderAsync">IExecuteReaderAsync</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteReaderAsync-1.html" name="" title="IExecuteReaderAsync&lt;TReader&gt;">IExecuteReaderAsync&lt;TReader&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.IExecuteReaderExtensions.html" name="" title="IExecuteReaderExtensions">IExecuteReaderExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.TransactionExtensions.html" name="" title="TransactionExtensions">TransactionExtensions</a>
+                          </li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="expand-stub"></span>
+                    <a href="Open.Database.Extensions.Core.html" name="" title="Open.Database.Extensions.Core">Open.Database.Extensions.Core</a>
+                    
+                    <ul class="nav level2">
+                          <li>
+                              <a href="Open.Database.Extensions.Core.QueryResult-1.html" name="" title="QueryResult&lt;TResult&gt;">QueryResult&lt;TResult&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.Core.QueryResultCollection-2.html" name="" title="QueryResultCollection&lt;T, TResult&gt;">QueryResultCollection&lt;T, TResult&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.Core.QueryResultCollection-1.html" name="" title="QueryResultCollection&lt;T&gt;">QueryResultCollection&lt;T&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.Core.QueryResultExtensions.html" name="" title="QueryResultExtensions">QueryResultExtensions</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.Core.QueryResultQueue-1.html" name="" title="QueryResultQueue&lt;T&gt;">QueryResultQueue&lt;T&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.Core.Transformer-1.html" name="" title="Transformer&lt;T&gt;">Transformer&lt;T&gt;</a>
+                          </li>
+                          <li>
+                              <a href="Open.Database.Extensions.Core.Transformer-1.Processor.html" name="" title="Transformer&lt;T&gt;.Processor">Transformer&lt;T&gt;.Processor</a>
+                          </li>
+                    </ul>
+                </li>
+          </ul>
+      </div>
     </div>
   </div>
 </div>
