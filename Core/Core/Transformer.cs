@@ -80,7 +80,6 @@ public class Transformer<T>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="overrides"></param>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "This is simply an expressive helper that would seem odd to make another static class to handle.")]
 	public static Transformer<T> Create(IEnumerable<(string Field, string? Column)>? overrides = null)
 		=> new(overrides);
 
