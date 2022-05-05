@@ -263,7 +263,7 @@ public static partial class DataRecordExtensions
 	/// <param name="values">The target to store the values.</param>
 	/// <returns>The provided span, updated with values matching the ordinal positions requested.</returns>
 	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
-	public static Span<object> GetValuesFromOrdinals(this IDataRecord record, in ReadOnlySpan<int> ordinals, Span<object> values)
+	public static Span<object> GetValuesFromOrdinals(this IDataRecord record, ReadOnlySpan<int> ordinals, Span<object> values)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         Contract.EndContractBlock();
@@ -275,7 +275,7 @@ public static partial class DataRecordExtensions
     }
 
 	/// <returns>The provided list, updated with values matching the ordinal positions requested.</returns>
-	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, in ReadOnlySpan{int}, Span{object})"/>
+	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, ReadOnlySpan{int}, Span{object})"/>
 	public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IList<int> ordinals, TList values)
         where TList : IList<object>
     {
@@ -290,7 +290,7 @@ public static partial class DataRecordExtensions
     }
 
 	/// <returns>An array of values matching the ordinal positions requested.</returns>
-	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, in ReadOnlySpan{int}, Span{object})"/>
+	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, ReadOnlySpan{int}, Span{object})"/>
 	public static object[] GetValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
@@ -441,7 +441,7 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
 	/// <param name="ordinalMapping">The column ids and resultant names to query.</param>
 	/// <returns>The resultant Dictionary of values.</returns>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         Contract.EndContractBlock();
@@ -505,7 +505,7 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
 	/// <param name="columnNames">The column names to query.</param>
 	/// <returns>The resultant Dictionary of values.</returns>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, in ReadOnlySpan<string> columnNames)
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, ReadOnlySpan<string> columnNames)
     {
         if (record is null) throw new ArgumentNullException(nameof(record));
         Contract.EndContractBlock();

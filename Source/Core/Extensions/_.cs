@@ -71,7 +71,7 @@ public static partial class CoreExtensions
 	/// Returns a copy of the contents of this span as an array with any <see cref="DBNull"/> values converted to null.
 	/// </summary>
 	/// <inheritdoc cref="DBNullToNullCopy(object[])"/>
-	public static object?[] DBNullToNullCopy(this in ReadOnlySpan<object?> values)
+	public static object?[] DBNullToNullCopy(this ReadOnlySpan<object?> values)
     {
         var len = values.Length;
         var result = new object?[len];
@@ -80,8 +80,8 @@ public static partial class CoreExtensions
         return result;
     }
 
-	/// <inheritdoc cref="DBNullToNullCopy(in ReadOnlySpan{object?})"/>
-	public static object?[] DBNullToNullCopy(this in Span<object?> values)
+	/// <inheritdoc cref="DBNullToNullCopy(ReadOnlySpan{object?})"/>
+	public static object?[] DBNullToNullCopy(this Span<object?> values)
     {
         var len = values.Length;
         var result = new object?[len];
