@@ -25,8 +25,7 @@ public static partial class CommandExtensions
 
         var c = target.CreateParameter();
         c.ParameterName = name;
-        if (value != null) // DBNull.Value is allowed.
-            c.Value = value;
+        c.Value = value;
         target.Parameters.Add(c);
         return c;
     }
@@ -43,7 +42,7 @@ public static partial class CommandExtensions
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
-		object value,
+		object? value,
 		DbType type,
 		ParameterDirection direction = ParameterDirection.Input)
     {

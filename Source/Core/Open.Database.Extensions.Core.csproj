@@ -14,7 +14,7 @@
 		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
-		<Version>7.0.1</Version>
+		<Version>7.0.2</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IncludeSymbols>true</IncludeSymbols>

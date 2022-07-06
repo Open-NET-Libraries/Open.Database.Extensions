@@ -21,8 +21,12 @@ public static partial class SqlCommandExtensions
 	/// <param name="type">The DbType of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
 	/// <returns>The created IDbDataParameter.</returns>
-	public static SqlParameter AddParameter(this SqlCommand target,
-		string name, object value, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
+	public static SqlParameter AddParameter(
+		this SqlCommand target,
+		string name,
+		object? value,
+		SqlDbType type,
+		ParameterDirection direction = ParameterDirection.Input)
 	{
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
@@ -40,8 +44,11 @@ public static partial class SqlCommandExtensions
 	/// <param name="type">The SqlDbType of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
 	/// <returns>The created IDbDataParameter.</returns>
-	public static SqlParameter AddParameterType(this SqlCommand target,
-		string? name, SqlDbType type, ParameterDirection direction = ParameterDirection.Input)
+	public static SqlParameter AddParameterType(
+		this SqlCommand target,
+		string? name,
+		SqlDbType type,
+		ParameterDirection direction = ParameterDirection.Input)
 	{
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (direction != ParameterDirection.ReturnValue && name == null)
