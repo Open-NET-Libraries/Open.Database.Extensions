@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Open.Database.Extensions.Core.csproj" />
+    <ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
   </ItemGroup>
 
 </Project>
