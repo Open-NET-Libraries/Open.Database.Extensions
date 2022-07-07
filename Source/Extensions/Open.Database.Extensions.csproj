@@ -24,9 +24,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Open.Database.Extensions.Channel" Version="7.0.1" />
-		<PackageReference Include="Open.Database.Extensions.Dataflow" Version="7.0.1" />
-		<PackageReference Include="Open.Database.Extensions.SqlClient" Version="7.0.2" />
+		<PackageReference Include="Open.Database.Extensions.Channel" Version="7.0.4" />
+		<PackageReference Include="Open.Database.Extensions.Dataflow" Version="7.0.4" />
+		<PackageReference Include="Open.Database.Extensions.SqlClient" Version="7.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>
