@@ -234,6 +234,26 @@ public static partial class CommandExtensions
     }
 
 	/// <summary>
+	/// If the <paramref name="command"/> is derived from <see cref="DbCommand"/>, this will call <see cref="DbCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)"/>;
+	/// otherwise it will call <see cref="IDbCommand.ExecuteReader(CommandBehavior)"/>.
+	/// </summary>
+	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
+	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <param name="cancellationToken">The cancellation token.</param>
+	public static async ValueTask<IDataReader> ExecuteReaderAsync(this IDbCommand command,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		return command is DbCommand c
+			? await c.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true)
+			: command.ExecuteReader(behavior);
+	}
+
+
+	/// <summary>
 	/// Asynchronously executes a reader on a command with a handler function.
 	/// </summary>
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>

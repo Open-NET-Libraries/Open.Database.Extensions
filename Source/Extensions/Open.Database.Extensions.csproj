@@ -14,7 +14,7 @@
 		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
-		<Version>7.0.0</Version>
+		<Version>7.0.4</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -24,9 +24,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Open.Database.Extensions.Channel" Version="7.0.0" />
-		<PackageReference Include="Open.Database.Extensions.Dataflow" Version="7.0.0" />
-		<PackageReference Include="Open.Database.Extensions.SqlClient" Version="7.0.0" />
+		<PackageReference Include="Open.Database.Extensions.Channel" Version="7.0.1" />
+		<PackageReference Include="Open.Database.Extensions.Dataflow" Version="7.0.1" />
+		<PackageReference Include="Open.Database.Extensions.SqlClient" Version="7.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

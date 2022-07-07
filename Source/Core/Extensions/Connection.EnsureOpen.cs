@@ -73,14 +73,37 @@ public static partial class ConnectionExtensions
         => connection.EnsureOpenAsync(true, cancellationToken);
 
 	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, bool, CancellationToken)"/>
-	internal static async ValueTask<ConnectionState> EnsureOpenAsync(
+	public static async ValueTask<ConnectionState> EnsureOpenAsync(
 		this IDbConnection connection,
-		CancellationToken cancellationToken)
+		bool configureAwait = true,
+		CancellationToken cancellationToken = default)
     {
         if (connection is DbConnection c)
-            return await c.EnsureOpenAsync(true, cancellationToken).ConfigureAwait(true);
+            return await c.EnsureOpenAsync(configureAwait, cancellationToken).ConfigureAwait(configureAwait);
 
         cancellationToken.ThrowIfCancellationRequested();
         return connection.EnsureOpen();
     }
+
+	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, bool, CancellationToken)"/>
+	public static ValueTask<ConnectionState> EnsureOpenAsync(
+		this IDbConnection connection,
+		CancellationToken cancellationToken)
+		=> EnsureOpenAsync(connection, true, cancellationToken);
+
+	/// <summary>
+	/// If the <paramref name="connection"/> derives from <see cref="DbConnection"/>, this will call <see cref="DbConnection.OpenAsync(CancellationToken)"/>;
+	/// otherwise it will call <see cref="IDbConnection.Open()"/>.
+	/// </summary>
+	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, bool, CancellationToken)"/>
+	public static async ValueTask OpenAsync(
+		this IDbConnection connection,
+		bool configureAwait = true,
+		CancellationToken cancellationToken = default)
+	{
+		if (connection is DbConnection c)
+			await c.OpenAsync(cancellationToken).ConfigureAwait(configureAwait);
+
+		connection.Open();
+	}
 }
