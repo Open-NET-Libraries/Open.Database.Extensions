@@ -14,7 +14,7 @@
 		<PackageTags>ado;ado extensions;dataflow;data;database</PackageTags>
 		<RepositoryType>git</RepositoryType>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>7.0.4</Version>
+		<Version>7.1.0</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -28,7 +28,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-		<PackageReference Include="Open.Database.Extensions.Core" Version="7.0.4" />
 		<PackageReference Include="System.Threading.Tasks.Dataflow" Version="6.*" />
 	</ItemGroup>
 
@@ -41,6 +40,10 @@
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Core\Open.Database.Extensions.Core.csproj" />
 	</ItemGroup>
 	
 </Project>

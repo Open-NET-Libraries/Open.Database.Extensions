@@ -30,6 +30,61 @@ public static partial class CommandExtensions
         return c;
     }
 
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		string? value) => AddParameter(target, name, value, DbType.String);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		int value) => AddParameter(target, name, value, DbType.Int32);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		long value) => AddParameter(target, name, value, DbType.Int64);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		short value) => AddParameter(target, name, value, DbType.Int16);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		DateTime value) => AddParameter(target, name, value, DbType.DateTime);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		double value) => AddParameter(target, name, value, DbType.Double);
+
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		decimal value) => AddParameter(target, name, value, DbType.Decimal);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		Guid value) => AddParameter(target, name, value, DbType.Guid);
+
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	public static IDbDataParameter AddParameter(
+		this IDbCommand target,
+		string name,
+		DateTimeOffset value) => AddParameter(target, name, value, DbType.DateTimeOffset);
+
 	/// <summary>
 	/// Shortcut for adding a command parameter.
 	/// </summary>
