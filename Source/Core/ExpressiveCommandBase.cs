@@ -223,6 +223,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
             Name = name,
             Value = value ?? DBNull.Value
         });
+
         return (TThis)this;
     }
 
@@ -241,10 +242,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
             throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
         Contract.EndContractBlock();
 
-        var p = new Param { Name = name, Type = type };
-		p.Value = value ?? (object)DBNull.Value;
+		Params.Add(new Param
+		{
+			Name = name,
+			Type = type,
+			Value = value ?? (object)DBNull.Value
+		});
 
-		Params.Add(p);
         return (TThis)this;
     }
 
@@ -260,10 +264,12 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
         if (name is null) throw new ArgumentNullException(nameof(name));
         Contract.EndContractBlock();
 
-        var p = new Param { Name = name };
-		p.Value = value ?? (object)DBNull.Value;
+		Params.Add(new Param
+		{
+			Name = name,
+			Value = value ?? (object)DBNull.Value
+		});
 
-		Params.Add(p);
         return (TThis)this;
     }
 

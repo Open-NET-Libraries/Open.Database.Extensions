@@ -252,7 +252,6 @@ public static partial class CommandExtensions
 			: command.ExecuteReader(behavior);
 	}
 
-
 	/// <summary>
 	/// Asynchronously executes a reader on a command with a handler function.
 	/// </summary>

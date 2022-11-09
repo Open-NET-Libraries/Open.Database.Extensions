@@ -17,14 +17,11 @@ public class Basic
 			return conn;
 		});
 
-
 		Assert.Throws<ArgumentNullException>(() => factory.Command(null));
 		Assert.Throws<ArgumentException>(() => factory.Command(string.Empty));
 	}
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Compile test.")]
 	static async Task AmbiguityValidation(IDbCommand command)
-	{
-		await command.Connection.EnsureOpenAsync();
-	}
+		=> await command.Connection.EnsureOpenAsync();
 }

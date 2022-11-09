@@ -14,7 +14,7 @@
 		<PackageTags>ado;ado extensions;dataflow;data;database</PackageTags>
 		<RepositoryType>git</RepositoryType>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>7.1.0</Version>
+		<Version>7.2.0</Version>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -28,7 +28,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-		<PackageReference Include="System.Threading.Tasks.Dataflow" Version="6.*" />
+		<PackageReference Include="System.Threading.Tasks.Dataflow" Version="7.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -66,7 +66,6 @@ public static partial class CommandExtensions
 		string name,
 		double value) => AddParameter(target, name, value, DbType.Double);
 
-
 	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
