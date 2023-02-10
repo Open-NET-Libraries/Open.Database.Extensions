@@ -255,14 +255,14 @@ public class Transformer<T>
 	}
 
 #if NETSTANDARD2_1
-    /// <param name="reader">The reader to read from.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <inheritdoc cref="ResultsBuffered(IDataReader, bool)"/>
-    internal IAsyncEnumerable<T> ResultsAsync(DbDataReader reader, CancellationToken cancellationToken)
-    {
+	/// <param name="reader">The reader to read from.</param>
+	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <inheritdoc cref="ResultsBuffered(IDataReader, bool)"/>
+	internal IAsyncEnumerable<T> ResultsAsync(DbDataReader reader, CancellationToken cancellationToken)
+	{
 		return reader is null
-            ? throw new ArgumentNullException(nameof(reader))
-            : ResultsAsyncCore(reader, cancellationToken);
+			? throw new ArgumentNullException(nameof(reader))
+			: ResultsAsyncCore(reader, cancellationToken);
 
 		async IAsyncEnumerable<T> ResultsAsyncCore(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{

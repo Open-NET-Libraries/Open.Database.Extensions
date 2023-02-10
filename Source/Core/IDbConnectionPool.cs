@@ -19,24 +19,24 @@ public interface IDbConnectionPool
 	/// <returns>An <see cref="IDbConnection"/>.</returns>
 	IDbConnection Take();
 
-    /// <summary>
-    /// Gives the connection to the pool.
-    /// Depending on implementation,
+	/// <summary>
+	/// Gives the connection to the pool.
+	/// Depending on implementation,
 	/// the pool could be full,
 	/// and the connection disposed of immediately.
-    /// </summary>
-    /// <param name="connection">The connection to be received by the pool.</param>
-    void Give(IDbConnection connection);
+	/// </summary>
+	/// <param name="connection">The connection to be received by the pool.</param>
+	void Give(IDbConnection connection);
 }
 
 /// <inheritdoc />
 /// <typeparam name="TConnection">The actual connection type.</typeparam>
 public interface IDbConnectionPool<out TConnection> : IDbConnectionPool
-    where TConnection : IDbConnection
+	where TConnection : IDbConnection
 {
-    /// <inheritdoc />
-    /// <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
-    new TConnection Take();
+	/// <inheritdoc />
+	/// <returns>An connection of type <typeparamref name="TConnection"/>.</returns>
+	new TConnection Take();
 }
 
 /// <summary>
@@ -44,30 +44,30 @@ public interface IDbConnectionPool<out TConnection> : IDbConnectionPool
 /// </summary>
 public static class ConnectionPoolExtensions
 {
-    class GenericPool : IDbConnectionPool<IDbConnection>
-    {
-        private readonly IDbConnectionPool _source;
+	class GenericPool : IDbConnectionPool<IDbConnection>
+	{
+		private readonly IDbConnectionPool _source;
 
-        public GenericPool(IDbConnectionPool source)
-        {
-            _source = source ?? throw new ArgumentNullException(nameof(source));
-        }
+		public GenericPool(IDbConnectionPool source)
+		{
+			_source = source ?? throw new ArgumentNullException(nameof(source));
+		}
 
-        public IDbConnection Take()
-            => _source.Take();
+		public IDbConnection Take()
+			=> _source.Take();
 
-        IDbConnection IDbConnectionPool.Take()
-            => _source.Take();
+		IDbConnection IDbConnectionPool.Take()
+			=> _source.Take();
 
-        public void Give(IDbConnection connection)
-            => _source.Give(connection);
-    }
+		public void Give(IDbConnection connection)
+			=> _source.Give(connection);
+	}
 
-    /// <summary>
-    /// Converts a non-generic connection factory to a generic one.
-    /// </summary>
-    /// <param name="connectionPool">The source connection factory.</param>
-    /// <returns>The generic version of the source factory.</returns>
-    public static IDbConnectionPool<IDbConnection> AsGeneric(this IDbConnectionPool connectionPool)
-        => connectionPool is IDbConnectionPool<IDbConnection> p ? p : new GenericPool(connectionPool);
+	/// <summary>
+	/// Converts a non-generic connection factory to a generic one.
+	/// </summary>
+	/// <param name="connectionPool">The source connection factory.</param>
+	/// <returns>The generic version of the source factory.</returns>
+	public static IDbConnectionPool<IDbConnection> AsGeneric(this IDbConnectionPool connectionPool)
+		=> connectionPool is IDbConnectionPool<IDbConnection> p ? p : new GenericPool(connectionPool);
 }
