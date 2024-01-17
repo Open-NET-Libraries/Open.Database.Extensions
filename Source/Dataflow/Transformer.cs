@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-
-namespace Open.Database.Extensions.Dataflow;
+﻿namespace Open.Database.Extensions.Dataflow;
 
 /// <inheritdoc />
 internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)

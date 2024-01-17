@@ -1,15 +1,4 @@
-﻿using Open.ChannelExtensions;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for writing data to a channel.
@@ -149,7 +138,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
-		if(command.Connection is null) throw new InvalidOperationException("Command has no connection.");
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))

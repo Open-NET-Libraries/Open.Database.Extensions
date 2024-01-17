@@ -1,8 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Diagnostics.Contracts;
-
-namespace Open.Database.Extensions.Core;
+﻿namespace Open.Database.Extensions.Core;
 
 /// <summary>
 /// Simplifies handling connections.

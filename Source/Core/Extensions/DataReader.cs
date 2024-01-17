@@ -1,15 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-#if NETSTANDARD2_0
+﻿#if NETSTANDARD2_0
 #else
 using System.Runtime.CompilerServices;
 #endif

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Diagnostics.Contracts;
-using System.Threading.Channels;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 public static partial class ChannelDbExtensions
 {

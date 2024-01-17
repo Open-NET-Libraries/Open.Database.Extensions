@@ -1,9 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Diagnostics.Contracts;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for acquiring and operating on different connection factories.

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Data;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Common interface for creating a connection.  Can easily be used with dependency injection.

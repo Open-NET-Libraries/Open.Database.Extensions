@@ -1,7 +1,4 @@
-﻿using System;
-using System.Data;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// A unifying common interface for creating/managing connections. Can easily be

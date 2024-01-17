@@ -1,5 +1,4 @@
-﻿using System;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 // ReSharper disable UnusedMember.Global
 
 namespace Open.Database.Extensions;

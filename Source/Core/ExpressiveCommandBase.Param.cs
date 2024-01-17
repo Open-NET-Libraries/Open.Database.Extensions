@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 		where TConnection : class, IDbConnection

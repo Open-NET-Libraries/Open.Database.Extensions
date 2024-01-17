@@ -1,11 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading;
-using System.Threading.Tasks.Dataflow;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for pipelining data with Dataflow blocks.
