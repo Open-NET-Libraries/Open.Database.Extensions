@@ -1,14 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading;
+﻿using System.Reflection;
 
 namespace Open.Database.Extensions.Core;
 
@@ -29,7 +19,7 @@ public class Transformer<T>
 	/// Buffers for transforming.
 	/// </summary>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "<Pending>")]
-	protected internal static readonly ArrayPool<object?> LocalPool = ArrayPool<object?>.Create(1024, MaxArrayBuffer);
+	protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
 
 	/// <summary>
 	/// The type of <typeparamref name="T"/>.
@@ -137,8 +127,8 @@ public class Transformer<T>
 		/// </summary>
 		public Transformer<T> Transformer { get; }
 
-		ImmutableArray<string> _names = ImmutableArray<string>.Empty;
-		Action<T, object?>?[] _propertySetters = Array.Empty<Action<T, object?>?>();
+		ImmutableArray<string> _names = [];
+		Action<T, object?>?[] _propertySetters = [];
 
 		/// <summary>
 		/// The resultant transform function.
@@ -178,7 +168,7 @@ public class Transformer<T>
 	/// <param name="arrayPool">The array pool to return the buffers to.</param>
 	/// <param name="clearArrays">Indicates whether the contents of the buffers should be cleared before reuse.</param>
 	/// <returns>A dequeuing enumerable of the transformed results.</returns>
-	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object?[]>> results, ArrayPool<object?> arrayPool, bool clearArrays = false)
+	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results, ArrayPool<object> arrayPool, bool clearArrays = false)
 	{
 		if (results is null) throw new ArgumentNullException(nameof(results));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -254,7 +244,8 @@ public class Transformer<T>
 			LocalPool);
 	}
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_0
+#else
 	/// <param name="reader">The reader to read from.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <inheritdoc cref="ResultsBuffered(IDataReader, bool)"/>
@@ -270,7 +261,9 @@ public class Transformer<T>
 			var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
 			var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
 
+#pragma warning disable ConfigureAwaitEnforcer // ConfigureAwaitEnforcer
 			await foreach (var a in reader.AsAsyncEnumerable(columns.Select(m => m.Ordinal), LocalPool, cancellationToken))
+#pragma warning restore ConfigureAwaitEnforcer // ConfigureAwaitEnforcer
 			{
 				try
 				{
@@ -298,10 +291,10 @@ public class Transformer<T>
 
 		var columnCount = table.Columns.Count;
 		var columns = table.Columns.AsEnumerable();
-		var results = new QueryResult<Queue<object?[]>>(
+		var results = new QueryResult<Queue<object[]>>(
 			columns.Select(c => c.Ordinal),
 			columns.Select(c => c.ColumnName),
-			new Queue<object?[]>(table.Rows.AsEnumerable().Select(r =>
+			new Queue<object[]>(table.Rows.AsEnumerable().Select(r =>
 			{
 				var a = LocalPool.Rent(columnCount);
 				for (var i = 0; i < columnCount; i++) a[i] = r[i];

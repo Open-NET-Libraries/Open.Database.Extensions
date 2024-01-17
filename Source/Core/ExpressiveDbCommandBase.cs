@@ -1,13 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// An base class for executing commands on a database using best practices and simplified expressive syntax.
@@ -125,8 +116,8 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// Calls ExecuteScalarAsync on the underlying command.
 	/// </summary>
 	/// <returns>The value returned from the method.</returns>
-	public ValueTask<object> ExecuteScalarAsync()
-		=> ExecuteAsync(command => new ValueTask<object>(command.ExecuteScalarAsync(CancellationToken)));
+	public ValueTask<object?> ExecuteScalarAsync()
+		=> ExecuteAsync(command => new ValueTask<object?>(command.ExecuteScalarAsync(CancellationToken)));
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.
@@ -134,7 +125,7 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <param name="transform">The transform function for the result.</param>
 	/// <returns>The value returned from the method.</returns>
-	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object, T> transform)
+	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object?, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
@@ -148,7 +139,7 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <returns>The value returned from the method.</returns>
 	public async ValueTask<T> ExecuteScalarAsync<T>()
-		=> (T)await ExecuteScalarAsync().ConfigureAwait(false);
+		=> (T)(await ExecuteScalarAsync().ConfigureAwait(false))!;
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.
@@ -156,7 +147,7 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <param name="transform">The transform function (task) for the result.</param>
 	/// <returns>The value returned from the method.</returns>
-	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object, ValueTask<T>> transform)
+	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object?, ValueTask<T>> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Data;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// A unifying common interface for creating/managing connections. Can easily be
@@ -44,14 +41,10 @@ public interface IDbConnectionPool<out TConnection> : IDbConnectionPool
 /// </summary>
 public static class ConnectionPoolExtensions
 {
-	class GenericPool : IDbConnectionPool<IDbConnection>
+	class GenericPool(IDbConnectionPool source) : IDbConnectionPool<IDbConnection>
 	{
-		private readonly IDbConnectionPool _source;
-
-		public GenericPool(IDbConnectionPool source)
-		{
-			_source = source ?? throw new ArgumentNullException(nameof(source));
-		}
+		private readonly IDbConnectionPool _source
+			= source ?? throw new ArgumentNullException(nameof(source));
 
 		public IDbConnection Take()
 			=> _source.Take();

@@ -1,20 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for retrieving data from a command using best practices.
 /// </summary>
 public static partial class CommandExtensions
 {
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static ConnectionState EnsureOpen(this IDbCommand command)
+	{
+#if DEBUG
+		if (command.Connection is null) throw new InvalidOperationException("Cannot execute a command with a null connection.");
+#endif
+		return command.Connection!.EnsureOpen();
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static ValueTask<ConnectionState> EnsureOpenAsync(this IDbCommand command, CancellationToken cancellationToken)
+	{
+#if DEBUG
+		if (command.Connection is null) throw new ArgumentException("Cannot execute a command with a null connection.");
+#endif
+		return command.Connection!.EnsureOpenAsync(cancellationToken);
+	}
+
 	/// <summary>
 	/// Iterates all records using an <see cref="IDataReader"/> and returns the desired results as a list.
 	/// </summary>
@@ -31,7 +39,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.Select(transform).ToList();
@@ -53,13 +61,14 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-#if NETSTANDARD2_1
-		await using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
 #else
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+		await
 #endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+
 		return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -90,14 +99,15 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 
-#if NETSTANDARD2_1
-		await using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
 #else
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+		await
 #endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+
 		if (useReadAsync) return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 
 		var r = reader.ToList(transform, cancellationToken);
@@ -132,7 +142,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.Select(transform).ToArray();
@@ -149,7 +159,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.Select(transform).ToImmutableArray();
@@ -170,7 +180,7 @@ public static partial class CommandExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.ToDataTable();
@@ -188,7 +198,7 @@ public static partial class CommandExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.ToDataTables();
@@ -206,7 +216,7 @@ public static partial class CommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		handler(reader);
@@ -227,7 +237,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return transform(reader);
@@ -248,7 +258,7 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 		return command is DbCommand c
-			? await c.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true)
+			? await c.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false)
 			: command.ExecuteReader(behavior);
 	}
 
@@ -268,9 +278,13 @@ public static partial class CommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		handler(reader);
 	}
 
@@ -293,11 +307,11 @@ public static partial class CommandExtensions
 
 		if (command is DbCommand c)
 		{
-			await c.ExecuteReaderAsync(reader => handler(reader), behavior, cancellationToken).ConfigureAwait(true);
+			await c.ExecuteReaderAsync(reader => handler(reader), behavior, cancellationToken).ConfigureAwait(false);
 			return;
 		}
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		await handler(reader).ConfigureAwait(false);
@@ -317,9 +331,13 @@ public static partial class CommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await handler(reader).ConfigureAwait(false);
 	}
 
@@ -341,9 +359,13 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		return transform(reader);
 	}
 
@@ -367,7 +389,7 @@ public static partial class CommandExtensions
 
 		static async ValueTask<T> ExecuteReaderAsyncCore(IDbCommand command, Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior)
 		{
-			var state = command.Connection.EnsureOpen();
+			var state = command.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
 			return await transform(reader).ConfigureAwait(false);
@@ -384,9 +406,13 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		return await transform(reader).ConfigureAwait(false);
 	}
 
@@ -419,7 +445,7 @@ public static partial class CommandExtensions
 		if (selector is null) throw new ArgumentNullException(nameof(selector));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return selector(reader.Select(transform));
@@ -440,7 +466,7 @@ public static partial class CommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		reader.ForEach(handler);
@@ -463,7 +489,7 @@ public static partial class CommandExtensions
 
 		static IEnumerable<T> IterateReaderInternalCore(IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 		{
-			var state = command.Connection.EnsureOpen();
+			var state = command.EnsureOpen();
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = command.ExecuteReader(behavior);
 			while (reader.Read())
@@ -485,7 +511,7 @@ public static partial class CommandExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		reader.IterateWhile(predicate);
@@ -511,9 +537,13 @@ public static partial class CommandExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await reader.ForEachAsync(handler, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -536,9 +566,13 @@ public static partial class CommandExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await reader.ForEachAsync(handler, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -563,9 +597,13 @@ public static partial class CommandExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		var state = await command.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		var state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(true);
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using var reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await reader.IterateWhileAsync(predicate, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -584,7 +622,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow);
 		return reader.Select(transform).First();
@@ -592,13 +630,13 @@ public static partial class CommandExtensions
 
 	/// <remarks>Returns <c>default(T)</c> if thre are no results.</remarks>
 	/// <inheritdoc cref="First{T}(IDbCommand, Func{IDataRecord, T}, CommandBehavior)"/>
-	public static T FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+	public static T? FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior | CommandBehavior.SingleRow);
 		return reader.Select(transform).FirstOrDefault();
@@ -612,7 +650,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.Select(transform).Single();
@@ -623,13 +661,13 @@ public static partial class CommandExtensions
 	/// Throws an <see cref="InvalidOperationException"/> if there is more than one result.
 	/// </remarks>
 	/// <inheritdoc cref="FirstOrDefault{T}(IDbCommand, Func{IDataRecord, T}, CommandBehavior)"/>
-	public static T SingleOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+	public static T? SingleOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.Select(transform).SingleOrDefault();
@@ -650,7 +688,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		return reader.Select(transform).Take(count).ToList();
@@ -671,7 +709,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		while (0 < count--) reader.Read();
@@ -694,7 +732,7 @@ public static partial class CommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior);
 		while (0 < skip--) reader.Read();
@@ -722,7 +760,7 @@ public static partial class CommandExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var state = command.Connection.EnsureOpen();
+		var state = command.EnsureOpen();
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 		using var reader = command.ExecuteReader(behavior | CommandBehavior.SingleResult);
 		return reader.FirstOrdinalResults<T0>();

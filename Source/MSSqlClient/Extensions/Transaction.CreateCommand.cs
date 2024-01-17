@@ -1,4 +1,7 @@
-﻿namespace Open.Database.Extensions;
+﻿// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
+
+namespace Open.Database.Extensions;
 
 public static partial class SqlTransactionExtensions
 {

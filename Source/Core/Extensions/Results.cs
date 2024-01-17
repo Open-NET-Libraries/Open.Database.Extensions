@@ -1,13 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 public static partial class CoreExtensions
 {
@@ -135,7 +126,9 @@ public static partial class CoreExtensions
 	public static IEnumerable<T> Results<T>(this IDbCommand command, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
 		where T : new()
 		=> Results<T>(command, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
-#if NETSTANDARD2_1
+
+#if NETSTANDARD2_0
+#else
 	/// <summary>
 	/// Asynchronously iterates each record and attempts to map the fields to type T.
 	/// </summary>
@@ -205,7 +198,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new System.ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(true))
+		if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
 			return Enumerable.Empty<T>(); // else readStarted = true;
 
 		var x = new Transformer<T>(fieldMappingOverrides);

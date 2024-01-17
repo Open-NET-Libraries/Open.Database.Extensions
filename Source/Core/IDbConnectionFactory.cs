@@ -1,7 +1,4 @@
-﻿using System;
-using System.Data;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Common interface for creating a connection.  Can easily be used with dependency injection.
@@ -30,14 +27,10 @@ public interface IDbConnectionFactory<out TConnection> : IDbConnectionFactory
 /// </summary>
 public static class DbConnectionFactoryExtensions
 {
-	class PoolFromFactory : IDbConnectionPool
+	class PoolFromFactory(IDbConnectionFactory connectionFactory) : IDbConnectionPool
 	{
-		private readonly IDbConnectionFactory _connectionFactory;
-
-		public PoolFromFactory(IDbConnectionFactory connectionFactory)
-		{
-			_connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
-		}
+		private readonly IDbConnectionFactory _connectionFactory
+			= connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
 
 		public IDbConnection Take()
 			=> _connectionFactory.Create();
@@ -46,15 +39,11 @@ public static class DbConnectionFactoryExtensions
 			=> connection.Dispose();
 	}
 
-	class PoolFromFactory<TConnection> : IDbConnectionPool<TConnection>
+	class PoolFromFactory<TConnection>(IDbConnectionFactory<TConnection> connectionFactory) : IDbConnectionPool<TConnection>
 		where TConnection : IDbConnection
 	{
-		private readonly IDbConnectionFactory<TConnection> _connectionFactory;
-
-		public PoolFromFactory(IDbConnectionFactory<TConnection> connectionFactory)
-		{
-			_connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
-		}
+		private readonly IDbConnectionFactory<TConnection> _connectionFactory
+			= connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
 
 		public TConnection Take()
 			=> _connectionFactory.Create();

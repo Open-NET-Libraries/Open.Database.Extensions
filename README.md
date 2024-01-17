@@ -15,6 +15,13 @@ The provided expressive command classes allow for an expressive means to append 
 
 Extensions are provided to create commands from connection factories.
 
+## 8.0 Release Notes
+
+  - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
+  - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
+  - .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
+  - Improved nullable integrity.
+
 ### Example
 
 ```cs

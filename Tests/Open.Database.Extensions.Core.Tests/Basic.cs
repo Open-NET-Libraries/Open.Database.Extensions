@@ -22,6 +22,7 @@ public class Basic
 	}
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Compile test.")]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("ConfigureAwait", "ConfigureAwaitEnforcer:ConfigureAwaitEnforcer", Justification = "<Pending>")]
 	static async Task AmbiguityValidation(IDbCommand command)
 		=> await command.Connection.EnsureOpenAsync();
 }

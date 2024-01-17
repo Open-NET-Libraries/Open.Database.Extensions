@@ -1,14 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Base class for developing expressive commands.
@@ -63,7 +53,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		Contract.EndContractBlock();
 
 		Type = type;
-		Params = @params?.ToList() ?? new List<Param>();
+		Params = @params?.ToList() ?? [];
 		Timeout = CommandTimeout.DEFAULT_SECONDS;
 	}
 
@@ -123,7 +113,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 		: this(
-			(TConnection)(transaction ?? throw new ArgumentNullException(nameof(transaction))).Connection,
+			(TConnection)(transaction ?? throw new ArgumentNullException(nameof(transaction))).Connection!,
 			transaction, type, command, @params)
 	{
 	}
@@ -484,7 +474,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var cmd = PrepareCommand(conn);
-			await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(true);
+			await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(false);
 		});
 
 		ValueTask ExecuteReaderAsyncCore(IDataReader reader)
@@ -502,7 +492,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var cmd = PrepareCommand(conn);
-			return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(true);
+			return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(false);
 		});
 
 		ValueTask<T> ExecuteReaderAsyncCore(IDataReader reader)
@@ -516,7 +506,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var cmd = PrepareCommand(conn);
-			await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(true);
+			await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(false);
 		});
 
 	/// <inheritdoc />
@@ -526,7 +516,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var cmd = PrepareCommand(conn);
-			return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(true);
+			return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(false);
 		});
 
 	void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
@@ -545,7 +535,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
 	/// <returns>The value from the return parameter.</returns>
-	public object ExecuteReturn()
+	public object? ExecuteReturn()
 		// Open MUST occur before command creation as some DbCommands require it.
 		=> ConnectionProvider.Open((conn, _) =>
 		{
@@ -560,13 +550,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </summary>
 	/// <returns>The value from the return parameter.</returns>
 	public T ExecuteReturn<T>()
-		=> (T)ExecuteReturn();
+		=> (T)ExecuteReturn()!;
 
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
 	/// <returns>The value from the return parameter.</returns>
-	public ValueTask<object> ExecuteReturnAsync()
+	public ValueTask<object?> ExecuteReturnAsync()
 	{
 		CancellationToken.ThrowIfCancellationRequested();
 
@@ -582,7 +572,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				cmd.ExecuteNonQuery();
 
 			return returnParameter.Value;
-		});
+		})!;
 	}
 
 	/// <summary>
@@ -590,7 +580,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </summary>
 	/// <returns>The value from the return parameter.</returns>
 	public async ValueTask<T> ExecuteReturnAsync<T>()
-		=> (T)await ExecuteReturnAsync().ConfigureAwait(false);
+		=> (T)(await ExecuteReturnAsync().ConfigureAwait(false))!;
 
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command.
@@ -603,7 +593,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Calls ExecuteScalar on the underlying command.
 	/// </summary>
 	/// <returns>The value returned from the method.</returns>
-	public object ExecuteScalar()
+	public object? ExecuteScalar()
 		=> Execute(command => command.ExecuteScalar());
 
 	/// <summary>
@@ -612,14 +602,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <returns>The value returned from the method.</returns>
 	public T ExecuteScalar<T>()
-		=> (T)ExecuteScalar();
+		=> (T)ExecuteScalar()!;
 
 	/// <summary>
 	/// Calls ExecuteScalar on the underlying command.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <returns>The value returned from the method.</returns>
-	public T ExecuteScalar<T>(Func<object, T> transform)
+	public T ExecuteScalar<T>(Func<object?, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();

@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions.Core;
+﻿namespace Open.Database.Extensions.Core;
 
 /// <summary>
 /// A container for data reader results that also provides the column names

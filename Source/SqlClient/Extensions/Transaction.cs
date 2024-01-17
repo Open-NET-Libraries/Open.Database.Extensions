@@ -1,13 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Data.SqlClient;
-using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Tasks;
-// ReSharper disable UnusedMember.Global
-// ReSharper disable MemberCanBePrivate.Global
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 // NOTE: This is simply a copy/paste of th IDb and Db extensions but replacing types with their Sql versions.
 // Why?  To ensure the Sql types are propagated through the type flow.
@@ -136,7 +127,7 @@ public static partial class SqlTransactionExtensions
 		// Only await if needed...
 		if (connection.State != ConnectionState.Open)
 		{
-			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true); // If the task is cancelled, awaiting will throw.
+			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 

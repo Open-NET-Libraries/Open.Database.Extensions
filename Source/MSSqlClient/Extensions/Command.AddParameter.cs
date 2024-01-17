@@ -1,4 +1,7 @@
-﻿namespace Open.Database.Extensions;
+﻿// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
+
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// SqlClient extensions for building a command and retrieving data using best practices.

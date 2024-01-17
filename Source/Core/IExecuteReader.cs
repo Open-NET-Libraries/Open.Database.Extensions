@@ -1,9 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Common interface used for expressive commands when dealing with a data reader.
@@ -93,6 +88,4 @@ public interface IExecuteReaderAsync : IExecuteReader
 
 /// <inheritdoc />
 public interface IExecuteReaderAsync<TReader> : IExecuteReaderAsync, IExecuteReader<TReader>
-	where TReader : IDataReader
-{
-}
+	where TReader : IDataReader;

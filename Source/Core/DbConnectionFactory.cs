@@ -1,8 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Diagnostics.Contracts;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// DbConnection factory implementation that accepts a factory function.

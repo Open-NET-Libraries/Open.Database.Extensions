@@ -1,31 +1,15 @@
-﻿using Open.ChannelExtensions;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
+﻿namespace Open.Database.Extensions;
 
-namespace Open.Database.Extensions;
-
-internal class Transformer<T> : Core.Transformer<T>
+/// <summary>Constructs a <see cref="Transformer{T}"/>.</summary>
+/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+	: Core.Transformer<T>(fieldMappingOverrides)
 	where T : new()
 {
-	/// <summary>Constructs a <see cref="Transformer{T}"/>.</summary>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-	public Transformer(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
-		: base(fieldMappingOverrides)
-	{
-	}
-
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	/// <param name="fieldMappingOverrides"></param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
 		=> new(fieldMappingOverrides);
 
@@ -49,7 +33,7 @@ internal class Transformer<T> : Core.Transformer<T>
 		var processor = new Processor(this, names);
 		var transform = processor.Transform;
 
-		var channel = ChannelDbExtensions.CreateChannel<object?[]>(MaxArrayBuffer, true);
+		var channel = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
 		var writer = channel.Writer;
 
 		var piped = channel
@@ -85,7 +69,8 @@ internal class Transformer<T> : Core.Transformer<T>
 			.ToChannel(writer, false, LocalPool, cancellationToken).ConfigureAwait(false);
 	}
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_0
+#else
 	/// <summary>
 	/// Transforms the results from the reader by first buffering the results and if/when the buffer size is reached, the results are transformed to a channel for reading.
 	/// </summary>
@@ -106,7 +91,7 @@ internal class Transformer<T> : Core.Transformer<T>
 		var processor = new Processor(this, names);
 		var transform = processor.Transform;
 
-		var channel = ChannelDbExtensions.CreateChannel<object?[]>(MaxArrayBuffer, true);
+		var channel = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
 		var writer = channel.Writer;
 
 		var piped = channel

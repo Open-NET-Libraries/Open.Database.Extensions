@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// An abstraction for executing commands on a database using best practices and simplified expressive syntax.

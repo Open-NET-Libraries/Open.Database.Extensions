@@ -1,14 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for retrieving data from a command using best practices.
@@ -163,7 +153,7 @@ public static class IExecuteReaderExtensions
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="transform">The transform function to process each IDataRecord.</param>
 	/// <returns>The value from the transform.</returns>
-	public static T FirstOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+	public static T? FirstOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -199,7 +189,7 @@ public static class IExecuteReaderExtensions
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="transform">The transform function to process each IDataRecord.</param>
 	/// <returns>The value from the transform.</returns>
-	public static T SingleOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
+	public static T? SingleOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -225,11 +215,9 @@ public static class IExecuteReaderExtensions
 		if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 		Contract.EndContractBlock();
 
-		return count == 0
-			? new List<T>()
-			: command.ExecuteReader(
-				reader => reader.Select(transform).Take(count).ToList(),
-				CommandBehavior.SingleResult);
+		return count == 0 ? [] : command.ExecuteReader(
+			reader => reader.Select(transform).Take(count).ToList(),
+			CommandBehavior.SingleResult);
 	}
 
 	/// <summary>
@@ -272,7 +260,7 @@ public static class IExecuteReaderExtensions
 		Contract.EndContractBlock();
 
 		return take == 0
-			? new List<T>()
+			? []
 			: command.ExecuteReader(
 				reader => reader.Select(transform).Skip(skip).Take(take).ToList(),
 				CommandBehavior.SingleResult);

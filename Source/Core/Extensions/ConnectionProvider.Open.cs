@@ -1,10 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for acquiring and operating on different connection factories.
@@ -202,7 +196,7 @@ public static partial class ConnectionExtensions
 
 		using var conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		return await action(conn).ConfigureAwait(false);
 	}
 
@@ -225,7 +219,7 @@ public static partial class ConnectionExtensions
 
 		using var conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		await action(conn).ConfigureAwait(false);
 	}
 
@@ -245,7 +239,7 @@ public static partial class ConnectionExtensions
 
 		using var conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		return await action(conn).ConfigureAwait(false);
 	}
 
@@ -262,7 +256,7 @@ public static partial class ConnectionExtensions
 
 		using var conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		await action(conn).ConfigureAwait(false);
 	}
 
@@ -278,7 +272,7 @@ public static partial class ConnectionExtensions
 		try
 		{
 			return await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
+				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
 				.ConfigureAwait(false);
 		}
 		finally
@@ -305,7 +299,7 @@ public static partial class ConnectionExtensions
 		try
 		{
 			await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
+				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
 				.ConfigureAwait(false);
 		}
 		finally
@@ -332,7 +326,7 @@ public static partial class ConnectionExtensions
 		try
 		{
 			return await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
+				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
 				.ConfigureAwait(false);
 		}
 		finally
@@ -354,7 +348,7 @@ public static partial class ConnectionExtensions
 		try
 		{
 			await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true))
+				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
 				.ConfigureAwait(false);
 		}
 		finally
@@ -386,7 +380,7 @@ public static partial class ConnectionExtensions
 
 		using var conn = connectionFactory();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		return await action(conn).ConfigureAwait(false);
 	}
 
@@ -403,7 +397,7 @@ public static partial class ConnectionExtensions
 
 		using var conn = connectionFactory();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(true);
+		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		await action(conn).ConfigureAwait(false);
 	}
 }

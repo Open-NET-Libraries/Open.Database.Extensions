@@ -1,13 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Channels;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
@@ -42,16 +33,16 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The channel reader containing the results.</returns>
-	public static ChannelReader<object?[]> AsChannel(this IDataReader reader,
+	public static ChannelReader<object[]> AsChannel(this IDataReader reader,
 		bool singleReader,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object?[]>(-1, singleReader);
+		var channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(reader, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -153,16 +144,16 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The channel reader containing the results.</returns>
-	public static ChannelReader<object?[]> AsChannel(this IDbCommand command,
+	public static ChannelReader<object[]> AsChannel(this IDbCommand command,
 		bool singleReader,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object?[]>(-1, singleReader);
+		var channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -261,15 +252,15 @@ public static partial class ChannelDbExtensions
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The channel reader containing the results.</returns>
-	public static ChannelReader<object?[]> AsChannel(this IExecuteReader command,
+	public static ChannelReader<object[]> AsChannel(this IExecuteReader command,
 		bool singleReader,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object?[]>(-1, singleReader);
+		var channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, arrayPool);
 		return channel.Reader;
 	}
@@ -336,7 +327,8 @@ public static partial class ChannelDbExtensions
 		return channel.Reader;
 	}
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_0
+#else
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
 	/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
@@ -367,16 +359,16 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The channel reader containing the results.</returns>
-	public static ChannelReader<object?[]> AsChannelAsync(this DbDataReader reader,
+	public static ChannelReader<object[]> AsChannelAsync(this DbDataReader reader,
 		bool singleReader,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object?[]>(-1, singleReader);
+		var channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(reader, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -478,16 +470,16 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The channel reader containing the results.</returns>
-	public static ChannelReader<object?[]> AsChannelAsync(this DbCommand command,
+	public static ChannelReader<object[]> AsChannelAsync(this DbCommand command,
 		bool singleReader,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object?[]>(-1, singleReader);
+		var channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -586,14 +578,14 @@ public static partial class ChannelDbExtensions
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The channel reader containing the results.</returns>
-	public static ChannelReader<object?[]> AsChannelAsync(this IExecuteReaderAsync command,
+	public static ChannelReader<object[]> AsChannelAsync(this IExecuteReaderAsync command,
 		bool singleReader,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object?[]>(-1, singleReader);
+		var channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, arrayPool);
 		return channel.Reader;
 	}

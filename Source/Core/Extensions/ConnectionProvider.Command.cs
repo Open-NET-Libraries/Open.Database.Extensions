@@ -1,8 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Data.Common;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for acquiring and operating on different connection factories.

@@ -1,15 +1,4 @@
-﻿using Open.ChannelExtensions;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for writing data to a channel.
@@ -50,9 +39,9 @@ public static partial class ChannelDbExtensions
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records processed.</returns>
 	public static ValueTask<long> ToChannel(this IDataReader reader,
-		ChannelWriter<object?[]> target,
+		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -149,6 +138,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -187,13 +177,14 @@ public static partial class ChannelDbExtensions
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToChannel(this IDbCommand command,
-		ChannelWriter<object?[]> target,
+		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -240,6 +231,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -288,6 +280,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -335,6 +328,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -412,9 +406,9 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToChannel(this IExecuteReader command,
-		ChannelWriter<object?[]> target,
+		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -573,7 +567,8 @@ public static partial class ChannelDbExtensions
 		}
 	}
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_0
+#else
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
 	/// </summary>
@@ -606,9 +601,9 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
-		ChannelWriter<object?[]> target,
+		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -702,6 +697,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -740,13 +736,14 @@ public static partial class ChannelDbExtensions
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToChannelAsync(this DbCommand command,
-		ChannelWriter<object?[]> target,
+		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -794,6 +791,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -839,6 +837,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -886,6 +885,7 @@ public static partial class ChannelDbExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -965,9 +965,9 @@ public static partial class ChannelDbExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
-		ChannelWriter<object?[]> target,
+		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
