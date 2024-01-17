@@ -17,8 +17,7 @@ Extensions are provided to create commands from connection factories.
 
 ## 8.0 Release Notes
 
-  - All `.ConfigureAwait(false)` are now `.ConfigureAwait(false)` as they should be. 
-The caller will need to `.ConfigureAwait(false)` if they need to resume on the calling context.
+  - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
   - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
   - .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
   - Improved nullable integrity.
