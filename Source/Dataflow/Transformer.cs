@@ -10,19 +10,15 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions.Dataflow;
 
-internal class Transformer<T> : Core.Transformer<T>
-		where T : new()
+/// <inheritdoc />
+internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+	: Core.Transformer<T>(fieldMappingOverrides)
+	where T : new()
 {
-	/// <inheritdoc />
-	public Transformer(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
-		: base(fieldMappingOverrides)
-	{
-	}
-
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	/// <param name="fieldMappingOverrides"></param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
 		=> new(fieldMappingOverrides);
 
@@ -52,7 +48,7 @@ internal class Transformer<T> : Core.Transformer<T>
 		var transform = processor.Transform;
 		var columnCount = columns.Length;
 
-		var transformBlock = new TransformBlock<object?[], T>(
+		var transformBlock = new TransformBlock<object[], T>(
 			a =>
 			{
 				try
@@ -116,7 +112,7 @@ internal class Transformer<T> : Core.Transformer<T>
 		var transform = processor.Transform;
 		var columnCount = columns.Length;
 
-		var transformBlock = new TransformBlock<object?[], T>(
+		var transformBlock = new TransformBlock<object[], T>(
 			a =>
 			{
 				try

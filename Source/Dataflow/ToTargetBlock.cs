@@ -57,9 +57,9 @@ public static partial class DataflowExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The number of records processed.</returns>
 	public static long ToTargetBlock(this IDataReader reader,
-		ITargetBlock<object?[]> target,
+		ITargetBlock<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -202,9 +202,9 @@ public static partial class DataflowExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The number of records processed.</returns>
 	public static long ToTargetBlock(this IDbCommand command,
-		ITargetBlock<object?[]> target,
+		ITargetBlock<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -410,9 +410,9 @@ public static partial class DataflowExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The number of records processed.</returns>
 	public static long ToTargetBlock(this IExecuteReader command,
-		ITargetBlock<object?[]> target,
+		ITargetBlock<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -628,9 +628,9 @@ public static partial class DataflowExtensions
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync(this IDataReader reader,
-		ITargetBlock<object?[]> target,
+		ITargetBlock<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -780,6 +780,7 @@ public static partial class DataflowExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -818,14 +819,15 @@ public static partial class DataflowExtensions
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync(this IDbCommand command,
-		ITargetBlock<object?[]> target,
+		ITargetBlock<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool,
+		ArrayPool<object> arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -872,6 +874,7 @@ public static partial class DataflowExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -917,6 +920,7 @@ public static partial class DataflowExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -925,7 +929,7 @@ public static partial class DataflowExtensions
 		try
 		{
 			var dbc = command as DbCommand;
-			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 			var behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
@@ -968,6 +972,7 @@ public static partial class DataflowExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
@@ -976,7 +981,7 @@ public static partial class DataflowExtensions
 		try
 		{
 			var dbc = command as DbCommand;
-			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 			var behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
@@ -1048,9 +1053,9 @@ public static partial class DataflowExtensions
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <returns>The number of records processed.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync(this IExecuteReader command,
-		ITargetBlock<object?[]> target,
+		ITargetBlock<object[]> target,
 		bool complete,
-		ArrayPool<object?> arrayPool)
+		ArrayPool<object> arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));

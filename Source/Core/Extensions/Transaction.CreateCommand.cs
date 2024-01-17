@@ -1,9 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for database transactions.
@@ -26,6 +21,7 @@ public static partial class TransactionExtensions
 		if (transaction is null) throw new ArgumentNullException(nameof(transaction));
 		if (commandText is null) throw new ArgumentNullException(nameof(commandText));
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
+		if (transaction.Connection is null) throw new InvalidOperationException("Transaction has no connection.");
 		Contract.EndContractBlock();
 
 		var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
@@ -69,6 +65,7 @@ public static partial class TransactionExtensions
 		if (transaction is null) throw new ArgumentNullException(nameof(transaction));
 		if (commandText is null) throw new ArgumentNullException(nameof(commandText));
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
+		if (transaction.Connection is null) throw new InvalidOperationException("Transaction has no connection.");
 		Contract.EndContractBlock();
 
 		var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);

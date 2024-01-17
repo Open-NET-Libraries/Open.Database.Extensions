@@ -93,6 +93,4 @@ public interface IExecuteReaderAsync : IExecuteReader
 
 /// <inheritdoc />
 public interface IExecuteReaderAsync<TReader> : IExecuteReaderAsync, IExecuteReader<TReader>
-	where TReader : IDataReader
-{
-}
+	where TReader : IDataReader;

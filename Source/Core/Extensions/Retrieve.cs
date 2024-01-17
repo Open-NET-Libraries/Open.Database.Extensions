@@ -26,17 +26,17 @@ public static partial class CoreExtensions
 			new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted)));
 	}
 
-	internal static QueryResultQueue<object?[]> RetrieveInternal(
-		ArrayPool<object?> arrayPool,
+	internal static QueryResultQueue<object[]> RetrieveInternal(
+		ArrayPool<object> arrayPool,
 		IDataReader reader,
 		IEnumerable<int> ordinals,
 		IEnumerable<string>? columnNames = null,
 		bool readStarted = false)
 	{
 		var o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
-		return new QueryResultQueue<object?[]>(
+		return new QueryResultQueue<object[]>(
 			o, columnNames ?? reader.GetNames(o),
-			new Queue<object?[]>(reader.AsEnumerableInternal(o, readStarted, arrayPool)));
+			new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted, arrayPool)));
 	}
 
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
@@ -131,7 +131,7 @@ public static partial class CoreExtensions
 		var names = reader.GetNames(); // pull before first read.
 		var buffer = new Queue<object[]>();
 
-		while (useReadAsync ? await reader.ReadAsync(cancellationToken).ConfigureAwait(true) : (!cancellationToken.IsCancellationRequested && reader.Read()))
+		while (useReadAsync ? await reader.ReadAsync(cancellationToken).ConfigureAwait(false) : (!cancellationToken.IsCancellationRequested && reader.Read()))
 		{
 			var row = new object[fieldCount];
 			reader.GetValues(row);
@@ -158,16 +158,16 @@ public static partial class CoreExtensions
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0046:Convert to conditional expression", Justification = "<Pending>")]
-	static async ValueTask<QueryResultQueue<object?[]>> RetrieveAsyncInternal(ArrayPool<object?>? arrayPool, DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
+	static async ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(ArrayPool<object>? arrayPool, DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
 		var buffer
-			= new Queue<object?[]>();
+			= new Queue<object[]>();
 
 		var result
-			= new QueryResultQueue<object?[]>(
+			= new QueryResultQueue<object[]>(
 			   ordinals,
 			   columnNames ?? ordinals.Select(reader.GetName),
 			   buffer);
@@ -175,13 +175,13 @@ public static partial class CoreExtensions
 		var fieldCount = result.ColumnCount;
 		var o = result.Ordinals;
 
-		Func<IDataRecord, object?[]> handler = GetHandler(arrayPool, fieldCount, o);
+		Func<IDataRecord, object[]> handler = GetHandler(arrayPool, fieldCount, o);
 
 		if (readStarted)
 			buffer.Enqueue(handler(reader));
 
 		while (useReadAsync
-			? await reader.ReadAsync(cancellationToken).ConfigureAwait(true)
+			? await reader.ReadAsync(cancellationToken).ConfigureAwait(false)
 			: (!cancellationToken.IsCancellationRequested && reader.Read()))
 		{
 			buffer.Enqueue(handler(reader));
@@ -192,7 +192,7 @@ public static partial class CoreExtensions
 
 		return result;
 
-		static Func<IDataRecord, object?[]> GetHandler(ArrayPool<object?>? arrayPool, int fieldCount, ImmutableArray<int> o)
+		static Func<IDataRecord, object[]> GetHandler(ArrayPool<object>? arrayPool, int fieldCount, ImmutableArray<int> o)
 		{
 			if (arrayPool != null)
 			{

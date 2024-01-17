@@ -34,21 +34,18 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		public TDbType? Type { get; set; }
 
 		/// <inheritdoc />
-		public bool Equals(Param other)
+		public readonly bool Equals(Param other)
 			=> Name == other.Name
 			&& EqualityComparer<object>.Default.Equals(Value, other.Value)
 			&& EqualityComparer<TDbType?>.Default.Equals(Type, other.Type);
 
 		/// <inheritdoc />
-		public override bool Equals(object obj)
+		public override readonly bool Equals(object? obj)
 			=> obj is Param o && Equals(o);
 
 		/// <inheritdoc />
-#if NETSTANDARD2_1
-		public override int GetHashCode()
-			=> HashCode.Combine(Name, Value, Type);
-#else
-		public override int GetHashCode()
+#if NETSTANDARD2_0
+		public override readonly int GetHashCode()
 		{
 			var hashCode = 1477810893;
 			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
@@ -56,6 +53,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			hashCode = hashCode * -1521134295 + EqualityComparer<TDbType?>.Default.GetHashCode(Type);
 			return hashCode;
 		}
+#else
+		public override readonly int GetHashCode()
+			=> HashCode.Combine(Name, Value, Type);
 #endif
 
 		/// <summary>

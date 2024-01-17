@@ -24,7 +24,7 @@ public static partial class CoreExtensions
 		var exTarget = Expression.Parameter(targetType ?? throw new InvalidOperationException(), "t");
 		var exValue = Expression.Parameter(typeof(object), "p");
 		var methodInfo = propertyInfo.GetSetMethod();
-		var exBody = Expression.Call(exTarget, methodInfo,
+		var exBody = Expression.Call(exTarget, methodInfo!,
 		   Expression.Convert(exValue, propertyInfo.PropertyType));
 		var lambda = Expression.Lambda<Action<T, object?>>(exBody, exTarget, exValue);
 		var action = lambda.Compile();
@@ -185,12 +185,12 @@ public static partial class CoreExtensions
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();
 
-#if NETSTANDARD2_1
-		while (source.TryDequeue(out var a))
-			yield return a;
-#else
+#if NETSTANDARD2_0
 		while (source.Count != 0)
 			yield return source.Dequeue();
+#else
+		while (source.TryDequeue(out var a))
+			yield return a;
 #endif
 	}
 }

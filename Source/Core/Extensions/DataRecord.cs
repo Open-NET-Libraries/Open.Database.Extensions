@@ -1,12 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Diagnostics.Contracts;
-using System.Linq;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extension methods for IDataRecord access.
@@ -44,7 +36,7 @@ public static partial class DataRecordExtensions
 	/// <param name="minimumArrayLength">The minimum size of the resultant array.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <inheritdoc cref="GetValues(IDataRecord, int)"/>
-	public static object?[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object?> arrayPool)
+	public static object[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object> arrayPool)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -57,7 +49,7 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The reader to get column names from.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <inheritdoc cref="GetValues(IDataRecord, int)"/>
-	public static object?[] GetValues(this IDataRecord record, ArrayPool<object?> arrayPool)
+	public static object[] GetValues(this IDataRecord record, ArrayPool<object> arrayPool)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -164,7 +156,7 @@ public static partial class DataRecordExtensions
 	public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
 		if (columnNames is ICollection<string> cn && cn.Count == 0)
-			return Array.Empty<(string Name, int Ordinal)>();
+			return [];
 
 		try
 		{
@@ -178,7 +170,7 @@ public static partial class DataRecordExtensions
 			mismatch.ExceptWith(record.GetNames());
 
 			// Columns not mapped correctly.  Report all columns that are mismatched/missing.
-			throw new IndexOutOfRangeException($"Invalid columns: {string.Join(", ", mismatch.OrderBy(c => c).ToArray())}", ex);
+			throw new IndexOutOfRangeException($"Invalid columns: {string.Join(", ", mismatch.OrderBy(c => c))}", ex);
 		}
 	}
 
@@ -298,7 +290,7 @@ public static partial class DataRecordExtensions
 		Contract.EndContractBlock();
 
 		var count = ordinals.Count;
-		if (count == 0) return Array.Empty<object>();
+		if (count == 0) return [];
 
 		var values = new object[count];
 		for (var i = 0; i < count; i++)

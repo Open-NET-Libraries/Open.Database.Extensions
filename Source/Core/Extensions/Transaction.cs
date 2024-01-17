@@ -128,7 +128,7 @@ public static partial class TransactionExtensions
 		// Only await if needed...
 		if (connection.State != ConnectionState.Open)
 		{
-			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(true); // If the task is cancelled, awaiting will throw.
+			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false); // If the task is cancelled, awaiting will throw.
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 

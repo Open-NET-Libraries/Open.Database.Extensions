@@ -8,15 +8,11 @@ namespace Open.Database.Extensions.Core;
 /// Simplifies handling connections.
 /// </summary>
 /// <typeparam name="TConnection"></typeparam>
-internal class DbConnectionProvider<TConnection> : IDbConnectionPool<TConnection>
-		where TConnection : class, IDbConnection
+internal class DbConnectionProvider<TConnection>(TConnection connection)
+	: IDbConnectionPool<TConnection>
+	where TConnection : class, IDbConnection
 {
-	public DbConnectionProvider(TConnection connection)
-	{
-		Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-	}
-
-	private TConnection Connection { get; }
+	private TConnection Connection { get; } = connection ?? throw new ArgumentNullException(nameof(connection));
 
 	private ConnectionState? TakenConnectionState;
 
