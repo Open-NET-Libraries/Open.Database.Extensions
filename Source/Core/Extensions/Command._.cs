@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for retrieving data from a command using best practices.

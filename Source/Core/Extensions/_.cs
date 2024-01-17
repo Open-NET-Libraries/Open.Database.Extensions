@@ -1,5 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Open.Database.Extensions;

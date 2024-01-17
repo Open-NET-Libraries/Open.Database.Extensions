@@ -3,7 +3,6 @@
 /// <summary>
 /// Simplifies handling connections.
 /// </summary>
-/// <typeparam name="TConnection"></typeparam>
 internal class DbConnectionProvider<TConnection>(TConnection connection)
 	: IDbConnectionPool<TConnection>
 	where TConnection : class, IDbConnection

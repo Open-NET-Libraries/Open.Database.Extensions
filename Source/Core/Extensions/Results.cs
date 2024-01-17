@@ -1,6 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 public static partial class CoreExtensions
 {

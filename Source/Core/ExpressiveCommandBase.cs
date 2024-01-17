@@ -1,6 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Base class for developing expressive commands.
@@ -574,7 +572,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				cmd.ExecuteNonQuery();
 
 			return returnParameter.Value;
-		});
+		})!;
 	}
 
 	/// <summary>

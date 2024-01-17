@@ -1,6 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// An base class for executing commands on a database using best practices and simplified expressive syntax.

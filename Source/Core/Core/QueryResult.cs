@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace Open.Database.Extensions.Core;
+﻿namespace Open.Database.Extensions.Core;
 
 /// <summary>
 /// A container for data reader results that also provides the column names

@@ -1,4 +1,7 @@
-﻿namespace Open.Database.Extensions;
+﻿// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
+
+namespace Open.Database.Extensions;
 
 // NOTE: This is simply a copy/paste of th IDb and Db extensions but replacing types with their Sql versions.
 // Why?  To ensure the Sql types are propagated through the type flow.

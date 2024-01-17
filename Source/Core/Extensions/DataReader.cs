@@ -1,9 +1,4 @@
-﻿#if NETSTANDARD2_0
-#else
-using System.Runtime.CompilerServices;
-#endif
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extension methods for Data Readers.
