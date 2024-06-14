@@ -91,9 +91,10 @@ public static partial class DataRecordExtensions
 
 		var fieldCount = record.FieldCount;
 		var columnNames = ImmutableArray.CreateBuilder<string>(fieldCount);
+		columnNames.Count = fieldCount;
 		for (var i = 0; i < fieldCount; i++)
 			columnNames[i] = record.GetName(i);
-		return columnNames.ToImmutable();
+		return columnNames.MoveToImmutable();
 	}
 
 	/// <summary>
