@@ -12,7 +12,7 @@ public static partial class ConnectionExtensions
 		if (connection is null) throw new ArgumentNullException(nameof(connection));
 		Contract.EndContractBlock();
 
-		var state = connection.State;
+		ConnectionState state = connection.State;
 
 		if (state.HasFlag(ConnectionState.Broken))
 			connection.Close();
@@ -41,7 +41,7 @@ public static partial class ConnectionExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var state = connection.State;
+		ConnectionState state = connection.State;
 		if (state.HasFlag(ConnectionState.Broken))
 			connection.Close();
 

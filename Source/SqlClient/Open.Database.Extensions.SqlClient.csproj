@@ -1,49 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<RootNamespace>Open.Database.Extensions.SqlClient</RootNamespace>
-		<TargetFrameworks>netstandard2.0; netstandard2.1; net8.0</TargetFrameworks>
-		<LangVersion>latest</LangVersion>
-		<Nullable>enable</Nullable>
-		<Authors>electricessence</Authors>
-		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
 		<Description>Useful set of utilities and abstractions for simplifying modern SQL Client data-access operations and ensuring DI compatibility.</Description>
 		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<RepositoryType>git</RepositoryType>
-		<Version>8.0.1</Version>
-		<PackageReleaseNotes></PackageReleaseNotes>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<IncludeSymbols>true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<PackageIcon>logo.png</PackageIcon>
-		<AnalysisLevel>latest</AnalysisLevel>
-		<EnableNETAnalyzers>True</EnableNETAnalyzers>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="..\..\logo.png">
-			<Pack>True</Pack>
-			<PackagePath></PackagePath>
-		</None>
-		<None Include="..\..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
+		<PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Core\Open.Database.Extensions.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EditorConfigFiles Remove="D:\Users\essence\Development\- GitHub\- Open-NET-Libraries\Open.Database.Extensions\Source\SqlClient\.editorconfig" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="D:\Users\essence\Development\- GitHub\- Open-NET-Libraries\Open.Database.Extensions\Source\SqlClient\.editorconfig" />
 	</ItemGroup>
 
 </Project>

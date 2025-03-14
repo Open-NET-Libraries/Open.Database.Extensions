@@ -19,7 +19,7 @@ public static partial class CommandExtensions
 			throw new ArgumentException(ParameterNamesNotEmptyMessage, nameof(name));
 		Contract.EndContractBlock();
 
-		var c = target.CreateParameter();
+		IDbDataParameter c = target.CreateParameter();
 		c.ParameterName = name;
 		c.Value = value;
 		target.Parameters.Add(c);
@@ -96,7 +96,7 @@ public static partial class CommandExtensions
 		DbType type,
 		ParameterDirection direction = ParameterDirection.Input)
 	{
-		var p = target.AddParameterType(name, type);
+		IDbDataParameter p = target.AddParameterType(name, type);
 		p.Value = value;
 		p.Direction = direction;
 		return p;
@@ -120,7 +120,7 @@ public static partial class CommandExtensions
 			throw new ArgumentException(ParameterNamesNotEmptyMessage, nameof(name));
 		Contract.EndContractBlock();
 
-		var c = target.CreateParameter();
+		IDbDataParameter c = target.CreateParameter();
 		if (name != null) c.ParameterName = name;
 		c.DbType = type;
 		c.Direction = direction;
@@ -149,7 +149,7 @@ public static partial class CommandExtensions
 			throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var c = target.CreateParameter();
+		IDbDataParameter c = target.CreateParameter();
 		if (!string.IsNullOrWhiteSpace(name)) c.ParameterName = name;
 		c.Direction = ParameterDirection.ReturnValue;
 		target.Parameters.Add(c);

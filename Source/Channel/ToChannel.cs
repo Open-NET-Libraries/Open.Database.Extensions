@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions;
+﻿
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for writing data to a channel.
@@ -156,6 +157,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -201,6 +203,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -239,10 +242,10 @@ public static partial class ChannelDbExtensions
 
 		try
 		{
-			var state = command.Connection.EnsureOpen();
-			var behavior = CommandBehavior.SingleResult;
+			ConnectionState state = command.Connection.EnsureOpen();
+			CommandBehavior behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = command.ExecuteReader(behavior);
+			using IDataReader reader = command.ExecuteReader(behavior);
 			return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -252,6 +255,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -298,6 +302,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -346,6 +351,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -372,7 +378,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -386,6 +392,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -414,7 +421,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -428,6 +435,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -458,7 +466,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -472,6 +480,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -500,7 +509,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -514,6 +523,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -544,7 +554,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -558,6 +568,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -715,6 +726,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -761,6 +773,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -809,6 +822,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -855,6 +869,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -903,6 +918,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -929,7 +945,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -945,6 +961,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -973,7 +990,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -989,6 +1006,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1019,7 +1037,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -1035,6 +1053,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1063,7 +1082,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -1079,6 +1098,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1109,7 +1129,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var cancellationToken = command.CancellationToken;
+		CancellationToken cancellationToken = command.CancellationToken;
 		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 		try
 		{
@@ -1125,6 +1145,7 @@ public static partial class ChannelDbExtensions
 				complete = false;
 				target.Complete(ex);
 			}
+
 			throw;
 		}
 		finally

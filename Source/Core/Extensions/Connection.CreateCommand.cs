@@ -19,7 +19,7 @@ public static partial class ConnectionExtensions
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 		Contract.EndContractBlock();
 
-		var command = connection.CreateCommand();
+		IDbCommand command = connection.CreateCommand();
 		command.CommandType = type;
 		command.CommandText = commandText;
 		command.CommandTimeout = secondsTimeout;
@@ -54,7 +54,7 @@ public static partial class ConnectionExtensions
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 		Contract.EndContractBlock();
 
-		var command = connection.CreateCommand();
+		DbCommand command = connection.CreateCommand();
 		command.CommandType = type;
 		command.CommandText = commandText;
 		command.CommandTimeout = secondsTimeout;

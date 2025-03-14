@@ -1,7 +1,7 @@
 ﻿namespace Open.Database.Extensions;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
+[SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
+[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
 public static partial class ChannelDbExtensions
 {
 	/// <summary>
@@ -19,7 +19,7 @@ public static partial class ChannelDbExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(reader, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -42,7 +42,7 @@ public static partial class ChannelDbExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(reader, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -66,7 +66,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(reader, channel.Writer, true, transform, cancellationToken);
 		return channel.Reader;
 	}
@@ -87,7 +87,7 @@ public static partial class ChannelDbExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(reader, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -110,7 +110,7 @@ public static partial class ChannelDbExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
@@ -130,7 +130,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -153,7 +153,7 @@ public static partial class ChannelDbExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -177,7 +177,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, transform, cancellationToken);
 		return channel.Reader;
 	}
@@ -198,7 +198,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -221,7 +221,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
@@ -239,7 +239,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true);
 		return channel.Reader;
 	}
@@ -260,7 +260,7 @@ public static partial class ChannelDbExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, arrayPool);
 		return channel.Reader;
 	}
@@ -282,7 +282,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, transform);
 		return channel.Reader;
 	}
@@ -301,7 +301,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true);
 		return channel.Reader;
 	}
@@ -322,7 +322,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides);
 		return channel.Reader;
 	}
@@ -345,7 +345,7 @@ public static partial class ChannelDbExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(reader, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -368,7 +368,7 @@ public static partial class ChannelDbExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(reader, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -392,7 +392,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(reader, channel.Writer, true, transform, cancellationToken);
 		return channel.Reader;
 	}
@@ -413,7 +413,7 @@ public static partial class ChannelDbExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(reader, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -436,7 +436,7 @@ public static partial class ChannelDbExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
@@ -456,7 +456,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -479,7 +479,7 @@ public static partial class ChannelDbExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, arrayPool, cancellationToken);
 		return channel.Reader;
 	}
@@ -503,7 +503,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, transform, cancellationToken);
 		return channel.Reader;
 	}
@@ -524,7 +524,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, cancellationToken);
 		return channel.Reader;
 	}
@@ -547,7 +547,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
@@ -565,7 +565,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true);
 		return channel.Reader;
 	}
@@ -585,7 +585,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<object[]>(-1, singleReader);
+		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, arrayPool);
 		return channel.Reader;
 	}
@@ -607,7 +607,7 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, transform);
 		return channel.Reader;
 	}
@@ -626,7 +626,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true);
 		return channel.Reader;
 	}
@@ -647,7 +647,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		var channel = CreateChannel<T>(-1, singleReader);
+		Channel<T> channel = CreateChannel<T>(-1, singleReader);
 		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides);
 		return channel.Reader;
 	}

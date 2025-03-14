@@ -1,8 +1,13 @@
-﻿namespace Open.Database.Extensions;
+﻿
+using System.Runtime.CompilerServices;
+
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extension methods for Data Readers.
 /// </summary>
+[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
+[SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional to prevent cancellation exception.")]
 public static class DataReaderExtensions
 {
 	/// <summary>
@@ -30,7 +35,7 @@ public static class DataReaderExtensions
 				return;
 
 			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			var cancelled = false;
+			bool cancelled = false;
 			while (reader.Read())
 			{
 				if (cancelled)
@@ -110,7 +115,7 @@ public static class DataReaderExtensions
 			cancellationToken.ThrowIfCancellationRequested();
 
 			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			var cancelled = false;
+			bool cancelled = false;
 			while (reader.Read())
 			{
 				if (cancelled)
@@ -148,10 +153,10 @@ public static class DataReaderExtensions
 			if (!reader.Read())
 				yield break;
 
-			var fieldCount = reader.FieldCount;
+			int fieldCount = reader.FieldCount;
 			do
 			{
-				var row = new object[fieldCount];
+				object[] row = new object[fieldCount];
 				reader.GetValues(row);
 				yield return row;
 			} while (reader.Read());
@@ -172,10 +177,10 @@ public static class DataReaderExtensions
 			if (!reader.Read())
 				yield break;
 
-			var fieldCount = reader.FieldCount;
+			int fieldCount = reader.FieldCount;
 			do
 			{
-				var row = arrayPool.Rent(fieldCount);
+				object[] row = arrayPool.Rent(fieldCount);
 				reader.GetValues(row);
 				yield return row;
 			} while (reader.Read());
@@ -195,8 +200,8 @@ public static class DataReaderExtensions
 			if (!readStarted && !reader.Read())
 				yield break;
 
-			var o = ordinals as IList<int> ?? ordinals.ToArray();
-			var fieldCount = o.Count;
+			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
+			int fieldCount = o.Count;
 			if (fieldCount == 0)
 			{
 				do
@@ -209,8 +214,8 @@ public static class DataReaderExtensions
 
 			do
 			{
-				var row = new object[fieldCount];
-				for (var i = 0; i < fieldCount; i++)
+				object[] row = new object[fieldCount];
+				for (int i = 0; i < fieldCount; i++)
 					row[i] = reader.GetValue(o[i]);
 				yield return row;
 			}
@@ -232,12 +237,12 @@ public static class DataReaderExtensions
 			if (!readStarted && !reader.Read())
 				yield break;
 
-			var o = ordinals as IList<int> ?? ordinals.ToArray();
-			var fieldCount = o.Count;
+			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
+			int fieldCount = o.Count;
 			do
 			{
-				var row = arrayPool.Rent(fieldCount);
-				for (var i = 0; i < fieldCount; i++)
+				object[] row = arrayPool.Rent(fieldCount);
+				for (int i = 0; i < fieldCount; i++)
 					row[i] = reader.GetValue(o[i]);
 				yield return row;
 			}
@@ -318,7 +323,7 @@ public static class DataReaderExtensions
 					yield break;
 
 				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-				var cancelled = false;
+				bool cancelled = false;
 				while (reader.Read())
 				{
 					if (cancelled)
@@ -345,7 +350,6 @@ public static class DataReaderExtensions
 	}
 
 	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
 	public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
 		=> Select(reader, transform, cancellationToken, throwOnCancellation);
 
@@ -355,7 +359,6 @@ public static class DataReaderExtensions
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		CancellationToken cancellationToken = default)
@@ -368,17 +371,21 @@ public static class DataReaderExtensions
 		{
 			Contract.EndContractBlock();
 
-			if (cancellationToken.IsCancellationRequested || !await reader.ReadAsync().ConfigureAwait(false))
+			if (cancellationToken.IsCancellationRequested
+			|| !await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false))
+			{
 				yield break;
+			}
 
-			var fieldCount = reader.FieldCount;
+			int fieldCount = reader.FieldCount;
 			do
 			{
-				var row = new object[fieldCount];
+				object[] row = new object[fieldCount];
 				reader.GetValues(row);
 				yield return row;
 			}
-			while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(false));
+			while (!cancellationToken.IsCancellationRequested
+				&& await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
 		}
 	}
 
@@ -386,7 +393,6 @@ public static class DataReaderExtensions
 	/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, CancellationToken cancellationToken = default)
 	{
 		return reader is null
@@ -400,10 +406,10 @@ public static class DataReaderExtensions
 			if (cancellationToken.IsCancellationRequested || !await reader.ReadAsync().ConfigureAwait(false))
 				yield break;
 
-			var fieldCount = reader.FieldCount;
+			int fieldCount = reader.FieldCount;
 			do
 			{
-				var row = arrayPool.Rent(fieldCount);
+				object[] row = arrayPool.Rent(fieldCount);
 				reader.GetValues(row);
 				yield return row;
 			}
@@ -411,7 +417,6 @@ public static class DataReaderExtensions
 		}
 	}
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 	static IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(this DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, CancellationToken cancellationToken)
 	{
 		return reader is null
@@ -422,29 +427,29 @@ public static class DataReaderExtensions
 
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternalCore(DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			if (!readStarted && (cancellationToken.IsCancellationRequested || !await reader.ReadAsync().ConfigureAwait(false)))
+			if (!readStarted && (cancellationToken.IsCancellationRequested || !await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false)))
 				yield break;
 
-			var o = ordinals as IList<int> ?? ordinals.ToArray();
-			var fieldCount = o.Count;
+			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
+			int fieldCount = o.Count;
 			if (fieldCount == 0)
 			{
 				do
 				{
 					yield return Array.Empty<object>();
 				}
-				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(false));
+				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
 			}
 			else
 			{
 				do
 				{
-					var row = new object[fieldCount];
-					for (var i = 0; i < fieldCount; i++)
+					object[] row = new object[fieldCount];
+					for (int i = 0; i < fieldCount; i++)
 						row[i] = reader.GetValue(o[i]);
 					yield return row;
 				}
-				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(false));
+				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
 			}
 		}
 	}
@@ -472,19 +477,23 @@ public static class DataReaderExtensions
 			ArrayPool<object> arrayPool,
 			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			if (!readStarted && (cancellationToken.IsCancellationRequested || !await reader.ReadAsync().ConfigureAwait(false)))
+			if (!readStarted && (cancellationToken.IsCancellationRequested
+			|| !await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false)))
+			{
 				yield break;
+			}
 
-			var o = ordinals as IList<int> ?? ordinals.ToArray();
-			var fieldCount = o.Count;
+			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
+			int fieldCount = o.Count;
 			do
 			{
-				var row = arrayPool.Rent(fieldCount);
-				for (var i = 0; i < fieldCount; i++)
+				object[] row = arrayPool.Rent(fieldCount);
+				for (int i = 0; i < fieldCount; i++)
 					row[i] = reader.GetValue(o[i]);
 				yield return row;
 			}
-			while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(false));
+			while (!cancellationToken.IsCancellationRequested
+				&& await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
 		}
 	}
 
@@ -505,7 +514,6 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params int[] others)
 		=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), cancellationToken);
 
@@ -515,7 +523,6 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Extended params prevent this.")]
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, CancellationToken cancellationToken, int n, params int[] others)
 		=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool, cancellationToken);
 
@@ -536,7 +543,6 @@ public static class DataReaderExtensions
 	/// <param name="throwOnCancellation">If true, when canceled, may exit the iteration via an exception. Otherwise when canceled will simply stop iterating and return without exception.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <returns>An enumerable used to iterate the results.</returns>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 	public static IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
 		Func<IDataRecord, T> transform,
 		bool throwOnCancellation,
@@ -548,7 +554,11 @@ public static class DataReaderExtensions
 			? throw new ArgumentNullException(nameof(transform))
 			: SelectAsyncCore(reader, transform, throwOnCancellation, cancellationToken);
 
-		static async IAsyncEnumerable<T> SelectAsyncCore(DbDataReader reader, Func<IDataRecord, T> transform, bool throwOnCancellation, [EnumeratorCancellation] CancellationToken cancellationToken)
+		static async IAsyncEnumerable<T> SelectAsyncCore(
+			DbDataReader reader,
+			Func<IDataRecord, T> transform,
+			bool throwOnCancellation,
+			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (throwOnCancellation)
 			{
@@ -559,8 +569,11 @@ public static class DataReaderExtensions
 			else
 			{
 				if (cancellationToken.IsCancellationRequested) yield break;
-				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(false))
+				while (!cancellationToken.IsCancellationRequested
+					&& await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false))
+				{
 					yield return transform(reader);
+				}
 			}
 		}
 	}
@@ -572,7 +585,6 @@ public static class DataReaderExtensions
 		=> SelectAsync(reader, transform, false, cancellationToken);
 
 	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 	public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
 		Func<IDataRecord, ValueTask<T>> transform,
 		bool throwOnCancellation,
@@ -748,7 +760,7 @@ public static class DataReaderExtensions
 				return;
 
 			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			var cancelled = false;
+			bool cancelled = false;
 			while (reader.Read() && predicate(reader))
 			{
 				if (cancelled)
@@ -825,7 +837,7 @@ public static class DataReaderExtensions
 			cancellationToken.ThrowIfCancellationRequested();
 
 			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			var cancelled = false;
+			bool cancelled = false;
 			while (reader.Read() && await predicate(reader).ConfigureAwait(false))
 			{
 				if (cancelled)
@@ -983,6 +995,7 @@ public static class DataReaderExtensions
 					: reader.GetFieldValue<T0>(0)
 				);
 			}
+
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 		else

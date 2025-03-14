@@ -14,7 +14,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		return action(conn);
 	}
@@ -32,7 +32,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		action(conn);
 	}
@@ -50,7 +50,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConnection conn = connectionFactory.Create();
 		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		return action(conn);
 	}
@@ -66,7 +66,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConnection conn = connectionFactory.Create();
 		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		action(conn);
 	}
@@ -80,7 +80,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			return action(conn, conn.EnsureOpen());
@@ -104,7 +104,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			action(conn, conn.EnsureOpen());
@@ -126,7 +126,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConnection conn = connectionPool.Take();
 		try
 		{
 			return action(conn, conn.EnsureOpen());
@@ -146,7 +146,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConnection conn = connectionPool.Take();
 		try
 		{
 			action(conn, conn.EnsureOpen());
@@ -166,7 +166,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConnection conn = connectionFactory();
 		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		return action(conn);
 	}
@@ -181,7 +181,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConnection conn = connectionFactory();
 		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		action(conn);
 	}
@@ -194,7 +194,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		return await action(conn).ConfigureAwait(false);
@@ -217,7 +217,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		await action(conn).ConfigureAwait(false);
@@ -237,7 +237,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConnection conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		return await action(conn).ConfigureAwait(false);
@@ -254,7 +254,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConnection conn = connectionFactory.Create();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		await action(conn).ConfigureAwait(false);
@@ -268,7 +268,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			return await action(conn,
@@ -295,7 +295,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			await action(conn,
@@ -322,7 +322,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConnection conn = connectionPool.Take();
 		try
 		{
 			return await action(conn,
@@ -344,7 +344,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConnection conn = connectionPool.Take();
 		try
 		{
 			await action(conn,
@@ -378,7 +378,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConnection conn = connectionFactory();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		return await action(conn).ConfigureAwait(false);
@@ -395,7 +395,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConnection conn = connectionFactory();
 		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
 		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		await action(conn).ConfigureAwait(false);

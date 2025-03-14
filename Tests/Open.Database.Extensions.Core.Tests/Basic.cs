@@ -13,7 +13,7 @@ public class Basic
 	{
 		var factory = DbConnectionFactory.Create(() =>
 		{
-			var conn = Substitute.For<IDbConnection>();
+			IDbConnection conn = Substitute.For<IDbConnection>();
 			return conn;
 		});
 

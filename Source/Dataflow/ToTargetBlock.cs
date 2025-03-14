@@ -1,6 +1,4 @@
-﻿using Open.Database.Extensions.Dataflow;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for pipelining data with Dataflow blocks.
@@ -25,8 +23,8 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			var fieldCount = reader.FieldCount;
-			var total = 0;
+			int fieldCount = reader.FieldCount;
+			int total = 0;
 			while (reader.Read() && target.Post(reader.GetValues(fieldCount))) total++;
 			if (complete) target.Complete();
 			return total;
@@ -59,8 +57,8 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			var fieldCount = reader.FieldCount;
-			var total = 0;
+			int fieldCount = reader.FieldCount;
+			int total = 0;
 			while (reader.Read() && target.Post(reader.GetValues(fieldCount, arrayPool))) total++;
 			if (complete) target.Complete();
 			return total;
@@ -94,7 +92,7 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			var total = 0;
+			int total = 0;
 			while (reader.Read() && target.Post(transform(reader))) total++;
 			if (complete) target.Complete();
 			return total;
@@ -172,6 +170,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -214,6 +213,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -257,6 +257,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -298,6 +299,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -341,6 +343,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -380,6 +383,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -422,6 +426,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -465,6 +470,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -506,6 +512,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -549,6 +556,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -578,8 +586,8 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			var fieldCount = reader.FieldCount;
-			var total = 0;
+			int fieldCount = reader.FieldCount;
+			int total = 0;
 			if (reader is DbDataReader r)
 			{
 				while (
@@ -598,6 +606,7 @@ public static partial class DataflowExtensions
 					total++;
 				}
 			}
+
 			if (complete) target.Complete();
 			return total;
 		}
@@ -631,8 +640,8 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			var fieldCount = reader.FieldCount;
-			var total = 0;
+			int fieldCount = reader.FieldCount;
+			int total = 0;
 			if (reader is DbDataReader r)
 			{
 				while (
@@ -651,6 +660,7 @@ public static partial class DataflowExtensions
 					total++;
 				}
 			}
+
 			if (complete) target.Complete();
 			return total;
 		}
@@ -685,7 +695,7 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			var total = 0;
+			int total = 0;
 			if (reader is DbDataReader r)
 			{
 				while (
@@ -704,6 +714,7 @@ public static partial class DataflowExtensions
 					total++;
 				}
 			}
+
 			if (complete) target.Complete();
 			return total;
 		}
@@ -789,6 +800,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -836,6 +848,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -883,6 +896,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -920,10 +934,10 @@ public static partial class DataflowExtensions
 		try
 		{
 			var dbc = command as DbCommand;
-			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-			var behavior = CommandBehavior.SingleResult;
+			ConnectionState state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+			CommandBehavior behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+			using IDataReader reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 			return await ToTargetBlockAsync(reader, target, false, cancellationToken).ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -933,6 +947,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -972,10 +987,10 @@ public static partial class DataflowExtensions
 		try
 		{
 			var dbc = command as DbCommand;
-			var state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-			var behavior = CommandBehavior.SingleResult;
+			ConnectionState state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+			CommandBehavior behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+			using IDataReader reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 			return await ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, cancellationToken).ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -985,6 +1000,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1024,6 +1040,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1066,6 +1083,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1108,6 +1126,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1149,6 +1168,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally
@@ -1192,6 +1212,7 @@ public static partial class DataflowExtensions
 				complete = false;
 				target.Fault(ex);
 			}
+
 			throw;
 		}
 		finally

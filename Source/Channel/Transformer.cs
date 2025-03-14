@@ -26,17 +26,17 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var columns = reader.GetMatchingOrdinals(ColumnNames, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
 		var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
 		var names = columns.Select(m => m.Name).ToImmutableArray();
 
 		var processor = new Processor(this, names);
-		var transform = processor.Transform;
+		Func<object?[], T> transform = processor.Transform;
 
-		var channel = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
-		var writer = channel.Writer;
+		Channel<object[]> channel = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+		ChannelWriter<object[]> writer = channel.Writer;
 
-		var piped = channel
+		ValueTask<long> piped = channel
 			.Reader
 			.Transform(a =>
 			{
@@ -84,17 +84,17 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var columns = reader.GetMatchingOrdinals(ColumnNames, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
 		var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
 		var names = columns.Select(m => m.Name).ToImmutableArray();
 
 		var processor = new Processor(this, names);
-		var transform = processor.Transform;
+		Func<object?[], T> transform = processor.Transform;
 
-		var channel = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
-		var writer = channel.Writer;
+		Channel<object[]> channel = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+		ChannelWriter<object[]> writer = channel.Writer;
 
-		var piped = channel
+		ValueTask<long> piped = channel
 			.Reader
 			.Transform(a =>
 			{

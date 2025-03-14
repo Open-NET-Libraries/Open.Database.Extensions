@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-
+﻿
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
@@ -18,7 +17,7 @@ public class Transformer<T>
 	/// <summary>
 	/// Buffers for transforming.
 	/// </summary>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "<Pending>")]
+	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "<Pending>")]
 	protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
 
 	/// <summary>
@@ -26,21 +25,21 @@ public class Transformer<T>
 	/// </summary>
 	public Type Type { get; }
 
-	private readonly PropertyInfo[] Properties;
+	private readonly PropertyInfo[] _properties;
 
 	// Allow mapping key = object property, value = column name.
-	readonly Dictionary<string, string> PropertyMap;
-	readonly Dictionary<string, PropertyInfo> ColumnToPropertyMap;
+	readonly Dictionary<string, string> _propertyMap;
+	readonly Dictionary<string, PropertyInfo> _columnToPropertyMap;
 
 	/// <summary>
 	/// The property names.
 	/// </summary>
-	public IEnumerable<string> PropertyNames => PropertyMap.Keys;
+	public IEnumerable<string> PropertyNames => _propertyMap.Keys;
 
 	/// <summary>
 	/// The column names.
 	/// </summary>
-	public IEnumerable<string> ColumnNames => PropertyMap.Values;
+	public IEnumerable<string> ColumnNames => _propertyMap.Values;
 
 	/// <summary>
 	/// Constructs a transformer using the optional field overrides.
@@ -48,22 +47,22 @@ public class Transformer<T>
 	protected internal Transformer(IEnumerable<(string Field, string? Column)>? overrides = null)
 	{
 		Type = typeof(T);
-		Properties = Type.GetProperties();
-		PropertyMap = Properties.Select(p => p.Name).ToDictionary(n => n);
+		_properties = Type.GetProperties();
+		_propertyMap = _properties.Select(p => p.Name).ToDictionary(n => n);
 
-		var pm = Properties.ToDictionary(p => p.Name);
+		Dictionary<string, PropertyInfo> pm = _properties.ToDictionary(p => p.Name);
 
 		if (overrides != null)
 		{
-			foreach (var (Field, Column) in overrides)
+			foreach ((string Field, string? Column) in overrides)
 			{
-				var cn = Column;
-				if (cn == null) PropertyMap.Remove(Field); // Null values indicate a desire to 'ignore' a field.
-				else PropertyMap[Field] = cn;
+				string? cn = Column;
+				if (cn == null) _propertyMap.Remove(Field); // Null values indicate a desire to 'ignore' a field.
+				else _propertyMap[Field] = cn;
 			}
 		}
 
-		ColumnToPropertyMap = PropertyMap.ToDictionary(kvp => kvp.Value.ToUpperInvariant(), kvp => pm[kvp.Key]);
+		_columnToPropertyMap = _propertyMap.ToDictionary(kvp => kvp.Value.ToUpperInvariant(), kvp => pm[kvp.Key]);
 	}
 
 	/// <summary>
@@ -88,10 +87,10 @@ public class Transformer<T>
 			Transform = record =>
 			{
 				var model = new T();
-				var count = _names.Length;
-				for (var i = 0; i < count; i++)
+				int count = _names.Length;
+				for (int i = 0; i < count; i++)
 				{
-					var p = _propertySetters[i];
+					Action<T, object?>? p = _propertySetters[i];
 					if (p != null)
 					{
 						object? value = record[i];
@@ -141,10 +140,10 @@ public class Transformer<T>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
 		{
-			var map = Transformer.ColumnToPropertyMap;
+			Dictionary<string, PropertyInfo> map = Transformer._columnToPropertyMap;
 			_names = names;
 			_propertySetters = names
-				.Select(n => map.TryGetValue(n.ToUpperInvariant(), out var p) ? p.BuildUntypedSetter<T>() : null)
+				.Select(n => map.TryGetValue(n.ToUpperInvariant(), out PropertyInfo? p) ? p.BuildUntypedSetter<T>() : null)
 				.ToArray();
 		}
 	}
@@ -156,7 +155,7 @@ public class Transformer<T>
 		Contract.EndContractBlock();
 
 		var processor = new Processor(this, results.Names);
-		var q = results.Result;
+		Queue<object?[]> q = results.Result;
 
 		return q.DequeueEach().Select(processor.Transform);
 	}
@@ -175,8 +174,8 @@ public class Transformer<T>
 		Contract.EndContractBlock();
 
 		var processor = new Processor(this, results.Names);
-		var transform = processor.Transform;
-		var q = results.Result;
+		Func<object?[], T> transform = processor.Transform;
+		Queue<object[]> q = results.Result;
 
 		return q.DequeueEach().Select(a =>
 		{
@@ -198,9 +197,9 @@ public class Transformer<T>
 		Contract.EndContractBlock();
 
 		// Ignore missing columns.
-		var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
 		var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
-		var transform = processor.Transform;
+		Func<object?[], T> transform = processor.Transform;
 
 		return reader
 			.AsEnumerable(columns.Select(m => m.Ordinal), LocalPool)
@@ -232,7 +231,7 @@ public class Transformer<T>
 			return Enumerable.Empty<T>();
 
 		// Ignore missing columns.
-		var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
 
 		return AsDequeueingEnumerable(
 			CoreExtensions.RetrieveInternal(
@@ -258,11 +257,11 @@ public class Transformer<T>
 		async IAsyncEnumerable<T> ResultsAsyncCore(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			// Ignore missing columns.
-			var columns = reader.GetMatchingOrdinals(PropertyMap.Values, true);
+			(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
 			var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
 
 #pragma warning disable ConfigureAwaitEnforcer // ConfigureAwaitEnforcer
-			await foreach (var a in reader.AsAsyncEnumerable(columns.Select(m => m.Ordinal), LocalPool, cancellationToken))
+			await foreach (object[] a in reader.AsAsyncEnumerable(columns.Select(m => m.Ordinal), LocalPool, cancellationToken))
 #pragma warning restore ConfigureAwaitEnforcer // ConfigureAwaitEnforcer
 			{
 				try
@@ -289,15 +288,15 @@ public class Transformer<T>
 		if (table is null) throw new ArgumentNullException(nameof(table));
 		Contract.EndContractBlock();
 
-		var columnCount = table.Columns.Count;
-		var columns = table.Columns.AsEnumerable();
+		int columnCount = table.Columns.Count;
+		IEnumerable<DataColumn> columns = table.Columns.AsEnumerable();
 		var results = new QueryResult<Queue<object[]>>(
 			columns.Select(c => c.Ordinal),
 			columns.Select(c => c.ColumnName),
 			new Queue<object[]>(table.Rows.AsEnumerable().Select(r =>
 			{
-				var a = LocalPool.Rent(columnCount);
-				for (var i = 0; i < columnCount; i++) a[i] = r[i];
+				object[] a = LocalPool.Rent(columnCount);
+				for (int i = 0; i < columnCount; i++) a[i] = r[i];
 				return a;
 			})));
 

@@ -1,7 +1,4 @@
-﻿// ReSharper disable UnusedMember.Global
-// ReSharper disable MemberCanBePrivate.Global
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for SqlConnections.
@@ -26,7 +23,7 @@ public static partial class SqlConnectionExtensions
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException(EmptyOrWhiteSpace, nameof(commandText));
 		Contract.EndContractBlock();
 
-		var command = connection.CreateCommand();
+		SqlCommand command = connection.CreateCommand();
 		command.CommandType = type;
 		command.CommandText = commandText;
 		command.CommandTimeout = secondsTimeout;

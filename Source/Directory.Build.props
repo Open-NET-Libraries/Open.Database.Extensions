@@ -1,32 +1,37 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project>
 
 	<PropertyGroup>
 		<RootNamespace>Open.Database.Extensions</RootNamespace>
-		<TargetFrameworks>netstandard2.0; netstandard2.1; net8.0</TargetFrameworks>
+		<Version>9.0.0</Version>
+		
+		<TargetFrameworks>netstandard2.0; netstandard2.1; net8.0; net9.0;</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
+		<ImplicitUsings>true</ImplicitUsings>
+
 		<Authors>electricessence</Authors>
 		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
-		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility. This now is a meta-package containing a collection of extensions.</Description>
-		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
+
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
-		<Version>8.0.1</Version>
-		<PackageReleaseNotes></PackageReleaseNotes>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<PackageIcon>logo.png</PackageIcon>
+		<EnableNETAnalyzers>True</EnableNETAnalyzers>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>logo.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<None Include="..\..\logo.png">
 			<Pack>True</Pack>
-			<PackagePath></PackagePath>
+			<PackagePath>\</PackagePath>
 		</None>
 		<None Include="..\..\README.md">
 			<Pack>True</Pack>
@@ -34,10 +39,9 @@
 		</None>
 	</ItemGroup>
 
-	<ItemGroup>
-	  <ProjectReference Include="..\Channel\Open.Database.Extensions.Channel.csproj" />
-	  <ProjectReference Include="..\Dataflow\Open.Database.Extensions.Dataflow.csproj" />
-	  <ProjectReference Include="..\SqlClient\Open.Database.Extensions.SqlClient.csproj" />
-	</ItemGroup>
+	<!-- Disable the nullable warnings when compiling for .NET Standard 2.0 -->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<NoWarn>$(NoWarn);nullable</NoWarn>
+	</PropertyGroup>
 
 </Project>

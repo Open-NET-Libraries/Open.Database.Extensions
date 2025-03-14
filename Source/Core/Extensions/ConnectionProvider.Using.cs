@@ -14,7 +14,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		return action(conn);
 	}
 
@@ -30,7 +30,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		action(conn);
 	}
 
@@ -45,7 +45,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConn conn = connectionFactory.Create();
 		return action(conn);
 	}
 
@@ -58,7 +58,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConn conn = connectionFactory.Create();
 		action(conn);
 	}
 
@@ -71,7 +71,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			return action(conn);
@@ -94,7 +94,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			action(conn);
@@ -116,7 +116,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConn conn = connectionPool.Take();
 		try
 		{
 			return action(conn);
@@ -136,7 +136,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConn conn = connectionPool.Take();
 		try
 		{
 			action(conn);
@@ -158,7 +158,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConn conn = connectionFactory();
 		return action(conn);
 	}
 
@@ -171,7 +171,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConn conn = connectionFactory();
 		action(conn);
 	}
 
@@ -184,7 +184,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		return await action(conn).ConfigureAwait(false);
 	}
 
@@ -195,7 +195,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using IDbConnection conn = connectionFactory.Create();
 		await action(conn).ConfigureAwait(false);
 	}
 
@@ -207,7 +207,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConn conn = connectionFactory.Create();
 		return await action(conn).ConfigureAwait(false);
 	}
 
@@ -220,7 +220,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory.Create();
+		using TConn conn = connectionFactory.Create();
 		await action(conn).ConfigureAwait(false);
 	}
 
@@ -233,7 +233,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			return await action(conn).ConfigureAwait(false);
@@ -251,7 +251,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		IDbConnection conn = connectionPool.Take();
 		try
 		{
 			await action(conn).ConfigureAwait(false);
@@ -273,7 +273,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConn conn = connectionPool.Take();
 		try
 		{
 			return await action(conn).ConfigureAwait(false);
@@ -293,7 +293,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var conn = connectionPool.Take();
+		TConn conn = connectionPool.Take();
 		try
 		{
 			await action(conn).ConfigureAwait(false);
@@ -314,7 +314,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConn conn = connectionFactory();
 		return await action(conn).ConfigureAwait(false);
 	}
 
@@ -327,7 +327,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var conn = connectionFactory();
+		using TConn conn = connectionFactory();
 		await action(conn).ConfigureAwait(false);
 	}
 }

@@ -1,7 +1,4 @@
-﻿// ReSharper disable UnusedMember.Global
-// ReSharper disable MemberCanBePrivate.Global
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 public static partial class SqlTransactionExtensions
 {
@@ -21,7 +18,7 @@ public static partial class SqlTransactionExtensions
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException("Command is empty or whitespace.", nameof(commandText));
 		Contract.EndContractBlock();
 
-		var command = transaction
+		SqlCommand command = transaction
 			.Connection
 			.CreateCommand(type, commandText, secondsTimeout);
 

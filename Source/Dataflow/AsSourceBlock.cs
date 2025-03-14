@@ -18,7 +18,7 @@ public static partial class DataflowExtensions
 	/// <returns>The source block containing the results.</returns>
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDataReader reader, DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		ToTargetBlock(reader, buffer, true);
 		return buffer;
 	}
@@ -35,7 +35,7 @@ public static partial class DataflowExtensions
 		ArrayPool<object> arrayPool,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		ToTargetBlock(reader, buffer, true, arrayPool);
 		return buffer;
 	}
@@ -53,7 +53,7 @@ public static partial class DataflowExtensions
 		Func<IDataRecord, T> transform,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(reader, buffer, true, transform);
 		return buffer;
 	}
@@ -70,7 +70,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(reader, buffer, true);
 		return buffer;
 	}
@@ -89,7 +89,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(reader, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}
@@ -106,7 +106,7 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDbCommand command,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		ToTargetBlock(command, buffer, true);
 		return buffer;
 	}
@@ -125,7 +125,7 @@ public static partial class DataflowExtensions
 		ArrayPool<object> arrayPool,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		ToTargetBlock(command, buffer, true, arrayPool);
 		return buffer;
 	}
@@ -145,7 +145,7 @@ public static partial class DataflowExtensions
 		Func<IDataRecord, T> transform,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true, transform);
 		return buffer;
 	}
@@ -164,7 +164,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true);
 		return buffer;
 	}
@@ -185,7 +185,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}
@@ -202,7 +202,7 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		ToTargetBlock(command, buffer, true);
 		return buffer;
 	}
@@ -221,7 +221,7 @@ public static partial class DataflowExtensions
 		ArrayPool<object> arrayPool,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		ToTargetBlock(command, buffer, true, arrayPool);
 		return buffer;
 	}
@@ -241,7 +241,7 @@ public static partial class DataflowExtensions
 		Func<IDataRecord, T> transform,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true, transform);
 		return buffer;
 	}
@@ -260,7 +260,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true);
 		return buffer;
 	}
@@ -281,7 +281,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}
@@ -298,7 +298,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, cancellationToken);
 		return buffer;
 	}
@@ -317,7 +317,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, arrayPool, cancellationToken);
 		return buffer;
 	}
@@ -337,7 +337,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, transform, cancellationToken);
 		return buffer;
 	}
@@ -356,7 +356,7 @@ public static partial class DataflowExtensions
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, cancellationToken);
 		return buffer;
 	}
@@ -377,7 +377,7 @@ public static partial class DataflowExtensions
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, fieldMappingOverrides, cancellationToken);
 		return buffer;
 	}
@@ -395,7 +395,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, cancellationToken);
 		return buffer;
 	}
@@ -415,7 +415,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, arrayPool, cancellationToken);
 		return buffer;
 	}
@@ -436,7 +436,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, transform, cancellationToken);
 		return buffer;
 	}
@@ -457,7 +457,7 @@ public static partial class DataflowExtensions
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, cancellationToken);
 		return buffer;
 	}
@@ -480,7 +480,7 @@ public static partial class DataflowExtensions
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, fieldMappingOverrides, cancellationToken);
 		return buffer;
 	}
@@ -496,7 +496,7 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		_ = ToTargetBlockAsync(command, buffer, true);
 		return buffer;
 	}
@@ -514,7 +514,7 @@ public static partial class DataflowExtensions
 		ArrayPool<object> arrayPool,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<object[]>(options);
+		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, arrayPool);
 		return buffer;
 	}
@@ -533,7 +533,7 @@ public static partial class DataflowExtensions
 		Func<IDataRecord, T> transform,
 		DataflowBlockOptions? options = null)
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, transform);
 		return buffer;
 	}
@@ -551,7 +551,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true);
 		return buffer;
 	}
@@ -571,7 +571,7 @@ public static partial class DataflowExtensions
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
-		var buffer = GetBufferBlock<T>(options);
+		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}

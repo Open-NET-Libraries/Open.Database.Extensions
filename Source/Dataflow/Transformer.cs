@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions.Dataflow;
+﻿namespace Open.Database.Extensions;
 
 /// <inheritdoc />
 internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
@@ -30,13 +30,13 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var columns = reader.GetMatchingOrdinals(ColumnNames, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
 		var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
 		var names = columns.Select(m => m.Name).ToImmutableArray();
 
 		var processor = new Processor(this, names);
-		var transform = processor.Transform;
-		var columnCount = columns.Length;
+		Func<object?[], T> transform = processor.Transform;
+		int columnCount = columns.Length;
 
 		var transformBlock = new TransformBlock<object[], T>(
 			a =>
@@ -94,13 +94,13 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var columns = reader.GetMatchingOrdinals(ColumnNames, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
 		var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
 		var names = columns.Select(m => m.Name).ToImmutableArray();
 
 		var processor = new Processor(this, names);
-		var transform = processor.Transform;
-		var columnCount = columns.Length;
+		Func<object?[], T> transform = processor.Transform;
+		int columnCount = columns.Length;
 
 		var transformBlock = new TransformBlock<object[], T>(
 			a =>

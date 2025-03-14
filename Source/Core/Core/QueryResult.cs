@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions.Core;
+﻿
+namespace Open.Database.Extensions.Core;
 
 /// <summary>
 /// A container for data reader results that also provides the column names
@@ -180,14 +181,14 @@ public static class QueryResultExtensions
 
 		static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionariesCore(QueryResult<Queue<object?[]>> source)
 		{
-			var q = source.Result;
-			var names = source.Names;
-			var count = source.ColumnCount;
+			Queue<object?[]> q = source.Result;
+			ImmutableArray<string> names = source.Names;
+			int count = source.ColumnCount;
 			while (q.Count != 0)
 			{
-				var r = q.Dequeue();
+				object?[] r = q.Dequeue();
 				var d = new Dictionary<string, object?>(count);
-				for (var i = 0; i < count; i++)
+				for (int i = 0; i < count; i++)
 					d.Add(names[i], CoreExtensions.DBNullValueToNull(r[i]));
 				yield return d;
 			}
@@ -283,13 +284,13 @@ public static class QueryResultExtensions
 
 		static IEnumerable<Dictionary<string, object?>> AsMappedDictionariesCore(QueryResult<IEnumerable<object?[]>> source)
 		{
-			var q = source.Result;
-			var names = source.Names;
-			var count = source.ColumnCount;
-			foreach (var r in q)
+			IEnumerable<object?[]> q = source.Result;
+			ImmutableArray<string> names = source.Names;
+			int count = source.ColumnCount;
+			foreach (object?[] r in q)
 			{
 				var d = new Dictionary<string, object?>(count);
-				for (var i = 0; i < count; i++)
+				for (int i = 0; i < count; i++)
 					d.Add(names[i], CoreExtensions.DBNullValueToNull(r[i]));
 				yield return d;
 			}

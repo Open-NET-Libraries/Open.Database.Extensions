@@ -145,7 +145,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <returns>The new command to use.</returns>
 	protected TCommand PrepareCommand(TConnection connection)
 	{
-		var cmd = connection.CreateCommand(Type, Command, Timeout);
+		IDbCommand cmd = connection.CreateCommand(Type, Command, Timeout);
 		if (cmd is not TCommand c)
 			throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 		if (Transaction != null)
@@ -363,7 +363,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// Open MUST occur before command creation as some DbCommands require it.
 		ConnectionProvider.Open((conn, _) =>
 		{
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			action(cmd);
 		});
 	}
@@ -377,7 +377,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// Open MUST occur before command creation as some DbCommands require it.
 		return ConnectionProvider.Open((conn, _) =>
 		{
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			return transform(cmd);
 		});
 	}
@@ -393,7 +393,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// Open MUST occur before command creation as some DbCommands require it.
 		return ConnectionProvider.OpenAsync(async (conn, _) =>
 		{
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			await handler(cmd).ConfigureAwait(false);
 		});
 	}
@@ -409,7 +409,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// Open MUST occur before command creation as some DbCommands require it.
 		return ConnectionProvider.OpenAsync(async (conn, _) =>
 		{
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			return await transform(cmd).ConfigureAwait(false);
 		});
 	}
@@ -446,7 +446,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		ConnectionProvider.Open((conn, state) =>
 		{
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			cmd.ExecuteReader(reader => handler(EnsureReaderType(reader)), behavior);
 		});
 	}
@@ -461,7 +461,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			return cmd.ExecuteReader(reader => transform(EnsureReaderType(reader)), behavior);
 		});
 	}
@@ -473,7 +473,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(false);
 		});
 
@@ -491,7 +491,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(false);
 		});
 
@@ -505,7 +505,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(false);
 		});
 
@@ -515,7 +515,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			// Open MUST occur before command creation as some DbCommands require it.
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using var cmd = PrepareCommand(conn);
+			using TCommand cmd = PrepareCommand(conn);
 			return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(false);
 		});
 
@@ -539,8 +539,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// Open MUST occur before command creation as some DbCommands require it.
 		=> ConnectionProvider.Open((conn, _) =>
 		{
-			using var cmd = PrepareCommand(conn);
-			var returnParameter = cmd.AddReturnParameter();
+			using TCommand cmd = PrepareCommand(conn);
+			IDbDataParameter returnParameter = cmd.AddReturnParameter();
 			cmd.ExecuteNonQuery();
 			return returnParameter.Value;
 		});
@@ -563,8 +563,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// Open MUST occur before command creation as some DbCommands require it.
 		return ConnectionProvider.OpenAsync(async (conn, _) =>
 		{
-			using var cmd = PrepareCommand(conn);
-			var returnParameter = cmd.AddReturnParameter();
+			using TCommand cmd = PrepareCommand(conn);
+			IDbDataParameter returnParameter = cmd.AddReturnParameter();
 
 			if (cmd is DbCommand dbCommand)
 				await dbCommand.ExecuteNonQueryAsync(CancellationToken).ConfigureAwait(false);

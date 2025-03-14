@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions;
+﻿
+namespace Open.Database.Extensions;
 
 public static partial class CoreExtensions
 {
@@ -8,7 +9,7 @@ public static partial class CoreExtensions
 		IEnumerable<string>? columnNames = null,
 		bool readStarted = false)
 	{
-		var o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
+		IList<int> o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
 		return new QueryResultQueue<object[]>(
 			o, columnNames ?? reader.GetNames(o),
 			new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted)));
@@ -21,7 +22,7 @@ public static partial class CoreExtensions
 		IEnumerable<string>? columnNames = null,
 		bool readStarted = false)
 	{
-		var o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
+		IList<int> o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
 		return new QueryResultQueue<object[]>(
 			o, columnNames ?? reader.GetNames(o),
 			new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted, arrayPool)));
@@ -30,7 +31,7 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader)
 	{
-		var names = reader.GetNames();
+		ImmutableArray<string> names = reader.GetNames();
 		return new QueryResultQueue<object[]>(
 			Enumerable.Range(0, names.Length), names,
 			new Queue<object[]>(reader.AsEnumerable()));
@@ -58,7 +59,7 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 	{
-		var columns = reader.GetOrdinalMapping(columnNames);
+		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames);
 		return RetrieveInternal(reader,
 			columns.Select(c => c.Ordinal),
 			columns.Select(c => c.Name));
@@ -115,13 +116,13 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var fieldCount = reader.FieldCount;
-		var names = reader.GetNames(); // pull before first read.
+		int fieldCount = reader.FieldCount;
+		ImmutableArray<string> names = reader.GetNames(); // pull before first read.
 		var buffer = new Queue<object[]>();
 
 		while (useReadAsync ? await reader.ReadAsync(cancellationToken).ConfigureAwait(false) : (!cancellationToken.IsCancellationRequested && reader.Read()))
 		{
-			var row = new object[fieldCount];
+			object[] row = new object[fieldCount];
 			reader.GetValues(row);
 			buffer.Enqueue(row);
 		}
@@ -160,8 +161,8 @@ public static partial class CoreExtensions
 			   columnNames ?? ordinals.Select(reader.GetName),
 			   buffer);
 
-		var fieldCount = result.ColumnCount;
-		var o = result.Ordinals;
+		int fieldCount = result.ColumnCount;
+		ImmutableArray<int> o = result.Ordinals;
 
 		Func<IDataRecord, object[]> handler = GetHandler(arrayPool, fieldCount, o);
 
@@ -186,8 +187,8 @@ public static partial class CoreExtensions
 			{
 				return record =>
 				{
-					var row = arrayPool.Rent(fieldCount);
-					for (var i = 0; i < fieldCount; i++)
+					object[] row = arrayPool.Rent(fieldCount);
+					for (int i = 0; i < fieldCount; i++)
 						row[i] = record.GetValue(o[i]);
 					return row;
 				};
@@ -197,8 +198,8 @@ public static partial class CoreExtensions
 				? (_ => Array.Empty<object>())
 				: (record =>
 				{
-					var row = new object[fieldCount];
-					for (var i = 0; i < fieldCount; i++)
+					object[] row = new object[fieldCount];
+					for (int i = 0; i < fieldCount; i++)
 						row[i] = record.GetValue(o[i]);
 					return row;
 				});
@@ -261,7 +262,7 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken = default)
 	{
 		// Validate columns first.
-		var columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
+		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
 		return RetrieveAsyncInternal(reader, cancellationToken,
 			columns.Select(c => c.Ordinal),
 			columns.Select(c => c.Name), useReadAsync: useReadAsync);

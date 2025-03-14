@@ -69,9 +69,9 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 		if (command is null) throw new System.ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		foreach (var p in Params)
+		foreach (Param p in Params)
 		{
-			var np = command
+			SqlParameter np = command
 				.Parameters
 				.AddWithValue(p.Name, p.Value);
 

@@ -1,12 +1,9 @@
-﻿// ReSharper disable UnusedMember.Global
-// ReSharper disable MemberCanBePrivate.Global
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// SqlClient extensions for building a command and retrieving data using best practices.
 /// </summary>
-public static partial class SqlCommandExtensions
+public static class SqlCommandExtensions
 {
 	/// <summary>
 	/// Shortcut for adding command parameter.
@@ -27,7 +24,7 @@ public static partial class SqlCommandExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		var p = AddParameterType(target, name, type, direction);
+		SqlParameter p = AddParameterType(target, name, type, direction);
 		p.Value = value;
 		return p;
 	}
@@ -53,7 +50,7 @@ public static partial class SqlCommandExtensions
 			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
 		Contract.EndContractBlock();
 
-		var c = target.CreateParameter();
+		SqlParameter c = target.CreateParameter();
 		c.ParameterName = name;
 		c.SqlDbType = type;
 		c.Direction = direction;

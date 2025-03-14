@@ -203,7 +203,7 @@ public static partial class CoreExtensions
 
 		var x = new Transformer<T>(fieldMappingOverrides);
 		// Ignore missing columns.
-		var columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
 
 		return x.AsDequeueingEnumerable(
 			await RetrieveAsyncInternal(

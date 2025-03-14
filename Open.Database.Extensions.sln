@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Sq
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Channel", "Source\Channel\Open.Database.Extensions.Channel.csproj", "{EE37225F-0B2B-4225-B07D-2BCE007B780C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions", "Source\Extensions\Open.Database.Extensions.csproj", "{4FB33C8D-D70E-4952-9947-A1347BCED665}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.Core.Tests", "Tests\Open.Database.Extensions.Core.Tests\Open.Database.Extensions.Core.Tests.csproj", "{B2C2E89F-3B08-4CF8-B363-468C0918F867}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B4ADB121-1900-4CB4-905C-A7B1F640BA8A}"
@@ -20,6 +18,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3194AC1F-55DE-4EAE-BDC6-4E427B034CFF}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Source\Directory.Build.props = Source\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Open.Database.Extensions.MSSqlClient", "Source\MSSqlClient\Open.Database.Extensions.MSSqlClient.csproj", "{B9245504-9E2F-417F-87AC-8950BFB4FD4E}"
@@ -46,10 +45,6 @@ Global
 		{EE37225F-0B2B-4225-B07D-2BCE007B780C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE37225F-0B2B-4225-B07D-2BCE007B780C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE37225F-0B2B-4225-B07D-2BCE007B780C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4FB33C8D-D70E-4952-9947-A1347BCED665}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2C2E89F-3B08-4CF8-B363-468C0918F867}.Release|Any CPU.ActiveCfg = Release|Any CPU

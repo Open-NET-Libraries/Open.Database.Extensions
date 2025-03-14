@@ -18,7 +18,7 @@ public static partial class SqlTransactionExtensions
 		if (string.IsNullOrWhiteSpace(commandText)) throw new ArgumentException("Command is empty or whitespace.", nameof(commandText));
 		Contract.EndContractBlock();
 
-		var command = transaction
+		SqlCommand command = transaction
 			.Connection
 			.CreateCommand(type, commandText, secondsTimeout);
 

@@ -24,7 +24,7 @@ public static partial class TransactionExtensions
 		if (transaction.Connection is null) throw new InvalidOperationException("Transaction has no connection.");
 		Contract.EndContractBlock();
 
-		var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
+		IDbCommand command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
 		command.Transaction = transaction;
 		return command;
 	}
@@ -68,7 +68,7 @@ public static partial class TransactionExtensions
 		if (transaction.Connection is null) throw new InvalidOperationException("Transaction has no connection.");
 		Contract.EndContractBlock();
 
-		var command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
+		DbCommand command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
 		command.Transaction = transaction;
 		return command;
 	}

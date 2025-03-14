@@ -11,7 +11,7 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var result = new object[record.FieldCount];
+		object[] result = new object[record.FieldCount];
 		record.GetValues(result);
 		return result;
 	}
@@ -27,7 +27,7 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var result = new object[arrayLength];
+		object[] result = new object[arrayLength];
 		record.GetValues(result);
 		return result;
 	}
@@ -42,7 +42,7 @@ public static partial class DataRecordExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 
 		Contract.EndContractBlock();
-		var result = arrayPool.Rent(minimumArrayLength);
+		object[] result = arrayPool.Rent(minimumArrayLength);
 		record.GetValues(result);
 		return result;
 	}
@@ -55,7 +55,7 @@ public static partial class DataRecordExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 
 		Contract.EndContractBlock();
-		var result = arrayPool.Rent(record.FieldCount);
+		object[] result = arrayPool.Rent(record.FieldCount);
 		record.GetValues(result);
 		return result;
 	}
@@ -73,8 +73,8 @@ public static partial class DataRecordExtensions
 
 		static IEnumerable<string> ColumnNamesCore(IDataRecord record)
 		{
-			var fieldCount = record.FieldCount;
-			for (var i = 0; i < fieldCount; i++)
+			int fieldCount = record.FieldCount;
+			for (int i = 0; i < fieldCount; i++)
 				yield return record.GetName(i);
 		}
 	}
@@ -89,10 +89,10 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var fieldCount = record.FieldCount;
-		var columnNames = ImmutableArray.CreateBuilder<string>(fieldCount);
+		int fieldCount = record.FieldCount;
+		ImmutableArray<string>.Builder columnNames = ImmutableArray.CreateBuilder<string>(fieldCount);
 		columnNames.Count = fieldCount;
-		for (var i = 0; i < fieldCount; i++)
+		for (int i = 0; i < fieldCount; i++)
 			columnNames[i] = record.GetName(i);
 		return columnNames.MoveToImmutable();
 	}
@@ -130,8 +130,8 @@ public static partial class DataRecordExtensions
 		{
 			// Does do a case-insensitive search after a case-sensitive one.
 			// https://docs.microsoft.com/en-us/dotnet/api/system.data.idatarecord.getordinal
-			var ordinal = record.GetOrdinal(n);
-			var name = record.GetName(ordinal); // Get actual casing.
+			int ordinal = record.GetOrdinal(n);
+			string name = record.GetName(ordinal); // Get actual casing.
 			return (name, ordinal);
 		});
 
@@ -187,8 +187,8 @@ public static partial class DataRecordExtensions
 
 		static IEnumerable<object> EnumerateValuesCore(IDataRecord record)
 		{
-			var count = record.FieldCount;
-			for (var i = 0; i < count; i++)
+			int count = record.FieldCount;
+			for (int i = 0; i < count; i++)
 				yield return record.GetValue(i);
 		}
 	}
@@ -209,7 +209,7 @@ public static partial class DataRecordExtensions
 
 		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, IEnumerable<int> ordinals)
 		{
-			foreach (var i in ordinals)
+			foreach (int i in ordinals)
 				yield return record.GetValue(i);
 		}
 	}
@@ -226,8 +226,8 @@ public static partial class DataRecordExtensions
 		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, IList<int> ordinals)
 		{
 			// Avoid creating an another enumerator if possible.
-			var count = ordinals.Count;
-			for (var i = 0; i < count; i++)
+			int count = ordinals.Count;
+			for (int i = 0; i < count; i++)
 				yield return record.GetValue(ordinals[i]);
 		}
 	}
@@ -245,8 +245,8 @@ public static partial class DataRecordExtensions
 		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, int firstOrdinal, int[] remainingOrdinals)
 		{
 			yield return record.GetValue(firstOrdinal);
-			var len = remainingOrdinals.Length;
-			for (var i = 0; i < len; i++)
+			int len = remainingOrdinals.Length;
+			for (int i = 0; i < len; i++)
 				yield return record.GetValue(remainingOrdinals[i]);
 		}
 	}
@@ -261,8 +261,8 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var len = ordinals.Length;
-		for (var i = 0; i < len; i++)
+		int len = ordinals.Length;
+		for (int i = 0; i < len; i++)
 			values[i] = record.GetValue(ordinals[i]);
 		return values;
 	}
@@ -276,8 +276,8 @@ public static partial class DataRecordExtensions
 		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
 		Contract.EndContractBlock();
 
-		var count = ordinals.Count;
-		for (var i = 0; i < count; i++)
+		int count = ordinals.Count;
+		for (int i = 0; i < count; i++)
 			values[i] = record.GetValue(ordinals[i]);
 		return values;
 	}
@@ -290,11 +290,11 @@ public static partial class DataRecordExtensions
 		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
 		Contract.EndContractBlock();
 
-		var count = ordinals.Count;
+		int count = ordinals.Count;
 		if (count == 0) return [];
 
-		var values = new object[count];
-		for (var i = 0; i < count; i++)
+		object[] values = new object[count];
+		for (int i = 0; i < count; i++)
 			values[i] = record.GetValue(ordinals[i]);
 		return values;
 	}
@@ -314,7 +314,7 @@ public static partial class DataRecordExtensions
 				? throw new ArgumentException("Column names cannot be null or whitespace only.")
 				: c.ToUpperInvariant());
 
-		var actual = record.OrdinalMapping();
+		IEnumerable<(string Name, int Ordinal)> actual = record.OrdinalMapping();
 		if (sort)
 		{
 			var requested = new HashSet<string>(columnNames);
@@ -355,8 +355,8 @@ public static partial class DataRecordExtensions
 
 		static IEnumerable<string> DataTypeNamesCore(IDataRecord record)
 		{
-			var fieldCount = record.FieldCount;
-			for (var i = 0; i < fieldCount; i++)
+			int fieldCount = record.FieldCount;
+			for (int i = 0; i < fieldCount; i++)
 				yield return record.GetDataTypeName(i);
 		}
 	}
@@ -371,9 +371,9 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var fieldCount = record.FieldCount;
-		var results = new string[fieldCount];
-		for (var i = 0; i < fieldCount; i++)
+		int fieldCount = record.FieldCount;
+		string[] results = new string[fieldCount];
+		for (int i = 0; i < fieldCount; i++)
 			results[i] = record.GetDataTypeName(i);
 		return results;
 	}
@@ -418,12 +418,13 @@ public static partial class DataRecordExtensions
 		Contract.EndContractBlock();
 
 		var e = new Dictionary<string, object?>();
-		var count = ordinalMapping.Count;
-		for (var i = 0; i < count; i++)
+		int count = ordinalMapping.Count;
+		for (int i = 0; i < count; i++)
 		{
-			var (name, ordinal) = ordinalMapping[i];
+			(string name, int ordinal) = ordinalMapping[i];
 			e.Add(name, CoreExtensions.DBNullValueToNull(record[ordinal]));
 		}
+
 		return e;
 	}
 
@@ -440,12 +441,13 @@ public static partial class DataRecordExtensions
 		Contract.EndContractBlock();
 
 		var e = new Dictionary<string, object?>();
-		var count = ordinalMapping.Length;
-		for (var i = 0; i < count; i++)
+		int count = ordinalMapping.Length;
+		for (int i = 0; i < count; i++)
 		{
-			var (name, ordinal) = ordinalMapping[i];
+			(string name, int ordinal) = ordinalMapping[i];
 			e.Add(name, CoreExtensions.DBNullValueToNull(record[ordinal]));
 		}
+
 		return e;
 	}
 
@@ -463,7 +465,7 @@ public static partial class DataRecordExtensions
 		Contract.EndContractBlock();
 
 		var e = new Dictionary<string, object?>();
-		foreach (var name in columnNames)
+		foreach (string name in columnNames)
 			e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 		return e;
 	}
@@ -482,12 +484,13 @@ public static partial class DataRecordExtensions
 		Contract.EndContractBlock();
 
 		var e = new Dictionary<string, object?>();
-		var count = columnNames.Count;
-		for (var i = 0; i < count; i++)
+		int count = columnNames.Count;
+		for (int i = 0; i < count; i++)
 		{
-			var name = columnNames[i];
+			string name = columnNames[i];
 			e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 		}
+
 		return e;
 	}
 
@@ -504,12 +507,13 @@ public static partial class DataRecordExtensions
 		Contract.EndContractBlock();
 
 		var e = new Dictionary<string, object?>();
-		var count = columnNames.Length;
-		for (var i = 0; i < count; i++)
+		int count = columnNames.Length;
+		for (int i = 0; i < count; i++)
 		{
-			var name = columnNames[i];
+			string name = columnNames[i];
 			e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 		}
+
 		return e;
 	}
 }

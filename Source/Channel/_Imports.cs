@@ -1,12 +1,8 @@
 ﻿global using Open.ChannelExtensions;
-global using System;
 global using System.Buffers;
-global using System.Collections.Generic;
 global using System.Collections.Immutable;
 global using System.Data;
 global using System.Data.Common;
+global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics.Contracts;
-global using System.Linq;
-global using System.Threading;
 global using System.Threading.Channels;
-global using System.Threading.Tasks;

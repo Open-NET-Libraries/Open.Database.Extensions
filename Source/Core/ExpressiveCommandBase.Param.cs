@@ -43,7 +43,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 #if NETSTANDARD2_0
 		public override readonly int GetHashCode()
 		{
-			var hashCode = 1477810893;
+			int hashCode = 1477810893;
 			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
 			hashCode = hashCode * -1521134295 + EqualityComparer<object>.Default.GetHashCode(Value);
 			hashCode = hashCode * -1521134295 + EqualityComparer<TDbType?>.Default.GetHashCode(Type);

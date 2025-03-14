@@ -9,7 +9,7 @@ namespace Open.Database.Extensions;
 public static partial class CoreExtensions
 {
 	internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
-		=> (remaining == null || remaining.Count == 0) ? new T[] { first } : Enumerable.Repeat(first, 1).Concat(remaining);
+		=> (remaining == null || remaining.Count == 0) ? [first] : remaining.Prepend(first);
 
 	// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
 	internal static Action<T, object?> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)
@@ -21,8 +21,7 @@ public static partial class CoreExtensions
 		var exBody = Expression.Call(exTarget, methodInfo!,
 		   Expression.Convert(exValue, propertyInfo.PropertyType));
 		var lambda = Expression.Lambda<Action<T, object?>>(exBody, exTarget, exValue);
-		var action = lambda.Compile();
-		return action;
+		return lambda.Compile();
 	}
 
 	internal static object? DBNullValueToNull(object? value)
@@ -40,7 +39,7 @@ public static partial class CoreExtensions
 
 		static IEnumerable<object?> DBNullToNullCore(IEnumerable<object?> values)
 		{
-			foreach (var v in values)
+			foreach (object? v in values)
 				yield return DBNullValueToNull(v);
 		}
 	}
@@ -54,9 +53,9 @@ public static partial class CoreExtensions
 		if (values is null) throw new ArgumentNullException(nameof(values));
 		Contract.EndContractBlock();
 
-		var len = values.Length;
-		var result = new object?[len];
-		for (var i = 0; i < len; i++)
+		int len = values.Length;
+		object?[] result = new object?[len];
+		for (int i = 0; i < len; i++)
 			result[i] = DBNullValueToNull(values[i]);
 		return result;
 	}
@@ -67,9 +66,9 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="DBNullToNullCopy(object[])"/>
 	public static object?[] DBNullToNullCopy(this ReadOnlySpan<object?> values)
 	{
-		var len = values.Length;
-		var result = new object?[len];
-		for (var i = 0; i < len; i++)
+		int len = values.Length;
+		object?[] result = new object?[len];
+		for (int i = 0; i < len; i++)
 			result[i] = DBNullValueToNull(values[i]);
 		return result;
 	}
@@ -77,9 +76,9 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="DBNullToNullCopy(ReadOnlySpan{object?})"/>
 	public static object?[] DBNullToNullCopy(this Span<object?> values)
 	{
-		var len = values.Length;
-		var result = new object?[len];
-		for (var i = 0; i < len; i++)
+		int len = values.Length;
+		object?[] result = new object?[len];
+		for (int i = 0; i < len; i++)
 			result[i] = DBNullValueToNull(values[i]);
 		return result;
 	}
@@ -90,12 +89,13 @@ public static partial class CoreExtensions
 	/// <param name="values">The source values.</param>
 	public static Span<object?> ReplaceDBNullWithNull(this Span<object?> values)
 	{
-		var len = values.Length;
-		for (var i = 0; i < len; i++)
+		int len = values.Length;
+		for (int i = 0; i < len; i++)
 		{
-			ref var value = ref values[i];
+			ref object? value = ref values[i];
 			if (value == DBNull.Value) value = null;
 		}
+
 		return values;
 	}
 
@@ -183,7 +183,7 @@ public static partial class CoreExtensions
 		while (source.Count != 0)
 			yield return source.Dequeue();
 #else
-		while (source.TryDequeue(out var a))
+		while (source.TryDequeue(out T? a))
 			yield return a;
 #endif
 	}

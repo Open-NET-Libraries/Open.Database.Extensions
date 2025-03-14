@@ -64,9 +64,9 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
 	/// <inheritdoc />
 	protected override void AddParams(IDbCommand command)
 	{
-		foreach (var p in Params)
+		foreach (Param p in Params)
 		{
-			var np = command.AddParameter(p.Name, p.Value);
+			IDbDataParameter np = command.AddParameter(p.Name, p.Value);
 			if (p.Type.HasValue) np.DbType = p.Type.Value;
 		}
 	}
