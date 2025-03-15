@@ -31,7 +31,7 @@ public static partial class CoreExtensions
 	/// to the <paramref name="target"/> span
 	/// with any <see cref="DBNull"/> values converted to <see langword="null"/>.
 	/// </summary>
-	public static Span<object?> CopyToWithDbNullAsNull(this ReadOnlySpan<object?> values, Span<object?> target)
+	public static Span<object?> CopyToDBNullAsNull(this ReadOnlySpan<object?> values, Span<object?> target)
 	{
 		int len = values.Length;
 		object?[] result = new object?[len];
@@ -41,9 +41,18 @@ public static partial class CoreExtensions
 		return result;
 	}
 
-	/// <inheritdoc cref="CopyToWithDbNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
-	public static Span<object?> CopyToWithDbNullAsNull(this Span<object?> values, Span<object?> target)
-		=> CopyToWithDbNullAsNull((ReadOnlySpan<object?>)values, target);
+	/// <inheritdoc cref="CopyToDBNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
+	public static Span<object?> CopyToDBNullAsNull(this Span<object?> values, Span<object?> target)
+		=> CopyToDBNullAsNull((ReadOnlySpan<object?>)values, target);
+
+
+	/// <inheritdoc cref="CopyToDBNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
+	public static Span<object?> CopyToDBNullAsNull(this ReadOnlySpan<object?> values, Memory<object?> target)
+		=> CopyToDBNullAsNull(values, target.Span);
+
+	/// <inheritdoc cref="CopyToDBNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
+	public static Span<object?> CopyToDBNullAsNull(this Span<object?> values, Memory<object?> target)
+		=> CopyToDBNullAsNull((ReadOnlySpan<object?>)values, target.Span);
 
 	/// <summary>
 	/// Any <see cref="DBNull"/> values are yielded as null.
@@ -70,7 +79,7 @@ public static partial class CoreExtensions
 		Contract.EndContractBlock();
 
 		object?[] result = new object?[values.Length];
-		CopyToWithDbNullAsNull(values.AsSpan(), result.AsSpan());
+		CopyToDBNullAsNull(values.AsSpan(), result.AsSpan());
 		return result;
 	}
 
@@ -81,7 +90,7 @@ public static partial class CoreExtensions
 	public static object?[] DBNullToNullCopy(this ReadOnlySpan<object?> values)
 	{
 		object?[] result = new object?[values.Length];
-		DBNullToNullCopy(values, result.AsSpan());
+		CopyToDBNullAsNull(values, result.AsSpan());
 		return result;
 	}
 
@@ -94,7 +103,14 @@ public static partial class CoreExtensions
 	/// </summary>
 	/// <param name="values">The source values.</param>
 	public static Span<object?> ReplaceDBNullWithNull(this Span<object?> values)
-		=> DBNullToNullCopy(values, values);
+		=> CopyToDBNullAsNull(values, values);
+
+	/// <inheritdoc cref="ReplaceDBNullWithNull(Span{object?})"/>
+	public static Memory<object?> ReplaceDBNullWithNull(this Memory<object?> values)
+	{
+		CopyToDBNullAsNull(values.Span, values.Span);
+		return values;
+	}
 
 	/// <inheritdoc cref="ReplaceDBNullWithNull(Span{object?})"/>
 	public static object?[] ReplaceDBNullWithNull(this object?[] values)
@@ -103,6 +119,30 @@ public static partial class CoreExtensions
 		Contract.EndContractBlock();
 
 		values.AsSpan().ReplaceDBNullWithNull();
+		return values;
+	}
+
+	/// <inheritdoc cref="ReplaceDBNullWithNull(Span{object?})"/>
+	public static List<object?> ReplaceDBNullWithNull(this List<object?> values)
+	{
+		if (values is null) throw new ArgumentNullException(nameof(values));
+		Contract.EndContractBlock();
+
+#if NET8_0_OR_GREATER
+		var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(values);
+		for (int i = 0; i < span.Length; i++)
+		{
+			ref object? item = ref span[i];
+			if (item == DBNull.Value) item = null;
+		}
+#else
+		int count = values.Count;
+		for (int i = 0; i < count; i++)
+		{
+			if (values[i] == DBNull.Value) values[i] = null;
+		}
+#endif
+
 		return values;
 	}
 
@@ -149,7 +189,11 @@ public static partial class CoreExtensions
 		.Results(table, clearSourceTable);
 
 	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+#if NET8_0_OR_GREATER
+	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)> fieldMappingOverrides) where T : new()
+#else
 	public static IEnumerable<T> To<T>(this DataTable table, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
+#endif
 		=> Transformer<T>
 		.Create(fieldMappingOverrides)
 		.Results(table, false);

@@ -274,18 +274,24 @@ public static class DataReaderExtensions
 		=> AsEnumerableInternal(reader, ordinals, false);
 
 	/// <param name="reader">The reader to enumerate.</param>
+	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
+	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+#if NET8_0_OR_GREATER
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
+		=> AsEnumerableInternal(reader, others.Prepend(n), false);
+#else
+
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
+		=> AsEnumerable(reader, CoreExtensions.Concat(n, others));
+#endif
+
+	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
 		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
-
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
-		=> AsEnumerable(reader, CoreExtensions.Concat(n, others));
 
 	/// <summary>
 	/// Provides an enumerable for iterating all the remaining values of the current result set of a data reader.

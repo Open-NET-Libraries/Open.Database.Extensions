@@ -207,8 +207,13 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+#if NET8_0_OR_GREATER
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(int n, params IEnumerable<int> others)
+		=> RetrieveAsync(others.Prepend(n));
+#else
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(int n, params int[] others)
 		=> RetrieveAsync(Concat(n, others));
+#endif
 
 	/// <summary>
 	/// Iterates all records within the current result set using an IDataReader and returns the desired results.
