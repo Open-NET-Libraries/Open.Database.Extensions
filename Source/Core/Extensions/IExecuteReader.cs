@@ -1,6 +1,4 @@
-﻿using Open.Database.Extensions.Core;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for retrieving data from a command using best practices.

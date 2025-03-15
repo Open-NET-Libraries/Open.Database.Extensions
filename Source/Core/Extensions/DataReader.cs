@@ -1,13 +1,12 @@
-﻿
-using System.Runtime.CompilerServices;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extension methods for Data Readers.
 /// </summary>
+#pragma warning disable IDE0079 // Remove unnecessary suppression
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
 [SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional to prevent cancellation exception.")]
+#pragma warning restore IDE0079 // Remove unnecessary suppression
 public static class DataReaderExtensions
 {
 	/// <summary>
@@ -454,7 +453,6 @@ public static class DataReaderExtensions
 		}
 	}
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods that take one", Justification = "Intentional for this method to prevent cancellation exception.")]
 	static IAsyncEnumerable<object[]> AsAsyncEnumerableInternal(
 		this DbDataReader reader,
 		IEnumerable<int> ordinals,
