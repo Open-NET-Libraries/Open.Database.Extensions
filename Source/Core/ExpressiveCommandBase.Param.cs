@@ -41,6 +41,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		/// <inheritdoc />
 #if NETSTANDARD2_0
+		[SuppressMessage("Roslynator", "RCS1123:Add parentheses when necessary", Justification = "<Pending>")]
 		public override readonly int GetHashCode()
 		{
 			int hashCode = 1477810893;

@@ -1,4 +1,6 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Diagnostics;
+
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extension methods for Data Readers.
@@ -140,113 +142,131 @@ public static class DataReaderExtensions
 	public static ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, CancellationToken cancellationToken)
 		=> ForEachAsync(reader, handler, true, cancellationToken);
 
+	static IEnumerable<object[]> AsEnumerableCore(IDataReader reader)
+	{
+		Debug.Assert(reader is not null);
+
+		if (!reader.Read())
+			yield break;
+
+		int fieldCount = reader.FieldCount;
+		do
+		{
+			object[] row = new object[fieldCount];
+			reader.GetValues(row);
+			yield return row;
+		} while (reader.Read());
+	}
+
+	static IEnumerable<object[]> AsEnumerableCore(IDataReader reader, ArrayPool<object> arrayPool)
+	{
+		Debug.Assert(reader is not null);
+		Debug.Assert(arrayPool is not null);
+
+		if (!reader.Read())
+			yield break;
+
+		int fieldCount = reader.FieldCount;
+		do
+		{
+			object[] row = arrayPool.Rent(fieldCount);
+			reader.GetValues(row);
+			yield return row;
+		} while (reader.Read());
+	}
+
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
-	{
-		return reader is null
+		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: AsEnumerableCore(reader);
 
-		static IEnumerable<object[]> AsEnumerableCore(IDataReader reader)
-		{
-			if (!reader.Read())
-				yield break;
-
-			int fieldCount = reader.FieldCount;
-			do
-			{
-				object[] row = new object[fieldCount];
-				reader.GetValues(row);
-				yield return row;
-			} while (reader.Read());
-		}
-	}
-
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object> arrayPool)
-	{
-		return reader is null
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
+		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: arrayPool is null
-			? throw new ArgumentNullException(nameof(arrayPool))
+			? AsEnumerableCore(reader)
 			: AsEnumerableCore(reader, arrayPool);
 
-		static IEnumerable<object[]> AsEnumerableCore(IDataReader reader, ArrayPool<object> arrayPool)
-		{
-			if (!reader.Read())
-				yield break;
-
-			int fieldCount = reader.FieldCount;
-			do
-			{
-				object[] row = arrayPool.Rent(fieldCount);
-				reader.GetValues(row);
-				yield return row;
-			} while (reader.Read());
-		}
-	}
-
-	internal static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
+	static IEnumerable<object[]> AsEnumerableInternalCore(
+		IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
 	{
-		return reader is null
-			? throw new ArgumentNullException(nameof(reader))
-			: ordinals is null
-			? throw new ArgumentNullException(nameof(ordinals))
-			: AsEnumerableInternalCore(reader, ordinals, readStarted);
+		Debug.Assert(reader is not null);
+		Debug.Assert(ordinals is not null);
 
-		static IEnumerable<object[]> AsEnumerableInternalCore(IDataReader reader, IEnumerable<int> ordinals, bool readStarted)
+		if (!readStarted && !reader.Read())
+			yield break;
+
+		IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
+		int fieldCount = o.Count;
+		if (fieldCount == 0)
 		{
-			if (!readStarted && !reader.Read())
-				yield break;
-
-			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
-			int fieldCount = o.Count;
-			if (fieldCount == 0)
-			{
-				do
-				{
-					yield return Array.Empty<object>();
-				}
-				while (reader.Read());
-				yield break;
-			}
-
 			do
 			{
-				object[] row = new object[fieldCount];
-				for (int i = 0; i < fieldCount; i++)
-					row[i] = reader.GetValue(o[i]);
-				yield return row;
+				yield return Array.Empty<object>();
 			}
 			while (reader.Read());
+			yield break;
 		}
+
+		do
+		{
+			object[] row = new object[fieldCount];
+			for (int i = 0; i < fieldCount; i++)
+				row[i] = reader.GetValue(o[i]);
+			yield return row;
+		}
+		while (reader.Read());
 	}
 
-	internal static IEnumerable<object[]> AsEnumerableInternal(this IDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object> arrayPool)
+	static IEnumerable<object[]> AsEnumerableInternalCore(
+		IDataReader reader, IEnumerable<int> ordinals, bool readStarted, ArrayPool<object> arrayPool)
 	{
-		return reader is null
-			? throw new ArgumentNullException(nameof(reader))
-			: ordinals is null
-			? throw new ArgumentNullException(nameof(ordinals))
-			: arrayPool is null ? throw new ArgumentNullException(nameof(arrayPool))
-			: AsEnumerableInternalCore();
+		Debug.Assert(reader is not null);
+		Debug.Assert(ordinals is not null);
+		Debug.Assert(arrayPool is not null);
 
-		IEnumerable<object[]> AsEnumerableInternalCore()
+		if (!readStarted && !reader.Read())
+			yield break;
+
+		IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
+		int fieldCount = o.Count;
+		do
 		{
-			if (!readStarted && !reader.Read())
-				yield break;
-
-			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
-			int fieldCount = o.Count;
-			do
-			{
-				object[] row = arrayPool.Rent(fieldCount);
-				for (int i = 0; i < fieldCount; i++)
-					row[i] = reader.GetValue(o[i]);
-				yield return row;
-			}
-			while (reader.Read());
+			object[] row = arrayPool.Rent(fieldCount);
+			for (int i = 0; i < fieldCount; i++)
+				row[i] = reader.GetValue(o[i]);
+			yield return row;
 		}
+		while (reader.Read());
+	}
+
+	internal static IEnumerable<object[]> AsEnumerableInternal(
+		this IDataReader reader,
+		IEnumerable<int> ordinals,
+		bool readStarted)
+	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+		Contract.EndContractBlock();
+
+		return AsEnumerableInternalCore(reader, ordinals, readStarted);
+	}
+
+	internal static IEnumerable<object[]> AsEnumerableInternal(
+		this IDataReader reader,
+		IEnumerable<int> ordinals,
+		bool readStarted,
+		ArrayPool<object>? arrayPool)
+	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
+		Contract.EndContractBlock();
+
+		return arrayPool is null
+			? AsEnumerableInternalCore(reader, ordinals, readStarted)
+			: AsEnumerableInternalCore(reader, ordinals, readStarted, arrayPool);
 	}
 
 	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object?})"/>
@@ -257,7 +277,7 @@ public static class DataReaderExtensions
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object> arrayPool)
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
 		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
 
 	/// <param name="reader">The reader to enumerate.</param>
@@ -276,7 +296,7 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <returns>An enumerable of the values returned from a data reader.</returns>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object> arrayPool, int n, params int[] others)
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool, int n, params int[] others)
 		=> AsEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
 
 	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
@@ -392,12 +412,15 @@ public static class DataReaderExtensions
 	/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object> arrayPool, CancellationToken cancellationToken = default)
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
+		this DbDataReader reader,
+		ArrayPool<object>? arrayPool,
+		CancellationToken cancellationToken = default)
 	{
 		return reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: arrayPool is null
-			? throw new ArgumentNullException(nameof(arrayPool))
+			? AsAsyncEnumerable(reader, cancellationToken)
 			: AsAsyncEnumerableCore(reader, arrayPool, cancellationToken);
 
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableCore(DbDataReader reader, ArrayPool<object> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken)

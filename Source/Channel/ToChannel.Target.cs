@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for writing data to a channel.
@@ -127,7 +125,7 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannel(this IDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object> arrayPool,
+		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -546,7 +544,7 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object> arrayPool,
+		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -758,7 +756,7 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
 		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object> arrayPool)
+		ArrayPool<object>? arrayPool)
 		=> ToChannelAsyncCore(
 			command, target, complete,
 			reader => command.UseAsyncRead && reader is DbDataReader r

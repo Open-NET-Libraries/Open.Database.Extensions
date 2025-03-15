@@ -116,10 +116,7 @@ public class Transformer<T>
 		/// <param name="transformer">The transformer to use.</param>
 		/// <param name="names">The names of columns/properties to acquire.</param>
 		public Processor(Transformer<T> transformer, ImmutableArray<string> names)
-			: this(transformer)
-		{
-			SetNames(names);
-		}
+			: this(transformer) => SetNames(names);
 
 		/// <summary>
 		/// The transformer being used.
@@ -260,9 +257,7 @@ public class Transformer<T>
 			(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
 			var processor = new Processor(this, columns.Select(m => m.Name).ToImmutableArray());
 
-#pragma warning disable ConfigureAwaitEnforcer // ConfigureAwaitEnforcer
 			await foreach (object[] a in reader.AsAsyncEnumerable(columns.Select(m => m.Ordinal), LocalPool, cancellationToken))
-#pragma warning restore ConfigureAwaitEnforcer // ConfigureAwaitEnforcer
 			{
 				try
 				{

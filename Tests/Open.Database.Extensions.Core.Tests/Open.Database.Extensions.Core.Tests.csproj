@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
+		<ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Source\Channel\Open.Database.Extensions.Channel.csproj" />
     <ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="IDbCommand\" />
   </ItemGroup>
 
 </Project>

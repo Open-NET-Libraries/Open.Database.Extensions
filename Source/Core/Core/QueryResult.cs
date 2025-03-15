@@ -158,6 +158,15 @@ public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enume
 		: base(ordinals, names, result)
 	{
 	}
+
+	/// <inheritdoc cref="QueryResultQueue{T}.QueryResultQueue(ImmutableArray{int}, ImmutableArray{string}, Queue{T})" />
+	public QueryResultQueue(
+		IEnumerable<int> ordinals,
+		IEnumerable<string> names,
+		IEnumerable<T> result)
+		: base(ordinals, names, new (result))
+	{
+	}
 }
 
 /// <summary>

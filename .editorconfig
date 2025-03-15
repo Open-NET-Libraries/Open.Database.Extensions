@@ -178,5 +178,11 @@ dotnet_diagnostic.CA1510.severity = silent
 # IDE0130: Namespace does not match folder structure
 dotnet_diagnostic.IDE0130.severity = silent
 
+# IDE0301: Simplify collection initialization
+dotnet_diagnostic.IDE0301.severity = silent
+
 # IDE0305: Simplify collection initialization
 dotnet_diagnostic.IDE0305.severity = silent
+
+# IDE0306: Simplify collection initialization
+dotnet_diagnostic.IDE0306.severity = silent

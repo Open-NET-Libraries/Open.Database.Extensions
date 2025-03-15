@@ -12,7 +12,7 @@ public static partial class CoreExtensions
 		IList<int> o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
 		return new QueryResultQueue<object[]>(
 			o, columnNames ?? reader.GetNames(o),
-			new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted)));
+			reader.AsEnumerableInternal(o, readStarted));
 	}
 
 	internal static QueryResultQueue<object[]> RetrieveInternal(
@@ -25,7 +25,7 @@ public static partial class CoreExtensions
 		IList<int> o = ordinals is IList<int> i ? i : ordinals.ToImmutableArray();
 		return new QueryResultQueue<object[]>(
 			o, columnNames ?? reader.GetNames(o),
-			new Queue<object[]>(reader.AsEnumerableInternal(o, readStarted, arrayPool)));
+			reader.AsEnumerableInternal(o, readStarted, arrayPool));
 	}
 
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
@@ -34,7 +34,7 @@ public static partial class CoreExtensions
 		ImmutableArray<string> names = reader.GetNames();
 		return new QueryResultQueue<object[]>(
 			Enumerable.Range(0, names.Length), names,
-			new Queue<object[]>(reader.AsEnumerable()));
+			reader.AsEnumerable());
 	}
 
 	/// <summary>

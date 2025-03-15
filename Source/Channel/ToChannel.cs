@@ -35,11 +35,10 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<object[]> ToChannel(this IDataReader reader,
 		bool singleReader,
-		ArrayPool<object> arrayPool,
+		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
@@ -580,7 +579,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<object[]> ToChannelAsync(this IExecuteReaderAsync command,
 		bool singleReader,
-		ArrayPool<object> arrayPool)
+		ArrayPool<object>? arrayPool)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
