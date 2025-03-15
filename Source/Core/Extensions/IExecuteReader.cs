@@ -165,7 +165,8 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a IDataReader and returns the first result through a transform function.  Throws if none or more than one entry.
+	/// Iterates a IDataReader and returns the first result through a transform function.
+	/// Throws if none or more than one entry.
 	/// </summary>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The IExecuteReader to iterate.</param>
@@ -183,7 +184,9 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.  Throws if more than one entry.
+	/// Iterates an IDataReader and returns the first result through a transform function.
+	/// Returns default(T) if none.
+	/// Throws if more than one entry.
 	/// </summary>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The IExecuteReader to iterate.</param>

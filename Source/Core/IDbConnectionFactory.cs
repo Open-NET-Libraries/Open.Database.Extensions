@@ -27,30 +27,44 @@ public interface IDbConnectionFactory<out TConnection> : IDbConnectionFactory
 /// </summary>
 public static class DbConnectionFactoryExtensions
 {
-	class PoolFromFactory(IDbConnectionFactory connectionFactory) : IDbConnectionPool
+	/// <summary>
+	/// A struct that represents a connection factory that can be used as a pool.
+	/// </summary>
+	public readonly struct ConnectionFactoryToPoolAdapter(Func<IDbConnection> factory) : IDbConnectionPool
 	{
-		private readonly IDbConnectionFactory _connectionFactory
-			= connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+		/// <summary>
+		/// Constructs a connection factory to pool adapter.
+		/// </summary>
+		public ConnectionFactoryToPoolAdapter(IDbConnectionFactory factory)
+			: this(factory.Create) { }
 
+		/// <inheritdoc />
 		public IDbConnection Take()
-			=> _connectionFactory.Create();
+			=> factory();
 
+		/// <inheritdoc />
 		public void Give(IDbConnection connection)
 			=> connection.Dispose();
 	}
 
-	class PoolFromFactory<TConnection>(IDbConnectionFactory<TConnection> connectionFactory) : IDbConnectionPool<TConnection>
+	/// <inheritdoc cref="ConnectionFactoryToPoolAdapter(Func{IDbConnection})" />/>
+	public readonly struct ConnectionFactoryToPoolAdapter<TConnection>(Func<TConnection> factory) : IDbConnectionPool<TConnection>
 		where TConnection : IDbConnection
 	{
-		private readonly IDbConnectionFactory<TConnection> _connectionFactory
-			= connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+		/// <summary>
+		/// Constructs a connection factory to pool adapter.
+		/// </summary>
+		public ConnectionFactoryToPoolAdapter(IDbConnectionFactory<TConnection> factory)
+			: this(factory.Create) { }
 
+		/// <inheritdoc />
 		public TConnection Take()
-			=> _connectionFactory.Create();
+			=> factory();
 
 		IDbConnection IDbConnectionPool.Take()
 			=> Take();
 
+		/// <inheritdoc />
 		public void Give(IDbConnection connection)
 			=> connection.Dispose();
 	}
@@ -59,18 +73,18 @@ public static class DbConnectionFactoryExtensions
 	/// Provides a connection pool that simply creates from a connection factory and disposes when returned.
 	/// </summary>
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
-	/// <returns></returns>
-	public static IDbConnectionPool AsPool(this IDbConnectionFactory connectionFactory)
-		=> new PoolFromFactory(connectionFactory);
+	/// <returns>An <see cref="ConnectionFactoryToPoolAdapter"/> to handle this factory.</returns>
+	public static ConnectionFactoryToPoolAdapter AsPool(this IDbConnectionFactory connectionFactory)
+		=> new (connectionFactory);
 
 	/// <summary>
 	/// Provides a connection pool that simply creates from a connection factory and disposes when returned.
 	/// </summary>
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
-	/// <returns></returns>
-	public static IDbConnectionPool<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
+	/// <returns>An <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> to handle this factory.</returns>
+	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
-		=> new PoolFromFactory<TConnection>(connectionFactory);
+		=> new (connectionFactory);
 
 	/// <summary>
 	/// Coerces a non-generic connection factory to a generic one.
@@ -78,6 +92,11 @@ public static class DbConnectionFactoryExtensions
 	/// <param name="connectionFactory">The source connection factory.</param>
 	/// <returns>The generic version of the source factory.</returns>
 	public static IDbConnectionFactory<IDbConnection> AsGeneric(this IDbConnectionFactory connectionFactory)
-		=> (connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory))) is IDbConnectionFactory<IDbConnection> p ? p
-		: new DbConnectionFactory<IDbConnection>(() => connectionFactory.Create());
+	{
+		if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
+		Contract.EndContractBlock();
+
+		return connectionFactory is IDbConnectionFactory<IDbConnection> p ? p
+			: new DbConnectionFactory<IDbConnection>(connectionFactory.Create);
+	}
 }

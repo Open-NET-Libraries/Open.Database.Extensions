@@ -43,7 +43,8 @@ public class DbConnectionFactory : IDbConnectionFactory
 /// Generic connection factory implementation that accepts a factory function.
 /// </summary>
 /// <typeparam name="TConnection">The connection type.</typeparam>
-public class DbConnectionFactory<TConnection> : DbConnectionFactory, IDbConnectionFactory<TConnection>
+public class DbConnectionFactory<TConnection>
+	: DbConnectionFactory, IDbConnectionFactory<TConnection>
 	where TConnection : IDbConnection
 {
 	readonly Func<TConnection> _factory;

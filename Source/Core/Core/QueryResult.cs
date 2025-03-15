@@ -19,6 +19,7 @@ public class QueryResult<TResult>
 	{
 		if (ordinals.Length != names.Length)
 			throw new ArgumentException("Mismatched array lengths of ordinals and names.");
+
 		Ordinals = ordinals;
 		Names = names;
 		Result = result;

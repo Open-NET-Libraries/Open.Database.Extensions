@@ -9,15 +9,15 @@ internal class DbConnectionProvider<TConnection>(TConnection connection)
 {
 	private TConnection Connection { get; } = connection ?? throw new ArgumentNullException(nameof(connection));
 
-	private ConnectionState? TakenConnectionState;
+	private ConnectionState? _takenConnectionState;
 
 	/// <inheritdoc />
 	public TConnection Take()
 	{
-		if (TakenConnectionState.HasValue)
+		if (_takenConnectionState.HasValue)
 			throw new InvalidOperationException("Concurrent use of a single connection is not supported.");
 
-		TakenConnectionState = Connection.State;
+		_takenConnectionState = Connection.State;
 		return Connection;
 	}
 
@@ -32,10 +32,10 @@ internal class DbConnectionProvider<TConnection>(TConnection connection)
 			throw new ArgumentException("Does not belong to this provider.", nameof(connection));
 		Contract.EndContractBlock();
 
-		if (TakenConnectionState == ConnectionState.Closed)
+		if (_takenConnectionState == ConnectionState.Closed)
 			connection.Close();
 
-		TakenConnectionState = null;
+		_takenConnectionState = null;
 	}
 }
 

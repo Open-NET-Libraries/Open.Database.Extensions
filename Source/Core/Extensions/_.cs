@@ -27,14 +27,31 @@ public static partial class CoreExtensions
 		=> value == DBNull.Value ? null : value;
 
 	/// <summary>
+	/// Copies the contents of the <paramref name="values"/> span
+	/// to the <paramref name="target"/> span
+	/// with any <see cref="DBNull"/> values converted to <see langword="null"/>.
+	/// </summary>
+	public static Span<object?> CopyToWithDbNullAsNull(this ReadOnlySpan<object?> values, Span<object?> target)
+	{
+		int len = values.Length;
+		object?[] result = new object?[len];
+		for (int i = 0; i < len; i++)
+			target[i] = DBNullValueToNull(values[i]);
+
+		return result;
+	}
+
+	/// <inheritdoc cref="CopyToWithDbNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
+	public static Span<object?> CopyToWithDbNullAsNull(this Span<object?> values, Span<object?> target)
+		=> CopyToWithDbNullAsNull((ReadOnlySpan<object?>)values, target);
+
+	/// <summary>
 	/// Any <see cref="DBNull"/> values are yielded as null.
 	/// </summary>
 	/// <param name="values">The source enumerable.</param>
 	public static IEnumerable<object?> DBNullToNull(this IEnumerable<object?> values)
 	{
-		return values is null
-			? throw new ArgumentNullException(nameof(values))
-			: DBNullToNullCore(values);
+		return DBNullToNullCore(values ?? throw new ArgumentNullException(nameof(values)));
 
 		static IEnumerable<object?> DBNullToNullCore(IEnumerable<object?> values)
 		{
@@ -52,10 +69,8 @@ public static partial class CoreExtensions
 		if (values is null) throw new ArgumentNullException(nameof(values));
 		Contract.EndContractBlock();
 
-		int len = values.Length;
-		object?[] result = new object?[len];
-		for (int i = 0; i < len; i++)
-			result[i] = DBNullValueToNull(values[i]);
+		object?[] result = new object?[values.Length];
+		CopyToWithDbNullAsNull(values.AsSpan(), result.AsSpan());
 		return result;
 	}
 
@@ -65,38 +80,21 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="DBNullToNullCopy(object[])"/>
 	public static object?[] DBNullToNullCopy(this ReadOnlySpan<object?> values)
 	{
-		int len = values.Length;
-		object?[] result = new object?[len];
-		for (int i = 0; i < len; i++)
-			result[i] = DBNullValueToNull(values[i]);
+		object?[] result = new object?[values.Length];
+		DBNullToNullCopy(values, result.AsSpan());
 		return result;
 	}
 
 	/// <inheritdoc cref="DBNullToNullCopy(ReadOnlySpan{object?})"/>
 	public static object?[] DBNullToNullCopy(this Span<object?> values)
-	{
-		int len = values.Length;
-		object?[] result = new object?[len];
-		for (int i = 0; i < len; i++)
-			result[i] = DBNullValueToNull(values[i]);
-		return result;
-	}
+		=> DBNullToNullCopy((ReadOnlySpan<object?>)values);
 
 	/// <summary>
 	/// Replaces any <see cref="DBNull"/> in the <paramref name="values"/> with null;
 	/// </summary>
 	/// <param name="values">The source values.</param>
 	public static Span<object?> ReplaceDBNullWithNull(this Span<object?> values)
-	{
-		int len = values.Length;
-		for (int i = 0; i < len; i++)
-		{
-			ref object? value = ref values[i];
-			if (value == DBNull.Value) value = null;
-		}
-
-		return values;
-	}
+		=> DBNullToNullCopy(values, values);
 
 	/// <inheritdoc cref="ReplaceDBNullWithNull(Span{object?})"/>
 	public static object?[] ReplaceDBNullWithNull(this object?[] values)
