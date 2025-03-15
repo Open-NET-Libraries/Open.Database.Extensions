@@ -84,9 +84,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 		: this(DbConnectionProvider.Create(connection), type, command, @params)
-	{
-		Transaction = transaction;
-	}
+		=> Transaction = transaction;
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connection">The connection to execute the command on.</param>
