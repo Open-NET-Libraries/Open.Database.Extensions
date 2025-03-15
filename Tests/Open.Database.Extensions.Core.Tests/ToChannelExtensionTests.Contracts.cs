@@ -17,14 +17,28 @@ public static class ToChannelExtensionsContractTests
 	}
 
 	[Fact]
-	public static void ToChannelT_IDataReader_NullReader_ThrowsArgumentNullException()
+	public static async Task ToChannelT_IDataReader_NullReader_ThrowsArgumentNullException()
 	{
 		// Arrange
 		IDataReader reader = null;
-		CancellationToken cancellationToken = default;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannel<object>(true, cancellationToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(
+			async () => await reader.ToChannel(Channel.CreateUnbounded<object>().Writer, true));
+
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannel<object>(true));
+	}
+
+	[Fact]
+	public static async Task ToChannelT_IDataReader_NullTarget_ThrowsArgumentNullException()
+	{
+		// Arrange
+		IDataReader reader = Substitute.For<IDataReader>();
+
+		// Act & Assert
+		await Assert.ThrowsAsync<ArgumentNullException>(
+			async () => await reader.ToChannel<object>(null, true));
 	}
 
 	[Fact]
@@ -34,7 +48,8 @@ public static class ToChannelExtensionsContractTests
 		IDataReader reader = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannel(true, ArrayPool<object>.Shared));
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannel(true, ArrayPool<object>.Shared));
 	}
 
 	[Fact]
@@ -45,7 +60,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannel(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannel(true, transform));
 	}
 
 	[Fact]
@@ -56,7 +72,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannel(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannel(true, transform));
 	}
 
 	[Fact]
@@ -66,7 +83,8 @@ public static class ToChannelExtensionsContractTests
 		IDbCommand command = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannel(true));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannel(true));
 	}
 
 	[Fact]
@@ -77,7 +95,8 @@ public static class ToChannelExtensionsContractTests
 		ArrayPool<object> arrayPool = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannel(true, arrayPool));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannel(true, arrayPool));
 	}
 
 	[Fact]
@@ -88,7 +107,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannel(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannel(true, transform));
 	}
 
 	[Fact]
@@ -98,7 +118,8 @@ public static class ToChannelExtensionsContractTests
 		IExecuteReader command = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannel(true));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannel(true));
 	}
 
 	[Fact]
@@ -109,7 +130,8 @@ public static class ToChannelExtensionsContractTests
 		ArrayPool<object> arrayPool = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannel(true, arrayPool));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannel(true, arrayPool));
 	}
 
 	[Fact]
@@ -120,7 +142,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannel(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannel(true, transform));
 	}
 
 #if !NETSTANDARD2_0
@@ -131,7 +154,8 @@ public static class ToChannelExtensionsContractTests
 		DbDataReader reader = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannelAsync(true));
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannelAsync(true));
 	}
 
 	[Fact]
@@ -142,7 +166,8 @@ public static class ToChannelExtensionsContractTests
 		ArrayPool<object> arrayPool = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannelAsync(true, arrayPool));
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannelAsync(true, arrayPool));
 	}
 
 	[Fact]
@@ -153,7 +178,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannelAsync(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => reader.ToChannelAsync(true, transform));
 	}
 
 	[Fact]
@@ -163,7 +189,8 @@ public static class ToChannelExtensionsContractTests
 		DbCommand command = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannelAsync(true));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannelAsync(true));
 	}
 
 	[Fact]
@@ -174,7 +201,8 @@ public static class ToChannelExtensionsContractTests
 		ArrayPool<object> arrayPool = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannelAsync(true, arrayPool));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannelAsync(true, arrayPool));
 	}
 
 	[Fact]
@@ -185,7 +213,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannelAsync(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannelAsync(true, transform));
 	}
 
 	[Fact]
@@ -195,7 +224,8 @@ public static class ToChannelExtensionsContractTests
 		IExecuteReaderAsync command = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannelAsync(true));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannelAsync(true));
 	}
 
 	[Fact]
@@ -206,7 +236,8 @@ public static class ToChannelExtensionsContractTests
 		Func<IDataRecord, object> transform = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => command.ToChannelAsync(true, transform));
+		Assert.Throws<ArgumentNullException>(
+			() => command.ToChannelAsync(true, transform));
 	}
 #endif
 }

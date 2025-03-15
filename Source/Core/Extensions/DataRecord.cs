@@ -153,7 +153,6 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The <see cref="IDataRecord"/> to query the ordinals from.</param>
 	/// <param name="columnNames">The requested column names.</param>
 	/// <param name="sort">If true, will order the results by ordinal ascending.</param>
-	/// <returns></returns>
 	public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
 		if (columnNames is ICollection<string> cn && cn.Count == 0)

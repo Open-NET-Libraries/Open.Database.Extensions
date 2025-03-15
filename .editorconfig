@@ -186,3 +186,6 @@ dotnet_diagnostic.IDE0305.severity = silent
 
 # IDE0306: Simplify collection initialization
 dotnet_diagnostic.IDE0306.severity = silent
+
+# RCS1077: Optimize LINQ usage.
+dotnet_diagnostic.RCS1077.severity = silent

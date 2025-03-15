@@ -16,6 +16,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
+		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
 		{
@@ -101,17 +102,11 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<object[]> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		Contract.EndContractBlock();
-
-		return target.WriteAll(
+		=> target.WriteAll(
 			reader.AsEnumerable(),
 			complete,
 			false,
 			cancellationToken);
-	}
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -127,17 +122,11 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		Contract.EndContractBlock();
-
-		return target.WriteAll(
+		=> target.WriteAll(
 			reader.AsEnumerable(arrayPool),
 			complete,
 			false,
 			cancellationToken);
-	}
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to the channel.
@@ -154,18 +143,11 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		Func<IDataRecord, T> transform,
 		CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		if (transform is null) throw new ArgumentNullException(nameof(transform));
-		Contract.EndContractBlock();
-
-		return target.WriteAll(
+		=> target.WriteAll(
 			reader.Select(transform, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
-	}
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -521,17 +503,11 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<object[]> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		Contract.EndContractBlock();
-
-		return target.WriteAllAsync(
+		=> target.WriteAllAsync(
 			reader.AsAsyncEnumerable(cancellationToken),
 			complete,
 			false,
 			cancellationToken);
-	}
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -546,17 +522,11 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		Contract.EndContractBlock();
-
-		return target.WriteAllAsync(
+		=> target.WriteAllAsync(
 			reader.AsAsyncEnumerable(arrayPool, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
-	}
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
