@@ -221,8 +221,13 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+#if NET8_0_OR_GREATER
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(string c, params IEnumerable<string> others)
+		=> RetrieveAsync(others.Prepend(c));
+#else
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(string c, params string[] others)
 		=> RetrieveAsync(Concat(c, others));
+#endif
 
 	/// <summary>
 	/// Asynchronously returns all records via a transform function.
