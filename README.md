@@ -136,7 +136,14 @@ public static bool TryTransaction()
 
 ## 8.0 Release Notes
 
-  - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
-  - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
-  - .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
-  - Improved nullable integrity.
+- All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
+- Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
+- .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
+- Improved nullable integrity.
+
+## 9.0 Release Notes
+
+- Open.Database.Extensions meta-package is discontinued.
+- .NET 9.0 added to targets to ensure potential compilation and performance improvements are available.
+- Impelmented some .NET 8 and 9 specific features.
+- Significant cleanup and simplifcation where possible.
