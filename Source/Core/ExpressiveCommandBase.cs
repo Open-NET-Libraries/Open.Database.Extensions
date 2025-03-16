@@ -71,6 +71,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 	}
 
+	/// <inheritdoc cref="ExpressiveCommandBase(IDbConnectionFactory{TConnection}, CommandType, string, IEnumerable{Param}?)"/>
+	protected ExpressiveCommandBase(
+		Func<TConnection> connFactory,
+		CommandType type,
+		string command,
+		IEnumerable<Param>? @params)
+		: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command, @params)
+	{
+	}
+
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connection">The connection to execute the command on.</param>
 	/// <param name="transaction">The optional transaction to execute the command on.</param>

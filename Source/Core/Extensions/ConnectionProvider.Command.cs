@@ -192,7 +192,7 @@ public static partial class ConnectionExtensions
 		this Func<IDbConnection> connectionSource,
 		string command,
 		CommandType type = CommandType.Text)
-		=> Command(DbConnectionFactory.Create(connectionSource), command, type);
+		=> Command(connectionSource.AsPool(), command, type);
 
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> with command type set to <see cref="CommandType.StoredProcedure"/> for subsequent configuration and execution.
@@ -216,7 +216,7 @@ public static partial class ConnectionExtensions
 		string command,
 		CommandType type = CommandType.Text)
 		where TConnection : DbConnection
-		=> Command(DbConnectionFactory.Create(connectionSource), command, type);
+		=> Command(connectionSource.AsPool(), command, type);
 
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> with command type set to <see cref="CommandType.StoredProcedure"/> for subsequent configuration and execution.
@@ -228,5 +228,5 @@ public static partial class ConnectionExtensions
 		this Func<TConnection> connectionSource,
 		string procedureName)
 		where TConnection : DbConnection
-		=> StoredProcedure(DbConnectionFactory.Create(connectionSource), procedureName);
+		=> StoredProcedure(connectionSource.AsPool(), procedureName);
 }

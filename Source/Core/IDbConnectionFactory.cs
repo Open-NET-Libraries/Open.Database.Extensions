@@ -1,4 +1,6 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Data.Common;
+
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Common interface for creating a connection.  Can easily be used with dependency injection.
@@ -77,6 +79,10 @@ public static class DbConnectionFactoryExtensions
 	public static ConnectionFactoryToPoolAdapter AsPool(this IDbConnectionFactory connectionFactory)
 		=> new (connectionFactory);
 
+	/// <inheritdoc cref="AsPool(IDbConnectionFactory)"/>
+	public static ConnectionFactoryToPoolAdapter AsPool(this Func<IDbConnection> connectionFactory)
+		=> new(connectionFactory);
+
 	/// <summary>
 	/// Provides a connection pool that simply creates from a connection factory and disposes when returned.
 	/// </summary>
@@ -85,6 +91,11 @@ public static class DbConnectionFactoryExtensions
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 		=> new (connectionFactory);
+
+	/// <inheritdoc cref="AsPool{TConnection}(IDbConnectionFactory{TConnection})"/>
+	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this Func<TConnection> connectionFactory)
+		where TConnection : IDbConnection
+		=> new(connectionFactory);
 
 	/// <summary>
 	/// Coerces a non-generic connection factory to a generic one.

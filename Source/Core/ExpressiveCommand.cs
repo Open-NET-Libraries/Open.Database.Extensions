@@ -28,6 +28,17 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
 	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
+	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(IDbConnectionFactory{TConnection}, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
+	public ExpressiveCommand(
+		Func<IDbConnection> connFactory,
+		CommandType type,
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connFactory, type, command, @params)
+	{
+	}
+
+	/// <summary>Constructs a <see cref="ExpressiveCommand"/>.</summary>
 	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveCommandBase(TConnection, IDbTransaction?, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)" />
 	public ExpressiveCommand(
 		IDbConnection connection,

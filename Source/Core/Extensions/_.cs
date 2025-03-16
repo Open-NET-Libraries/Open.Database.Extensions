@@ -45,7 +45,6 @@ public static partial class CoreExtensions
 	public static Span<object?> CopyToDBNullAsNull(this Span<object?> values, Span<object?> target)
 		=> CopyToDBNullAsNull((ReadOnlySpan<object?>)values, target);
 
-
 	/// <inheritdoc cref="CopyToDBNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
 	public static Span<object?> CopyToDBNullAsNull(this ReadOnlySpan<object?> values, Memory<object?> target)
 		=> CopyToDBNullAsNull(values, target.Span);

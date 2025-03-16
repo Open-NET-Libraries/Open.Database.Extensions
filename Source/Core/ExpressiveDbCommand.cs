@@ -27,6 +27,16 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	{
 	}
 
+	/// <inheritdoc cref="ExpressiveDbCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExpressiveDbCommandBase(IDbConnectionFactory{TConnection}, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)"/>
+	public ExpressiveDbCommand(
+		Func<DbConnection> connFactory,
+		CommandType type,
+		string command,
+		IEnumerable<Param>? @params = null)
+	: base(connFactory.AsPool(), type, command, @params)
+	{
+	}
+
 	/// <summary>Constructs a <see cref="ExpressiveDbCommand"/>.</summary>
 	/// <inheritdoc />
 	public ExpressiveDbCommand(

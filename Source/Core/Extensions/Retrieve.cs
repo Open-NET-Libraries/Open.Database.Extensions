@@ -1,6 +1,7 @@
 ﻿
 namespace Open.Database.Extensions;
 
+[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
 public static partial class CoreExtensions
 {
 	internal static QueryResultQueue<object[]> RetrieveInternal(
@@ -141,12 +142,9 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsync(reader, true, cancellationToken);
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
 	static ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
 		=> RetrieveAsyncInternal(null, reader, cancellationToken, ordinals, columnNames, readStarted, useReadAsync)!;
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0046:Convert to conditional expression", Justification = "<Pending>")]
 	static async ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(ArrayPool<object>? arrayPool, DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -237,7 +235,6 @@ public static partial class CoreExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{int}, bool, CancellationToken)" />
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -295,7 +292,6 @@ public static partial class CoreExtensions
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -322,7 +318,6 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsync(command, true, cancellationToken);
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
 	static ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(
 		DbCommand command,
 		CancellationToken cancellationToken,
@@ -362,7 +357,6 @@ public static partial class CoreExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		CancellationToken cancellationToken,
@@ -411,7 +405,6 @@ public static partial class CoreExtensions
 	/// <param name="columnName">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="otherColumnNames">The remaining column names to request from the reader for each record.</param>
 	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Method takes params and cannot have a the cancellation token last.")]
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		CancellationToken cancellationToken,

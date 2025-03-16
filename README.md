@@ -4,23 +4,29 @@
 
 Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
 
-## Connection Factories
+## Principles
+
+- Minimize connection open time.
+- Deferred/lazy transformation.
+- Optimize for specific use cases.
+- Minimize boilerplate code.
+
+## Features
+- Provides a fluent interface for database operations.
+- Supports dependency injection for connection factories.
+- Support both synchronous and asynchronous operations.
+- Provides expressive commands for executing SQL queries and stored procedures.
+
+### Connection Factories
 
 Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.
 A `SqlConnectionFactory` is provided and can be overridden to provide more specific dependency injection configurations.
 
-## Expressive Commands
+### Expressive Commands
 
 The provided expressive command classes allow for an expressive means to append parameters and execute the results without lengthy complicated setup.
 
 Extensions are provided to create commands from connection factories.
-
-## 8.0 Release Notes
-
-  - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
-  - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
-  - .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
-  - Improved nullable integrity.
 
 ### Example
 
@@ -127,3 +133,10 @@ public static bool TryTransaction()
             .ExecuteScalar<bool>();
     }));
 ```
+
+## 8.0 Release Notes
+
+  - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
+  - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
+  - .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
+  - Improved nullable integrity.
