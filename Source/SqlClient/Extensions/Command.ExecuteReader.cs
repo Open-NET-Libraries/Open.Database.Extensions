@@ -45,6 +45,22 @@ public static partial class SqlCommandExtensions
 	}
 
 	/// <param name="command">The <see cref="SqlCommand"/> to generate a reader from.</param>
+	/// <param name="transform">The transform function for each <see cref="SqlDataReader"/>.</param>
+	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <inheritdoc cref="CommandExtensions.ExecuteReader{T}(IDbCommand, Func{IDataReader, T}, CommandBehavior)"/>
+	public static T ExecuteReader<T>(this SqlCommand command, Func<SqlDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		ConnectionState state = command.EnsureOpen();
+		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+		using SqlDataReader reader = command.ExecuteReader(behavior);
+		return transform(reader);
+	}
+
+	/// <param name="command">The <see cref="SqlCommand"/> to generate a reader from.</param>
 	/// <param name="handler">The handler function for the <see cref="SqlDataReader"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
@@ -92,7 +108,7 @@ public static partial class SqlCommandExtensions
 	}
 
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
+	/// <param name="transform">The transform function the <see cref="DbDataReader"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <inheritdoc cref="CommandExtensions.ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, ValueTask{T}}, CommandBehavior, CancellationToken)"/>/>
@@ -116,5 +132,28 @@ public static partial class SqlCommandExtensions
 #endif
 		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		return transform(reader);
+	}
+
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(SqlCommand, Func{SqlDataReader, T}, CommandBehavior, CancellationToken)"/>
+	public static async ValueTask<T> ExecuteReaderAsync<T>(this SqlCommand command,
+		Func<SqlDataReader, ValueTask<T>> transform,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		ConnectionState state = await command
+			.EnsureOpenAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
+#if NETSTANDARD2_0
+#else
+		await
+#endif
+		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		return await transform(reader);
 	}
 }
