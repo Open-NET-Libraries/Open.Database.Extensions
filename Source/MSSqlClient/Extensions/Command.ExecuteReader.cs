@@ -60,7 +60,7 @@ public static partial class SqlCommandExtensions
 
 		ConnectionState state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-#if NETSTANDARD2_0
+#if NET472
 #else
 		await
 #endif
@@ -83,7 +83,7 @@ public static partial class SqlCommandExtensions
 			.ConfigureAwait(false);
 
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-#if NETSTANDARD2_0
+#if NET472
 #else
 		await
 #endif
@@ -110,7 +110,7 @@ public static partial class SqlCommandExtensions
 			.ConfigureAwait(false);
 
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-#if NETSTANDARD2_0
+#if NET472
 #else
 		await
 #endif
