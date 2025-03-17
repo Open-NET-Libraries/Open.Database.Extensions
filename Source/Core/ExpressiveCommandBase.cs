@@ -179,51 +179,6 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	}
 
 	#region AddParam
-	/// <summary>
-	/// Adds a parameter to the params list.
-	/// </summary>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <param name="type">The database type of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParam(string name, object value, TDbType type)
-	{
-		if (name is null) throw new ArgumentNullException(nameof(name));
-		else if (string.IsNullOrWhiteSpace(name))
-			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
-		Contract.EndContractBlock();
-
-		Params.Add(new Param
-		{
-			Name = name,
-			Value = value,
-			Type = type
-		});
-
-		return (TThis)this;
-	}
-
-	/// <summary>
-	/// Adds a parameter to the params list.
-	/// </summary>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParam(string name, object value)
-	{
-		if (name is null) throw new ArgumentNullException(nameof(name));
-		else if (string.IsNullOrWhiteSpace(name))
-			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
-		Contract.EndContractBlock();
-
-		Params.Add(new Param
-		{
-			Name = name,
-			Value = value ?? DBNull.Value
-		});
-
-		return (TThis)this;
-	}
 
 	/// <summary>
 	/// Adds a parameter to the params list.
@@ -231,86 +186,108 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="value">The value of the parameter.</param>
 	/// <param name="type">The database type of the parameter.</param>
+	/// <param name="direction">The direction of the parameter.</param>
 	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParam<T>(string name, T? value, TDbType type)
-		where T : struct
+	/// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is blank.</exception>
+	public TThis AddParam(string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 	{
 		if (name is null) throw new ArgumentNullException(nameof(name));
-		else if (string.IsNullOrWhiteSpace(name))
+		if (string.IsNullOrWhiteSpace(name))
 			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
 		Contract.EndContractBlock();
 
-		Params.Add(new Param
-		{
-			Name = name,
-			Type = type,
-			Value = value ?? (object)DBNull.Value
-		});
-
+		Params.Add(new(name, value, type, direction));
 		return (TThis)this;
 	}
 
-	/// <summary>
-	/// Adds a parameter to the params list.
-	/// </summary>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParam<T>(string name, T? value)
-		where T : struct
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, object? value, ParameterDirection direction = ParameterDirection.Input)
 	{
 		if (name is null) throw new ArgumentNullException(nameof(name));
-		Contract.EndContractBlock();
-
-		Params.Add(new Param
-		{
-			Name = name,
-			Value = value ?? (object)DBNull.Value
-		});
-
-		return (TThis)this;
-	}
-
-	/// <summary>
-	/// Adds a parameter to the params list.
-	/// </summary>
-	/// <param name="name">The name of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParam(string name)
-	{
-		if (name is null) throw new ArgumentNullException(nameof(name));
-		else if (string.IsNullOrWhiteSpace(name))
+		if (string.IsNullOrWhiteSpace(name))
 			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
 		Contract.EndContractBlock();
 
-		Params.Add(new Param
-		{
-			Name = name
-		});
+		Params.Add(new(name, value ?? DBNull.Value, null, direction));
+		return (TThis)this;
+	}
 
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam<T>(string name, T? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		where T : struct
+	{
+		if (name is null) throw new ArgumentNullException(nameof(name));
+		if (string.IsNullOrWhiteSpace(name))
+			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+		Contract.EndContractBlock();
+
+		Params.Add(new(name, value ?? (object)DBNull.Value, type, direction));
+		return (TThis)this;
+	}
+
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, string? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+	{
+		if (name is null) throw new ArgumentNullException(nameof(name));
+		if (string.IsNullOrWhiteSpace(name))
+			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+		Contract.EndContractBlock();
+
+		Params.Add(new(name, value ?? (object)DBNull.Value, type, direction));
+		return (TThis)this;
+	}
+
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+	{
+		if (name is null) throw new ArgumentNullException(nameof(name));
+		if (string.IsNullOrWhiteSpace(name))
+			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+		Contract.EndContractBlock();
+
+		Params.Add(new (name, null, type, direction));
+		return (TThis)this;
+	}
+
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, ParameterDirection direction = ParameterDirection.Input)
+	{
+		if (name is null) throw new ArgumentNullException(nameof(name));
+		if (string.IsNullOrWhiteSpace(name))
+			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+		Contract.EndContractBlock();
+
+		Params.Add(new(name, null, null, direction));
 		return (TThis)this;
 	}
 
 	/// <summary>
-	/// Conditionally adds a parameter to the params list.
+	/// Adds a return parameter to the params list.
 	/// </summary>
-	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParamIf<T>(bool condition, string name, T? value)
-		where T : struct
-		=> condition ? AddParam(name, value) : (TThis)this;
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddReturnParam(string name, TDbType type)
+	{
+		if (name is null) throw new ArgumentNullException(nameof(name));
+		if (string.IsNullOrWhiteSpace(name))
+			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+		Contract.EndContractBlock();
 
-	/// <summary>
-	/// Conditionally adds a parameter to the params list.
-	/// </summary>
-	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParamIf(bool condition, string name, object value)
-		=> condition ? AddParam(name, value) : (TThis)this;
+		Params.Add(new(name, null, type, ParameterDirection.ReturnValue));
+		return (TThis)this;
+	}
+
+	/// <inheritdoc cref="AddReturnParam(string, TDbType)"/>
+	public TThis AddReturnParam(string name)
+	{
+		if (name is null) throw new ArgumentNullException(nameof(name));
+		if (string.IsNullOrWhiteSpace(name))
+			throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+		Contract.EndContractBlock();
+
+		Params.Add(new(name, null, null, ParameterDirection.ReturnValue));
+		return (TThis)this;
+	}
 
 	/// <summary>
 	/// Conditionally adds a parameter to the params list.
@@ -319,30 +296,32 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="value">The value of the parameter.</param>
 	/// <param name="type">The database type of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParamIf(bool condition, string name, object value, TDbType type)
-		=> condition ? AddParam(name, value, type) : (TThis)this;
+	/// <param name="direction">The direction of the parameter.</param>
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 
-	/// <summary>
-	/// Conditionally adds a parameter to the params list.
-	/// </summary>
-	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <param name="type">The database type of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParamIf<T>(bool condition, string name, T? value, TDbType type)
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf<T>(bool condition, string name, T? value, ParameterDirection direction = ParameterDirection.Input)
 		where T : struct
-		=> condition ? AddParam(name, value, type) : (TThis)this;
+		=> condition ? AddParam(name, value, null, direction) : (TThis)this;
 
-	/// <summary>
-	/// Conditionally adds a parameter to the params list.
-	/// </summary>
-	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <returns>This instance for use in method chaining.</returns>
-	public TThis AddParamIf(bool condition, string name)
-		=> condition ? AddParam(name) : (TThis)this;
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, object? value, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, value, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf<T>(bool condition, string name, T? value, TDbType? type, ParameterDirection direction = ParameterDirection.Input)
+		where T : struct
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, direction) : (TThis)this;
 
 	/// <summary>
 	/// Handles adding the list of parameters to a new command.

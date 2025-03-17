@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>
+			Useful set of utilities and abstractions for simplifying modern data-access operations and ensuring DI compatibility.
+			This is simply a meta-package that includes Open.Database.Extensions.Core.
+		</Description>
+		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+    <ProjectReference Include="..\Core\Open.Database.Extensions.Core.csproj" />
+  </ItemGroup>
+	
+</Project>

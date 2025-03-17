@@ -71,10 +71,18 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 
 		foreach (Param p in Params)
 		{
-			SqlParameter np = command
-				.Parameters
-				.AddWithValue(p.Name, p.Value);
+			SqlParameter np;
+			if (p.Value is null)
+			{
+				np = command.CreateParameter();
+				np.ParameterName = p.Name;
+			}
+			else
+			{
+				np = command.Parameters.AddWithValue(p.Name, p.Value);
+			}
 
+			np.Direction = p.Direction;
 			if (p.Type.HasValue)
 				np.SqlDbType = p.Type.Value;
 		}

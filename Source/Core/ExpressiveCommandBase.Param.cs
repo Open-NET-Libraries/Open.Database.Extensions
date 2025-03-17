@@ -11,58 +11,38 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// A struct that represents the param to be created when the command is executed.
 	/// TDbType facilitates the difference between DbType and SqlDbType.
 	/// </summary>
-	public struct Param : IEquatable<Param>
+	public readonly record struct Param : IEquatable<Param>
 
 	{
 		/// <summary>
+		/// Constructs a <see cref="Param"/>.
+		/// </summary>
+		public Param(string name, object? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		{
+			Name = name;
+			Value = value;
+			Type = type;
+			Direction = direction;
+		}
+
+		/// <summary>
 		/// The name of the param.
 		/// </summary>
-		public string Name { get; set; }
+		public string Name { get; }
 
 		/// <summary>
 		/// The value of the param.
 		/// </summary>
-		public object Value { get; set; }
+		public object? Value { get; }
 
 		/// <summary>
 		/// The DbType of the param.
 		/// </summary>
-		public TDbType? Type { get; set; }
-
-		/// <inheritdoc />
-		public readonly bool Equals(Param other)
-			=> Name == other.Name
-			&& EqualityComparer<object>.Default.Equals(Value, other.Value)
-			&& EqualityComparer<TDbType?>.Default.Equals(Type, other.Type);
-
-		/// <inheritdoc />
-		public override readonly bool Equals(object? obj)
-			=> obj is Param o && Equals(o);
-
-		/// <inheritdoc />
-#if NETSTANDARD2_0
-		[SuppressMessage("Roslynator", "RCS1123:Add parentheses when necessary", Justification = "<Pending>")]
-		public override readonly int GetHashCode()
-		{
-			int hashCode = 1477810893;
-			hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
-			hashCode = hashCode * -1521134295 + EqualityComparer<object>.Default.GetHashCode(Value);
-			hashCode = hashCode * -1521134295 + EqualityComparer<TDbType?>.Default.GetHashCode(Type);
-			return hashCode;
-		}
-#else
-		public override readonly int GetHashCode()
-			=> HashCode.Combine(Name, Value, Type);
-#endif
+		public TDbType? Type { get; }
 
 		/// <summary>
-		/// Equality operator.
+		/// The direction of the param.
 		/// </summary>
-		public static bool operator ==(Param left, Param right) => left.Equals(right);
-
-		/// <summary>
-		/// Inequality operator.
-		/// </summary>
-		public static bool operator !=(Param left, Param right) => !left.Equals(right);
+		public ParameterDirection Direction { get; }
 	}
 }
