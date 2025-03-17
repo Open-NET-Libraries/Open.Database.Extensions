@@ -11,18 +11,29 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// A struct that represents the param to be created when the command is executed.
 	/// TDbType facilitates the difference between DbType and SqlDbType.
 	/// </summary>
-	public readonly record struct Param : IEquatable<Param>
+	public readonly record struct Param
 
 	{
 		/// <summary>
 		/// Constructs a <see cref="Param"/>.
 		/// </summary>
-		public Param(string name, object? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		public Param(
+			string name,
+			object? value,
+			TDbType? type = null,
+			ParameterDirection direction = ParameterDirection.Input)
 		{
+			if (name is null) throw new ArgumentNullException(nameof(name));
+			if (string.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Parameter names cannot be empty or white space.", nameof(name));
+			Contract.EndContractBlock();
+
 			Name = name;
-			Value = value;
 			Type = type;
 			Direction = direction;
+
+			bool isInput = direction is ParameterDirection.Input or ParameterDirection.InputOutput;
+			Value = isInput ? (value ?? DBNull.Value) : value;
 		}
 
 		/// <summary>
