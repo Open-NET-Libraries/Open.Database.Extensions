@@ -3,7 +3,7 @@
 /// <summary>
 /// SqlClient extensions for building a command and retrieving data using best practices.
 /// </summary>
-public static class SqlCommandExtensions
+public static partial class SqlCommandExtensions
 {
 	/// <summary>
 	/// Shortcut for adding command parameter.

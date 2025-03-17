@@ -6,6 +6,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 public static partial class CommandExtensions
 {
+	#region Connection.EnsureOpen Shortcuts.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static ConnectionState EnsureOpen(this IDbCommand command)
 	{
@@ -23,6 +24,7 @@ public static partial class CommandExtensions
 #endif
 		return command.Connection!.EnsureOpenAsync(cancellationToken);
 	}
+	#endregion
 
 	/// <summary>
 	/// Iterates all records using an <see cref="IDataReader"/> and returns the desired results as a list.
@@ -319,7 +321,7 @@ public static partial class CommandExtensions
 	}
 
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
+	/// <param name="handler">The handler function for the <see cref="DbDataReader"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)"/>
