@@ -74,14 +74,14 @@ public class Transformer<T>
 			}
 		}
 
-		// Key on the column name with a case-insensitive comparer instead of allocating an
-		// upper-cased key per column.
-		Dictionary<string, PropertyInfo> columnToProperty = _propertyMap.ToDictionary(
-			kvp => kvp.Value, kvp => pm[kvp.Key], StringComparer.OrdinalIgnoreCase);
+		// Project column-name -> property straight into the target map with a case-insensitive
+		// comparer: no upper-cased key strings, and no intermediate Dictionary on the frozen path.
 #if NET10_0_OR_GREATER
-		_columnToPropertyMap = columnToProperty.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+		_columnToPropertyMap = _propertyMap.ToFrozenDictionary(
+			kvp => kvp.Value, kvp => pm[kvp.Key], StringComparer.OrdinalIgnoreCase);
 #else
-		_columnToPropertyMap = columnToProperty;
+		_columnToPropertyMap = _propertyMap.ToDictionary(
+			kvp => kvp.Value, kvp => pm[kvp.Key], StringComparer.OrdinalIgnoreCase);
 #endif
 	}
 
