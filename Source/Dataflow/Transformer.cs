@@ -31,12 +31,10 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 		Contract.EndContractBlock();
 
 		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
-		var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
 		var names = columns.Select(m => m.Name).ToImmutableArray();
 
 		var processor = new Processor(this, names);
 		Func<object?[], T> transform = processor.Transform;
-		int columnCount = columns.Length;
 
 		var transformBlock = new TransformBlock<object[], T>(
 			a =>
@@ -95,12 +93,10 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 		Contract.EndContractBlock();
 
 		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
-		var ordinals = columns.Select(m => m.Ordinal).ToImmutableArray();
 		var names = columns.Select(m => m.Name).ToImmutableArray();
 
 		var processor = new Processor(this, names);
 		Func<object?[], T> transform = processor.Transform;
-		int columnCount = columns.Length;
 
 		var transformBlock = new TransformBlock<object[], T>(
 			a =>

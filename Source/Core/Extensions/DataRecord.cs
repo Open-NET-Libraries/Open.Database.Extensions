@@ -307,27 +307,36 @@ public static partial class DataRecordExtensions
 	/// <returns>The enumerable of name to ordinal mappings.</returns>
 	public static IEnumerable<(string Name, int Ordinal)> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
-		// Normalize the requested column names to be lowercase.
-		columnNames = columnNames.Select(c
-			=> string.IsNullOrWhiteSpace(c)
-				? throw new ArgumentException("Column names cannot be null or whitespace only.")
-				: c.ToUpperInvariant());
-
+		// Match case-insensitively via an OrdinalIgnoreCase comparer instead of allocating an
+		// upper-cased copy of every requested and every actual column name.
+		IEnumerable<string> requestedNames = ValidateColumnNames(columnNames);
 		IEnumerable<(string Name, int Ordinal)> actual = record.OrdinalMapping();
+
 		if (sort)
 		{
-			var requested = new HashSet<string>(columnNames);
-			// Return actual values based upon if their lower-case counterparts exist in the requested.
-			return actual
-				.Where(m => requested.Contains(m.Name.ToUpperInvariant()));
+			var requested = new HashSet<string>(requestedNames, StringComparer.OrdinalIgnoreCase);
+			// Return the actual columns, in record order, whose names were requested.
+			return actual.Where(m => requested.Contains(m.Name));
 		}
 		else
 		{
-			// Create a map of lower-case keys to actual.
-			var actualColumns = actual.ToDictionary(m => m.Name.ToUpperInvariant(), m => m);
-			return columnNames
-				.Where(c => actualColumns.ContainsKey(c)) // Select lower case column names if they exist in the dictionary.
-				.Select(c => actualColumns[c]); // Then select the actual values based upon that key.
+			// Map actual columns case-insensitively so the requested order can be preserved.
+			var actualColumns = new Dictionary<string, (string Name, int Ordinal)>(StringComparer.OrdinalIgnoreCase);
+			foreach ((string Name, int Ordinal) m in actual)
+				actualColumns[m.Name] = m;
+			return requestedNames
+				.Where(actualColumns.ContainsKey)
+				.Select(c => actualColumns[c]);
+		}
+
+		static IEnumerable<string> ValidateColumnNames(IEnumerable<string> names)
+		{
+			foreach (string c in names)
+			{
+				yield return string.IsNullOrWhiteSpace(c)
+					? throw new ArgumentException("Column names cannot be null or whitespace only.")
+					: c;
+			}
 		}
 	}
 
