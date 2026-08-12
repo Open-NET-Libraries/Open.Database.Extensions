@@ -126,7 +126,7 @@ public static partial class CoreExtensions
 		if (values is null) throw new ArgumentNullException(nameof(values));
 		Contract.EndContractBlock();
 
-#if NET8_0_OR_GREATER
+#if NET10_0_OR_GREATER
 		var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(values);
 		for (int i = 0; i < span.Length; i++)
 		{
@@ -187,7 +187,7 @@ public static partial class CoreExtensions
 		.Results(table, clearSourceTable);
 
 	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
-#if NET8_0_OR_GREATER
+#if NET10_0_OR_GREATER
 	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)> fieldMappingOverrides) where T : new()
 #else
 	public static IEnumerable<T> To<T>(this DataTable table, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()

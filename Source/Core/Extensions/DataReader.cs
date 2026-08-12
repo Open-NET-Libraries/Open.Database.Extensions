@@ -277,7 +277,7 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-#if NET8_0_OR_GREATER
+#if NET10_0_OR_GREATER
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
 		=> AsEnumerableInternal(reader, others.Prepend(n), false);
 #else
