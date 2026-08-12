@@ -2,10 +2,12 @@
 // Polyfill for System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute.
 // The attribute ships in-box on .NET 9+, but net10.0 is this library's modern target, so
 // everything below it (the netstandard shims and net472) gets this internal definition.
-// The C# 13+ compiler recognizes it by full name and honors a source-defined copy — verified
-// on net472 (the polyfilled overload wins overload resolution exactly as the in-box one does),
-// which is what lets the modern span overloads added during API modernization win uniformly
-// across every target framework.
+// The C# 13+ compiler recognizes it by full metadata name and honors a source-defined copy,
+// decoding the priority from the attribute blob without requiring the type to be public or
+// from the runtime. Verified on netstandard2.0 both in-assembly (the ns2.0 compiler honors it)
+// and cross-assembly (a net10 consumer honors this internal attribute read from ns2.0 metadata),
+// with a no-attribute negative control confirming causation. This is what lets the modern span
+// overloads added during API modernization win overload resolution uniformly across every TFM.
 namespace System.Runtime.CompilerServices;
 
 [AttributeUsage(
