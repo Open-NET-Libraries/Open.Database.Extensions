@@ -3,10 +3,14 @@
 	<PropertyGroup>
 		<RootNamespace>Open.Database.Extensions</RootNamespace>
 		
-		<VersionPrefix>10.0.1</VersionPrefix>
+		<VersionPrefix>10.1.0</VersionPrefix>
 		<VersionSuffix Condition="'$(Configuration)' == 'Debug'">debug</VersionSuffix>
-		
-		<TargetFrameworks>netstandard2.0; netstandard2.1; net8.0; net10.0;</TargetFrameworks>
+
+		<!-- net10.0 is the primary/modern target. netstandard2.0/2.1 are retained as shimmed
+		     legacy paths (via #if switching + BCL compat packages). net472 lives only on the
+		     MSSqlClient adapter; .NET Framework consumers of the other packages use the
+		     netstandard2.0 build. net8/net9 consumers fall back to netstandard2.1. -->
+		<TargetFrameworks>netstandard2.0; netstandard2.1; net10.0;</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>

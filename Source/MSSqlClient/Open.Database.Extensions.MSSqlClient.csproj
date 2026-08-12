@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net472; net8.0; net10.0;</TargetFrameworks>
+		<TargetFrameworks>net472; net10.0;</TargetFrameworks>
 		<Description>Useful set of utilities and abstractions for simplifying modern SQL Client data-access operations and ensuring DI compatibility.</Description>
 		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
 	</PropertyGroup>
