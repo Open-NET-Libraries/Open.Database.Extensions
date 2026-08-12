@@ -34,11 +34,10 @@ public static partial class CoreExtensions
 	public static Span<object?> CopyToDBNullAsNull(this ReadOnlySpan<object?> values, Span<object?> target)
 	{
 		int len = values.Length;
-		object?[] result = new object?[len];
 		for (int i = 0; i < len; i++)
 			target[i] = DBNullValueToNull(values[i]);
 
-		return result;
+		return target;
 	}
 
 	/// <inheritdoc cref="CopyToDBNullAsNull(ReadOnlySpan{object?}, Span{object?})"/>
