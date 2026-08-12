@@ -936,7 +936,11 @@ public static class DataReaderExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var results = new Queue<object>(reader.Select(r => r.GetValue(0)));
+		// Buffer the first-column values so the reader/connection can be released before the
+		// (deferred) DBNull conversion runs during enumeration.
+		var results = new Queue<object>();
+		while (reader.Read())
+			results.Enqueue(reader.GetValue(0));
 		return results.DequeueEach().DBNullToNull();
 	}
 

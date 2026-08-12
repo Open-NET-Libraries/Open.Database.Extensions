@@ -1,4 +1,8 @@
 ﻿
+#if NET10_0_OR_GREATER
+using System.Collections.Frozen;
+#endif
+
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
@@ -29,7 +33,15 @@ public class Transformer<T>
 
 	// Allow mapping key = object property, value = column name.
 	readonly Dictionary<string, string> _propertyMap;
+
+	// Column-name -> property lookup, matched case-insensitively (OrdinalIgnoreCase) so no
+	// upper-cased key strings are allocated. Built once and never mutated after construction,
+	// so it is frozen on the modern target for faster reads.
+#if NET10_0_OR_GREATER
+	readonly FrozenDictionary<string, PropertyInfo> _columnToPropertyMap;
+#else
 	readonly Dictionary<string, PropertyInfo> _columnToPropertyMap;
+#endif
 
 	/// <summary>
 	/// The property names.
@@ -62,7 +74,15 @@ public class Transformer<T>
 			}
 		}
 
-		_columnToPropertyMap = _propertyMap.ToDictionary(kvp => kvp.Value.ToUpperInvariant(), kvp => pm[kvp.Key]);
+		// Project column-name -> property straight into the target map with a case-insensitive
+		// comparer: no upper-cased key strings, and no intermediate Dictionary on the frozen path.
+#if NET10_0_OR_GREATER
+		_columnToPropertyMap = _propertyMap.ToFrozenDictionary(
+			kvp => kvp.Value, kvp => pm[kvp.Key], StringComparer.OrdinalIgnoreCase);
+#else
+		_columnToPropertyMap = _propertyMap.ToDictionary(
+			kvp => kvp.Value, kvp => pm[kvp.Key], StringComparer.OrdinalIgnoreCase);
+#endif
 	}
 
 	/// <summary>
@@ -137,10 +157,10 @@ public class Transformer<T>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
 		{
-			Dictionary<string, PropertyInfo> map = Transformer._columnToPropertyMap;
+			var map = Transformer._columnToPropertyMap;
 			_names = names;
 			_propertySetters = names
-				.Select(n => map.TryGetValue(n.ToUpperInvariant(), out PropertyInfo? p) ? p.BuildUntypedSetter<T>() : null)
+				.Select(n => map.TryGetValue(n, out PropertyInfo? p) ? p.BuildUntypedSetter<T>() : null)
 				.ToArray();
 		}
 	}
