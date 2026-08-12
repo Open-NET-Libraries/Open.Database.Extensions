@@ -60,9 +60,20 @@ public static partial class SqlTransactionExtensions
 		if (connection.State != ConnectionState.Open)
 			await connection.EnsureOpenAsync(cancellationToken);
 
+#if NET8_0_OR_GREATER
+		await
+#endif
 		using SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
 		(bool Commit, T Value) result = await conditionalAction(transaction, cancellationToken);
-		if (result.Commit) transaction.Commit();
+		if (result.Commit)
+		{
+#if NET472
+			transaction.Commit();
+#else
+			await transaction.CommitAsync(cancellationToken);
+#endif
+		}
+
 		return result;
 	}
 
