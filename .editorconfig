@@ -189,3 +189,8 @@ dotnet_diagnostic.IDE0306.severity = silent
 
 # RCS1077: Optimize LINQ usage.
 dotnet_diagnostic.RCS1077.severity = silent
+
+# RS0041: Public API uses oblivious reference types.
+# The generic ExpressiveCommandBase<...> design has nullable-oblivious spots; annotating
+# them fully is part of the API-modernization phase, not the public-API baseline itself.
+dotnet_diagnostic.RS0041.severity = none
