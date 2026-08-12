@@ -1,8 +1,11 @@
-#if !NET9_0_OR_GREATER
-// Polyfill for System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute,
-// which ships in-box only on .NET 9+ (recognized by the C# 13+ compiler by full name).
-// Defining it internally on the netstandard shims lets the modern (span) overloads added
-// during API modernization win overload resolution uniformly across every target framework.
+#if !NET10_0_OR_GREATER
+// Polyfill for System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute.
+// The attribute ships in-box on .NET 9+, but net10.0 is this library's modern target, so
+// everything below it (the netstandard shims and net472) gets this internal definition.
+// The C# 13+ compiler recognizes it by full name and honors a source-defined copy — verified
+// on net472 (the polyfilled overload wins overload resolution exactly as the in-box one does),
+// which is what lets the modern span overloads added during API modernization win uniformly
+// across every target framework.
 namespace System.Runtime.CompilerServices;
 
 [AttributeUsage(

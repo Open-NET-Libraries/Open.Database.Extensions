@@ -3,7 +3,8 @@
 	<PropertyGroup>
 		<RootNamespace>Open.Database.Extensions</RootNamespace>
 		
-		<VersionPrefix>10.1.0</VersionPrefix>
+		<!-- Stays at 10.0.1 through the phase stack; bumped to 10.1.0 only in the final release phase. -->
+		<VersionPrefix>10.0.1</VersionPrefix>
 		<VersionSuffix Condition="'$(Configuration)' == 'Debug'">debug</VersionSuffix>
 
 		<!-- net10.0 is the primary/modern target. netstandard2.0/2.1 are retained as shimmed
