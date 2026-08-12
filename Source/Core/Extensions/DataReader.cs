@@ -175,13 +175,13 @@ public static class DataReaderExtensions
 		} while (reader.Read());
 	}
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: AsEnumerableCore(reader);
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
@@ -276,20 +276,14 @@ public static class DataReaderExtensions
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
-#if NET10_0_OR_GREATER
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
 		=> AsEnumerableInternal(reader, others.Prepend(n), false);
-#else
-
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params int[] others)
-		=> AsEnumerable(reader, CoreExtensions.Concat(n, others));
-#endif
 
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
 		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
 
@@ -302,8 +296,8 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <returns>An enumerable of the values returned from a data reader.</returns>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool, int n, params int[] others)
-		=> AsEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
+		=> AsEnumerable(reader, others.Prepend(n), arrayPool);
 
 	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
 	public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
@@ -419,7 +413,7 @@ public static class DataReaderExtensions
 
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		CancellationToken cancellationToken = default)
@@ -430,7 +424,7 @@ public static class DataReaderExtensions
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		ArrayPool<object>? arrayPool,
@@ -534,7 +528,7 @@ public static class DataReaderExtensions
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, int[])"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool, CancellationToken cancellationToken = default)
 		=> arrayPool is null
 		? AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken)
@@ -545,8 +539,8 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}?, CancellationToken)"/>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params int[] others)
-		=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), cancellationToken);
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
+		=> AsAsyncEnumerable(reader, others.Prepend(n), cancellationToken);
 
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
@@ -554,16 +548,16 @@ public static class DataReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, CancellationToken cancellationToken, int n, params int[] others)
-		=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool, cancellationToken);
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
+		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool, cancellationToken);
 
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, int[])"/>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params int[] others)
-		=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others));
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})"/>
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params IEnumerable<int> others)
+		=> AsAsyncEnumerable(reader, others.Prepend(n));
 
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, int[])"/>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, int n, params int[] others)
-		=> AsAsyncEnumerable(reader, CoreExtensions.Concat(n, others), arrayPool);
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})"/>
+	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
+		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool);
 
 	/// <summary>
 	/// Asyncronously iterates all records from a data reader..]

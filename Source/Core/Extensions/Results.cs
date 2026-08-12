@@ -26,6 +26,7 @@ public static partial class CoreExtensions
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> Results<T>(this IDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 		=> Results<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
@@ -70,6 +71,7 @@ public static partial class CoreExtensions
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 		=> ResultsBuffered<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
@@ -111,6 +113,7 @@ public static partial class CoreExtensions
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> Results<T>(this IDbCommand command, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 		=> Results<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
@@ -154,6 +157,7 @@ public static partial class CoreExtensions
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IAsyncEnumerable<T> ResultsAsync<T>(this DbDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 		=> ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
@@ -166,6 +170,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IAsyncEnumerable<T> ResultsAsync<T>(this DbDataReader reader, CancellationToken cancellationToken, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 		=> ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>, cancellationToken);
@@ -260,6 +265,7 @@ public static partial class CoreExtensions
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>A task containing the list of results.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(this DbDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
 		=> ResultsBufferedAsync<T>(reader, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
@@ -271,6 +277,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>A task containing the list of results.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(this DbDataReader reader, CancellationToken cancellationToken, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 		=> ResultsBufferedAsync<T>(reader, fieldMappingOverrides, cancellationToken);
@@ -332,6 +339,7 @@ public static partial class CoreExtensions
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>A task containing the list of results.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
 		=> ResultsAsync<T>(command, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
@@ -343,6 +351,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>A task containing the list of results.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(this DbCommand command, CancellationToken cancellationToken, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
 		=> ResultsAsync<T>(command, fieldMappingOverrides, cancellationToken);
 

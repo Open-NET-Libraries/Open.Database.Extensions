@@ -235,18 +235,17 @@ public static partial class DataRecordExtensions
 	/// <param name="firstOrdinal">The first ordinal to query.</param>
 	/// <param name="remainingOrdinals">The remaining set of ordinals to query.</param>
 	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
-	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params int[] remainingOrdinals)
+	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params IEnumerable<int> remainingOrdinals)
 	{
 		return record is null
 			? throw new ArgumentNullException(nameof(record))
 			: EnumerateValuesFromOrdinalsCore(record, firstOrdinal, remainingOrdinals);
 
-		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, int firstOrdinal, int[] remainingOrdinals)
+		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, int firstOrdinal, IEnumerable<int> remainingOrdinals)
 		{
 			yield return record.GetValue(firstOrdinal);
-			int len = remainingOrdinals.Length;
-			for (int i = 0; i < len; i++)
-				yield return record.GetValue(remainingOrdinals[i]);
+			foreach (int i in remainingOrdinals)
+				yield return record.GetValue(i);
 		}
 	}
 
