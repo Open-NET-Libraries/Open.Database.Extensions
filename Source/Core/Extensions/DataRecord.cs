@@ -214,7 +214,7 @@ public static partial class DataRecordExtensions
 	}
 
 	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
-	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
+	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IReadOnlyList<int> ordinals)
 	{
 		return record is null
 			? throw new ArgumentNullException(nameof(record))
@@ -222,7 +222,7 @@ public static partial class DataRecordExtensions
 			? throw new ArgumentNullException(nameof(ordinals))
 			: EnumerateValuesFromOrdinalsCore(record, ordinals);
 
-		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, IList<int> ordinals)
+		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, IReadOnlyList<int> ordinals)
 		{
 			// Avoid creating an another enumerator if possible.
 			int count = ordinals.Count;
@@ -267,7 +267,7 @@ public static partial class DataRecordExtensions
 
 	/// <returns>The provided list, updated with values matching the ordinal positions requested.</returns>
 	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, ReadOnlySpan{int}, Span{object})"/>
-	public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IList<int> ordinals, TList values)
+	public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IReadOnlyList<int> ordinals, TList values)
 		where TList : IList<object>
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
@@ -282,7 +282,7 @@ public static partial class DataRecordExtensions
 
 	/// <returns>An array of values matching the ordinal positions requested.</returns>
 	/// <inheritdoc cref="GetValuesFromOrdinals(IDataRecord, ReadOnlySpan{int}, Span{object})"/>
-	public static object[] GetValuesFromOrdinals(this IDataRecord record, IList<int> ordinals)
+	public static object[] GetValuesFromOrdinals(this IDataRecord record, IReadOnlyList<int> ordinals)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
@@ -418,7 +418,7 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
 	/// <param name="ordinalMapping">The column ids and resultant names to query.</param>
 	/// <returns>The resultant Dictionary of values.</returns>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<(string Name, int Ordinal)> ordinalMapping)
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IReadOnlyList<(string Name, int Ordinal)> ordinalMapping)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
@@ -484,7 +484,7 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The <see cref="IDataRecord"/> to extract values from.</param>
 	/// <param name="columnNames">The column names to query.</param>
 	/// <returns>The resultant Dictionary of values.</returns>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IList<string> columnNames)
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IReadOnlyList<string> columnNames)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));

@@ -60,4 +60,28 @@ public static class FieldMappingOverloadTests
 	[Fact]
 	public static void NoOverrides_LeavesUnmatchedNull() =>
 		Assert.Null(Reader().Results<Person>().Single().FirstName);
+
+	// To<T>(DataTable, ...) uses the same params-array + [OverloadResolutionPriority] shape.
+	static DataTable OneRowTable()
+	{
+		var table = new DataTable();
+		table.Columns.Add("first_name", typeof(string));
+		table.Rows.Add("Ada");
+		return table;
+	}
+
+	[Fact]
+	public static void To_InlineTuple() =>
+		Assert.Equal("Ada", OneRowTable().To<Person>(("FirstName", "first_name")).Single().FirstName);
+
+	[Fact]
+	public static void To_CollectionExpressionOfNew() =>
+		Assert.Equal("Ada", OneRowTable().To<Person>([new("FirstName", "first_name")]).Single().FirstName);
+
+	[Fact]
+	public static void To_Dictionary()
+	{
+		var overrides = new Dictionary<string, string?> { ["FirstName"] = "first_name" };
+		Assert.Equal("Ada", OneRowTable().To<Person>(overrides).Single().FirstName);
+	}
 }

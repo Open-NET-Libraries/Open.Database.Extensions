@@ -187,6 +187,7 @@ public static partial class CoreExtensions
 		.Results(table, clearSourceTable);
 
 	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)> fieldMappingOverrides) where T : new()
 		=> Transformer<T>
 		.Create(fieldMappingOverrides)
