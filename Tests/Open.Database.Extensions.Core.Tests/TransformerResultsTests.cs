@@ -71,7 +71,7 @@ public static class TransformerResultsTests
 		queue.Enqueue(["Jane", 25]);
 		queue.Enqueue(["Jack", 40]);
 
-		var result = new Core.QueryResult<Queue<object?[]>>(
+		var result = new QueryResult<Queue<object?[]>>(
 			[0, 1],
 			["first_name", "AGE"],
 			queue);

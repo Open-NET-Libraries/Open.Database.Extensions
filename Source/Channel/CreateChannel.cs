@@ -9,14 +9,14 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		return capacity > 0
-			? Channel.CreateBounded<T>(new BoundedChannelOptions(capacity)
+			? System.Threading.Channels.Channel.CreateBounded<T>(new BoundedChannelOptions(capacity)
 			{
 				SingleWriter = singleWriter,
 				SingleReader = singleReader,
 				AllowSynchronousContinuations = true,
 				FullMode = BoundedChannelFullMode.Wait
 			})
-			: Channel.CreateUnbounded<T>(new UnboundedChannelOptions
+			: System.Threading.Channels.Channel.CreateUnbounded<T>(new UnboundedChannelOptions
 			{
 				SingleWriter = singleWriter,
 				SingleReader = singleReader,

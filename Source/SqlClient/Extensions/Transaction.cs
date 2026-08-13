@@ -60,24 +60,16 @@ public static partial class SqlTransactionExtensions
 		if (connection.State != ConnectionState.Open)
 			await connection.EnsureOpenAsync(cancellationToken);
 
-#if NET5_0_OR_GREATER
-		await using SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
-#else
-#pragma warning disable IDE0079 // Remove unnecessary suppression
-#pragma warning disable RCS1261 // Resource can be disposed asynchronously
+#if NETSTANDARD2_0
 		using SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
-#pragma warning restore RCS1261 // Resource can be disposed asynchronously
-#pragma warning restore IDE0079 // Remove unnecessary suppression
+#else
+		await using SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
 #endif
 		(bool Commit, T Value) result = await conditionalAction(transaction, cancellationToken);
 		if (result.Commit)
 		{
 #if NETSTANDARD2_0
-#pragma warning disable IDE0079 // Remove unnecessary suppression
-#pragma warning disable RCS1261 // Resource can be disposed asynchronously
 			transaction.Commit();
-#pragma warning restore RCS1261 // Resource can be disposed asynchronously
-#pragma warning restore IDE0079 // Remove unnecessary suppression
 #else
 			await transaction.CommitAsync(cancellationToken);
 #endif

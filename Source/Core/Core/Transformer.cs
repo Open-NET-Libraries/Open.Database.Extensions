@@ -62,7 +62,10 @@ public class Transformer<T>
 	/// <summary>
 	/// Constructs a transformer using the optional field overrides.
 	/// </summary>
-	protected internal Transformer(IEnumerable<(string Field, string? Column)>? overrides = null)
+	/// <remarks>
+	/// The "key" is the field name, and the "value" is the column name.
+	/// </remarks>
+	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
 	{
 		// Per-instance copy of the default (property-name -> same column-name) map, sized exactly,
 		// so the optional overrides can mutate it without touching the shared reflection cache.
@@ -70,12 +73,12 @@ public class Transformer<T>
 		foreach (string name in PropertiesByName.Keys)
 			_propertyMap[name] = name;
 
-		if (overrides != null)
+		if (overrides is not null)
 		{
-			foreach ((string Field, string? Column) in overrides)
+			foreach (var kvp in overrides)
 			{
-				if (Column == null) _propertyMap.Remove(Field); // Null column indicates 'ignore this field'.
-				else _propertyMap[Field] = Column;
+				if (kvp.Value == null) _propertyMap.Remove(kvp.Key); // Null column indicates 'ignore this field'.
+				else _propertyMap[kvp.Key] = kvp.Value;
 			}
 		}
 
@@ -85,12 +88,22 @@ public class Transformer<T>
 			kvp => kvp.Value, kvp => PropertiesByName[kvp.Key], StringComparer.OrdinalIgnoreCase);
 	}
 
+	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	[ExcludeFromCodeCoverage]
+	[OverloadResolutionPriority(1)]
+	public static Transformer<T> Create() => new();
+
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	/// <param name="overrides"></param>
-	public static Transformer<T> Create(IEnumerable<(string Field, string? Column)>? overrides = null)
+	public static Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>>? overrides)
 		=> new(overrides);
+
+	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	[ExcludeFromCodeCoverage]
+	[OverloadResolutionPriority(-1)]
+	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		=> new(fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
 
 	/// <summary>
 	/// A sub class for processing the transformer results.
@@ -282,8 +295,6 @@ public class Transformer<T>
 			LocalPool);
 	}
 
-#if NETSTANDARD2_0
-#else
 	/// <param name="reader">The reader to read from.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <inheritdoc cref="ResultsBuffered(IDataReader, bool)"/>
@@ -313,7 +324,6 @@ public class Transformer<T>
 			}
 		}
 	}
-#endif
 
 	/// <summary>
 	/// Processes the data from the data table into a queue. Then dequeues the results and transforms each one by one during enumeration.

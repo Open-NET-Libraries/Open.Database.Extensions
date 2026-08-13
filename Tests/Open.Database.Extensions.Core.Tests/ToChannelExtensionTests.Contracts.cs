@@ -24,7 +24,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		await Assert.ThrowsAsync<ArgumentNullException>(
-			async () => await reader.ToChannel(Channel.CreateUnbounded<object>().Writer, true));
+			async () => await reader.ToChannel(System.Threading.Channels.Channel.CreateUnbounded<object>().Writer, true));
 
 		Assert.Throws<ArgumentNullException>(
 			() => reader.ToChannel<object>(true));

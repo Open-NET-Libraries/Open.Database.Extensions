@@ -9,7 +9,7 @@
 /// <typeparam name="TReader">The type of reader created by the command.</typeparam>
 /// <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
 /// <typeparam name="TThis">The type of this class in order to facilitate proper expressive notation.</typeparam>
-public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
+public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 	: ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>, IExecuteReaderAsync<TReader>
 	where TConnection : DbConnection
 	where TCommand : DbCommand
@@ -248,18 +248,15 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>A task containing the list of results.</returns>
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides) where T : new()
-		=> ResultsAsync<T>(fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)));
+	[OverloadResolutionPriority(-1)]
+	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
+		where T : new()
+		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
 
-	/// <summary>
-	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
-	/// </summary>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-	/// <returns>A task containing the list of results.</returns>
-	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
-		=> ResultsAsync<T>((IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
+	/// <inheritdoc cref="ResultsAsync{T}(IEnumerable{KeyValuePair{string, string?}})"/>
+	public ValueTask<IEnumerable<T>> ResultsAsync<T>()
+		where T : new()
+		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
 
 	/// <summary>
 	/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
@@ -285,13 +282,9 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
 		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
 
-	/// <summary>
-	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
-	/// </summary>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
-	/// <returns>A task containing the list of results.</returns>
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+	/// <inheritdoc cref="ResultsAsync{T}(IEnumerable{KeyValuePair{string, string?}})"/>
+	[OverloadResolutionPriority(-2)]
+	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
 		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
 }

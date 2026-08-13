@@ -117,7 +117,7 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete)
 		where T : new()
-		=> Transformer<T>
+		=> Dataflow.Transformer<T>
 			.Create()
 			.PipeResultsTo(reader, target, complete);
 
@@ -136,7 +136,7 @@ public static partial class DataflowExtensions
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> Transformer<T>
+		=> Dataflow.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsTo(reader, target, complete);
 
@@ -740,7 +740,7 @@ public static partial class DataflowExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Transformer<T>
+		=> Dataflow.Transformer<T>
 			.Create()
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
@@ -761,7 +761,7 @@ public static partial class DataflowExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Transformer<T>
+		=> Dataflow.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 

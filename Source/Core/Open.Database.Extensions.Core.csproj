@@ -21,6 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.11" />
 	</ItemGroup>
 
 	<!-- Minimum version only (not exact-pinned): keeps the floor low so netstandard consumers aren't forced to a newer minimum, while still allowing their own app's dependency graph to resolve a higher version if needed. -->

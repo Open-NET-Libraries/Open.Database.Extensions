@@ -14,7 +14,7 @@ namespace System.Runtime.CompilerServices;
 	AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property,
 	AllowMultiple = false,
 	Inherited = false)]
-internal sealed class OverloadResolutionPriorityAttribute(int priority) : Attribute
+public sealed class OverloadResolutionPriorityAttribute(int priority) : Attribute
 {
 	/// <summary>The priority of the target within its overload set.</summary>
 	public int Priority { get; } = priority;

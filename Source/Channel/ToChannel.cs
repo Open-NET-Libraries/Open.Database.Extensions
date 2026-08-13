@@ -326,8 +326,6 @@ public static partial class ChannelDbExtensions
 		return channel.Reader;
 	}
 
-#if NETSTANDARD2_0
-#else
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
 	/// Iterates an DbDataReader through the transform function and writes each record to an unbound channel.
@@ -650,6 +648,4 @@ public static partial class ChannelDbExtensions
 		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides);
 		return channel.Reader;
 	}
-#endif
-
 }

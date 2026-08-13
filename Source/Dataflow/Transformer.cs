@@ -1,16 +1,31 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
+namespace Open.Database.Extensions.Dataflow;
 
 /// <inheritdoc />
-internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides = null)
 	: Core.Transformer<T>(fieldMappingOverrides)
 	where T : new()
 {
+	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	[ExcludeFromCodeCoverage]
+	[OverloadResolutionPriority(1)]
+	public static new Transformer<T> Create()
+		=> new();
+
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-	public static new Transformer<T> Create(IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null)
+	public static new Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
 		=> new(fieldMappingOverrides);
+
+	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	[ExcludeFromCodeCoverage]
+	[OverloadResolutionPriority(-1)]
+	public static new Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		=> new(fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
 
 	/// <summary>
 	/// Transforms the results from the reader by first buffering the results and if/when the buffer size is reached, the results are transformed to a channel for reading.
@@ -20,7 +35,7 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 	/// <param name="complete">Will call complete when no more results are avaiable.</param>
 	/// <param name="options">The options to apply to the transform block.</param>
 	/// <returns>The ChannelReader of the target.</returns>
-	internal long PipeResultsTo(
+	public long PipeResultsTo(
 		IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete,
@@ -81,7 +96,7 @@ internal class Transformer<T>(IEnumerable<(string Field, string? Column)>? field
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <param name="options">The options to apply to the transform block.</param>
 	/// <returns>The ChannelReader of the target.</returns>
-	internal async ValueTask<long> PipeResultsToAsync(
+	public async ValueTask<long> PipeResultsToAsync(
 		IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete,

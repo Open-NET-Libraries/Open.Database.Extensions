@@ -10,7 +10,7 @@ public static class IDbCommandToChannelObjectArrayExtensionTests
 		var command = Substitute.For<IDbCommand>();
 		var connection = Substitute.For<IDbConnection>();
 		var reader = Substitute.For<IDataReader>();
-		var c = Channel.CreateUnbounded<object[]>();
+		var c = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		var cWriter = c.Writer;
 		var cReader = c.Reader;
 		var cancellationToken = new CancellationToken();
@@ -77,7 +77,7 @@ public static class IDbCommandToChannelObjectArrayExtensionTests
 	{
 		// Arrange
 		IDbCommand command = null;
-		var writer = Channel.CreateUnbounded<object[]>().Writer;
+		var writer = System.Threading.Channels.Channel.CreateUnbounded<object[]>().Writer;
 
 		// Act & Assert
 		await Assert.ThrowsAsync<ArgumentNullException>(async () => await command.ToChannel(writer, true));

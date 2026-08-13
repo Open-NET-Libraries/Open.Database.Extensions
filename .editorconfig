@@ -204,3 +204,11 @@ dotnet_diagnostic.RCS1077.severity = silent
 # The generic ExpressiveCommandBase<...> design has nullable-oblivious spots; annotating
 # them fully is part of the API-modernization phase, not the public-API baseline itself.
 dotnet_diagnostic.RS0041.severity = none
+
+# RS0026 / RS0027: Public API overloads with optional parameters.
+# The mapping-override families intentionally provide parallel KeyValuePair + tuple overloads,
+# each with optional (useReadAsync / cancellationToken) parameters, disambiguated by
+# [OverloadResolutionPriority]. These analyzers flag that deliberate pattern; the priorities
+# already resolve the call-site ambiguity, so they are turned off.
+dotnet_diagnostic.RS0026.severity = none
+dotnet_diagnostic.RS0027.severity = none

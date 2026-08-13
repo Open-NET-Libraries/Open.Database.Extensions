@@ -163,7 +163,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Transformer<T>
+		=> Channel.Transformer<T>
 			.Create()
 			.PipeResultsTo(reader, target, complete, cancellationToken);
 
@@ -183,7 +183,7 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Transformer<T>
+		=> Channel.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsTo(reader, target, complete, cancellationToken);
 
@@ -406,9 +406,6 @@ public static partial class ChannelDbExtensions
 			command, target, complete,
 			reader => reader.ToChannel(target, false, fieldMappingOverrides, command.CancellationToken));
 
-#if NETSTANDARD2_0
-#else
-
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		DbCommand command,
 		ChannelWriter<T> writer,
@@ -568,7 +565,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Transformer<T>
+		=> Channel.Transformer<T>
 			.Create()
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
@@ -587,7 +584,7 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Transformer<T>
+		=> Channel.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
@@ -795,6 +792,4 @@ public static partial class ChannelDbExtensions
 			reader => command.UseAsyncRead && reader is DbDataReader r
 				? r.ToChannelAsync(target, false, fieldMappingOverrides, command.CancellationToken)
 				: reader.ToChannel(target, false, fieldMappingOverrides, command.CancellationToken));
-#endif
-
 }

@@ -212,19 +212,6 @@ public static partial class CoreExtensions
 		}
 	}
 
-	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
-	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
-		=> Transformer<T>
-		.Create(fieldMappingOverrides)
-		.Results(table, clearSourceTable);
-
-	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
-	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)> fieldMappingOverrides) where T : new()
-		=> Transformer<T>
-		.Create(fieldMappingOverrides)
-		.Results(table, false);
-
 	/// <summary>
 	/// Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
 	/// </summary>
@@ -233,8 +220,36 @@ public static partial class CoreExtensions
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 	/// <returns>An enumerable used to iterate the results.</returns>
-	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides, bool clearSourceTable = false) where T : new()
-		=> To<T>(table, fieldMappingOverrides?.Select(kvp => (kvp.Key, kvp.Value)), clearSourceTable);
+	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides = null, bool clearSourceTable = false)
+		where T : new()
+		=> Transformer<T>
+		.Create(fieldMappingOverrides)
+		.Results(table, clearSourceTable);
+
+	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+
+	[OverloadResolutionPriority(-1)]
+	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		where T : new()
+		=> Transformer<T>
+		.Create(fieldMappingOverrides)
+		.Results(table, false);
+
+	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+	[OverloadResolutionPriority(-2)]
+	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null, bool clearSourceTable = false)
+		where T : new()
+		=> Transformer<T>
+		.Create(fieldMappingOverrides)
+		.Results(table, clearSourceTable);
+
+	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+	[OverloadResolutionPriority(-3)]
+	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		where T : new()
+		=> Transformer<T>
+		.Create(fieldMappingOverrides)
+		.Results(table, false);
 
 	/// <summary>
 	/// Useful extension for dequeuing items from a queue.

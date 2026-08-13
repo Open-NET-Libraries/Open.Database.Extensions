@@ -66,7 +66,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// </summary>
 	protected override void AddParams(SqlCommand command)
 	{
-		if (command is null) throw new System.ArgumentNullException(nameof(command));
+		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
 		foreach (Param p in Params)
