@@ -31,21 +31,24 @@ public class Transformer<T>
 
 	// Reflection is invariant per T; a static on this generic type is per-T and initialized once
 	// (thread-safe), so GetProperties() and the name->PropertyInfo map aren't rebuilt per query.
+	// Built once, read on every query (property lookups + Keys) -> frozen on the modern target.
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "Per-T reflection cache is intentional.")]
+#if NET10_0_OR_GREATER
+	static readonly FrozenDictionary<string, PropertyInfo> PropertiesByName
+		= typeof(T).GetProperties().ToFrozenDictionary(p => p.Name);
+#else
 	static readonly Dictionary<string, PropertyInfo> PropertiesByName
 		= typeof(T).GetProperties().ToDictionary(p => p.Name);
+#endif
 
 	// Allow mapping key = object property, value = column name.
 	readonly Dictionary<string, string> _propertyMap;
 
 	// Column-name -> property lookup, matched case-insensitively (OrdinalIgnoreCase) so no
-	// upper-cased key strings are allocated. Built once and never mutated after construction,
-	// so it is frozen on the modern target for faster reads.
-#if NET10_0_OR_GREATER
-	readonly FrozenDictionary<string, PropertyInfo> _columnToPropertyMap;
-#else
+	// upper-cased key strings are allocated. This map is per-query (a fresh Transformer is built
+	// per operation) and read only a handful of times, so a plain Dictionary is correct here —
+	// freezing a short-lived map costs more to build than the few lookups would ever recover.
 	readonly Dictionary<string, PropertyInfo> _columnToPropertyMap;
-#endif
 
 	/// <summary>
 	/// The property names.
@@ -77,15 +80,10 @@ public class Transformer<T>
 			}
 		}
 
-		// Project column-name -> property straight into the target map with a case-insensitive
-		// comparer: no upper-cased key strings, and no intermediate Dictionary on the frozen path.
-#if NET10_0_OR_GREATER
-		_columnToPropertyMap = _propertyMap.ToFrozenDictionary(
-			kvp => kvp.Value, kvp => PropertiesByName[kvp.Key], StringComparer.OrdinalIgnoreCase);
-#else
+		// Project column-name -> property directly with a case-insensitive comparer (no upper-cased
+		// key strings). A plain Dictionary — this map lives only for the duration of one query.
 		_columnToPropertyMap = _propertyMap.ToDictionary(
 			kvp => kvp.Value, kvp => PropertiesByName[kvp.Key], StringComparer.OrdinalIgnoreCase);
-#endif
 	}
 
 	/// <summary>
