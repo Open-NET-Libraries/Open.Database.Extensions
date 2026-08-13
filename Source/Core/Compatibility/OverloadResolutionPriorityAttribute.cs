@@ -10,11 +10,15 @@
 // overloads added during API modernization win overload resolution uniformly across every TFM.
 namespace System.Runtime.CompilerServices;
 
+// Internal (the conventional shape for a compiler-recognized attribute polyfill): the C# compiler
+// honors it by full metadata name without the type being public, and Channel/Dataflow — the only
+// sibling assemblies that *apply* it — see it via [InternalsVisibleTo] (see the .csproj). Keeping it
+// internal also stops it leaking into the netstandard public surface (which is what tripped CS1591).
 [AttributeUsage(
 	AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property,
 	AllowMultiple = false,
 	Inherited = false)]
-public sealed class OverloadResolutionPriorityAttribute(int priority) : Attribute
+internal sealed class OverloadResolutionPriorityAttribute(int priority) : Attribute
 {
 	/// <summary>The priority of the target within its overload set.</summary>
 	public int Priority { get; } = priority;

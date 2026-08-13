@@ -20,8 +20,13 @@
 		<AdditionalFiles Include="PublicAPI.Unshipped.txt" />
 	</ItemGroup>
 
-	<ItemGroup>
+	<!-- In-box on net10; only needed as a package on the netstandard shims (avoids NU1510 on net10). -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
 	  <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.11" />
+	  <!-- The internal OverloadResolutionPriorityAttribute polyfill is applied by these sibling
+	       assemblies; they need to see it. net10 uses the in-box attribute, so this is shim-only. -->
+	  <InternalsVisibleTo Include="Open.Database.Extensions.Channel" />
+	  <InternalsVisibleTo Include="Open.Database.Extensions.Dataflow" />
 	</ItemGroup>
 
 	<!-- Minimum version only (not exact-pinned): keeps the floor low so netstandard consumers aren't forced to a newer minimum, while still allowing their own app's dependency graph to resolve a higher version if needed. -->
