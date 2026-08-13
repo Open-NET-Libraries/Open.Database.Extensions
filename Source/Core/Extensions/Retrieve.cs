@@ -34,8 +34,17 @@ public static partial class CoreExtensions
 	{
 		ImmutableArray<string> names = reader.GetNames();
 		return new QueryResultQueue<object[]>(
-			Enumerable.Range(0, names.Length), names,
+			IdentityOrdinals(names.Length), names,
 			reader.AsEnumerable());
+	}
+
+	// Builds [0, 1, ... n-1] directly as an ImmutableArray (exact capacity, and reused zero-copy by
+	// QueryResult) instead of an Enumerable.Range that a growing ToImmutableArray would then copy.
+	static ImmutableArray<int> IdentityOrdinals(int count)
+	{
+		var b = ImmutableArray.CreateBuilder<int>(count);
+		for (int i = 0; i < count; i++) b.Add(i);
+		return b.MoveToImmutable();
 	}
 
 	/// <summary>
@@ -131,7 +140,7 @@ public static partial class CoreExtensions
 		if (!useReadAsync) cancellationToken.ThrowIfCancellationRequested();
 
 		return new QueryResultQueue<object[]>(
-			Enumerable.Range(0, names.Length),
+			IdentityOrdinals(names.Length),
 			names,
 			buffer);
 	}

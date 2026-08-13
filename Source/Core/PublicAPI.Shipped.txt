@@ -459,7 +459,7 @@ static Open.Database.Extensions.DataRecordExtensions.DataTypeNames(this System.D
 static Open.Database.Extensions.DataRecordExtensions.EnumerateValues(this System.Data.IDataRecord! record) -> System.Collections.Generic.IEnumerable<object!>!
 static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(this System.Data.IDataRecord! record, int firstOrdinal, params System.Collections.Generic.IEnumerable<int>! remainingOrdinals) -> System.Collections.Generic.IEnumerable<object!>!
 static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<int>! ordinals) -> System.Collections.Generic.IEnumerable<object!>!
-static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IList<int>! ordinals) -> System.Collections.Generic.IEnumerable<object!>!
+static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<int>! ordinals) -> System.Collections.Generic.IEnumerable<object!>!
 static Open.Database.Extensions.DataRecordExtensions.GetDataTypeNames(this System.Data.IDataRecord! record) -> string![]!
 static Open.Database.Extensions.DataRecordExtensions.GetMatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> (string! Name, int Ordinal)[]!
 static Open.Database.Extensions.DataRecordExtensions.GetNames(this System.Data.IDataRecord! record) -> System.Collections.Immutable.ImmutableArray<string!>
@@ -469,9 +469,9 @@ static Open.Database.Extensions.DataRecordExtensions.GetValues(this System.Data.
 static Open.Database.Extensions.DataRecordExtensions.GetValues(this System.Data.IDataRecord! record, int arrayLength) -> object![]!
 static Open.Database.Extensions.DataRecordExtensions.GetValues(this System.Data.IDataRecord! record, int minimumArrayLength, System.Buffers.ArrayPool<object!>! arrayPool) -> object![]!
 static Open.Database.Extensions.DataRecordExtensions.GetValues(this System.Data.IDataRecord! record, System.Buffers.ArrayPool<object!>! arrayPool) -> object![]!
-static Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IList<int>! ordinals) -> object![]!
+static Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<int>! ordinals) -> object![]!
 static Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals(this System.Data.IDataRecord! record, System.ReadOnlySpan<int> ordinals, System.Span<object!> values) -> System.Span<object!>
-static Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals<TList>(this System.Data.IDataRecord! record, System.Collections.Generic.IList<int>! ordinals, TList values) -> TList
+static Open.Database.Extensions.DataRecordExtensions.GetValuesFromOrdinals<TList>(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<int>! ordinals, TList values) -> TList
 static Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
 static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
 static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
@@ -479,8 +479,8 @@ static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.
 static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
 static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames) -> System.Collections.Generic.Dictionary<string!, object?>!
 static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<int, string!>>! columnMap) -> System.Collections.Generic.Dictionary<string!, object?>!
-static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IList<(string! Name, int Ordinal)>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
-static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IList<string!>! columnNames) -> System.Collections.Generic.Dictionary<string!, object?>!
+static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<(string! Name, int Ordinal)>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<string!>! columnNames) -> System.Collections.Generic.Dictionary<string!, object?>!
 static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.ReadOnlySpan<(string! Name, int Ordinal)> ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
 static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.ReadOnlySpan<string!> columnNames) -> System.Collections.Generic.Dictionary<string!, object?>!
 static Open.Database.Extensions.DbConnectionFactory.Create<TConnection>(System.Func<TConnection>! factory) -> Open.Database.Extensions.DbConnectionFactory<TConnection>!

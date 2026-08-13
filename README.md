@@ -162,5 +162,7 @@ A modernization and allocation-reduction pass. **Source-compatible with 10.0** �
   ```
 
 - **Modernized `params`:** ordinal helpers (`Retrieve`, `AsEnumerable`, …) accept `params IEnumerable<int>`/`params IEnumerable<string>` — any enumerable, not just arrays.
+- **Read-only inputs:** several read-only `IList<T>` parameters were widened to `IReadOnlyList<T>` (`GetValuesFromOrdinals`, `EnumerateValuesFromOrdinals`, `ToDictionary`). Arrays, `List<T>`, `ImmutableArray<T>`, etc. all still bind. *(A custom type implementing only `IList<T>` — and not also `IReadOnlyList<T>` — would need to recompile; no BCL collection is affected.)*
+- **Lower per-query overhead:** `Transformer<T>` caches its per-type reflection once instead of rebuilding it on every query; buffered/data-table paths pre-size collections and avoid redundant `Select` iterators.
 - Fixed a wasted-allocation / incorrect-return bug in `CopyToDBNullAsNull`.
 - Public API surface is now tracked with `Microsoft.CodeAnalysis.PublicApiAnalyzers`, and unit-test coverage was substantially expanded.

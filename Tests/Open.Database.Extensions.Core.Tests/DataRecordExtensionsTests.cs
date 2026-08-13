@@ -128,6 +128,17 @@ public static class DataRecordExtensionsTests
 	}
 
 	[Fact]
+	public static void GetValuesFromOrdinals_ArrayBindsToIReadOnlyList()
+	{
+		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
+
+		// Arrays implement IReadOnlyList<int>, so a plain array still binds the widened overload
+		// (including on the netstandard2.0 shim).
+		int[] ordinals = [2, 0];
+		Assert.Equal(new object[] { "v", 1 }, record.GetValuesFromOrdinals(ordinals));
+	}
+
+	[Fact]
 	public static void GetValuesFromOrdinals_Span_FillsTarget()
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
