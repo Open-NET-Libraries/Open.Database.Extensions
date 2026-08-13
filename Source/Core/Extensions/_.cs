@@ -187,11 +187,7 @@ public static partial class CoreExtensions
 		.Results(table, clearSourceTable);
 
 	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
-#if NET10_0_OR_GREATER
 	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)> fieldMappingOverrides) where T : new()
-#else
-	public static IEnumerable<T> To<T>(this DataTable table, params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
-#endif
 		=> Transformer<T>
 		.Create(fieldMappingOverrides)
 		.Results(table, false);

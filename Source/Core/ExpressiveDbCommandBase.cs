@@ -217,13 +217,8 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-#if NET10_0_OR_GREATER
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(int n, params IEnumerable<int> others)
 		=> RetrieveAsync(others.Prepend(n));
-#else
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(int n, params int[] others)
-		=> RetrieveAsync(Concat(n, others));
-#endif
 
 	/// <summary>
 	/// Iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -231,13 +226,8 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-#if NET10_0_OR_GREATER
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(string c, params IEnumerable<string> others)
 		=> RetrieveAsync(others.Prepend(c));
-#else
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(string c, params string[] others)
-		=> RetrieveAsync(Concat(c, others));
-#endif
 
 	/// <summary>
 	/// Asynchronously returns all records via a transform function.
@@ -267,8 +257,9 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>A task containing the list of results.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
-		=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
+		=> ResultsAsync<T>((IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
 	/// <summary>
 	/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.

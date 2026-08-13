@@ -52,8 +52,8 @@ public static partial class CoreExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
-	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, int n, params int[] others)
-		=> RetrieveInternal(reader, Concat(n, others));
+	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, int n, params IEnumerable<int> others)
+		=> RetrieveInternal(reader, others.Prepend(n));
 
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="columnNames">The column names to select.</param>
@@ -70,8 +70,8 @@ public static partial class CoreExtensions
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
-	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, string c, params string[] others)
-		=> Retrieve(reader, Concat(c, others));
+	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, string c, params IEnumerable<string> others)
+		=> Retrieve(reader, others.Prepend(c));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="behavior">The <see cref="CommandBehavior"/> flags to use with the data reader.</param>
@@ -95,8 +95,8 @@ public static partial class CoreExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
-	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, int n, params int[] others)
-		=> command.ExecuteReader(reader => RetrieveInternal(reader, Concat(n, others)));
+	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, int n, params IEnumerable<int> others)
+		=> command.ExecuteReader(reader => RetrieveInternal(reader, others.Prepend(n)));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="columnNames">The column names to select.</param>
@@ -108,8 +108,8 @@ public static partial class CoreExtensions
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
-	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, string c, params string[] others)
-		=> command.ExecuteReader(reader => Retrieve(reader, Concat(c, others)));
+	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, string c, params IEnumerable<string> others)
+		=> command.ExecuteReader(reader => Retrieve(reader, others.Prepend(c)));
 
 	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)"/>
 	public static async ValueTask<QueryResultQueue<object[]>> RetrieveAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
@@ -223,12 +223,12 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsyncInternal(reader, cancellationToken, ordinals);
 
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, CancellationToken, int, int[])" />
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, CancellationToken, int, IEnumerable{int})" />
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		int n,
-		params int[] others)
-		=> RetrieveAsync(reader, Concat(n, others));
+		params IEnumerable<int> others)
+		=> RetrieveAsync(reader, others.Prepend(n));
 
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
@@ -239,8 +239,8 @@ public static partial class CoreExtensions
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
 		int n,
-		params int[] others)
-		=> RetrieveAsync(reader, Concat(n, others), cancellationToken);
+		params IEnumerable<int> others)
+		=> RetrieveAsync(reader, others.Prepend(n), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously enumerates all records within the current result set using an <see cref="DbDataReader"/> and returns the desired results.
@@ -280,12 +280,12 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsync(reader, columnNames, false, true, cancellationToken);
 
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, CancellationToken, string, string[])"/>
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, CancellationToken, string, IEnumerable{string})"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		string c,
-		params string[] others)
-		=> RetrieveAsync(reader, Concat(c, others));
+		params IEnumerable<string> others)
+		=> RetrieveAsync(reader, others.Prepend(c));
 
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
@@ -296,8 +296,8 @@ public static partial class CoreExtensions
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
 		string c,
-		params string[] others)
-		=> RetrieveAsync(reader, Concat(c, others), cancellationToken);
+		params IEnumerable<string> others)
+		=> RetrieveAsync(reader, others.Prepend(c), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously executes a reader and enumerates all the remaining values of the current result set and returns the desired results.
@@ -345,12 +345,12 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsyncInternal(command, cancellationToken, ordinals);
 	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, int, int[])"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, int, IEnumerable{int})"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		int n,
-		params int[] others)
-		=> RetrieveAsync(command, Concat(n, others));
+		params IEnumerable<int> others)
+		=> RetrieveAsync(command, others.Prepend(n));
 
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
@@ -361,8 +361,8 @@ public static partial class CoreExtensions
 		this DbCommand command,
 		CancellationToken cancellationToken,
 		int n,
-		params int[] others)
-		=> RetrieveAsync(command, Concat(n, others), cancellationToken);
+		params IEnumerable<int> others)
+		=> RetrieveAsync(command, others.Prepend(n), cancellationToken);
 
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
 	/// <param name="columnNames">The column names to select.</param>
@@ -393,12 +393,12 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsync(command, columnNames, false, true, cancellationToken);
 
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, string, string[])"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, string, IEnumerable{string})"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		string columnName,
-		params string[] otherColumnNames)
-		=> RetrieveAsync(command, Concat(columnName, otherColumnNames));
+		params IEnumerable<string> otherColumnNames)
+		=> RetrieveAsync(command, otherColumnNames.Prepend(columnName));
 
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
@@ -409,6 +409,6 @@ public static partial class CoreExtensions
 		this DbCommand command,
 		CancellationToken cancellationToken,
 		string columnName,
-		params string[] otherColumnNames)
-		=> RetrieveAsync(command, Concat(columnName, otherColumnNames), false, cancellationToken);
+		params IEnumerable<string> otherColumnNames)
+		=> RetrieveAsync(command, otherColumnNames.Prepend(columnName), false, cancellationToken);
 }

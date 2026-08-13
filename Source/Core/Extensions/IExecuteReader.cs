@@ -367,7 +367,7 @@ public static class IExecuteReaderExtensions
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, int n, params int[] others)
+	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, int n, params IEnumerable<int> others)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -403,7 +403,7 @@ public static class IExecuteReaderExtensions
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, string c, params string[] others)
+	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, string c, params IEnumerable<string> others)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		//if (c is null) throw new ArgumentNullException(nameof(c));
@@ -463,6 +463,7 @@ public static class IExecuteReaderExtensions
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> Results<T>(this IExecuteReader command, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
 	{
