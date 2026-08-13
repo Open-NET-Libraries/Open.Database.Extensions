@@ -372,15 +372,12 @@ public static class DataReaderExtensions
 	public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
 		=> Select(reader, transform, cancellationToken, throwOnCancellation);
 
-#if NETSTANDARD2_0
-#else
-
 	static async IAsyncEnumerable<object[]> AsAsyncEnumerableCore(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
 		Contract.EndContractBlock();
 
 		if (cancellationToken.IsCancellationRequested
-		|| !await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false))
+		|| !await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false))
 		{
 			yield break;
 		}
@@ -393,7 +390,7 @@ public static class DataReaderExtensions
 			yield return row;
 		}
 		while (!cancellationToken.IsCancellationRequested
-			&& await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
+			&& await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false));
 	}
 
 	static async IAsyncEnumerable<object[]> AsAsyncEnumerableCore(DbDataReader reader, ArrayPool<object> arrayPool, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -452,7 +449,7 @@ public static class DataReaderExtensions
 
 		static async IAsyncEnumerable<object[]> AsAsyncEnumerableInternalCore(DbDataReader reader, IEnumerable<int> ordinals, bool readStarted, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			if (!readStarted && (cancellationToken.IsCancellationRequested || !await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false)))
+			if (!readStarted && (cancellationToken.IsCancellationRequested || !await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false)))
 				yield break;
 
 			IList<int> o = ordinals as IList<int> ?? ordinals.ToArray();
@@ -463,7 +460,8 @@ public static class DataReaderExtensions
 				{
 					yield return Array.Empty<object>();
 				}
-				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
+				while (!cancellationToken.IsCancellationRequested
+					&& await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false));
 			}
 			else
 			{
@@ -474,7 +472,8 @@ public static class DataReaderExtensions
 						row[i] = reader.GetValue(o[i]);
 					yield return row;
 				}
-				while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
+				while (!cancellationToken.IsCancellationRequested
+					&& await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false));
 			}
 		}
 	}
@@ -501,7 +500,7 @@ public static class DataReaderExtensions
 			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			if (!readStarted && (cancellationToken.IsCancellationRequested
-			|| !await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false)))
+			|| !await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false)))
 			{
 				yield break;
 			}
@@ -516,7 +515,7 @@ public static class DataReaderExtensions
 				yield return row;
 			}
 			while (!cancellationToken.IsCancellationRequested
-				&& await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false));
+				&& await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false));
 		}
 	}
 
@@ -595,7 +594,7 @@ public static class DataReaderExtensions
 			{
 				if (cancellationToken.IsCancellationRequested) yield break;
 				while (!cancellationToken.IsCancellationRequested
-					&& await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false))
+					&& await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false))
 				{
 					yield return transform(reader);
 				}
@@ -662,7 +661,6 @@ public static class DataReaderExtensions
 		Func<IDataRecord, ValueTask<T>> transform,
 		CancellationToken cancellationToken = default)
 		=> SelectAsync(reader, transform, false, cancellationToken);
-#endif
 
 	/// <summary>
 	/// Shortcut for .Iterate(transform).ToList();

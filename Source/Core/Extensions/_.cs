@@ -10,6 +10,38 @@ public static partial class CoreExtensions
 	internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
 		=> (remaining == null || remaining.Count == 0) ? [first] : remaining.Prepend(first);
 
+	internal static ValueTask<bool> CancelledAsFalse(this ValueTask<bool> task)
+	{
+		if (task.IsCompletedSuccessfully)
+			return task;
+
+		return CancelledAsFalseCore(task);
+
+		static async ValueTask<bool> CancelledAsFalseCore(ValueTask<bool> task)
+		{
+			try
+			{
+				return await task.ConfigureAwait(false);
+			}
+			catch (OperationCanceledException)
+			{
+				return false;
+			}
+		}
+	}
+
+	internal static async ValueTask<bool> CancelledAsFalse(this Task<bool> task)
+	{
+		try
+		{
+			return await task.ConfigureAwait(false);
+		}
+		catch (OperationCanceledException)
+		{
+			return false;
+		}
+	}
+
 	// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
 	internal static Action<T, object?> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)
 	{
