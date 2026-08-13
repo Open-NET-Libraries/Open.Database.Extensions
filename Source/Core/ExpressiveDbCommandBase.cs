@@ -259,7 +259,7 @@ public abstract class ExpressiveDbCommandBase<TConnection, TCommand, TReader, TD
 	/// <returns>A task containing the list of results.</returns>
 	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params (string Field, string? Column)[] fieldMappingOverrides) where T : new()
-		=> ResultsAsync<T>(fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
+		=> ResultsAsync<T>((IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
 	/// <summary>
 	/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.

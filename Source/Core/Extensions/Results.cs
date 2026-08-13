@@ -29,7 +29,7 @@ public static partial class CoreExtensions
 	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> Results<T>(this IDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
-		=> Results<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
+		=> Results<T>(reader, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
@@ -74,7 +74,7 @@ public static partial class CoreExtensions
 	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
-		=> ResultsBuffered<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
+		=> ResultsBuffered<T>(reader, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
@@ -116,7 +116,7 @@ public static partial class CoreExtensions
 	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IEnumerable<T> Results<T>(this IDbCommand command, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
-		=> Results<T>(command, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
+		=> Results<T>(command, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
@@ -160,7 +160,7 @@ public static partial class CoreExtensions
 	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IAsyncEnumerable<T> ResultsAsync<T>(this DbDataReader reader, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
-		=> ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>);
+		=> ResultsAsync<T>(reader, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides);
 
 	/// <summary>
 	/// Asynchronously iterates each record and attempts to map the fields to type T.
@@ -173,7 +173,7 @@ public static partial class CoreExtensions
 	[System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 	public static IAsyncEnumerable<T> ResultsAsync<T>(this DbDataReader reader, CancellationToken cancellationToken, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
-		=> ResultsAsync<T>(reader, fieldMappingOverrides as IEnumerable<(string Field, string? Column)>, cancellationToken);
+		=> ResultsAsync<T>(reader, (IEnumerable<(string Field, string? Column)>)fieldMappingOverrides, cancellationToken);
 
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
