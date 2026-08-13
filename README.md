@@ -147,3 +147,20 @@ public static bool TryTransaction()
 - .NET 9.0 added to targets to ensure potential compilation and performance improvements are available.
 - Impelmented some .NET 8 and 9 specific features.
 - Significant cleanup and simplifcation where possible.
+
+## 10.1.0 Release Notes
+
+A modernization and allocation-reduction pass. **Source-compatible with 10.0** — existing code recompiles cleanly.
+
+- **Target frameworks:** `net10.0` is now the primary/modern target. `netstandard2.0` and `netstandard2.1` are retained as shimmed legacy paths (net8/net9 consumers use the `netstandard2.1` build); `Open.Database.Extensions.MSSqlClient` also targets `net472`. The explicit `net8.0`/`net9.0` targets were dropped.
+- **Fewer allocations on the hot paths:** case-insensitive column-to-property matching now uses `StringComparer.OrdinalIgnoreCase` (and `FrozenDictionary` on `net10.0`) instead of allocating an upper-cased string per column; assorted per-query LINQ and dead code removed.
+- **Ergonomic field-mapping overrides:** `Results<T>`, `ResultsAsync<T>`, `To<T>`, etc. now accept target-typed `new(...)` and collection expressions:
+
+  ```cs
+  cmd.Results<Person>(new("FirstName", "first_name"), new("LastName", "last_name"));
+  cmd.Results<Person>([new("FirstName", "first_name"), new("LastName", "last_name")]);
+  ```
+
+- **Modernized `params`:** ordinal helpers (`Retrieve`, `AsEnumerable`, …) accept `params IEnumerable<int>`/`params IEnumerable<string>` — any enumerable, not just arrays.
+- Fixed a wasted-allocation / incorrect-return bug in `CopyToDBNullAsNull`.
+- Public API surface is now tracked with `Microsoft.CodeAnalysis.PublicApiAnalyzers`, and unit-test coverage was substantially expanded.
