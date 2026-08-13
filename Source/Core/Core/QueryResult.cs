@@ -165,7 +165,7 @@ public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enume
 		IEnumerable<int> ordinals,
 		IEnumerable<string> names,
 		IEnumerable<T> result)
-		: base(ordinals, names, new (result))
+		: base(ordinals, names, new(result))
 	{
 	}
 }

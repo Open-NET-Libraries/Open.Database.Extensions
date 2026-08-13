@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Common interface for creating a connection.  Can easily be used with dependency injection.
@@ -77,7 +75,7 @@ public static class DbConnectionFactoryExtensions
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 	/// <returns>An <see cref="ConnectionFactoryToPoolAdapter"/> to handle this factory.</returns>
 	public static ConnectionFactoryToPoolAdapter AsPool(this IDbConnectionFactory connectionFactory)
-		=> new (connectionFactory);
+		=> new(connectionFactory);
 
 	/// <inheritdoc cref="AsPool(IDbConnectionFactory)"/>
 	public static ConnectionFactoryToPoolAdapter AsPool(this Func<IDbConnection> connectionFactory)
@@ -90,7 +88,7 @@ public static class DbConnectionFactoryExtensions
 	/// <returns>An <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> to handle this factory.</returns>
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
-		=> new (connectionFactory);
+		=> new(connectionFactory);
 
 	/// <inheritdoc cref="AsPool{TConnection}(IDbConnectionFactory{TConnection})"/>
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this Func<TConnection> connectionFactory)
