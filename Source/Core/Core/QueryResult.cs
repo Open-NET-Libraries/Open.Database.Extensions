@@ -207,12 +207,12 @@ public static class QueryResultExtensions
 
 	/// <inheritdoc
 	/// cref="DequeueAsMappedDictionaries(QueryResult{Queue{object?[]}})"/>
-	public static async Task<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object?[]>>> source)
+	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object?[]>>> source)
 		=> (await (source ?? throw new ArgumentNullException(nameof(source))).ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 	/// <inheritdoc
 	/// cref="DequeueAsMappedDictionaries(QueryResult{Queue{object?[]}})"/>
-	public static async Task<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this ValueTask<QueryResult<Queue<object?[]>>> source)
+	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this ValueTask<QueryResult<Queue<object?[]>>> source)
 		=> (await source.ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 	/// <summary>
@@ -248,7 +248,7 @@ public static class QueryResultExtensions
 		=> DequeueAs<T>(source, fieldMappingOverrides?.Select(mapping => new KeyValuePair<string, string?>(mapping.Field, mapping.Column)));
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
-	public static async Task<IEnumerable<T>> DequeueAs<T>(
+	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source,
 		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
@@ -261,7 +261,7 @@ public static class QueryResultExtensions
 	}
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
-	public static async Task<IEnumerable<T>> DequeueAs<T>(
+	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source,
 		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
@@ -272,7 +272,7 @@ public static class QueryResultExtensions
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
 	[OverloadResolutionPriority(-1)]
-	public static Task<IEnumerable<T>> DequeueAs<T>(
+	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
@@ -280,7 +280,7 @@ public static class QueryResultExtensions
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
 	[OverloadResolutionPriority(-1)]
-	public static Task<IEnumerable<T>> DequeueAs<T>(
+	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
@@ -288,14 +288,14 @@ public static class QueryResultExtensions
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
 	[OverloadResolutionPriority(1)]
-	public static Task<IEnumerable<T>> DequeueAs<T>(
+	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source)
 		where T : new()
 		=> DequeueAs<T>(source, null);
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
 	[OverloadResolutionPriority(1)]
-	public static Task<IEnumerable<T>> DequeueAs<T>(
+	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source)
 		where T : new()
 		=> DequeueAs<T>(source, null);
