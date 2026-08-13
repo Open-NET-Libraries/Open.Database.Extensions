@@ -31,7 +31,17 @@ dotnet_naming_symbols.private_const.applicable_kinds = field
 dotnet_naming_symbols.private_const.applicable_accessibilities = private
 dotnet_naming_symbols.private_const.required_modifiers = const
 
-dotnet_naming_style.title_case.required_prefix = 
+# Static readonly fields may use PascalCase (title case), e.g. cached lookup maps like PropertiesByName.
+# Declared before the private-field rule below so it takes precedence for static readonly fields.
+dotnet_naming_rule.static_readonly_fields_should_be_title_case.severity = warning
+dotnet_naming_rule.static_readonly_fields_should_be_title_case.symbols = static_readonly_field
+dotnet_naming_rule.static_readonly_fields_should_be_title_case.style = title_case
+
+dotnet_naming_symbols.static_readonly_field.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_field.applicable_accessibilities = private, internal, private_protected
+dotnet_naming_symbols.static_readonly_field.required_modifiers = static, readonly
+
+dotnet_naming_style.title_case.required_prefix =
 dotnet_naming_style.title_case.required_suffix = 
 dotnet_naming_style.title_case.word_separator = 
 dotnet_naming_style.title_case.capitalization = pascal_case

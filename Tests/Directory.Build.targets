@@ -1,0 +1,22 @@
+<Project>
+
+  <!--
+    Guard against a recurring "tests fail to run" problem.
+
+    The Fine Code Coverage Visual Studio extension periodically writes a machine-specific,
+    absolute <RunSettingsFilePath> into the test .csproj, pointing at a generated .runsettings
+    under bin\...\fine-code-coverage\coverage-tool-output\. Whenever that file is absent - after a
+    clean/rebuild, on CI, or on another machine - the test host aborts before running any test with:
+
+        The Settings file '...fcc-mscodecoverage-generated.runsettings' could not be found.
+
+    This target file is imported AFTER the project body, so the PropertyGroup below overrides any
+    RunSettingsFilePath the extension injected. It only clears the value when it points at a file
+    that does not exist, so a genuine, existing runsettings (including one FCC just generated) is
+    left untouched and tests still run either way.
+  -->
+  <PropertyGroup Condition="'$(RunSettingsFilePath)' != '' and !Exists('$(RunSettingsFilePath)')">
+    <RunSettingsFilePath></RunSettingsFilePath>
+  </PropertyGroup>
+
+</Project>

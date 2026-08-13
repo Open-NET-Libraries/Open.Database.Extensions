@@ -41,7 +41,8 @@ public static class DataRecordExtensionsTests
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
-		Assert.Equal(new[] { "Value", "Id" }, record.GetNames([2, 0]));
+		// GetNames returns ImmutableArray<string> (reference-equality IEquatable); compare as a sequence.
+		Assert.Equal(["Value", "Id"], record.GetNames([2, 0]).ToArray());
 	}
 
 	[Fact]
@@ -124,7 +125,7 @@ public static class DataRecordExtensionsTests
 
 		object[] values = record.GetValuesFromOrdinals([2, 0]);
 
-		Assert.Equal(new object[] { "v", 1 }, values);
+		Assert.Equal(["v", 1], values);
 	}
 
 	[Fact]
@@ -135,7 +136,7 @@ public static class DataRecordExtensionsTests
 		// Arrays implement IReadOnlyList<int>, so a plain array still binds the widened overload
 		// (including on the netstandard2.0 shim).
 		int[] ordinals = [2, 0];
-		Assert.Equal(new object[] { "v", 1 }, record.GetValuesFromOrdinals(ordinals));
+		Assert.Equal(["v", 1], record.GetValuesFromOrdinals(ordinals));
 	}
 
 	[Fact]
@@ -157,7 +158,7 @@ public static class DataRecordExtensionsTests
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		Assert.Equal(
-			new[] { "Id_type", "Name_type", "Value_type" },
+			["Id_type", "Name_type", "Value_type"],
 			record.GetDataTypeNames());
 	}
 
@@ -166,7 +167,7 @@ public static class DataRecordExtensionsTests
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, DBNull.Value, "v"]);
 
-		Dictionary<string, object?> dict = record.ToDictionary(["Id", "Name"]);
+		var dict = record.ToDictionary(["Id", "Name"]);
 
 		Assert.Equal(1, dict["Id"]);
 		Assert.Null(dict["Name"]); // DBNull -> null
@@ -178,7 +179,7 @@ public static class DataRecordExtensionsTests
 		IDataRecord record = PositionedRecord(Columns, [1, DBNull.Value, "v"]);
 
 		var mapping = new List<(string Name, int Ordinal)> { ("Name", 1), ("Value", 2) };
-		Dictionary<string, object?> dict = record.ToDictionary(mapping);
+		var dict = record.ToDictionary(mapping);
 
 		Assert.Null(dict["Name"]);
 		Assert.Equal("v", dict["Value"]);

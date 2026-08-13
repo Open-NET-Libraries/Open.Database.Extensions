@@ -18,7 +18,7 @@ public static class CaseInsensitiveMappingTests
 	{
 		var queue = new Queue<object?[]>();
 		queue.Enqueue(["Ada"]);
-		var result = new QueryResult<Queue<object?[]>>(new[] { 0 }, new[] { columnName }, queue);
+		var result = new QueryResult<Queue<object?[]>>([0], [columnName], queue);
 
 		List<TransformerResultsTests.Person> people = [.. result.DequeueAs<TransformerResultsTests.Person>()];
 

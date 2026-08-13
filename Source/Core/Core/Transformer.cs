@@ -32,7 +32,6 @@ public class Transformer<T>
 	// Reflection is invariant per T; a static on this generic type is per-T and initialized once
 	// (thread-safe), so GetProperties() and the name->PropertyInfo map aren't rebuilt per query.
 	// Built once, read on every query (property lookups + Keys) -> frozen on the modern target.
-	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "Per-T reflection cache is intentional.")]
 #if NET10_0_OR_GREATER
 	static readonly FrozenDictionary<string, PropertyInfo> PropertiesByName
 		= typeof(T).GetProperties().ToFrozenDictionary(p => p.Name);
@@ -214,7 +213,7 @@ public class Transformer<T>
 	static (int[] Ordinals, ImmutableArray<string> Names) SplitColumns((string Name, int Ordinal)[] columns)
 	{
 		int n = columns.Length;
-		var ordinals = new int[n];
+		int[] ordinals = new int[n];
 		var names = ImmutableArray.CreateBuilder<string>(n);
 		names.Count = n;
 		for (int i = 0; i < n; i++)
@@ -331,8 +330,8 @@ public class Transformer<T>
 		int columnCount = cols.Count;
 
 		// Ordinals + names in a single pass (no double Select iterators).
-		var ordinals = new int[columnCount];
-		var names = new string[columnCount];
+		int[] ordinals = new int[columnCount];
+		string[] names = new string[columnCount];
 		for (int i = 0; i < columnCount; i++)
 		{
 			DataColumn c = cols[i];

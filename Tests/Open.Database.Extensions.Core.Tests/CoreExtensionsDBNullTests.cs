@@ -9,7 +9,7 @@ public static class CoreExtensionsDBNullTests
 	public static void CopyToDBNullAsNull_WritesConvertedValues_AndReturnsTarget()
 	{
 		// Arrange
-		ReadOnlySpan<object?> source = new object?[] { "a", DBNull.Value, 3, DBNull.Value };
+		ReadOnlySpan<object?> source = ["a", DBNull.Value, 3, DBNull.Value];
 		Span<object?> target = new object?[source.Length];
 
 		// Act
@@ -32,7 +32,7 @@ public static class CoreExtensionsDBNullTests
 	public static void ReplaceDBNullWithNull_Span_ConvertsInPlace_AndReturnsSameContents()
 	{
 		// Arrange
-		var backing = new object?[] { DBNull.Value, "x", DBNull.Value };
+		object?[] backing = [DBNull.Value, "x", DBNull.Value];
 		Span<object?> span = backing;
 
 		// Act
@@ -52,7 +52,7 @@ public static class CoreExtensionsDBNullTests
 	public static void ReplaceDBNullWithNull_Array_ConvertsInPlace_AndReturnsSameInstance()
 	{
 		// Arrange
-		var values = new object?[] { DBNull.Value, 1, DBNull.Value };
+		object?[] values = [DBNull.Value, 1, DBNull.Value];
 
 		// Act
 		object?[] returned = values.ReplaceDBNullWithNull();
@@ -84,7 +84,7 @@ public static class CoreExtensionsDBNullTests
 	public static void DBNullToNullCopy_Array_ReturnsNewConvertedArray()
 	{
 		// Arrange
-		var values = new object?[] { DBNull.Value, "z" };
+		object?[] values = [DBNull.Value, "z"];
 
 		// Act
 		object?[] copy = values.DBNullToNullCopy();
@@ -107,6 +107,6 @@ public static class CoreExtensionsDBNullTests
 		object?[] result = [.. values.DBNullToNull()];
 
 		// Assert
-		Assert.Equal(new object?[] { null, "a", null, 2 }, result);
+		Assert.Equal([null, "a", null, 2], result);
 	}
 }

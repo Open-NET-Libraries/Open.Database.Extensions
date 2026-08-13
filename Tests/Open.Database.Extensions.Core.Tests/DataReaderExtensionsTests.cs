@@ -16,8 +16,8 @@ public static class DataReaderExtensionsTests
 		List<object[]> rows = [.. reader.AsEnumerable()];
 
 		Assert.Equal(2, rows.Count);
-		Assert.Equal(new object[] { 1, "a" }, rows[0]);
-		Assert.Equal(new object[] { 2, "b" }, rows[1]);
+		Assert.Equal([1, "a"], rows[0]);
+		Assert.Equal([2, "b"], rows[1]);
 	}
 
 	[Fact]
@@ -28,7 +28,7 @@ public static class DataReaderExtensionsTests
 		IEnumerable<int> ordinals = [2, 0];
 		object[] row = Assert.Single([.. reader.AsEnumerable(ordinals)]);
 
-		Assert.Equal(new object[] { "x", 1 }, row);
+		Assert.Equal(["x", 1], row);
 	}
 
 	[Fact]
@@ -39,7 +39,7 @@ public static class DataReaderExtensionsTests
 		// n = 0, others = 2  ->  ordinals [0, 2]
 		object[] row = Assert.Single([.. reader.AsEnumerable(0, 2)]);
 
-		Assert.Equal(new object[] { 1, "x" }, row);
+		Assert.Equal([1, "x"], row);
 	}
 
 	[Fact]

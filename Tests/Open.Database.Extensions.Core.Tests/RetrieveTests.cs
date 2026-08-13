@@ -23,12 +23,14 @@ public static class RetrieveTests
 
 		Core.QueryResultQueue<object[]> result = reader.Retrieve();
 
-		Assert.Equal(new[] { "Id", "Name" }, result.Names);
-		Assert.Equal(new[] { 0, 1 }, result.Ordinals);
+		// Names/Ordinals are ImmutableArray<T>, whose IEquatable compares the backing array by
+		// reference; materialize to a plain array so xUnit compares element-by-element.
+		Assert.Equal(["Id", "Name"], result.Names.ToArray());
+		Assert.Equal([0, 1], result.Ordinals.ToArray());
 
 		List<object[]> rows = Drain(result);
 		Assert.Equal(2, rows.Count);
-		Assert.Equal(new object[] { 1, "a" }, rows[0]);
+		Assert.Equal([1, "a"], rows[0]);
 		Assert.Equal(2, rows[1][0]);
 		Assert.Equal(DBNull.Value, rows[1][1]); // Retrieve retains DBNull (does not convert)
 	}
@@ -43,11 +45,11 @@ public static class RetrieveTests
 		IEnumerable<string> columns = ["Name", "Id"];
 		Core.QueryResultQueue<object[]> result = reader.Retrieve(columns);
 
-		Assert.Equal(new[] { "Name", "Id" }, result.Names);
-		Assert.Equal(new[] { 1, 0 }, result.Ordinals);
+		Assert.Equal(["Name", "Id"], result.Names.ToArray());
+		Assert.Equal([1, 0], result.Ordinals.ToArray());
 
 		object[] row = Assert.Single(Drain(result));
-		Assert.Equal(new object[] { "a", 1 }, row);
+		Assert.Equal(["a", 1], row);
 	}
 
 	[Fact]
@@ -60,9 +62,9 @@ public static class RetrieveTests
 		IEnumerable<int> ordinals = [2, 0];
 		Core.QueryResultQueue<object[]> result = reader.Retrieve(ordinals);
 
-		Assert.Equal(new[] { "Extra", "Id" }, result.Names);
+		Assert.Equal(["Extra", "Id"], result.Names.ToArray());
 
 		object[] row = Assert.Single(Drain(result));
-		Assert.Equal(new object[] { "x", 1 }, row);
+		Assert.Equal(["x", 1], row);
 	}
 }

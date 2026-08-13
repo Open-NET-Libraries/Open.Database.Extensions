@@ -72,8 +72,8 @@ public static class TransformerResultsTests
 		queue.Enqueue(["Jack", 40]);
 
 		var result = new Core.QueryResult<Queue<object?[]>>(
-			new[] { 0, 1 },
-			new[] { "first_name", "AGE" },
+			[0, 1],
+			["first_name", "AGE"],
 			queue);
 
 		var overrides = new (string Field, string? Column)[] { ("FirstName", "first_name") };

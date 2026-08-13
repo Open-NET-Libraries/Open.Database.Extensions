@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
 		<IsPackable>false</IsPackable>
 		<ImplicitUsings>true</ImplicitUsings>
+		<RunSettingsFilePath>D:\Users\essence\Development\- GitHub\- Open-NET-Libraries\Open.Database.Extensions\Tests\Open.Database.Extensions.Core.Tests\bin\Release\net10.0\fine-code-coverage\coverage-tool-output\Open.Database.Extensions.Core.Tests-fcc-mscodecoverage-generated.runsettings</RunSettingsFilePath>
 	</PropertyGroup>
 
   <ItemGroup>
