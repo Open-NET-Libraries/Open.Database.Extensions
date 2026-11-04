@@ -158,16 +158,16 @@ public static class TransactionExtensionsTests
 	}
 
 	[Fact]
-	public static void ExecuteTransaction_BrokenConnection_IsRepairedAndTreatedAsTheCallers()
+	public static void ExecuteTransaction_BrokenConnection_IsRepairedThenClosedAgain()
 	{
-		// Same rule as the rest of the library: only a connection that was Closed on entry is closed afterwards.
+		// A broken connection was not open, so the connection that gets (re)opened here is closed here.
 		var c = new FakeDbConnection();
 		c.SetState(ConnectionState.Broken);
 
 		c.ExecuteTransaction(_ => { });
 
-		Assert.Equal(["close", "open", "begin", "commit", "tx-dispose"], c.Log);
-		Assert.Equal(ConnectionState.Open, c.State);
+		Assert.Equal(["close", "open", "begin", "commit", "tx-dispose", "close"], c.Log);
+		Assert.Equal(ConnectionState.Closed, c.State);
 	}
 
 	#endregion

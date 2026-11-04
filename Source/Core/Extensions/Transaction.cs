@@ -13,6 +13,7 @@ public static partial class TransactionExtensions
 	/// The connection does not need to be opened beforehand.
 	/// If it is not open, it is opened first and then closed (not disposed) when the transaction completes, even if it fails.
 	/// A connection that was already open is left open.
+	/// A failure while closing is ignored, as by then the transaction has already been committed or rolled back.
 	/// Use the overload that accepts a <see cref="ConnectionBehavior"/> to leave an opened connection open instead.
 	/// </para>
 	/// <para>
@@ -444,11 +445,11 @@ public static partial class TransactionExtensions
 	// an uncommitted transaction on dispose while the connection is still open.
 	// A failure to close is deliberately ignored. By then the transaction has already been committed or rolled back,
 	// so it must neither turn a completed operation into an error nor replace the exception of a failed one.
-	// A connection that was Broken on entry is repaired by EnsureOpen but is treated as the caller's (not closed),
-	// consistent with the other prior-state checks in this library (state == Closed).
+	// Only a connection that was already Open belongs to the caller. One that was Closed, or Broken and therefore
+	// repaired by EnsureOpen, is a connection this operation opened, so it is closed again here.
 	static void RestoreConnection(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
 	{
-		if (behavior != ConnectionBehavior.RestoreState || priorState != ConnectionState.Closed)
+		if (behavior != ConnectionBehavior.RestoreState || priorState.HasFlag(ConnectionState.Open))
 			return;
 
 		try
@@ -470,7 +471,7 @@ public static partial class TransactionExtensions
 #else
 	static async ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
 	{
-		if (behavior != ConnectionBehavior.RestoreState || priorState != ConnectionState.Closed)
+		if (behavior != ConnectionBehavior.RestoreState || priorState.HasFlag(ConnectionState.Open))
 			return;
 
 		try
