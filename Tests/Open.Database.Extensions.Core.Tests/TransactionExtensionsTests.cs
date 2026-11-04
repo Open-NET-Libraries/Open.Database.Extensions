@@ -450,4 +450,97 @@ public static class TransactionExtensionsTests
 	}
 
 	#endregion
+
+	#region Cancellation token in place of the isolation level
+
+	[Fact]
+	public static void ExecuteTransaction_TokenAfterAction_UsesUnspecifiedIsolation()
+	{
+		var c = new FakeDbConnection();
+
+		c.ExecuteTransaction(_ => { }, CancellationToken.None);
+
+		Assert.Equal(Success, c.Log);
+		Assert.Equal(IsolationLevel.Unspecified, c.LastTransaction!.IsolationLevel);
+	}
+
+	// A token that is already cancelled must stop every shape before anything is opened.
+	// That only happens if each overload actually hands the token on.
+	[Fact]
+	public static void TokenAfterAction_SyncShapes_PassTheTokenOn()
+	{
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+		CancellationToken ct = cts.Token;
+		var c = new FakeDbConnection();
+
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransactionConditional(_ => (true, 1), ct));
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransactionConditional(_ => true, ct));
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransaction(_ => 1, ct));
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransaction(_ => { }, ct));
+
+		Assert.Empty(c.Log);
+	}
+
+	[Fact]
+	public static async Task TokenAfterAction_AsyncShapes_PassTheTokenOn()
+	{
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+		CancellationToken ct = cts.Token;
+		var c = new FakeDbConnection();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionConditionalAsync((_, _) => new ValueTask<(bool Commit, int Value)>((true, 1)), ct));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionConditionalAsync(_ => new ValueTask<(bool Commit, int Value)>((true, 1)), ct));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionConditionalAsync(_ => new ValueTask<bool>(true), ct));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => new ValueTask<int>(1), ct));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => default, ct));
+
+		Assert.Empty(c.Log);
+	}
+
+	[Fact]
+	public static void TokenAfterConnectionBehavior_SyncShapes_PassTheTokenOn()
+	{
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+		CancellationToken ct = cts.Token;
+		const ConnectionBehavior b = ConnectionBehavior.LeaveOpen;
+		var c = new FakeDbConnection();
+
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransactionConditional(_ => (true, 1), b, ct));
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransaction(_ => 1, b, ct));
+		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransaction(_ => { }, b, ct));
+
+		Assert.Empty(c.Log);
+	}
+
+	[Fact]
+	public static async Task TokenAfterConnectionBehavior_AsyncShapes_PassTheTokenOn()
+	{
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+		CancellationToken ct = cts.Token;
+		const ConnectionBehavior b = ConnectionBehavior.LeaveOpen;
+		var c = new FakeDbConnection();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionConditionalAsync((_, _) => new ValueTask<(bool Commit, int Value)>((true, 1)), b, ct));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => new ValueTask<int>(1), b, ct));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => default, b, ct));
+
+		Assert.Empty(c.Log);
+	}
+
+	[Fact]
+	public static void ExecuteTransaction_LiteralDefault_StillBindsToIsolationLevel()
+	{
+		// Source compatibility: this compiled (as IsolationLevel) before the token overloads were added.
+		var c = new FakeDbConnection();
+
+		c.ExecuteTransaction(_ => { }, default);
+
+		Assert.Equal((IsolationLevel)0, c.LastTransaction!.IsolationLevel);
+	}
+
+	#endregion
 }

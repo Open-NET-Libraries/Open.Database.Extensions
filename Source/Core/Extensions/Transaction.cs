@@ -489,6 +489,145 @@ public static partial class TransactionExtensions
 
 	#endregion
 
+	#region Cancellation token in place of the isolation level
+
+	// The isolation level is almost always left unspecified, so a token may be passed right after the action
+	// (or right after the ConnectionBehavior). None of these have optional parameters, which is what keeps them
+	// from competing with the overloads that do.
+	// They carry the lowest priority so that a bare `default` argument, which has always bound to IsolationLevel,
+	// keeps doing so. A real CancellationToken can only match these, so it is unaffected.
+
+	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
+		this DbConnection connection,
+		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionConditional(DbConnection, Func{DbTransaction, bool}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static bool ExecuteTransactionConditional(
+		this DbConnection connection,
+		Func<DbTransaction, bool> conditionalAction,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static T ExecuteTransaction<T>(
+		this DbConnection connection,
+		Func<DbTransaction, T> action,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static void ExecuteTransaction(
+		this DbConnection connection,
+		Action<DbTransaction> action,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
+		this DbConnection connection,
+		Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, T Value)>> conditionalAction,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
+		this DbConnection connection,
+		Func<DbTransaction, ValueTask<(bool Commit, T Value)>> conditionalAction,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync(DbConnection, Func{DbTransaction, ValueTask{bool}}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask<bool> ExecuteTransactionConditionalAsync(
+		this DbConnection connection,
+		Func<DbTransaction, ValueTask<bool>> conditionalAction,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask<T> ExecuteTransactionAsync<T>(
+		this DbConnection connection,
+		Func<DbTransaction, ValueTask<T>> action,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask ExecuteTransactionAsync(
+		this DbConnection connection,
+		Func<DbTransaction, ValueTask> action,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
+
+	// With a ConnectionBehavior in front, a literal 0 in the next position could mean either enum,
+	// so these carry the same priority as the other ConnectionBehavior overloads.
+
+	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
+		this DbConnection connection,
+		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
+		ConnectionBehavior connectionBehavior,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditional(conditionalAction, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
+		this DbConnection connection,
+		Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, T Value)>> conditionalAction,
+		ConnectionBehavior connectionBehavior,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static T ExecuteTransaction<T>(
+		this DbConnection connection,
+		Func<DbTransaction, T> action,
+		ConnectionBehavior connectionBehavior,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransaction(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static void ExecuteTransaction(
+		this DbConnection connection,
+		Action<DbTransaction> action,
+		ConnectionBehavior connectionBehavior,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransaction(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask<T> ExecuteTransactionAsync<T>(
+		this DbConnection connection,
+		Func<DbTransaction, ValueTask<T>> action,
+		ConnectionBehavior connectionBehavior,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionAsync(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
+
+	/// <inheritdoc cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
+	[OverloadResolutionPriority(-1)]
+	public static ValueTask ExecuteTransactionAsync(
+		this DbConnection connection,
+		Func<DbTransaction, ValueTask> action,
+		ConnectionBehavior connectionBehavior,
+		CancellationToken cancellationToken)
+		=> connection.ExecuteTransactionAsync(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
+
+	#endregion
+
 	#region Overloads
 
 	#region No optional params
