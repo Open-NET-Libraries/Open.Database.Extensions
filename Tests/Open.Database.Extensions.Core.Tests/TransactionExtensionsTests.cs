@@ -135,11 +135,26 @@ public static class TransactionExtensionsTests
 	}
 
 	[Fact]
-	public static void ExecuteTransaction_CloseFailsAfterSuccess_ReportsTheFailure()
+	public static void ExecuteTransaction_CloseFailsAfterCommit_StillReturnsNormally()
+	{
+		// The work is already committed; a failure to close must not make the caller think it failed.
+		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
+
+		int value = c.ExecuteTransaction(_ => 42);
+
+		Assert.Equal(42, value);
+		Assert.Equal(1, c.LastTransaction!.CommitCalls);
+	}
+
+	[Fact]
+	public static async Task ExecuteTransactionAsync_CloseFailsAfterCommit_StillReturnsNormally()
 	{
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
 
-		Assert.Throws<TimeoutException>(() => c.ExecuteTransaction(_ => { }));
+		int value = await c.ExecuteTransactionAsync(_ => new ValueTask<int>(42));
+
+		Assert.Equal(42, value);
+		Assert.Equal(1, c.LastTransaction!.CommitCalls);
 	}
 
 	[Fact]

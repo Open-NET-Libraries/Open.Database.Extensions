@@ -69,7 +69,6 @@ public static partial class TransactionExtensions
 
 		// Remember the prior state so a connection that is opened here is closed again here.
 		ConnectionState priorState = connection.EnsureOpen();
-		bool succeeded = false;
 		try
 		{
 			cancellationToken.ThrowIfCancellationRequested();
@@ -81,12 +80,11 @@ public static partial class TransactionExtensions
 			cancellationToken.ThrowIfCancellationRequested();
 
 			if (result.Commit) transaction.Commit();
-			succeeded = true;
 			return result;
 		}
 		finally
 		{
-			RestoreConnection(connection, priorState, connectionBehavior, succeeded);
+			RestoreConnection(connection, priorState, connectionBehavior);
 		}
 	}
 
@@ -126,7 +124,6 @@ public static partial class TransactionExtensions
 
 		// Remember the prior state so a connection that is opened here is closed again here.
 		ConnectionState priorState = await connection.EnsureOpenAsync(cancellationToken);
-		bool succeeded = false;
 		try
 		{
 			// Disposing the transaction (at the end of this block, before the connection is closed)
@@ -142,12 +139,11 @@ public static partial class TransactionExtensions
 			cancellationToken.ThrowIfCancellationRequested();
 
 			if (result.Commit) transaction.Commit();
-			succeeded = true;
 			return result;
 		}
 		finally
 		{
-			await RestoreConnectionAsync(connection, priorState, connectionBehavior, succeeded);
+			await RestoreConnectionAsync(connection, priorState, connectionBehavior);
 		}
 	}
 
@@ -446,10 +442,11 @@ public static partial class TransactionExtensions
 	// connection is left the way it was found. By the time this runs the transaction has already been disposed:
 	// that ordering matters because some providers (e.g. Microsoft.Data.Sqlite, MySqlConnector) only roll back
 	// an uncommitted transaction on dispose while the connection is still open.
-	// A failure to close must not hide an exception that is already propagating from the operation itself.
+	// A failure to close is deliberately ignored. By then the transaction has already been committed or rolled back,
+	// so it must neither turn a completed operation into an error nor replace the exception of a failed one.
 	// A connection that was Broken on entry is repaired by EnsureOpen but is treated as the caller's (not closed),
 	// consistent with the other prior-state checks in this library (state == Closed).
-	static void RestoreConnection(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior, bool succeeded)
+	static void RestoreConnection(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
 	{
 		if (behavior != ConnectionBehavior.RestoreState || priorState != ConnectionState.Closed)
 			return;
@@ -458,20 +455,20 @@ public static partial class TransactionExtensions
 		{
 			connection.Close();
 		}
-		catch (Exception) when (!succeeded)
+		catch (Exception)
 		{
-			// Intentionally swallowed: the operation's own exception is already propagating.
+			// Intentionally ignored; see above.
 		}
 	}
 
 #if NETSTANDARD2_0
-	static ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior, bool succeeded)
+	static ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
 	{
-		RestoreConnection(connection, priorState, behavior, succeeded);
+		RestoreConnection(connection, priorState, behavior);
 		return default;
 	}
 #else
-	static async ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior, bool succeeded)
+	static async ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
 	{
 		if (behavior != ConnectionBehavior.RestoreState || priorState != ConnectionState.Closed)
 			return;
@@ -480,9 +477,9 @@ public static partial class TransactionExtensions
 		{
 			await connection.CloseAsync().ConfigureAwait(false);
 		}
-		catch (Exception) when (!succeeded)
+		catch (Exception)
 		{
-			// Intentionally swallowed: the operation's own exception is already propagating.
+			// Intentionally ignored; see above.
 		}
 	}
 #endif
