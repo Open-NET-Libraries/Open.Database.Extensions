@@ -33,7 +33,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	static Dictionary<string, PropertyInfo> BuildProperties()
 	{
 		var map = new Dictionary<string, PropertyInfo>(StringComparer.Ordinal);
-		foreach (PropertyInfo p in typeof(T).GetProperties())
+		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
 			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is not null)
 #if NETSTANDARD2_0

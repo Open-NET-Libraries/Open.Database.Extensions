@@ -257,6 +257,40 @@ public static class RowMapTests
 		Assert.Null(item.Note);
 	}
 
+	// ---- only public instance properties are mapped ----
+
+	internal sealed class WithStatic
+	{
+		public int Id { get; set; }
+		public static string? Shared { get; set; }
+	}
+
+	internal sealed class WithInit
+	{
+		public int Id { get; init; }
+	}
+
+	[Fact]
+	public static void StaticProperty_NamedByAMap_FailsLikeAnUnknownProperty()
+	{
+		var ex = Assert.Throws<ArgumentException>(() => new RowMap<WithStatic>(("Shared", "x")));
+		Assert.Contains("Shared", ex.Message);
+		Assert.Contains("no settable public property", ex.Message);
+	}
+
+	[Fact]
+	public static void StaticProperty_IsIgnoredByTheDefaultMapping_EvenWhenAColumnHasItsName()
+	{
+		WithStatic.Shared = null;
+		WithStatic row = new FakeExecuteReader(["Id", "Shared"], [1, "from the column"]).Map<WithStatic>().ToList().Single();
+		Assert.Equal(1, row.Id);
+		Assert.Null(WithStatic.Shared);
+	}
+
+	[Fact]
+	public static void InitOnlySetter_IsAccepted()
+		=> Assert.Equal(5, new FakeExecuteReader(["x"], [5]).Map<WithInit>(new RowMap<WithInit>(("Id", "x"))).ToList().Single().Id);
+
 	// ---- column order and result-set shape ----
 
 	[Fact]
