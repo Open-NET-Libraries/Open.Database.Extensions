@@ -69,7 +69,10 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The record (typically a data reader positioned on a row) to read the values from.</param>
 	/// <param name="arrayPool">The array pool to rent the buffer from.</param>
 	/// <returns>The rented array containing the values in ordinal order.</returns>
-	/// <inheritdoc cref="GetValues(IDataRecord, int, ArrayPool{object})"/>
+	/// <remarks>
+	/// The caller owns the rented array and must return it to <paramref name="arrayPool"/>. The array can be longer than requested, and elements beyond the copied values are not cleared, so they can hold values from earlier use. Because the array holds database values, consider returning it with its contents cleared.
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="arrayPool"/> is <see langword="null"/>.</exception>
 	public static object[] GetValues(this IDataRecord record, ArrayPool<object> arrayPool)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
@@ -173,7 +176,9 @@ public static partial class DataRecordExtensions
 	/// <param name="columnNames">The requested column names.</param>
 	/// <param name="sort"><see langword="true"/> to order the results by ordinal ascending; <see langword="false"/> to keep the requested order.</param>
 	/// <returns>An enumerable of mappings.</returns>
-	/// <inheritdoc cref="OrdinalMapping(IDataRecord, IEnumerable{string})"/>
+	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
+	/// <seealso cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>
+	/// <seealso cref="MatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
 	public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort)
 		=> sort
 		? OrdinalMapping(record, columnNames).OrderBy(m => m.Ordinal)
@@ -258,7 +263,8 @@ public static partial class DataRecordExtensions
 	/// <param name="record">The record to read the values from.</param>
 	/// <param name="ordinals">The ordinals to read. The values are returned in this order.</param>
 	/// <returns>An enumerable of values matching the ordinals requested. The values are read from the record as the enumerable is enumerated.</returns>
-	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinals"/> is <see langword="null"/>.</exception>
+	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record. It is thrown while the result is enumerated.</exception>
 	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IReadOnlyList<int> ordinals)
 	{
 		return record is null
@@ -417,7 +423,10 @@ public static partial class DataRecordExtensions
 	/// <param name="columnNames">The requested column names. Names that do not exist in the record are skipped rather than reported.</param>
 	/// <param name="sort"><see langword="true"/> to return the mappings in the record's column order; <see langword="false"/> to return them in the requested order.</param>
 	/// <returns>An array of (name, ordinal) mappings, where each name is the column's actual name in the record.</returns>
-	/// <inheritdoc cref="MatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
+	/// <remarks>
+	/// Use <see cref="OrdinalMapping(IDataRecord, IEnumerable{string})"/> or <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/> instead when a missing column should be an error.
+	/// </remarks>
+	/// <exception cref="ArgumentException">A requested name is <see langword="null"/>, empty, or white space. It can be thrown when the result is enumerated rather than when this method is called.</exception>
 	public static (string Name, int Ordinal)[] GetMatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 		=> MatchingOrdinals(record, columnNames, sort).ToArray();
 

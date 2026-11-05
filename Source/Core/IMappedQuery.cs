@@ -31,7 +31,9 @@ public interface IMappedQuery<T>
 	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
 	/// <param name="handler">Receives a forward-only sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
 	/// <returns>The value returned by <paramref name="handler"/>. Materialize it before returning (for example into a list) rather than returning the lazy sequence.</returns>
-	/// <inheritdoc cref="Read(Action{IEnumerable{T}})"/>
+	/// <remarks>
+	/// The connection is opened if it is not already open and is released when the handler returns, whether the handler completes or throws. Exceptions from the provider propagate unchanged.
+	/// </remarks>
 	TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler);
 
 	/// <summary>
@@ -41,7 +43,9 @@ public interface IMappedQuery<T>
 	/// <param name="cancellationToken">Cancels the operation. The implementations in this library use the command's own cancellation token when this one cannot be canceled.</param>
 	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="Read(Action{IEnumerable{T}})"/>
+	/// <remarks>
+	/// The connection is opened if it is not already open and is released when the handler returns, whether the handler completes or throws. Exceptions from the provider propagate unchanged.
+	/// </remarks>
 	ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken);
 
 	/// <summary>
@@ -52,6 +56,8 @@ public interface IMappedQuery<T>
 	/// <param name="cancellationToken">Cancels the operation. The implementations in this library use the command's own cancellation token when this one cannot be canceled.</param>
 	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="Read(Action{IEnumerable{T}})"/>
+	/// <remarks>
+	/// The connection is opened if it is not already open and is released when the handler returns, whether the handler completes or throws. Exceptions from the provider propagate unchanged.
+	/// </remarks>
 	ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken);
 }

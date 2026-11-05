@@ -130,7 +130,11 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces a list of all the rows, in the order the database returned them.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="ToList{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(cancellationToken,
 			async (items, token) => await items.ToListAsync(token).ConfigureAwait(false));
@@ -141,7 +145,11 @@ public static class MappedQueryExtensions
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <returns>An array of all the rows, in the order the database returned them. The array is empty if there are no rows.</returns>
-	/// <inheritdoc cref="ToList{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static T[] ToArray<T>(this IMappedQuery<T> query)
 		=> query.Read(items => items.ToArray());
 
@@ -153,7 +161,11 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces an array of all the rows, in the order the database returned them.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(cancellationToken,
 			async (items, token) => await items.ToArrayAsync(token).ConfigureAwait(false));
@@ -164,7 +176,11 @@ public static class MappedQueryExtensions
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <returns>An immutable array of all the rows, in the order the database returned them.</returns>
-	/// <inheritdoc cref="ToList{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ImmutableArray<T> ToImmutableArray<T>(this IMappedQuery<T> query)
 		=> query.Read(items => items.ToImmutableArray());
 
@@ -191,7 +207,11 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces an immutable array of all the rows, in the order the database returned them.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="ToImmutableArray{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default) => query.ReadAsync(cancellationToken,
 			async (items, token) => await items.ToImmutableArrayAsync(token).ConfigureAwait(false));
 
@@ -206,7 +226,11 @@ public static class MappedQueryExtensions
 	/// <returns>A dictionary of all the rows. It is empty if there are no rows.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
-	/// <inheritdoc cref="ToList{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static Dictionary<TKey, T> ToDictionary<T, TKey>(
 		this IMappedQuery<T> query, Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer = null)
 		where TKey : notnull
@@ -223,7 +247,13 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces a dictionary of all the rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<T, TKey>(
 		this IMappedQuery<T> query,
 		Func<T, TKey> keySelector,
@@ -245,7 +275,11 @@ public static class MappedQueryExtensions
 	/// <param name="query">The query to execute.</param>
 	/// <param name="comparer">The comparer for the rows, or <see langword="null"/> to use the default comparer.</param>
 	/// <returns>A set of the distinct rows. Rows that compare equal to an earlier row are dropped.</returns>
-	/// <inheritdoc cref="ToList{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static HashSet<T> ToHashSet<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null)
 	{
 #if NETSTANDARD2_0
@@ -272,7 +306,11 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces a set of the distinct rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="ToHashSet{T}(IMappedQuery{T}, IEqualityComparer{T})"/>
+	/// <remarks>
+	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// </remarks>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
 	{
 #if NETSTANDARD2_0
@@ -316,7 +354,10 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces the first row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="FirstOrDefault{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// </remarks>
+	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	public static ValueTask<T?> FirstOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(cancellationToken,
 			async (items, token) => await items.FirstOrDefaultAsync(token).ConfigureAwait(false));
@@ -340,7 +381,8 @@ public static class MappedQueryExtensions
 	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
 	/// <returns>A task that produces the single row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <inheritdoc cref="SingleOrDefault{T}(IMappedQuery{T})"/>
+	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
+	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	public static ValueTask<T?> SingleOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(cancellationToken,
 			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false));

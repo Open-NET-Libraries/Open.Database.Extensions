@@ -118,7 +118,9 @@ public static class DbConnectionFactoryExtensions
 	/// </summary>
 	/// <param name="connectionFactory">The function that creates a connection.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter"/> that handles this function.</returns>
-	/// <inheritdoc cref="AsPool(IDbConnectionFactory)"/>
+	/// <remarks>
+	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
+	/// </remarks>
 	public static ConnectionFactoryToPoolAdapter AsPool(this Func<IDbConnection> connectionFactory)
 		=> new(connectionFactory);
 
@@ -128,7 +130,9 @@ public static class DbConnectionFactoryExtensions
 	/// <typeparam name="TConnection">The connection type.</typeparam>
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> that handles this factory.</returns>
-	/// <inheritdoc cref="AsPool(IDbConnectionFactory)"/>
+	/// <remarks>
+	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
+	/// </remarks>
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 		=> new(connectionFactory);
@@ -139,7 +143,9 @@ public static class DbConnectionFactoryExtensions
 	/// <typeparam name="TConnection">The connection type.</typeparam>
 	/// <param name="connectionFactory">The function that creates a connection.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> that handles this function.</returns>
-	/// <inheritdoc cref="AsPool(IDbConnectionFactory)"/>
+	/// <remarks>
+	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
+	/// </remarks>
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this Func<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 		=> new(connectionFactory);
