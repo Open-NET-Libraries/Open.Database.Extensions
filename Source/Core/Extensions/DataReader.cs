@@ -956,17 +956,11 @@ public static class DataReaderExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var results = new Queue<T0>();
+		var results = new List<T0>();
 		while (reader.Read())
-		{
-			results.Enqueue(
-				reader.IsDBNull(0)
-				? default!
-				: reader.GetFieldValue<T0>(0)
-			);
-		}
+			results.Add(ColumnReader.Get<T0>(reader, 0));
 
-		return results.DequeueEach();
+		return results;
 	}
 
 	/// <summary>
@@ -1000,43 +994,25 @@ public static class DataReaderExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var results = new Queue<T0>();
+		var results = new List<T0>();
 		if (useReadAsync)
 		{
 			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-			{
-				results.Enqueue(
-					await reader.IsDBNullAsync(0, cancellationToken).ConfigureAwait(false)
-					? default!
-					: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false)
-				);
-			}
+				results.Add(ColumnReader.Get<T0>(reader, 0));
 		}
 		else if (cancellationToken.CanBeCanceled)
 		{
 			while (!cancellationToken.IsCancellationRequested && reader.Read())
-			{
-				results.Enqueue(
-					reader.IsDBNull(0)
-					? default!
-					: reader.GetFieldValue<T0>(0)
-				);
-			}
+				results.Add(ColumnReader.Get<T0>(reader, 0));
 
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 		else
 		{
 			while (reader.Read())
-			{
-				results.Enqueue(
-					reader.IsDBNull(0)
-					? default!
-					: reader.GetFieldValue<T0>(0)
-				);
-			}
+				results.Add(ColumnReader.Get<T0>(reader, 0));
 		}
 
-		return results.DequeueEach();
+		return results;
 	}
 }

@@ -108,6 +108,36 @@ Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the re
 
 `ResultsAsync<T>()` is fully asynchronous from end-to-end but returns an `IEnumerable<T>` that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.
 
+## Mapped queries: `Map<T>()`
+
+`Map<T>()` is the fast, expressive way to read rows into a model. It is deferred: nothing runs until a terminal is called, and rows are mapped as the reader streams.
+
+```cs
+var posts = await connection
+    .Command("select * from posts where author = @author")
+    .AddParam("author", 42)
+    .Map<Post>()
+    .ToListAsync();
+
+var page = connection.Command("select * from posts order by id")
+    .Map<Post>()
+    .Skip(20).Take(10)     // skipped rows are advanced, never mapped; reading stops once the take is met
+    .ToArray();
+
+var one = connection.Command("select * from posts where id = @id").AddParam("id", 7).Map<Post>().SingleOrDefault();
+```
+
+Terminals: `ToList`, `ToArray`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` (each with an `…Async` twin) and `Read(...)`/`ReadAsync(...)` for streaming.
+
+How it stays fast:
+
+- The mapping from a result set to `T` is compiled **once per result-set shape** (column names + column types) and cached, so a repeat query does no reflection and no compilation.
+- Values are read with the provider's typed getters (`GetInt32`, `GetString`, …), so nothing is boxed. A column whose type differs from the property converts numerically (`long` → `int`, `int` → enum, …) or through a general conversion (string → enum/`Guid`).
+- `NULL` is honored for reference types and `Nullable<T>` properties. A `NULL` in a column mapped to a non-nullable value-type property is the provider's error to raise, and the exception names the property and column.
+- Columns are matched to properties case-insensitively; unmatched columns are ignored, and unmatched properties keep their defaults. Field/column overrides are supported: `.Map<Post>(("Id", "PostId"), ("Body", null))` (a `null` column ignores the field).
+- Readers are opened with `SequentialAccess | SingleResult` (`SingleRow` for `FirstOrDefault`), like Dapper.
+- The execution path allocates no closures: state-passing `ExecuteReader`/`ExecuteReaderAsync` overloads on `IExecuteReader` take a `static` lambda plus the state it needs.
+
 ## Transactions
 
 Example:
@@ -166,3 +196,22 @@ A modernization and allocation-reduction pass. **Source-compatible with 10.0** �
 - **Lower per-query overhead:** `Transformer<T>` caches its per-type reflection once instead of rebuilding it on every query; buffered/data-table paths pre-size collections and avoid redundant `Select` iterators.
 - Fixed a wasted-allocation / incorrect-return bug in `CopyToDBNullAsNull`.
 - Public API surface is now tracked with `Microsoft.CodeAnalysis.PublicApiAnalyzers`, and unit-test coverage was substantially expanded.
+
+## 11.0.0 Release Notes
+
+A performance release: **result mapping is rewritten and now beats Dapper 2.1.89** in the included benchmarks (`Benchmarks/`, see `Benchmarks/RESULTS.md`), with a fraction of the allocations on multi-row results.
+
+- **Cached, typed row mapping.** The mapping for a result-set shape is compiled once and reused. Previously every query compiled a setter per property (~1 ms fixed cost per `Map<T>()`). Values are read with typed getters, so nothing is boxed.
+- **Direct read loops.** `ToList`, `ToArray`, `FirstOrDefault`, `SingleOrDefault`, `ToDictionary`, `ToHashSet`, `ToImmutableArray` (and async twins) read straight from the reader. `Skip` advances without mapping, `Take` stops reading when met. They are now instance methods on `MappedQuery<T>` (no boxing of the query struct); the `IMappedQuery<T>` extensions remain for generic code.
+- **No per-call closures.** `IExecuteReader` gained state-passing `ExecuteReader<TState, TResult>` / `ExecuteReaderAsync<TState, TResult>`; pass a `static` lambda and the state it needs.
+- **Leaner commands.** A command created from a connection no longer allocates a pool wrapper, `Params` is created on first use, and async execution skips awaiting when the connection is already open.
+- **Readers use `SequentialAccess | SingleResult`** for `Map<T>()` (and `SingleRow` for `FirstOrDefault`), like Dapper. `Map(selector)` keeps the default access mode because a selector may read columns in any order.
+
+### Breaking changes
+
+- `IExecuteReader` has two new members (above). Custom implementations must add them; `ExpressiveCommand*` already do.
+- A `NULL` in a column mapped to a **non-nullable value-type** property is the provider's error to raise (it is wrapped in an `InvalidOperationException` naming the property and column). Map nullable columns to `Nullable<T>`/reference properties.
+- Field-mapping overrides naming a property that does not exist throw `ArgumentException` (was `KeyNotFoundException`). Only properties with a public setter are mapped.
+- `ResultsBuffered*` and `FirstOrdinalResults<T>` return materialized lists rather than one-shot dequeuing enumerables; `FirstOrdinalResults<T>` reads `NULL` as `default`.
+- `ExpressiveCommandBase.Params` is created lazily.
+- Async command execution passes the command's `CancellationToken` to the connection open.

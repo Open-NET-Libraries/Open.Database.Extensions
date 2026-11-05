@@ -17,8 +17,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var x = new Transformer<T>(fieldMappingOverrides);
-		return x.Results(reader);
+		return RowReader.Stream(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1);
 	}
 
 	/// <inheritdoc cref="Results{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
@@ -29,8 +28,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var x = new Transformer<T>();
-		return x.Results(reader);
+		return RowReader.Stream(RowPlan<T>.Default, reader, 0, -1);
 	}
 
 	/// <inheritdoc cref="Results{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
@@ -54,11 +52,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		if (!reader.Read())
-			return Enumerable.Empty<T>();
-
-		var x = new Transformer<T>(fieldMappingOverrides);
-		return x.ResultsBuffered(reader, true);
+		return RowReader.ToList(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1);
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)" />
@@ -68,11 +62,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		if (!reader.Read())
-			return Enumerable.Empty<T>();
-
-		var x = new Transformer<T>();
-		return x.ResultsBuffered(reader, true);
+		return RowReader.ToList(RowPlan<T>.Default, reader, 0, -1);
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)" />
@@ -132,8 +122,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var x = new Transformer<T>(fieldMappingOverrides);
-		return x.ResultsAsync(reader, cancellationToken);
+		return RowReader.StreamAsync(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1, true, cancellationToken);
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, CancellationToken)" />
@@ -182,22 +171,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-			return Enumerable.Empty<T>(); // else readStarted = true;
-
-		var x = new Transformer<T>(fieldMappingOverrides);
-		// Ignore missing columns.
-		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(x.ColumnNames, true);
-
-		return x.AsDequeueingEnumerable(
-			await RetrieveAsyncInternal(
-				Transformer<T>.LocalPool,
-				reader, cancellationToken,
-				columns.Select(c => c.Ordinal),
-				columns.Select(c => c.Name),
-				readStarted: true,
-				useReadAsync: useReadAsync).ConfigureAwait(false),
-			Transformer<T>.LocalPool);
+		return await RowReader.ToListAsync(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />

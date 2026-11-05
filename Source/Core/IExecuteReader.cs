@@ -38,6 +38,30 @@ public interface IExecuteReader
 	/// <param name="transform">The transform function for each IDataRecord.</param>
 	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 	ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default);
+
+	/// <summary>
+	/// Executes a reader on a command, passing <paramref name="state"/> to <paramref name="transform"/>.
+	/// Pass a <see langword="static"/> lambda and the state it needs to avoid allocating a closure per call.
+	/// </summary>
+	/// <typeparam name="TState">The type of the state passed to the transform.</typeparam>
+	/// <typeparam name="TResult">The return type of the transform function.</typeparam>
+	/// <param name="state">The state to pass to the transform.</param>
+	/// <param name="transform">The transform function for the data reader.</param>
+	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+	/// <returns>The result of the transform.</returns>
+	TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default);
+
+	/// <summary>
+	/// Executes a reader on a command, passing <paramref name="state"/> to <paramref name="transform"/>.
+	/// Pass a <see langword="static"/> lambda and the state it needs to avoid allocating a closure per call.
+	/// </summary>
+	/// <typeparam name="TState">The type of the state passed to the transform.</typeparam>
+	/// <typeparam name="TResult">The return type of the transform function.</typeparam>
+	/// <param name="state">The state to pass to the transform.</param>
+	/// <param name="transform">The transform function for the data reader.</param>
+	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+	/// <returns>The result of the transform.</returns>
+	ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default);
 }
 
 /// <summary>

@@ -20,10 +20,15 @@ internal sealed class FakeExecuteReader(IReadOnlyList<string> columns, params ob
 	/// <summary>The command-scoped token, chosen when a terminal doesn't supply a cancelable one.</summary>
 	public CancellationToken CancellationToken { get; set; }
 
+	Func<DbDataReader>? _factory;
+
+	/// <summary>Creates a command whose every execution is handed the reader the factory builds (e.g. a typed one).</summary>
+	public FakeExecuteReader(Func<DbDataReader> factory) : this([]) => _factory = factory;
+
 	DbDataReader NewReader()
 	{
 		ExecuteCount++;
-		return FakeReader.CreateDb(columns, rows);
+		return _factory?.Invoke() ?? FakeReader.CreateDb(columns, rows);
 	}
 
 	public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
@@ -48,5 +53,17 @@ internal sealed class FakeExecuteReader(IReadOnlyList<string> columns, params ob
 	{
 		await using DbDataReader reader = NewReader();
 		return await transform(reader).ConfigureAwait(false);
+	}
+
+	public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
+	{
+		using DbDataReader reader = NewReader();
+		return transform(reader, state);
+	}
+
+	public async ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
+	{
+		await using DbDataReader reader = NewReader();
+		return await transform(reader, state).ConfigureAwait(false);
 	}
 }
