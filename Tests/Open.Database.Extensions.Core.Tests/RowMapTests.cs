@@ -291,6 +291,37 @@ public static class RowMapTests
 	public static void InitOnlySetter_IsAccepted()
 		=> Assert.Equal(5, new FakeExecuteReader(["x"], [5]).Map<WithInit>(new RowMap<WithInit>(("Id", "x"))).ToList().Single().Id);
 
+	// ---- validate only what the map mentions; an empty column name is a mistake ----
+
+	internal sealed class CaseTwins
+	{
+		public int Id { get; set; }
+		public string? Name { get; set; }
+		public string? NAME { get; set; }
+	}
+
+	[Fact]
+	public static void ModelWithPropertiesDifferingOnlyByCase_IsAcceptedWhenTheMapDoesNotTouchThem()
+	{
+		// Map<T>() accepts the model (the first twin reads the column), so a map that does not mention the twins must too.
+		Assert.Equal(1, new FakeExecuteReader(["Id"], [1]).Map<CaseTwins>().ToList().Single().Id);
+		_ = new RowMap<CaseTwins>();
+		var map = new RowMap<CaseTwins>(("Id", "c_id"));
+		Assert.Equal(1, new FakeExecuteReader(["c_id"], [1]).Map<CaseTwins>(map).ToList().Single().Id);
+	}
+
+	[Fact]
+	public static void MentionedProperty_CollidingWithACaseTwin_StillThrows()
+		=> Assert.Throws<ArgumentException>(() => new RowMap<CaseTwins>(("Id", "name")));
+
+	[Fact]
+	public static void EmptyColumnName_Throws_WhileNullStillIgnores()
+	{
+		var ex = Assert.Throws<ArgumentException>(() => new RowMap<Item>(("Name", "")));
+		Assert.Contains("Name", ex.Message);
+		_ = new RowMap<Item>(("Name", null));
+	}
+
 	// ---- column order and result-set shape ----
 
 	[Fact]

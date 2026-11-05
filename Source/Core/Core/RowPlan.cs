@@ -110,6 +110,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 			{
 				if (kvp.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
 				if (!named.Add(kvp.Key)) throw new ArgumentException($"The property '{kvp.Key}' is mapped more than once.", paramName);
+				if (kvp.Value is { Length: 0 }) throw new ArgumentException($"The property '{kvp.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
 			}
 
 			if (!PropertiesByName.ContainsKey(kvp.Key))
@@ -131,7 +132,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 			if (kvp.Value is null) continue;
 			if (!_columnToProperty.TryGetValue(kvp.Value, out PropertyInfo? first))
 				_columnToProperty.Add(kvp.Value, PropertiesByName[kvp.Key]);
-			else if (strict)
+			else if (named is not null && (named.Contains(kvp.Key) || named.Contains(first.Name))) // only what the map mentions: the model's own by-name twins are Map<T>()'s business
 				throw new ArgumentException($"The properties '{first.Name}' and '{kvp.Key}' both read column '{kvp.Value}'. Map one of them to another column, or to null to ignore it.", paramName);
 		}
 	}
