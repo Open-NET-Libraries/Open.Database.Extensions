@@ -16,6 +16,7 @@ public static partial class ToChannelPipelineTests
 	{
 		readonly SemaphoreSlim _permits = new(gated ? 0 : 1_000_000_000, int.MaxValue);
 		int _completeCalls;
+		int _attempts;
 
 		public int CompleteCalls => Volatile.Read(ref _completeCalls);
 		public Exception? CompletedWith { get; private set; }
@@ -26,6 +27,7 @@ public static partial class ToChannelPipelineTests
 
 		public override bool TryWrite(T item)
 		{
+			Interlocked.Increment(ref _attempts);
 			if (!_permits.Wait(0)) return false;
 			if (inner.TryWrite(item)) return true;
 			_permits.Release();
@@ -34,8 +36,14 @@ public static partial class ToChannelPipelineTests
 
 		public override async ValueTask<bool> WaitToWriteAsync(CancellationToken cancellationToken = default)
 		{
-			await _permits.WaitAsync(cancellationToken).ConfigureAwait(false);
-			_permits.Release();
+			// Asking whether the target is open for writing before there is anything to write (as some of the overloads do before
+			// they even start the command) is not a write.
+			if (Volatile.Read(ref _attempts) > 0)
+			{
+				await _permits.WaitAsync(cancellationToken).ConfigureAwait(false);
+				_permits.Release();
+			}
+
 			return await inner.WaitToWriteAsync(cancellationToken).ConfigureAwait(false);
 		}
 
@@ -126,7 +134,7 @@ public static partial class ToChannelPipelineTests
 		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000)), ct);
 
 		Task<(List<Row> Items, Exception? Error)> consumer = Task.Run(() => Drain(channel.Reader, ct), ct);
-		Task<long> task = call(target, true).AsTask();
+		Task<long> task = Task.Run(() => call(target, true).AsTask(), ct); // Off this thread: a gated release must not block the test itself.
 		SpyReader reader = await probe.Created.WaitAsync(Prompt, ct);
 
 		await WaitUntilStable(() => reader.RowsRead, ct);
@@ -223,7 +231,7 @@ public static partial class ToChannelPipelineTests
 			}
 		}, ct);
 
-		Task<long> task = Mapped<Row>(kind, false, factory, cts.Token)(target, true).AsTask();
+		Task<long> task = Task.Run(() => Mapped<Row>(kind, false, factory, cts.Token)(target, true).AsTask(), ct); // Off this thread: a gated release must not block the test itself.
 		SpyReader reader = await probe.Created.WaitAsync(Prompt, ct);
 
 		if (ending == Ending.CallerCancel)
@@ -287,6 +295,12 @@ public static partial class ToChannelPipelineTests
 
 	// ---- stopping stage 1 ----
 
+	// A reader with a column that isn't mapped, so records are read by ordinal, with the stopping token handed down to every read.
+	static readonly string[] ExtraThenId = ["Extra", "Id"];
+
+	static object?[][] RowsWithAnExtraColumn(int count)
+		=> [.. Enumerable.Range(0, count).Select(i => new object?[] { "junk", i })];
+
 	// Stage 2 fails (here: when it is told to) while stage 1 is inside the provider, which can report the cancellation as
 	// anything (here an ObjectDisposedException). The caller must be told why the pipeline stopped, not that.
 	[Theory]
@@ -298,7 +312,7 @@ public static partial class ToChannelPipelineTests
 		var insideProvider = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000), configure: reader => reader.BeforeReadAsync = async (rows, token) =>
+		var call = Mapped<Row>(kind, false, probe.Factory(RowsWithAnExtraColumn(5000), columns: ExtraThenId, configure: reader => reader.BeforeReadAsync = async (rows, token) =>
 		{
 			if (rows < 3) return;
 
@@ -344,7 +358,7 @@ public static partial class ToChannelPipelineTests
 		var registered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000), configure: reader => reader.BeforeReadAsync = async (rows, token) =>
+		var call = Mapped<Row>(kind, false, probe.Factory(RowsWithAnExtraColumn(5000), columns: ExtraThenId, configure: reader => reader.BeforeReadAsync = async (rows, token) =>
 		{
 			if (rows < 3) return;
 

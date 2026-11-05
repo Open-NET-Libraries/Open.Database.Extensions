@@ -805,6 +805,7 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
+		Contract.EndContractBlock();
 
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);

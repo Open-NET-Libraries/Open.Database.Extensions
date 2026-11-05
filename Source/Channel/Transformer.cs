@@ -28,15 +28,33 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	public static new Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		=> new(fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
 
-	private ImmutableArray<string> ResolveNames(IDataReader reader)
-		=> reader.GetMatchingOrdinals(ColumnNames, true).Select(m => m.Name).ToImmutableArray();
+	/// <summary>
+	/// The columns of the reader that map to properties: their ordinals and names, in the order of the ordinals.
+	/// Columns of the reader that map to nothing are left out, so records read with these ordinals line up with these names.
+	/// </summary>
+	private (int[] Ordinals, ImmutableArray<string> Names) ResolveColumns(IDataReader reader)
+	{
+		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
+		int count = columns.Length;
+		int[] ordinals = new int[count];
+		var names = ImmutableArray.CreateBuilder<string>(count);
+		for (int i = 0; i < count; i++)
+		{
+			ordinals[i] = columns[i].Ordinal;
+			names.Add(columns[i].Name);
+		}
+
+		return (ordinals, names.MoveToImmutable());
+	}
 
 	/// <summary>
 	/// Creates the pipeline that buffers the records of a reader (stage 1) and maps them into the <paramref name="target"/> (stage 2).
-	/// Stage 2 starts immediately, so the caller must make sure the pipeline's <see cref="Pipeline.Buffer"/> gets completed.
+	/// Stage 2 starts immediately, so the caller must run stage 1 through <see cref="Pipeline.RunAsync(Func{ValueTask{long}})"/>, which
+	/// makes sure the buffer gets completed.
 	/// </summary>
 	/// <param name="target">The target channel to write to.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered, or with the error that ended the pipeline.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered, or with the error that ended the pipeline,
+	/// but never before stage 1 has ended, i.e. the reader has been released.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	public Pipeline CreatePipeline(ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
 		=> new(this, target, complete, cancellationToken);
@@ -61,9 +79,10 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		_ = ResolveNames(reader); // Fail before anything is started if the reader doesn't have the columns.
+		// Fail before anything is started (and without touching the target) if the reader can't be described.
+		(int[] Ordinals, ImmutableArray<string> Names) columns = ResolveColumns(reader);
 		Pipeline pipeline = CreatePipeline(target, complete, cancellationToken);
-		return pipeline.RunAsync(() => pipeline.Read(reader));
+		return pipeline.RunAsync(() => pipeline.ReadFrom(reader, columns));
 	}
 
 	/// <inheritdoc cref="PipeResultsTo(IDataReader, ChannelWriter{T}, bool, CancellationToken)"/>
@@ -77,18 +96,20 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		_ = ResolveNames(reader);
+		(int[] Ordinals, ImmutableArray<string> Names) columns = ResolveColumns(reader);
 		Pipeline pipeline = CreatePipeline(target, complete, cancellationToken);
-		return pipeline.RunAsync(() => pipeline.ReadAsync(reader));
+		return pipeline.RunAsync(() => pipeline.ReadFromAsync(reader, columns));
 	}
 
 	/// <summary>
 	/// A bounded buffer (<see cref="Buffer"/>) that stage 1 fills from a reader, and the second stage that drains it
-	/// into the target on its own task (so the producing thread isn't the one mapping records and waiting on a slow consumer).
+	/// into the target on its own task (so the reading thread isn't the one mapping records and waiting on a slow consumer).
 	/// </summary>
 	/// <remarks>
 	/// Completion flows downstream: whoever runs stage 1 completes the buffer (with the error if reading failed),
-	/// and once the second stage has delivered everything that was buffered, it completes the target.
+	/// and once the second stage has delivered everything that was buffered, the target is completed.
+	/// The target is only ever completed once BOTH stages have ended, so never while the reader may still be open,
+	/// whichever stage ended the pipeline.
 	/// </remarks>
 	internal sealed class Pipeline
 	{
@@ -98,7 +119,8 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		private readonly ChannelWriter<T> _target;
 		private readonly bool _complete;
 		private readonly CancellationToken _cancellationToken;
-		private volatile Exception? _failure;
+		private volatile Exception? _deliveryError;
+		private int _pending = 2;
 
 		internal Pipeline(Transformer<T> owner, ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
 		{
@@ -110,7 +132,15 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 			_stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			Token = _stop.Token;
 
-			Channel<object[]> buffer = ChannelDbExtensions.CreateChannel<object[]>(MaxArrayBuffer, true);
+			// Continuations must not run synchronously inside the writes of stage 1: that would put the mapping (and the
+			// waiting on a slow consumer) inside the loop that reads the database, and keep the reader open for all of it.
+			Channel<object[]> buffer = System.Threading.Channels.Channel.CreateBounded<object[]>(new BoundedChannelOptions(MaxArrayBuffer)
+			{
+				SingleReader = true,
+				SingleWriter = true,
+				AllowSynchronousContinuations = false,
+				FullMode = BoundedChannelFullMode.Wait,
+			});
 			Buffer = buffer.Writer;
 
 			_ = DeliverAsync(buffer.Reader);
@@ -125,25 +155,61 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// </summary>
 		public CancellationToken Token { get; }
 
-		/// <summary>Stage 1: writes the records of the reader to the <see cref="Buffer"/> without completing it.</summary>
+		/// <summary>Stage 1 for a reader of a command: writes the records of the reader to the <see cref="Buffer"/> without completing it.</summary>
 		public ValueTask<long> Read(IDataReader reader)
+			=> ReadFrom(reader, _owner.ResolveColumns(reader));
+
+		/// <summary>Stage 1 for a reader of a command, using asynchronous reads.</summary>
+		public ValueTask<long> ReadAsync(DbDataReader reader)
+			=> ReadFromAsync(reader, _owner.ResolveColumns(reader));
+
+		internal async ValueTask<long> ReadFrom(IDataReader reader, (int[] Ordinals, ImmutableArray<string> Names) columns)
 		{
-			_processor.SetNames(_owner.ResolveNames(reader));
-			return reader.ToChannel(Buffer, false, LocalPool, Token);
+			_processor.SetNames(columns.Names); // Before the first record can reach stage 2.
+
+			// When every column is mapped, the whole record is taken in one call.
+			IEnumerable<object[]> records = columns.Ordinals.Length == reader.FieldCount
+				? reader.AsEnumerable(LocalPool)
+				: reader.AsEnumerable(columns.Ordinals, LocalPool);
+
+			long count = 0;
+			foreach (object[] record in records)
+			{
+				// Each record is written (waiting for room if need be) BEFORE the next one is read: if reading fails, every record
+				// that was read is already in the buffer. (WriteAll would start the write, read ahead, and abandon the write if that fails.)
+				await Buffer.WriteAsync(record, Token).ConfigureAwait(false);
+				count++;
+			}
+
+			return count;
 		}
 
-		/// <summary>Stage 1, using asynchronous reads: writes the records of the reader to the <see cref="Buffer"/> without completing it.</summary>
-		public ValueTask<long> ReadAsync(DbDataReader reader)
+		internal async ValueTask<long> ReadFromAsync(DbDataReader reader, (int[] Ordinals, ImmutableArray<string> Names) columns)
 		{
-			_processor.SetNames(_owner.ResolveNames(reader));
-			return reader.ToChannelAsync(Buffer, false, LocalPool, Token);
+			_processor.SetNames(columns.Names);
+
+			long count = 0;
+			IAsyncEnumerable<object[]> records = columns.Ordinals.Length == reader.FieldCount
+				? reader.AsAsyncEnumerable(LocalPool, Token)
+				: reader.AsAsyncEnumerable(columns.Ordinals, LocalPool, Token);
+
+			await foreach (object[] record in records.ConfigureAwait(false))
+			{
+				await Buffer.WriteAsync(record, Token).ConfigureAwait(false);
+				count++;
+			}
+
+			// The enumeration ends quietly when it is cancelled, which mustn't look like all the records have been read.
+			Token.ThrowIfCancellationRequested();
+			return count;
 		}
 
 		/// <summary>
 		/// Runs stage 1 and guarantees the <see cref="Buffer"/> ends up completed, so the second stage can never be left waiting.
 		/// </summary>
 		/// <remarks>
-		/// If stage 1 was stopped because the second stage failed, the second stage's failure is thrown instead of the cancellation it caused.
+		/// If the second stage had failed by the time stage 1 ended, whatever stage 1 ended with (it may have been stopped by the
+		/// second stage, and a provider can report that in any way), the second stage's failure is thrown instead.
 		/// </remarks>
 		public async ValueTask<long> RunAsync(Func<ValueTask<long>> stage1)
 		{
@@ -151,28 +217,31 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 			try
 			{
 				long count = await stage1().ConfigureAwait(false);
-
-				ThrowIfSecondStageFailed(); // Reading can also end quietly (not by throwing) when the second stage has stopped it.
-
+				ThrowIfDeliveryFailed(); // Reading can also end quietly, not by throwing, when the second stage has stopped it.
 				return count;
 			}
 			catch (Exception ex)
 			{
 				error = ex;
-				if (ex is OperationCanceledException)
-					ThrowIfSecondStageFailed();
-
+				ThrowIfDeliveryFailed();
 				throw;
 			}
 			finally
 			{
-				Buffer.TryComplete(error); // Already completed (by the core) when this is the command-level path.
+				try
+				{
+					Buffer.TryComplete(error); // Already completed (by the core) when this is the command-level path.
+				}
+				finally
+				{
+					StageEnded();
+				}
 			}
 		}
 
-		private void ThrowIfSecondStageFailed()
+		private void ThrowIfDeliveryFailed()
 		{
-			if (_failure is { } failure)
+			if (_deliveryError is { } failure)
 				ExceptionDispatchInfo.Capture(failure).Throw();
 		}
 
@@ -185,16 +254,16 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 			{
 				while (await buffer.WaitToReadAsync(_cancellationToken).ConfigureAwait(false))
 				{
-					while (buffer.TryRead(out object[]? row))
+					while (buffer.TryRead(out object[]? record))
 					{
 						T item;
 						try
 						{
-							item = _processor.Transform(row);
+							item = _processor.Transform(record);
 						}
 						finally
 						{
-							LocalPool.Return(row);
+							LocalPool.Return(record);
 						}
 
 						await _target.WriteAsync(item, _cancellationToken).ConfigureAwait(false);
@@ -206,12 +275,36 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 				error = ex;
 			}
 
-			_failure = error;
-			_stop.Cancel(); // Stage 1 can never be left waiting for room in a buffer that nothing drains any more.
-			_stop.Dispose();
+			_deliveryError = error; // Visible to stage 1 by the time the cancellation below reaches it.
+			try
+			{
+				// Stage 1 can never be left waiting for room in a buffer that nothing drains any more.
+				// (Records left in the buffer are simply collected with it: their arrays aren't returned to the pool, which only
+				// costs the reuse, on a path that is already a failure, and draining here would race the last writes of stage 1.)
+				if (error is not null)
+					_stop.Cancel();
+			}
+			finally
+			{
+				StageEnded();
+			}
+		}
 
-			if (_complete)
-				_target.TryComplete(error);
+		// The target is completed by whichever stage ends last: not before stage 1 has ended (the reader has been released), and
+		// not before stage 2 has ended (everything that could be delivered has been, or delivery has failed).
+		private void StageEnded()
+		{
+			if (Interlocked.Decrement(ref _pending) != 0) return;
+
+			try
+			{
+				if (_complete)
+					_target.TryComplete(_deliveryError);
+			}
+			finally
+			{
+				_stop.Dispose();
+			}
 		}
 	}
 }
