@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 
@@ -150,8 +152,10 @@ public static class ToTargetBlockMappedCompletionTests
 
 			public T? ConsumeMessage(DataflowMessageHeader messageHeader, ITargetBlock<T> target, out bool messageConsumed)
 			{
+				// Count first: the block may complete (and complete the target) the moment the consume returns.
+				Interlocked.Increment(ref spy._accepted);
 				T? value = real.ConsumeMessage(messageHeader, spy, out messageConsumed);
-				if (messageConsumed) Interlocked.Increment(ref spy._accepted);
+				if (!messageConsumed) Interlocked.Decrement(ref spy._accepted);
 				return value;
 			}
 
@@ -168,6 +172,7 @@ public static class ToTargetBlockMappedCompletionTests
 	sealed class Harness<T>
 	{
 		int _consumed;
+		public System.Collections.Concurrent.ConcurrentQueue<T> Received { get; } = new();
 
 		public int Consumed => Volatile.Read(ref _consumed);
 		public SpyTarget<T> Target { get; }
@@ -178,9 +183,10 @@ public static class ToTargetBlockMappedCompletionTests
 			if (kind == TargetKind.ActionBlock)
 			{
 				var block = new ActionBlock<T>(
-					_ =>
+					item =>
 					{
 						Burn();
+						Received.Enqueue(item);
 						Interlocked.Increment(ref _consumed);
 					},
 					new ExecutionDataflowBlockOptions { BoundedCapacity = TargetCapacity });
@@ -193,9 +199,10 @@ public static class ToTargetBlockMappedCompletionTests
 				Target = new SpyTarget<T>(block, log);
 				Drained = Task.Run(async () =>
 				{
-					await foreach (T _ in block.ReceiveAllAsync(cancellationToken))
+					await foreach (T item in block.ReceiveAllAsync(cancellationToken))
 					{
 						Burn();
+						Received.Enqueue(item);
 						Interlocked.Increment(ref _consumed);
 					}
 				}, cancellationToken);
@@ -233,7 +240,14 @@ public static class ToTargetBlockMappedCompletionTests
 
 	// ---- command builders ----
 
-	// An IExecuteReader whose readers come from a factory (which may throw) and which logs when the reader was disposed.
+	static async ValueTask ReleaseAsync(IDataReader reader, Action<string>? log)
+	{
+		if (reader is IAsyncDisposable d) await d.DisposeAsync().ConfigureAwait(false);
+		else reader.Dispose();
+		log?.Invoke("reader-disposed");
+	}
+
+	// An IExecuteReader whose readers come from a factory (which may throw) and which logs when the reader was released.
 	sealed class ScriptedCommand(Func<IDataReader> open, Action<string>? log) : IExecuteReader
 	{
 		public CancellationToken CancellationToken => default;
@@ -256,23 +270,119 @@ public static class ToTargetBlockMappedCompletionTests
 		{
 			IDataReader reader = open();
 			try { await handler(reader).ConfigureAwait(false); }
-			finally { reader.Dispose(); log?.Invoke("reader-disposed"); }
+			finally { await ReleaseAsync(reader, log).ConfigureAwait(false); }
 		}
 
 		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			IDataReader reader = open();
 			try { return await transform(reader).ConfigureAwait(false); }
-			finally { reader.Dispose(); log?.Invoke("reader-disposed"); }
+			finally { await ReleaseAsync(reader, log).ConfigureAwait(false); }
 		}
 	}
 
-	static Func<ITargetBlock<Row>, bool, ValueTask<long>> Mapped(
+	// A hand-written reader whose Dispose and DisposeAsync both block until the test lets them finish.
+	// "Entered" completes when the owner starts releasing it; "reader-released" is logged when the release finishes.
+	sealed class GatedReader(string[] columns, object?[][] rows, Action<string> log, int failReadAt = -1) : DbDataReader
+	{
+		readonly TaskCompletionSource<bool> _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		readonly TaskCompletionSource<bool> _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		int _index = -1;
+		int _released;
+
+		public Task Entered => _entered.Task;
+		public void Release() => _gate.TrySetResult(true);
+
+		void Released()
+		{
+			if (Interlocked.Exchange(ref _released, 1) == 0) log("reader-released");
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				_entered.TrySetResult(true);
+				_gate.Task.Wait();
+				Released();
+			}
+
+			base.Dispose(disposing);
+		}
+
+		public override async ValueTask DisposeAsync()
+		{
+			_entered.TrySetResult(true);
+			await _gate.Task.ConfigureAwait(false);
+			Released();
+		}
+
+		public override bool Read()
+		{
+			if (failReadAt >= 0 && _index + 1 == failReadAt) throw new InvalidOperationException("the reader failed");
+			return ++_index < rows.Length;
+		}
+
+		public override int FieldCount => columns.Length;
+		public override bool HasRows => rows.Length > 0;
+		public override bool IsClosed => false;
+		public override int RecordsAffected => -1;
+		public override int Depth => 0;
+		public override object this[int ordinal] => GetValue(ordinal);
+		public override object this[string name] => GetValue(GetOrdinal(name));
+		public override object GetValue(int ordinal) => rows[_index][ordinal] ?? DBNull.Value;
+
+		public override int GetValues(object[] values)
+		{
+			object?[] row = rows[_index];
+			int n = Math.Min(values.Length, row.Length);
+			for (int i = 0; i < n; i++) values[i] = row[i] ?? DBNull.Value;
+			return n;
+		}
+
+		public override string GetName(int ordinal) => columns[ordinal];
+
+		public override int GetOrdinal(string name)
+		{
+			int i = Array.FindIndex(columns, c => string.Equals(c, name, StringComparison.OrdinalIgnoreCase));
+			return i >= 0 ? i : throw new IndexOutOfRangeException(name);
+		}
+
+		public override string GetDataTypeName(int ordinal) => "gated";
+		public override Type GetFieldType(int ordinal) => typeof(object);
+		public override bool IsDBNull(int ordinal) => GetValue(ordinal) is DBNull;
+		public override bool NextResult() => false;
+		public override void Close() { }
+		public override IEnumerator GetEnumerator() => throw new NotSupportedException();
+		public override bool GetBoolean(int ordinal) => throw new NotSupportedException();
+		public override byte GetByte(int ordinal) => throw new NotSupportedException();
+		public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length) => throw new NotSupportedException();
+		public override char GetChar(int ordinal) => throw new NotSupportedException();
+		public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length) => throw new NotSupportedException();
+		public override DateTime GetDateTime(int ordinal) => throw new NotSupportedException();
+		public override decimal GetDecimal(int ordinal) => throw new NotSupportedException();
+		public override double GetDouble(int ordinal) => throw new NotSupportedException();
+		public override float GetFloat(int ordinal) => throw new NotSupportedException();
+		public override Guid GetGuid(int ordinal) => throw new NotSupportedException();
+		public override short GetInt16(int ordinal) => throw new NotSupportedException();
+		public override int GetInt32(int ordinal) => throw new NotSupportedException();
+		public override long GetInt64(int ordinal) => throw new NotSupportedException();
+		public override string GetString(int ordinal) => throw new NotSupportedException();
+	}
+
+	static Func<ITargetBlock<TRow>, bool, ValueTask<long>> Mapped<TRow>(
 		Kind kind, bool overrides, object?[][] rows,
 		Exception? failure = null, Action<string>? log = null,
-		IEnumerable<(string Field, string? Column)>? overrideValues = null)
+		IEnumerable<(string Field, string? Column)>? overrideValues = null,
+		string[]? columns = null, Func<DbDataReader>? readerFactory = null)
+		where TRow : new()
 	{
 		IEnumerable<(string Field, string? Column)> ov = overrideValues ?? Overrides;
+		string[] cols = columns ?? Columns;
+		DbDataReader NewReader() => failure is not null
+			? throw failure
+			: readerFactory is not null ? readerFactory() : FakeReader.CreateDb(cols, rows);
+
 		switch (kind)
 		{
 			case Kind.DbCommandInterfaceSync:
@@ -284,7 +394,8 @@ public static class ToTargetBlockMappedCompletionTests
 				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ =>
 				{
 					if (failure is not null) throw failure;
-					IDataReader reader = FakeReader.Create(Columns, rows);
+					if (readerFactory is not null) return readerFactory();
+					IDataReader reader = FakeReader.Create(cols, rows);
 					reader.When(r => r.Dispose()).Do(x => log?.Invoke("reader-disposed"));
 					return reader;
 				});
@@ -295,19 +406,19 @@ public static class ToTargetBlockMappedCompletionTests
 			{
 				var connection = new FakeDbConnection();
 				connection.SetState(ConnectionState.Open);
-				var command = new FakeDbCommand(connection, () => failure is null ? FakeReader.CreateDb(Columns, rows) : throw failure);
+				var command = new FakeDbCommand(connection, NewReader);
 				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
 			}
 
 			case Kind.ExecuteReaderSync:
 			{
-				IExecuteReader command = new ScriptedCommand(() => failure is null ? FakeReader.CreateDb(Columns, rows) : throw failure, log);
+				IExecuteReader command = new ScriptedCommand(() => NewReader(), log);
 				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
 			}
 
 			default:
 			{
-				IExecuteReader command = new ScriptedCommand(() => failure is null ? FakeReader.CreateDb(Columns, rows) : throw failure, log);
+				IExecuteReader command = new ScriptedCommand(() => NewReader(), log);
 				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
 			}
 		}
@@ -375,7 +486,7 @@ public static class ToTargetBlockMappedCompletionTests
 	[MemberData(nameof(MappedShapes))]
 	public static async Task Mapped_CompleteTrue_BoundedSlowTarget_DeliversEveryRow_AndCompletesOnlyAfterTheLast(Kind kind, bool overrides, TargetKind target, int count)
 	{
-		var call = Mapped(kind, overrides, Rows(count));
+		var call = Mapped<Row>(kind, overrides, Rows(count));
 		Outcome outcome = await RunAsync<Row>($"mapped {kind} overrides={overrides} target={target} rows={count}", target, t => call(t, true));
 
 		// Post() may legitimately decline once the 1024-row transform buffer fills (sync paths); fewer rows than that cannot.
@@ -514,7 +625,7 @@ public static class ToTargetBlockMappedCompletionTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var failure = new InvalidOperationException("boom");
 		var harness = new Harness<Row>(target, ct);
-		var call = Mapped(kind, overrides, Rows(3), failure);
+		var call = Mapped<Row>(kind, overrides, Rows(3), failure);
 
 		var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () => await call(harness.Target, true));
 		var faulted = await Assert.ThrowsAsync<InvalidOperationException>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
@@ -533,7 +644,7 @@ public static class ToTargetBlockMappedCompletionTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var failure = new InvalidOperationException("boom");
 		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
-		var call = Mapped(kind, overrides, Rows(3), failure);
+		var call = Mapped<Row>(kind, overrides, Rows(3), failure);
 
 		var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () => await call(harness.Target, false));
 
@@ -552,7 +663,7 @@ public static class ToTargetBlockMappedCompletionTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var harness = new Harness<Row>(target, ct);
 		object?[][] rows = [.. Rows(good), null!];
-		var call = Mapped(kind, overrides, rows);
+		var call = Mapped<Row>(kind, overrides, rows);
 
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target, true).AsTask().WaitAsync(Timeout, ct));
 		Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
@@ -584,7 +695,7 @@ public static class ToTargetBlockMappedCompletionTests
 	[MemberData(nameof(Shapes))]
 	public static async Task Mapped_NullTarget_Throws(Kind kind, bool overrides)
 	{
-		var call = Mapped(kind, overrides, Rows(3));
+		var call = Mapped<Row>(kind, overrides, Rows(3));
 		var thrown = await Assert.ThrowsAsync<ArgumentNullException>(async () => await call(null!, true));
 		Assert.Equal("target", thrown.ParamName);
 	}
@@ -597,7 +708,7 @@ public static class ToTargetBlockMappedCompletionTests
 		const int count = 1000;
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var harness = new Harness<Row>(target, ct);
-		var call = Mapped(kind, overrides, Rows(count));
+		var call = Mapped<Row>(kind, overrides, Rows(count));
 
 		long produced = await Task.Run(async () => await call(harness.Target, false), ct).WaitAsync(Timeout, ct);
 
@@ -633,7 +744,7 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		const int count = 1000;
 		var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
-		var call = Mapped(kind, overrides, Rows(count), log: log.Enqueue);
+		var call = Mapped<Row>(kind, overrides, Rows(count), log: log.Enqueue);
 
 		Outcome outcome = await RunAsync<Row>($"disposal {kind} overrides={overrides}", TargetKind.ActionBlock, t => call(t, true), log.Enqueue);
 
@@ -650,7 +761,7 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
-		var call = Mapped(kind, true, Rows(3), overrideValues: new (string Field, string? Column)[] { ("NoSuchProperty", "Id") });
+		var call = Mapped<Row>(kind, true, Rows(3), overrideValues: new (string Field, string? Column)[] { ("NoSuchProperty", "Id") });
 
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target, true));
 		Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
@@ -716,4 +827,110 @@ public static class ToTargetBlockMappedCompletionTests
 	}
 
 	public static TheoryData<Kind> Kinds { get; } = [.. Enum.GetValues<Kind>()];
+
+	// ---- column alignment: columns of the reader that the model does not map must not shift the ones it does ----
+
+	sealed class Person
+	{
+		public int Id { get; set; }
+		public string? Name { get; set; }
+	}
+
+	public enum Layout
+	{
+		AllMapped,
+		UnmappedBefore,
+		UnmappedBetween,
+		UnmappedAfter,
+		UnmappedEverywhere,
+	}
+
+	static (string[] Columns, object?[][] Rows) PersonRows(Layout layout, int count)
+	{
+		string[] columns = layout switch
+		{
+			Layout.AllMapped => ["Id", "Name"],
+			Layout.UnmappedBefore => ["Extra", "Id", "Name"],
+			Layout.UnmappedBetween => ["Id", "Extra", "Name"],
+			Layout.UnmappedAfter => ["Id", "Name", "Extra"],
+			_ => ["Extra1", "Id", "Extra2", "Name", "Extra3"],
+		};
+
+		var rows = new object?[count][];
+		for (int i = 0; i < count; i++)
+		{
+			int id = i + 1;
+			rows[i] = [.. columns.Select(c => c switch
+			{
+				"Id" => (object?)id,
+				"Name" => "name" + id,
+				_ => "extra text, not a number",
+			})];
+		}
+
+		return (columns, rows);
+	}
+
+	public static TheoryData<Kind, bool, Layout> AlignmentShapes { get; } = BuildAlignmentShapes();
+
+	static TheoryData<Kind, bool, Layout> BuildAlignmentShapes()
+	{
+		var data = new TheoryData<Kind, bool, Layout>();
+		foreach (Kind kind in Enum.GetValues<Kind>())
+			foreach (bool overrides in new[] { false, true })
+				foreach (Layout layout in Enum.GetValues<Layout>())
+					data.Add(kind, overrides, layout);
+		return data;
+	}
+
+	public static TheoryData<bool, Layout> ReaderLevelAlignmentShapes { get; } = BuildReaderLevelAlignmentShapes();
+
+	static TheoryData<bool, Layout> BuildReaderLevelAlignmentShapes()
+	{
+		var data = new TheoryData<bool, Layout>();
+		foreach (bool useAsync in new[] { false, true })
+			foreach (Layout layout in Enum.GetValues<Layout>())
+				data.Add(useAsync, layout);
+		return data;
+	}
+
+	static void AssertPeople(Harness<Person> harness, int count)
+		=> Assert.Multiple(
+			() => Assert.Equal(Enumerable.Range(1, count), harness.Received.Select(p => p.Id)),
+			() => Assert.Equal(Enumerable.Range(1, count).Select(i => "name" + i), harness.Received.Select(p => p.Name)));
+
+	[Theory]
+	[MemberData(nameof(AlignmentShapes))]
+	public static async Task Mapped_UnmappedColumns_DoNotShiftTheMappedOnes(Kind kind, bool overrides, Layout layout)
+	{
+		const int count = 5;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		(string[] columns, object?[][] rows) = PersonRows(layout, count);
+		var harness = new Harness<Person>(TargetKind.ActionBlock, ct);
+		var call = Mapped<Person>(kind, overrides, rows, columns: columns);
+
+		long produced = await Task.Run(async () => await call(harness.Target, true), ct).WaitAsync(Timeout, ct);
+		await harness.Drained.WaitAsync(Timeout, ct);
+
+		Assert.Equal(count, produced);
+		AssertPeople(harness, count);
+	}
+
+	[Theory]
+	[MemberData(nameof(ReaderLevelAlignmentShapes))]
+	public static async Task ReaderLevelMapped_UnmappedColumns_DoNotShiftTheMappedOnes(bool useAsync, Layout layout)
+	{
+		const int count = 5;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		(string[] columns, object?[][] rows) = PersonRows(layout, count);
+		var harness = new Harness<Person>(TargetKind.ActionBlock, ct);
+
+		long produced = useAsync
+			? await FakeReader.CreateDb(columns, rows).ToTargetBlockAsync(harness.Target, true)
+			: FakeReader.Create(columns, rows).ToTargetBlock(harness.Target, true);
+		await harness.Drained.WaitAsync(Timeout, ct);
+
+		Assert.Equal(count, produced);
+		AssertPeople(harness, count);
+	}
 }
