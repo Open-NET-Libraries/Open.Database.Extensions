@@ -65,7 +65,7 @@ public class Transformer<T>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
+		=> new(fieldMappingOverrides is RowMap<T> map ? map : fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
 
 	/// <summary>
 	/// A sub class for processing the transformer results.

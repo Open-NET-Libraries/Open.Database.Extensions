@@ -27,7 +27,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static new Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
+		=> new(fieldMappingOverrides is RowMap<T> map ? map : fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
 
 	/// <summary>
 	/// The columns of the reader that map to properties: their ordinals and names, in the order of the ordinals.

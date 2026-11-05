@@ -48,11 +48,12 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 	// NOTE: static initializers run in textual order; this must follow PropertiesByName.
 	/// <summary>The plan for the model's default mapping (property name == column name).</summary>
-	public static readonly RowPlan<T> Default = new(null);
+	public static readonly RowPlan<T> Default = new(default, strict: false);
 
 	/// <summary>Gets the plan for the given overrides (field name → column name; null column ignores the field).</summary>
 	public static RowPlan<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
 	{
+		if (overrides is RowMap<T> map) return map.Plan; // Predefined and already validated: no key, no lookup, no allocation.
 		if (overrides is null) return Default;
 
 		KeyValuePair<string, string?>[] items = overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray();
@@ -65,11 +66,14 @@ internal sealed class RowPlan<T> : RowSource<T>
 		string key = sb.ToString();
 		if (OverridePlans.TryGetValue(key, out RowPlan<T>? plan)) return plan;
 
-		plan = new RowPlan<T>(items);
+		plan = new RowPlan<T>(items, strict: false);
 		if (OverridePlans.Count >= MaxOverridePlans) OverridePlans.Clear();
 		if (OverridePlans.TryAdd(key, plan)) return plan;
 		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : plan; // Lost a race (or the cache was just cleared): either plan is equivalent.
 	}
+
+	/// <summary>Builds the plan for a <see cref="RowMap{T}"/>: every field it names must exist and be settable, and no two properties may read one column.</summary>
+	public static RowPlan<T> Validated(ReadOnlySpan<KeyValuePair<string, string?>> mappings) => new(mappings, strict: true);
 
 	// Property name → column name for every mapped (not ignored) property.
 	readonly Dictionary<string, string> _propertyMap;
@@ -87,24 +91,33 @@ internal sealed class RowPlan<T> : RowSource<T>
 	Layout? _last;
 	readonly ConcurrentDictionary<int, Layout[]> _layouts = new();
 
-	RowPlan(KeyValuePair<string, string?>[]? overrides)
+	// A strict plan (a RowMap) is held to account for every field it names, and for every column it reads;
+	// a lenient one (a per-call override) keeps the historical behavior: an unknown field with a null column is
+	// harmless, a repeated field takes its last column, and when properties share a column the first one reads it.
+	RowPlan(ReadOnlySpan<KeyValuePair<string, string?>> overrides, bool strict)
 	{
+		string paramName = strict ? "mappings" : nameof(overrides);
+
 		// field name → column name; defaults to the same name.
 		var fieldToColumn = new Dictionary<string, string?>(PropertiesByName.Count, StringComparer.Ordinal);
 		foreach (string name in PropertiesByName.Keys) fieldToColumn[name] = name;
 
-		if (overrides is not null)
+		HashSet<string>? named = strict ? new(StringComparer.Ordinal) : null;
+		foreach (KeyValuePair<string, string?> kvp in overrides)
 		{
-			foreach (KeyValuePair<string, string?> kvp in overrides)
+			if (named is not null)
 			{
-				if (!PropertiesByName.ContainsKey(kvp.Key))
-				{
-					if (kvp.Value is null) continue; // Ignoring a field that does not exist is harmless.
-					throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{kvp.Key}'.", nameof(overrides));
-				}
-
-				fieldToColumn[kvp.Key] = kvp.Value; // A null column means 'ignore this field'.
+				if (kvp.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
+				if (!named.Add(kvp.Key)) throw new ArgumentException($"The property '{kvp.Key}' is mapped more than once.", paramName);
 			}
+
+			if (!PropertiesByName.ContainsKey(kvp.Key))
+			{
+				if (kvp.Value is null && !strict) continue; // Ignoring a field that does not exist is harmless.
+				throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{kvp.Key}'.", paramName);
+			}
+
+			fieldToColumn[kvp.Key] = kvp.Value; // A null column means 'ignore this field'.
 		}
 
 		_propertyMap = new Dictionary<string, string>(fieldToColumn.Count, StringComparer.Ordinal);
@@ -114,12 +127,11 @@ internal sealed class RowPlan<T> : RowSource<T>
 		_columnToProperty = new Dictionary<string, PropertyInfo>(fieldToColumn.Count, StringComparer.OrdinalIgnoreCase);
 		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
 		{
-			if (kvp.Value is not null)
-#if NETSTANDARD2_0
-				if (!_columnToProperty.ContainsKey(kvp.Value)) _columnToProperty.Add(kvp.Value, PropertiesByName[kvp.Key]);
-#else
-				_columnToProperty.TryAdd(kvp.Value, PropertiesByName[kvp.Key]);
-#endif
+			if (kvp.Value is null) continue;
+			if (!_columnToProperty.TryGetValue(kvp.Value, out PropertyInfo? first))
+				_columnToProperty.Add(kvp.Value, PropertiesByName[kvp.Key]);
+			else if (strict)
+				throw new ArgumentException($"The properties '{first.Name}' and '{kvp.Key}' both read column '{kvp.Value}'. Map one of them to another column, or to null to ignore it.", paramName);
 		}
 	}
 

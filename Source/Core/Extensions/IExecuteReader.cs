@@ -443,6 +443,7 @@ public static class IExecuteReaderExtensions
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	[OverloadResolutionPriority(-1)]
 	public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
 	{

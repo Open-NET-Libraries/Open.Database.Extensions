@@ -49,3 +49,5 @@ Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, T
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParamIf(bool condition, string! name, int value, TDbType? type = null, System.Data.ParameterDirection direction = System.Data.ParameterDirection.Input) -> TThis!
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParam(string! name, long value, TDbType? type = null, System.Data.ParameterDirection direction = System.Data.ParameterDirection.Input) -> TThis!
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParamIf(bool condition, string! name, long value, TDbType? type = null, System.Data.ParameterDirection direction = System.Data.ParameterDirection.Input) -> TThis!
+Open.Database.Extensions.RowMap<T>
+Open.Database.Extensions.RowMap<T>.RowMap(params System.Collections.Generic.IEnumerable<(string! Field, string? Column)>! mappings) -> void
