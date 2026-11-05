@@ -11,14 +11,16 @@ namespace Open.Database.Extensions.Tests;
 /// provider does. That is what lets the generated row mappers take their typed (unboxed) path.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal class TypedReader(IReadOnlyList<(string Name, Type Type)> columns, object?[][] rows) : DbDataReader
+internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) : DbDataReader
 {
+	readonly ImmutableArray<ColumnDef> _columns = columns;
+
 	/// <summary>How many times <see cref="Read"/> has returned a row.</summary>
 	public int RowsRead { get; private set; }
 
 	int _row = -1;
 
-	public static TypedReader Create((string Name, Type Type)[] columns, params object?[][] rows) => new(columns, rows);
+	public static TypedReader Create(ImmutableArray<ColumnDef> columns, params object?[][] rows) => new TypedReader(columns, rows);
 
 	object? Cell(int ordinal) => rows[_row][ordinal];
 
@@ -35,17 +37,18 @@ internal class TypedReader(IReadOnlyList<(string Name, Type Type)> columns, obje
 		return Task.FromResult(Read());
 	}
 
-	public override int FieldCount => columns.Count;
-	public override string GetName(int ordinal) => columns[ordinal].Name;
-	public override Type GetFieldType(int ordinal) => columns[ordinal].Type;
-	public override string GetDataTypeName(int ordinal) => columns[ordinal].Type.Name;
+	public override int FieldCount => _columns.Length;
+	public override string GetName(int ordinal) => _columns[ordinal].Name;
+	public override Type GetFieldType(int ordinal) => _columns[ordinal].Type;
+	public override string GetDataTypeName(int ordinal) => _columns[ordinal].Type.Name;
 	public override bool IsDBNull(int ordinal) => Cell(ordinal) is null or DBNull;
 	public override object GetValue(int ordinal) => Cell(ordinal) ?? DBNull.Value;
 
 	public override int GetOrdinal(string name)
 	{
-		for (int i = 0; i < columns.Count; i++)
-			if (string.Equals(columns[i].Name, name, StringComparison.OrdinalIgnoreCase)) return i;
+		ReadOnlySpan<ColumnDef> span = _columns.AsSpan();
+		for (int i = 0; i < span.Length; i++)
+			if (string.Equals(span[i].Name, name, StringComparison.OrdinalIgnoreCase)) return i;
 		throw new IndexOutOfRangeException(name);
 	}
 
@@ -83,3 +86,4 @@ internal class TypedReader(IReadOnlyList<(string Name, Type Type)> columns, obje
 	public override bool NextResult() => false;
 	public override IEnumerator GetEnumerator() => throw new NotSupportedException();
 }
+

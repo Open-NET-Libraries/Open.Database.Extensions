@@ -44,7 +44,7 @@ public static class RowMapperTests
 		public string? Name { get; set; }
 	}
 
-	static readonly (string, Type)[] WideColumns =
+	static readonly ImmutableArray<ColumnDef> WideColumns =
 	[
 		("Id", typeof(int)), ("Big", typeof(long)), ("Small", typeof(short)), ("Flag", typeof(bool)),
 		("Score", typeof(double)), ("Price", typeof(decimal)), ("Created", typeof(DateTime)), ("Key", typeof(Guid)),
@@ -60,10 +60,10 @@ public static class RowMapperTests
 		[2, -1L, (short)-3, false, -2.5, 0m, When.AddDays(1), Id2, "second", null, null, null],
 	];
 
-	static FakeExecuteReader Cmd((string, Type)[] columns, params object?[][] rows)
+	static FakeExecuteReader Cmd(ImmutableArray<ColumnDef> columns, params object?[][] rows)
 		=> new(() => TypedReader.Create(columns, rows));
 
-	static FakeExecuteReader Cmd(out Func<TypedReader?> reader, (string, Type)[] columns, params object?[][] rows)
+	static FakeExecuteReader Cmd(out Func<TypedReader?> reader, ImmutableArray<ColumnDef> columns, params object?[][] rows)
 	{
 		TypedReader? last = null;
 		reader = () => last;
@@ -200,8 +200,8 @@ public static class RowMapperTests
 	[Fact]
 	public static void Plans_AreCachedPerLayout_AndSwitchBetweenLayouts()
 	{
-		(string, Type)[] a = [("Id", typeof(int)), ("Name", typeof(string))];
-		(string, Type)[] b = [("Name", typeof(string)), ("Id", typeof(long))]; // reordered + different type.
+		ImmutableArray<ColumnDef> a = [("Id", typeof(int)), ("Name", typeof(string))];
+		ImmutableArray<ColumnDef> b = [("Name", typeof(string)), ("Id", typeof(long))]; // reordered + different type.
 
 		for (int i = 0; i < 3; i++)
 		{
