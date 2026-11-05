@@ -337,6 +337,19 @@ public static class RowMapperTests
 		public int GetHashCode(Simple obj) => obj.Id;
 	}
 
+	// The buffered Results APIs hand back a queue-draining enumerable: each item is released to the GC as it is
+	// consumed, so the buffer behaves like a stream and a caller can hold the rest for a later pass.
+	[Fact]
+	public static void ResultsBuffered_DrainsAsItIsEnumerated()
+	{
+		using var reader = TypedReader.Create([("Id", typeof(int))], [1], [2], [3]);
+		IEnumerable<Simple> buffered = reader.ResultsBuffered<Simple>();
+
+		Assert.Equal(1, buffered.First().Id);
+		Assert.Equal([2, 3], buffered.Select(s => s.Id)); // The first item was already drained.
+		Assert.Empty(buffered);
+	}
+
 	// ---- async ----
 
 	[Fact]

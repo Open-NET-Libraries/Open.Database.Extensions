@@ -52,7 +52,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.ToList(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1);
+		return RowReader.ToQueue(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1).DequeueEach();
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)" />
@@ -62,7 +62,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.ToList(RowPlan<T>.Default, reader, 0, -1);
+		return RowReader.ToQueue(RowPlan<T>.Default, reader, 0, -1).DequeueEach();
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)" />
@@ -171,7 +171,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return await RowReader.ToListAsync(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1, useReadAsync, cancellationToken).ConfigureAwait(false);
+		return (await RowReader.ToQueueAsync(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1, useReadAsync, cancellationToken).ConfigureAwait(false)).DequeueEach();
 	}
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />

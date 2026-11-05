@@ -77,6 +77,14 @@ internal static class RowReader
 		return list;
 	}
 
+	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
+	public static Queue<T> ToQueue<T>(RowSource<T> source, IDataReader reader, int skip, int take)
+	{
+		var sink = new QueueSink<T>(new Queue<T>());
+		Fill(source, reader, skip, take, ref sink);
+		return sink.Queue;
+	}
+
 	public static T[] ToArray<T>(RowSource<T> source, IDataReader reader, int skip, int take)
 	{
 		if (reader is not DbDataReader db)
@@ -208,6 +216,10 @@ internal static class RowReader
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 		=> (await FillAsync(source, reader, skip, take, useReadAsync, new ListSink<T>(new List<T>()), cancellationToken).ConfigureAwait(false)).List;
 
+	public static async ValueTask<Queue<T>> ToQueueAsync<T>(
+		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		=> (await FillAsync(source, reader, skip, take, useReadAsync, new QueueSink<T>(new Queue<T>()), cancellationToken).ConfigureAwait(false)).Queue;
+
 	public static async ValueTask<T[]> ToArrayAsync<T>(
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 	{
@@ -288,6 +300,12 @@ internal static class RowReader
 	}
 
 	#endregion
+}
+
+internal readonly struct QueueSink<T>(Queue<T> queue) : IRowSink<T>
+{
+	public Queue<T> Queue { get; } = queue;
+	public void Add(T item) => Queue.Enqueue(item);
 }
 
 internal readonly struct ListSink<T>(List<T> list) : IRowSink<T>

@@ -214,6 +214,6 @@ A performance release: **result mapping is rewritten and now beats Dapper 2.1.89
 - `IExecuteReader` has two new members (above). Custom implementations must add them; `ExpressiveCommand*` already do.
 - A `NULL` in a column mapped to a **non-nullable value-type** property is the provider's error to raise (it is wrapped in an `InvalidOperationException` naming the property and column). Map nullable columns to `Nullable<T>`/reference properties.
 - Field-mapping overrides naming a property that does not exist throw `ArgumentException` (was `KeyNotFoundException`). Only properties with a public setter are mapped.
-- `ResultsBuffered*` and `FirstOrdinalResults<T>` return materialized lists rather than one-shot dequeuing enumerables; `FirstOrdinalResults<T>` reads `NULL` as `default`.
+- `FirstOrdinalResults<T>` reads `NULL` as `default`. (`ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable, so items are released to the GC as they are drained.)
 - `ExpressiveCommandBase.Params` is created lazily.
 - Async command execution passes the command's `CancellationToken` to the connection open.

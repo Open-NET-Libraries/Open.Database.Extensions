@@ -1,3 +1,4 @@
+using System.Threading.Tasks.Dataflow;
 using System.Data;
 using System.Threading.Channels;
 using BenchmarkDotNet.Attributes;
@@ -102,6 +103,49 @@ public class ChannelBenchmarks
 	{
 		long n = 0;
 		await foreach (Post _ in _conn.Command(Sql).ToChannel<Post>(true).ReadAllAsync()) n++;
+		return n;
+	}
+}
+
+[MemoryDiagnoser]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+[CategoriesColumn]
+public class DataflowBenchmarks
+{
+	const string Sql = "select * from posts";
+
+	[Params(1, 100, 1000)]
+	public int Rows { get; set; }
+
+	BenchConnection _conn = null!;
+
+	[GlobalSetup]
+	public void Setup() => _conn = new BenchConnection(BenchTable.Posts(Rows));
+
+	// Fill a BufferBlock with every mapped row and drain it.
+	[BenchmarkCategory("Dataflow"), Benchmark(Baseline = true)]
+	public async Task<long> Dataflow_Dapper()
+	{
+		var block = new BufferBlock<Post>();
+		foreach (Post p in await _conn.QueryAsync<Post>(Sql))
+			await block.SendAsync(p);
+		block.Complete();
+
+		long n = 0;
+		while (await block.OutputAvailableAsync())
+			while (block.TryReceive(null, out _)) n++;
+		return n;
+	}
+
+	[BenchmarkCategory("Dataflow"), Benchmark]
+	public async Task<long> Dataflow_ODE()
+	{
+		var block = new BufferBlock<Post>();
+		await _conn.Command(Sql).ExecuteReaderAsync(reader => reader.ToTargetBlock(block, true));
+
+		long n = 0;
+		while (await block.OutputAvailableAsync())
+			while (block.TryReceive(null, out _)) n++;
 		return n;
 	}
 }
