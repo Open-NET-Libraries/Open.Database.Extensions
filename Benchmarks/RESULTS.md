@@ -125,3 +125,66 @@ What it shows:
 1. **With an unbounded target the second stage buys nothing** and costs 2-3x on the producer side (and the same total time when the consumer is the bottleneck).
 2. **The second stage's one real effect is freeing the reader earlier when the target is bounded and the consumer is slow**, but as implemented it **drops rows**: the target is completed when stage one finishes reading, while stage two still holds up to ~1024 rows. The study measured the same loss on untouched `master` (a separate project against a clean `origin/master` checkout), so this is pre-existing, not caused by this PR.
 3. **Spill keeps the benefit without the loss**: the reader is freed as soon as the 1024-row buffer absorbs the backlog (0.1 ms vs 18.8 ms for 1000 rows), no rows are lost, and it runs at one-stage speed when the target keeps up.
+
+## `RowMap<T>`: a predefined column mapping when every column is named differently
+
+A 12-property model read from a result set whose every column is named differently (`post_id`, `post_title`, …). Four ways to read it:
+`Map<T>()` on a model whose property names are the column names (the control: same result set, same column-name lengths, so the provider allocates the same), a predefined `RowMap<T>`, per-call overrides (12 tuples at the call site), and Dapper with `SqlMapper.SetTypeMap` set once.
+
+Machine state: AMD Ryzen 9 7900, Windows 10 22H2, .NET 10, BenchmarkDotNet 0.15.8 `ShortRun` (3 warmup + 3 measured iterations, 1 launch), in-process, process at below-normal priority, Release.
+The machine was not quiet (test suites and builds ran during the runs, and another process may have been benchmarking), so **only the allocation columns are recorded here**: they are deterministic. The timing comparison needs a run on a quiet machine and is still pending.
+Reproduce: `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*.RenamedColumnBenchmarks.*" --job short --inprocess` (in-memory), `"*.SqlServerRenamedColumnBenchmarks.*"` (LocalDB), `"*.LazyMapBenchmarks.*"`, `--map-memory`.
+
+**Allocated bytes per call, in-memory provider**
+
+| Scenario | Rows | `Map<T>()` same names | `RowMap<T>` | Per-call overrides | Dapper `SetTypeMap` |
+|---|---:|---:|---:|---:|---:|
+| List | 1 | 368 | 368 | 2,200 | 856 |
+| List | 100 | 13,560 | 13,560 | 15,392 | 36,440 |
+| List | 1000 | 128,768 | 128,768 | 130,600 | 355,049 |
+| First | 1, 100, 1000 | 280 | 280 | 2,112 | 576 |
+
+**Allocated memory per call, SQL Server LocalDB** (Microsoft.Data.SqlClient 7.1.1; the provider's own allocations are included)
+
+| Scenario | Rows | `Map<T>()` same names | `RowMap<T>` | Per-call overrides | Dapper `SetTypeMap` |
+|---|---:|---:|---:|---:|---:|
+| List | 1 | 4.61 KB | 4.61 KB | 6.40 KB | 5.09 KB |
+| List | 100 | 27.95 KB | 27.95 KB | 29.74 KB | 47.96 KB |
+| List | 1000 | 236.77 KB | 236.78 KB | 238.56 KB | 434.32 KB |
+| First | 1, 100, 1000 | 4.52 KB | 4.52 KB | 6.31 KB | 4.82 KB |
+
+- A `RowMap<T>` read allocates exactly what `Map<T>()` allocates on matching names (0 B difference in memory; 0.01 KB or less on LocalDB, which rounds to 10 B), and less than Dapper with a type map at every size: in memory 0.43x at one row and 0.36-0.37x at 100 and 1000 rows; on LocalDB 0.91x, 0.58x and 0.55x.
+- Per-call overrides cost a fixed 1,832 B per call in memory (1.8 KB on LocalDB): work a mapping object skips (reading `RowPlan<T>.For`: the params collection, the tuple conversion and the key string). At one LocalDB row that is 1.26x Dapper. A `RowMap<T>` removes all of it.
+- Against `Map<T>()` on the *short-named* table the renamed result set allocates 0.12 KB more on LocalDB (4.48 KB vs 4.61 KB for `List` of one row). That is consistent with SqlClient allocating each column name on every query (62 more characters across the 12 columns is 124 B), not with the library, which is why the control above uses the same names.
+
+**Two commands outside mapping, ODE vs Dapper on LocalDB (allocation; not touched by this work)**
+
+| Scenario | Rows | Dapper | ODE | Alloc |
+|---|---:|---:|---:|---:|
+| Scalar | 1, 100, 1000 | 1.21 KB | 1.20 KB | 0.99 |
+| Non-query, 8 parameters | 1, 100, 1000 | 3.68 KB | 3.99 KB | 1.08-1.09 |
+
+The eight-parameter non-query allocates 0.31 KB (about 40 B per parameter) more than Dapper; the scalar read ties. Both are fixed per-call costs in the command path, not in mapping.
+
+**What a mapping retains** (`--map-memory`, managed heap only, 12 fields, averaged over 1,000 mappings)
+
+| | Bytes |
+|---|---:|
+| Allocated to build one | 3,392 |
+| Retained while unused | 1,536 |
+| Retained after its first read (one result-set layout, typed reader compiled) | 7,905 |
+
+(Before the layout caches were created on first use: 6,000 allocated, 4,144 retained unused, 9,209 after the first read.) Five hundred models cost about 0.8 MB if every mapping were built up front and about 4 MB if every one had been read, which is why the documentation builds each mapping on first use. The machine code the JIT emits for a compiled reader is not counted.
+
+**Holding a mapping** (`LazyMapBenchmarks`, warm reads, 1,000 per invocation, each through a non-inlined call so the JIT cannot fold the read away; short run, machine not quiet, so treat the times as indicative)
+
+| Variant | Time per read | Allocated per read |
+|---|---:|---:|
+| `static readonly` field | 1.18 ns | 0 B |
+| `field ??= new(...)` | 1.20 ns | 0 B |
+| `LazyInitializer.EnsureInitialized(ref field, static () => ...)` | 2.79 ns | 0 B |
+| `Lazy<T>.Value` | 1.39 ns | 0 B |
+| Build one 12-field mapping (the first-call cost) | 1,228 ns | 3,296 B |
+| Create the `Lazy<T>` wrapper | 7.7 ns | 72 B |
+
+`static readonly` shows no read-time advantage over `field ??=`. `EnsureInitialized` costs about 1.6 ns more per read than `field ??=`, which is negligible next to a query. A first call costs about 1.2 µs to build the mapping, plus compiling the reader for the result-set layout (the same as for `Map<T>()`).
