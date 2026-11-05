@@ -50,7 +50,8 @@ public static partial class ConnectionExtensions
 
 		await connection.OpenAsync(cancellationToken).ConfigureAwait(configureAwait);
 
-		if (cancellationToken.IsCancellationRequested && !state.HasFlag(ConnectionState.Closed))
+		// ConnectionState.Closed is zero, so HasFlag(Closed) is always true: test the state itself.
+		if (cancellationToken.IsCancellationRequested && connection.State != ConnectionState.Closed)
 		{
 			connection.Close(); // Fake finally...
 			cancellationToken.ThrowIfCancellationRequested();
@@ -96,7 +97,7 @@ public static partial class ConnectionExtensions
 	{
 		if (connection is DbConnection c)
 			await c.OpenAsync(cancellationToken).ConfigureAwait(configureAwait);
-
-		connection.Open();
+		else
+			connection.Open();
 	}
 }

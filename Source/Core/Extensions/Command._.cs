@@ -753,7 +753,7 @@ public static partial class CommandExtensions
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		=> command is DbCommand dbc
-		? dbc.FirstOrdinalResults<T0>()
+		? dbc.FirstOrdinalResults<T0>(behavior)
 		: command.FirstOrdinalResults(behavior | CommandBehavior.SingleResult).Cast<T0>();
 
 	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
