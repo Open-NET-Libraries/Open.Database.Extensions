@@ -926,7 +926,7 @@ public static class ToTargetBlockMappedCompletionTests
 		var harness = new Harness<Person>(TargetKind.ActionBlock, ct);
 
 		long produced = useAsync
-			? await FakeReader.CreateDb(columns, rows).ToTargetBlockAsync(harness.Target, true)
+			? await FakeReader.CreateDb(columns, rows).ToTargetBlockAsync(harness.Target, true, ct)
 			: FakeReader.Create(columns, rows).ToTargetBlock(harness.Target, true);
 		await harness.Drained.WaitAsync(Timeout, ct);
 
