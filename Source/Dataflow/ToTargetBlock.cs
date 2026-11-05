@@ -276,8 +276,8 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete)
@@ -287,26 +287,7 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		try
-		{
-			return command.ExecuteReader(reader =>
-				ToTargetBlock(reader, target, false));
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, null);
 	}
 
 	/// <summary>
@@ -318,9 +299,9 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -331,26 +312,7 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		try
-		{
-			return command.ExecuteReader(reader =>
-				ToTargetBlock(reader, target, false, fieldMappingOverrides));
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, fieldMappingOverrides);
 	}
 
 	/// <summary>
@@ -489,8 +451,8 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete)
@@ -500,26 +462,7 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		try
-		{
-			return command.ExecuteReader(reader =>
-				ToTargetBlock(reader, target, complete));
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, null);
 	}
 
 	/// <summary>
@@ -531,9 +474,9 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -544,26 +487,7 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		try
-		{
-			return command.ExecuteReader(reader =>
-				ToTargetBlock(reader, target, complete, fieldMappingOverrides));
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, fieldMappingOverrides);
 	}
 
 	/// <summary>
@@ -914,9 +838,9 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -931,30 +855,9 @@ public static partial class DataflowExtensions
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
 			await Task.Yield();
 
-		try
-		{
-			var dbc = command as DbCommand;
-			ConnectionState state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-			CommandBehavior behavior = CommandBehavior.SingleResult;
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using IDataReader reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-			return await ToTargetBlockAsync(reader, target, false, cancellationToken).ConfigureAwait(false);
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return await ToTargetBlockMappedAsync(
+			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
+			target, complete, null, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -965,10 +868,10 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -984,30 +887,9 @@ public static partial class DataflowExtensions
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
 			await Task.Yield();
 
-		try
-		{
-			var dbc = command as DbCommand;
-			ConnectionState state = dbc == null ? command.Connection.EnsureOpen() : await dbc.Connection!.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-			CommandBehavior behavior = CommandBehavior.SingleResult;
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using IDataReader reader = dbc == null ? command.ExecuteReader(behavior) : await dbc.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-			return await ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, cancellationToken).ConfigureAwait(false);
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return await ToTargetBlockMappedAsync(
+			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
+			target, complete, fieldMappingOverrides, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -1144,8 +1026,8 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete)
@@ -1156,26 +1038,9 @@ public static partial class DataflowExtensions
 		Contract.EndContractBlock();
 
 		await Task.Yield();
-		try
-		{
-			return await command.ExecuteReaderAsync(reader =>
-				ToTargetBlockAsync(reader, target, false, command.CancellationToken)).ConfigureAwait(false);
-		}
-		catch (Exception ex)
-		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
-			throw;
-		}
-		finally
-		{
-			if (complete)
-				target.Complete();
-		}
+		return await ToTargetBlockMappedAsync(
+			read => command.ExecuteReaderAsync(read),
+			target, complete, null, command.CancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -1186,9 +1051,9 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -1200,25 +1065,62 @@ public static partial class DataflowExtensions
 		Contract.EndContractBlock();
 
 		await Task.Yield();
+		return await ToTargetBlockMappedAsync(
+			read => command.ExecuteReaderAsync(read),
+			target, complete, fieldMappingOverrides, command.CancellationToken).ConfigureAwait(false);
+	}
+
+	// Shared by the mapped command-level overloads.
+	//
+	// The internal pipeline (source end -> mapper -> target) exists before anything can fail, and the only thing this
+	// code ever completes or faults is the pipeline's SOURCE end.  The target is completed (or faulted) downstream by the
+	// pipeline itself, after every row written into it has been delivered; it is never completed directly here.
+	static long ToTargetBlockMapped<T>(
+		Func<Func<IDataReader, long>, long> executeReader,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		where T : new()
+	{
+		var pipeline = new Dataflow.Transformer<T>.Pipeline(target, complete);
+		long total;
 		try
 		{
-			return await command.ExecuteReaderAsync(reader =>
-				ToTargetBlockAsync(reader, target, false, fieldMappingOverrides, command.CancellationToken)).ConfigureAwait(false);
+			total = executeReader(reader => pipeline.Write(reader, Dataflow.Transformer<T>.Create(fieldMappingOverrides)));
 		}
 		catch (Exception ex)
 		{
-			if (complete)
-			{
-				complete = false;
-				target.Fault(ex);
-			}
-
+			pipeline.Fault(ex);
 			throw;
 		}
-		finally
+
+		// The reader has been disposed by now.
+		pipeline.Complete();
+		return total;
+	}
+
+	static async ValueTask<long> ToTargetBlockMappedAsync<T>(
+		Func<Func<IDataReader, ValueTask<long>>, ValueTask<long>> executeReader,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
+		CancellationToken cancellationToken)
+		where T : new()
+	{
+		var pipeline = new Dataflow.Transformer<T>.Pipeline(target, complete);
+		long total;
+		try
 		{
-			if (complete)
-				target.Complete();
+			total = await executeReader(reader => pipeline.WriteAsync(reader, Dataflow.Transformer<T>.Create(fieldMappingOverrides), cancellationToken)).ConfigureAwait(false);
 		}
+		catch (Exception ex)
+		{
+			pipeline.Fault(ex);
+			throw;
+		}
+
+		// The reader has been disposed by now.
+		pipeline.Complete();
+		return total;
 	}
 }
