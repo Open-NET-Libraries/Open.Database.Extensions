@@ -72,7 +72,7 @@ public class Transformer<T>
 	/// </summary>
 	protected class Processor
 	{
-		Func<object?[], T> _map = static _ => throw new InvalidOperationException("The column names have not been set.");
+		Func<object?[], T> _map = static _ => new T(); // Until names are set, as before: an empty model.
 
 		/// <summary>
 		/// Constructs a processor.

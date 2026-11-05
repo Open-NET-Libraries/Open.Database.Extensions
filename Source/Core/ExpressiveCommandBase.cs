@@ -30,11 +30,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// The connection provider to used to acquire connections.
 	/// </summary>
 	protected IDbConnectionPool<TConnection> ConnectionProvider
-		=> _source as IDbConnectionPool<TConnection> ?? DbConnectionProvider.Create((TConnection)_source);
+		=> _poolOrConnection as IDbConnectionPool<TConnection> ?? (EnsureOptions().Provider ??= DbConnectionProvider.Create((TConnection)_poolOrConnection));
 
 	// Either the pool to take connections from, or (a command built from a bare connection) the connection
 	// itself: running it needs no pool wrapper object.
-	readonly object _source;
+	readonly object _poolOrConnection;
 	int _busy;
 
 	// The rarely-set members live in a block that is only allocated when one is set, so the usual
@@ -42,13 +42,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	private protected sealed class CommandOptions
 	{
 		public IDbTransaction? Transaction;
+		public IDbConnectionPool<TConnection>? Provider;
 		public CancellationToken CancellationToken;
 		public ushort Timeout = CommandTimeout.DEFAULT_SECONDS;
 		public bool UseAsyncRead;
 	}
 
 	private protected CommandOptions? _options;
-	private protected CommandOptions Options => _options ??= new();
+	private protected CommandOptions EnsureOptions() => _options ??= new();
 
 	/// <summary>
 	/// The transaction to execute commands on if not using a connection factory.
@@ -66,7 +67,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 	{
-		_source = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
+		_poolOrConnection = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
 		Command = command ?? throw new ArgumentNullException(nameof(command));
 		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
 		Contract.EndContractBlock();
@@ -112,8 +113,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 	{
-		_source = connection ?? throw new ArgumentNullException(nameof(connection));
-		if (transaction is not null) Options.Transaction = transaction;
+		_poolOrConnection = connection ?? throw new ArgumentNullException(nameof(connection));
+		if (transaction is not null) EnsureOptions().Transaction = transaction;
 		Command = command ?? throw new ArgumentNullException(nameof(command));
 		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
 		Contract.EndContractBlock();
@@ -179,7 +180,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		set
 		{
 			if (value == CommandTimeout.DEFAULT_SECONDS && _options is null) return;
-			Options.Timeout = value;
+			EnsureOptions().Timeout = value;
 		}
 	}
 
@@ -208,7 +209,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		set
 		{
 			if (!value.CanBeCanceled && _options is null) return;
-			Options.CancellationToken = value;
+			EnsureOptions().CancellationToken = value;
 		}
 	}
 
@@ -359,10 +360,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// Open MUST occur before command creation as some DbCommands require it.
 	private protected TResult ExecuteCore<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, TResult> func)
 	{
-		if (_source is TConnection single)
-			return ExecuteSingle(single, state, func);
+		if (_poolOrConnection is TConnection single)
+			return ExecuteDirect(single, state, func);
 
-		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_source;
+		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
 		TConnection conn = pool.Take();
 		try
 		{
@@ -380,27 +381,27 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
-		if (_source is TConnection single)
+		if (_poolOrConnection is TConnection single)
 		{
-			EnterSingle();
+			EnterDirect();
 			ConnectionState before = single.State;
 			try
 			{
-				ConnectionState prior = await EnsureOpenFast(single, CancellationToken).ConfigureAwait(false);
+				ConnectionState prior = await OpenIfNeededAsync(single, CancellationToken).ConfigureAwait(false);
 				using TCommand cmd = PrepareCommand(single);
 				return await func(cmd, prior, state).ConfigureAwait(false);
 			}
 			finally
 			{
-				ExitSingle(single, before);
+				ExitDirect(single, before);
 			}
 		}
 
-		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_source;
+		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
 		TConnection conn = pool.Take();
 		try
 		{
-			ConnectionState prior = await EnsureOpenFast(conn, CancellationToken).ConfigureAwait(false);
+			ConnectionState prior = await OpenIfNeededAsync(conn, CancellationToken).ConfigureAwait(false);
 			using TCommand cmd = PrepareCommand(conn);
 			return await func(cmd, prior, state).ConfigureAwait(false);
 		}
@@ -411,7 +412,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	}
 
 	// An open connection (the usual case) needs no awaiting at all.
-	static ValueTask<ConnectionState> EnsureOpenFast(TConnection connection, CancellationToken cancellationToken)
+	static ValueTask<ConnectionState> OpenIfNeededAsync(TConnection connection, CancellationToken cancellationToken)
 	{
 		ConnectionState state = connection.State;
 		return (state & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open
@@ -419,9 +420,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			: connection.EnsureOpenAsync(cancellationToken);
 	}
 
-	TResult ExecuteSingle<TState, TResult>(TConnection single, TState state, Func<TCommand, ConnectionState, TState, TResult> func)
+	TResult ExecuteDirect<TState, TResult>(TConnection single, TState state, Func<TCommand, ConnectionState, TState, TResult> func)
 	{
-		EnterSingle();
+		EnterDirect();
 		ConnectionState before = single.State;
 		try
 		{
@@ -431,18 +432,18 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 		finally
 		{
-			ExitSingle(single, before);
+			ExitDirect(single, before);
 		}
 	}
 
 	// A connection that was closed when taken is closed again when released; one that was open stays open.
-	void EnterSingle()
+	void EnterDirect()
 	{
 		if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
 			throw new InvalidOperationException("Concurrent use of a single connection is not supported.");
 	}
 
-	void ExitSingle(TConnection connection, ConnectionState before)
+	void ExitDirect(TConnection connection, ConnectionState before)
 	{
 		try
 		{
@@ -484,7 +485,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return Discard(ExecuteCoreAsync(handler, static async (cmd, _, h) =>
+		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
+
+		return ValueTaskHelpers.Discard(ExecuteCoreAsync(handler, static async (cmd, _, h) =>
 		{
 			await h(cmd).ConfigureAwait(false);
 			return false;
@@ -492,24 +495,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	}
 
 	// Completes a ValueTask<T> as a plain ValueTask without allocating when it has already finished.
-	private static ValueTask Discard<T>(ValueTask<T> task)
-	{
-		if (task.IsCompletedSuccessfully)
-		{
-			_ = task.Result;
-			return default;
-		}
-
-		return Slow(task);
-
-		static async ValueTask Slow(ValueTask<T> pending) => await pending.ConfigureAwait(false);
-	}
-
 	/// <inheritdoc />
 	public virtual ValueTask<T> ExecuteAsync<T>(Func<TCommand, ValueTask<T>> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
+
+		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
 
 		return ExecuteCoreAsync(transform, static (cmd, _, f) => f(cmd));
 	}
@@ -565,7 +557,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 #else
 				await
 #endif
-				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.Item4).ConfigureAwait(false);
+				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.CancellationToken).ConfigureAwait(false);
 				return await s.transform(dbReader, s.state).ConfigureAwait(false);
 			}
 
@@ -602,7 +594,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return Discard(ExecuteReaderAsync(handler, static (reader, h) =>
+		return ValueTaskHelpers.Discard(ExecuteReaderAsync(handler, static (reader, h) =>
 		{
 			h(EnsureReaderType(reader));
 			return new ValueTask<bool>(false);
@@ -624,7 +616,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return Discard(ExecuteReaderAsync(handler, static async (reader, h) =>
+		return ValueTaskHelpers.Discard(ExecuteReaderAsync(handler, static async (reader, h) =>
 		{
 			await h(EnsureReaderType(reader)).ConfigureAwait(false);
 			return false;
@@ -665,7 +657,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return Discard(ExecuteReaderAsync(handler, static async (reader, h) =>
+		return ValueTaskHelpers.Discard(ExecuteReaderAsync(handler, static async (reader, h) =>
 		{
 			await h(reader).ConfigureAwait(false);
 			return false;
@@ -706,6 +698,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <returns>The value from the return parameter.</returns>
 	public ValueTask<object?> ExecuteReturnAsync()
 	{
+		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
+
 		return ExecuteCoreAsync(CancellationToken, static async (cmd, _, token) =>
 		{
 			IDbDataParameter returnParameter = cmd.AddReturnParameter();

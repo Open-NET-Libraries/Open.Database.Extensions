@@ -998,7 +998,13 @@ public static class DataReaderExtensions
 		if (useReadAsync)
 		{
 			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-				results.Enqueue(ColumnReader.Get<T0>(reader, 0));
+			{
+				// Genuinely asynchronous column reads (matters for large values under SequentialAccess).
+				results.Enqueue(
+					await reader.IsDBNullAsync(0, cancellationToken).ConfigureAwait(false)
+					? default!
+					: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false));
+			}
 		}
 		else if (cancellationToken.CanBeCanceled)
 		{

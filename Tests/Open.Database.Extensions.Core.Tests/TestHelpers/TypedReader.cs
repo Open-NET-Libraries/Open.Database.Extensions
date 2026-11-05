@@ -11,7 +11,7 @@ namespace Open.Database.Extensions.Tests;
 /// provider does. That is what lets the generated row mappers take their typed (unboxed) path.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal sealed class TypedReader(IReadOnlyList<(string Name, Type Type)> columns, object?[][] rows) : DbDataReader
+internal class TypedReader(IReadOnlyList<(string Name, Type Type)> columns, object?[][] rows) : DbDataReader
 {
 	/// <summary>How many times <see cref="Read"/> has returned a row.</summary>
 	public int RowsRead { get; private set; }

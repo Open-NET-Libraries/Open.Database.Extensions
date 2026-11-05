@@ -169,8 +169,22 @@ internal static class RowReader
 		for (; skip > 0; skip--)
 			if (!reader.Read()) yield break;
 
-		Func<IDataRecord, T>? map = null;
 		int n = 0;
+		if (reader is DbDataReader db)
+		{
+			// The virtual-call mapper, not the interface-call one (a second compile per layout otherwise).
+			Func<DbDataReader, T>? dbMap = null;
+			while (db.Read())
+			{
+				dbMap ??= source.Mapper(db);
+				yield return dbMap(db);
+				if (++n == take) yield break;
+			}
+
+			yield break;
+		}
+
+		Func<IDataRecord, T>? map = null;
 		while (reader.Read())
 		{
 			map ??= source.Mapper(reader);
@@ -198,7 +212,7 @@ internal static class RowReader
 		where TSink : struct, IRowSink<T>
 	{
 		if (take == 0 || !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
-			|| !await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+			|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 			return sink;
 
 		Func<DbDataReader, T> map = source.Mapper(reader);
@@ -208,7 +222,7 @@ internal static class RowReader
 			sink.Add(map(reader));
 			if (++n == take) break;
 		}
-		while (await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
+		while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 		return sink;
 	}
 
@@ -240,7 +254,7 @@ internal static class RowReader
 	{
 		if (take == 0
 			|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
-			|| !await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+			|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 			return (false, default);
 
 		return (true, source.Mapper(reader)(reader));
@@ -251,11 +265,11 @@ internal static class RowReader
 	{
 		if (take == 0
 			|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
-			|| !await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+			|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 			return (false, default);
 
 		T item = source.Mapper(reader)(reader);
-		if (take != 1 && await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)) throw MoreThanOne();
+		if (take != 1 && await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)) throw MoreThanOne();
 		return (true, item);
 	}
 
@@ -269,7 +283,7 @@ internal static class RowReader
 
 		Func<DbDataReader, T>? map = null;
 		int n = 0;
-		while (await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+		while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 		{
 			map ??= source.Mapper(reader);
 			yield return map(reader);
@@ -285,14 +299,14 @@ internal static class RowReader
 		static async ValueTask<bool> Core(DbDataReader reader, int skip, bool useReadAsync, CancellationToken cancellationToken)
 		{
 			for (; skip > 0; skip--)
-				if (!await ReadAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+				if (!await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 					return false;
 			return true;
 		}
 	}
 
 	// With useReadAsync == false only the execution is async: rows are pulled with Read() (still cancellable between rows).
-	static ValueTask<bool> ReadAsync(DbDataReader reader, bool useReadAsync, CancellationToken cancellationToken)
+	static ValueTask<bool> ReadRowAsync(DbDataReader reader, bool useReadAsync, CancellationToken cancellationToken)
 	{
 		if (useReadAsync) return new ValueTask<bool>(reader.ReadAsync(cancellationToken));
 		cancellationToken.ThrowIfCancellationRequested();

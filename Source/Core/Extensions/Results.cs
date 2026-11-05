@@ -122,7 +122,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.StreamAsync(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1, true, cancellationToken);
+		return RowReader.StreamAsync(RowPlan<T>.For(fieldMappingOverrides), reader, 0, -1, useReadAsync: true, cancellationToken);
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, CancellationToken)" />

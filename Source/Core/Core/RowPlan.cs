@@ -22,10 +22,10 @@ internal sealed class RowPlan<T> : RowSource<T>
 {
 	// Both caches are bounded so dynamically generated overrides or column lists cannot grow memory forever.
 	// Real applications use a handful of each; when a bound is hit the cache is simply cleared and refills.
-	const int MaxCustomPlans = 128;
+	const int MaxOverridePlans = 128;
 	const int MaxLayouts = 128;
 
-	static readonly ConcurrentDictionary<string, RowPlan<T>> Custom = new(StringComparer.Ordinal);
+	static readonly ConcurrentDictionary<string, RowPlan<T>> OverridePlans = new(StringComparer.Ordinal);
 
 	// Settable public instance properties by name: reflection runs once per T.
 	static readonly Dictionary<string, PropertyInfo> PropertiesByName = BuildProperties();
@@ -63,11 +63,12 @@ internal sealed class RowPlan<T> : RowSource<T>
 			sb.Append(kvp.Key).Append('=').Append(kvp.Value ?? "\0").Append('|');
 
 		string key = sb.ToString();
-		if (Custom.TryGetValue(key, out RowPlan<T>? plan)) return plan;
+		if (OverridePlans.TryGetValue(key, out RowPlan<T>? plan)) return plan;
 
 		plan = new RowPlan<T>(items);
-		if (Custom.Count >= MaxCustomPlans) Custom.Clear();
-		return Custom.TryAdd(key, plan) ? plan : Custom[key];
+		if (OverridePlans.Count >= MaxOverridePlans) OverridePlans.Clear();
+		if (OverridePlans.TryAdd(key, plan)) return plan;
+		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : plan; // Lost a race (or the cache was just cleared): either plan is equivalent.
 	}
 
 	// Property name → column name for every mapped (not ignored) property.
@@ -97,7 +98,11 @@ internal sealed class RowPlan<T> : RowSource<T>
 			foreach (KeyValuePair<string, string?> kvp in overrides)
 			{
 				if (!PropertiesByName.ContainsKey(kvp.Key))
+				{
+					if (kvp.Value is null) continue; // Ignoring a field that does not exist is harmless.
 					throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{kvp.Key}'.", nameof(overrides));
+				}
+
 				fieldToColumn[kvp.Key] = kvp.Value; // A null column means 'ignore this field'.
 			}
 		}
@@ -380,11 +385,18 @@ internal sealed class RowPlan<T> : RowSource<T>
 				Expression.Block(typeof(T), statements),
 				Expression.Catch(
 					ex,
-					Expression.Throw(
-						Expression.Call(
-							typeof(RowPlan<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
-							ex, index, Expression.Constant(bindings)),
-						typeof(T)))));
+					// The provider's own failures and cancellation propagate untouched; everything else is wrapped with
+					// the property and column that were being read.
+					Expression.Condition(
+						Expression.OrElse(
+							Expression.TypeIs(ex, typeof(DbException)),
+							Expression.TypeIs(ex, typeof(OperationCanceledException))),
+						Expression.Rethrow(typeof(T)),
+						Expression.Throw(
+							Expression.Call(
+								typeof(RowPlan<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
+								ex, index, Expression.Constant(bindings)),
+							typeof(T))))));
 	}
 
 	static Expression ReadValue(
@@ -420,17 +432,32 @@ internal sealed class RowPlan<T> : RowSource<T>
 	}
 
 	// Returns the expression converted to the target type, or null when the types have no direct conversion.
+	static bool IsIntegral(Type t)
+		=> t == typeof(byte) || t == typeof(sbyte) || t == typeof(short) || t == typeof(ushort)
+			|| t == typeof(int) || t == typeof(uint) || t == typeof(long) || t == typeof(ulong);
+
+	static bool IsFractional(Type t) => t == typeof(float) || t == typeof(double) || t == typeof(decimal);
+
+	// Direct typed conversions only where they cannot silently change the value: integer to integer/enum is
+	// range-checked (throws on overflow), integers and floating point widen to a fractional type. Anything
+	// else (fractional to integer, which must round, text, etc.) takes the general path.
 	static Expression? TryConvert(Expression value, Type target)
 	{
-		if (value.Type == target) return value;
+		Type source = value.Type;
+		if (source == target) return value;
+
+		Type t = target.IsEnum ? Enum.GetUnderlyingType(target) : target;
 		try
 		{
-			return Expression.Convert(value, target);
+			if (IsIntegral(source) && IsIntegral(t)) return Expression.ConvertChecked(value, target);
+			if ((IsIntegral(source) || IsFractional(source)) && IsFractional(t)) return Expression.Convert(value, target);
 		}
 		catch (InvalidOperationException)
 		{
-			return null;
+			// No such conversion: fall through to the general path.
 		}
+
+		return null;
 	}
 
 	#endregion
@@ -442,7 +469,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 		if (value is null or DBNull)
 		{
 			if (default(TTarget) is null) return default!;
-			throw new InvalidCastException($"A NULL value cannot be assigned to a non-nullable '{typeof(TTarget)}'.");
+			throw new InvalidCastException($"A NULL value cannot be assigned to a non-nullable '{typeof(TTarget)}'. Map the column to a nullable property or COALESCE it.");
 		}
 
 		if (value is TTarget exact) return exact;
@@ -455,7 +482,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 		else if (u == typeof(Guid))
 			converted = value is string gs ? Guid.Parse(gs) : value is byte[] gb ? new Guid(gb) : throw new InvalidCastException($"Cannot convert '{value.GetType()}' to Guid.");
 		else if (u == typeof(string))
-			converted = Convert.ToString(value, CultureInfo.InvariantCulture)!;
+			converted = value is byte[] ? throw new InvalidCastException("A byte array cannot be assigned to a string; map it to byte[] or convert it explicitly.") : Convert.ToString(value, CultureInfo.InvariantCulture)!;
 		else
 			converted = Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
 

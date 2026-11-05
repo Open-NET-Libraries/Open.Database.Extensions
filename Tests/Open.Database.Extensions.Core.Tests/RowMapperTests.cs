@@ -212,6 +212,52 @@ public static class RowMapperTests
 		}
 	}
 
+	// Narrowing must be range-checked, never silently wrap or truncate (review finding).
+	[Fact]
+	public static void Narrowing_OverflowThrows_InsteadOfWrapping()
+	{
+		var cmd = Cmd([("Id", typeof(long)), ("Name", typeof(string))], [4_294_967_301L, "x"]);
+		var ex = Assert.Throws<InvalidOperationException>(() => cmd.Map<Simple>().ToList());
+		Assert.Contains("Id", ex.Message);
+		Assert.IsType<OverflowException>(ex.InnerException);
+	}
+
+	[Fact]
+	public static void Narrowing_InRange_Works_AndFractionalToIntegerRounds()
+	{
+		Assert.Equal(7, Cmd([("Id", typeof(long))], [7L]).Map<Simple>().ToList().Single().Id);
+		Assert.Equal(4, Cmd([("Id", typeof(double))], [3.7]).Map<Simple>().ToList().Single().Id); // Convert.ChangeType semantics.
+	}
+
+	[Fact]
+	public static void ByteArray_ToString_IsRejected()
+	{
+		var cmd = Cmd([("Id", typeof(int)), ("Name", typeof(byte[]))], [1, new byte[] { 1, 2 }]);
+		Assert.Throws<InvalidOperationException>(() => cmd.Map<Simple>().ToList());
+	}
+
+	[Fact]
+	public static void OverrideKeys_AreUnambiguous()
+	{
+		var a = Cmd([("A|B=C", typeof(int)), ("A", typeof(int)), ("B", typeof(int))], [1, 2, 3]);
+		// "Id" -> column "A|B=C" must not be confused with ("Id"->"A", "Name"->"B=C" style) combinations.
+		Assert.Equal(1, a.Map<Simple>(("Id", "A|B=C")).ToList().Single().Id);
+		Assert.Equal(2, a.Map<Simple>(("Id", "A")).ToList().Single().Id);
+	}
+
+	[Fact]
+	public static void ProviderExceptions_AreNotWrapped()
+	{
+		var cmd = new FakeExecuteReader(() => new ThrowingReader());
+		Assert.Throws<ThrowingReader.ProviderFailure>(() => cmd.Map<Simple>().ToList());
+	}
+
+	sealed class ThrowingReader() : TypedReader([("Id", typeof(int)), ("Name", typeof(string))], [[1, "x"]])
+	{
+		internal sealed class ProviderFailure : System.Data.Common.DbException { }
+		public override int GetInt32(int ordinal) => throw new ProviderFailure();
+	}
+
 	// ---- loops ----
 
 	[Fact]

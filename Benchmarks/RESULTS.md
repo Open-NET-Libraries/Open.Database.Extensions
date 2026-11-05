@@ -99,6 +99,29 @@ Both libraries return identical objects (checked in setup).
 | Transaction | 4.05 vs 4.12 µs | 5.56 vs 5.79 µs | 20.3 vs 20.3 µs | 1.08 |
 | `Retrieve().DequeueAs<T>()` | **0.94x** (290 vs 308 ns) | **1.29x** slower | **1.33x** slower | 1.48 / 1.39 / 1.39 |
 
-**ToChannel and Dataflow are intentionally slower than a naive single-stage producer.** They keep their original two-stage design: the reader dumps raw rows into a bounded buffer (1024 rows) and a second stage maps them, so a slow consumer does not hold the database connection. The "Dapper" side here is a hand-written single-stage loop with no such buffer, so it is not a like-for-like comparison. They benefit from the shared mapper (no per-query setter compilation) but are not at parity with the naive loop. A possible follow-up that keeps the buffer semantics: write straight to the target while it accepts items and spill to the bounded buffer plus a pump task only when it is full.
+**ToChannel and Dataflow:** these keep their original two-stage design (raw rows into a bounded 1024-row buffer, a second stage maps them). The "Dapper" rows above are a hand-written single-stage loop. See the channel study below before reading anything into the gap.
 
 `Retrieve().DequeueAs<T>()` is a deliberate two-pass route (copy every row into boxed `object[]`, map later), so it cannot match a single-pass typed read at larger sizes. It improved from 3.3x slower at 1 row. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()` (which buffers mapped rows in a draining queue).
+
+## Channel study: does the second stage earn its place?
+
+`dotnet Open.Database.Extensions.Benchmarks.dll --channel-study` (in-memory provider, so reads are instant and "reader-held" is the time the reader/connection is busy). Three designs, with a fast and slow consumer and an unbounded or bounded (100) target channel:
+
+- **one-stage**: map on the reading thread, write straight to the target.
+- **two-stage**: ODE's `ToChannel` as it exists on `master`: raw rows into a bounded 1024-row buffer, a second task maps them into the target.
+- **spill**: write straight to the target while it accepts; only when it is full, spill into a bounded 1024-row buffer drained by a pump task. The target is completed after everything is delivered.
+
+Selected rows (ms, median of 9; the full table is the program's output):
+
+| rows | target | consumer | one-stage held / total | two-stage held / total | spill held / total |
+|---:|---|---|---:|---:|---:|
+| 1000 | unbounded | none | 0.38 / 0.41 | **1.23 / 1.23** | 0.39 / 0.39 |
+| 10000 | unbounded | none | 1.61 / 1.61 | **5.09 / 5.09** | 1.50 / 1.50 |
+| 1000 | bounded 100 | 2 µs/item | 2.04 / 2.25 | 0.26 / 0.47 **LOST 807 rows** | 0.10 / 2.24 |
+| 1000 | bounded 100 | 20 µs/item | 18.8 / 20.8 | 0.24 / 2.26 **LOST 890 rows** | 0.11 / 20.8 |
+| 10000 | bounded 100 | 20 µs/item | 206 / 208 | 184 / 186 **LOST 1025 rows** | 185 / 208 |
+
+What it shows:
+1. **With an unbounded target the second stage buys nothing** and costs 2-3x on the producer side (and the same total time when the consumer is the bottleneck).
+2. **The second stage's one real effect is freeing the reader earlier when the target is bounded and the consumer is slow**, but as implemented it **drops rows**: the target is completed when stage one finishes reading, while stage two still holds up to ~1024 rows. The study measured the same loss on untouched `master` (a separate project against a clean `origin/master` checkout), so this is pre-existing, not caused by this PR.
+3. **Spill keeps the benefit without the loss**: the reader is freed as soon as the 1024-row buffer absorbs the backlog (0.1 ms vs 18.8 ms for 1000 rows), no rows are lost, and it runs at one-stage speed when the target keeps up.

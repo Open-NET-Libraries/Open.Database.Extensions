@@ -74,7 +74,7 @@ readonly struct MappedQueryCore<T>
 {
 	// Generated mappings read each column once, in order, so the provider may stream the row.
 	// A caller-supplied selector may read in any order, so it runs with the default access mode.
-	const CommandBehavior Sequential = CommandBehavior.SingleResult | CommandBehavior.SequentialAccess;
+	const CommandBehavior GeneratedMapping = CommandBehavior.SingleResult | CommandBehavior.SequentialAccess;
 
 	readonly IExecuteReader _command;
 	readonly RowSource<T> _source;
@@ -84,7 +84,7 @@ readonly struct MappedQueryCore<T>
 	internal MappedQueryCore(IExecuteReader command, RowSource<T> source, int skip, int take)
 	{ _command = command; _source = source; _skip = skip; _take = take; }
 
-	CommandBehavior Behavior => _source is SelectorSource<T> ? CommandBehavior.SingleResult : Sequential;
+	CommandBehavior Behavior => _source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping;
 
 	internal MappedQueryCore<T> WithSkip(int count)
 		=> count >= 0 ? new(_command, _source, _skip + count, _take)
@@ -99,7 +99,7 @@ readonly struct MappedQueryCore<T>
 	// Honors the command's UseAsyncRead choice (default false: rows are pulled with Read() after an async execute).
 	bool UseAsyncRead => _command is IExecuteReaderAsync { UseAsyncRead: true };
 
-	CancellationToken Token(CancellationToken cancellationToken)
+	CancellationToken EffectiveToken(CancellationToken cancellationToken)
 		=> cancellationToken.CanBeCanceled ? cancellationToken : _command.CancellationToken;
 
 	// The terminals pass their inputs to the command as state and use static lambdas, so running a
@@ -120,32 +120,19 @@ readonly struct MappedQueryCore<T>
 
 	internal ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken)
 	{
-		CancellationToken token = Token(cancellationToken);
-		return Discard(_command.ExecuteReaderAsync((handler, _source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
+		CancellationToken token = EffectiveToken(cancellationToken);
+		return ValueTaskHelpers.Discard(_command.ExecuteReaderAsync((handler, _source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
 		{
-			await s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.Item5, s.token), s.token).ConfigureAwait(false);
+			await s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token).ConfigureAwait(false);
 			return false;
 		}, Behavior));
 	}
 
 	internal ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken)
 	{
-		CancellationToken token = Token(cancellationToken);
+		CancellationToken token = EffectiveToken(cancellationToken);
 		return _command.ExecuteReaderAsync((handler, _source, _skip, _take, UseAsyncRead, token), static (reader, s)
-			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.Item5, s.token), s.token), Behavior);
-	}
-
-	static ValueTask Discard<TResult>(ValueTask<TResult> task)
-	{
-		if (task.IsCompletedSuccessfully)
-		{
-			_ = task.Result;
-			return default;
-		}
-
-		return Slow(task);
-
-		static async ValueTask Slow(ValueTask<TResult> pending) => await pending.ConfigureAwait(false);
+			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token), Behavior);
 	}
 
 	static IAsyncEnumerable<T> StreamAsync(RowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
@@ -177,23 +164,23 @@ readonly struct MappedQueryCore<T>
 			=> RowReader.TrySingle(s._source, reader, s._skip, s._take, out T? item) ? item : default, Behavior);
 
 	internal ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
-		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: Token(cancellationToken)), static (reader, s)
+		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: EffectiveToken(cancellationToken)), static (reader, s)
 			=> reader is DbDataReader db
-				? RowReader.ToListAsync(s._source, db, s._skip, s._take, s.Item4, s.token)
+				? RowReader.ToListAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token)
 				: new ValueTask<List<T>>(RowReader.ToList(s._source, reader, s._skip, s._take)), Behavior);
 
 	internal ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
-		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: Token(cancellationToken)), static (reader, s)
+		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: EffectiveToken(cancellationToken)), static (reader, s)
 			=> reader is DbDataReader db
-				? RowReader.ToArrayAsync(s._source, db, s._skip, s._take, s.Item4, s.token)
+				? RowReader.ToArrayAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token)
 				: new ValueTask<T[]>(RowReader.ToArray(s._source, reader, s._skip, s._take)), Behavior);
 
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
-		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: Token(cancellationToken)), static async (reader, s) =>
+		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: EffectiveToken(cancellationToken)), static async (reader, s) =>
 		{
 			if (reader is DbDataReader db)
 			{
-				(bool found, T? item) = await RowReader.TryFirstAsync(s._source, db, s._skip, s._take, s.Item4, s.token).ConfigureAwait(false);
+				(bool found, T? item) = await RowReader.TryFirstAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token).ConfigureAwait(false);
 				return found ? item : default;
 			}
 
@@ -201,11 +188,11 @@ readonly struct MappedQueryCore<T>
 		}, FirstBehavior);
 
 	internal ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken)
-		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: Token(cancellationToken)), static async (reader, s) =>
+		=> _command.ExecuteReaderAsync((_source, _skip, _take, UseAsyncRead, token: EffectiveToken(cancellationToken)), static async (reader, s) =>
 		{
 			if (reader is DbDataReader db)
 			{
-				(bool found, T? item) = await RowReader.TrySingleAsync(s._source, db, s._skip, s._take, s.Item4, s.token).ConfigureAwait(false);
+				(bool found, T? item) = await RowReader.TrySingleAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token).ConfigureAwait(false);
 				return found ? item : default;
 			}
 
@@ -252,11 +239,11 @@ readonly struct MappedQueryCore<T>
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 
-		return _command.ExecuteReaderAsync((_source, _skip, _take, keySelector, comparer, UseAsyncRead, token: Token(cancellationToken)), static async (reader, s) =>
+		return _command.ExecuteReaderAsync((_source, _skip, _take, keySelector, comparer, UseAsyncRead, token: EffectiveToken(cancellationToken)), static async (reader, s) =>
 		{
 			var sink = new DictionarySink<T, TKey>(new Dictionary<TKey, T>(s.comparer), s.keySelector);
 			if (reader is DbDataReader db)
-				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s.Item6, sink, s.token).ConfigureAwait(false)).Dictionary;
+				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, sink, s.token).ConfigureAwait(false)).Dictionary;
 
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
 			return sink.Dictionary;
@@ -272,11 +259,11 @@ readonly struct MappedQueryCore<T>
 		}, Behavior);
 
 	internal ValueTask<HashSet<T>> ToHashSetAsync(IEqualityComparer<T>? comparer, CancellationToken cancellationToken)
-		=> _command.ExecuteReaderAsync((_source, _skip, _take, comparer, UseAsyncRead, token: Token(cancellationToken)), static async (reader, s) =>
+		=> _command.ExecuteReaderAsync((_source, _skip, _take, comparer, UseAsyncRead, token: EffectiveToken(cancellationToken)), static async (reader, s) =>
 		{
 			var sink = new HashSetSink<T>(new HashSet<T>(s.comparer));
 			if (reader is DbDataReader db)
-				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s.Item5, sink, s.token).ConfigureAwait(false)).Set;
+				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, sink, s.token).ConfigureAwait(false)).Set;
 
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
 			return sink.Set;

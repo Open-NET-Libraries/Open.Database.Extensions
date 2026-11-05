@@ -110,7 +110,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		set
 		{
 			if (!value && _options is null) return;
-			Options.UseAsyncRead = value;
+			EnsureOptions().UseAsyncRead = value;
 		}
 	}
 
