@@ -89,7 +89,8 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 	// Most recently used layout; the overwhelmingly common case is the same shape every time.
 	Layout? _last;
-	readonly ConcurrentDictionary<int, Layout[]> _layouts = new();
+	// Created with the first layout: a mapping that is never used holds no dictionary.
+	ConcurrentDictionary<int, Layout[]>? _layouts;
 
 	// A strict plan (a RowMap) is held to account for every field it names, and for every column it reads;
 	// a lenient one (a per-call override) keeps the historical behavior: an unknown field with a null column is
@@ -153,10 +154,16 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 	Layout Resolve(IDataRecord reader)
 	{
+		ConcurrentDictionary<int, Layout[]> layouts = Cache(ref _layouts);
 		int hash = Layout.Hash(reader);
-		return _last = Find(_layouts, hash, l => l.Matches(reader))
-			?? Remember(_layouts, hash, new Layout(reader));
+		return _last = Find(layouts, hash, l => l.Matches(reader))
+			?? Remember(layouts, hash, new Layout(reader));
 	}
+
+	// Shared by both layout caches: the dictionary is created on first use (a lost race just drops an empty one).
+	static ConcurrentDictionary<int, TLayout[]> Cache<TLayout>(ref ConcurrentDictionary<int, TLayout[]>? field)
+		where TLayout : class
+		=> Volatile.Read(ref field) ?? Interlocked.CompareExchange(ref field, new(), null) ?? field!;
 
 	// Shared by both layout caches: find a layout by hash and match, or remember a new one.
 	static TLayout? Find<TLayout>(ConcurrentDictionary<int, TLayout[]> cache, int hash, Func<TLayout, bool> matches)
@@ -247,7 +254,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	// Rows that were already copied out of a reader as object[] (boxed values) are mapped by a compiled,
 	// cached per-column-list delegate too, rather than rebuilding lookups and property setters per query.
 	ArrayLayout? _lastArray;
-	readonly ConcurrentDictionary<int, ArrayLayout[]> _arrayLayouts = new();
+	ConcurrentDictionary<int, ArrayLayout[]>? _arrayLayouts;
 
 	sealed class ArrayLayout(string[] names)
 	{
@@ -277,8 +284,9 @@ internal sealed class RowPlan<T> : RowSource<T>
 		int hash = names.Length;
 		foreach (string n in names) hash = unchecked(hash * 31 + (n?.GetHashCode() ?? 0));
 
-		return _lastArray = Find(_arrayLayouts, hash, l => l.Matches(names))
-			?? Remember(_arrayLayouts, hash, new ArrayLayout([.. names]));
+		ConcurrentDictionary<int, ArrayLayout[]> layouts = Cache(ref _arrayLayouts);
+		return _lastArray = Find(layouts, hash, l => l.Matches(names))
+			?? Remember(layouts, hash, new ArrayLayout([.. names]));
 	}
 
 	Func<object?[], T> BuildArray(ArrayLayout layout)
