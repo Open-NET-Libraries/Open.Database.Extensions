@@ -25,13 +25,6 @@ public static partial class ChannelDbExtensions
 				.ConfigureAwait(false);
 		}
 
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
-		}
-
 		Exception? exception = null;
 		try
 		{
@@ -46,7 +39,8 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			writer.TryComplete(exception);
+			if (complete)
+				writer.TryComplete(exception);
 		}
 	}
 
@@ -63,13 +57,6 @@ public static partial class ChannelDbExtensions
 		await writer
 			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
 			.ConfigureAwait(false);
-
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform)
-				.ConfigureAwait(false);
-		}
 
 		Exception? exception = null;
 		try
@@ -424,13 +411,6 @@ public static partial class ChannelDbExtensions
 				.ConfigureAwait(false);
 		}
 
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
-		}
-
 		Exception? exception = null;
 		try
 		{
@@ -445,7 +425,8 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			writer.TryComplete(exception);
+			if (complete)
+				writer.TryComplete(exception);
 		}
 	}
 
@@ -462,13 +443,6 @@ public static partial class ChannelDbExtensions
 		await writer
 			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
 			.ConfigureAwait(false);
-
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform)
-				.ConfigureAwait(false);
-		}
 
 		Exception? exception = null;
 		try
