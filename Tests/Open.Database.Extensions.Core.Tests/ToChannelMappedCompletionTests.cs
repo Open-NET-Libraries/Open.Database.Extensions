@@ -154,15 +154,28 @@ public static class ToChannelMappedCompletionTests
 	// Records how many rows had been written to the target at the moment something completed it.
 	sealed class SpyWriter<T>(ChannelWriter<T> inner) : ChannelWriter<T>
 	{
+		// Writes and the completion take the same lock, so the count taken at completion is exact, and it is
+		// recorded before the target can be observed as completed.
+		readonly object _lock = new();
 		int _written;
-		public int Written => Volatile.Read(ref _written);
+		public int Written
+		{
+			get
+			{
+				lock (_lock) return _written;
+			}
+		}
+
 		public int? WrittenAtComplete { get; private set; }
 
 		public override bool TryWrite(T item)
 		{
-			bool ok = inner.TryWrite(item);
-			if (ok) Interlocked.Increment(ref _written);
-			return ok;
+			lock (_lock)
+			{
+				bool ok = inner.TryWrite(item);
+				if (ok) _written++;
+				return ok;
+			}
 		}
 
 		public override ValueTask<bool> WaitToWriteAsync(CancellationToken cancellationToken = default)
@@ -170,11 +183,12 @@ public static class ToChannelMappedCompletionTests
 
 		public override bool TryComplete(Exception? error = null)
 		{
-			bool completed = inner.TryComplete(error);
-
-			// Once completed, further writes fail, so Written is now the exact number written before completion.
-			WrittenAtComplete ??= Written;
-			return completed;
+			lock (_lock)
+			{
+				// No write can slip in between this snapshot and the completion.
+				WrittenAtComplete ??= _written;
+				return inner.TryComplete(error);
+			}
 		}
 	}
 

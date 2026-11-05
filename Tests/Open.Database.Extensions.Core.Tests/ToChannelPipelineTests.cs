@@ -15,7 +15,7 @@ namespace Open.Database.Extensions.Tests;
 // target. These tests pin that structure: ordering, early release of the reader, no hang when stage 2 stops, rows read
 // before a failure are still delivered, and the preconditions leave the target alone.
 [ExcludeFromCodeCoverage]
-public static class ToChannelPipelineTests
+public static partial class ToChannelPipelineTests
 {
 	const int TargetCapacity = 10;
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
@@ -26,7 +26,20 @@ public static class ToChannelPipelineTests
 
 	sealed class Row
 	{
-		public int Id { get; set; }
+		/// <summary>Invoked each time a record is mapped into a row.</summary>
+		public static Action? OnMapped { get; set; }
+
+		int _id;
+
+		public int Id
+		{
+			get => _id;
+			set
+			{
+				_id = value;
+				OnMapped?.Invoke();
+			}
+		}
 	}
 
 	public static TheoryData<Kind> Kinds { get; } = [.. Enum.GetValues<Kind>()];
@@ -82,40 +95,58 @@ public static class ToChannelPipelineTests
 
 	// ---- test doubles ----
 
-	/// <summary>Wraps a fake reader to record when it is released and to fail after a number of rows.</summary>
+	/// <summary>Wraps a fake reader to record when it is released, to fail after a number of rows, and to misbehave on demand.</summary>
 	sealed class SpyReader(DbDataReader inner, int failAfterRows, Exception? failure) : DbDataReader
 	{
 		readonly TaskCompletionSource _disposed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		int _reads;
+		int _rowsRead;
+		Exception? _armed;
 
+		/// <summary>Completes once the reader has been released.</summary>
 		public Task Disposed => _disposed.Task;
 		public bool IsDisposed => _disposed.Task.IsCompleted;
 
+		/// <summary>Completes as soon as releasing the reader begins (it may then be held up by <see cref="DisposeGate"/>).</summary>
+		public TaskCompletionSource DisposeStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		/// <summary>When set, releasing the reader blocks until this completes.</summary>
+		public TaskCompletionSource? DisposeGate { get; set; }
+
+		/// <summary>The number of rows the reader has handed out.</summary>
+		public int RowsRead => Volatile.Read(ref _rowsRead);
+
+		/// <summary>Makes every following read fail with the given error.</summary>
+		public void ArmFailure(Exception error) => Volatile.Write(ref _armed, error);
+
+		/// <summary>Runs before each asynchronous read with the number of rows handed out so far.</summary>
+		public Func<int, CancellationToken, Task>? BeforeReadAsync { get; set; }
+
 		public override bool Read()
 		{
+			if (Volatile.Read(ref _armed) is { } armed) throw armed;
 			if (failure is not null && _reads++ == failAfterRows) throw failure;
-			return inner.Read();
+			bool more = inner.Read();
+			if (more) Interlocked.Increment(ref _rowsRead);
+			return more;
 		}
 
-		public override Task<bool> ReadAsync(CancellationToken cancellationToken)
+		public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
 		{
-			if (cancellationToken.IsCancellationRequested) return Task.FromCanceled<bool>(cancellationToken);
-
-			try
-			{
-				return Task.FromResult(Read());
-			}
-			catch (Exception ex)
-			{
-				return Task.FromException<bool>(ex);
-			}
+			cancellationToken.ThrowIfCancellationRequested();
+			if (BeforeReadAsync is { } hook) await hook(RowsRead, cancellationToken).ConfigureAwait(false);
+			return Read();
 		}
-
-		public override void Close() => _disposed.TrySetResult();
 
 		protected override void Dispose(bool disposing)
 		{
-			if (disposing) _disposed.TrySetResult();
+			if (disposing)
+			{
+				DisposeStarted.TrySetResult();
+				DisposeGate?.Task.Wait(Timeout);
+				_disposed.TrySetResult();
+			}
+
 			base.Dispose(disposing);
 		}
 
@@ -161,11 +192,14 @@ public static class ToChannelPipelineTests
 		public SpyReader Reader => _created.Task.Result;
 		public Task<SpyReader> Created => _created.Task;
 
-		public Func<DbDataReader> Factory(object?[][] rows, int failAfterRows = -1, Exception? failure = null)
+		public Func<DbDataReader> Factory(
+			object?[][] rows, int failAfterRows = -1, Exception? failure = null,
+			Action<SpyReader>? configure = null, IReadOnlyList<string>? columns = null)
 			=> () =>
 			{
 				Interlocked.Increment(ref _executions);
-				var reader = new SpyReader(FakeReader.CreateDb(Columns, rows), failAfterRows, failure);
+				var reader = new SpyReader(FakeReader.CreateDb(columns ?? Columns, rows), failAfterRows, failure);
+				configure?.Invoke(reader);
 				_created.TrySetResult(reader);
 				return reader;
 			};
@@ -231,40 +265,6 @@ public static class ToChannelPipelineTests
 		var connection = new FakeDbConnection();
 		connection.SetState(state);
 		return new FakeDbCommand(connection, factory);
-	}
-
-	/// <summary>The mapped ToChannel call for the given command type and overload shape.</summary>
-	static Func<ChannelWriter<Row>, bool, ValueTask<long>> Mapped(
-		Kind kind, bool overrides, Func<DbDataReader> factory,
-		CancellationToken token, ConnectionState state = ConnectionState.Open)
-	{
-		switch (kind)
-		{
-			case Kind.ExecuteReader:
-			{
-				IExecuteReader command = new ScriptedCommand(factory, false, token);
-				return (w, c) => overrides ? command.ToChannel(w, c, Overrides) : command.ToChannel(w, c);
-			}
-
-			case Kind.ExecuteReaderAsync:
-			case Kind.ExecuteReaderAsyncUsingAsyncRead:
-			{
-				IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, token);
-				return (w, c) => overrides ? command.ToChannelAsync(w, c, Overrides) : command.ToChannelAsync(w, c);
-			}
-
-			case Kind.DbCommandInterface:
-			{
-				(IDbCommand command, _) = NewDbCommand(factory, state);
-				return (w, c) => overrides ? command.ToChannel(w, c, Overrides, token) : command.ToChannel(w, c, token);
-			}
-
-			default:
-			{
-				FakeDbCommand command = NewFakeDbCommand(factory, state);
-				return (w, c) => overrides ? command.ToChannelAsync(w, c, Overrides, token) : command.ToChannelAsync(w, c, token);
-			}
-		}
 	}
 
 	/// <summary>The unmapped ToChannel call (single stage) for the given command type.</summary>
@@ -357,7 +357,7 @@ public static class ToChannelPipelineTests
 
 		bool? disposedAtComplete = mode == 0
 			? await RunOrdering(Unmapped(kind, factory), probe, ct)
-			: await RunOrdering(Mapped(kind, mode == 2, factory, ct), probe, ct);
+			: await RunOrdering(Mapped<Row>(kind, mode == 2, factory, ct), probe, ct);
 
 		Assert.True(disposedAtComplete, "the reader must be released before anything completes the target");
 	}
@@ -392,7 +392,7 @@ public static class ToChannelPipelineTests
 			}
 		}, ct);
 
-		Task<long> call = Mapped(kind, overrides, probe.Factory(Rows(Count)), ct)(channel.Writer, true).AsTask();
+		Task<long> call = Mapped<Row>(kind, overrides, probe.Factory(Rows(Count)), ct)(channel.Writer, true).AsTask();
 
 		await parked.Task.WaitAsync(Prompt, ct);
 		SpyReader reader = await probe.Created.WaitAsync(Prompt, ct);
@@ -420,7 +420,7 @@ public static class ToChannelPipelineTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped(kind, false, probe.Factory(Rows(5000, "not a number")), ct);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000, "not a number")), ct);
 
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(channel.Writer, complete).AsTask().WaitAsync(Prompt, ct));
 
@@ -446,7 +446,7 @@ public static class ToChannelPipelineTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped(kind, false, probe.Factory(Rows(5000)), ct);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000)), ct);
 
 		Task consumer = Task.Run(async () =>
 		{
@@ -477,7 +477,7 @@ public static class ToChannelPipelineTests
 		using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped(kind, false, probe.Factory(Rows(5000)), cts.Token);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000)), cts.Token);
 
 		Task<long> task = call(channel.Writer, true).AsTask();
 		await probe.Created.WaitAsync(Prompt, ct);
@@ -596,7 +596,7 @@ public static class ToChannelPipelineTests
 		var failure = new InvalidOperationException("db");
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped(kind, overrides, probe.Factory(Rows(5000), FailAfter, failure), ct);
+		var call = Mapped<Row>(kind, overrides, probe.Factory(Rows(5000), FailAfter, failure), ct);
 
 		Task<(List<Row> Items, Exception? Error)> consumer = Task.Run(() => Drain(channel.Reader, ct, 300), ct);
 
@@ -618,7 +618,7 @@ public static class ToChannelPipelineTests
 		var failure = new InvalidOperationException("db");
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped(kind, false, probe.Factory(Rows(5000), FailAfter, failure), ct);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000), FailAfter, failure), ct);
 
 		var items = new List<Row>();
 		Task consumer = Task.Run(async () =>
@@ -648,7 +648,7 @@ public static class ToChannelPipelineTests
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
 		channel.Writer.TryComplete();
-		var call = Mapped(kind, false, probe.Factory(Rows(3)), ct, ConnectionState.Closed);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(3)), ct, ConnectionState.Closed);
 
 		await Assert.ThrowsAsync<ChannelClosedException>(async () => await call(channel.Writer, true));
 
@@ -661,7 +661,7 @@ public static class ToChannelPipelineTests
 	{
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped(kind, false, probe.Factory(Rows(3)), new CancellationToken(true), ConnectionState.Closed);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(3)), new CancellationToken(true), ConnectionState.Closed);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await call(channel.Writer, true));
 
