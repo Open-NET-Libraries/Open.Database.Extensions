@@ -13,8 +13,6 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) : DbDataReader
 {
-	readonly ImmutableArray<ColumnDef> _columns = columns;
-
 	/// <summary>How many times <see cref="Read"/> has returned a row.</summary>
 	public int RowsRead { get; private set; }
 
@@ -37,16 +35,16 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 		return Task.FromResult(Read());
 	}
 
-	public override int FieldCount => _columns.Length;
-	public override string GetName(int ordinal) => _columns[ordinal].Name;
-	public override Type GetFieldType(int ordinal) => _columns[ordinal].Type;
-	public override string GetDataTypeName(int ordinal) => _columns[ordinal].Type.Name;
+	public override int FieldCount => columns.Length;
+	public override string GetName(int ordinal) => columns[ordinal].Name;
+	public override Type GetFieldType(int ordinal) => columns[ordinal].Type;
+	public override string GetDataTypeName(int ordinal) => columns[ordinal].Type.Name;
 	public override bool IsDBNull(int ordinal) => Cell(ordinal) is null or DBNull;
 	public override object GetValue(int ordinal) => Cell(ordinal) ?? DBNull.Value;
 
 	public override int GetOrdinal(string name)
 	{
-		ReadOnlySpan<ColumnDef> span = _columns.AsSpan();
+		ReadOnlySpan<ColumnDef> span = columns.AsSpan();
 		for (int i = 0; i < span.Length; i++)
 			if (string.Equals(span[i].Name, name, StringComparison.OrdinalIgnoreCase)) return i;
 		throw new IndexOutOfRangeException(name);
