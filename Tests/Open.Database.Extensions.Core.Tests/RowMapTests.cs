@@ -322,6 +322,47 @@ public static class RowMapTests
 		_ = new RowMap<Item>(("Name", null));
 	}
 
+	// ---- a RowMap read allocates what Map<T>() allocates on matching names ----
+
+	// Identical result shapes (same types, same rows) and a provider that serves stored name strings, so the only
+	// difference between the two readers is the column names, and they cost the provider nothing to report. (The
+	// real-provider caveat is in Benchmarks/RESULTS.md: SqlClient allocates longer column names on every query.)
+	static readonly ImmutableArray<ColumnDef> RenamedColumns = [("item_id", typeof(int)), ("item_name", typeof(string)), ("item_total", typeof(decimal)), ("item_note", typeof(string))];
+	static readonly ImmutableArray<ColumnDef> MatchingColumns = [("Id", typeof(int)), ("Name", typeof(string)), ("Total", typeof(decimal)), ("Note", typeof(string))];
+
+	// The smallest allocation per call over several rounds, after warm-up (the layout is compiled and cached by then).
+	static long BytesPerRead(Func<List<Item>> read)
+	{
+		for (int i = 0; i < 5; i++) read();
+		long best = long.MaxValue;
+		for (int round = 0; round < 5; round++)
+		{
+			long before = GC.GetAllocatedBytesForCurrentThread();
+			for (int i = 0; i < 20; i++) read();
+			best = Math.Min(best, (GC.GetAllocatedBytesForCurrentThread() - before) / 20);
+		}
+
+		return best;
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(100)]
+	public static void RowMapRead_AllocatesWhatMapOfTAllocatesOnMatchingNames(int rows)
+	{
+		object?[][] data = [.. Enumerable.Range(1, rows).Select(i => (object?[])[i, "name" + i, i * 1.5m, i % 2 == 0 ? null : "note" + i])];
+		var renamed = new FakeExecuteReader(() => TypedReader.Create(RenamedColumns, data));
+		var matching = new FakeExecuteReader(() => TypedReader.Create(MatchingColumns, data));
+
+		long viaRowMap = BytesPerRead(() => renamed.Map<Item>(Plain).ToList());
+		long byName = BytesPerRead(() => matching.Map<Item>().ToList());
+		long perCall = BytesPerRead(() => renamed.Map<Item>(("Id", "item_id"), ("Name", "item_name"), ("Total", "item_total"), ("Note", "item_note")).ToList());
+
+		Assert.InRange(viaRowMap - byName, -16, 16);
+		Assert.True(perCall - byName > 400, $"Per-call overrides were expected to cost visibly more ({perCall} vs {byName} B); otherwise this test cannot tell the difference."); // the control
+	}
+
 	// ---- column order and result-set shape ----
 
 	[Fact]
