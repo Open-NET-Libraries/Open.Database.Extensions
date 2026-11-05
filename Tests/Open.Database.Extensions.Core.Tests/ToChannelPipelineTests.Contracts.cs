@@ -29,7 +29,7 @@ public static partial class ToChannelPipelineTests
 
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(target, complete).AsTask().WaitAsync(Prompt, ct));
 
-		Assert.IsType<KeyNotFoundException>(thrown);
+		Assert.IsType<ArgumentException>(thrown); // 11.0: an override naming an unknown property throws ArgumentException (it was KeyNotFoundException).
 		Assert.Equal(0, probe.Executions); // Nothing ran, so there is no reader that the target could be completed ahead of.
 		if (complete)
 		{
@@ -75,7 +75,7 @@ public static partial class ToChannelPipelineTests
 			? () => reader.ToChannelAsync(channel.Writer, true, Unbindable, ct)
 			: () => reader.ToChannel(channel.Writer, true, Unbindable, ct);
 
-		Assert.Throws<KeyNotFoundException>(() => { _ = call(); });
+		Assert.Throws<ArgumentException>(() => { _ = call(); });
 
 		Assert.False(channel.Reader.Completion.IsCompleted);
 		Assert.False(reader.IsDisposed);

@@ -247,6 +247,12 @@ public static partial class ToChannelPipelineTests
 			await handler(reader).ConfigureAwait(false);
 		}
 
+		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> ExecuteReader<TResult>(reader => transform(reader, state), behavior);
+
+		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> ExecuteReaderAsync<TResult>(reader => transform(reader, state), behavior);
+
 		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			await using DbDataReader reader = factory();
