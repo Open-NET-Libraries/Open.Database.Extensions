@@ -134,7 +134,7 @@ public static class ConnectionOpenUsingTests
 	public static void FactoryAsPool_TakeCreatesEachTime_AndGiveDisposes()
 	{
 		var created = new List<IDbConnection>();
-		IDbConnectionFactory factory = DbConnectionFactory.Create<IDbConnection>(() =>
+		IDbConnectionFactory factory = DbConnectionFactory.Create(() =>
 		{
 			var c = Substitute.For<IDbConnection>();
 			created.Add(c);

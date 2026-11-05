@@ -363,7 +363,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (_poolOrConnection is TConnection single)
 			return ExecuteDirect(single, state, func);
 
-		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
+		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
 		TConnection conn = pool.Take();
 		try
 		{
@@ -397,7 +397,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			}
 		}
 
-		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
+		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
 		TConnection conn = pool.Take();
 		try
 		{

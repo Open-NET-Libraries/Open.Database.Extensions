@@ -54,11 +54,11 @@ public static class RowMapperTests
 	static readonly DateTime When = new(2024, 5, 6, 7, 8, 9, DateTimeKind.Utc);
 	static readonly Guid Id1 = Guid.NewGuid(), Id2 = Guid.NewGuid();
 
-	static object?[][] WideRows() =>
-	[
-		[1, 10_000_000_000L, (short)7, true, 1.5, 12.25m, When, Id1, "first", "has body", 5, When],
-		[2, -1L, (short)-3, false, -2.5, 0m, When.AddDays(1), Id2, "second", null, null, null],
-	];
+	static object?[][] WideRows()
+		=> [
+			[1, 10_000_000_000L, (short)7, true, 1.5, 12.25m, When, Id1, "first", "has body", 5, When],
+			[2, -1L, (short)-3, false, -2.5, 0m, When.AddDays(1), Id2, "second", null, null, null],
+		];
 
 	static FakeExecuteReader Cmd(ImmutableArray<ColumnDef> columns, params object?[][] rows)
 		=> new(() => TypedReader.Create(columns, rows));
@@ -254,7 +254,8 @@ public static class RowMapperTests
 
 	sealed class ThrowingReader() : TypedReader([("Id", typeof(int)), ("Name", typeof(string))], [[1, "x"]])
 	{
-		internal sealed class ProviderFailure : System.Data.Common.DbException { }
+		[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors", Justification = "Test Only")]
+		internal sealed class ProviderFailure : System.Data.Common.DbException;
 		public override int GetInt32(int ordinal) => throw new ProviderFailure();
 	}
 
@@ -305,9 +306,7 @@ public static class RowMapperTests
 
 	[Fact]
 	public static void FirstOrDefault_AfterSkip()
-	{
-		Assert.Equal(3, SimpleRows(5).Map<Simple>().Skip(2).FirstOrDefault()!.Id);
-	}
+		=> Assert.Equal(3, SimpleRows(5).Map<Simple>().Skip(2).FirstOrDefault()!.Id);
 
 	[Fact]
 	public static void SingleOrDefault_ThrowsOnSecondRow_UnlessTakeLimitsIt()
@@ -334,7 +333,7 @@ public static class RowMapperTests
 	{
 		public int Id { get; set; }
 		public int ReadOnly { get; } = 5;
-		public int PrivateSet { get; private set; } = 6;
+		public int PrivateSet { get; } = 6;
 	}
 
 	[Fact]
@@ -461,7 +460,7 @@ public static class RowMapperTests
 		var ct = TestContext.Current.CancellationToken;
 		foreach (bool useReadAsync in new[] { true, false })
 		{
-			using var reader = TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
+			await using var reader = TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
 			var items = (await reader.ResultsBufferedAsync<Simple>(null, useReadAsync, ct)).ToList();
 			Assert.Equal([1, 2], items.Select(s => s.Id));
 		}
@@ -471,7 +470,7 @@ public static class RowMapperTests
 	public static async Task ResultsAsync_StreamsOverTypedReader()
 	{
 		var ct = TestContext.Current.CancellationToken;
-		using var reader = TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
+		await using var reader = TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
 
 		var ids = new List<int>();
 		await foreach (Simple s in reader.ResultsAsync<Simple>(cancellationToken: ct)) ids.Add(s.Id);

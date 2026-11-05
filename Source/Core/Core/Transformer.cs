@@ -70,16 +70,12 @@ public class Transformer<T>
 	/// <summary>
 	/// A sub class for processing the transformer results.
 	/// </summary>
-	protected class Processor
+	/// <remarks>
+	/// Constructs a processor.
+	/// </remarks>
+	/// <param name="transformer">The transformer to use.</param>
+	protected class Processor(Transformer<T> transformer)
 	{
-		Func<object?[], T> _map = static _ => new T(); // Until names are set, as before: an empty model.
-
-		/// <summary>
-		/// Constructs a processor.
-		/// </summary>
-		/// <param name="transformer">The transformer to use.</param>
-		public Processor(Transformer<T> transformer) => Transformer = transformer;
-
 		/// <summary>
 		/// Constructs a processor.
 		/// </summary>
@@ -91,19 +87,20 @@ public class Transformer<T>
 		/// <summary>
 		/// The transformer being used.
 		/// </summary>
-		public Transformer<T> Transformer { get; }
+		public Transformer<T> Transformer { get; } = transformer;
 
 		/// <summary>
 		/// The resultant transform function.
 		/// </summary>
-		public Func<object?[], T> Transform => _map; // Using a Func<object?[],T> for better type inference.
+		public Func<object?[], T> Transform { get; private set; }
+			= static _ => new T(); // Using a Func<object?[],T> for better type inference.
 
 		/// <summary>
 		/// Allows for deferred initialization.
 		/// </summary>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
-			=> _map = Transformer._plan.ArrayMapper(names);
+			=> Transform = Transformer._plan.ArrayMapper(names);
 	}
 
 	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object?[]}}, ArrayPool{object?}, bool)" />

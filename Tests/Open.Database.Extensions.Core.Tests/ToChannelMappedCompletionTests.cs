@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Threading.Channels;
 
 #nullable enable
 
@@ -55,7 +54,7 @@ public static class ToChannelMappedCompletionTests
 
 	static object?[][] Rows(int count, object? value = null)
 	{
-		var rows = new object?[count][];
+		object?[][] rows = new object?[count][];
 		for (int i = 0; i < count; i++) rows[i] = [value ?? i];
 		return rows;
 	}
@@ -91,10 +90,10 @@ public static class ToChannelMappedCompletionTests
 		}
 
 		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReader<TResult>(reader => transform(reader, state), behavior);
+			=> ExecuteReader(reader => transform(reader, state), behavior);
 
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync<TResult>(reader => transform(reader, state), behavior);
+			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
 
 		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -109,39 +108,39 @@ public static class ToChannelMappedCompletionTests
 		switch (kind)
 		{
 			case Kind.ExecuteReader:
-			{
-				IExecuteReader command = new ScriptedCommand(rows, failure, false);
-				return (w, c) => overrides ? command.ToChannel(w, c, Overrides) : command.ToChannel(w, c);
-			}
+				{
+					IExecuteReader command = new ScriptedCommand(rows, failure, false);
+					return (w, c) => overrides ? command.ToChannel(w, c, Overrides) : command.ToChannel(w, c);
+				}
 
 			case Kind.ExecuteReaderAsync:
 			case Kind.ExecuteReaderAsyncUsingAsyncRead:
-			{
-				IExecuteReaderAsync command = new ScriptedCommand(rows, failure, kind == Kind.ExecuteReaderAsyncUsingAsyncRead);
-				return (w, c) => overrides ? command.ToChannelAsync(w, c, Overrides) : command.ToChannelAsync(w, c);
-			}
+				{
+					IExecuteReaderAsync command = new ScriptedCommand(rows, failure, kind == Kind.ExecuteReaderAsyncUsingAsyncRead);
+					return (w, c) => overrides ? command.ToChannelAsync(w, c, Overrides) : command.ToChannelAsync(w, c);
+				}
 
 			case Kind.DbCommandInterface:
-			{
-				var command = Substitute.For<IDbCommand>();
-				var connection = Substitute.For<IDbConnection>();
-				command.Connection.Returns(connection);
-				connection.State.Returns(ConnectionState.Open);
-				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => failure is null
-					? FakeReader.Create(Columns, rows)
-					: throw failure);
-				return (w, c) => overrides ? command.ToChannel(w, c, Overrides) : command.ToChannel(w, c);
-			}
+				{
+					var command = Substitute.For<IDbCommand>();
+					var connection = Substitute.For<IDbConnection>();
+					command.Connection.Returns(connection);
+					connection.State.Returns(ConnectionState.Open);
+					command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => failure is null
+						? FakeReader.Create(Columns, rows)
+						: throw failure);
+					return (w, c) => overrides ? command.ToChannel(w, c, Overrides) : command.ToChannel(w, c);
+				}
 
 			default:
-			{
-				var connection = new FakeDbConnection();
-				connection.SetState(ConnectionState.Open);
-				var command = new FakeDbCommand(connection, () => failure is null
-					? FakeReader.CreateDb(Columns, rows)
-					: throw failure);
-				return (w, c) => overrides ? command.ToChannelAsync(w, c, Overrides) : command.ToChannelAsync(w, c);
-			}
+				{
+					var connection = new FakeDbConnection();
+					connection.SetState(ConnectionState.Open);
+					var command = new FakeDbCommand(connection, () => failure is null
+						? FakeReader.CreateDb(Columns, rows)
+						: throw failure);
+					return (w, c) => overrides ? command.ToChannelAsync(w, c, Overrides) : command.ToChannelAsync(w, c);
+				}
 		}
 	}
 
@@ -162,7 +161,7 @@ public static class ToChannelMappedCompletionTests
 	{
 		// Writes and the completion take the same lock, so the count taken at completion is exact, and it is
 		// recorded before the target can be observed as completed.
-		readonly object _lock = new();
+		readonly Lock _lock = new();
 		int _written;
 		public int Written
 		{

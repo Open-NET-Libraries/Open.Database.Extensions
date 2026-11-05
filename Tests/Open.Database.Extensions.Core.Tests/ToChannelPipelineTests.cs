@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Data.Common;
-using System.Threading.Channels;
 using BoundedChannel = System.Threading.Channels.Channel;
 using Kind = Open.Database.Extensions.Tests.ToChannelMappedCompletionTests.Kind;
 
@@ -29,14 +28,12 @@ public static partial class ToChannelPipelineTests
 		/// <summary>Invoked each time a record is mapped into a row.</summary>
 		public static Action? OnMapped { get; set; }
 
-		int _id;
-
 		public int Id
 		{
-			get => _id;
+			get;
 			set
 			{
-				_id = value;
+				field = value;
 				OnMapped?.Invoke();
 			}
 		}
@@ -67,8 +64,10 @@ public static partial class ToChannelPipelineTests
 	{
 		var data = new TheoryData<Kind, int>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			for (int mode = 0; mode < 3; mode++)
 				data.Add(kind, mode);
+		}
 
 		return data;
 	}
@@ -79,16 +78,20 @@ public static partial class ToChannelPipelineTests
 	{
 		var data = new TheoryData<bool, bool, bool>();
 		foreach (bool useAsync in new[] { false, true })
+		{
 			foreach (bool complete in new[] { false, true })
+			{
 				foreach (bool overrides in new[] { false, true })
 					data.Add(useAsync, complete, overrides);
+			}
+		}
 
 		return data;
 	}
 
 	static object?[][] Rows(int count, object? value = null)
 	{
-		var rows = new object?[count][];
+		object?[][] rows = new object?[count][];
 		for (int i = 0; i < count; i++) rows[i] = [value ?? i];
 		return rows;
 	}
@@ -248,10 +251,10 @@ public static partial class ToChannelPipelineTests
 		}
 
 		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReader<TResult>(reader => transform(reader, state), behavior);
+			=> ExecuteReader(reader => transform(reader, state), behavior);
 
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync<TResult>(reader => transform(reader, state), behavior);
+			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
 
 		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -283,29 +286,29 @@ public static partial class ToChannelPipelineTests
 		switch (kind)
 		{
 			case Kind.ExecuteReader:
-			{
-				IExecuteReader command = new ScriptedCommand(factory, false, default);
-				return (w, c) => command.ToChannel(w, c);
-			}
+				{
+					IExecuteReader command = new ScriptedCommand(factory, false, default);
+					return (w, c) => command.ToChannel(w, c);
+				}
 
 			case Kind.ExecuteReaderAsync:
 			case Kind.ExecuteReaderAsyncUsingAsyncRead:
-			{
-				IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, default);
-				return (w, c) => command.ToChannelAsync(w, c);
-			}
+				{
+					IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, default);
+					return (w, c) => command.ToChannelAsync(w, c);
+				}
 
 			case Kind.DbCommandInterface:
-			{
-				(IDbCommand command, _) = NewDbCommand(factory, ConnectionState.Open);
-				return (w, c) => command.ToChannel(w, c);
-			}
+				{
+					(IDbCommand command, _) = NewDbCommand(factory, ConnectionState.Open);
+					return (w, c) => command.ToChannel(w, c);
+				}
 
 			default:
-			{
-				FakeDbCommand command = NewFakeDbCommand(factory, ConnectionState.Open);
-				return (w, c) => command.ToChannelAsync(w, c);
-			}
+				{
+					FakeDbCommand command = NewFakeDbCommand(factory, ConnectionState.Open);
+					return (w, c) => command.ToChannelAsync(w, c);
+				}
 		}
 	}
 
@@ -391,7 +394,7 @@ public static partial class ToChannelPipelineTests
 		var parked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		var received = new List<Row>();
 
-		Task consumer = Task.Run(async () =>
+		var consumer = Task.Run(async () =>
 		{
 			await foreach (Row row in channel.Reader.ReadAllAsync(ct))
 			{
@@ -435,7 +438,7 @@ public static partial class ToChannelPipelineTests
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(channel.Writer, complete).AsTask().WaitAsync(Prompt, ct));
 
 		Assert.IsNotType<TimeoutException>(thrown); // It hung.
-		Assert.IsNotAssignableFrom<OperationCanceledException>(thrown); // The cause is reported, not the cancellation it triggered.
+		Assert.IsNotType<OperationCanceledException>(thrown, exactMatch: false); // The cause is reported, not the cancellation it triggered.
 		await probe.Reader.Disposed.WaitAsync(Prompt, ct);
 
 		if (complete)
@@ -458,7 +461,7 @@ public static partial class ToChannelPipelineTests
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
 		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000)), ct);
 
-		Task consumer = Task.Run(async () =>
+		var consumer = Task.Run(async () =>
 		{
 			int taken = 0;
 			await foreach (Row _ in channel.Reader.ReadAllAsync(ct))
@@ -474,7 +477,7 @@ public static partial class ToChannelPipelineTests
 
 		Task finished = await Task.WhenAny(task, Task.Delay(Prompt, ct));
 		Assert.Same(task, finished); // Otherwise stage 1 is blocked on a full buffer for good.
-		try { await task; } catch (Exception) { /* Ending with a failure is fine, hanging is not. */ }
+		try { await task; } catch { /* Ending with a failure is fine, hanging is not. */ }
 
 		await probe.Reader.Disposed.WaitAsync(Prompt, ct);
 	}
@@ -508,19 +511,19 @@ public static partial class ToChannelPipelineTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		SpyReader reader = (SpyReader)probe.Factory(Rows(5000, "not a number"))();
+		var reader = (SpyReader)probe.Factory(Rows(5000, "not a number"))();
 
 		Func<ValueTask<long>> call = (useAsync, overrides) switch
 		{
-			(false, false) => () => reader.ToChannel<Row>(channel.Writer, complete, ct),
+			(false, false) => () => reader.ToChannel(channel.Writer, complete, ct),
 			(false, true) => () => reader.ToChannel(channel.Writer, complete, Overrides, ct),
-			(true, false) => () => reader.ToChannelAsync<Row>(channel.Writer, complete, ct),
+			(true, false) => () => reader.ToChannelAsync(channel.Writer, complete, ct),
 			(true, true) => () => reader.ToChannelAsync(channel.Writer, complete, Overrides, ct),
 		};
 
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call().AsTask().WaitAsync(Prompt, ct));
 		Assert.IsNotType<TimeoutException>(thrown);
-		Assert.IsNotAssignableFrom<OperationCanceledException>(thrown);
+		Assert.IsNotType<OperationCanceledException>(thrown, exactMatch: false);
 
 		if (complete)
 		{
@@ -545,7 +548,7 @@ public static partial class ToChannelPipelineTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		SpyReader reader = (SpyReader)probe.Factory(Rows(Count))();
+		var reader = (SpyReader)probe.Factory(Rows(Count))();
 
 		Task<(List<Row> Items, Exception? Error)> consumer = complete
 			? Task.Run(() => Drain(channel.Reader, ct, 200), ct)
@@ -558,9 +561,9 @@ public static partial class ToChannelPipelineTests
 
 		ValueTask<long> call = (useAsync, overrides) switch
 		{
-			(false, false) => reader.ToChannel<Row>(channel.Writer, complete, ct),
+			(false, false) => reader.ToChannel(channel.Writer, complete, ct),
 			(false, true) => reader.ToChannel(channel.Writer, complete, Overrides, ct),
-			(true, false) => reader.ToChannelAsync<Row>(channel.Writer, complete, ct),
+			(true, false) => reader.ToChannelAsync(channel.Writer, complete, ct),
 			(true, true) => reader.ToChannelAsync(channel.Writer, complete, Overrides, ct),
 		};
 
@@ -582,12 +585,12 @@ public static partial class ToChannelPipelineTests
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		SpyReader reader = (SpyReader)new Probe().Factory(Rows(1))();
+		var reader = (SpyReader)new Probe().Factory(Rows(1))();
 
 		Assert.Multiple(
-			() => Assert.Throws<ArgumentNullException>(() => ((IDataReader)null!).ToChannel<Row>(channel.Writer, true, ct)),
+			() => Assert.Throws<ArgumentNullException>(() => ((IDataReader)null!).ToChannel(channel.Writer, true, ct)),
 			() => Assert.Throws<ArgumentNullException>(() => reader.ToChannel<Row>(null!, true, ct)),
-			() => Assert.Throws<ArgumentNullException>(() => ((DbDataReader)null!).ToChannelAsync<Row>(channel.Writer, true, ct)),
+			() => Assert.Throws<ArgumentNullException>(() => ((DbDataReader)null!).ToChannelAsync(channel.Writer, true, ct)),
 			() => Assert.Throws<ArgumentNullException>(() => reader.ToChannelAsync<Row>(null!, true, ct)));
 		Assert.False(channel.Reader.Completion.IsCompleted);
 	}
@@ -631,7 +634,7 @@ public static partial class ToChannelPipelineTests
 		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000), FailAfter, failure), ct);
 
 		var items = new List<Row>();
-		Task consumer = Task.Run(async () =>
+		var consumer = Task.Run(async () =>
 		{
 			for (int i = 0; i < FailAfter; i++)
 			{

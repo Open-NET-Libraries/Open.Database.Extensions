@@ -127,7 +127,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	public override Func<DbDataReader, T> Mapper(DbDataReader reader)
 	{
 		Layout? l = _last;
-		if (l is null || !l.Matches(reader)) l = Resolve(reader);
+		if (l?.Matches(reader) != true) l = Resolve(reader);
 		return l.Db ??= Build<DbDataReader>(l);
 	}
 
@@ -135,7 +135,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	public override Func<IDataRecord, T> Mapper(IDataRecord reader)
 	{
 		Layout? l = _last;
-		if (l is null || !l.Matches(reader)) l = Resolve(reader);
+		if (l?.Matches(reader) != true) l = Resolve(reader);
 		return l.Rec ??= Build<IDataRecord>(l);
 	}
 
@@ -192,8 +192,8 @@ internal sealed class RowPlan<T> : RowSource<T>
 			int h = n;
 			for (int i = 0; i < n; i++)
 			{
-				h = unchecked((h * 31) + (r.GetName(i)?.GetHashCode() ?? 0));
-				h = unchecked((h * 31) + (r.GetFieldType(i) ?? typeof(object)).GetHashCode());
+				h = unchecked(h * 31 + (r.GetName(i)?.GetHashCode() ?? 0));
+				h = unchecked(h * 31 + (r.GetFieldType(i) ?? typeof(object)).GetHashCode());
 			}
 
 			return h;
@@ -230,7 +230,6 @@ internal sealed class RowPlan<T> : RowSource<T>
 		}
 	}
 
-
 	#region Array rows (the buffered Retrieve/QueryResult route)
 
 	// Rows that were already copied out of a reader as object[] (boxed values) are mapped by a compiled,
@@ -257,14 +256,14 @@ internal sealed class RowPlan<T> : RowSource<T>
 	public Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
 	{
 		ArrayLayout? l = _lastArray;
-		if (l is null || !l.Matches(names)) l = ResolveArray(names);
+		if (l?.Matches(names) != true) l = ResolveArray(names);
 		return l.Map ??= BuildArray(l);
 	}
 
 	ArrayLayout ResolveArray(ImmutableArray<string> names)
 	{
 		int hash = names.Length;
-		foreach (string n in names) hash = unchecked((hash * 31) + (n?.GetHashCode() ?? 0));
+		foreach (string n in names) hash = unchecked(hash * 31 + (n?.GetHashCode() ?? 0));
 
 		return _lastArray = Find(_arrayLayouts, hash, l => l.Matches(names))
 			?? Remember(_arrayLayouts, hash, new ArrayLayout([.. names]));
@@ -347,7 +346,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	}
 
 	// `index` tracks the column being read so a failure can name the offending property and column.
-	static Expression Guard(List<Expression> statements, ParameterExpression item, ParameterExpression index, Binding?[] bindings)
+	static BlockExpression Guard(List<Expression> statements, ParameterExpression item, ParameterExpression index, Binding?[] bindings)
 	{
 		ParameterExpression ex = Expression.Parameter(typeof(Exception), "ex");
 		return Expression.Block(
@@ -449,17 +448,38 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 		Type target = typeof(TTarget);
 		Type u = Nullable.GetUnderlyingType(target) ?? target;
-		object converted;
-		if (u.IsEnum)
-			converted = value is string s ? Enum.Parse(u, s, true) : Enum.ToObject(u, value);
-		else if (u == typeof(Guid))
-			converted = value is string gs ? Guid.Parse(gs) : value is byte[] gb ? new Guid(gb) : throw new InvalidCastException($"Cannot convert '{value.GetType()}' to Guid.");
-		else if (u == typeof(string))
-			converted = value is byte[] ? throw new InvalidCastException("A byte array cannot be assigned to a string; map it to byte[] or convert it explicitly.") : Convert.ToString(value, CultureInfo.InvariantCulture)!;
-		else
-			converted = Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
+		return (TTarget)GetConverted(value, u);
 
-		return (TTarget)converted;
+		static object GetConverted(object value, Type u)
+		{
+			if (u.IsEnum)
+			{
+				return value is string s
+					? Enum.Parse(u, s, true)
+					: Enum.ToObject(u, value);
+			}
+
+			if (u == typeof(Guid))
+			{
+				if (value is string gs)
+					return Guid.Parse(gs);
+
+				if (value is byte[] gb)
+					return new Guid(gb);
+
+				throw new InvalidCastException($"Cannot convert '{value.GetType()}' to Guid.");
+			}
+
+			if (u == typeof(string))
+			{
+				if (value is byte[])
+					throw new InvalidCastException("A byte array cannot be assigned to a string; map it to byte[] or convert it explicitly.");
+
+				return Convert.ToString(value, CultureInfo.InvariantCulture)!;
+			}
+
+			return Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
+		}
 	}
 
 	static Exception MapError(Exception ex, int index, Binding?[] bindings)

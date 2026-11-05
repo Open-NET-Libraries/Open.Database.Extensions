@@ -1,5 +1,3 @@
-using System.Data.Common;
-using System.Threading.Channels;
 using BoundedChannel = System.Threading.Channels.Channel;
 using Kind = Open.Database.Extensions.Tests.ToChannelMappedCompletionTests.Kind;
 
@@ -35,9 +33,13 @@ public static partial class ToChannelPipelineTests
 	{
 		var data = new TheoryData<Kind, bool, int>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (bool overrides in new[] { false, true })
+			{
 				for (int layout = 0; layout < Layouts.Length; layout++)
 					data.Add(kind, overrides, layout);
+			}
+		}
 
 		return data;
 	}
@@ -48,15 +50,17 @@ public static partial class ToChannelPipelineTests
 	{
 		var data = new TheoryData<bool, int>();
 		foreach (bool useAsync in new[] { false, true })
+		{
 			for (int layout = 0; layout < Layouts.Length; layout++)
 				data.Add(useAsync, layout);
+		}
 
 		return data;
 	}
 
 	static object?[][] WideRows(string[] layout, int count)
 	{
-		var rows = new object?[count][];
+		object?[][] rows = new object?[count][];
 		for (int i = 0; i < count; i++)
 			rows[i] = [.. layout.Select(column => column switch { "Id" => (object?)i, "Name" => "n" + i, _ => "junk-" + column })];
 
@@ -101,12 +105,12 @@ public static partial class ToChannelPipelineTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		string[] layout = Layouts[layoutIndex];
 		var channel = BoundedChannel.CreateBounded<Wide>(TargetCapacity);
-		SpyReader reader = (SpyReader)new Probe().Factory(WideRows(layout, Count), columns: layout)();
+		var reader = (SpyReader)new Probe().Factory(WideRows(layout, Count), columns: layout)();
 
 		Task<(List<Wide> Items, Exception? Error)> consumer = Task.Run(() => Drain(channel.Reader, ct), ct);
 		long produced = useAsync
-			? await reader.ToChannelAsync<Wide>(channel.Writer, true, ct).AsTask().WaitAsync(Timeout, ct)
-			: await reader.ToChannel<Wide>(channel.Writer, true, ct).AsTask().WaitAsync(Timeout, ct);
+			? await reader.ToChannelAsync(channel.Writer, true, ct).AsTask().WaitAsync(Timeout, ct)
+			: await reader.ToChannel(channel.Writer, true, ct).AsTask().WaitAsync(Timeout, ct);
 		(List<Wide> items, Exception? error) = await consumer.WaitAsync(Timeout, ct);
 
 		Assert.Null(error);

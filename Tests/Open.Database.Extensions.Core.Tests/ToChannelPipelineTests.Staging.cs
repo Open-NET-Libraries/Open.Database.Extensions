@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Threading.Channels;
 using BoundedChannel = System.Threading.Channels.Channel;
 using Kind = Open.Database.Extensions.Tests.ToChannelMappedCompletionTests.Kind;
 
@@ -67,29 +66,29 @@ public static partial class ToChannelPipelineTests
 		switch (kind)
 		{
 			case Kind.ExecuteReader:
-			{
-				IExecuteReader command = new ScriptedCommand(factory, false, token);
-				return (w, c) => overrides ? command.ToChannel(w, c, map) : command.ToChannel(w, c);
-			}
+				{
+					IExecuteReader command = new ScriptedCommand(factory, false, token);
+					return (w, c) => overrides ? command.ToChannel(w, c, map) : command.ToChannel(w, c);
+				}
 
 			case Kind.ExecuteReaderAsync:
 			case Kind.ExecuteReaderAsyncUsingAsyncRead:
-			{
-				IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, token);
-				return (w, c) => overrides ? command.ToChannelAsync(w, c, map) : command.ToChannelAsync(w, c);
-			}
+				{
+					IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, token);
+					return (w, c) => overrides ? command.ToChannelAsync(w, c, map) : command.ToChannelAsync(w, c);
+				}
 
 			case Kind.DbCommandInterface:
-			{
-				(IDbCommand command, _) = NewDbCommand(factory, state);
-				return (w, c) => overrides ? command.ToChannel(w, c, map, token) : command.ToChannel(w, c, token);
-			}
+				{
+					(IDbCommand command, _) = NewDbCommand(factory, state);
+					return (w, c) => overrides ? command.ToChannel(w, c, map, token) : command.ToChannel(w, c, token);
+				}
 
 			default:
-			{
-				FakeDbCommand command = NewFakeDbCommand(factory, state);
-				return (w, c) => overrides ? command.ToChannelAsync(w, c, map, token) : command.ToChannelAsync(w, c, token);
-			}
+				{
+					FakeDbCommand command = NewFakeDbCommand(factory, state);
+					return (w, c) => overrides ? command.ToChannelAsync(w, c, map, token) : command.ToChannelAsync(w, c, token);
+				}
 		}
 	}
 
@@ -173,8 +172,10 @@ public static partial class ToChannelPipelineTests
 	{
 		var data = new TheoryData<Kind, Ending>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (Ending ending in Enum.GetValues<Ending>())
 				data.Add(kind, ending);
+		}
 
 		return data;
 	}
@@ -277,8 +278,8 @@ public static partial class ToChannelPipelineTests
 				break;
 
 			case Ending.CallerCancel:
-				Assert.IsAssignableFrom<OperationCanceledException>(thrown);
-				Assert.IsAssignableFrom<OperationCanceledException>(target.CompletedWith);
+				Assert.IsType<OperationCanceledException>(thrown, exactMatch: false);
+				Assert.IsType<OperationCanceledException>(target.CompletedWith, exactMatch: false);
 				break;
 
 			case Ending.ConsumerClosesTarget:
@@ -312,7 +313,7 @@ public static partial class ToChannelPipelineTests
 		var insideProvider = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped<Row>(kind, false, probe.Factory(RowsWithAnExtraColumn(5000), columns: ExtraThenId, configure: reader => reader.BeforeReadAsync = async (rows, token) =>
+		var call = Mapped<Row>(kind, false, probe.Factory(RowsWithAnExtraColumn(5000), configure: reader => reader.BeforeReadAsync = async (rows, token) =>
 		{
 			if (rows < 3) return;
 
@@ -325,7 +326,7 @@ public static partial class ToChannelPipelineTests
 			{
 				throw new ObjectDisposedException("reader");
 			}
-		}), ct);
+		}, columns: ExtraThenId), ct);
 
 		Row.OnMapped = () =>
 		{
@@ -358,14 +359,14 @@ public static partial class ToChannelPipelineTests
 		var registered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var call = Mapped<Row>(kind, false, probe.Factory(RowsWithAnExtraColumn(5000), columns: ExtraThenId, configure: reader => reader.BeforeReadAsync = async (rows, token) =>
+		var call = Mapped<Row>(kind, false, probe.Factory(RowsWithAnExtraColumn(5000), configure: reader => reader.BeforeReadAsync = async (rows, token) =>
 		{
 			if (rows < 3) return;
 
 			token.Register(() => throw new FormatException("a callback that throws"));
 			registered.TrySetResult();
 			await Task.Delay(-1, token);
-		}), ct);
+		}, columns: ExtraThenId), ct);
 
 		Row.OnMapped = () =>
 		{

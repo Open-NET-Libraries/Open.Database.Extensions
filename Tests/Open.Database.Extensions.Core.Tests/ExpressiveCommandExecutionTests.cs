@@ -163,7 +163,7 @@ public static class ExpressiveCommandExecutionTests
 	public static void FactoryBased_CreatesAndDisposesAConnectionPerExecution()
 	{
 		var probes = new List<ConnectionProbe>();
-		IDbConnectionFactory factory = DbConnectionFactory.Create<IDbConnection>(() =>
+		IDbConnectionFactory factory = DbConnectionFactory.Create(() =>
 		{
 			var p = new ConnectionProbe(ConnectionState.Closed);
 			probes.Add(p);

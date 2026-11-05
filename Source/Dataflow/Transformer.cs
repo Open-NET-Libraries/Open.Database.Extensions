@@ -223,7 +223,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 			Bind(transformer, reader);
 
-			using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
+			using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
 			CancellationToken token = linked.Token;
 
 			// Stop writing if the target closes under the pipeline, but only while writing: this race is abandoned when the write

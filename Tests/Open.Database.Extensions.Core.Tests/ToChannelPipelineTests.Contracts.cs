@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Threading.Channels;
 using BoundedChannel = System.Threading.Channels.Channel;
 using Kind = Open.Database.Extensions.Tests.ToChannelMappedCompletionTests.Kind;
 
@@ -70,12 +69,12 @@ public static partial class ToChannelPipelineTests
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		SpyReader reader = (SpyReader)new Probe().Factory(Rows(1))();
+		var reader = (SpyReader)new Probe().Factory(Rows(1))();
 		Func<ValueTask<long>> call = useAsync
 			? () => reader.ToChannelAsync(channel.Writer, true, Unbindable, ct)
 			: () => reader.ToChannel(channel.Writer, true, Unbindable, ct);
 
-		Assert.Throws<ArgumentException>(() => { _ = call(); });
+		Assert.Throws<ArgumentException>(() => _ = call());
 
 		Assert.False(channel.Reader.Completion.IsCompleted);
 		Assert.False(reader.IsDisposed);
@@ -145,7 +144,7 @@ public static partial class ToChannelPipelineTests
 		});
 		var call = Mapped<Row>(kind, false, factory, cts.Token);
 
-		Task consumer = Task.Run(async () =>
+		var consumer = Task.Run(async () =>
 		{
 			int received = 0;
 			try
@@ -191,7 +190,7 @@ public static partial class ToChannelPipelineTests
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		SpyReader reader = (SpyReader)new Probe().Factory(Rows(50))();
+		var reader = (SpyReader)new Probe().Factory(Rows(50))();
 		var cancelled = new CancellationToken(true);
 
 		Func<ValueTask<long>> call = useAsync
@@ -229,7 +228,7 @@ public static partial class ToChannelPipelineTests
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		ChannelWriter<Row> writer = BoundedChannel.CreateBounded<Row>(TargetCapacity).Writer;
-		SpyReader reader = (SpyReader)new Probe().Factory(Rows(1))();
+		var reader = (SpyReader)new Probe().Factory(Rows(1))();
 
 		static void Names(string expected, Action call)
 		{
@@ -237,9 +236,9 @@ public static partial class ToChannelPipelineTests
 			Assert.Equal(expected, thrown.ParamName);
 		}
 
-		Names("reader", () => ((IDataReader)null!).ToChannel<Row>(writer, true, ct));
+		Names("reader", () => ((IDataReader)null!).ToChannel(writer, true, ct));
 		Names("reader", () => ((IDataReader)null!).ToChannel(writer, true, Overrides, ct));
-		Names("reader", () => ((DbDataReader)null!).ToChannelAsync<Row>(writer, true, ct));
+		Names("reader", () => ((DbDataReader)null!).ToChannelAsync(writer, true, ct));
 		Names("reader", () => ((DbDataReader)null!).ToChannelAsync(writer, true, Overrides, ct));
 		Names("target", () => reader.ToChannel<Row>(null!, true, ct));
 		Names("target", () => reader.ToChannel<Row>(null!, true, Overrides, ct));

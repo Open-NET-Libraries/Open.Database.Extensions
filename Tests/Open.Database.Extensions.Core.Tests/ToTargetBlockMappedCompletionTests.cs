@@ -53,6 +53,7 @@ public static class ToTargetBlockMappedCompletionTests
 		BufferBlock,
 	}
 
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'", Justification = "Valid")]
 	static bool IsAsync(Kind kind) => kind is Kind.DbCommandAsync or Kind.ExecuteReaderAsync;
 
 	public static TheoryData<Kind, bool, TargetKind, int> MappedShapes { get; } = BuildMappedShapes();
@@ -61,10 +62,17 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, bool, TargetKind, int>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (bool overrides in new[] { false, true })
+			{
 				foreach (TargetKind target in Enum.GetValues<TargetKind>())
+				{
 					foreach (int count in new[] { 1000, 5000 })
 						data.Add(kind, overrides, target, count);
+				}
+			}
+		}
+
 		return data;
 	}
 
@@ -74,8 +82,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, TargetKind>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (TargetKind target in Enum.GetValues<TargetKind>())
 				data.Add(kind, target);
+		}
+
 		return data;
 	}
 
@@ -83,7 +94,7 @@ public static class ToTargetBlockMappedCompletionTests
 
 	static object?[][] Rows(int count)
 	{
-		var rows = new object?[count][];
+		object?[][] rows = new object?[count][];
 		for (int i = 0; i < count; i++) rows[i] = [i];
 		return rows;
 	}
@@ -98,7 +109,7 @@ public static class ToTargetBlockMappedCompletionTests
 
 	sealed class SpyTarget<T>(ITargetBlock<T> inner, Action<string>? log = null) : ITargetBlock<T>
 	{
-		readonly object _sync = new();
+		readonly Lock _sync = new();
 		int _accepted;
 
 		public int Accepted => Volatile.Read(ref _accepted);
@@ -281,10 +292,10 @@ public static class ToTargetBlockMappedCompletionTests
 		}
 
 		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReader<TResult>(reader => transform(reader, state), behavior);
+			=> ExecuteReader(reader => transform(reader, state), behavior);
 
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync<TResult>(reader => transform(reader, state), behavior);
+			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
 
 		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -356,7 +367,7 @@ public static class ToTargetBlockMappedCompletionTests
 			if (stallAt >= 0 && _index + 1 == stallAt)
 			{
 				_stalled.TrySetResult(true);
-				using CancellationTokenRegistration registration = cancellationToken.Register(s => ((TaskCompletionSource<bool>)s!).TrySetResult(true), _cancelSignal);
+				await using CancellationTokenRegistration registration = cancellationToken.Register(s => ((TaskCompletionSource<bool>)s!).TrySetResult(true), _cancelSignal);
 				await _cancelSignal.Task.ConfigureAwait(false);
 				throw (cancelException ?? (() => new OperationCanceledException(cancellationToken)))();
 			}
@@ -427,41 +438,41 @@ public static class ToTargetBlockMappedCompletionTests
 		switch (kind)
 		{
 			case Kind.DbCommandInterfaceSync:
-			{
-				var command = Substitute.For<IDbCommand>();
-				var connection = Substitute.For<IDbConnection>();
-				command.Connection.Returns(connection);
-				connection.State.Returns(ConnectionState.Open);
-				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ =>
 				{
-					if (failure is not null) throw failure;
-					if (readerFactory is not null) return readerFactory();
-					IDataReader reader = FakeReader.Create(cols, rows);
-					reader.When(r => r.Dispose()).Do(x => log?.Invoke("reader-disposed"));
-					return reader;
-				});
-				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
-			}
+					var command = Substitute.For<IDbCommand>();
+					var connection = Substitute.For<IDbConnection>();
+					command.Connection.Returns(connection);
+					connection.State.Returns(ConnectionState.Open);
+					command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ =>
+					{
+						if (failure is not null) throw failure;
+						if (readerFactory is not null) return readerFactory();
+						IDataReader reader = FakeReader.Create(cols, rows);
+						reader.When(r => r.Dispose()).Do(__ => log?.Invoke("reader-disposed"));
+						return reader;
+					});
+					return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
+				}
 
 			case Kind.DbCommandAsync:
-			{
-				var connection = new FakeDbConnection();
-				connection.SetState(ConnectionState.Open);
-				var command = new FakeDbCommand(connection, NewReader);
-				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov, callToken ?? default) : command.ToTargetBlockAsync(t, c, callToken ?? default);
-			}
+				{
+					var connection = new FakeDbConnection();
+					connection.SetState(ConnectionState.Open);
+					var command = new FakeDbCommand(connection, NewReader);
+					return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov, callToken ?? default) : command.ToTargetBlockAsync(t, c, callToken ?? default);
+				}
 
 			case Kind.ExecuteReaderSync:
-			{
-				IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
-				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
-			}
+				{
+					IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
+					return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
+				}
 
 			default:
-			{
-				IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
-				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
-			}
+				{
+					IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
+					return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
+				}
 		}
 	}
 
@@ -470,34 +481,34 @@ public static class ToTargetBlockMappedCompletionTests
 		switch (kind)
 		{
 			case Kind.DbCommandInterfaceSync:
-			{
-				var command = Substitute.For<IDbCommand>();
-				var connection = Substitute.For<IDbConnection>();
-				command.Connection.Returns(connection);
-				connection.State.Returns(ConnectionState.Open);
-				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(Columns, rows));
-				return (t, c) => ValueTask.FromResult(command.ToTargetBlock(t, c));
-			}
+				{
+					var command = Substitute.For<IDbCommand>();
+					var connection = Substitute.For<IDbConnection>();
+					command.Connection.Returns(connection);
+					connection.State.Returns(ConnectionState.Open);
+					command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(Columns, rows));
+					return (t, c) => ValueTask.FromResult(command.ToTargetBlock(t, c));
+				}
 
 			case Kind.DbCommandAsync:
-			{
-				var connection = new FakeDbConnection();
-				connection.SetState(ConnectionState.Open);
-				var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(Columns, rows));
-				return (t, c) => command.ToTargetBlockAsync(t, c);
-			}
+				{
+					var connection = new FakeDbConnection();
+					connection.SetState(ConnectionState.Open);
+					var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(Columns, rows));
+					return (t, c) => command.ToTargetBlockAsync(t, c);
+				}
 
 			case Kind.ExecuteReaderSync:
-			{
-				IExecuteReader command = new FakeExecuteReader(Columns, rows);
-				return (t, c) => ValueTask.FromResult(command.ToTargetBlock(t, c));
-			}
+				{
+					IExecuteReader command = new FakeExecuteReader(Columns, rows);
+					return (t, c) => ValueTask.FromResult(command.ToTargetBlock(t, c));
+				}
 
 			default:
-			{
-				IExecuteReader command = new FakeExecuteReader(Columns, rows);
-				return (t, c) => command.ToTargetBlockAsync(t, c);
-			}
+				{
+					IExecuteReader command = new FakeExecuteReader(Columns, rows);
+					return (t, c) => command.ToTargetBlockAsync(t, c);
+				}
 		}
 	}
 
@@ -579,9 +590,14 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, bool, TargetKind>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (bool overrides in new[] { false, true })
+			{
 				foreach (TargetKind target in Enum.GetValues<TargetKind>())
 					data.Add(kind, overrides, target);
+			}
+		}
+
 		return data;
 	}
 
@@ -591,8 +607,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, bool>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (bool overrides in new[] { false, true })
 				data.Add(kind, overrides);
+		}
+
 		return data;
 	}
 
@@ -611,8 +630,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Precondition, bool>();
 		foreach (Precondition p in Enum.GetValues<Precondition>())
+		{
 			foreach (bool overrides in new[] { false, true })
 				data.Add(p, overrides);
+		}
+
 		return data;
 	}
 
@@ -622,32 +644,32 @@ public static class ToTargetBlockMappedCompletionTests
 		{
 			case Precondition.NullDbCommand:
 				return t => ValueTask.FromResult(overrides
-					? DataflowExtensions.ToTargetBlock<Row>((IDbCommand)null!, t, true, Overrides)
-					: DataflowExtensions.ToTargetBlock<Row>((IDbCommand)null!, t, true));
+					? ((IDbCommand)null!).ToTargetBlock(t, true, Overrides)
+					: ((IDbCommand)null!).ToTargetBlock(t, true));
 
 			case Precondition.NullDbCommandAsync:
 				return t => overrides
-					? DataflowExtensions.ToTargetBlockAsync<Row>((IDbCommand)null!, t, true, Overrides)
-					: DataflowExtensions.ToTargetBlockAsync<Row>((IDbCommand)null!, t, true);
+					? ((IDbCommand)null!).ToTargetBlockAsync(t, true, Overrides)
+					: ((IDbCommand)null!).ToTargetBlockAsync(t, true);
 
 			case Precondition.NullExecuteReader:
 				return t => ValueTask.FromResult(overrides
-					? DataflowExtensions.ToTargetBlock<Row>((IExecuteReader)null!, t, true, Overrides)
-					: DataflowExtensions.ToTargetBlock<Row>((IExecuteReader)null!, t, true));
+					? ((IExecuteReader)null!).ToTargetBlock(t, true, Overrides)
+					: ((IExecuteReader)null!).ToTargetBlock(t, true));
 
 			case Precondition.NullExecuteReaderAsync:
 				return t => overrides
-					? DataflowExtensions.ToTargetBlockAsync<Row>((IExecuteReader)null!, t, true, Overrides)
-					: DataflowExtensions.ToTargetBlockAsync<Row>((IExecuteReader)null!, t, true);
+					? ((IExecuteReader)null!).ToTargetBlockAsync(t, true, Overrides)
+					: ((IExecuteReader)null!).ToTargetBlockAsync(t, true);
 
 			default:
-			{
-				var command = Substitute.For<IDbCommand>();
-				command.Connection.Returns((IDbConnection)null!);
-				return t => overrides
-					? command.ToTargetBlockAsync(t, true, Overrides)
-					: command.ToTargetBlockAsync(t, true);
-			}
+				{
+					var command = Substitute.For<IDbCommand>();
+					command.Connection.Returns((IDbConnection)null!);
+					return t => overrides
+						? command.ToTargetBlockAsync(t, true, Overrides)
+						: command.ToTargetBlockAsync(t, true);
+				}
 		}
 	}
 
@@ -691,7 +713,7 @@ public static class ToTargetBlockMappedCompletionTests
 
 		Assert.Same(failure, thrown);
 		AssertUntouched(harness.Target, "complete: false must not complete or fault the target, even on failure");
-		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
+		Assert.True(harness.Target.Post(new Row()), "the target must still accept rows");
 	}
 
 	// The reader fails after 500 good rows (a row that throws when read).  Every row read before the failure must
@@ -731,7 +753,7 @@ public static class ToTargetBlockMappedCompletionTests
 		if (precondition != Precondition.DbCommandWithoutConnectionAsync)
 			Assert.Equal("command", ((ArgumentNullException)thrown).ParamName);
 		AssertUntouched(harness.Target, "a precondition failure must not complete or fault the target");
-		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
+		Assert.True(harness.Target.Post(new Row()), "the target must still accept rows");
 	}
 
 	[Theory]
@@ -763,7 +785,7 @@ public static class ToTargetBlockMappedCompletionTests
 			() => Assert.Equal(count, produced),
 			() => Assert.Equal(count, harness.Consumed));
 		AssertUntouched(harness.Target, "complete: false must leave the target open");
-		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
+		Assert.True(harness.Target.Post(new Row()), "the target must still accept rows");
 
 		harness.Target.Complete();
 		await harness.Drained.WaitAsync(Timeout, ct);
@@ -776,8 +798,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, bool>();
 		foreach (Kind kind in new[] { Kind.DbCommandInterfaceSync, Kind.ExecuteReaderSync, Kind.ExecuteReaderAsync })
+		{
 			foreach (bool overrides in new[] { false, true })
 				data.Add(kind, overrides);
+		}
+
 		return data;
 	}
 
@@ -820,8 +845,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<bool, TargetKind>();
 		foreach (bool useAsync in new[] { false, true })
+		{
 			foreach (TargetKind target in Enum.GetValues<TargetKind>())
 				data.Add(useAsync, target);
+		}
+
 		return data;
 	}
 
@@ -899,7 +927,7 @@ public static class ToTargetBlockMappedCompletionTests
 			_ => ["Extra1", "Id", "Extra2", "Name", "Extra3"],
 		};
 
-		var rows = new object?[count][];
+		object?[][] rows = new object?[count][];
 		for (int i = 0; i < count; i++)
 		{
 			int id = i + 1;
@@ -920,9 +948,14 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, bool, Layout>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (bool overrides in new[] { false, true })
+			{
 				foreach (Layout layout in Enum.GetValues<Layout>())
 					data.Add(kind, overrides, layout);
+			}
+		}
+
 		return data;
 	}
 
@@ -932,8 +965,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<bool, Layout>();
 		foreach (bool useAsync in new[] { false, true })
+		{
 			foreach (Layout layout in Enum.GetValues<Layout>())
 				data.Add(useAsync, layout);
+		}
+
 		return data;
 	}
 
@@ -992,8 +1028,11 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		var data = new TheoryData<Kind, Scenario>();
 		foreach (Kind kind in Enum.GetValues<Kind>())
+		{
 			foreach (Scenario scenario in Enum.GetValues<Scenario>())
 				data.Add(kind, scenario);
+		}
+
 		return data;
 	}
 
@@ -1272,17 +1311,17 @@ public static class ToTargetBlockMappedCompletionTests
 				break;
 
 			default:
-			{
-				Kind commandKind = kind switch
 				{
-					RetentionKind.ExecuteReaderSync => Kind.ExecuteReaderSync,
-					RetentionKind.ExecuteReaderAsync => Kind.ExecuteReaderAsync,
-					_ => Kind.DbCommandAsync,
-				};
-				var call = Mapped<Row>(commandKind, false, rows, readerFactory: NewReader);
-				oneCall = async () => await call(target, false);
-				break;
-			}
+					Kind commandKind = kind switch
+					{
+						RetentionKind.ExecuteReaderSync => Kind.ExecuteReaderSync,
+						RetentionKind.ExecuteReaderAsync => Kind.ExecuteReaderAsync,
+						_ => Kind.DbCommandAsync,
+					};
+					var call = Mapped<Row>(commandKind, false, rows, readerFactory: NewReader);
+					oneCall = async () => await call(target, false);
+					break;
+				}
 		}
 
 		for (int i = 0; i < warmUp; i++) await oneCall();
@@ -1356,7 +1395,7 @@ public static class ToTargetBlockMappedCompletionTests
 
 		Assert.Multiple(
 			() => Assert.Single(faulted.InnerExceptions),
-			() => Assert.IsAssignableFrom<OperationCanceledException>(faulted.InnerExceptions[0]),
+			() => Assert.IsType<OperationCanceledException>(faulted.InnerExceptions[0], exactMatch: false),
 			() => Assert.Equal(["reader-released", "target-faulted"], log.ToArray()),
 			() => Assert.Null(harness.Target.AcceptedAtComplete),
 			() => Assert.Equal(50, harness.Target.AcceptedAtFault)); // The 50 rows read before the cancellation were delivered first.
@@ -1424,13 +1463,13 @@ public static class ToTargetBlockMappedCompletionTests
 
 		var nullReader = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
 		{
-			if (useAsync) await DataflowExtensions.ToTargetBlockAsync<Row>((IDataReader)null!, harness.Target, true, ct);
-			else DataflowExtensions.ToTargetBlock<Row>((IDataReader)null!, harness.Target, true);
+			if (useAsync) await ((IDataReader)null!).ToTargetBlockAsync(harness.Target, true, ct);
+			else ((IDataReader)null!).ToTargetBlock(harness.Target, true);
 		});
 		var nullTarget = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
 		{
-			if (useAsync) await DataflowExtensions.ToTargetBlockAsync<Row>(reader, null!, true, ct);
-			else DataflowExtensions.ToTargetBlock<Row>(reader, null!, true);
+			if (useAsync) await reader.ToTargetBlockAsync<Row>(null!, true, ct);
+			else reader.ToTargetBlock<Row>(null!, true);
 		});
 
 		Assert.Multiple(

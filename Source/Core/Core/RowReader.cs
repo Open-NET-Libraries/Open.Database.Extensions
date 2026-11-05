@@ -211,9 +211,12 @@ internal static class RowReader
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, TSink sink, CancellationToken cancellationToken)
 		where TSink : struct, IRowSink<T>
 	{
-		if (take == 0 || !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
+		if (take == 0
+			|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+		{
 			return sink;
+		}
 
 		Func<DbDataReader, T> map = source.Mapper(reader);
 		int n = 0;
@@ -228,7 +231,7 @@ internal static class RowReader
 
 	public static async ValueTask<List<T>> ToListAsync<T>(
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
-		=> (await FillAsync(source, reader, skip, take, useReadAsync, new ListSink<T>(new List<T>()), cancellationToken).ConfigureAwait(false)).List;
+		=> (await FillAsync(source, reader, skip, take, useReadAsync, new ListSink<T>([]), cancellationToken).ConfigureAwait(false)).List;
 
 	public static async ValueTask<Queue<T>> ToQueueAsync<T>(
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
@@ -251,26 +254,25 @@ internal static class RowReader
 
 	public static async ValueTask<(bool Found, T? Item)> TryFirstAsync<T>(
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
-	{
-		if (take == 0
-			|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
-			|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
-			return (false, default);
-
-		return (true, source.Mapper(reader)(reader));
-	}
+		=> take != 0
+		&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
+		&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)
+		? (true, source.Mapper(reader)(reader))
+		: (false, default);
 
 	public static async ValueTask<(bool Found, T? Item)> TrySingleAsync<T>(
 		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 	{
-		if (take == 0
-			|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
-			|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
-			return (false, default);
+		if (take != 0
+			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
+			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+		{
+			T item = source.Mapper(reader)(reader);
+			if (take != 1 && await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)) throw MoreThanOne();
+			return (true, item);
+		}
 
-		T item = source.Mapper(reader)(reader);
-		if (take != 1 && await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)) throw MoreThanOne();
-		return (true, item);
+		return (false, default);
 	}
 
 	/// <summary>A lazy async stream. The reader must stay open while it is enumerated.</summary>
@@ -299,8 +301,11 @@ internal static class RowReader
 		static async ValueTask<bool> Core(DbDataReader reader, int skip, bool useReadAsync, CancellationToken cancellationToken)
 		{
 			for (; skip > 0; skip--)
+			{
 				if (!await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 					return false;
+			}
+
 			return true;
 		}
 	}
@@ -360,7 +365,7 @@ internal struct ArraySink<T> : IRowSink<T>
 		items[_count++] = item;
 	}
 
-	T[] Grow(T[] items)
+	private readonly T[] Grow(T[] items)
 	{
 		T[] bigger = ArrayPool<T>.Shared.Rent(items.Length * 2);
 		Array.Copy(items, bigger, _count);

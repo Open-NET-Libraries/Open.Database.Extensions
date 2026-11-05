@@ -18,7 +18,8 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 
 	int _row = -1;
 
-	public static TypedReader Create(ImmutableArray<ColumnDef> columns, params object?[][] rows) => new TypedReader(columns, rows);
+	public static TypedReader Create(ImmutableArray<ColumnDef> columns, params object?[][] rows)
+		=> new(columns, rows);
 
 	object? Cell(int ordinal) => rows[_row][ordinal];
 
@@ -71,8 +72,11 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 		return n;
 	}
 
-	public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length) => throw new NotSupportedException();
-	public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length) => throw new NotSupportedException();
+	public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
+		=> throw new NotSupportedException();
+
+	public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
+		=> throw new NotSupportedException();
 
 	public override object this[int ordinal] => GetValue(ordinal);
 	public override object this[string name] => GetValue(GetOrdinal(name));
@@ -82,6 +86,7 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 	public override bool IsClosed => false;
 	public override int RecordsAffected => -1;
 	public override bool NextResult() => false;
-	public override IEnumerator GetEnumerator() => throw new NotSupportedException();
+	public override IEnumerator GetEnumerator()
+		=> throw new NotSupportedException();
 }
 

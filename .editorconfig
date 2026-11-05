@@ -212,3 +212,7 @@ dotnet_diagnostic.RS0041.severity = none
 # already resolve the call-site ambiguity, so they are turned off.
 dotnet_diagnostic.RS0026.severity = none
 dotnet_diagnostic.RS0027.severity = none
+
+
+# RCS1123: Add parentheses when necessary
+dotnet_diagnostic.RCS1123.severity = silent

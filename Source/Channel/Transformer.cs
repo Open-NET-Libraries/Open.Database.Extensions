@@ -139,7 +139,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 			// Continuations must not run synchronously inside the writes of stage 1: that would put the mapping (and the
 			// waiting on a slow consumer) inside the loop that reads the database, and keep the reader open for all of it.
-			Channel<object[]> buffer = System.Threading.Channels.Channel.CreateBounded<object[]>(new BoundedChannelOptions(MaxArrayBuffer)
+			var buffer = System.Threading.Channels.Channel.CreateBounded<object[]>(new BoundedChannelOptions(MaxArrayBuffer)
 			{
 				SingleReader = true,
 				SingleWriter = true,

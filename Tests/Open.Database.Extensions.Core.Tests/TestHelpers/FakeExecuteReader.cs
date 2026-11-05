@@ -20,7 +20,7 @@ internal sealed class FakeExecuteReader(IReadOnlyList<string> columns, params ob
 	/// <summary>The command-scoped token, chosen when a terminal doesn't supply a cancelable one.</summary>
 	public CancellationToken CancellationToken { get; set; }
 
-	Func<DbDataReader>? _factory;
+	readonly Func<DbDataReader>? _factory;
 
 	/// <summary>Creates a command whose every execution is handed the reader the factory builds (e.g. a typed one).</summary>
 	public FakeExecuteReader(Func<DbDataReader> factory) : this([]) => _factory = factory;

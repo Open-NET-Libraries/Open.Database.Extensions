@@ -227,7 +227,7 @@ readonly struct MappedQueryCore<T>
 
 		return _command.ExecuteReader((_source, _skip, _take, keySelector, comparer), static (reader, s) =>
 		{
-			var sink = new DictionarySink<T, TKey>(new Dictionary<TKey, T>(s.comparer), s.keySelector);
+			var sink = new DictionarySink<T, TKey>([with(s.comparer)], s.keySelector);
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
 			return sink.Dictionary;
 		}, Behavior);
@@ -241,7 +241,7 @@ readonly struct MappedQueryCore<T>
 
 		return _command.ExecuteReaderAsync((_source, _skip, _take, keySelector, comparer, UseAsyncRead, token: EffectiveToken(cancellationToken)), static async (reader, s) =>
 		{
-			var sink = new DictionarySink<T, TKey>(new Dictionary<TKey, T>(s.comparer), s.keySelector);
+			var sink = new DictionarySink<T, TKey>([with(s.comparer)], s.keySelector);
 			if (reader is DbDataReader db)
 				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, sink, s.token).ConfigureAwait(false)).Dictionary;
 
@@ -253,7 +253,7 @@ readonly struct MappedQueryCore<T>
 	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
 		=> _command.ExecuteReader((_source, _skip, _take, comparer), static (reader, s) =>
 		{
-			var sink = new HashSetSink<T>(new HashSet<T>(s.comparer));
+			var sink = new HashSetSink<T>([with(s.comparer)]);
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
 			return sink.Set;
 		}, Behavior);
@@ -261,7 +261,7 @@ readonly struct MappedQueryCore<T>
 	internal ValueTask<HashSet<T>> ToHashSetAsync(IEqualityComparer<T>? comparer, CancellationToken cancellationToken)
 		=> _command.ExecuteReaderAsync((_source, _skip, _take, comparer, UseAsyncRead, token: EffectiveToken(cancellationToken)), static async (reader, s) =>
 		{
-			var sink = new HashSetSink<T>(new HashSet<T>(s.comparer));
+			var sink = new HashSetSink<T>([with(s.comparer)]);
 			if (reader is DbDataReader db)
 				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, sink, s.token).ConfigureAwait(false)).Set;
 
