@@ -142,26 +142,28 @@ internal sealed class RowPlan<T> : RowSource<T>
 	Layout Resolve(IDataRecord reader)
 	{
 		int hash = Layout.Hash(reader);
-		if (_layouts.TryGetValue(hash, out Layout[]? candidates))
+		return _last = Find(_layouts, hash, l => l.Matches(reader))
+			?? Remember(_layouts, hash, new Layout(reader));
+	}
+
+	// Shared by both layout caches: find a layout by hash and match, or remember a new one.
+	static TLayout? Find<TLayout>(ConcurrentDictionary<int, TLayout[]> cache, int hash, Func<TLayout, bool> matches)
+		where TLayout : class
+	{
+		if (cache.TryGetValue(hash, out TLayout[]? candidates))
 		{
-			foreach (Layout c in candidates)
-			{
-				if (c.Matches(reader))
-				{
-					_last = c;
-					return c;
-				}
-			}
+			foreach (TLayout c in candidates)
+				if (matches(c)) return c;
 		}
 
-		if (_layouts.Count >= MaxLayouts) _layouts.Clear();
+		return null;
+	}
 
-		var layout = new Layout(reader);
-		_layouts.AddOrUpdate(
-			hash,
-			_ => [layout],
-			(_, existing) => [.. existing, layout]);
-		_last = layout;
+	static TLayout Remember<TLayout>(ConcurrentDictionary<int, TLayout[]> cache, int hash, TLayout layout)
+		where TLayout : class
+	{
+		if (cache.Count >= MaxLayouts) cache.Clear();
+		cache.AddOrUpdate(hash, _ => [layout], (_, existing) => [.. existing, layout]);
 		return layout;
 	}
 
@@ -197,6 +199,8 @@ internal sealed class RowPlan<T> : RowSource<T>
 			return h;
 		}
 
+		// The same check twice on purpose: this runs on every query, and virtual calls on DbDataReader beat
+		// the interface calls the IDataRecord overload must make.
 		public bool Matches(DbDataReader r)
 		{
 			string[] names = Names;
@@ -262,53 +266,17 @@ internal sealed class RowPlan<T> : RowSource<T>
 		int hash = names.Length;
 		foreach (string n in names) hash = unchecked((hash * 31) + (n?.GetHashCode() ?? 0));
 
-		if (_arrayLayouts.TryGetValue(hash, out ArrayLayout[]? candidates))
-		{
-			foreach (ArrayLayout c in candidates)
-			{
-				if (c.Matches(names))
-				{
-					_lastArray = c;
-					return c;
-				}
-			}
-		}
-
-		if (_arrayLayouts.Count >= MaxLayouts) _arrayLayouts.Clear();
-
-		var layout = new ArrayLayout([.. names]);
-		_arrayLayouts.AddOrUpdate(hash, _ => [layout], (_, existing) => [.. existing, layout]);
-		_lastArray = layout;
-		return layout;
+		return _lastArray = Find(_arrayLayouts, hash, l => l.Matches(names))
+			?? Remember(_arrayLayouts, hash, new ArrayLayout([.. names]));
 	}
 
 	Func<object?[], T> BuildArray(ArrayLayout layout)
 	{
 		ParameterExpression row = Expression.Parameter(typeof(object?[]), "row");
-		ParameterExpression item = Expression.Variable(typeof(T), "item");
-		ParameterExpression index = Expression.Variable(typeof(int), "index");
-
-		var bindings = new Binding?[layout.Names.Length];
-		var statements = new List<Expression>(layout.Names.Length * 2 + 2)
-		{
-			Expression.Assign(item, Expression.New(typeof(T))),
-		};
-
 		MethodInfo convert = typeof(RowPlan<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
-		var assigned = new HashSet<PropertyInfo>();
-		for (int i = 0; i < layout.Names.Length; i++)
-		{
-			if (!_columnToProperty.TryGetValue(layout.Names[i], out PropertyInfo? property)) continue;
-			if (!assigned.Add(property)) continue;
 
-			bindings[i] = new Binding(property.Name, layout.Names[i]);
-			Expression cell = Expression.ArrayIndex(row, Expression.Constant(i));
-			statements.Add(Expression.Assign(index, Expression.Constant(i)));
-			statements.Add(Expression.Call(item, property.GetSetMethod()!, Expression.Call(convert.MakeGenericMethod(property.PropertyType), cell)));
-		}
-
-		statements.Add(item);
-		return Expression.Lambda<Func<object?[], T>>(Guard(statements, item, index, bindings), row).Compile();
+		return Compile<object?[]>(row, layout.Names, (i, property)
+			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))));
 	}
 
 	#endregion
@@ -345,32 +313,37 @@ internal sealed class RowPlan<T> : RowSource<T>
 		MethodInfo getValue = readerType.GetMethod(nameof(IDataRecord.GetValue), [typeof(int)])!;
 
 		ParameterExpression r = Expression.Parameter(readerType, "r");
+
+		return Compile<TReader>(r, layout.Names, (i, property)
+			=> ReadValue(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue));
+	}
+
+	// The skeleton shared by both mappers: `new T()`, then for each column that maps to a property,
+	// `item.Property = <cell>`. Only how a cell is read differs (a live reader vs buffered object[] rows).
+	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, PropertyInfo, Expression> readCell)
+	{
 		ParameterExpression item = Expression.Variable(typeof(T), "item");
 		ParameterExpression index = Expression.Variable(typeof(int), "index");
 
-		var bindings = new Binding?[layout.Names.Length];
-		var statements = new List<Expression>(layout.Names.Length * 2 + 2)
+		var bindings = new Binding?[names.Length];
+		var statements = new List<Expression>(names.Length * 2 + 2)
 		{
 			Expression.Assign(item, Expression.New(typeof(T))),
 		};
 
 		var assigned = new HashSet<PropertyInfo>();
-		for (int i = 0; i < layout.Names.Length; i++)
+		for (int i = 0; i < names.Length; i++)
 		{
-			if (!_columnToProperty.TryGetValue(layout.Names[i], out PropertyInfo? property)) continue; // Not mapped: ignore the column.
+			if (!_columnToProperty.TryGetValue(names[i], out PropertyInfo? property)) continue; // Not mapped: ignore the column.
 			if (!assigned.Add(property)) continue; // The first matching column wins.
 
-			bindings[i] = new Binding(property.Name, layout.Names[i]);
-			Expression ordinal = Expression.Constant(i);
-			Expression value = ReadValue(r, ordinal, layout.Types[i], property.PropertyType, readerType, isDbNull, getValue);
-
-			statements.Add(Expression.Assign(index, ordinal));
-			statements.Add(Expression.Call(item, property.GetSetMethod()!, value));
+			bindings[i] = new Binding(property.Name, names[i]);
+			statements.Add(Expression.Assign(index, Expression.Constant(i)));
+			statements.Add(Expression.Call(item, property.GetSetMethod()!, readCell(i, property)));
 		}
 
 		statements.Add(item);
-
-		return Expression.Lambda<Func<TReader, T>>(Guard(statements, item, index, bindings), r).Compile();
+		return Expression.Lambda<Func<TArg, T>>(Guard(statements, item, index, bindings), arg).Compile();
 	}
 
 	// `index` tracks the column being read so a failure can name the offending property and column.
