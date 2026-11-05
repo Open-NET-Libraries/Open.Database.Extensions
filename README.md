@@ -102,7 +102,7 @@ var people = cmd.Results<Person>(new Dictionary<string,string>{
 
 ### `Retrieve()` and `RetrieveAsync()`
 
-Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
+Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.DequeueAsMappedDictionaries()` extension will iteratively convert the results to dictionaries for ease of access.
 
 ### `ResultsAsync<T>`
 
@@ -170,15 +170,15 @@ public static bool TryTransaction()
 
 - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
 - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
-- .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
+- .NET 8.0 added to targets to ensure potential compilation and performance improvements are available.
 - Improved nullable integrity.
 
 ## 9.0 Release Notes
 
 - Open.Database.Extensions meta-package is discontinued.
 - .NET 9.0 added to targets to ensure potential compilation and performance improvements are available.
-- Impelmented some .NET 8 and 9 specific features.
-- Significant cleanup and simplifcation where possible.
+- Implemented some .NET 8 and 9 specific features.
+- Significant cleanup and simplification where possible.
 
 ## 10.1.0 Release Notes
 
@@ -201,6 +201,8 @@ A modernization and allocation-reduction pass. **Source-compatible with 10.0** â
 
 ## 11.0.0 Release Notes
 
+> **11.0.0-preview01.** This is a preview: please try it and tell us what you find. See [Known limitations](#known-limitations-in-this-preview) below.
+
 A performance release: **result mapping is rewritten and now beats Dapper 2.1.89** in the included benchmarks (`Benchmarks/`, see `Benchmarks/RESULTS.md`), with a fraction of the allocations on multi-row results.
 
 - **Cached, typed row mapping.** The mapping for a result-set shape is compiled once and reused. Previously every query compiled a setter per property (~1 ms fixed cost per `Map<T>()`). Values are read with typed getters, so nothing is boxed.
@@ -208,6 +210,8 @@ A performance release: **result mapping is rewritten and now beats Dapper 2.1.89
 - **No per-call closures.** `IExecuteReader` gained state-passing `ExecuteReader<TState, TResult>` / `ExecuteReaderAsync<TState, TResult>`; pass a `static` lambda and the state it needs.
 - **Leaner commands.** A command created from a connection no longer allocates a pool wrapper, `Params` is created on first use, and async execution skips awaiting when the connection is already open.
 - **Readers use `SequentialAccess | SingleResult`** for `Map<T>()` (and `SingleRow` for `FirstOrDefault`), like Dapper. `Map(selector)` keeps the default access mode because a selector may read columns in any order.
+- **Channel and Dataflow fixes.** `complete: false` no longer runs the command twice. The mapped `ToChannel<T>`/`ToChannelAsync<T>` and `ToTargetBlock<T>` overloads complete your target only after every row has been delivered and the database reader has been released (before, up to about 1,000 buffered rows could be lost with a bounded target), no longer lose the last row when the reader fails mid-stream, and map correctly when the reader has extra unmapped columns.
+- **Connection and command fixes.** `OpenAsync(IDbConnection)` no longer opens a `DbConnection` twice, `EnsureOpenAsync` closes a connection that finished opening just as cancellation arrived, and `FirstOrdinalResults<T>(IDbCommand, behavior)` honors `behavior`.
 
 ### Breaking changes
 
@@ -217,3 +221,10 @@ A performance release: **result mapping is rewritten and now beats Dapper 2.1.89
 - `FirstOrdinalResults<T>` reads `NULL` as `default`. (`ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable, so items are released to the GC as they are drained.)
 - `ExpressiveCommandBase.Params` is created lazily.
 - Async command execution passes the command's `CancellationToken` to the connection open.
+- Mapped Channel and Dataflow overloads: a mapping failure now faults the target when `complete` is `true`; the target is never completed or faulted before the reader is released; `ArgumentNullException.ParamName` for a null target is `"target"`; and a mapped async channel call that is cancelled succeeds only if the reader had already reported the end of the results, otherwise it throws `OperationCanceledException`.
+
+### Known limitations in this preview
+
+- `Retrieve()` followed by `DequeueAs<T>()` is a two-pass route (rows are copied into `object[]` and mapped as they are drained); it is slower and allocates more than a direct `Map<T>()` at larger sizes. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()`. See `Benchmarks/RESULTS.md`.
+- The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full; the cause is in the underlying channel library and a fix is planned.
+- Benchmarks and tests cover the in-memory provider, SQLite and SQL Server LocalDB. Real-world feedback on other providers and workloads is welcome.
