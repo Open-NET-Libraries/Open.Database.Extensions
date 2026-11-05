@@ -228,6 +228,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		where T : struct
 		=> AddParam(new(name, value, type, direction));
 
+	// A literal 0 converts implicitly to any enum, so without these a call like AddParam("id", 0) would bind to
+	// the type-only or direction-only overloads below and silently add a parameter with no value.
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, int value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> AddParam(new(name, value, type, direction));
+
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, long value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> AddParam(new(name, value, type, direction));
+
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam(string name, string? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
@@ -275,6 +285,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParamIf<T>(bool condition, string name, T? value, TDbType? type, ParameterDirection direction = ParameterDirection.Input)
 		where T : struct
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, int value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, long value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>

@@ -117,7 +117,7 @@ var posts = await connection
     .Command("select * from posts where author = @author")
     .AddParam("author", 42)
     .Map<Post>()
-    .ToListAsync();
+    .ToArrayAsync();
 
 var page = connection.Command("select * from posts order by id")
     .Map<Post>()
@@ -127,7 +127,9 @@ var page = connection.Command("select * from posts order by id")
 var one = connection.Command("select * from posts where id = @id").AddParam("id", 7).Map<Post>().SingleOrDefault();
 ```
 
-Terminals: `ToList`, `ToArray`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` (each with an `…Async` twin) and `Read(...)`/`ReadAsync(...)` for streaming.
+Prefer `ToArray` for results you only read: it allocates one exactly-sized array (no spare capacity, no collection object) and an empty result is the shared static empty array. Use `ToList` when you need a mutable collection.
+
+Terminals: `ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` (each with an `…Async` twin) and `Read(...)`/`ReadAsync(...)` for streaming.
 
 How it stays fast:
 
