@@ -50,6 +50,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	{
 		readonly TransformBlock<object[], T> _block;
 		readonly CancellationTokenSource _stop = new();
+		readonly ITargetBlock<T> _target;
 		readonly TaskCompletionSource<bool> _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		Func<object?[], T>? _transform;
 		int[] _ordinals = [];
@@ -65,6 +66,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// <param name="options">The options to apply to the transform block.</param>
 		public Pipeline(ITargetBlock<T> target, bool complete, ExecutionDataflowBlockOptions? options = null)
 		{
+			_target = target;
 			_block = new TransformBlock<object[], T>(
 				a =>
 				{
@@ -87,7 +89,8 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 			// An async writer must not wait forever on a pipeline that can no longer deliver: it would hold the reader
 			// (and its connection) for good.  So the writer is stopped when the block faults or is cancelled (a row could not be
-			// mapped) or when the target closes under it.  The writer then ends quietly, just as a declined Post() does.
+			// mapped), and, for as long as it is writing, when the target closes under it (see WriteAsync).
+			// The writer then ends quietly, just as a declined Post() does.
 			_ = _block.Completion.ContinueWith(
 				t =>
 				{
@@ -96,12 +99,6 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 					_ = t.Exception; // Observed on purpose: with complete: false nobody else will look at it.
 					_stop.Cancel();
 				},
-				CancellationToken.None,
-				TaskContinuationOptions.ExecuteSynchronously,
-				TaskScheduler.Default);
-
-			_ = target.Completion.ContinueWith(
-				_ => _stop.Cancel(),
 				CancellationToken.None,
 				TaskContinuationOptions.ExecuteSynchronously,
 				TaskScheduler.Default);
@@ -214,6 +211,21 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 			using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
 			CancellationToken token = linked.Token;
+
+			// Stop writing if the target closes under the pipeline, but only while writing: this race is abandoned when the write
+			// ends (Task.WhenAny removes its registration from the target's Completion task), so a long-lived target is not left
+			// holding anything from a call that has finished.
+			Task closed = _target.Completion;
+			var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+			_ = Task.WhenAny(closed, finished.Task).ContinueWith(
+				t =>
+				{
+					if (ReferenceEquals(t.Result, closed)) _stop.Cancel();
+				},
+				CancellationToken.None,
+				TaskContinuationOptions.ExecuteSynchronously,
+				TaskScheduler.Default);
+
 			long total = 0;
 			try
 			{
@@ -232,9 +244,15 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 					total++;
 				}
 			}
-			catch (OperationCanceledException) when (_stop.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+			catch (Exception) when (_stop.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
 			{
-				// The pipeline stopped the writer (see the constructor): end quietly.
+				// The pipeline itself stopped the writer (the mapper failed, or the target closed): end quietly.  Whatever a provider
+				// throws when it honours that cancellation (an OperationCanceledException or its own exception) is not a failure of the
+				// caller's operation; the target has already heard about the cause.
+			}
+			finally
+			{
+				finished.TrySetResult(true); // Abandons the watch on the target.
 			}
 
 			return total;

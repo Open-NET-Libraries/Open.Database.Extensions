@@ -7,6 +7,10 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions.Tests;
 
+// The retention tests measure process-wide memory, so this class runs alone, after the parallel collections.
+[CollectionDefinition("Dataflow mapped completion", DisableParallelization = true)]
+public sealed class DataflowMappedCompletionCollection;
+
 // A bounded Dataflow target (capacity 10) behind a slow consumer must receive every row the call reports as read,
 // and must not be completed until the last of those rows has been accepted.
 //
@@ -19,6 +23,7 @@ namespace Open.Database.Extensions.Tests;
 // what the call REPORTED as produced (not against 5000); the "all 5000" assertion applies only where a decline
 // cannot happen (async paths use SendAsync; sync paths with fewer rows than the 1024 transform buffer).
 [ExcludeFromCodeCoverage]
+[Collection("Dataflow mapped completion")]
 public static class ToTargetBlockMappedCompletionTests
 {
 	const int TargetCapacity = 10;
@@ -248,9 +253,9 @@ public static class ToTargetBlockMappedCompletionTests
 	}
 
 	// An IExecuteReader whose readers come from a factory (which may throw) and which logs when the reader was released.
-	sealed class ScriptedCommand(Func<IDataReader> open, Action<string>? log) : IExecuteReader
+	sealed class ScriptedCommand(Func<IDataReader> open, Action<string>? log, CancellationToken token = default) : IExecuteReader
 	{
-		public CancellationToken CancellationToken => default;
+		public CancellationToken CancellationToken => token;
 
 		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 		{
@@ -283,7 +288,7 @@ public static class ToTargetBlockMappedCompletionTests
 
 	// A hand-written reader whose Dispose and DisposeAsync both block until the test lets them finish.
 	// "Entered" completes when the owner starts releasing it; "reader-released" is logged when the release finishes.
-	sealed class GatedReader(string[] columns, object?[][] rows, Action<string> log, int failReadAt = -1) : DbDataReader
+	sealed class GatedReader(string[] columns, object?[][] rows, Action<string> log, int failReadAt = -1, int stallAt = -1, Func<Exception>? cancelException = null) : DbDataReader
 	{
 		readonly TaskCompletionSource<bool> _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		readonly TaskCompletionSource<bool> _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -292,6 +297,14 @@ public static class ToTargetBlockMappedCompletionTests
 
 		public Task Entered => _entered.Task;
 		public void Release() => _gate.TrySetResult(true);
+		readonly TaskCompletionSource<bool> _stalled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		readonly TaskCompletionSource<bool> _cancelSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		/// <summary>Completes when a read has parked at <c>stallAt</c>.</summary>
+		public Task Stalled => _stalled.Task;
+
+		/// <summary>The provider noticing a cancellation: unblocks the parked read, which then throws.</summary>
+		public void Cancel() => _cancelSignal.TrySetResult(true);
 
 		void Released()
 		{
@@ -320,7 +333,27 @@ public static class ToTargetBlockMappedCompletionTests
 		public override bool Read()
 		{
 			if (failReadAt >= 0 && _index + 1 == failReadAt) throw new InvalidOperationException("the reader failed");
+			if (stallAt >= 0 && _index + 1 == stallAt)
+			{
+				_stalled.TrySetResult(true);
+				_cancelSignal.Task.Wait();
+				throw (cancelException ?? (() => new OperationCanceledException()))();
+			}
+
 			return ++_index < rows.Length;
+		}
+
+		public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+		{
+			if (stallAt >= 0 && _index + 1 == stallAt)
+			{
+				_stalled.TrySetResult(true);
+				using CancellationTokenRegistration registration = cancellationToken.Register(s => ((TaskCompletionSource<bool>)s!).TrySetResult(true), _cancelSignal);
+				await _cancelSignal.Task.ConfigureAwait(false);
+				throw (cancelException ?? (() => new OperationCanceledException(cancellationToken)))();
+			}
+
+			return Read();
 		}
 
 		public override int FieldCount => columns.Length;
@@ -374,7 +407,7 @@ public static class ToTargetBlockMappedCompletionTests
 		Kind kind, bool overrides, object?[][] rows,
 		Exception? failure = null, Action<string>? log = null,
 		IEnumerable<(string Field, string? Column)>? overrideValues = null,
-		string[]? columns = null, Func<DbDataReader>? readerFactory = null)
+		string[]? columns = null, Func<DbDataReader>? readerFactory = null, CancellationToken? callToken = null)
 		where TRow : new()
 	{
 		IEnumerable<(string Field, string? Column)> ov = overrideValues ?? Overrides;
@@ -407,18 +440,18 @@ public static class ToTargetBlockMappedCompletionTests
 				var connection = new FakeDbConnection();
 				connection.SetState(ConnectionState.Open);
 				var command = new FakeDbCommand(connection, NewReader);
-				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
+				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov, callToken ?? default) : command.ToTargetBlockAsync(t, c, callToken ?? default);
 			}
 
 			case Kind.ExecuteReaderSync:
 			{
-				IExecuteReader command = new ScriptedCommand(() => NewReader(), log);
+				IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
 				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
 			}
 
 			default:
 			{
-				IExecuteReader command = new ScriptedCommand(() => NewReader(), log);
+				IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
 				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
 			}
 		}
@@ -1046,14 +1079,14 @@ public static class ToTargetBlockMappedCompletionTests
 	[MemberData(nameof(Kinds))]
 	public static async Task Mapped_MappingFailure_FaultsTheTargetWithTheSameShapeAsAReaderFailure(Kind kind)
 	{
-		const int count = 5000;
+		const int count = 20_000;
 		CancellationToken ct = TestContext.Current.CancellationToken;
 
 		// A row that cannot be mapped (the second stage fails)...
 		object?[][] badRows = Rows(count);
 		badRows[0] = ["not a number"];
 		var mappingHarness = new Harness<Row>(TargetKind.ActionBlock, ct);
-		long produced = await Task.Run(async () => await Mapped<Row>(kind, false, badRows)(mappingHarness.Target, true), ct).WaitAsync(Timeout, ct);
+		long produced = await Task.Run(async () => await Mapped<Row>(kind, false, badRows)(mappingHarness.Target, true), ct).WaitAsync(TimeSpan.FromSeconds(10), ct); // An async writer that is not stopped hangs here.
 		AggregateException mapping = await FaultOfAsync(mappingHarness.Target.Completion);
 
 		// ...and a reader that fails (the first stage fails).
@@ -1063,7 +1096,7 @@ public static class ToTargetBlockMappedCompletionTests
 		AggregateException reader = await FaultOfAsync(readerHarness.Target.Completion);
 
 		Assert.Multiple(
-			() => Assert.True(produced < count, $"the writer should have stopped when the mapper failed, but it wrote {produced} of {count} rows"),
+			() => Assert.True(produced <= TransformBuffer + 64, $"the writer should have stopped within one block of the mapper failing on row 0, but it wrote {produced} of {count} rows"),
 			() => Assert.Single(mapping.InnerExceptions),
 			() => Assert.IsType<InvalidOperationException>(mapping.InnerExceptions[0]), // "Unable to set value of property..." directly, not wrapped again
 			() => Assert.Single(reader.InnerExceptions),
@@ -1168,5 +1201,154 @@ public static class ToTargetBlockMappedCompletionTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
 		Assert.Null(harness.Target.AcceptedAtComplete);
+	}
+
+	// ---- a finished call leaves nothing behind on a long-lived target ----
+
+	public enum RetentionKind
+	{
+		ReaderLevelSync,
+		ReaderLevelAsync,
+		ExecuteReaderSync,
+		ExecuteReaderAsync,
+		DbCommandAsync,
+	}
+
+	public static TheoryData<RetentionKind> RetentionKinds { get; } = [.. Enum.GetValues<RetentionKind>()];
+
+	static async Task SettleAsync(CancellationToken ct)
+	{
+		await Task.Delay(200, ct); // Let the last pipelines drain.
+		for (int i = 0; i < 3; i++)
+		{
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+		}
+	}
+
+	// complete: false against one open target for the lifetime of the test, thousands of calls.  Whatever a call registers
+	// on the target (or on anything the target keeps alive) must be gone when the call's pipeline has finished.
+	[Theory]
+	[MemberData(nameof(RetentionKinds))]
+	public static async Task Mapped_CompleteFalse_RetainsNothingPerCallOnALongLivedTarget(RetentionKind kind)
+	{
+		const int warmUp = 300;
+		const int calls = 4000;
+		const double allowedBytesPerCall = 500;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var target = new ActionBlock<Row>(_ => { }); // Open, unbounded, never completed.
+		object?[][] rows = Rows(3);
+
+		DbDataReader NewReader()
+		{
+			var reader = new GatedReader(Columns, rows, _ => { });
+			reader.Release(); // Not held on release.
+			return reader;
+		}
+
+		Func<Task> oneCall;
+		switch (kind)
+		{
+			case RetentionKind.ReaderLevelSync:
+				oneCall = () =>
+				{
+					NewReader().ToTargetBlock(target, false);
+					return Task.CompletedTask;
+				};
+				break;
+
+			case RetentionKind.ReaderLevelAsync:
+				oneCall = async () => await NewReader().ToTargetBlockAsync(target, false, ct);
+				break;
+
+			default:
+			{
+				Kind commandKind = kind switch
+				{
+					RetentionKind.ExecuteReaderSync => Kind.ExecuteReaderSync,
+					RetentionKind.ExecuteReaderAsync => Kind.ExecuteReaderAsync,
+					_ => Kind.DbCommandAsync,
+				};
+				var call = Mapped<Row>(commandKind, false, rows, readerFactory: NewReader);
+				oneCall = async () => await call(target, false);
+				break;
+			}
+		}
+
+		for (int i = 0; i < warmUp; i++) await oneCall();
+		await SettleAsync(ct);
+		long before = GC.GetTotalMemory(true);
+
+		for (int i = 0; i < calls; i++) await oneCall();
+		await SettleAsync(ct);
+		long after = GC.GetTotalMemory(true);
+		GC.KeepAlive(target);
+
+		double perCall = (double)(after - before) / calls;
+		TestContext.Current.TestOutputHelper?.WriteLine($"retention {kind}: {perCall:F0} B/call over {calls} calls");
+		Assert.True(perCall < allowedBytesPerCall, $"{kind}: {perCall:F0} bytes retained per call on a long-lived target (allowed {allowedBytesPerCall:F0})");
+	}
+
+	// ---- a provider that surfaces its own exception when the read is cancelled: the pipeline's stop is a quiet end ----
+
+	public static TheoryData<Kind> AsyncKinds { get; } = [Kind.DbCommandAsync, Kind.ExecuteReaderAsync];
+
+	[Theory]
+	[MemberData(nameof(AsyncKinds))]
+	public static async Task Mapped_MappingFailure_ProviderThrowsItsOwnExceptionWhenTheReadIsCancelled_EndsQuietly(Kind kind)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+		object?[][] rows = Rows(200);
+		rows[0] = ["not a number"];
+		var provider = new InvalidOperationException("provider: the command was cancelled");
+		var reader = new GatedReader(Columns, rows, log.Enqueue, stallAt: 5, cancelException: () => provider);
+		reader.Release();
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct, log.Enqueue);
+		var call = Mapped<Row>(kind, false, rows, readerFactory: () => reader);
+
+		// The writer parks in a read; the mapper fails on row 0, the pipeline stops the writer by cancelling that read, and the
+		// provider answers with an exception of its own instead of an OperationCanceledException.
+		long produced = await Task.Run(async () => await call(harness.Target, true), ct).WaitAsync(Timeout, ct);
+		AggregateException faulted = await FaultOfAsync(harness.Target.Completion);
+
+		Assert.Multiple(
+			() => Assert.InRange(produced, 0, 5), // At most the rows read before the stall.
+			() => Assert.Single(faulted.InnerExceptions),
+			() => Assert.NotSame(provider, faulted.InnerExceptions[0]), // The target heard about the mapping failure...
+			() => Assert.IsType<InvalidOperationException>(faulted.InnerExceptions[0]),
+			() => Assert.Equal(["reader-released", "target-faulted"], log.ToArray()));
+	}
+
+	// ---- the caller cancels while the reader is stalled in a read ----
+
+	[Theory]
+	[MemberData(nameof(Kinds))]
+	public static async Task Mapped_CallerCancelsWhileTheReaderIsStalled_ReleasesTheReaderThenFaultsTheTargetWithTheCancellation(Kind kind)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		using var cancellation = new CancellationTokenSource();
+		var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+		object?[][] rows = Rows(200);
+		var reader = new GatedReader(Columns, rows, log.Enqueue, stallAt: 50, cancelException: () => new OperationCanceledException(cancellation.Token));
+		reader.Release(); // The release itself is not held: this test is about the cancelled read.
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct, log.Enqueue);
+		var call = Mapped<Row>(kind, false, rows, readerFactory: () => reader, callToken: cancellation.Token);
+
+		Task<long> running = Task.Run(async () => await call(harness.Target, true), ct);
+
+		await reader.Stalled.WaitAsync(Timeout, ct); // The writer is parked in the read of row 50.
+		cancellation.Cancel();
+		reader.Cancel(); // The synchronous overloads take no token: the provider's own cancellation unblocks their read.
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await running.WaitAsync(Timeout, ct));
+		AggregateException faulted = await FaultOfAsync(harness.Target.Completion);
+
+		Assert.Multiple(
+			() => Assert.Single(faulted.InnerExceptions),
+			() => Assert.IsAssignableFrom<OperationCanceledException>(faulted.InnerExceptions[0]),
+			() => Assert.Equal(["reader-released", "target-faulted"], log.ToArray()),
+			() => Assert.Null(harness.Target.AcceptedAtComplete),
+			() => Assert.Equal(50, harness.Target.AcceptedAtFault)); // The 50 rows read before the cancellation were delivered first.
 	}
 }
