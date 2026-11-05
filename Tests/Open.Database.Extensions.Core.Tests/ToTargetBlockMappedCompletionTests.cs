@@ -658,5 +658,62 @@ public static class ToTargetBlockMappedCompletionTests
 		Assert.Same(thrown, faulted);
 	}
 
+	// The reader-level call shares the same pipeline: a read failure after 500 good rows delivers them, then faults the target
+	// (complete: true), or leaves the target open (complete: false).
+	public static TheoryData<bool, TargetKind> ReaderLevelShapes { get; } = BuildReaderLevelShapes();
+
+	static TheoryData<bool, TargetKind> BuildReaderLevelShapes()
+	{
+		var data = new TheoryData<bool, TargetKind>();
+		foreach (bool useAsync in new[] { false, true })
+			foreach (TargetKind target in Enum.GetValues<TargetKind>())
+				data.Add(useAsync, target);
+		return data;
+	}
+
+	static async Task ReadFailingReader(bool useAsync, SpyTarget<Row> target, bool complete)
+	{
+		object?[][] rows = [.. Rows(500), null!];
+		if (useAsync) await FakeReader.CreateDb(Columns, rows).ToTargetBlockAsync(target, complete);
+		else FakeReader.Create(Columns, rows).ToTargetBlock(target, complete);
+	}
+
+	[Theory]
+	[MemberData(nameof(ReaderLevelShapes))]
+	public static async Task ReaderLevelMapped_ReaderFailsMidStream_CompleteTrue_DeliversTheRowsReadThenFaultsTheTarget(bool useAsync, TargetKind target)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(target, ct);
+
+		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await ReadFailingReader(useAsync, harness.Target, true));
+		Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+
+		Assert.Multiple(
+			() => Assert.Same(thrown, faulted),
+			() => Assert.Equal(500, harness.Target.AcceptedAtFault),
+			() => Assert.Null(harness.Target.AcceptedAtComplete));
+	}
+
+	[Theory]
+	[MemberData(nameof(ReaderLevelShapes))]
+	public static async Task ReaderLevelMapped_ReaderFailsMidStream_CompleteFalse_LeavesTheTargetOpen(bool useAsync, TargetKind target)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(target, ct);
+
+		await Assert.ThrowsAnyAsync<Exception>(async () => await ReadFailingReader(useAsync, harness.Target, false));
+
+		// The rows read before the failure still flow to the (open) target.
+		var watch = Stopwatch.StartNew();
+		while (harness.Consumed < 500 && watch.Elapsed < Timeout)
+			await Task.Delay(5, ct);
+
+		Assert.Equal(500, harness.Consumed);
+		AssertUntouched(harness.Target, "complete: false must leave the target open, even when reading fails");
+
+		harness.Target.Complete();
+		await harness.Drained.WaitAsync(Timeout, ct);
+	}
+
 	public static TheoryData<Kind> Kinds { get; } = [.. Enum.GetValues<Kind>()];
 }
