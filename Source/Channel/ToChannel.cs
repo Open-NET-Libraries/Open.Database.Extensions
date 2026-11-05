@@ -4,6 +4,21 @@
 [SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
 public static partial class ChannelDbExtensions
 {
+	// Production always starts on the thread pool, so the caller never becomes the producing thread. A failure
+	// reaches the consumer through the channel (completed with the exception) instead of going unobserved.
+	private static void Produce<T>(ChannelWriter<T> writer, Func<ValueTask<long>> start)
+		=> _ = Task.Run(async () =>
+		{
+			try
+			{
+				await start().ConfigureAwait(false);
+			}
+			catch (Exception ex)
+			{
+				writer.TryComplete(ex);
+			}
+		});
+
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
 	/// Be sure to await the completion.
@@ -20,7 +35,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(reader, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(reader, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -42,7 +57,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(reader, channel.Writer, true, arrayPool, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(reader, channel.Writer, true, arrayPool, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -66,7 +81,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(reader, channel.Writer, true, transform, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(reader, channel.Writer, true, transform, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -87,7 +102,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(reader, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(reader, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -110,7 +125,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -130,7 +145,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -153,7 +168,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, arrayPool, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, arrayPool, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -177,7 +192,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, transform, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, transform, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -198,7 +213,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -221,7 +236,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, fieldMappingOverrides, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -239,7 +254,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true));
 		return channel.Reader;
 	}
 
@@ -260,7 +275,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, arrayPool);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, arrayPool));
 		return channel.Reader;
 	}
 
@@ -282,7 +297,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, transform);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, transform));
 		return channel.Reader;
 	}
 
@@ -301,7 +316,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true));
 		return channel.Reader;
 	}
 
@@ -322,7 +337,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides);
+		Produce(channel.Writer, () => ToChannel(command, channel.Writer, true, fieldMappingOverrides));
 		return channel.Reader;
 	}
 
@@ -343,7 +358,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(reader, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(reader, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -366,7 +381,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(reader, channel.Writer, true, arrayPool, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(reader, channel.Writer, true, arrayPool, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -390,7 +405,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(reader, channel.Writer, true, transform, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(reader, channel.Writer, true, transform, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -411,7 +426,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(reader, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(reader, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -434,7 +449,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -454,7 +469,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -477,7 +492,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, arrayPool, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, arrayPool, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -501,7 +516,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, transform, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, transform, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -522,7 +537,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -545,7 +560,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides, cancellationToken));
 		return channel.Reader;
 	}
 
@@ -563,7 +578,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true));
 		return channel.Reader;
 	}
 
@@ -583,7 +598,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, arrayPool);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, arrayPool));
 		return channel.Reader;
 	}
 
@@ -605,7 +620,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, transform);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, transform));
 		return channel.Reader;
 	}
 
@@ -624,7 +639,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true));
 		return channel.Reader;
 	}
 
@@ -645,7 +660,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides);
+		Produce(channel.Writer, () => ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides));
 		return channel.Reader;
 	}
 }

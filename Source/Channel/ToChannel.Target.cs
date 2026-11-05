@@ -25,13 +25,6 @@ public static partial class ChannelDbExtensions
 				.ConfigureAwait(false);
 		}
 
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
-		}
-
 		Exception? exception = null;
 		try
 		{
@@ -46,7 +39,8 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			writer.TryComplete(exception);
+			if (complete)
+				writer.TryComplete(exception);
 		}
 	}
 
@@ -63,13 +57,6 @@ public static partial class ChannelDbExtensions
 		await writer
 			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
 			.ConfigureAwait(false);
-
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform)
-				.ConfigureAwait(false);
-		}
 
 		Exception? exception = null;
 		try
@@ -163,9 +150,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Channel.Transformer<T>
-			.Create()
-			.PipeResultsTo(reader, target, complete, cancellationToken);
+		=> target.WriteAll(reader.Results<T>(), complete, false, cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -183,9 +168,7 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Channel.Transformer<T>
-			.Create(fieldMappingOverrides)
-			.PipeResultsTo(reader, target, complete, cancellationToken);
+		=> target.WriteAll(reader.Results<T>(fieldMappingOverrides), complete, false, cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -424,13 +407,6 @@ public static partial class ChannelDbExtensions
 				.ConfigureAwait(false);
 		}
 
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
-		}
-
 		Exception? exception = null;
 		try
 		{
@@ -445,7 +421,8 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			writer.TryComplete(exception);
+			if (complete)
+				writer.TryComplete(exception);
 		}
 	}
 
@@ -462,13 +439,6 @@ public static partial class ChannelDbExtensions
 		await writer
 			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
 			.ConfigureAwait(false);
-
-		if (!complete)
-		{
-			await command
-				.ExecuteReaderAsync(transform)
-				.ConfigureAwait(false);
-		}
 
 		Exception? exception = null;
 		try
@@ -565,9 +535,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Channel.Transformer<T>
-			.Create()
-			.PipeResultsToAsync(reader, target, complete, cancellationToken);
+		=> target.WriteAllAsync(reader.ResultsAsync<T>(cancellationToken), complete, false, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -584,9 +552,7 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> Channel.Transformer<T>
-			.Create(fieldMappingOverrides)
-			.PipeResultsToAsync(reader, target, complete, cancellationToken);
+		=> target.WriteAllAsync(reader.ResultsAsync<T>(cancellationToken, fieldMappingOverrides), complete, false, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.

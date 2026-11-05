@@ -1,0 +1,4 @@
+caller thread 2; 50000 rows; in-memory provider (reads complete synchronously)
+variant                                      returned-ms   done-ms    rows ran on caller thread
+ToChannel<T>(singleReader)  [mapped]         0.01          24.17      0
+ToChannel<T>(singleReader, selector)         0.01          19.37      0

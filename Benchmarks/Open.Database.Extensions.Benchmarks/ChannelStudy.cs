@@ -53,6 +53,39 @@ public static class ChannelStudy
 		}
 	}
 
+	// Does ToChannel() return immediately (production on another thread), or does the caller do the work?
+	// "returned" is how long the call itself took; "done" is until the channel completed.
+	public static async Task ThreadStudyAsync()
+	{
+		const int rows = 50_000;
+		var conn = new BenchConnection(BenchTable.Posts(rows));
+		int callerThread = Environment.CurrentManagedThreadId;
+		Console.WriteLine("caller thread {0}; {1} rows; in-memory provider (reads complete synchronously)", callerThread, rows);
+		Console.WriteLine("{0,-44} {1,-13} {2,-10} {3}", "variant", "returned-ms", "done-ms", "rows ran on caller thread");
+
+		foreach ((string name, Func<ChannelReader<Post>> start) in new (string, Func<ChannelReader<Post>>)[]
+		{
+			("ToChannel<T>(singleReader)  [mapped]", () => conn.Command(Sql).ToChannel<Post>(true)),
+			("ToChannel<T>(singleReader, selector)", () => conn.Command(Sql).ToChannel(true, r => { if (Environment.CurrentManagedThreadId == callerThread) Interlocked.Increment(ref _onCaller); return new Post { Id = r.GetInt32(0) }; })),
+		})
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				_onCaller = 0;
+				long t0 = Stopwatch.GetTimestamp();
+				ChannelReader<Post> reader = start();
+				double returned = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
+				long count = 0;
+				await foreach (Post _ in reader.ReadAllAsync()) count++;
+				double done = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
+				if (count != rows) Console.WriteLine("  !! received {0} of {1} rows", count, rows);
+				if (i == 3) Console.WriteLine("{0,-44} {1,-13:F2} {2,-10:F2} {3}", name, returned, done, _onCaller);
+			}
+		}
+	}
+
+	static int _onCaller;
+
 	static double Median(List<double> v)
 	{
 		v.Sort();

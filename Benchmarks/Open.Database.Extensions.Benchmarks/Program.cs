@@ -1,6 +1,12 @@
 using BenchmarkDotNet.Running;
 
 // dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*" [--job short]
+if (args.Contains("--thread-study"))
+{
+	await Open.Database.Extensions.Benchmarks.ChannelStudy.ThreadStudyAsync();
+	return;
+}
+
 if (args.Contains("--channel-study"))
 {
 	await Open.Database.Extensions.Benchmarks.ChannelStudy.RunAsync();

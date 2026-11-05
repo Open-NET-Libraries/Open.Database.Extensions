@@ -93,7 +93,7 @@ Both libraries return identical objects (checked in setup).
 
 | Feature | 1 row | 100 rows | 1000 rows | alloc |
 |---|---:|---:|---:|---:|
-| ToChannel (drain a channel) | 3.1 vs 1.3 µs (2.4x slower) | 45 vs 36 µs (1.24x slower) | 359 vs 284 µs (1.26x slower) | 2.20 / 1.09 / 1.01 |
+| ToChannel (drain a channel) | 2.05 vs 1.53 µs (tie; includes the thread hand-off) | 22.0 vs 42.5 µs (0.52x) | 133 vs 328 µs (0.41x) | 1.07 / 0.39 / 0.34 |
 | Dataflow (`BufferBlock`) | 9.6 vs 2.2 µs (4.4x slower) | 42.7 vs 15.0 µs (2.8x slower) | 322 vs 130 µs (2.5x slower) | 2.85 / 1.12 / 1.01 |
 | DataTable | 84.8 vs 86.2 µs | 244 vs 247 µs | 2,019 vs 2,007 µs | 1.00 (a tie) |
 | Transaction | 4.05 vs 4.12 µs | 5.56 vs 5.79 µs | 20.3 vs 20.3 µs | 1.08 |
