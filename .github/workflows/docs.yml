@@ -1,0 +1,130 @@
+name: Docs
+
+# Builds the documentation site on every push to master and publishes it to GitHub Pages.
+# Pull requests and manual runs build the site too, but only master pushes and manual runs deploy.
+# Warnings never block a deploy; an error, a library build error or a broken docs sample does,
+# and in that case the previously published site stays live.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Pushes and manual runs share one queue so an older run can never overwrite a newer deployment.
+# Pull requests get their own group so they can never displace a master run.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore the pinned DocFX tool
+        run: dotnet tool restore
+
+      - name: Build the samples (a library or sample that does not compile fails the run)
+        run: dotnet build docsite/samples/Samples.csproj -c Release -p:GeneratePackageOnBuild=false
+
+      - name: Run the samples (a failure is reported, not blocking)
+        id: samples
+        continue-on-error: true
+        run: dotnet docsite/samples/bin/Release/net10.0/Samples.dll
+
+      - name: Build the site
+        run: |
+          dotnet docfx docsite/docfx.json --log docfx-log.json
+          if ($LASTEXITCODE -ne 0) { throw "DocFX failed with exit code $LASTEXITCODE" }
+
+      - name: Check that the site has content
+        run: |
+          $site = 'docsite/_site'
+          foreach ($file in 'index.html', 'api/index.html', 'index.json', 'sitemap.xml', 'xrefmap.yml') {
+            if (-not (Test-Path "$site/$file")) { throw "The site is missing $file" }
+          }
+          $apiPages = @(Get-ChildItem "$site/api" -Filter *.html).Count
+          if ($apiPages -lt 100) { throw "Only $apiPages API pages were generated" }
+          "Site has $apiPages API pages."
+
+      - name: Summarize warnings
+        if: always()
+        continue-on-error: true
+        run: |
+          $lines = @()
+          $lines += '## Docs build'
+          $lines += ''
+          if ('${{ steps.samples.outcome }}' -eq 'failure') {
+            $lines += '> **The samples ran but reported a failure.** The docs may describe behavior that changed. See the "Run the samples" step.'
+            $lines += ''
+            Write-Host '::warning title=Docs samples::The samples ran but reported a failure.'
+          }
+          if (Test-Path docfx-log.json) {
+            # Plain text parsing on purpose: a log line that is not valid JSON must not break the summary.
+            $warnings = @(Get-Content docfx-log.json | Where-Object { $_ -match '"severity":"warning"' } | ForEach-Object {
+              $message = if ($_ -match '"message":"(.*?)"(?:,"(?:file|line|code|date_time)")') { $Matches[1] } else { $_ }
+              $message = $message -replace '\\\\', '/' -replace '\\"', '"'
+              [pscustomobject]@{ Message = $message; Kind = ($message -replace "'[^']*'", "'x'" -replace '\d+', 'N') }
+            })
+            $lines += "DocFX reported **$($warnings.Count)** warning(s). Warnings never block a deploy."
+            if ($warnings.Count -gt 0) {
+              $lines += ''
+              $lines += '| Warning | Count |'
+              $lines += '|---|---:|'
+              foreach ($group in ($warnings | Group-Object Kind | Sort-Object Count -Descending | Select-Object -First 20)) {
+                $lines += "| $($group.Name -replace '\|', '/') | $($group.Count) |"
+              }
+              $lines += ''
+              $lines += '<details><summary>First 100 warnings</summary>'
+              $lines += ''
+              foreach ($warning in ($warnings | Select-Object -First 100)) {
+                $lines += "- $($warning.Message)"
+              }
+              $lines += ''
+              $lines += '</details>'
+            }
+          }          else {
+            $lines += 'No DocFX log was produced.'
+          }
+          $lines -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      - name: Upload the site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docsite/_site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v6
+
+      - id: deployment
+        uses: actions/deploy-pages@v5

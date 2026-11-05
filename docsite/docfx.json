@@ -1,0 +1,79 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../Source",
+          "files": [
+            "Core/*.csproj",
+            "Channel/*.csproj",
+            "Dataflow/*.csproj",
+            "MSSqlClient/*.csproj"
+          ]
+        }
+      ],
+      "output": "api",
+      "properties": {
+        "TargetFramework": "net10.0"
+      },
+      "namespaceLayout": "flattened",
+      "memberLayout": "separatePages",
+      "enumSortOrder": "declaringOrder"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "toc.yml",
+          "index.md",
+          "api/**/*.yml",
+          "api/index.md",
+          "articles/**/*.md",
+          "articles/**/toc.yml"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [ "images/**" ]
+      },
+      {
+        "src": "..",
+        "files": [ "logo.png" ]
+      }
+    ],
+    "overwrite": [
+      {
+        "src": "..",
+        "files": [ "Source/**/docs/*.md" ],
+        "exclude": [ "**/obj/**", "**/bin/**" ]
+      },
+      {
+        "files": [ "api/overview/*.md" ]
+      }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "Open.Database.Extensions",
+      "_appTitle": "Open.Database.Extensions",
+      "_appFooter": "<span>Open.Database.Extensions &middot; MIT license &middot; built from <code>master</code> by GitHub Actions</span>",
+      "_appLogoPath": "logo.png",
+      "_appFaviconPath": "logo.png",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/Open-NET-Libraries/Open.Database.Extensions",
+        "branch": "master"
+      },
+      "_lang": "en"
+    },
+    "sitemap": {
+      "baseUrl": "https://open-net-libraries.github.io/Open.Database.Extensions/",
+      "priority": 0.5,
+      "changefreq": "monthly"
+    },
+    "postProcessors": [ "ExtractSearchIndex" ]
+  }
+}
