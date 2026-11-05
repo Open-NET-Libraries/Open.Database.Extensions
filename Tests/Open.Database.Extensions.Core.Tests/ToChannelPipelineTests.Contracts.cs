@@ -74,7 +74,7 @@ public static partial class ToChannelPipelineTests
 			? () => reader.ToChannelAsync(channel.Writer, true, Unbindable, ct)
 			: () => reader.ToChannel(channel.Writer, true, Unbindable, ct);
 
-		Assert.Throws<ArgumentException>(() => _ = call());
+		Assert.Throws<ArgumentException>(() => NeverReturns(call()));
 
 		Assert.False(channel.Reader.Completion.IsCompleted);
 		Assert.False(reader.IsDisposed);
@@ -236,14 +236,14 @@ public static partial class ToChannelPipelineTests
 			Assert.Equal(expected, thrown.ParamName);
 		}
 
-		Names("reader", () => ((IDataReader)null!).ToChannel(writer, true, ct));
-		Names("reader", () => ((IDataReader)null!).ToChannel(writer, true, Overrides, ct));
-		Names("reader", () => ((DbDataReader)null!).ToChannelAsync(writer, true, ct));
-		Names("reader", () => ((DbDataReader)null!).ToChannelAsync(writer, true, Overrides, ct));
-		Names("target", () => reader.ToChannel<Row>(null!, true, ct));
-		Names("target", () => reader.ToChannel<Row>(null!, true, Overrides, ct));
-		Names("target", () => reader.ToChannelAsync<Row>(null!, true, ct));
-		Names("target", () => reader.ToChannelAsync<Row>(null!, true, Overrides, ct));
+		Names("reader", () => NeverReturns(((IDataReader)null!).ToChannel(writer, true, ct)));
+		Names("reader", () => NeverReturns(((IDataReader)null!).ToChannel(writer, true, Overrides, ct)));
+		Names("reader", () => NeverReturns(((DbDataReader)null!).ToChannelAsync(writer, true, ct)));
+		Names("reader", () => NeverReturns(((DbDataReader)null!).ToChannelAsync(writer, true, Overrides, ct)));
+		Names("target", () => NeverReturns(reader.ToChannel<Row>(null!, true, ct)));
+		Names("target", () => NeverReturns(reader.ToChannel<Row>(null!, true, Overrides, ct)));
+		Names("target", () => NeverReturns(reader.ToChannelAsync<Row>(null!, true, ct)));
+		Names("target", () => NeverReturns(reader.ToChannelAsync<Row>(null!, true, Overrides, ct)));
 	}
 
 	// No overrides is no overrides, however it is spelled.

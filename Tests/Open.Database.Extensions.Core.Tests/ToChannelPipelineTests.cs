@@ -18,6 +18,10 @@ public static partial class ToChannelPipelineTests
 {
 	const int TargetCapacity = 10;
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
+
+	// For a call that must throw before it hands back its ValueTask (an argument-validation test). If it does return one, it is passed here, which
+	// counts as used for CA2012, instead of being discarded or boxed.
+	static void NeverReturns<T>(ValueTask<T> _) { }
 	static readonly TimeSpan Prompt = TimeSpan.FromSeconds(10);
 
 	static readonly string[] Columns = ["Id"];
@@ -588,10 +592,10 @@ public static partial class ToChannelPipelineTests
 		var reader = (SpyReader)new Probe().Factory(Rows(1))();
 
 		Assert.Multiple(
-			() => Assert.Throws<ArgumentNullException>(() => ((IDataReader)null!).ToChannel(channel.Writer, true, ct)),
-			() => Assert.Throws<ArgumentNullException>(() => reader.ToChannel<Row>(null!, true, ct)),
-			() => Assert.Throws<ArgumentNullException>(() => ((DbDataReader)null!).ToChannelAsync(channel.Writer, true, ct)),
-			() => Assert.Throws<ArgumentNullException>(() => reader.ToChannelAsync<Row>(null!, true, ct)));
+			() => Assert.Throws<ArgumentNullException>(() => NeverReturns(((IDataReader)null!).ToChannel(channel.Writer, true, ct))),
+			() => Assert.Throws<ArgumentNullException>(() => NeverReturns(reader.ToChannel<Row>(null!, true, ct))),
+			() => Assert.Throws<ArgumentNullException>(() => NeverReturns(((DbDataReader)null!).ToChannelAsync(channel.Writer, true, ct))),
+			() => Assert.Throws<ArgumentNullException>(() => NeverReturns(reader.ToChannelAsync<Row>(null!, true, ct))));
 		Assert.False(channel.Reader.Completion.IsCompleted);
 	}
 
