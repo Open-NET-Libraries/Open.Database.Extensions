@@ -172,102 +172,6 @@ public static class TransactionExtensionsTests
 
 	#endregion
 
-	#region ConnectionBehavior.LeaveOpen
-
-	[Fact]
-	public static void ExecuteTransaction_LeaveOpen_KeepsTheConnectionItOpened()
-	{
-		var c = new FakeDbConnection();
-
-		c.ExecuteTransaction(_ => { }, ConnectionBehavior.LeaveOpen);
-
-		Assert.Equal(["open", "begin", "commit", "tx-dispose"], c.Log);
-		Assert.Equal(ConnectionState.Open, c.State);
-	}
-
-	[Fact]
-	public static void ExecuteTransactionOfT_LeaveOpen_KeepsTheConnectionAndReturnsTheValue()
-	{
-		var c = new FakeDbConnection();
-
-		int value = c.ExecuteTransaction(_ => 42, ConnectionBehavior.LeaveOpen);
-
-		Assert.Equal(42, value);
-		Assert.Equal(ConnectionState.Open, c.State);
-	}
-
-	[Fact]
-	public static void ExecuteTransactionConditional_LeaveOpen_KeepsTheConnection()
-	{
-		var c = new FakeDbConnection();
-
-		var result = c.ExecuteTransactionConditional(_ => (true, "ok"), ConnectionBehavior.LeaveOpen);
-
-		Assert.Equal((true, "ok"), result);
-		Assert.Equal(ConnectionState.Open, c.State);
-	}
-
-	[Fact]
-	public static async Task ExecuteTransactionAsync_LeaveOpen_KeepsTheConnectionItOpened()
-	{
-		var c = new FakeDbConnection();
-
-		await c.ExecuteTransactionAsync(_ => default, ConnectionBehavior.LeaveOpen);
-
-		Assert.Equal(["open", "begin", "commit", "tx-dispose"], c.Log);
-		Assert.Equal(ConnectionState.Open, c.State);
-	}
-
-	[Fact]
-	public static async Task ExecuteTransactionAsyncOfT_LeaveOpen_KeepsTheConnectionAndReturnsTheValue()
-	{
-		var c = new FakeDbConnection();
-
-		int value = await c.ExecuteTransactionAsync(_ => new ValueTask<int>(7), ConnectionBehavior.LeaveOpen);
-
-		Assert.Equal(7, value);
-		Assert.Equal(ConnectionState.Open, c.State);
-	}
-
-	[Fact]
-	public static async Task ExecuteTransactionConditionalAsync_LeaveOpen_KeepsTheConnection()
-	{
-		var c = new FakeDbConnection();
-
-		var result = await c.ExecuteTransactionConditionalAsync(
-			(_, _) => new ValueTask<(bool Commit, int Value)>((true, 5)),
-			ConnectionBehavior.LeaveOpen);
-
-		Assert.Equal((true, 5), result);
-		Assert.Equal(ConnectionState.Open, c.State);
-	}
-
-	[Fact]
-	public static void ExecuteTransaction_RestoreState_IsTheDefault()
-	{
-		var explicitly = new FakeDbConnection();
-		var implicitly = new FakeDbConnection();
-
-		explicitly.ExecuteTransaction(_ => { }, ConnectionBehavior.RestoreState);
-		implicitly.ExecuteTransaction(_ => { });
-
-		Assert.Equal(implicitly.Log, explicitly.Log);
-		Assert.Equal(ConnectionState.Closed, explicitly.State);
-	}
-
-	[Fact]
-	public static void ExecuteTransaction_LiteralZero_StillBindsToIsolationLevel()
-	{
-		// Source compatibility: adding the ConnectionBehavior overloads must not make a literal 0 ambiguous.
-		var c = new FakeDbConnection();
-
-		c.ExecuteTransaction(_ => { }, 0);
-
-		Assert.Equal((IsolationLevel)0, c.LastTransaction!.IsolationLevel);
-	}
-
-	#endregion
-
 	#region Commit and rollback
 
 	[Fact]
@@ -401,17 +305,6 @@ public static class TransactionExtensionsTests
 	}
 
 	[Fact]
-	public static void NullDelegate_ConnectionBehaviorOverloads_ThrowArgumentNullException_BeforeOpening()
-	{
-		var c = new FakeDbConnection();
-		const ConnectionBehavior b = ConnectionBehavior.RestoreState;
-
-		AssertRejected(c, () => c.ExecuteTransactionConditional((Func<DbTransaction, (bool Commit, int Value)>)null!, b), "conditionalAction");
-		AssertRejected(c, () => c.ExecuteTransaction((Func<DbTransaction, int>)null!, b), "action");
-		AssertRejected(c, () => c.ExecuteTransaction((Action<DbTransaction>)null!, b), "action");
-	}
-
-	[Fact]
 	public static void NullDelegate_ForwardingOverloads_ThrowArgumentNullException_BeforeOpening()
 	{
 		var c = new FakeDbConnection();
@@ -431,17 +324,6 @@ public static class TransactionExtensionsTests
 		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionConditionalAsync((Func<DbTransaction, ValueTask<bool>>)null!), "conditionalAction");
 		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync((Func<DbTransaction, ValueTask<int>>)null!), "action");
 		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync((Func<DbTransaction, ValueTask>)null!), "action");
-	}
-
-	[Fact]
-	public static async Task NullDelegate_AsyncConnectionBehaviorOverloads_ThrowArgumentNullException_BeforeOpening()
-	{
-		var c = new FakeDbConnection();
-		const ConnectionBehavior b = ConnectionBehavior.RestoreState;
-
-		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionConditionalAsync((Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, int Value)>>)null!, b), "conditionalAction");
-		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync((Func<DbTransaction, ValueTask<int>>)null!, b), "action");
-		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync((Func<DbTransaction, ValueTask>)null!, b), "action");
 	}
 
 	[Fact]
@@ -510,38 +392,6 @@ public static class TransactionExtensionsTests
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionConditionalAsync(_ => new ValueTask<bool>(true), ct));
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => new ValueTask<int>(1), ct));
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => default, ct));
-
-		Assert.Empty(c.Log);
-	}
-
-	[Fact]
-	public static void TokenAfterConnectionBehavior_SyncShapes_PassTheTokenOn()
-	{
-		using var cts = new CancellationTokenSource();
-		cts.Cancel();
-		CancellationToken ct = cts.Token;
-		const ConnectionBehavior b = ConnectionBehavior.LeaveOpen;
-		var c = new FakeDbConnection();
-
-		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransactionConditional(_ => (true, 1), b, ct));
-		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransaction(_ => 1, b, ct));
-		Assert.Throws<OperationCanceledException>(() => c.ExecuteTransaction(_ => { }, b, ct));
-
-		Assert.Empty(c.Log);
-	}
-
-	[Fact]
-	public static async Task TokenAfterConnectionBehavior_AsyncShapes_PassTheTokenOn()
-	{
-		using var cts = new CancellationTokenSource();
-		cts.Cancel();
-		CancellationToken ct = cts.Token;
-		const ConnectionBehavior b = ConnectionBehavior.LeaveOpen;
-		var c = new FakeDbConnection();
-
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionConditionalAsync((_, _) => new ValueTask<(bool Commit, int Value)>((true, 1)), b, ct));
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => new ValueTask<int>(1), b, ct));
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await c.ExecuteTransactionAsync(_ => default, b, ct));
 
 		Assert.Empty(c.Log);
 	}

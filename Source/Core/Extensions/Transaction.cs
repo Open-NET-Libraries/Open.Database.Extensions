@@ -14,7 +14,7 @@ public static partial class TransactionExtensions
 	/// If it is not open, it is opened first and then closed (not disposed) when the transaction completes, even if it fails.
 	/// A connection that was already open is left open.
 	/// A failure while closing is ignored, as by then the transaction has already been committed or rolled back.
-	/// Use the overload that accepts a <see cref="ConnectionBehavior"/> to leave an opened connection open instead.
+	/// To keep a connection open across several operations, open it before calling.
 	/// </para>
 	/// <para>
 	/// A transaction that is not committed is rolled back by disposing it, which is the standard ADO.NET pattern.
@@ -36,29 +36,6 @@ public static partial class TransactionExtensions
 	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
 		this DbConnection connection,
 		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransactionConditional(conditionalAction, ConnectionBehavior.RestoreState, isolationLevel, cancellationToken);
-
-	/// <summary>
-	/// Begins a transaction before executing the action, like
-	/// <see cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>,
-	/// but lets the caller specify what happens to a connection that had to be opened.
-	/// Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.
-	/// Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-	/// <param name="connectionBehavior">Specifies whether a connection that had to be opened is closed again when the transaction completes.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <returns>The value returned from the conditional action.</returns>
-	[OverloadResolutionPriority(-1)] // Keeps a literal 0 argument binding to IsolationLevel, as it always has.
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
-		ConnectionBehavior connectionBehavior,
 		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 		CancellationToken cancellationToken = default)
 	{
@@ -85,37 +62,14 @@ public static partial class TransactionExtensions
 		}
 		finally
 		{
-			RestoreConnection(connection, priorState, connectionBehavior);
+			RestoreConnection(connection, priorState);
 		}
 	}
 
 	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
-		this DbConnection connection,
-		Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, T Value)>> conditionalAction,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, ConnectionBehavior.RestoreState, isolationLevel, cancellationToken);
-
-	/// <summary>
-	/// Begins a transaction before executing the action, like
-	/// <see cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>,
-	/// but lets the caller specify what happens to a connection that had to be opened.
-	/// Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.
-	/// Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning a 'Commit' value of true signals to commit the transaction.</param>
-	/// <param name="connectionBehavior">Specifies whether a connection that had to be opened is closed again when the transaction completes.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <returns>The value returned from the conditional action.</returns>
-	[OverloadResolutionPriority(-1)] // Keeps a literal 0 argument binding to IsolationLevel, as it always has.
 	public static async ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 		this DbConnection connection,
 		Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, T Value)>> conditionalAction,
-		ConnectionBehavior connectionBehavior,
 		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
 		CancellationToken cancellationToken = default)
 	{
@@ -144,7 +98,7 @@ public static partial class TransactionExtensions
 		}
 		finally
 		{
-			await RestoreConnectionAsync(connection, priorState, connectionBehavior);
+			await RestoreConnectionAsync(connection, priorState);
 		}
 	}
 
@@ -317,127 +271,7 @@ public static partial class TransactionExtensions
 			.ConfigureAwait(false);
 	}
 
-	#region Connection behavior
-
-	/// <summary>
-	/// Begins a transaction before executing the action, like
-	/// <see cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, IsolationLevel, CancellationToken)"/>,
-	/// but lets the caller specify what happens to a connection that had to be opened.
-	/// Commits if there are no exceptions and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="connectionBehavior">Specifies whether a connection that had to be opened is closed again when the transaction completes.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <returns>The value of the action.</returns>
-	[OverloadResolutionPriority(-1)] // Keeps a literal 0 argument binding to IsolationLevel, as it always has.
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		Func<DbTransaction, T> action,
-		ConnectionBehavior connectionBehavior,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (action is null) throw new ArgumentNullException(nameof(action));
-		Contract.EndContractBlock();
-
-		return connection.ExecuteTransactionConditional(
-			t => (true, action(t)),
-			connectionBehavior, isolationLevel, cancellationToken).Value;
-	}
-
-	/// <summary>
-	/// Begins a transaction before executing the action, like
-	/// <see cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, IsolationLevel, CancellationToken)"/>,
-	/// but lets the caller specify what happens to a connection that had to be opened.
-	/// Commits if there are no exceptions and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="connectionBehavior">Specifies whether a connection that had to be opened is closed again when the transaction completes.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	[OverloadResolutionPriority(-1)] // Keeps a literal 0 argument binding to IsolationLevel, as it always has.
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		Action<DbTransaction> action,
-		ConnectionBehavior connectionBehavior,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (action is null) throw new ArgumentNullException(nameof(action));
-		Contract.EndContractBlock();
-
-		connection.ExecuteTransactionConditional(
-			t => { action(t); return (true, true); },
-			connectionBehavior, isolationLevel, cancellationToken);
-	}
-
-	/// <summary>
-	/// Begins a transaction before executing the action, like
-	/// <see cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)"/>,
-	/// but lets the caller specify what happens to a connection that had to be opened.
-	/// Commits if there are no exceptions and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="connectionBehavior">Specifies whether a connection that had to be opened is closed again when the transaction completes.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <returns>The value of the awaited action.</returns>
-	[OverloadResolutionPriority(-1)] // Keeps a literal 0 argument binding to IsolationLevel, as it always has.
-	public static async ValueTask<T> ExecuteTransactionAsync<T>(
-		this DbConnection connection,
-		Func<DbTransaction, ValueTask<T>> action,
-		ConnectionBehavior connectionBehavior,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (action is null) throw new ArgumentNullException(nameof(action));
-		Contract.EndContractBlock();
-
-		return (await connection
-			.ExecuteTransactionConditionalAsync(
-				async (t, _) => (true, await action(t).ConfigureAwait(false)),
-				connectionBehavior, isolationLevel, cancellationToken)
-			.ConfigureAwait(false)).Value;
-	}
-
-	/// <summary>
-	/// Begins a transaction before executing the action, like
-	/// <see cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, IsolationLevel, CancellationToken)"/>,
-	/// but lets the caller specify what happens to a connection that had to be opened.
-	/// Commits if there are no exceptions and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="connectionBehavior">Specifies whether a connection that had to be opened is closed again when the transaction completes.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	[OverloadResolutionPriority(-1)] // Keeps a literal 0 argument binding to IsolationLevel, as it always has.
-	public static async ValueTask ExecuteTransactionAsync(
-		this DbConnection connection,
-		Func<DbTransaction, ValueTask> action,
-		ConnectionBehavior connectionBehavior,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (action is null) throw new ArgumentNullException(nameof(action));
-		Contract.EndContractBlock();
-
-		await connection
-			.ExecuteTransactionConditionalAsync(
-				async (t, _) => { await action(t).ConfigureAwait(false); return (true, true); },
-				connectionBehavior, isolationLevel, cancellationToken)
-			.ConfigureAwait(false);
-	}
+	#region Restoring the connection
 
 	// Closes (never disposes) a connection that was not open when the operation began, so the caller's
 	// connection is left the way it was found. By the time this runs the transaction has already been disposed:
@@ -447,9 +281,9 @@ public static partial class TransactionExtensions
 	// so it must neither turn a completed operation into an error nor replace the exception of a failed one.
 	// Only a connection that was already Open belongs to the caller. One that was Closed, or Broken and therefore
 	// repaired by EnsureOpen, is a connection this operation opened, so it is closed again here.
-	static void RestoreConnection(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
+	static void RestoreConnection(DbConnection connection, ConnectionState priorState)
 	{
-		if (behavior != ConnectionBehavior.RestoreState || priorState.HasFlag(ConnectionState.Open))
+		if (priorState.HasFlag(ConnectionState.Open))
 			return;
 
 		try
@@ -463,15 +297,15 @@ public static partial class TransactionExtensions
 	}
 
 #if NETSTANDARD2_0
-	static ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
+	static ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState)
 	{
-		RestoreConnection(connection, priorState, behavior);
+		RestoreConnection(connection, priorState);
 		return default;
 	}
 #else
-	static async ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState, ConnectionBehavior behavior)
+	static async ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState)
 	{
-		if (behavior != ConnectionBehavior.RestoreState || priorState.HasFlag(ConnectionState.Open))
+		if (priorState.HasFlag(ConnectionState.Open))
 			return;
 
 		try
@@ -489,9 +323,8 @@ public static partial class TransactionExtensions
 
 	#region Cancellation token in place of the isolation level
 
-	// The isolation level is almost always left unspecified, so a token may be passed right after the action
-	// (or right after the ConnectionBehavior). None of these have optional parameters, which is what keeps them
-	// from competing with the overloads that do.
+	// The isolation level is almost always left unspecified, so a token may be passed right after the action.
+	// None of these have optional parameters, which is what keeps them from competing with the overloads that do.
 	// They carry the lowest priority so that a bare `default` argument, which has always bound to IsolationLevel,
 	// keeps doing so. A real CancellationToken can only match these, so it is unaffected.
 
@@ -566,63 +399,6 @@ public static partial class TransactionExtensions
 		Func<DbTransaction, ValueTask> action,
 		CancellationToken cancellationToken)
 		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
-
-	// With a ConnectionBehavior in front, a literal 0 in the next position could mean either enum,
-	// so these carry the same priority as the other ConnectionBehavior overloads.
-
-	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
-		ConnectionBehavior connectionBehavior,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransactionConditional(conditionalAction, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
-		this DbConnection connection,
-		Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, T Value)>> conditionalAction,
-		ConnectionBehavior connectionBehavior,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		Func<DbTransaction, T> action,
-		ConnectionBehavior connectionBehavior,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransaction(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		Action<DbTransaction> action,
-		ConnectionBehavior connectionBehavior,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransaction(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static ValueTask<T> ExecuteTransactionAsync<T>(
-		this DbConnection connection,
-		Func<DbTransaction, ValueTask<T>> action,
-		ConnectionBehavior connectionBehavior,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransactionAsync(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, ConnectionBehavior, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static ValueTask ExecuteTransactionAsync(
-		this DbConnection connection,
-		Func<DbTransaction, ValueTask> action,
-		ConnectionBehavior connectionBehavior,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransactionAsync(action, connectionBehavior, IsolationLevel.Unspecified, cancellationToken);
 
 	#endregion
 
