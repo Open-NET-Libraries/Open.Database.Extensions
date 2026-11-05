@@ -1,3 +1,4 @@
+using Open.Database.Extensions.Core;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using Dapper;
@@ -85,6 +86,13 @@ public class SyncBenchmarks
 
 	[BenchmarkCategory("Untyped"), Benchmark]
 	public int Untyped_ODE() => _conn.Command(Sql).Retrieve().Result.Count;
+
+	// ODE's buffer-then-map route: Retrieve() copies object[] rows, DequeueAs<T>() maps them as they are drained.
+	[BenchmarkCategory("QueryResult"), Benchmark(Baseline = true)]
+	public List<Post> QueryResult_Dapper() => _conn.Query<Post>(Sql).AsList();
+
+	[BenchmarkCategory("QueryResult"), Benchmark]
+	public List<Post> QueryResult_ODE() => _conn.Command(Sql).Retrieve().DequeueAs<Post>().ToList();
 
 	[BenchmarkCategory("Dictionary"), Benchmark(Baseline = true)]
 	public Dictionary<int, Post> Dictionary_Dapper() => _conn.Query<Post>(Sql).ToDictionary(p => p.Id);

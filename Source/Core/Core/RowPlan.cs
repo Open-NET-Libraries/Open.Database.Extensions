@@ -70,6 +70,15 @@ internal sealed class RowPlan<T> : RowSource<T>
 		return Custom.TryAdd(key, plan) ? plan : Custom[key];
 	}
 
+	// Property name → column name for every mapped (not ignored) property.
+	readonly Dictionary<string, string> _propertyMap;
+
+	/// <summary>The names of the properties that are mapped.</summary>
+	public IEnumerable<string> PropertyNames => _propertyMap.Keys;
+
+	/// <summary>The names of the columns the mapped properties read.</summary>
+	public IEnumerable<string> ColumnNames => _propertyMap.Values;
+
 	// Column name (case-insensitive) → the property it feeds.
 	readonly Dictionary<string, PropertyInfo> _columnToProperty;
 
@@ -92,6 +101,10 @@ internal sealed class RowPlan<T> : RowSource<T>
 				fieldToColumn[kvp.Key] = kvp.Value; // A null column means 'ignore this field'.
 			}
 		}
+
+		_propertyMap = new Dictionary<string, string>(fieldToColumn.Count, StringComparer.Ordinal);
+		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
+			if (kvp.Value is not null) _propertyMap[kvp.Key] = kvp.Value;
 
 		_columnToProperty = new Dictionary<string, PropertyInfo>(fieldToColumn.Count, StringComparer.OrdinalIgnoreCase);
 		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
@@ -208,6 +221,93 @@ internal sealed class RowPlan<T> : RowSource<T>
 		}
 	}
 
+
+	#region Array rows (the buffered Retrieve/QueryResult route)
+
+	// Rows that were already copied out of a reader as object[] (boxed values) are mapped by a compiled,
+	// cached per-column-list delegate too, rather than rebuilding lookups and property setters per query.
+	ArrayLayout? _lastArray;
+	readonly ConcurrentDictionary<int, ArrayLayout[]> _arrayLayouts = new();
+
+	sealed class ArrayLayout(string[] names)
+	{
+		public readonly string[] Names = names;
+		public Func<object?[], T>? Map;
+
+		public bool Matches(ImmutableArray<string> candidate)
+		{
+			string[] mine = Names;
+			if (candidate.Length != mine.Length) return false;
+			for (int i = 0; i < mine.Length; i++)
+				if (!string.Equals(candidate[i], mine[i], StringComparison.Ordinal)) return false;
+			return true;
+		}
+	}
+
+	/// <summary>Gets the mapper from <c>object[]</c> rows whose columns are, in order, <paramref name="names"/>.</summary>
+	public Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
+	{
+		ArrayLayout? l = _lastArray;
+		if (l is null || !l.Matches(names)) l = ResolveArray(names);
+		return l.Map ??= BuildArray(l);
+	}
+
+	ArrayLayout ResolveArray(ImmutableArray<string> names)
+	{
+		int hash = names.Length;
+		foreach (string n in names) hash = unchecked((hash * 31) + (n?.GetHashCode() ?? 0));
+
+		if (_arrayLayouts.TryGetValue(hash, out ArrayLayout[]? candidates))
+		{
+			foreach (ArrayLayout c in candidates)
+			{
+				if (c.Matches(names))
+				{
+					_lastArray = c;
+					return c;
+				}
+			}
+		}
+
+		if (_arrayLayouts.Count >= MaxLayouts) _arrayLayouts.Clear();
+
+		var layout = new ArrayLayout([.. names]);
+		_arrayLayouts.AddOrUpdate(hash, _ => [layout], (_, existing) => [.. existing, layout]);
+		_lastArray = layout;
+		return layout;
+	}
+
+	Func<object?[], T> BuildArray(ArrayLayout layout)
+	{
+		ParameterExpression row = Expression.Parameter(typeof(object?[]), "row");
+		ParameterExpression item = Expression.Variable(typeof(T), "item");
+		ParameterExpression index = Expression.Variable(typeof(int), "index");
+
+		var bindings = new Binding?[layout.Names.Length];
+		var statements = new List<Expression>(layout.Names.Length * 2 + 2)
+		{
+			Expression.Assign(item, Expression.New(typeof(T))),
+		};
+
+		MethodInfo convert = typeof(RowPlan<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
+		var assigned = new HashSet<PropertyInfo>();
+		for (int i = 0; i < layout.Names.Length; i++)
+		{
+			if (!_columnToProperty.TryGetValue(layout.Names[i], out PropertyInfo? property)) continue;
+			if (!assigned.Add(property)) continue;
+
+			bindings[i] = new Binding(property.Name, layout.Names[i]);
+			Expression cell = Expression.ArrayIndex(row, Expression.Constant(i));
+			statements.Add(Expression.Assign(index, Expression.Constant(i)));
+			statements.Add(Expression.Call(item, property.GetSetMethod()!, Expression.Call(convert.MakeGenericMethod(property.PropertyType), cell)));
+		}
+
+		statements.Add(item);
+		return Expression.Lambda<Func<object?[], T>>(Guard(statements, item, index, bindings), row).Compile();
+	}
+
+	#endregion
+
 	#region Compilation
 
 	static readonly Dictionary<Type, string> TypedGetters = new()
@@ -265,9 +365,14 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 		statements.Add(item);
 
-		// `index` tracks the column being read so a failure can name the offending property and column.
+		return Expression.Lambda<Func<TReader, T>>(Guard(statements, item, index, bindings), r).Compile();
+	}
+
+	// `index` tracks the column being read so a failure can name the offending property and column.
+	static Expression Guard(List<Expression> statements, ParameterExpression item, ParameterExpression index, Binding?[] bindings)
+	{
 		ParameterExpression ex = Expression.Parameter(typeof(Exception), "ex");
-		Expression body = Expression.Block(
+		return Expression.Block(
 			typeof(T),
 			[item, index],
 			Expression.Assign(index, Expression.Constant(-1)),
@@ -280,8 +385,6 @@ internal sealed class RowPlan<T> : RowSource<T>
 							typeof(RowPlan<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
 							ex, index, Expression.Constant(bindings)),
 						typeof(T)))));
-
-		return Expression.Lambda<Func<TReader, T>>(body, r).Compile();
 	}
 
 	static Expression ReadValue(

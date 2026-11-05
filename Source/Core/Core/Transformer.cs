@@ -1,13 +1,13 @@
 ﻿
-#if NET10_0_OR_GREATER
-using System.Collections.Frozen;
-#endif
-
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
 /// Utility of transforming retrieved data into models matching the type parameter provided.
 /// </summary>
+/// <remarks>
+/// The mapping is a compiled, cached <see cref="RowPlan{T}"/>: constructing a transformer and applying it to
+/// a result no longer rebuilds lookups or property setters per query.
+/// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
 	where T : new()
@@ -24,43 +24,22 @@ public class Transformer<T>
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "<Pending>")]
 	protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
 
-	// Compiling a setter is expensive; one per property, for the life of the process.
-	static readonly System.Collections.Concurrent.ConcurrentDictionary<PropertyInfo, Action<T, object?>> Setters = new();
-
 	/// <summary>
 	/// The type of <typeparamref name="T"/>.
 	/// </summary>
 	public Type Type => typeof(T);
 
-	// Reflection is invariant per T; a static on this generic type is per-T and initialized once
-	// (thread-safe), so GetProperties() and the name->PropertyInfo map aren't rebuilt per query.
-	// Built once, read on every query (property lookups + Keys) -> frozen on the modern target.
-#if NET10_0_OR_GREATER
-	static readonly FrozenDictionary<string, PropertyInfo> PropertiesByName
-		= typeof(T).GetProperties().ToFrozenDictionary(p => p.Name);
-#else
-	static readonly Dictionary<string, PropertyInfo> PropertiesByName
-		= typeof(T).GetProperties().ToDictionary(p => p.Name);
-#endif
-
-	// Allow mapping key = object property, value = column name.
-	readonly Dictionary<string, string> _propertyMap;
-
-	// Column-name -> property lookup, matched case-insensitively (OrdinalIgnoreCase) so no
-	// upper-cased key strings are allocated. This map is per-query (a fresh Transformer is built
-	// per operation) and read only a handful of times, so a plain Dictionary is correct here —
-	// freezing a short-lived map costs more to build than the few lookups would ever recover.
-	readonly Dictionary<string, PropertyInfo> _columnToPropertyMap;
+	readonly RowPlan<T> _plan;
 
 	/// <summary>
 	/// The property names.
 	/// </summary>
-	public IEnumerable<string> PropertyNames => _propertyMap.Keys;
+	public IEnumerable<string> PropertyNames => _plan.PropertyNames;
 
 	/// <summary>
 	/// The column names.
 	/// </summary>
-	public IEnumerable<string> ColumnNames => _propertyMap.Values;
+	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
 	/// Constructs a transformer using the optional field overrides.
@@ -69,27 +48,7 @@ public class Transformer<T>
 	/// The "key" is the field name, and the "value" is the column name.
 	/// </remarks>
 	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
-	{
-		// Per-instance copy of the default (property-name -> same column-name) map, sized exactly,
-		// so the optional overrides can mutate it without touching the shared reflection cache.
-		_propertyMap = [with(PropertiesByName.Count)];
-		foreach (string name in PropertiesByName.Keys)
-			_propertyMap[name] = name;
-
-		if (overrides is not null)
-		{
-			foreach (var kvp in overrides)
-			{
-				if (kvp.Value == null) _propertyMap.Remove(kvp.Key); // Null column indicates 'ignore this field'.
-				else _propertyMap[kvp.Key] = kvp.Value;
-			}
-		}
-
-		// Project column-name -> property directly with a case-insensitive comparer (no upper-cased
-		// key strings). A plain Dictionary — this map lives only for the duration of one query.
-		_columnToPropertyMap = _propertyMap.ToDictionary(
-			kvp => kvp.Value, kvp => PropertiesByName[kvp.Key], StringComparer.OrdinalIgnoreCase);
-	}
+		=> _plan = RowPlan<T>.For(overrides);
 
 	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
 	[ExcludeFromCodeCoverage]
@@ -113,38 +72,13 @@ public class Transformer<T>
 	/// </summary>
 	protected class Processor
 	{
+		Func<object?[], T> _map = static _ => throw new InvalidOperationException("The column names have not been set.");
+
 		/// <summary>
 		/// Constructs a processor.
 		/// </summary>
 		/// <param name="transformer">The transformer to use.</param>
-		public Processor(Transformer<T> transformer)
-		{
-			Transformer = transformer;
-			Transform = record =>
-			{
-				var model = new T();
-				int count = _names.Length;
-				for (int i = 0; i < count; i++)
-				{
-					Action<T, object?>? p = _propertySetters[i];
-					if (p != null)
-					{
-						object? value = record[i];
-						if (value == DBNull.Value) value = null;
-						try
-						{
-							p(model, value);
-						}
-						catch (Exception ex)
-						{
-							throw new InvalidOperationException($"Unable to set value of property '{_names[i]}'.", ex);
-						}
-					}
-				}
-
-				return model;
-			};
-		}
+		public Processor(Transformer<T> transformer) => Transformer = transformer;
 
 		/// <summary>
 		/// Constructs a processor.
@@ -159,26 +93,17 @@ public class Transformer<T>
 		/// </summary>
 		public Transformer<T> Transformer { get; }
 
-		ImmutableArray<string> _names = [];
-		Action<T, object?>?[] _propertySetters = [];
-
 		/// <summary>
 		/// The resultant transform function.
 		/// </summary>
-		public Func<object?[], T> Transform { get; } // Using a Func<object?[],T> for better type inference.
+		public Func<object?[], T> Transform => _map; // Using a Func<object?[],T> for better type inference.
 
 		/// <summary>
 		/// Allows for deferred initialization.
 		/// </summary>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
-		{
-			var map = Transformer._columnToPropertyMap;
-			_names = names;
-			_propertySetters = names
-				.Select(n => map.TryGetValue(n, out PropertyInfo? p) ? Setters.GetOrAdd(p, static p => p.BuildUntypedSetter<T>()) : null)
-				.ToArray();
-		}
+			=> _map = Transformer._plan.ArrayMapper(names);
 	}
 
 	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object?[]}}, ArrayPool{object?}, bool)" />
@@ -187,10 +112,7 @@ public class Transformer<T>
 		if (results is null) throw new ArgumentNullException(nameof(results));
 		Contract.EndContractBlock();
 
-		var processor = new Processor(this, results.Names);
-		Queue<object?[]> q = results.Result;
-
-		return q.DequeueEach().Select(processor.Transform);
+		return Drain(results.Result, _plan.ArrayMapper(results.Names));
 	}
 
 	/// <summary>
@@ -206,21 +128,33 @@ public class Transformer<T>
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var processor = new Processor(this, results.Names);
-		Func<object?[], T> transform = processor.Transform;
-		Queue<object[]> q = results.Result;
+		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays);
+	}
 
-		return q.DequeueEach().Select(a =>
+	// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
+	static IEnumerable<T> Drain(Queue<object?[]> queue, Func<object?[], T> map)
+	{
+		while (queue.Count > 0)
+			yield return map(queue.Dequeue());
+	}
+
+	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map, ArrayPool<object> pool, bool clear)
+	{
+		while (queue.Count > 0)
 		{
+			object[] row = queue.Dequeue();
+			T item;
 			try
 			{
-				return transform(a);
+				item = map(row);
 			}
 			finally
 			{
-				arrayPool.Return(a, clearArrays);
+				pool.Return(row, clear);
 			}
-		});
+
+			yield return item;
+		}
 	}
 
 	/// <summary>

@@ -42,19 +42,6 @@ public static partial class CoreExtensions
 		}
 	}
 
-	// https://stackoverflow.com/questions/17660097/is-it-possible-to-speed-this-method-up/17669142#17669142
-	internal static Action<T, object?> BuildUntypedSetter<T>(this PropertyInfo propertyInfo)
-	{
-		var targetType = propertyInfo.DeclaringType;
-		var exTarget = Expression.Parameter(targetType ?? throw new InvalidOperationException(), "t");
-		var exValue = Expression.Parameter(typeof(object), "p");
-		var methodInfo = propertyInfo.GetSetMethod();
-		var exBody = Expression.Call(exTarget, methodInfo!,
-		   Expression.Convert(exValue, propertyInfo.PropertyType));
-		var lambda = Expression.Lambda<Action<T, object?>>(exBody, exTarget, exValue);
-		return lambda.Compile();
-	}
-
 	internal static object? DBNullValueToNull(object? value)
 		=> value == DBNull.Value ? null : value;
 
