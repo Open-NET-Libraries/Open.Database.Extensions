@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Source\Channel\Open.Database.Extensions.Channel.csproj" />
     <ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+    <ProjectReference Include="..\..\Source\Dataflow\Open.Database.Extensions.Dataflow.csproj" />
   </ItemGroup>
 
   <ItemGroup>
