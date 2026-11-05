@@ -178,7 +178,7 @@ public static class ToChannelCompleteFlagTests
 		int delivered = await DrainAfterCompleting(channel, TestContext.Current.CancellationToken);
 
 		Assert.Multiple(
-			() => Assert.Equal(1, command.Behaviors.Count),
+			() => Assert.Single(command.Behaviors),
 			() => Assert.Equal(3, n),
 			() => Assert.True(open, "complete: false must leave the writer open"),
 			() => Assert.Equal(4, delivered)); // 3 rows + the one the test writes to prove the writer is open
@@ -192,7 +192,7 @@ public static class ToChannelCompleteFlagTests
 
 		long n = await command.ToChannelAsync(channel.Writer, true, TestContext.Current.CancellationToken);
 
-		Assert.Equal(1, command.Behaviors.Count);
+		Assert.Single(command.Behaviors);
 		Assert.Equal(3, n);
 		Assert.False(WriterIsOpen(channel));
 	}

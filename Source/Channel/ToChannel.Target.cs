@@ -11,7 +11,8 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> writer,
 		bool complete,
 		CancellationToken cancellationToken,
-		Func<IDataReader, ValueTask<long>> transform)
+		Func<IDataReader, ValueTask<long>> transform,
+		bool transformCompletes = false)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -39,7 +40,9 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			if (complete)
+			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
+			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
+			if (complete && (exception is not null || !transformCompletes))
 				writer.TryComplete(exception);
 		}
 	}
@@ -48,7 +51,8 @@ public static partial class ChannelDbExtensions
 		IExecuteReader command,
 		ChannelWriter<T> writer,
 		bool complete,
-		Func<IDataReader, ValueTask<long>> transform)
+		Func<IDataReader, ValueTask<long>> transform,
+		bool transformCompletes = false)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -72,7 +76,9 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			if (complete)
+			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
+			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
+			if (complete && (exception is not null || !transformCompletes))
 				writer.TryComplete(exception);
 		}
 	}
@@ -278,7 +284,8 @@ public static partial class ChannelDbExtensions
 		where T : new()
 		=> ToChannelCore(
 			command, target, complete, cancellationToken,
-			reader => ToChannel(reader, target, false, cancellationToken));
+			reader => ToChannel(reader, target, complete, cancellationToken),
+			transformCompletes: true);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -300,7 +307,8 @@ public static partial class ChannelDbExtensions
 		where T : new()
 		=> ToChannelCore(
 			command, target, complete, cancellationToken,
-			reader => ToChannel(reader, target, false, fieldMappingOverrides, cancellationToken));
+			reader => ToChannel(reader, target, complete, fieldMappingOverrides, cancellationToken),
+			transformCompletes: true);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -371,7 +379,8 @@ public static partial class ChannelDbExtensions
 		where T : new()
 		=> ToChannelCore(
 			command, target, complete,
-			reader => reader.ToChannel(target, false, command.CancellationToken));
+			reader => reader.ToChannel(target, complete, command.CancellationToken),
+			transformCompletes: true);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -391,14 +400,16 @@ public static partial class ChannelDbExtensions
 		where T : new()
 		=> ToChannelCore(
 			command, target, complete,
-			reader => reader.ToChannel(target, false, fieldMappingOverrides, command.CancellationToken));
+			reader => reader.ToChannel(target, complete, fieldMappingOverrides, command.CancellationToken),
+			transformCompletes: true);
 
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		DbCommand command,
 		ChannelWriter<T> writer,
 		bool complete,
 		CancellationToken cancellationToken,
-		Func<DbDataReader, ValueTask<long>> transform)
+		Func<DbDataReader, ValueTask<long>> transform,
+		bool transformCompletes = false)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -425,7 +436,9 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			if (complete)
+			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
+			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
+			if (complete && (exception is not null || !transformCompletes))
 				writer.TryComplete(exception);
 		}
 	}
@@ -434,7 +447,8 @@ public static partial class ChannelDbExtensions
 		IExecuteReaderAsync command,
 		ChannelWriter<T> writer,
 		bool complete,
-		Func<IDataReader, ValueTask<long>> transform)
+		Func<IDataReader, ValueTask<long>> transform,
+		bool transformCompletes = false)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -458,7 +472,9 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			if (complete)
+			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
+			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
+			if (complete && (exception is not null || !transformCompletes))
 				writer.TryComplete(exception);
 		}
 	}
@@ -642,7 +658,8 @@ public static partial class ChannelDbExtensions
 		where T : new()
 		=> ToChannelAsyncCore(
 			command, target, complete, cancellationToken,
-			reader => ToChannelAsync(reader, target, false, cancellationToken));
+			reader => ToChannelAsync(reader, target, complete, cancellationToken),
+			transformCompletes: true);
 
 	/// <summary>
 	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -664,7 +681,8 @@ public static partial class ChannelDbExtensions
 		where T : new()
 		=> ToChannelAsyncCore(
 			command, target, complete, cancellationToken,
-			reader => ToChannelAsync(reader, target, false, fieldMappingOverrides, cancellationToken));
+			reader => ToChannelAsync(reader, target, complete, fieldMappingOverrides, cancellationToken),
+			transformCompletes: true);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -742,8 +760,9 @@ public static partial class ChannelDbExtensions
 		=> ToChannelAsyncCore(
 			command, target, complete,
 			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, false, command.CancellationToken)
-				: reader.ToChannel(target, false, command.CancellationToken));
+				? r.ToChannelAsync(target, complete, command.CancellationToken)
+				: reader.ToChannel(target, complete, command.CancellationToken),
+			transformCompletes: true);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
@@ -764,6 +783,7 @@ public static partial class ChannelDbExtensions
 		=> ToChannelAsyncCore(
 			command, target, complete,
 			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, false, fieldMappingOverrides, command.CancellationToken)
-				: reader.ToChannel(target, false, fieldMappingOverrides, command.CancellationToken));
+				? r.ToChannelAsync(target, complete, fieldMappingOverrides, command.CancellationToken)
+				: reader.ToChannel(target, complete, fieldMappingOverrides, command.CancellationToken),
+			transformCompletes: true);
 }
