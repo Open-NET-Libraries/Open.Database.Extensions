@@ -16,7 +16,7 @@ The factory form and the connection form look the same after the first call.
 
 In the factory form the command creates, opens and disposes a connection for every terminal. In the connection form the connection is yours: the command opens it only when it is closed, closes only what it opened, and never disposes it. See [who owns the connection](foundation.md#who-owns-the-connection).
 
-Command objects are cheap, but they are not reusable across threads: a command built from one connection throws `InvalidOperationException` if two terminals run at once.
+A command is not safe to share across threads: one built from a single connection throws `InvalidOperationException` if two terminals run at once.
 
 ## Which command type you get
 
@@ -47,7 +47,7 @@ Pass a `CommandType` as the second argument of `Command` if you need `TableDirec
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
-Each has an `Async` twin that honors the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout.
+`ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout.
 
 `ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type. SQLite returns a `long` for `count(*)` and SQL Server returns an `int`. To convert, pass a function instead:
 

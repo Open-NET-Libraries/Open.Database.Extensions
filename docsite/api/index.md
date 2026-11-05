@@ -9,6 +9,6 @@ The reference is generated from the code and its XML documentation on every buil
 | `Open.Database.Extensions.Dataflow` | Reading into TPL Dataflow blocks. |
 | `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
 
-`Open.Database.Extensions.SqlClient` (built on `System.Data.SqlClient`) declares the same type names as `MSSqlClient` in the same namespace, so only the maintained `MSSqlClient` package is documented here.
+`Open.Database.Extensions.SqlClient` (built on `System.Data.SqlClient`) declares the same type names as `MSSqlClient` in the same namespace, so only `MSSqlClient`, the package on `Microsoft.Data.SqlClient`, is documented here.
 
 Start from the [namespaces](xref:Open.Database.Extensions) in the table of contents.

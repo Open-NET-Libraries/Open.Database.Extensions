@@ -38,10 +38,6 @@
     "resource": [
       {
         "files": [ "images/**" ]
-      },
-      {
-        "src": "..",
-        "files": [ "logo.png" ]
       }
     ],
     "overwrite": [
@@ -60,8 +56,8 @@
       "_appName": "Open.Database.Extensions",
       "_appTitle": "Open.Database.Extensions",
       "_appFooter": "<span>Open.Database.Extensions &middot; MIT license &middot; built from <code>master</code> by GitHub Actions</span>",
-      "_appLogoPath": "logo.png",
-      "_appFaviconPath": "logo.png",
+      "_appLogoPath": "images/logo.png",
+      "_appFaviconPath": "images/favicon.png",
       "_enableSearch": true,
       "_gitContribute": {
         "repo": "https://github.com/Open-NET-Libraries/Open.Database.Extensions",

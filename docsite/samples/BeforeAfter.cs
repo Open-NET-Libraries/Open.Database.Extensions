@@ -40,7 +40,7 @@ public static class BeforeAfter
 
 	public static async Task<Post[]> OdeList(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		#region ode_list
+		#region ode_list_factory
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author order by id")
 			.AddParam("author", 42)
@@ -84,7 +84,7 @@ public static class BeforeAfter
 
 	public static Post? OdeFirst(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		#region ode_first
+		#region ode_first_factory
 		Post? post = connectionFactory
 			.Command("select * from posts where id = @id")
 			.AddParam("id", 3)
