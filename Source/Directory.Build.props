@@ -20,7 +20,7 @@
 		<Authors>electricessence</Authors>
 		<Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</PackageProjectUrl>
+		<PackageProjectUrl>https://open-net-libraries.github.io/Open.Database.Extensions/</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Open-NET-Libraries/Open.Database.Extensions</RepositoryUrl>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
