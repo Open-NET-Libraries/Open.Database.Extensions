@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
 namespace Open.Database.Extensions.Channel;
@@ -34,6 +35,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	/// </summary>
 	private (int[] Ordinals, ImmutableArray<string> Names) ResolveColumns(IDataReader reader)
 	{
+		Debug.Assert(reader is not null);
 		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
 		int count = columns.Length;
 		int[] ordinals = new int[count];
@@ -124,6 +126,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 		internal Pipeline(Transformer<T> owner, ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
 		{
+			Debug.Assert(owner is not null);
+			Debug.Assert(target is not null);
+
 			_owner = owner;
 			_target = target;
 			_complete = complete;
@@ -165,6 +170,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 		internal async ValueTask<long> ReadFrom(IDataReader reader, (int[] Ordinals, ImmutableArray<string> Names) columns)
 		{
+			Debug.Assert(reader is not null);
+			Debug.Assert(columns.Ordinals is not null && !columns.Names.IsDefault);
+
 			_processor.SetNames(columns.Names); // Before the first record can reach stage 2.
 
 			// When every column is mapped, the whole record is taken in one call.
@@ -186,6 +194,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 
 		internal async ValueTask<long> ReadFromAsync(DbDataReader reader, (int[] Ordinals, ImmutableArray<string> Names) columns)
 		{
+			Debug.Assert(reader is not null);
+			Debug.Assert(columns.Ordinals is not null && !columns.Names.IsDefault);
+
 			_processor.SetNames(columns.Names);
 
 			int[] ordinals = columns.Ordinals;
@@ -224,6 +235,8 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// </remarks>
 		public async ValueTask<long> RunAsync(Func<ValueTask<long>> stage1)
 		{
+			Debug.Assert(stage1 is not null);
+
 			Exception? error = null;
 			try
 			{
@@ -264,6 +277,8 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		// If the buffer was completed with an error, that error surfaces here only after everything buffered has been delivered.
 		private async Task DeliverAsync(ChannelReader<object[]> buffer)
 		{
+			Debug.Assert(buffer is not null);
+
 			Exception? error = null;
 			try
 			{

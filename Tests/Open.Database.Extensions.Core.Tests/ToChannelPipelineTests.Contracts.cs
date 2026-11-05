@@ -224,4 +224,70 @@ public static partial class ToChannelPipelineTests
 		if (probe.Executions > 0)
 			await probe.Reader.Disposed.WaitAsync(Prompt, ct);
 	}
+	[Fact]
+	public static void ReaderLevel_NullArguments_NameTheParameter()
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		ChannelWriter<Row> writer = BoundedChannel.CreateBounded<Row>(TargetCapacity).Writer;
+		SpyReader reader = (SpyReader)new Probe().Factory(Rows(1))();
+
+		static void Names(string expected, Action call)
+		{
+			var thrown = Assert.Throws<ArgumentNullException>(call);
+			Assert.Equal(expected, thrown.ParamName);
+		}
+
+		Names("reader", () => ((IDataReader)null!).ToChannel<Row>(writer, true, ct));
+		Names("reader", () => ((IDataReader)null!).ToChannel(writer, true, Overrides, ct));
+		Names("reader", () => ((DbDataReader)null!).ToChannelAsync<Row>(writer, true, ct));
+		Names("reader", () => ((DbDataReader)null!).ToChannelAsync(writer, true, Overrides, ct));
+		Names("target", () => reader.ToChannel<Row>(null!, true, ct));
+		Names("target", () => reader.ToChannel<Row>(null!, true, Overrides, ct));
+		Names("target", () => reader.ToChannelAsync<Row>(null!, true, ct));
+		Names("target", () => reader.ToChannelAsync<Row>(null!, true, Overrides, ct));
+	}
+
+	// No overrides is no overrides, however it is spelled.
+	[Fact]
+	public static async Task Mapped_NullFieldMappingOverrides_MeanNone()
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var none = (IEnumerable<(string Field, string? Column)>)null!;
+		Func<DbDataReader> factory = new Probe().Factory(Rows(3));
+		(IDbCommand dbCommand, _) = NewDbCommand(factory, ConnectionState.Open);
+		FakeDbCommand fakeCommand = NewFakeDbCommand(factory, ConnectionState.Open);
+		IExecuteReader executeReader = new ScriptedCommand(factory, false, ct);
+		IExecuteReaderAsync executeReaderAsync = new ScriptedCommand(factory, false, ct);
+		ChannelWriter<Row> writer = BoundedChannel.CreateUnbounded<Row>().Writer;
+
+		Assert.Equal(3, await dbCommand.ToChannel(writer, false, none, ct));
+		Assert.Equal(3, await fakeCommand.ToChannelAsync(writer, false, none, ct));
+		Assert.Equal(3, await executeReader.ToChannel(writer, false, none));
+		Assert.Equal(3, await executeReaderAsync.ToChannelAsync(writer, false, none));
+	}
+
+	// Whatever is wrong with the overrides, the answer is never a NullReferenceException.
+	[Fact]
+	public static async Task Mapped_ANullFieldInAnOverride_IsNotANullReference()
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var oddly = new (string Field, string? Column)[] { (null!, "Id") };
+		Func<DbDataReader> factory = new Probe().Factory(Rows(3));
+		(IDbCommand dbCommand, _) = NewDbCommand(factory, ConnectionState.Open);
+		IExecuteReader executeReader = new ScriptedCommand(factory, false, ct);
+		ChannelWriter<Row> writer = BoundedChannel.CreateUnbounded<Row>().Writer;
+
+		Exception? thrown = null;
+		try
+		{
+			await dbCommand.ToChannel(writer, false, oddly, ct);
+			await executeReader.ToChannel(writer, false, oddly);
+		}
+		catch (Exception ex)
+		{
+			thrown = ex;
+		}
+
+		Assert.IsNotType<NullReferenceException>(thrown);
+	}
 }

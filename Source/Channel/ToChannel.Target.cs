@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Diagnostics;
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for writing data to a channel.
@@ -760,6 +761,8 @@ public static partial class ChannelDbExtensions
 		bool complete)
 		where T : new()
 	{
+		Debug.Assert(target is not null);
+
 		try
 		{
 			return fieldMappingOverrides is null
@@ -787,6 +790,8 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken)
 		where T : new()
 	{
+		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
+		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
@@ -809,6 +814,8 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
 	{
+		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
+		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
@@ -830,6 +837,8 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken)
 		where T : new()
 	{
+		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
+		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
@@ -852,6 +861,8 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
 	{
+		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
+		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
