@@ -10,7 +10,7 @@ public static class EnsureOpenAsyncTests
 	{
 		var probe = new ConnectionProbe(ConnectionState.Closed, dbConnection: true);
 
-		ConnectionState prior = await probe.Db!.EnsureOpenAsync();
+		ConnectionState prior = await probe.Db!.EnsureOpenAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal(ConnectionState.Closed, prior);
 		Assert.Equal("OpenAsync", probe.Log);
@@ -22,7 +22,7 @@ public static class EnsureOpenAsyncTests
 	{
 		var probe = new ConnectionProbe(ConnectionState.Open, dbConnection: true);
 
-		ConnectionState prior = await probe.Db!.EnsureOpenAsync();
+		ConnectionState prior = await probe.Db!.EnsureOpenAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal(ConnectionState.Open, prior);
 		Assert.Equal(string.Empty, probe.Log);
@@ -33,7 +33,7 @@ public static class EnsureOpenAsyncTests
 	{
 		var probe = new ConnectionProbe(ConnectionState.Broken, dbConnection: true);
 
-		ConnectionState prior = await probe.Db!.EnsureOpenAsync();
+		ConnectionState prior = await probe.Db!.EnsureOpenAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal(ConnectionState.Broken, prior);
 		Assert.Equal("Close,OpenAsync", probe.Log);
@@ -58,7 +58,7 @@ public static class EnsureOpenAsyncTests
 		System.Data.Common.DbConnection connection = null!;
 
 		await Assert.ThrowsAsync<ArgumentNullException>(
-			async () => await connection.EnsureOpenAsync());
+			async () => await connection.EnsureOpenAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -66,7 +66,7 @@ public static class EnsureOpenAsyncTests
 	{
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 
-		ConnectionState prior = await probe.Connection.EnsureOpenAsync();
+		ConnectionState prior = await probe.Connection.EnsureOpenAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal(ConnectionState.Closed, prior);
 		Assert.Equal("Open", probe.Log);
@@ -91,7 +91,7 @@ public static class EnsureOpenAsyncTests
 		var probe = new ConnectionProbe(ConnectionState.Closed, dbConnection: true);
 		IDbConnection connection = probe.Connection;
 
-		await connection.EnsureOpenAsync();
+		await connection.EnsureOpenAsync(TestContext.Current.CancellationToken);
 
 		// OpenAsync only; the synchronous Open() must not also be called.
 		Assert.Equal("OpenAsync", probe.Log);

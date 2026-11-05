@@ -160,26 +160,26 @@ public static class MappedQueryTests
 
 	[Fact]
 	public static async Task ToListAsync_MapsAllRows()
-		=> Assert.Equal("Ada,Alan,Grace", Names(await ThreePeople().Map<Person>().ToListAsync()));
+		=> Assert.Equal("Ada,Alan,Grace", Names(await ThreePeople().Map<Person>().ToListAsync(cancellationToken: TestContext.Current.CancellationToken)));
 
 	[Fact]
 	public static async Task FirstOrDefaultAsync_ReturnsFirstRow()
 	{
-		Person? p = await ThreePeople().Map<Person>().FirstOrDefaultAsync();
+		Person? p = await ThreePeople().Map<Person>().FirstOrDefaultAsync(cancellationToken: TestContext.Current.CancellationToken);
 		Assert.Equal("Ada", p!.FirstName);
 	}
 
 	[Fact]
 	public static async Task SkipTake_Async_Slices()
 	{
-		List<Person> people = await ThreePeople().Map<Person>().Skip(1).Take(1).ToListAsync();
+		List<Person> people = await ThreePeople().Map<Person>().Skip(1).Take(1).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 		Assert.Equal("Alan", Assert.Single(people).FirstName);
 	}
 
 	[Fact]
 	public static async Task Selector_Async_Projects()
 	{
-		List<string?> last = await ThreePeople().Map(r => (string?)r["LastName"]).ToListAsync();
+		List<string?> last = await ThreePeople().Map(r => (string?)r["LastName"]).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 		Assert.Equal("Lovelace,Turing,Hopper", string.Join(",", last));
 	}
 

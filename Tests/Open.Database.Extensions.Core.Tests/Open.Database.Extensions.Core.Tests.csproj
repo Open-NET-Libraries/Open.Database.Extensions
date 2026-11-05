@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+		<!-- xUnit v3 test projects are executables. -->
+		<OutputType>Exe</OutputType>
 		<IsPackable>false</IsPackable>
 		<ImplicitUsings>true</ImplicitUsings>
 		<RunSettingsFilePath>D:\Users\essence\Development\- GitHub\- Open-NET-Libraries\Open.Database.Extensions\Tests\Open.Database.Extensions.Core.Tests\bin\Release\net10.0\fine-code-coverage\coverage-tool-output\Open.Database.Extensions.Core.Tests-fcc-mscodecoverage-generated.runsettings</RunSettingsFilePath>
@@ -10,8 +12,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="NSubstitute" Version="6.2.0" />
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

@@ -171,7 +171,7 @@ public static class CommandExtensionsTests
 			return ValueTask.CompletedTask;
 		};
 
-		await probe.Command.ExecuteReaderAsync(handler);
+		await probe.Command.ExecuteReaderAsync(handler, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal("Open,ExecuteReader,Handler,DisposeReader", probe.Log);
 		Assert.True(probe.Behaviors.Single().HasFlag(CommandBehavior.CloseConnection));
@@ -188,7 +188,7 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Closed, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1, 2);
 
-		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0));
+		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal([1, 2], results);
 		Assert.Equal("OpenAsync", probe.Log);
@@ -201,7 +201,7 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Open, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1, 2);
 
-		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0));
+		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal([1, 2], results);
 		Assert.Equal(string.Empty, probe.Log);
@@ -214,7 +214,7 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Open, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1, 2, 3);
 
-		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), useReadAsync: false);
+		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), useReadAsync: false, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal([1, 2, 3], results);
 	}
@@ -240,7 +240,7 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Closed, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1);
 
-		bool read = await command.ExecuteReaderAsync(r => r.Read(), CommandBehavior.SequentialAccess);
+		bool read = await command.ExecuteReaderAsync(r => r.Read(), CommandBehavior.SequentialAccess, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.True(read);
 		Assert.Equal("OpenAsync", probe.Log);

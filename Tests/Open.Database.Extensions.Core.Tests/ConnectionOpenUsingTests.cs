@@ -166,7 +166,7 @@ public static class ConnectionOpenUsingTests
 		{
 			probe.Calls.Add("Action");
 			return ValueTask.CompletedTask;
-		}));
+		}), TestContext.Current.CancellationToken);
 
 		Assert.Equal("Create,Open,Action,DisposeConnection", probe.Log);
 	}
@@ -200,7 +200,7 @@ public static class ConnectionOpenUsingTests
 			{
 				probe.Calls.Add("Action");
 				throw new InvalidOperationException();
-			})));
+			}), TestContext.Current.CancellationToken));
 
 		Assert.Equal("Take,Open,Action,Give", probe.Log);
 	}
