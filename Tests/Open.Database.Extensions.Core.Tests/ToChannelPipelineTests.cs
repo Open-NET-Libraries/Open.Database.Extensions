@@ -122,12 +122,16 @@ public static partial class ToChannelPipelineTests
 		/// <summary>Runs before each asynchronous read with the number of rows handed out so far.</summary>
 		public Func<int, CancellationToken, Task>? BeforeReadAsync { get; set; }
 
+		/// <summary>Runs after each read with the number of rows handed out so far and whether the read found a row.</summary>
+		public Action<int, bool>? AfterRead { get; set; }
+
 		public override bool Read()
 		{
 			if (Volatile.Read(ref _armed) is { } armed) throw armed;
 			if (failure is not null && _reads++ == failAfterRows) throw failure;
 			bool more = inner.Read();
 			if (more) Interlocked.Increment(ref _rowsRead);
+			AfterRead?.Invoke(RowsRead, more);
 			return more;
 		}
 

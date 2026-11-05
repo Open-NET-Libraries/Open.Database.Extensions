@@ -276,7 +276,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create(), cancellationToken);
+		=> ToChannelMapped(command, target, complete, null, cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -296,7 +296,7 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides), cancellationToken);
+		=> ToChannelMapped(command, target, complete, fieldMappingOverrides, cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -365,7 +365,7 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete)
 		where T : new()
-		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create());
+		=> ToChannelMapped(command, target, complete, null);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -383,7 +383,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides));
+		=> ToChannelMapped(command, target, complete, fieldMappingOverrides);
 
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		DbCommand command,
@@ -634,7 +634,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create(), cancellationToken);
+		=> ToChannelMappedAsync(command, target, complete, null, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -654,7 +654,7 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides), cancellationToken);
+		=> ToChannelMappedAsync(command, target, complete, fieldMappingOverrides, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -729,7 +729,7 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete)
 		where T : new()
-		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create());
+		=> ToChannelMappedAsync(command, target, complete, null);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
@@ -747,7 +747,33 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides));
+		=> ToChannelMappedAsync(command, target, complete, fieldMappingOverrides);
+
+	// A field override that the model can't honor is a failure of the operation, not a precondition: with `complete` the target is
+	// faulted with it (so that whoever awaits the target isn't left waiting), and the call throws. Nothing has been executed and there
+	// is no reader yet, so completing the target here is not completing it before a reader is released.
+	// (The preconditions - null arguments, no connection, a closed target, a cancelled token - have been checked before this, and
+	// leave the target alone.)
+	private static Channel.Transformer<T> CreateMapper<T>(
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
+		ChannelWriter<T> target,
+		bool complete)
+		where T : new()
+	{
+		try
+		{
+			return fieldMappingOverrides is null
+				? Channel.Transformer<T>.Create()
+				: Channel.Transformer<T>.Create(fieldMappingOverrides);
+		}
+		catch (Exception ex)
+		{
+			if (complete)
+				target.TryComplete(ex);
+
+			throw;
+		}
+	}
 
 	// The mapped command-level overloads run as a pipeline. The command's reader is read into an internal, bounded
 	// buffer (stage 1), and the writer handed to the core is that buffer's writer: the core completes it once the reader
@@ -757,7 +783,7 @@ public static partial class ChannelDbExtensions
 		IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
-		Channel.Transformer<T> mapper,
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
 		CancellationToken cancellationToken)
 		where T : new()
 	{
@@ -769,6 +795,7 @@ public static partial class ChannelDbExtensions
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
+		Channel.Transformer<T> mapper = CreateMapper(fieldMappingOverrides, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
 			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Token, pipeline.Read))
@@ -779,7 +806,7 @@ public static partial class ChannelDbExtensions
 		IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
-		Channel.Transformer<T> mapper)
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -788,6 +815,7 @@ public static partial class ChannelDbExtensions
 
 		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
 
+		Channel.Transformer<T> mapper = CreateMapper(fieldMappingOverrides, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
 		return await pipeline
 			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Read))
@@ -798,7 +826,7 @@ public static partial class ChannelDbExtensions
 		DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
-		Channel.Transformer<T> mapper,
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
 		CancellationToken cancellationToken)
 		where T : new()
 	{
@@ -810,6 +838,7 @@ public static partial class ChannelDbExtensions
 		if (!command.Connection.State.HasFlag(ConnectionState.Open))
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
+		Channel.Transformer<T> mapper = CreateMapper(fieldMappingOverrides, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
 			.RunAsync(() => ToChannelAsyncCore(command, pipeline.Buffer, true, pipeline.Token, pipeline.ReadAsync))
@@ -820,7 +849,7 @@ public static partial class ChannelDbExtensions
 		IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
-		Channel.Transformer<T> mapper)
+		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -829,6 +858,7 @@ public static partial class ChannelDbExtensions
 
 		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
 
+		Channel.Transformer<T> mapper = CreateMapper(fieldMappingOverrides, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
 		return await pipeline
 			.RunAsync(() => ToChannelAsyncCore(

@@ -188,19 +188,30 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		{
 			_processor.SetNames(columns.Names);
 
+			int[] ordinals = columns.Ordinals;
+			bool whole = ordinals.Length == reader.FieldCount; // Every column is mapped: the whole record in one call.
 			long count = 0;
-			IAsyncEnumerable<object[]> records = columns.Ordinals.Length == reader.FieldCount
-				? reader.AsAsyncEnumerable(LocalPool, Token)
-				: reader.AsAsyncEnumerable(columns.Ordinals, LocalPool, Token);
 
-			await foreach (object[] record in records.ConfigureAwait(false))
+			// Like the synchronous read, this succeeds if, and only if, the reader reports that there is nothing left to read, and is
+			// cancelled if the cancellation is seen while there still is. Once the token is cancelled, one more read that can't itself
+			// be cancelled tells which of the two it is: if it finds a record, writing that record ends the call with the cancellation.
+			while (await reader.ReadAsync(Token.IsCancellationRequested ? CancellationToken.None : Token).ConfigureAwait(false))
 			{
+				object[] record = LocalPool.Rent(ordinals.Length);
+				if (whole)
+				{
+					reader.GetValues(record);
+				}
+				else
+				{
+					for (int i = 0; i < ordinals.Length; i++)
+						record[i] = reader.GetValue(ordinals[i]);
+				}
+
 				await Buffer.WriteAsync(record, Token).ConfigureAwait(false);
 				count++;
 			}
 
-			// The enumeration ends quietly when it is cancelled, which mustn't look like all the records have been read.
-			Token.ThrowIfCancellationRequested();
 			return count;
 		}
 
@@ -217,7 +228,11 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 			try
 			{
 				long count = await stage1().ConfigureAwait(false);
-				ThrowIfDeliveryFailed(); // Reading can also end quietly, not by throwing, when the second stage has stopped it.
+				// Reading can also end quietly, not by throwing, when the second stage has stopped it. (Not when it is the caller who cancelled:
+				// if stage 1 got to the end, that cancellation doesn't undo the read, even though it stops the second stage.)
+				if (!_cancellationToken.IsCancellationRequested)
+					ThrowIfDeliveryFailed();
+
 				return count;
 			}
 			catch (Exception ex)

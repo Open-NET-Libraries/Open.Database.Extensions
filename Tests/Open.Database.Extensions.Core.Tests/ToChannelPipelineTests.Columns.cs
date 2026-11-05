@@ -25,6 +25,8 @@ public static partial class ToChannelPipelineTests
 		["Id", "Name", "Extra"], // After.
 		["Id", "Name"], // Nothing unmapped.
 		["A", "Id", "B", "Name", "C"], // All around.
+		["Name", "Id"], // Not in the order of the properties.
+		["Name", "Extra", "Id"], // Not in the order of the properties, with something in between.
 	];
 
 	public static TheoryData<Kind, bool, int> WideLayouts { get; } = BuildWideLayouts();
