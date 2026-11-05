@@ -104,7 +104,15 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
 	/// This should only be set to true if there is a clear reason why and should be profiled before and after.
 	/// </summary>
-	public bool UseAsyncRead { get; set; }
+	public bool UseAsyncRead
+	{
+		get => _options?.UseAsyncRead ?? false;
+		set
+		{
+			if (!value && _options is null) return;
+			Options.UseAsyncRead = value;
+		}
+	}
 
 	/// <summary>
 	/// Sets the UseAsyncRead value.

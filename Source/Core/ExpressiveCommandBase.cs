@@ -29,17 +29,31 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// The connection provider to used to acquire connections.
 	/// </summary>
-	protected IDbConnectionPool<TConnection> ConnectionProvider => _pool ??= DbConnectionProvider.Create(_connection!);
+	protected IDbConnectionPool<TConnection> ConnectionProvider
+		=> _source as IDbConnectionPool<TConnection> ?? DbConnectionProvider.Create((TConnection)_source);
 
-	// A command built from a bare connection keeps it directly: no pool wrapper object is needed to run it.
-	IDbConnectionPool<TConnection>? _pool;
-	readonly TConnection? _connection;
+	// Either the pool to take connections from, or (a command built from a bare connection) the connection
+	// itself: running it needs no pool wrapper object.
+	readonly object _source;
 	int _busy;
+
+	// The rarely-set members live in a block that is only allocated when one is set, so the usual
+	// conn.Command(sql) object stays small (it is allocated on every call).
+	private protected sealed class CommandOptions
+	{
+		public IDbTransaction? Transaction;
+		public CancellationToken CancellationToken;
+		public ushort Timeout = CommandTimeout.DEFAULT_SECONDS;
+		public bool UseAsyncRead;
+	}
+
+	private protected CommandOptions? _options;
+	private protected CommandOptions Options => _options ??= new();
 
 	/// <summary>
 	/// The transaction to execute commands on if not using a connection factory.
 	/// </summary>
-	protected IDbTransaction? Transaction { get; }
+	protected IDbTransaction? Transaction => _options?.Transaction;
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connectionPool">The pool to acquire connections from.</param>
@@ -52,14 +66,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 	{
-		_pool = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
+		_source = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
 		Command = command ?? throw new ArgumentNullException(nameof(command));
 		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
 		Contract.EndContractBlock();
 
 		Type = type;
 		if (@params is not null) _params = @params.ToList();
-		Timeout = CommandTimeout.DEFAULT_SECONDS;
 	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
@@ -99,15 +112,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 	{
-		_connection = connection ?? throw new ArgumentNullException(nameof(connection));
-		Transaction = transaction;
+		_source = connection ?? throw new ArgumentNullException(nameof(connection));
+		if (transaction is not null) Options.Transaction = transaction;
 		Command = command ?? throw new ArgumentNullException(nameof(command));
 		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
 		Contract.EndContractBlock();
 
 		Type = type;
 		if (@params is not null) _params = @params.ToList();
-		Timeout = CommandTimeout.DEFAULT_SECONDS;
 	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
@@ -161,7 +173,15 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// The command timeout value.
 	/// </summary>
-	public ushort Timeout { get; set; }
+	public ushort Timeout
+	{
+		get => _options?.Timeout ?? CommandTimeout.DEFAULT_SECONDS;
+		set
+		{
+			if (value == CommandTimeout.DEFAULT_SECONDS && _options is null) return;
+			Options.Timeout = value;
+		}
+	}
 
 	/// <summary>
 	/// Creates the expected command type from the connection provided.
@@ -182,7 +202,15 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// The optional cancellation token to use with supported methods.
 	/// </summary>
-	public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
+	public CancellationToken CancellationToken
+	{
+		get => _options?.CancellationToken ?? CancellationToken.None;
+		set
+		{
+			if (!value.CanBeCanceled && _options is null) return;
+			Options.CancellationToken = value;
+		}
+	}
 
 	CancellationToken IExecuteReader.CancellationToken => CancellationToken;
 
@@ -331,10 +359,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// Open MUST occur before command creation as some DbCommands require it.
 	private protected TResult ExecuteCore<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, TResult> func)
 	{
-		if (_connection is { } single)
+		if (_source is TConnection single)
 			return ExecuteSingle(single, state, func);
 
-		IDbConnectionPool<TConnection> pool = _pool!;
+		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_source;
 		TConnection conn = pool.Take();
 		try
 		{
@@ -352,7 +380,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
-		if (_connection is { } single)
+		if (_source is TConnection single)
 		{
 			EnterSingle();
 			ConnectionState before = single.State;
@@ -368,7 +396,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			}
 		}
 
-		IDbConnectionPool<TConnection> pool = _pool!;
+		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_source;
 		TConnection conn = pool.Take();
 		try
 		{
