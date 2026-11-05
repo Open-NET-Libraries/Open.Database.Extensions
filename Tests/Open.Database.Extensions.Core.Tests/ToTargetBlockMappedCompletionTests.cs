@@ -89,13 +89,14 @@ public static class ToTargetBlockMappedCompletionTests
 
 	// ---- spy: wraps a real block, records how many messages it had accepted when Complete() was called, and by whom ----
 
-	sealed class SpyTarget<T>(ITargetBlock<T> inner) : ITargetBlock<T>
+	sealed class SpyTarget<T>(ITargetBlock<T> inner, Action<string>? log = null) : ITargetBlock<T>
 	{
 		readonly object _sync = new();
 		int _accepted;
 
 		public int Accepted => Volatile.Read(ref _accepted);
 		public int? AcceptedAtComplete { get; private set; }
+		public int? AcceptedAtFault { get; private set; }
 		public string? CompletedBy { get; private set; }
 
 		public Task Completion => inner.Completion;
@@ -127,10 +128,16 @@ public static class ToTargetBlockMappedCompletionTests
 				}
 			}
 
+			log?.Invoke("target-completed");
 			inner.Complete();
 		}
 
-		public void Fault(Exception exception) => inner.Fault(exception);
+		public void Fault(Exception exception)
+		{
+			lock (_sync) AcceptedAtFault ??= Accepted;
+			log?.Invoke("target-faulted");
+			inner.Fault(exception);
+		}
 
 		sealed class SourceProxy(ISourceBlock<T> real, SpyTarget<T> spy) : ISourceBlock<T>
 		{
@@ -166,7 +173,7 @@ public static class ToTargetBlockMappedCompletionTests
 		public SpyTarget<T> Target { get; }
 		public Task Drained { get; }
 
-		public Harness(TargetKind kind, CancellationToken cancellationToken)
+		public Harness(TargetKind kind, CancellationToken cancellationToken, Action<string>? log = null)
 		{
 			if (kind == TargetKind.ActionBlock)
 			{
@@ -177,13 +184,13 @@ public static class ToTargetBlockMappedCompletionTests
 						Interlocked.Increment(ref _consumed);
 					},
 					new ExecutionDataflowBlockOptions { BoundedCapacity = TargetCapacity });
-				Target = new SpyTarget<T>(block);
+				Target = new SpyTarget<T>(block, log);
 				Drained = block.Completion;
 			}
 			else
 			{
 				var block = new BufferBlock<T>(new DataflowBlockOptions { BoundedCapacity = TargetCapacity });
-				Target = new SpyTarget<T>(block);
+				Target = new SpyTarget<T>(block, log);
 				Drained = Task.Run(async () =>
 				{
 					await foreach (T _ in block.ReceiveAllAsync(cancellationToken))
@@ -202,10 +209,10 @@ public static class ToTargetBlockMappedCompletionTests
 			=> $"{Label}: produced={Produced} consumed={Consumed} acceptedAtComplete={AcceptedAtComplete?.ToString() ?? "never"} drained={Drained} completedBy=[{CompletedBy}]";
 	}
 
-	static async Task<Outcome> RunAsync<T>(string label, TargetKind targetKind, Func<ITargetBlock<T>, ValueTask<long>> call)
+	static async Task<Outcome> RunAsync<T>(string label, TargetKind targetKind, Func<ITargetBlock<T>, ValueTask<long>> call, Action<string>? log = null)
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
-		var harness = new Harness<T>(targetKind, ct);
+		var harness = new Harness<T>(targetKind, ct, log);
 
 		long produced = await Task.Run(async () => await call(harness.Target).ConfigureAwait(false), ct).WaitAsync(Timeout, ct);
 
@@ -226,8 +233,46 @@ public static class ToTargetBlockMappedCompletionTests
 
 	// ---- command builders ----
 
-	static Func<ITargetBlock<Row>, bool, ValueTask<long>> Mapped(Kind kind, bool overrides, object?[][] rows)
+	// An IExecuteReader whose readers come from a factory (which may throw) and which logs when the reader was disposed.
+	sealed class ScriptedCommand(Func<IDataReader> open, Action<string>? log) : IExecuteReader
 	{
+		public CancellationToken CancellationToken => default;
+
+		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			IDataReader reader = open();
+			try { handler(reader); }
+			finally { reader.Dispose(); log?.Invoke("reader-disposed"); }
+		}
+
+		public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			IDataReader reader = open();
+			try { return transform(reader); }
+			finally { reader.Dispose(); log?.Invoke("reader-disposed"); }
+		}
+
+		public async ValueTask ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			IDataReader reader = open();
+			try { await handler(reader).ConfigureAwait(false); }
+			finally { reader.Dispose(); log?.Invoke("reader-disposed"); }
+		}
+
+		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
+		{
+			IDataReader reader = open();
+			try { return await transform(reader).ConfigureAwait(false); }
+			finally { reader.Dispose(); log?.Invoke("reader-disposed"); }
+		}
+	}
+
+	static Func<ITargetBlock<Row>, bool, ValueTask<long>> Mapped(
+		Kind kind, bool overrides, object?[][] rows,
+		Exception? failure = null, Action<string>? log = null,
+		IEnumerable<(string Field, string? Column)>? overrideValues = null)
+	{
+		IEnumerable<(string Field, string? Column)> ov = overrideValues ?? Overrides;
 		switch (kind)
 		{
 			case Kind.DbCommandInterfaceSync:
@@ -236,28 +281,34 @@ public static class ToTargetBlockMappedCompletionTests
 				var connection = Substitute.For<IDbConnection>();
 				command.Connection.Returns(connection);
 				connection.State.Returns(ConnectionState.Open);
-				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(Columns, rows));
-				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, Overrides) : command.ToTargetBlock(t, c));
+				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ =>
+				{
+					if (failure is not null) throw failure;
+					IDataReader reader = FakeReader.Create(Columns, rows);
+					reader.When(r => r.Dispose()).Do(x => log?.Invoke("reader-disposed"));
+					return reader;
+				});
+				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
 			}
 
 			case Kind.DbCommandAsync:
 			{
 				var connection = new FakeDbConnection();
 				connection.SetState(ConnectionState.Open);
-				var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(Columns, rows));
-				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, Overrides) : command.ToTargetBlockAsync(t, c);
+				var command = new FakeDbCommand(connection, () => failure is null ? FakeReader.CreateDb(Columns, rows) : throw failure);
+				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
 			}
 
 			case Kind.ExecuteReaderSync:
 			{
-				IExecuteReader command = new FakeExecuteReader(Columns, rows);
-				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, Overrides) : command.ToTargetBlock(t, c));
+				IExecuteReader command = new ScriptedCommand(() => failure is null ? FakeReader.CreateDb(Columns, rows) : throw failure, log);
+				return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
 			}
 
 			default:
 			{
-				IExecuteReader command = new FakeExecuteReader(Columns, rows);
-				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, Overrides) : command.ToTargetBlockAsync(t, c);
+				IExecuteReader command = new ScriptedCommand(() => failure is null ? FakeReader.CreateDb(Columns, rows) : throw failure, log);
+				return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
 			}
 		}
 	}
@@ -367,4 +418,245 @@ public static class ToTargetBlockMappedCompletionTests
 		Outcome outcome = await RunAsync<Row>($"reader-level async target={target} rows={count}", target, t => reader.ToTargetBlockAsync(t, true));
 		AssertDelivered(outcome, count, declineIsPossible: false);
 	}
+
+	// ---- how the completion signal behaves: failures, preconditions, complete: false, ordering against the reader ----
+
+	public static TheoryData<Kind, bool, TargetKind> ShapesWithTarget { get; } = BuildShapesWithTarget();
+
+	static TheoryData<Kind, bool, TargetKind> BuildShapesWithTarget()
+	{
+		var data = new TheoryData<Kind, bool, TargetKind>();
+		foreach (Kind kind in Enum.GetValues<Kind>())
+			foreach (bool overrides in new[] { false, true })
+				foreach (TargetKind target in Enum.GetValues<TargetKind>())
+					data.Add(kind, overrides, target);
+		return data;
+	}
+
+	public static TheoryData<Kind, bool> Shapes { get; } = BuildShapes();
+
+	static TheoryData<Kind, bool> BuildShapes()
+	{
+		var data = new TheoryData<Kind, bool>();
+		foreach (Kind kind in Enum.GetValues<Kind>())
+			foreach (bool overrides in new[] { false, true })
+				data.Add(kind, overrides);
+		return data;
+	}
+
+	public enum Precondition
+	{
+		NullDbCommand,
+		NullDbCommandAsync,
+		NullExecuteReader,
+		NullExecuteReaderAsync,
+		DbCommandWithoutConnectionAsync,
+	}
+
+	public static TheoryData<Precondition, bool> PreconditionShapes { get; } = BuildPreconditionShapes();
+
+	static TheoryData<Precondition, bool> BuildPreconditionShapes()
+	{
+		var data = new TheoryData<Precondition, bool>();
+		foreach (Precondition p in Enum.GetValues<Precondition>())
+			foreach (bool overrides in new[] { false, true })
+				data.Add(p, overrides);
+		return data;
+	}
+
+	static Func<ITargetBlock<Row>, ValueTask<long>> PreconditionCall(Precondition precondition, bool overrides)
+	{
+		switch (precondition)
+		{
+			case Precondition.NullDbCommand:
+				return t => ValueTask.FromResult(overrides
+					? DataflowExtensions.ToTargetBlock<Row>((IDbCommand)null!, t, true, Overrides)
+					: DataflowExtensions.ToTargetBlock<Row>((IDbCommand)null!, t, true));
+
+			case Precondition.NullDbCommandAsync:
+				return t => overrides
+					? DataflowExtensions.ToTargetBlockAsync<Row>((IDbCommand)null!, t, true, Overrides)
+					: DataflowExtensions.ToTargetBlockAsync<Row>((IDbCommand)null!, t, true);
+
+			case Precondition.NullExecuteReader:
+				return t => ValueTask.FromResult(overrides
+					? DataflowExtensions.ToTargetBlock<Row>((IExecuteReader)null!, t, true, Overrides)
+					: DataflowExtensions.ToTargetBlock<Row>((IExecuteReader)null!, t, true));
+
+			case Precondition.NullExecuteReaderAsync:
+				return t => overrides
+					? DataflowExtensions.ToTargetBlockAsync<Row>((IExecuteReader)null!, t, true, Overrides)
+					: DataflowExtensions.ToTargetBlockAsync<Row>((IExecuteReader)null!, t, true);
+
+			default:
+			{
+				var command = Substitute.For<IDbCommand>();
+				command.Connection.Returns((IDbConnection)null!);
+				return t => overrides
+					? command.ToTargetBlockAsync(t, true, Overrides)
+					: command.ToTargetBlockAsync(t, true);
+			}
+		}
+	}
+
+	static void AssertUntouched<T>(SpyTarget<T> target, string because)
+		=> Assert.Multiple(
+			() => Assert.False(target.Completion.IsCompleted, because),
+			() => Assert.Null(target.AcceptedAtComplete),
+			() => Assert.Null(target.AcceptedAtFault));
+
+	// The command fails before any reader exists.  Whatever the pipeline has or hasn't built by then,
+	// complete: true means the consumer must see the failure (not hang), carrying the original exception.
+	[Theory]
+	[MemberData(nameof(ShapesWithTarget))]
+	public static async Task Mapped_ExecutionFails_CompleteTrue_FaultsTheTarget(Kind kind, bool overrides, TargetKind target)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var failure = new InvalidOperationException("boom");
+		var harness = new Harness<Row>(target, ct);
+		var call = Mapped(kind, overrides, Rows(3), failure);
+
+		var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () => await call(harness.Target, true));
+		var faulted = await Assert.ThrowsAsync<InvalidOperationException>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+
+		Assert.Multiple(
+			() => Assert.Same(failure, thrown),
+			() => Assert.Same(failure, faulted),
+			() => Assert.Equal(0, harness.Target.AcceptedAtFault),
+			() => Assert.Null(harness.Target.AcceptedAtComplete));
+	}
+
+	[Theory]
+	[MemberData(nameof(Shapes))]
+	public static async Task Mapped_ExecutionFails_CompleteFalse_LeavesTheTargetOpen(Kind kind, bool overrides)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var failure = new InvalidOperationException("boom");
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		var call = Mapped(kind, overrides, Rows(3), failure);
+
+		var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () => await call(harness.Target, false));
+
+		Assert.Same(failure, thrown);
+		AssertUntouched(harness.Target, "complete: false must not complete or fault the target, even on failure");
+		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
+	}
+
+	// The reader fails after 500 good rows (a row that throws when read).  Every row read before the failure must
+	// reach the target first; only then does the target learn of the failure.  Nothing may hang.
+	[Theory]
+	[MemberData(nameof(ShapesWithTarget))]
+	public static async Task Mapped_ReaderFailsMidStream_CompleteTrue_DeliversTheRowsReadThenFaultsTheTarget(Kind kind, bool overrides, TargetKind target)
+	{
+		const int good = 500;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(target, ct);
+		object?[][] rows = [.. Rows(good), null!];
+		var call = Mapped(kind, overrides, rows);
+
+		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target, true).AsTask().WaitAsync(Timeout, ct));
+		Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+
+		Assert.Multiple(
+			() => Assert.Same(thrown, faulted),
+			() => Assert.Equal(good, harness.Target.AcceptedAtFault), // every row read before the failure was accepted first
+			() => Assert.Null(harness.Target.AcceptedAtComplete));
+	}
+
+	// Preconditions are the caller's mistakes, not a failed operation: they throw as they always did and
+	// neither complete nor fault the target (and no pipeline is built to leave running).
+	[Theory]
+	[MemberData(nameof(PreconditionShapes))]
+	public static async Task Mapped_PreconditionFailure_DoesNotCompleteOrFaultTheTarget(Precondition precondition, bool overrides)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		var call = PreconditionCall(precondition, overrides);
+
+		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target));
+
+		Assert.IsType(precondition == Precondition.DbCommandWithoutConnectionAsync ? typeof(InvalidOperationException) : typeof(ArgumentNullException), thrown);
+		AssertUntouched(harness.Target, "a precondition failure must not complete or fault the target");
+		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
+	}
+
+	[Theory]
+	[MemberData(nameof(Shapes))]
+	public static async Task Mapped_NullTarget_Throws(Kind kind, bool overrides)
+	{
+		var call = Mapped(kind, overrides, Rows(3));
+		var thrown = await Assert.ThrowsAsync<ArgumentNullException>(async () => await call(null!, true));
+		Assert.Equal("target", thrown.ParamName);
+	}
+
+	// complete: false means "leave my target open".  The rows still all arrive (the second stage runs behind the call by design).
+	[Theory]
+	[MemberData(nameof(ShapesWithTarget))]
+	public static async Task Mapped_CompleteFalse_DeliversEveryRow_AndLeavesTheTargetOpen(Kind kind, bool overrides, TargetKind target)
+	{
+		const int count = 1000;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(target, ct);
+		var call = Mapped(kind, overrides, Rows(count));
+
+		long produced = await Task.Run(async () => await call(harness.Target, false), ct).WaitAsync(Timeout, ct);
+
+		var watch = Stopwatch.StartNew();
+		while (harness.Consumed < count && watch.Elapsed < Timeout)
+			await Task.Delay(5, ct);
+
+		Assert.Multiple(
+			() => Assert.Equal(count, produced),
+			() => Assert.Equal(count, harness.Consumed));
+		AssertUntouched(harness.Target, "complete: false must leave the target open");
+		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
+
+		harness.Target.Complete();
+		await harness.Drained.WaitAsync(Timeout, ct);
+	}
+
+	// The target is completed by the pipeline draining, never by the call itself: not before the reader is disposed.
+	public static TheoryData<Kind, bool> DisposalShapes { get; } = BuildDisposalShapes();
+
+	static TheoryData<Kind, bool> BuildDisposalShapes()
+	{
+		var data = new TheoryData<Kind, bool>();
+		foreach (Kind kind in new[] { Kind.DbCommandInterfaceSync, Kind.ExecuteReaderSync, Kind.ExecuteReaderAsync })
+			foreach (bool overrides in new[] { false, true })
+				data.Add(kind, overrides);
+		return data;
+	}
+
+	[Theory]
+	[MemberData(nameof(DisposalShapes))]
+	public static async Task Mapped_CompleteTrue_CompletesTheTargetOnlyAfterTheReaderIsDisposed(Kind kind, bool overrides)
+	{
+		const int count = 1000;
+		var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+		var call = Mapped(kind, overrides, Rows(count), log: log.Enqueue);
+
+		Outcome outcome = await RunAsync<Row>($"disposal {kind} overrides={overrides}", TargetKind.ActionBlock, t => call(t, true), log.Enqueue);
+
+		Assert.Multiple(
+			() => Assert.Equal(count, outcome.Consumed),
+			() => Assert.Equal(["reader-disposed", "target-completed"], log.ToArray()));
+	}
+
+	// A field override the model can't honor fails while the mapper is being built.  That is an operation failure
+	// (the reader is already open), so with complete: true the target is faulted rather than left waiting.
+	[Theory]
+	[MemberData(nameof(Kinds))]
+	public static async Task Mapped_FieldOverrideCannotBeBound_CompleteTrue_FaultsTheTarget(Kind kind)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		var call = Mapped(kind, true, Rows(3), overrideValues: new (string Field, string? Column)[] { ("NoSuchProperty", "Id") });
+
+		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target, true));
+		Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+
+		Assert.Same(thrown, faulted);
+	}
+
+	public static TheoryData<Kind> Kinds { get; } = [.. Enum.GetValues<Kind>()];
 }
