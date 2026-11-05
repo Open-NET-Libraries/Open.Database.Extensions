@@ -183,13 +183,14 @@ public static class ToTargetBlockMappedCompletionTests
 		public SpyTarget<T> Target { get; }
 		public Task Drained { get; }
 
-		public Harness(TargetKind kind, CancellationToken cancellationToken, Action<string>? log = null)
+		public Harness(TargetKind kind, CancellationToken cancellationToken, Action<string>? log = null, Task? gate = null)
 		{
 			if (kind == TargetKind.ActionBlock)
 			{
 				var block = new ActionBlock<T>(
 					item =>
 					{
+						gate?.Wait(); // A parked consumer: nothing is consumed until the gate opens.
 						Burn();
 						Received.Enqueue(item);
 						Interlocked.Increment(ref _consumed);
@@ -204,6 +205,7 @@ public static class ToTargetBlockMappedCompletionTests
 				Target = new SpyTarget<T>(block, log);
 				Drained = Task.Run(async () =>
 				{
+					if (gate is not null) await gate.ConfigureAwait(false); // A parked consumer.
 					await foreach (T item in block.ReceiveAllAsync(cancellationToken))
 					{
 						Burn();
@@ -1350,5 +1352,55 @@ public static class ToTargetBlockMappedCompletionTests
 			() => Assert.Equal(["reader-released", "target-faulted"], log.ToArray()),
 			() => Assert.Null(harness.Target.AcceptedAtComplete),
 			() => Assert.Equal(50, harness.Target.AcceptedAtFault)); // The 50 rows read before the cancellation were delivered first.
+	}
+
+	// ---- get in, get out: the reader is released as soon as it has been read, not held while a slow consumer drains ----
+
+	// The consumer is parked behind a gate, the result is larger than the target's capacity but smaller than the 1024-row
+	// buffer.  The call must finish and the reader must already be released while most rows are still undelivered;
+	// only when the gate opens do the rows arrive, and the target then completes, after the reader's release.
+	[Theory]
+	[MemberData(nameof(ShapesWithTarget))]
+	public static async Task Mapped_AParkedConsumer_DoesNotHoldTheReader(Kind kind, bool overrides, TargetKind target)
+	{
+		const int count = 300;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+		var consumerGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		object?[][] rows = Rows(count);
+		var reader = new GatedReader(Columns, rows, log.Enqueue);
+		reader.Release(); // The reader's release itself is not held: this test is about the consumer.
+		var harness = new Harness<Row>(target, ct, log.Enqueue, consumerGate.Task);
+		var call = Mapped<Row>(kind, overrides, rows, readerFactory: () => reader);
+
+		try
+		{
+			// The positive condition is the call finishing (an event, with a generous bound only to turn a hang into a failure).
+			long produced = await Task.Run(async () => await call(harness.Target, true), ct).WaitAsync(TimeSpan.FromSeconds(8), ct);
+
+			// The consumer is parked, so none of the following can change until the gate opens: no sleeps needed.
+			string[] atReturn = log.ToArray();
+			int accepted = harness.Target.Accepted;
+			int consumed = harness.Consumed;
+			bool completed = harness.Target.Completion.IsCompleted;
+
+			Assert.Multiple(
+				() => Assert.Equal(count, produced), // The reader was read to the end...
+				() => Assert.Equal(["reader-released"], atReturn), // ...and is already released,
+				() => Assert.True(accepted < count, $"{accepted} of {count} rows accepted by the target: it should still be behind"), // while rows are still undelivered,
+				() => Assert.Equal(0, consumed),
+				() => Assert.False(completed, "the target cannot complete while rows are undelivered"));
+
+			consumerGate.TrySetResult(true);
+			await harness.Drained.WaitAsync(Timeout, ct);
+
+			Assert.Multiple(
+				() => Assert.Equal(count, harness.Consumed),
+				() => Assert.Equal(["reader-released", "target-completed"], log.ToArray()));
+		}
+		finally
+		{
+			consumerGate.TrySetResult(true); // Never leave a consumer parked, even when an assertion fails.
+		}
 	}
 }
