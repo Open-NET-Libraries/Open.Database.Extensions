@@ -185,6 +185,18 @@ public static class RowMapperTests
 		Assert.Equal(1, cmd.Map<Simple>().ToList().Single().Id);
 	}
 
+	// More distinct overrides (and layouts) than the cache bounds: results stay correct when entries are evicted.
+	[Fact]
+	public static void Caches_StayCorrectPastTheirBounds()
+	{
+		for (int i = 0; i < 300; i++)
+		{
+			string column = "Key" + i;
+			Simple item = Cmd([(column, typeof(int)), ("Name", typeof(string))], [i, "n"]).Map<Simple>(("Id", column)).ToList().Single();
+			Assert.Equal(i, item.Id);
+		}
+	}
+
 	[Fact]
 	public static void Plans_AreCachedPerLayout_AndSwitchBetweenLayouts()
 	{

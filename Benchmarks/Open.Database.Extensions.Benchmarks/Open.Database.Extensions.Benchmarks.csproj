@@ -23,6 +23,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+		<ProjectReference Include="..\..\Source\Channel\Open.Database.Extensions.Channel.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -20,6 +20,11 @@ namespace Open.Database.Extensions.Core;
 internal sealed class RowPlan<T> : RowSource<T>
 	where T : new()
 {
+	// Both caches are bounded so dynamically generated overrides or column lists cannot grow memory forever.
+	// Real applications use a handful of each; when a bound is hit the cache is simply cleared and refills.
+	const int MaxCustomPlans = 128;
+	const int MaxLayouts = 128;
+
 	static readonly ConcurrentDictionary<string, RowPlan<T>> Custom = new(StringComparer.Ordinal);
 
 	// Settable public instance properties by name: reflection runs once per T.
@@ -61,6 +66,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 		if (Custom.TryGetValue(key, out RowPlan<T>? plan)) return plan;
 
 		plan = new RowPlan<T>(items);
+		if (Custom.Count >= MaxCustomPlans) Custom.Clear();
 		return Custom.TryAdd(key, plan) ? plan : Custom[key];
 	}
 
@@ -130,8 +136,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 			}
 		}
 
-		// A bound on distinct shapes (e.g. dynamically built column lists) so the cache can't grow forever.
-		if (_layouts.Count > 1024) _layouts.Clear();
+		if (_layouts.Count >= MaxLayouts) _layouts.Clear();
 
 		var layout = new Layout(reader);
 		_layouts.AddOrUpdate(
