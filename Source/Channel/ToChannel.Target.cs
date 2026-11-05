@@ -11,8 +11,7 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> writer,
 		bool complete,
 		CancellationToken cancellationToken,
-		Func<IDataReader, ValueTask<long>> transform,
-		bool transformCompletes = false)
+		Func<IDataReader, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -40,9 +39,7 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
-			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
-			if (complete && (exception is not null || !transformCompletes))
+			if (complete)
 				writer.TryComplete(exception);
 		}
 	}
@@ -51,8 +48,7 @@ public static partial class ChannelDbExtensions
 		IExecuteReader command,
 		ChannelWriter<T> writer,
 		bool complete,
-		Func<IDataReader, ValueTask<long>> transform,
-		bool transformCompletes = false)
+		Func<IDataReader, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -76,9 +72,7 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
-			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
-			if (complete && (exception is not null || !transformCompletes))
+			if (complete)
 				writer.TryComplete(exception);
 		}
 	}
@@ -148,9 +142,9 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -166,10 +160,10 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -274,18 +268,15 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The DbCommand to generate a reader from.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelCore(
-			command, target, complete, cancellationToken,
-			reader => ToChannel(reader, target, complete, cancellationToken),
-			transformCompletes: true);
+		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create(), cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -295,20 +286,17 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The DbCommand to generate a reader from.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelCore(
-			command, target, complete, cancellationToken,
-			reader => ToChannel(reader, target, complete, fieldMappingOverrides, cancellationToken),
-			transformCompletes: true);
+		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides), cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -371,16 +359,13 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete)
 		where T : new()
-		=> ToChannelCore(
-			command, target, complete,
-			reader => reader.ToChannel(target, complete, command.CancellationToken),
-			transformCompletes: true);
+		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create());
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -390,26 +375,22 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> ToChannelCore(
-			command, target, complete,
-			reader => reader.ToChannel(target, complete, fieldMappingOverrides, command.CancellationToken),
-			transformCompletes: true);
+		=> ToChannelMapped(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides));
 
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		DbCommand command,
 		ChannelWriter<T> writer,
 		bool complete,
 		CancellationToken cancellationToken,
-		Func<DbDataReader, ValueTask<long>> transform,
-		bool transformCompletes = false)
+		Func<DbDataReader, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -436,9 +417,7 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
-			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
-			if (complete && (exception is not null || !transformCompletes))
+			if (complete)
 				writer.TryComplete(exception);
 		}
 	}
@@ -447,8 +426,7 @@ public static partial class ChannelDbExtensions
 		IExecuteReaderAsync command,
 		ChannelWriter<T> writer,
 		bool complete,
-		Func<IDataReader, ValueTask<long>> transform,
-		bool transformCompletes = false)
+		Func<IDataReader, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -472,9 +450,7 @@ public static partial class ChannelDbExtensions
 		}
 		finally
 		{
-			// A transform that completes the writer itself (the mapped path: its second stage is still delivering
-			// rows when the transform returns) is left to do so on success; here it is only completed on failure.
-			if (complete && (exception is not null || !transformCompletes))
+			if (complete)
 				writer.TryComplete(exception);
 		}
 	}
@@ -548,8 +524,9 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -565,9 +542,10 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -648,18 +626,15 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The DbCommand to generate a reader from.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelAsyncCore(
-			command, target, complete, cancellationToken,
-			reader => ToChannelAsync(reader, target, complete, cancellationToken),
-			transformCompletes: true);
+		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create(), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -669,20 +644,17 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The DbCommand to generate a reader from.</param>
 	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> ToChannelAsyncCore(
-			command, target, complete, cancellationToken,
-			reader => ToChannelAsync(reader, target, complete, fieldMappingOverrides, cancellationToken),
-			transformCompletes: true);
+		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -751,18 +723,13 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete)
 		where T : new()
-		=> ToChannelAsyncCore(
-			command, target, complete,
-			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, command.CancellationToken)
-				: reader.ToChannel(target, complete, command.CancellationToken),
-			transformCompletes: true);
+		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create());
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
@@ -772,18 +739,102 @@ public static partial class ChannelDbExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> ToChannelAsyncCore(
-			command, target, complete,
-			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, complete, fieldMappingOverrides, command.CancellationToken)
-				: reader.ToChannel(target, complete, fieldMappingOverrides, command.CancellationToken),
-			transformCompletes: true);
+		=> ToChannelMappedAsync(command, target, complete, Channel.Transformer<T>.Create(fieldMappingOverrides));
+
+	// The mapped command-level overloads run as a pipeline. The command's reader is read into an internal, bounded
+	// buffer (stage 1), and the writer handed to the core is that buffer's writer: the core completes it once the reader
+	// has been released, or with the error that ended the read. A second stage, created up front, drains the buffer into
+	// the target and completes the target (when `complete`) after the last record has been delivered.
+	private static async ValueTask<long> ToChannelMapped<T>(
+		IDbCommand command,
+		ChannelWriter<T> target,
+		bool complete,
+		Channel.Transformer<T> mapper,
+		CancellationToken cancellationToken)
+		where T : new()
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
+		Contract.EndContractBlock();
+
+		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
+
+		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
+		return await pipeline
+			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Token, pipeline.Read))
+			.ConfigureAwait(false);
+	}
+
+	private static async ValueTask<long> ToChannelMapped<T>(
+		IExecuteReader command,
+		ChannelWriter<T> target,
+		bool complete,
+		Channel.Transformer<T> mapper)
+		where T : new()
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
+
+		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
+		return await pipeline
+			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Read))
+			.ConfigureAwait(false);
+	}
+
+	private static async ValueTask<long> ToChannelMappedAsync<T>(
+		DbCommand command,
+		ChannelWriter<T> target,
+		bool complete,
+		Channel.Transformer<T> mapper,
+		CancellationToken cancellationToken)
+		where T : new()
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
+
+		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
+
+		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
+		return await pipeline
+			.RunAsync(() => ToChannelAsyncCore(command, pipeline.Buffer, true, pipeline.Token, pipeline.ReadAsync))
+			.ConfigureAwait(false);
+	}
+
+	private static async ValueTask<long> ToChannelMappedAsync<T>(
+		IExecuteReaderAsync command,
+		ChannelWriter<T> target,
+		bool complete,
+		Channel.Transformer<T> mapper)
+		where T : new()
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
+
+		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
+		return await pipeline
+			.RunAsync(() => ToChannelAsyncCore(
+				command, pipeline.Buffer, true,
+				reader => command.UseAsyncRead && reader is DbDataReader r
+					? pipeline.ReadAsync(r)
+					: pipeline.Read(reader)))
+			.ConfigureAwait(false);
+	}
 }

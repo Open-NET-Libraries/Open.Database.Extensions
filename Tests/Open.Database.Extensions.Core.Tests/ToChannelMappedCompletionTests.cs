@@ -289,7 +289,15 @@ public static class ToChannelMappedCompletionTests
 		var call = Mapped(kind, false, Rows(3, "not a number"));
 
 		Task<int> consumer = Task.Run(() => SlowConsumeAll(channel.Reader, ct), ct);
-		await call(channel.Writer, true).AsTask().WaitAsync(Timeout, ct);
+		try
+		{
+			await call(channel.Writer, true).AsTask().WaitAsync(Timeout, ct);
+		}
+		catch (InvalidOperationException)
+		{
+			// The database is read on one task while the rows are mapped on another: if the mapping fails before the
+			// reading has finished, reading is stopped and the call reports that failure. Either way the target must end faulted.
+		}
 
 		await Assert.ThrowsAnyAsync<Exception>(async () => await consumer.WaitAsync(Timeout, ct));
 		Assert.True(channel.Reader.Completion.IsFaulted, "the target must end faulted, not cleanly");
