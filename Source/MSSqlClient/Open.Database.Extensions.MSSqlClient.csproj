@@ -18,4 +18,9 @@
 	  <ProjectReference Include="..\Core\Open.Database.Extensions.Core.csproj" />
 	</ItemGroup>
 
+	<!-- The OverloadResolutionPriority polyfill is internal to each assembly that applies it; the file compiles away on net10. -->
+	<ItemGroup>
+	  <Compile Include="..\Core\Compatibility\OverloadResolutionPriorityAttribute.cs" Link="Compatibility\OverloadResolutionPriorityAttribute.cs" />
+	</ItemGroup>
+
 </Project>

@@ -93,7 +93,17 @@ public static partial class TransactionExtensions
 			// Same contract as the synchronous path: a cancelled token never commits.
 			cancellationToken.ThrowIfCancellationRequested();
 
-			if (result.Commit) transaction.Commit();
+			if (result.Commit)
+			{
+				// The commit is the point of no return: the token was checked just above, and cancelling
+				// part-way through would leave the outcome unknown.
+#if NETSTANDARD2_0
+				transaction.Commit();
+#else
+				await transaction.CommitAsync(CancellationToken.None);
+#endif
+			}
+
 			return result;
 		}
 		finally
