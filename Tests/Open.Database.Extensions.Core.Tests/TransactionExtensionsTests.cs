@@ -21,7 +21,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		c.ExecuteTransaction(_ => { });
+		c.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(Success, c.Log);
 		Assert.Equal(ConnectionState.Closed, c.State);
@@ -32,7 +32,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		await c.ExecuteTransactionAsync(_ => default);
+		await c.ExecuteTransactionAsync(_ => default, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(Success, c.Log);
 		Assert.Equal(ConnectionState.Closed, c.State);
@@ -45,7 +45,7 @@ public static class TransactionExtensionsTests
 		c.Open();
 		c.Log.Clear();
 
-		c.ExecuteTransaction(_ => { });
+		c.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(["begin", "commit", "tx-dispose"], c.Log);
 		Assert.Equal(ConnectionState.Open, c.State);
@@ -58,7 +58,7 @@ public static class TransactionExtensionsTests
 		c.Open();
 		c.Log.Clear();
 
-		await c.ExecuteTransactionAsync(_ => default);
+		await c.ExecuteTransactionAsync(_ => default, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(["begin", "commit", "tx-dispose"], c.Log);
 		Assert.Equal(ConnectionState.Open, c.State);
@@ -70,7 +70,7 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection();
 		Action<DbTransaction> action = _ => throw Boom();
 
-		var ex = Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(action));
+		var ex = Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(action, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal("boom", ex.Message);
 		Assert.Equal(RolledBack, c.Log);
@@ -83,7 +83,7 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection();
 		Func<DbTransaction, ValueTask> action = _ => throw Boom();
 
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(action));
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(action, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal("boom", ex.Message);
 		Assert.Equal(RolledBack, c.Log);
@@ -95,7 +95,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection { BeginException = Boom() };
 
-		Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(_ => { }));
+		Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal(["open", "begin", "close"], c.Log);
 		Assert.Equal(ConnectionState.Closed, c.State);
@@ -106,7 +106,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection { BeginException = Boom() };
 
-		await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(_ => default));
+		await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(_ => default, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal(["open", "begin", "close"], c.Log);
 		Assert.Equal(ConnectionState.Closed, c.State);
@@ -118,7 +118,7 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
 		Action<DbTransaction> action = _ => throw Boom();
 
-		var ex = Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(action));
+		var ex = Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(action, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal("boom", ex.Message);
 	}
@@ -129,7 +129,7 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
 		Func<DbTransaction, ValueTask> action = _ => throw Boom();
 
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(action));
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(action, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal("boom", ex.Message);
 	}
@@ -140,7 +140,7 @@ public static class TransactionExtensionsTests
 		// The work is already committed; a failure to close must not make the caller think it failed.
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
 
-		int value = c.ExecuteTransaction(_ => 42);
+		int value = c.ExecuteTransaction(_ => 42, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(42, value);
 		Assert.Equal(1, c.LastTransaction!.CommitCalls);
@@ -151,7 +151,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
 
-		int value = await c.ExecuteTransactionAsync(_ => new ValueTask<int>(42));
+		int value = await c.ExecuteTransactionAsync(_ => new ValueTask<int>(42), cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(42, value);
 		Assert.Equal(1, c.LastTransaction!.CommitCalls);
@@ -164,7 +164,7 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection();
 		c.SetState(ConnectionState.Broken);
 
-		c.ExecuteTransaction(_ => { });
+		c.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(["close", "open", "begin", "commit", "tx-dispose", "close"], c.Log);
 		Assert.Equal(ConnectionState.Closed, c.State);
@@ -179,7 +179,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		bool committed = c.ExecuteTransactionConditional(_ => false);
+		bool committed = c.ExecuteTransactionConditional(_ => false, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.False(committed);
 		Assert.Equal(RolledBack, c.Log);
@@ -191,7 +191,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		int value = c.ExecuteTransaction(_ => 42);
+		int value = c.ExecuteTransaction(_ => 42, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(42, value);
 		Assert.Equal(1, c.LastTransaction!.CommitCalls);
@@ -202,7 +202,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		c.ExecuteTransaction(_ => { }, IsolationLevel.Serializable);
+		c.ExecuteTransaction(_ => { }, IsolationLevel.Serializable, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(IsolationLevel.Serializable, c.LastTransaction!.IsolationLevel);
 	}
@@ -212,7 +212,7 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		bool committed = await c.ExecuteTransactionConditionalAsync(_ => new ValueTask<bool>(false));
+		bool committed = await c.ExecuteTransactionConditionalAsync(_ => new ValueTask<bool>(false), cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.False(committed);
 		Assert.Equal(RolledBack, c.Log);
@@ -331,7 +331,7 @@ public static class TransactionExtensionsTests
 	{
 		DbConnection connection = null!;
 
-		var ex = Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction(_ => { }));
+		var ex = Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal("connection", ex.ParamName);
 	}
@@ -341,7 +341,7 @@ public static class TransactionExtensionsTests
 	{
 		DbConnection connection = null!;
 
-		var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await connection.ExecuteTransactionAsync(_ => default));
+		var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await connection.ExecuteTransactionAsync(_ => default, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal("connection", ex.ParamName);
 	}
@@ -402,7 +402,10 @@ public static class TransactionExtensionsTests
 		// Source compatibility: this compiled (as IsolationLevel) before the token overloads were added.
 		var c = new FakeDbConnection();
 
+		// Deliberately the two-argument form (no token): this test guards how a bare `default` binds.
+#pragma warning disable xUnit1051
 		c.ExecuteTransaction(_ => { }, default);
+#pragma warning restore xUnit1051
 
 		Assert.Equal((IsolationLevel)0, c.LastTransaction!.IsolationLevel);
 	}

@@ -60,7 +60,7 @@ public static class IDbCommandToChannelObjectArrayExtensionTests
 			});
 
 		int count = 0;
-		await foreach (object[] record in command.ToChannel(true).ReadAllAsync())
+		await foreach (object[] record in command.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken).ReadAllAsync(TestContext.Current.CancellationToken))
 		{
 			count++;
 			Assert.Equal("Value1", record[0]);
@@ -80,7 +80,7 @@ public static class IDbCommandToChannelObjectArrayExtensionTests
 		var writer = System.Threading.Channels.Channel.CreateUnbounded<object[]>().Writer;
 
 		// Act & Assert
-		await Assert.ThrowsAsync<ArgumentNullException>(async () => await command.ToChannel(writer, true));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await command.ToChannel(writer, true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -90,6 +90,6 @@ public static class IDbCommandToChannelObjectArrayExtensionTests
 		var command = Substitute.For<IDbCommand>();
 
 		// Act & Assert
-		await Assert.ThrowsAsync<ArgumentNullException>(async () => await command.ToChannel(null, true));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await command.ToChannel(null, true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 }

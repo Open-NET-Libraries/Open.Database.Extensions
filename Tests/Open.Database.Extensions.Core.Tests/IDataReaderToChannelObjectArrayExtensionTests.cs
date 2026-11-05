@@ -26,7 +26,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		mockReader.GetValue(Arg.Any<int>()).Returns("test");
 
 		// Act
-		long result = await mockReader.ToChannel(true).ReadAll(static _ => { });
+		long result = await mockReader.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken).ReadAll(static _ => { }, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.Equal(1, result);
@@ -45,7 +45,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		static string transform(IDataRecord record) => (string)record.GetValue(0);
 
 		// Act
-		long result = await mockReader.ToChannel(true, transform).ReadAll(static _ => { });
+		long result = await mockReader.ToChannel(true, transform, cancellationToken: TestContext.Current.CancellationToken).ReadAll(static _ => { }, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.Equal(1, result);
@@ -67,7 +67,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		reader.Read().Returns(false); // Simulate no records
 
 		// Act
-		long result = await command.ToChannel(true).ReadAll(static _ => { });
+		long result = await command.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken).ReadAll(static _ => { }, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.Equal(0, result); // Assuming the reader has no records
@@ -94,7 +94,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 			});
 
 		int count = 0;
-		await foreach (object[] record in reader.ToChannel(true).ReadAllAsync())
+		await foreach (object[] record in reader.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken).ReadAllAsync(TestContext.Current.CancellationToken))
 		{
 			count++;
 			Assert.Equal("Value1", record[0]);
@@ -113,7 +113,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		var reader = Substitute.For<DbDataReader>();
 
 		reader.FieldCount.Returns(4); // Simulate valid FieldCount
-		reader.ReadAsync().Returns(true, true, false); // Simulate 2 records then no more records
+		reader.ReadAsync(Arg.Any<CancellationToken>()).Returns(true, true, false); // Simulate 2 records then no more records
 
 		reader
 			.When(x => x.GetValues(Arg.Any<object[]>()))
@@ -127,7 +127,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 			});
 
 		int count = 0;
-		await foreach (object[] record in reader.ToChannelAsync(true).ReadAllAsync())
+		await foreach (object[] record in reader.ToChannelAsync(true, cancellationToken: TestContext.Current.CancellationToken).ReadAllAsync(TestContext.Current.CancellationToken))
 		{
 			count++;
 			Assert.Equal("Value1", record[0]);
@@ -164,7 +164,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 			});
 
 		int count = 0;
-		await foreach (var record in reader.ToChannel<TestRecord>(true).ReadAllAsync())
+		await foreach (var record in reader.ToChannel<TestRecord>(true, cancellationToken: TestContext.Current.CancellationToken).ReadAllAsync(TestContext.Current.CancellationToken))
 		{
 			count++;
 			Assert.Equal("Value1", record.A);
@@ -183,7 +183,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		var reader = Substitute.For<DbDataReader>();
 
 		reader.FieldCount.Returns(4); // Simulate valid FieldCount
-		reader.ReadAsync().Returns(true, true, false); // Simulate 2 records then no more records
+		reader.ReadAsync(Arg.Any<CancellationToken>()).Returns(true, true, false); // Simulate 2 records then no more records
 		reader.GetName(0).Returns("A");
 		reader.GetName(1).Returns("B");
 		reader.GetName(2).Returns("C");
@@ -201,7 +201,7 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 			});
 
 		int count = 0;
-		await foreach (var record in reader.ToChannelAsync<TestRecord>(true).ReadAllAsync())
+		await foreach (var record in reader.ToChannelAsync<TestRecord>(true, cancellationToken: TestContext.Current.CancellationToken).ReadAllAsync(TestContext.Current.CancellationToken))
 		{
 			count++;
 			Assert.Equal("Value1", record.A);

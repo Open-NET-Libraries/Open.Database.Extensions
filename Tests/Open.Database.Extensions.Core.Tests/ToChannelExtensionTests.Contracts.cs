@@ -13,7 +13,7 @@ public static class ToChannelExtensionsContractTests
 		IDataReader reader = null;
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => reader.ToChannel(true));
+		Assert.Throws<ArgumentNullException>(() => reader.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -24,10 +24,10 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		await Assert.ThrowsAsync<ArgumentNullException>(
-			async () => await reader.ToChannel(System.Threading.Channels.Channel.CreateUnbounded<object>().Writer, true));
+			async () => await reader.ToChannel(System.Threading.Channels.Channel.CreateUnbounded<object>().Writer, true, cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannel<object>(true));
+			() => reader.ToChannel<object>(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -38,7 +38,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		await Assert.ThrowsAsync<ArgumentNullException>(
-			async () => await reader.ToChannel<object>(null, true));
+			async () => await reader.ToChannel<object>(null, true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -49,7 +49,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannel(true, ArrayPool<object>.Shared));
+			() => reader.ToChannel(true, ArrayPool<object>.Shared, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -61,7 +61,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannel(true, transform));
+			() => reader.ToChannel(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -73,7 +73,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannel(true, transform));
+			() => reader.ToChannel(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -84,7 +84,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannel(true));
+			() => command.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -96,7 +96,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannel(true, arrayPool));
+			() => command.ToChannel(true, arrayPool, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -108,7 +108,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannel(true, transform));
+			() => command.ToChannel(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -155,7 +155,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannelAsync(true));
+			() => reader.ToChannelAsync(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -167,7 +167,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannelAsync(true, arrayPool));
+			() => reader.ToChannelAsync(true, arrayPool, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -179,7 +179,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => reader.ToChannelAsync(true, transform));
+			() => reader.ToChannelAsync(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -190,7 +190,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannelAsync(true));
+			() => command.ToChannelAsync(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -202,7 +202,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannelAsync(true, arrayPool));
+			() => command.ToChannelAsync(true, arrayPool, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -214,7 +214,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannelAsync(true, transform));
+			() => command.ToChannelAsync(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]

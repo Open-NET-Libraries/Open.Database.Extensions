@@ -58,7 +58,7 @@ public static class DataReaderExtensionsTests
 		IDataReader reader = FakeReader.Create(["Id"], [1], [2], [4]);
 
 		int sum = 0;
-		reader.ForEach(r => sum += (int)r.GetValue(0));
+		reader.ForEach(r => sum += (int)r.GetValue(0), cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(7, sum);
 	}
@@ -68,7 +68,7 @@ public static class DataReaderExtensionsTests
 	{
 		static int First(IDataRecord r) => (int)r.GetValue(0);
 
-		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToList(First));
+		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToList(First, TestContext.Current.CancellationToken));
 		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToArray(First));
 		// ImmutableArray<T> implements IEquatable<T> (reference equality), so compare as a sequence.
 		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToImmutableArray(First).ToArray());
