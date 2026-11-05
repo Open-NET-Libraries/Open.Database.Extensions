@@ -72,3 +72,31 @@ DateTime, Guid, strings, three of them nullable).
 - **Memory:** multi-row results use about a third of Dapper's allocations (typed getters, so no boxing). A few tiny fixed-cost rows allocate slightly more than Dapper: `Scalar`/`Execute` by 32 B (the fluent command object), async scalar by 16 B, `Selector` at 1 row by 80 B, `Untyped` at 1 row by 16 B.
 - **Before this work** (same machine, same provider): every `Map<T>` query paid a ~0.94 ms fixed cost (1 row: 957,000 ns vs Dapper's 313 ns) and ~210 ns/row afterwards vs Dapper's ~115 ns.
 - **ZLinq** (`LinqBenchmarks`): ties a plain loop and beats `System.Linq`, but never beats the loops this library uses, has no async support, and adds package dependencies on `netstandard2.0`, so it is not a dependency.
+
+## Real providers and the other features (short job, `--inprocess`; the provider dominates the time, so ties within a few percent are noise)
+
+Both libraries return identical objects (checked in setup).
+
+**SQL Server (LocalDB, Microsoft.Data.SqlClient 7.1.1), ODE vs Dapper**
+
+| Scenario | 1 row | 100 rows | 1000 rows | alloc |
+|---|---:|---:|---:|---:|
+| List | 68.5 vs 72.0 µs | 128 vs 136 µs | 797 vs 801 µs | 0.91 / 0.58 / 0.55 |
+| ListAsync | 93.2 vs 93.7 µs | 153 vs 162 µs | 815 vs 868 µs | 0.97 / 0.60 / 0.55 |
+| Params | 78.3 vs 77.8 µs | 139 vs 148 µs | 785 vs 852 µs | 0.96 / 0.60 / 0.55 |
+| First | 70.1 vs 70.2 µs | 117 vs 120 µs | 542 vs 551 µs | 0.94 |
+| Scalar | 61.5 vs 60.0 µs | 72.3 vs 73.0 µs | 149 vs 149 µs | 1.02 |
+
+**SQLite** (see the PR comment for the table): List/ListAsync/First/Params 0.82-0.97x time, 0.73-0.93x allocations; Scalar a tie at 1.04x allocations.
+
+**Other features (in-memory or SQLite provider; Dapper side is the idiomatic hand-written equivalent)**
+
+| Feature | 1 row | 100 rows | 1000 rows | alloc |
+|---|---:|---:|---:|---:|
+| ToChannel (drain a channel) | 1.77 vs 1.55 µs (tie) | 22 vs 45 µs | 134 vs 351 µs | 0.91 / 0.38 / 0.34 |
+| Dataflow (`BufferBlock`) | 2.67 vs 2.58 µs (tie) | 10.6 vs 16.6 µs | 75.6 vs 148.6 µs | 0.94 / 0.40 / 0.35 |
+| DataTable | 84.8 vs 86.2 µs | 244 vs 247 µs | 2,019 vs 2,007 µs | 1.00 (a tie) |
+| Transaction | 4.05 vs 4.12 µs | 5.56 vs 5.79 µs | 20.3 vs 20.3 µs | 1.08 |
+| `Retrieve().DequeueAs<T>()` | **0.94x** (290 vs 308 ns) | **1.29x** slower | **1.33x** slower | 1.48 / 1.39 / 1.39 |
+
+`Retrieve().DequeueAs<T>()` is a deliberate two-pass route (copy every row into boxed `object[]`, map later), so it cannot match a single-pass typed read at larger sizes. It improved from 3.3x slower at 1 row. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()` (which buffers mapped rows in a draining queue).
