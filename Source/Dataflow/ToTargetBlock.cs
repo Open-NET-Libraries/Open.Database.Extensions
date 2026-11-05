@@ -5,84 +5,6 @@
 /// </summary>
 public static partial class DataflowExtensions
 {
-	// Mapped rows go straight from the reader through the cached typed mapper to the target block.
-	// Reading stops as soon as the target rejects a record.
-	static long PostMapped<T>(
-		IDataReader reader,
-		ITargetBlock<T> target,
-		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		where T : new()
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		Contract.EndContractBlock();
-
-		try
-		{
-			long total = 0;
-			foreach (T item in fieldMappingOverrides is null ? reader.Results<T>() : reader.Results<T>(fieldMappingOverrides))
-			{
-				if (!target.Post(item)) break;
-				total++;
-			}
-
-			if (complete) target.Complete();
-			return total;
-		}
-		catch (Exception ex)
-		{
-			if (complete) target.Fault(ex);
-			throw;
-		}
-	}
-
-	static async ValueTask<long> SendMapped<T>(
-		IDataReader reader,
-		ITargetBlock<T> target,
-		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
-		CancellationToken cancellationToken)
-		where T : new()
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (target is null) throw new ArgumentNullException(nameof(target));
-		Contract.EndContractBlock();
-
-		try
-		{
-			long total = 0;
-			if (reader is DbDataReader db)
-			{
-				IAsyncEnumerable<T> items = fieldMappingOverrides is null
-					? db.ResultsAsync<T>(cancellationToken: cancellationToken)
-					: db.ResultsAsync<T>(cancellationToken, fieldMappingOverrides);
-
-				await foreach (T item in items.ConfigureAwait(false))
-				{
-					if (!await target.SendAsync(item, cancellationToken).ConfigureAwait(false)) break;
-					total++;
-				}
-			}
-			else
-			{
-				foreach (T item in fieldMappingOverrides is null ? reader.Results<T>() : reader.Results<T>(fieldMappingOverrides))
-				{
-					if (!await target.SendAsync(item, cancellationToken).ConfigureAwait(false)) break;
-					total++;
-				}
-			}
-
-			if (complete) target.Complete();
-			return total;
-		}
-		catch (Exception ex)
-		{
-			if (complete) target.Fault(ex);
-			throw;
-		}
-	}
-
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
@@ -195,7 +117,9 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete)
 		where T : new()
-		=> PostMapped(reader, target, complete, null);
+		=> Dataflow.Transformer<T>
+			.Create()
+			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
 	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
@@ -212,7 +136,9 @@ public static partial class DataflowExtensions
 		bool complete,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> PostMapped(reader, target, complete, fieldMappingOverrides);
+		=> Dataflow.Transformer<T>
+			.Create(fieldMappingOverrides)
+			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
@@ -814,7 +740,9 @@ public static partial class DataflowExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> SendMapped(reader, target, complete, null, cancellationToken);
+		=> Dataflow.Transformer<T>
+			.Create()
+			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
@@ -833,7 +761,9 @@ public static partial class DataflowExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> SendMapped(reader, target, complete, fieldMappingOverrides, cancellationToken);
+		=> Dataflow.Transformer<T>
+			.Create(fieldMappingOverrides)
+			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.

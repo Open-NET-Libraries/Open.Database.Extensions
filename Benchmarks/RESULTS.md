@@ -93,10 +93,12 @@ Both libraries return identical objects (checked in setup).
 
 | Feature | 1 row | 100 rows | 1000 rows | alloc |
 |---|---:|---:|---:|---:|
-| ToChannel (drain a channel) | 1.77 vs 1.55 µs (tie) | 22 vs 45 µs | 134 vs 351 µs | 0.91 / 0.38 / 0.34 |
-| Dataflow (`BufferBlock`) | 2.67 vs 2.58 µs (tie) | 10.6 vs 16.6 µs | 75.6 vs 148.6 µs | 0.94 / 0.40 / 0.35 |
+| ToChannel (drain a channel) | 3.1 vs 1.3 µs (2.4x slower) | 45 vs 36 µs (1.24x slower) | 359 vs 284 µs (1.26x slower) | 2.20 / 1.09 / 1.01 |
+| Dataflow (`BufferBlock`) | 9.6 vs 2.2 µs (4.4x slower) | 42.7 vs 15.0 µs (2.8x slower) | 322 vs 130 µs (2.5x slower) | 2.85 / 1.12 / 1.01 |
 | DataTable | 84.8 vs 86.2 µs | 244 vs 247 µs | 2,019 vs 2,007 µs | 1.00 (a tie) |
 | Transaction | 4.05 vs 4.12 µs | 5.56 vs 5.79 µs | 20.3 vs 20.3 µs | 1.08 |
 | `Retrieve().DequeueAs<T>()` | **0.94x** (290 vs 308 ns) | **1.29x** slower | **1.33x** slower | 1.48 / 1.39 / 1.39 |
+
+**ToChannel and Dataflow are intentionally slower than a naive single-stage producer.** They keep their original two-stage design: the reader dumps raw rows into a bounded buffer (1024 rows) and a second stage maps them, so a slow consumer does not hold the database connection. The "Dapper" side here is a hand-written single-stage loop with no such buffer, so it is not a like-for-like comparison. They benefit from the shared mapper (no per-query setter compilation) but are not at parity with the naive loop. A possible follow-up that keeps the buffer semantics: write straight to the target while it accepts items and spill to the bounded buffer plus a pump task only when it is full.
 
 `Retrieve().DequeueAs<T>()` is a deliberate two-pass route (copy every row into boxed `object[]`, map later), so it cannot match a single-pass typed read at larger sizes. It improved from 3.3x slower at 1 row. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()` (which buffers mapped rows in a draining queue).

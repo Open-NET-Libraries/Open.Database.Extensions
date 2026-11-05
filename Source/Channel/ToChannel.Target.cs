@@ -163,7 +163,9 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> target.WriteAll(reader.Results<T>(), complete, false, cancellationToken);
+		=> Channel.Transformer<T>
+			.Create()
+			.PipeResultsTo(reader, target, complete, cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -181,7 +183,9 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> target.WriteAll(reader.Results<T>(fieldMappingOverrides), complete, false, cancellationToken);
+		=> Channel.Transformer<T>
+			.Create(fieldMappingOverrides)
+			.PipeResultsTo(reader, target, complete, cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -561,7 +565,9 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> target.WriteAllAsync(reader.ResultsAsync<T>(cancellationToken), complete, false, cancellationToken);
+		=> Channel.Transformer<T>
+			.Create()
+			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
@@ -578,7 +584,9 @@ public static partial class ChannelDbExtensions
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
-		=> target.WriteAllAsync(reader.ResultsAsync<T>(cancellationToken, fieldMappingOverrides), complete, false, cancellationToken);
+		=> Channel.Transformer<T>
+			.Create(fieldMappingOverrides)
+			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
