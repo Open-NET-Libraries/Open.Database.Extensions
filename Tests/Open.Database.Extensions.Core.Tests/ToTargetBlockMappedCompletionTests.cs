@@ -933,4 +933,240 @@ public static class ToTargetBlockMappedCompletionTests
 		Assert.Equal(count, produced);
 		AssertPeople(harness, count);
 	}
+
+	// ---- the target hears nothing until the reader has been released (success, mapping failure, reader failure) ----
+
+	public enum Scenario
+	{
+		Success,
+		MappingFailure,
+		ReaderFailure,
+	}
+
+	public static TheoryData<Kind, Scenario> GatedShapes { get; } = BuildGatedShapes();
+
+	static TheoryData<Kind, Scenario> BuildGatedShapes()
+	{
+		var data = new TheoryData<Kind, Scenario>();
+		foreach (Kind kind in Enum.GetValues<Kind>())
+			foreach (Scenario scenario in Enum.GetValues<Scenario>())
+				data.Add(kind, scenario);
+		return data;
+	}
+
+	// The reader's Dispose/DisposeAsync are held shut by the test.  While they are, the pipeline may have drained every row
+	// and the mapper may have faulted, yet the target must be neither completed nor faulted: the reader (and its connection)
+	// is still held.  Only once the release has finished may the target hear about the end.
+	[Theory]
+	[MemberData(nameof(GatedShapes))]
+	public static async Task Mapped_CompleteTrue_NeverCompletesOrFaultsTheTargetBeforeTheReaderIsReleased(Kind kind, Scenario scenario)
+	{
+		const int count = 200;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+		object?[][] rows = Rows(count);
+		if (scenario == Scenario.MappingFailure) rows[0] = ["not a number"];
+		var reader = new GatedReader(Columns, rows, log.Enqueue, failReadAt: scenario == Scenario.ReaderFailure ? 100 : -1);
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct, log.Enqueue);
+		var call = Mapped<Row>(kind, false, rows, readerFactory: () => reader);
+
+		Task<long> running = Task.Run(async () => await call(harness.Target, true), ct);
+
+		await reader.Entered.WaitAsync(Timeout, ct); // The call is done with the reader and is releasing it.
+		if (scenario == Scenario.Success)
+		{
+			var watch = Stopwatch.StartNew();
+			while (harness.Consumed < count && watch.Elapsed < Timeout)
+				await Task.Delay(5, ct);
+		}
+
+		// Give a premature completion or fault every chance to happen.
+		await Task.WhenAny(harness.Target.Completion, Task.Delay(500, ct));
+		Assert.False(harness.Target.Completion.IsCompleted, $"{scenario}: the target was completed or faulted while the reader was still held");
+
+		reader.Release();
+
+		if (scenario == Scenario.ReaderFailure) await Assert.ThrowsAnyAsync<Exception>(async () => await running.WaitAsync(Timeout, ct));
+		else await running.WaitAsync(Timeout, ct);
+
+		if (scenario == Scenario.Success)
+		{
+			await harness.Target.Completion.WaitAsync(Timeout, ct);
+			Assert.Equal(["reader-released", "target-completed"], log.ToArray());
+		}
+		else
+		{
+			await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+			Assert.Equal(["reader-released", "target-faulted"], log.ToArray());
+		}
+	}
+
+	// ---- completion must not depend on the scheduler the caller happens to run on ----
+
+	[Fact]
+	public static async Task Mapped_CompleteTrue_CallerBlockedOnAnExclusiveScheduler_StillCompletesTheTarget()
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var pair = new ConcurrentExclusiveSchedulerPair();
+		var target = new ActionBlock<Row>(_ => { });
+
+		// The caller runs on the exclusive scheduler and then blocks that scheduler's thread waiting for the target.
+		bool completed = await Task.Factory.StartNew(() =>
+		{
+			IExecuteReader command = new FakeExecuteReader(Columns, Rows(10));
+			command.ToTargetBlock(target, true);
+			return target.Completion.Wait(TimeSpan.FromSeconds(10));
+		}, ct, TaskCreationOptions.None, pair.ExclusiveScheduler).WaitAsync(Timeout, ct);
+
+		Assert.True(completed, "the target was never completed: its completion was queued on the caller's blocked scheduler");
+	}
+
+	// ---- one exception shape, whichever stage failed ----
+
+	static async Task<AggregateException> FaultOfAsync(Task completion)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		try
+		{
+			await completion.WaitAsync(Timeout, ct);
+		}
+		catch (TimeoutException)
+		{
+			throw;
+		}
+		catch
+		{
+			// Inspected below.
+		}
+
+		return Assert.IsType<AggregateException>(completion.Exception);
+	}
+
+	[Theory]
+	[MemberData(nameof(Kinds))]
+	public static async Task Mapped_MappingFailure_FaultsTheTargetWithTheSameShapeAsAReaderFailure(Kind kind)
+	{
+		const int count = 5000;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+
+		// A row that cannot be mapped (the second stage fails)...
+		object?[][] badRows = Rows(count);
+		badRows[0] = ["not a number"];
+		var mappingHarness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		long produced = await Task.Run(async () => await Mapped<Row>(kind, false, badRows)(mappingHarness.Target, true), ct).WaitAsync(Timeout, ct);
+		AggregateException mapping = await FaultOfAsync(mappingHarness.Target.Completion);
+
+		// ...and a reader that fails (the first stage fails).
+		var readerHarness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () =>
+			await Mapped<Row>(kind, false, [.. Rows(10), null!])(readerHarness.Target, true));
+		AggregateException reader = await FaultOfAsync(readerHarness.Target.Completion);
+
+		Assert.Multiple(
+			() => Assert.True(produced < count, $"the writer should have stopped when the mapper failed, but it wrote {produced} of {count} rows"),
+			() => Assert.Single(mapping.InnerExceptions),
+			() => Assert.IsType<InvalidOperationException>(mapping.InnerExceptions[0]), // "Unable to set value of property..." directly, not wrapped again
+			() => Assert.Single(reader.InnerExceptions),
+			() => Assert.Same(thrown, reader.InnerExceptions[0]));
+	}
+
+	// A target that throws from Complete() must not take anything down, nor leave a faulted task unobserved.
+	sealed class ThrowingTarget<T>(ITargetBlock<T> inner) : ITargetBlock<T>
+	{
+		int _completeCalls;
+		public int CompleteCalls => Volatile.Read(ref _completeCalls);
+		public Task Completion => inner.Completion;
+
+		public DataflowMessageStatus OfferMessage(DataflowMessageHeader messageHeader, T messageValue, ISourceBlock<T>? source, bool consumeToAccept)
+			=> inner.OfferMessage(messageHeader, messageValue, source, consumeToAccept);
+
+		public void Complete()
+		{
+			Interlocked.Increment(ref _completeCalls);
+			throw new InvalidOperationException("dfx-target-complete-threw");
+		}
+
+		public void Fault(Exception exception) => inner.Fault(exception);
+	}
+
+	[Fact]
+	public static async Task Mapped_TargetThatThrowsFromComplete_IsHandledAndNothingIsLeftUnobserved()
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var unobserved = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
+		void OnUnobserved(object? sender, UnobservedTaskExceptionEventArgs e)
+		{
+			foreach (Exception inner in e.Exception.Flatten().InnerExceptions)
+				if (inner.Message == "dfx-target-complete-threw") unobserved.Enqueue(inner);
+		}
+
+		TaskScheduler.UnobservedTaskException += OnUnobserved;
+		try
+		{
+			var target = new ThrowingTarget<Row>(new ActionBlock<Row>(_ => { }));
+			IExecuteReader command = new FakeExecuteReader(Columns, Rows(10));
+
+			await Task.Run(() => command.ToTargetBlock(target, true), ct); // The caller is not told: it has no say in the target's Complete().
+
+			var watch = Stopwatch.StartNew();
+			while (target.CompleteCalls == 0 && watch.Elapsed < Timeout)
+				await Task.Delay(5, ct);
+
+			for (int i = 0; i < 3; i++)
+			{
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+			}
+
+			Assert.Equal(1, target.CompleteCalls);
+			Assert.Empty(unobserved);
+		}
+		finally
+		{
+			TaskScheduler.UnobservedTaskException -= OnUnobserved;
+		}
+	}
+
+	// ---- a target closed under a running pipeline must not leave the (async) writer, and its reader, hanging ----
+
+	[Theory]
+	[MemberData(nameof(Shapes))]
+	public static async Task Mapped_TargetClosedMidStream_StopsTheWriter_AndReleasesTheReader(Kind kind, bool complete)
+	{
+		const int count = 20_000;
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var shortTimeout = TimeSpan.FromSeconds(10);
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		var call = Mapped<Row>(kind, false, Rows(count));
+
+		Task<long> running = Task.Run(async () => await call(harness.Target, complete), ct);
+
+		var watch = Stopwatch.StartNew();
+		while (harness.Consumed < 20 && watch.Elapsed < Timeout)
+			await Task.Delay(5, ct);
+
+		harness.Target.Complete(); // The consumer closes the target while rows are still being read.
+
+		long produced = await running.WaitAsync(shortTimeout, ct); // Hangs forever if the writer is left waiting on a block that can no longer deliver.
+		await harness.Drained.WaitAsync(Timeout, ct);
+
+		Assert.True(produced < count, $"the writer should have stopped, but it wrote all {produced} rows");
+	}
+
+	// ---- a block cancelled through its options is a failure of the pipeline, not a clean end ----
+
+	[Fact]
+	public static async Task Pipeline_BlockCancelled_FaultsTheTargetInsteadOfCompletingIt()
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		using var cancellation = new CancellationTokenSource();
+		cancellation.Cancel();
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		var options = new ExecutionDataflowBlockOptions { CancellationToken = cancellation.Token, BoundedCapacity = 1024 };
+
+		Dataflow.Transformer<Row>.Create().PipeResultsTo(FakeReader.Create(Columns, Rows(10)), harness.Target, true, options);
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+		Assert.Null(harness.Target.AcceptedAtComplete);
+	}
 }

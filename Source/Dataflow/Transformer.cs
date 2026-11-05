@@ -35,13 +35,13 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	/// <remarks>
 	/// <para>
 	/// Completion is a signal that enters at the source end and flows downstream by itself:
-	/// whoever writes into the pipeline calls <see cref="Complete"/> (or <see cref="Fault"/>) on the source end only,
-	/// and when <c>complete</c> was requested, the target is completed (or faulted) by the continuation on the block's
-	/// <see cref="Task"/> only after every row has been delivered to it.
-	/// The target is never completed directly by the code that writes into the pipeline.
+	/// whoever writes into the pipeline calls <see cref="Complete"/> (or <see cref="Fault"/>) on the source end only, once it has
+	/// released the reader, and when <c>complete</c> was requested, the target is completed (or faulted) after
+	/// (1) the reader has been released and (2) every row has been delivered to the target.
+	/// The target is never completed or faulted directly by the code that writes into the pipeline, and never before the reader is released.
 	/// </para>
 	/// <para>
-	/// The block, its link to the target, and the completion continuation exist from construction,
+	/// The block, its link to the target, and the completion flow exist from construction,
 	/// so there is no window in which a failure has nothing to fault.
 	/// The column names (and therefore the mapper) are bound late, once a reader exists (<see cref="Write"/>).
 	/// </para>
@@ -49,12 +49,16 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	internal sealed class Pipeline
 	{
 		readonly TransformBlock<object[], T> _block;
+		readonly CancellationTokenSource _stop = new();
+		readonly TaskCompletionSource<bool> _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		Func<object?[], T>? _transform;
+		int[] _ordinals = [];
+		int _allColumnsInOrder = -1; // The reader's field count when every column is mapped, in order; otherwise -1.
 		Exception? _failure;
 
 		/// <summary>
 		/// Creates the source end, links it to the <paramref name="target"/>, and (if <paramref name="complete"/>) arranges for
-		/// the target to be completed or faulted once the source end has finished and drained.
+		/// the target to be completed or faulted once the writer has released the reader and the source end has drained.
 		/// </summary>
 		/// <param name="target">The target to deliver the mapped rows to.</param>
 		/// <param name="complete">If true, the target is completed (or faulted) downstream when the source end finishes.</param>
@@ -80,33 +84,102 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 				});
 
 			_block.LinkTo(target);
-			if (complete)
-			{
-				_ = _block
-					.Completion
-					.ContinueWith(t =>
-					{
-						// The block itself faulted (for example, a row could not be mapped).
-						if (t.IsFaulted) target.Fault(t.Exception);
 
-						// The writer failed: every row it did write has been delivered, so now the target learns of it.
-						else if (Volatile.Read(ref _failure) is { } failure) target.Fault(failure);
-						else target.Complete();
-					},
-					CancellationToken.None,
-					TaskContinuationOptions.ExecuteSynchronously,
-					TaskScheduler.Current);
+			// An async writer must not wait forever on a pipeline that can no longer deliver: it would hold the reader
+			// (and its connection) for good.  So the writer is stopped when the block faults or is cancelled (a row could not be
+			// mapped) or when the target closes under it.  The writer then ends quietly, just as a declined Post() does.
+			_ = _block.Completion.ContinueWith(
+				t =>
+				{
+					if (!t.IsFaulted && !t.IsCanceled) return;
+
+					_ = t.Exception; // Observed on purpose: with complete: false nobody else will look at it.
+					_stop.Cancel();
+				},
+				CancellationToken.None,
+				TaskContinuationOptions.ExecuteSynchronously,
+				TaskScheduler.Default);
+
+			_ = target.Completion.ContinueWith(
+				_ => _stop.Cancel(),
+				CancellationToken.None,
+				TaskContinuationOptions.ExecuteSynchronously,
+				TaskScheduler.Default);
+
+			if (complete) _ = FlowCompletionAsync(target);
+		}
+
+		// The completion signal flowing downstream.  Never runs on a scheduler captured from the caller.
+		async Task FlowCompletionAsync(ITargetBlock<T> target)
+		{
+			// The target must not hear about the end of the pipeline before the reader has been released.
+			await _released.Task.ConfigureAwait(false);
+
+			// ...nor before every row has been delivered to it.
+			Task completion = _block.Completion;
+			try
+			{
+				await completion.ConfigureAwait(false);
 			}
+			catch
+			{
+				// The outcome is read from the task below.
+			}
+
+			try
+			{
+				if (completion.IsFaulted) target.Fault(Unwrap(completion.Exception!)); // A row could not be mapped.
+				else if (completion.IsCanceled) target.Fault(new TaskCanceledException(completion));
+				else if (Volatile.Read(ref _failure) is { } failure) target.Fault(failure); // The writer failed.
+				else target.Complete();
+			}
+			catch
+			{
+				// Deliberate: nothing is left to report to (the call that built this pipeline has long since returned or
+				// is only waiting for the reader), and a target that throws from Complete()/Fault() has broken its own contract.
+				// Swallowing it here keeps this fire-and-forget task from faulting unobserved.
+			}
+
+			// Both paths hand the target a single exception where there is one (the same shape for a mapping failure and a reader failure).
+			static Exception Unwrap(AggregateException exception)
+				=> exception.InnerExceptions.Count == 1 ? exception.InnerExceptions[0] : exception;
 		}
 
 		/// <summary>
 		/// Binds the mapper to the columns of the <paramref name="reader"/>.  Must be called before any row is written.
 		/// </summary>
+		/// <remarks>
+		/// The mapper knows only the matched columns, so a row must hold exactly those, in that order
+		/// (the reader may have other columns, anywhere among them).
+		/// </remarks>
 		void Bind(Transformer<T> transformer, IDataReader reader)
 		{
 			(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(transformer.ColumnNames, true);
-			var names = columns.Select(m => m.Name).ToImmutableArray();
-			_transform = new Processor(transformer, names).Transform;
+			int[] ordinals = new int[columns.Length];
+			bool inOrder = true;
+			for (int i = 0; i < ordinals.Length; i++)
+			{
+				ordinals[i] = columns[i].Ordinal;
+				if (ordinals[i] != i) inOrder = false;
+			}
+
+			int fieldCount = reader.FieldCount;
+			_ordinals = ordinals;
+			_allColumnsInOrder = inOrder && ordinals.Length == fieldCount ? fieldCount : -1;
+			_transform = new Processor(transformer, columns.Select(m => m.Name).ToImmutableArray()).Transform;
+		}
+
+		object[] ReadRow(IDataReader reader)
+		{
+			// Every column is mapped, in order: take the whole record in one call.
+			if (_allColumnsInOrder >= 0) return reader.GetValues(_allColumnsInOrder, LocalPool);
+
+			int[] ordinals = _ordinals;
+			object[] row = LocalPool.Rent(ordinals.Length);
+			for (int i = 0; i < ordinals.Length; i++)
+				row[i] = reader.GetValue(ordinals[i]);
+
+			return row;
 		}
 
 		/// <summary>
@@ -117,30 +190,75 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		public long Write(IDataReader reader, Transformer<T> transformer)
 		{
 			Bind(transformer, reader);
-			return reader.ToTargetBlock(_block, false, LocalPool);
+
+			long total = 0;
+			while (reader.Read())
+			{
+				object[] row = ReadRow(reader);
+				if (!_block.Post(row))
+				{
+					LocalPool.Return(row);
+					break;
+				}
+
+				total++;
+			}
+
+			return total;
 		}
 
 		/// <inheritdoc cref="Write"/>
-		public ValueTask<long> WriteAsync(IDataReader reader, Transformer<T> transformer, CancellationToken cancellationToken)
+		public async ValueTask<long> WriteAsync(IDataReader reader, Transformer<T> transformer, CancellationToken cancellationToken)
 		{
 			Bind(transformer, reader);
-			return reader.ToTargetBlockAsync(_block, false, LocalPool, cancellationToken);
+
+			using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
+			CancellationToken token = linked.Token;
+			long total = 0;
+			try
+			{
+				while (
+					reader is DbDataReader r
+						? await r.ReadAsync(token).ConfigureAwait(false)
+						: reader.Read())
+				{
+					object[] row = ReadRow(reader);
+					if (!await _block.SendAsync(row, token).ConfigureAwait(false))
+					{
+						LocalPool.Return(row);
+						break;
+					}
+
+					total++;
+				}
+			}
+			catch (OperationCanceledException) when (_stop.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+			{
+				// The pipeline stopped the writer (see the constructor): end quietly.
+			}
+
+			return total;
 		}
 
 		/// <summary>
-		/// Signals that all rows have been written.  The rows still buffered continue to flow downstream
-		/// and the target is completed (if requested) after the last one has been delivered.
+		/// Signals that all rows have been written and the reader has been released.  The rows still buffered continue to flow
+		/// downstream and the target is completed (if requested) after the last one has been delivered.
 		/// </summary>
-		public void Complete() => _block.Complete();
+		public void Complete()
+		{
+			_block.Complete();
+			_released.TrySetResult(true);
+		}
 
 		/// <summary>
-		/// Signals that writing failed.  The rows already written are still delivered,
+		/// Signals that writing failed and the reader has been released.  The rows already written are still delivered,
 		/// and then the target is faulted with <paramref name="exception"/> (if completion was requested).
 		/// </summary>
 		public void Fault(Exception exception)
 		{
 			Interlocked.CompareExchange(ref _failure, exception, null);
 			_block.Complete();
+			_released.TrySetResult(true);
 		}
 	}
 

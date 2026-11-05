@@ -17,4 +17,8 @@
 	  <ProjectReference Include="..\Core\Open.Database.Extensions.Core.csproj" />
 	</ItemGroup>
 	
+	<ItemGroup>
+		<InternalsVisibleTo Include="Open.Database.Extensions.Core.Tests" />
+	</ItemGroup>
+
 </Project>

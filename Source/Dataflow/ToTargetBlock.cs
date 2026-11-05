@@ -276,7 +276,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
@@ -299,7 +299,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IDbCommand command,
@@ -451,7 +451,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
@@ -474,7 +474,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static long ToTargetBlock<T>(this IExecuteReader command,
@@ -838,7 +838,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
@@ -868,7 +868,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
@@ -1026,7 +1026,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
@@ -1051,7 +1051,7 @@ public static partial class DataflowExtensions
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
-	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading failed.  If false, the target is left open.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
