@@ -103,7 +103,7 @@ internal sealed class ConnectionProbe
 
 	/// <summary>Creates the reader handed out by each ExecuteReader call (one row, one "id" column by default).</summary>
 	public Func<IDataReader> ReaderFactory { get; set; }
-		= () => FakeReader.Create(["id"], new object?[] { 1 });
+		= () => FakeReader.Create(["id"], [1]);
 
 	/// <summary><see cref="Calls"/> joined by commas, for compact whole-sequence assertions.</summary>
 	public string Log => string.Join(",", Calls);

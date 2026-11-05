@@ -300,7 +300,7 @@ public static partial class TransactionExtensions
 		{
 			connection.Close();
 		}
-		catch (Exception)
+		catch
 		{
 			// Intentionally ignored; see above.
 		}
@@ -322,7 +322,7 @@ public static partial class TransactionExtensions
 		{
 			await connection.CloseAsync().ConfigureAwait(false);
 		}
-		catch (Exception)
+		catch
 		{
 			// Intentionally ignored; see above.
 		}

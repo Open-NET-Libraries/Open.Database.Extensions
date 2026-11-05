@@ -69,7 +69,7 @@ public class Transformer<T>
 	{
 		// Per-instance copy of the default (property-name -> same column-name) map, sized exactly,
 		// so the optional overrides can mutate it without touching the shared reflection cache.
-		_propertyMap = new Dictionary<string, string>(PropertiesByName.Count);
+		_propertyMap = [with(PropertiesByName.Count)];
 		foreach (string name in PropertiesByName.Keys)
 			_propertyMap[name] = name;
 

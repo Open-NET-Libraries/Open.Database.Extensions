@@ -24,10 +24,10 @@ public static class CommandExtensionsTests
 			case "ToList": c.ToList(r => r.GetValue(0)); break;
 			case "ToArray": c.ToArray(r => r.GetValue(0)); break;
 			case "ToImmutableArray": c.ToImmutableArray(r => r.GetValue(0)); break;
-			case "ExecuteReaderAction": c.ExecuteReader((IDataReader r) => { }); break;
+			case "ExecuteReaderAction": c.ExecuteReader(_ => { }); break;
 			case "ExecuteReaderFunc": c.ExecuteReader(r => r.Read()); break;
-			case "IterateReader": c.IterateReader((IDataRecord r) => { }); break;
-			case "IterateReaderWhile": c.IterateReaderWhile(r => true); break;
+			case "IterateReader": c.IterateReader(_ => { }); break;
+			case "IterateReaderWhile": c.IterateReaderWhile(_ => true); break;
 			case "First": c.First(r => r.GetValue(0)); break;
 			case "FirstOrDefault": c.FirstOrDefault(r => r.GetValue(0)); break;
 			case "Single": c.Single(r => r.GetValue(0)); break;
@@ -39,11 +39,11 @@ public static class CommandExtensionsTests
 		}
 	}
 
-	public static TheoryData<string> Operations => new()
-	{
-		"ToList", "ToArray", "ToImmutableArray", "ExecuteReaderAction", "ExecuteReaderFunc", "IterateReader",
-		"IterateReaderWhile", "First", "FirstOrDefault", "Single", "SingleOrDefault", "Take", "Skip", "SkipThenTake",
-	};
+	public static TheoryData<string> Operations
+		=> [
+			"ToList", "ToArray", "ToImmutableArray", "ExecuteReaderAction", "ExecuteReaderFunc", "IterateReader",
+			"IterateReaderWhile", "First", "FirstOrDefault", "Single", "SingleOrDefault", "Take", "Skip", "SkipThenTake",
+		];
 
 	[Theory]
 	[MemberData(nameof(Operations))]
@@ -131,10 +131,10 @@ public static class CommandExtensionsTests
 	{
 		var probe = new ConnectionProbe(ConnectionState.Closed)
 		{
-			ReaderFactory = () => FakeReader.Create(["id"], new object?[] { 1 }, new object?[] { null }, new object?[] { 3 }),
+			ReaderFactory = () => FakeReader.Create(["id"], [1], [null], [3]),
 		};
 
-		List<object?> results = probe.Command.FirstOrdinalResults().ToList();
+		var results = probe.Command.FirstOrdinalResults().ToList();
 
 		Assert.Equal([1, null, 3], results);
 		Assert.Equal(
@@ -153,7 +153,7 @@ public static class CommandExtensionsTests
 		Assert.Equal("transform", Assert.Throws<ArgumentNullException>(
 			() => probe.Command.ToList((Func<IDataRecord, object>)null!)).ParamName);
 		Assert.Equal("handler", Assert.Throws<ArgumentNullException>(
-			() => probe.Command.ExecuteReader((Action<IDataReader>)null!)).ParamName);
+			() => probe.Command.ExecuteReader(null!)).ParamName);
 		Assert.Equal("predicate", Assert.Throws<ArgumentNullException>(
 			() => probe.Command.IterateReaderWhile(null!)).ParamName);
 
@@ -165,11 +165,11 @@ public static class CommandExtensionsTests
 	public static async Task ExecuteReaderAsync_NonDbCommand_FallsBackToSynchronousPath()
 	{
 		ConnectionProbe probe = ProbeWithRows(ConnectionState.Closed, 1);
-		Func<IDataReader, ValueTask> handler = r =>
+		ValueTask handler(IDataReader _)
 		{
 			probe.Calls.Add("Handler");
 			return ValueTask.CompletedTask;
-		};
+		}
 
 		await probe.Command.ExecuteReaderAsync(handler, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -228,7 +228,7 @@ public static class CommandExtensionsTests
 		cts.Cancel();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-			await command.ForEachAsync((Action<IDataRecord>)(r => { }), cancellationToken: cts.Token));
+			await command.ForEachAsync(_ => { }, cancellationToken: cts.Token));
 
 		Assert.Equal(string.Empty, probe.Log);
 		Assert.Empty(command.Behaviors);

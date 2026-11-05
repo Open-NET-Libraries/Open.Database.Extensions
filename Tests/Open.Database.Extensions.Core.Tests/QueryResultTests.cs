@@ -10,18 +10,16 @@ public static class QueryResultTests
 {
 	static QueryResult<Queue<object?[]>> Rows(params object?[][] rows)
 		=> new(
-			ImmutableArray.Create(0, 1),
-			ImmutableArray.Create("Id", "Name"),
+			[0, 1],
+			["Id", "Name"],
 			new Queue<object?[]>(rows));
 
 	[Fact]
 	public static void Constructor_MismatchedOrdinalAndNameCounts_Throws()
-	{
-		Assert.Throws<ArgumentException>(() => new QueryResult<int>(
-			ImmutableArray.Create(0, 1),
-			ImmutableArray.Create("only one"),
+		=> Assert.Throws<ArgumentException>(() => new QueryResult<int>(
+			[0, 1],
+			["only one"],
 			0));
-	}
 
 	[Fact]
 	public static void Constructor_EnumerableOverload_MaterializesAndCountsColumns()
@@ -53,6 +51,10 @@ public static class QueryResultTests
 		Assert.Throws<ArgumentNullException>(() => { string _ = none; });
 	}
 
+	private static readonly int[] Result = [1, 2, 3];
+	private static readonly int[] Ordinals = [0];
+	private static readonly string[] Names = ["a"];
+
 	[Fact]
 	public static void QueryResultCollection_RejectsNullResult_AndEnumeratesResult()
 	{
@@ -60,7 +62,7 @@ public static class QueryResultTests
 			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, null!));
 
 		var collection = new QueryResultCollection<int>(
-			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, new[] { 1, 2, 3 });
+			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, Result);
 		Assert.Equal([1, 2, 3], collection.ToList());
 	}
 
@@ -69,7 +71,7 @@ public static class QueryResultTests
 	{
 		var source = new List<int> { 1, 2 };
 
-		var result = new QueryResultQueue<int>(new[] { 0 }, new[] { "a" }, (IEnumerable<int>)source);
+		var result = new QueryResultQueue<int>(Ordinals, Names, source);
 		source.Add(3);
 
 		Assert.Equal([1, 2], result.Result.ToArray());
@@ -79,15 +81,15 @@ public static class QueryResultTests
 	public static void AsMappedDictionaries_MapsNamesToValues_AndConvertsDBNullToNull()
 	{
 		var result = new QueryResult<IEnumerable<object?[]>>(
-			ImmutableArray.Create(0, 1),
-			ImmutableArray.Create("Id", "Name"),
+			[0, 1],
+			["Id", "Name"],
 			new[]
 			{
 				new object?[] { 1, "a" },
-				new object?[] { 2, DBNull.Value },
+				[2, DBNull.Value],
 			});
 
-		List<Dictionary<string, object?>> dictionaries = result.AsMappedDictionaries().ToList();
+		var dictionaries = result.AsMappedDictionaries().ToList();
 
 		Assert.Equal(2, dictionaries.Count);
 		Assert.Equal(1, dictionaries[0]["Id"]);
@@ -101,9 +103,9 @@ public static class QueryResultTests
 	public static void DequeueAsMappedDictionaries_DrainsTheQueueAsItIsEnumerated()
 	{
 		QueryResult<Queue<object?[]>> result = Rows(
-			new object?[] { 1, "a" },
-			new object?[] { 2, DBNull.Value },
-			new object?[] { 3, "c" });
+			[1, "a"],
+			[2, DBNull.Value],
+			[3, "c"]);
 
 		IEnumerable<Dictionary<string, object?>> dictionaries = result.DequeueAsMappedDictionaries();
 		Assert.Equal(3, result.Result.Count); // Nothing consumed until enumeration.
@@ -128,7 +130,7 @@ public static class QueryResultTests
 	[Fact]
 	public static async Task DequeueAsMappedDictionaries_Task_AwaitsThenMaps()
 	{
-		Task<QueryResult<Queue<object?[]>>> task = Task.FromResult(Rows(new object?[] { 1, "a" }));
+		Task<QueryResult<Queue<object?[]>>> task = Task.FromResult(Rows([1, "a"]));
 
 		IEnumerable<Dictionary<string, object?>> dictionaries = await task.DequeueAsMappedDictionaries();
 

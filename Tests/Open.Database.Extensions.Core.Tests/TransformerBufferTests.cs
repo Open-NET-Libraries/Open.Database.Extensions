@@ -38,7 +38,7 @@ public static class TransformerBufferTests
 
 		pool.DidNotReceiveWithAnyArgs().Return(default!, default); // Deferred until enumerated.
 
-		List<Person> list = people.ToList();
+		var list = people.ToList();
 
 		Assert.Equal([1, 2], list.Select(p => p.Id));
 		Assert.Equal(["a", "b"], list.Select(p => p.Name));
@@ -117,7 +117,7 @@ public static class TransformerBufferTests
 	[Fact]
 	public static void AsDequeueingEnumerable_NullArguments_Throw()
 	{
-		Transformer<Person> transformer = Transformer<Person>.Create();
+		var transformer = Transformer<Person>.Create();
 		QueryResult<Queue<object[]>> results = Buffered(["Id"]);
 
 		Assert.Equal("results", Assert.Throws<ArgumentNullException>(
@@ -131,7 +131,7 @@ public static class TransformerBufferTests
 	{
 		DataTable table = NewTable();
 
-		List<Person> people = Transformer<Person>.Create().Results(table, clearTable: true).ToList();
+		var people = Transformer<Person>.Create().Results(table, clearTable: true).ToList();
 
 		Assert.Empty(table.Rows);
 		Assert.Equal([1, 2], people.Select(p => p.Id));
@@ -143,7 +143,7 @@ public static class TransformerBufferTests
 	{
 		DataTable table = NewTable();
 
-		List<Person> people = Transformer<Person>.Create().Results(table, clearTable: false).ToList();
+		var people = Transformer<Person>.Create().Results(table, clearTable: false).ToList();
 
 		Assert.Equal(2, table.Rows.Count);
 		Assert.Equal(2, people.Count);

@@ -17,7 +17,7 @@ public static class ConnectionOpenUsingTests
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 		IDbConnectionFactory factory = probe.CreateFactory();
 
-		factory.Open(c => { probe.Calls.Add("Action"); });
+		factory.Open(c => probe.Calls.Add("Action"));
 
 		Assert.Equal("Create,Open,Action,DisposeConnection", probe.Log);
 	}
@@ -28,7 +28,7 @@ public static class ConnectionOpenUsingTests
 		var probe = new ConnectionProbe(ConnectionState.Open);
 		IDbConnectionFactory factory = probe.CreateFactory();
 
-		factory.Open(c => { probe.Calls.Add("Action"); });
+		factory.Open(c => probe.Calls.Add("Action"));
 
 		Assert.Equal("Create,Action,DisposeConnection", probe.Log);
 	}
@@ -40,7 +40,7 @@ public static class ConnectionOpenUsingTests
 		IDbConnectionFactory factory = probe.CreateFactory();
 
 		var ex = Assert.Throws<InvalidOperationException>(
-			() => factory.Open((Action<IDbConnection>)(c => throw new InvalidOperationException("boom"))));
+			() => factory.Open(c => throw new InvalidOperationException("boom")));
 
 		Assert.Equal("boom", ex.Message);
 		Assert.Equal("Create,Open,DisposeConnection", probe.Log);
@@ -64,7 +64,7 @@ public static class ConnectionOpenUsingTests
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 		IDbConnectionFactory factory = probe.CreateFactory();
 
-		factory.Using(c => { probe.Calls.Add("Action"); });
+		factory.Using(c => probe.Calls.Add("Action"));
 
 		Assert.Equal("Create,Action,DisposeConnection", probe.Log);
 	}
@@ -74,12 +74,12 @@ public static class ConnectionOpenUsingTests
 	{
 		var openProbe = new ConnectionProbe(ConnectionState.Closed);
 		Func<IDbConnection> openFactory = () => openProbe.Connection;
-		openFactory.Open(c => { openProbe.Calls.Add("Action"); });
+		openFactory.Open(c => openProbe.Calls.Add("Action"));
 		Assert.Equal("Open,Action,DisposeConnection", openProbe.Log);
 
 		var usingProbe = new ConnectionProbe(ConnectionState.Closed);
 		Func<IDbConnection> usingFactory = () => usingProbe.Connection;
-		usingFactory.Using(c => { usingProbe.Calls.Add("Action"); });
+		usingFactory.Using(c => usingProbe.Calls.Add("Action"));
 		Assert.Equal("Action,DisposeConnection", usingProbe.Log);
 	}
 
@@ -113,7 +113,7 @@ public static class ConnectionOpenUsingTests
 		IDbConnectionPool pool = probe.CreatePool();
 
 		Assert.Throws<InvalidOperationException>(
-			() => pool.Open((Action<IDbConnection, ConnectionState>)((c, s) => throw new InvalidOperationException())));
+			() => pool.Open((c, s) => throw new InvalidOperationException()));
 
 		Assert.Equal("Take,Open,Give", probe.Log);
 	}
@@ -124,7 +124,7 @@ public static class ConnectionOpenUsingTests
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 		IDbConnectionPool pool = probe.CreatePool();
 
-		pool.Using(c => { probe.Calls.Add("Action"); });
+		pool.Using(c => probe.Calls.Add("Action"));
 
 		Assert.Equal("Take,Action,Give", probe.Log);
 		Assert.Equal(ConnectionState.Closed, probe.State);
@@ -140,11 +140,10 @@ public static class ConnectionOpenUsingTests
 			created.Add(c);
 			return c;
 		});
-		IDbConnectionPool pool = factory.AsPool();
 
-		IDbConnection first = pool.Take();
-		IDbConnection second = pool.Take();
-		pool.Give(first);
+		IDbConnection first = factory.AsPool().Take();
+		IDbConnection second = factory.AsPool().Take();
+		factory.AsPool().Give(first);
 
 		Assert.NotSame(first, second);
 		Assert.Equal(2, created.Count);
@@ -162,11 +161,11 @@ public static class ConnectionOpenUsingTests
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 		IDbConnectionFactory factory = probe.CreateFactory();
 
-		await factory.OpenAsync((Func<IDbConnection, ValueTask>)(c =>
+		await factory.OpenAsync(c =>
 		{
 			probe.Calls.Add("Action");
 			return ValueTask.CompletedTask;
-		}), TestContext.Current.CancellationToken);
+		}, TestContext.Current.CancellationToken);
 
 		Assert.Equal("Create,Open,Action,DisposeConnection", probe.Log);
 	}
@@ -180,11 +179,11 @@ public static class ConnectionOpenUsingTests
 		cts.Cancel();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-			await factory.OpenAsync((Func<IDbConnection, ValueTask>)(c =>
+			await factory.OpenAsync(_ =>
 			{
 				probe.Calls.Add("Action");
 				return ValueTask.CompletedTask;
-			}), cts.Token));
+			}, cts.Token));
 
 		Assert.Equal("Create,DisposeConnection", probe.Log);
 	}
@@ -196,11 +195,11 @@ public static class ConnectionOpenUsingTests
 		IDbConnectionPool pool = probe.CreatePool();
 
 		await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-			await pool.OpenAsync((Func<IDbConnection, ConnectionState, ValueTask>)((c, s) =>
+			await pool.OpenAsync((c, s) =>
 			{
 				probe.Calls.Add("Action");
 				throw new InvalidOperationException();
-			}), TestContext.Current.CancellationToken));
+			}, TestContext.Current.CancellationToken));
 
 		Assert.Equal("Take,Open,Action,Give", probe.Log);
 	}
@@ -214,11 +213,11 @@ public static class ConnectionOpenUsingTests
 		cts.Cancel();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-			await pool.OpenAsync((Func<IDbConnection, ConnectionState, ValueTask>)((c, s) =>
+			await pool.OpenAsync((c, s) =>
 			{
 				probe.Calls.Add("Action");
 				return ValueTask.CompletedTask;
-			}), cts.Token));
+			}, cts.Token));
 
 		Assert.Equal("Take,Give", probe.Log);
 	}
@@ -230,11 +229,11 @@ public static class ConnectionOpenUsingTests
 		IDbConnectionPool pool = probe.CreatePool();
 
 		await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-			await pool.UsingAsync((Func<IDbConnection, ValueTask>)(c =>
+			await pool.UsingAsync(c =>
 			{
 				probe.Calls.Add("Action");
 				throw new InvalidOperationException();
-			})));
+			}));
 
 		Assert.Equal("Take,Action,Give", probe.Log);
 	}
@@ -246,7 +245,7 @@ public static class ConnectionOpenUsingTests
 		IDbConnectionFactory factory = probe.CreateFactory();
 
 		await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-			await factory.UsingAsync((Func<IDbConnection, ValueTask>)(c => throw new InvalidOperationException())));
+			await factory.UsingAsync(c => throw new InvalidOperationException()));
 
 		Assert.Equal("Create,DisposeConnection", probe.Log);
 	}
@@ -265,11 +264,11 @@ public static class ConnectionOpenUsingTests
 		Assert.Equal("connectionFactory", Assert.Throws<ArgumentNullException>(
 			() => ((IDbConnectionFactory)null!).Open(c => { })).ParamName);
 		Assert.Equal("action", Assert.Throws<ArgumentNullException>(
-			() => factory.Open((Action<IDbConnection>)null!)).ParamName);
+			() => factory.Open(null!)).ParamName);
 		Assert.Equal("connectionPool", Assert.Throws<ArgumentNullException>(
 			() => ((IDbConnectionPool)null!).Open((c, s) => { })).ParamName);
 		Assert.Equal("action", Assert.Throws<ArgumentNullException>(
-			() => pool.Open((Action<IDbConnection, ConnectionState>)null!)).ParamName);
+			() => pool.Open(null!)).ParamName);
 
 		// Validation happens before anything is created or taken.
 		Assert.Equal(string.Empty, probe.Log);
@@ -285,11 +284,11 @@ public static class ConnectionOpenUsingTests
 		Assert.Equal("connectionFactory", Assert.Throws<ArgumentNullException>(
 			() => ((IDbConnectionFactory)null!).Using(c => { })).ParamName);
 		Assert.Equal("action", Assert.Throws<ArgumentNullException>(
-			() => factory.Using((Action<IDbConnection>)null!)).ParamName);
+			() => factory.Using(null!)).ParamName);
 		Assert.Equal("connectionPool", Assert.Throws<ArgumentNullException>(
 			() => ((IDbConnectionPool)null!).Using(c => { })).ParamName);
 		Assert.Equal("action", Assert.Throws<ArgumentNullException>(
-			() => pool.Using((Action<IDbConnection>)null!)).ParamName);
+			() => pool.Using(null!)).ParamName);
 
 		Assert.Equal(string.Empty, probe.Log);
 	}

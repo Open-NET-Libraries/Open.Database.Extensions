@@ -68,7 +68,7 @@ public static class TransactionExtensionsTests
 	public static void ExecuteTransaction_ActionThrows_RollsBackClosesAndPropagates()
 	{
 		var c = new FakeDbConnection();
-		Action<DbTransaction> action = _ => throw Boom();
+		static void action(DbTransaction _) => throw Boom();
 
 		var ex = Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(action, cancellationToken: TestContext.Current.CancellationToken));
 
@@ -81,7 +81,7 @@ public static class TransactionExtensionsTests
 	public static async Task ExecuteTransactionAsync_ActionThrows_RollsBackClosesAndPropagates()
 	{
 		var c = new FakeDbConnection();
-		Func<DbTransaction, ValueTask> action = _ => throw Boom();
+		static ValueTask action(DbTransaction _) => throw Boom();
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(action, cancellationToken: TestContext.Current.CancellationToken));
 
@@ -116,7 +116,7 @@ public static class TransactionExtensionsTests
 	public static void ExecuteTransaction_CloseFails_DoesNotHideTheActionsException()
 	{
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
-		Action<DbTransaction> action = _ => throw Boom();
+		static void action(DbTransaction _) => throw Boom();
 
 		var ex = Assert.Throws<InvalidOperationException>(() => c.ExecuteTransaction(action, cancellationToken: TestContext.Current.CancellationToken));
 
@@ -127,7 +127,7 @@ public static class TransactionExtensionsTests
 	public static async Task ExecuteTransactionAsync_CloseFails_DoesNotHideTheActionsException()
 	{
 		var c = new FakeDbConnection { CloseException = new TimeoutException("close failed") };
-		Func<DbTransaction, ValueTask> action = _ => throw Boom();
+		static ValueTask action(DbTransaction _) => throw Boom();
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await c.ExecuteTransactionAsync(action, cancellationToken: TestContext.Current.CancellationToken));
 
@@ -299,9 +299,9 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection();
 
 		AssertRejected(c, () => c.ExecuteTransactionConditional((Func<DbTransaction, (bool Commit, int Value)>)null!), "conditionalAction");
-		AssertRejected(c, () => c.ExecuteTransactionConditional((Func<DbTransaction, bool>)null!), "conditionalAction");
+		AssertRejected(c, () => c.ExecuteTransactionConditional(null!), "conditionalAction");
 		AssertRejected(c, () => c.ExecuteTransaction((Func<DbTransaction, int>)null!), "action");
-		AssertRejected(c, () => c.ExecuteTransaction((Action<DbTransaction>)null!), "action");
+		AssertRejected(c, () => c.ExecuteTransaction(null!), "action");
 	}
 
 	[Fact]
@@ -309,9 +309,9 @@ public static class TransactionExtensionsTests
 	{
 		var c = new FakeDbConnection();
 
-		AssertRejected(c, () => c.ExecuteTransaction(IsolationLevel.ReadCommitted, CancellationToken.None, (Action<DbTransaction>)null!), "action");
+		AssertRejected(c, () => c.ExecuteTransaction(IsolationLevel.ReadCommitted, CancellationToken.None, null!), "action");
 		AssertRejected(c, () => c.ExecuteTransaction(CancellationToken.None, (Func<DbTransaction, int>)null!), "action");
-		AssertRejected(c, () => c.ExecuteTransactionConditional(IsolationLevel.ReadCommitted, (Func<DbTransaction, bool>)null!), "conditionalAction");
+		AssertRejected(c, () => c.ExecuteTransactionConditional(IsolationLevel.ReadCommitted, null!), "conditionalAction");
 	}
 
 	[Fact]
@@ -321,9 +321,9 @@ public static class TransactionExtensionsTests
 
 		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionConditionalAsync((Func<DbTransaction, CancellationToken, ValueTask<(bool Commit, int Value)>>)null!), "conditionalAction");
 		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionConditionalAsync((Func<DbTransaction, ValueTask<(bool Commit, int Value)>>)null!), "conditionalAction");
-		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionConditionalAsync((Func<DbTransaction, ValueTask<bool>>)null!), "conditionalAction");
+		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionConditionalAsync(null!), "conditionalAction");
 		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync((Func<DbTransaction, ValueTask<int>>)null!), "action");
-		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync((Func<DbTransaction, ValueTask>)null!), "action");
+		await AssertRejectedAsync(c, async () => await c.ExecuteTransactionAsync(null!), "action");
 	}
 
 	[Fact]
