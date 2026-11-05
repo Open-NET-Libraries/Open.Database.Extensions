@@ -1238,7 +1238,7 @@ public static class ToTargetBlockMappedCompletionTests
 	{
 		const int warmUp = 300;
 		const int calls = 4000;
-		const double allowedBytesPerCall = 500;
+		const double allowedBytesPerCall = 64; // Measured over 10 runs: 0-3 B/call, and 9-19 B/call for DbCommandAsync (the test fake keeps a list of behaviours).  Margin >3x.
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var target = new ActionBlock<Row>(_ => { }); // Open, unbounded, never completed.
 		object?[][] rows = Rows(3);
