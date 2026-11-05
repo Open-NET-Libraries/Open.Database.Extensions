@@ -29,12 +29,32 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// The connection provider to used to acquire connections.
 	/// </summary>
-	protected IDbConnectionPool<TConnection> ConnectionProvider { get; }
+	protected IDbConnectionPool<TConnection> ConnectionProvider
+		=> _poolOrConnection as IDbConnectionPool<TConnection> ?? (EnsureOptions().Provider ??= DbConnectionProvider.Create((TConnection)_poolOrConnection));
+
+	// Either the pool to take connections from, or (a command built from a bare connection) the connection
+	// itself: running it needs no pool wrapper object.
+	readonly object _poolOrConnection;
+	int _busy;
+
+	// The rarely-set members live in a block that is only allocated when one is set, so the usual
+	// conn.Command(sql) object stays small (it is allocated on every call).
+	private protected sealed class CommandOptions
+	{
+		public IDbTransaction? Transaction;
+		public IDbConnectionPool<TConnection>? Provider;
+		public CancellationToken CancellationToken;
+		public ushort Timeout = CommandTimeout.DEFAULT_SECONDS;
+		public bool UseAsyncRead;
+	}
+
+	private protected CommandOptions? _options;
+	private protected CommandOptions EnsureOptions() => _options ??= new();
 
 	/// <summary>
 	/// The transaction to execute commands on if not using a connection factory.
 	/// </summary>
-	protected IDbTransaction? Transaction { get; }
+	protected IDbTransaction? Transaction => _options?.Transaction;
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connectionPool">The pool to acquire connections from.</param>
@@ -47,14 +67,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		string command,
 		IEnumerable<Param>? @params)
 	{
-		ConnectionProvider = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
+		_poolOrConnection = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
 		Command = command ?? throw new ArgumentNullException(nameof(command));
 		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
 		Contract.EndContractBlock();
 
 		Type = type;
-		Params = @params?.ToList() ?? [];
-		Timeout = CommandTimeout.DEFAULT_SECONDS;
+		if (@params is not null) _params = @params.ToList();
 	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
@@ -93,8 +112,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		CommandType type,
 		string command,
 		IEnumerable<Param>? @params)
-		: this(DbConnectionProvider.Create(connection), type, command, @params)
-		=> Transaction = transaction;
+	{
+		_poolOrConnection = connection ?? throw new ArgumentNullException(nameof(connection));
+		if (transaction is not null) EnsureOptions().Transaction = transaction;
+		Command = command ?? throw new ArgumentNullException(nameof(command));
+		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
+		Contract.EndContractBlock();
+
+		Type = type;
+		if (@params is not null) _params = @params.ToList();
+	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connection">The connection to execute the command on.</param>
@@ -139,12 +166,23 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// The list of params to apply to the command before execution.
 	/// </summary>
-	public List<Param> Params { get; }
+	public List<Param> Params => _params ??= [];
+
+	// Most commands have no params, so the list is only created when one is added.
+	List<Param>? _params;
 
 	/// <summary>
 	/// The command timeout value.
 	/// </summary>
-	public ushort Timeout { get; set; }
+	public ushort Timeout
+	{
+		get => _options?.Timeout ?? CommandTimeout.DEFAULT_SECONDS;
+		set
+		{
+			if (value == CommandTimeout.DEFAULT_SECONDS && _options is null) return;
+			EnsureOptions().Timeout = value;
+		}
+	}
 
 	/// <summary>
 	/// Creates the expected command type from the connection provided.
@@ -158,14 +196,22 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
 		if (Transaction != null)
 			c.Transaction = Transaction;
-		AddParams(c);
+		if (_params is { Count: > 0 }) AddParams(c);
 		return c;
 	}
 
 	/// <summary>
 	/// The optional cancellation token to use with supported methods.
 	/// </summary>
-	public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
+	public CancellationToken CancellationToken
+	{
+		get => _options?.CancellationToken ?? CancellationToken.None;
+		set
+		{
+			if (!value.CanBeCanceled && _options is null) return;
+			EnsureOptions().CancellationToken = value;
+		}
+	}
 
 	CancellationToken IExecuteReader.CancellationToken => CancellationToken;
 
@@ -209,6 +255,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam<T>(string name, T? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		where T : struct
+		=> AddParam(new(name, value, type, direction));
+
+	// A literal 0 converts implicitly to any enum, so without these a call like AddParam("id", 0) would bind to
+	// the type-only or direction-only overloads below and silently add a parameter with no value.
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, int value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> AddParam(new(name, value, type, direction));
+
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, long value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
 
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
@@ -261,6 +317,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, int value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, long value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParamIf(bool condition, string name, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, type, direction) : (TThis)this;
 
@@ -286,17 +350,123 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return (TThis)this;
 	}
 
+	#region Execution core
+
+	// Every execution path funnels through these two methods: take the connection, make sure it is open,
+	// build the command, run the caller's function, release the connection. The caller's inputs travel in
+	// TState (a value type for the typed paths) and the functions are static lambdas, so a call allocates
+	// no closures or delegates of its own.
+
+	// Open MUST occur before command creation as some DbCommands require it.
+	private protected TResult ExecuteCore<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, TResult> func)
+	{
+		if (_poolOrConnection is TConnection single)
+			return ExecuteDirect(single, state, func);
+
+		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
+		TConnection conn = pool.Take();
+		try
+		{
+			ConnectionState prior = conn.EnsureOpen();
+			using TCommand cmd = PrepareCommand(conn);
+			return func(cmd, prior, state);
+		}
+		finally
+		{
+			pool.Give(conn);
+		}
+	}
+
+	private protected async ValueTask<TResult> ExecuteCoreAsync<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, ValueTask<TResult>> func)
+	{
+		CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+
+		if (_poolOrConnection is TConnection single)
+		{
+			EnterDirect();
+			ConnectionState before = single.State;
+			try
+			{
+				ConnectionState prior = await OpenIfNeededAsync(single, CancellationToken).ConfigureAwait(false);
+				using TCommand cmd = PrepareCommand(single);
+				return await func(cmd, prior, state).ConfigureAwait(false);
+			}
+			finally
+			{
+				ExitDirect(single, before);
+			}
+		}
+
+		IDbConnectionPool<TConnection> pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
+		TConnection conn = pool.Take();
+		try
+		{
+			ConnectionState prior = await OpenIfNeededAsync(conn, CancellationToken).ConfigureAwait(false);
+			using TCommand cmd = PrepareCommand(conn);
+			return await func(cmd, prior, state).ConfigureAwait(false);
+		}
+		finally
+		{
+			pool.Give(conn);
+		}
+	}
+
+	// An open connection (the usual case) needs no awaiting at all.
+	static ValueTask<ConnectionState> OpenIfNeededAsync(TConnection connection, CancellationToken cancellationToken)
+	{
+		ConnectionState state = connection.State;
+		return (state & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open
+			? new ValueTask<ConnectionState>(state)
+			: connection.EnsureOpenAsync(cancellationToken);
+	}
+
+	TResult ExecuteDirect<TState, TResult>(TConnection single, TState state, Func<TCommand, ConnectionState, TState, TResult> func)
+	{
+		EnterDirect();
+		ConnectionState before = single.State;
+		try
+		{
+			ConnectionState prior = single.EnsureOpen();
+			using TCommand cmd = PrepareCommand(single);
+			return func(cmd, prior, state);
+		}
+		finally
+		{
+			ExitDirect(single, before);
+		}
+	}
+
+	// A connection that was closed when taken is closed again when released; one that was open stays open.
+	void EnterDirect()
+	{
+		if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
+			throw new InvalidOperationException("Concurrent use of a single connection is not supported.");
+	}
+
+	void ExitDirect(TConnection connection, ConnectionState before)
+	{
+		try
+		{
+			if (before == ConnectionState.Closed) connection.Close();
+		}
+		finally
+		{
+			Volatile.Write(ref _busy, 0);
+		}
+	}
+
+	#endregion
+
 	/// <inheritdoc />
 	public void Execute(Action<TCommand> action)
 	{
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		// Open MUST occur before command creation as some DbCommands require it.
-		ConnectionProvider.Open((conn, _) =>
+		ExecuteCore(action, static (cmd, _, a) =>
 		{
-			using TCommand cmd = PrepareCommand(conn);
-			action(cmd);
+			a(cmd);
+			return false;
 		});
 	}
 
@@ -306,12 +476,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		// Open MUST occur before command creation as some DbCommands require it.
-		return ConnectionProvider.Open((conn, _) =>
-		{
-			using TCommand cmd = PrepareCommand(conn);
-			return transform(cmd);
-		});
+		return ExecuteCore(transform, static (cmd, _, f) => f(cmd));
 	}
 
 	/// <inheritdoc />
@@ -320,30 +485,25 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
 
-		// Open MUST occur before command creation as some DbCommands require it.
-		return ConnectionProvider.OpenAsync(async (conn, _) =>
+		return ValueTaskHelpers.Discard(ExecuteCoreAsync(handler, static async (cmd, _, h) =>
 		{
-			using TCommand cmd = PrepareCommand(conn);
-			await handler(cmd).ConfigureAwait(false);
-		});
+			await h(cmd).ConfigureAwait(false);
+			return false;
+		}));
 	}
 
+	// Completes a ValueTask<T> as a plain ValueTask without allocating when it has already finished.
 	/// <inheritdoc />
 	public virtual ValueTask<T> ExecuteAsync<T>(Func<TCommand, ValueTask<T>> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
 
-		// Open MUST occur before command creation as some DbCommands require it.
-		return ConnectionProvider.OpenAsync(async (conn, _) =>
-		{
-			using TCommand cmd = PrepareCommand(conn);
-			return await transform(cmd).ConfigureAwait(false);
-		});
+		return ExecuteCoreAsync(transform, static (cmd, _, f) => f(cmd));
 	}
 
 	void IExecuteCommand.Execute(Action<IDbCommand> action)
@@ -369,18 +529,54 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		=> reader is TReader r ? r : throw new InvalidCastException($"Expected reader type of ({typeof(TReader)}).  Actual: ({reader.GetType()})");
 
 	/// <inheritdoc />
+	public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
+	{
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		return ExecuteCore((state, transform, behavior), static (cmd, prior, s) =>
+		{
+			CommandBehavior b = prior == ConnectionState.Closed ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
+			using IDataReader reader = cmd.ExecuteReader(b);
+			return s.transform(reader, s.state);
+		});
+	}
+
+	/// <inheritdoc />
+	public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
+	{
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		return ExecuteCoreAsync((state, transform, behavior, CancellationToken), static async (cmd, prior, s) =>
+		{
+			CommandBehavior b = prior == ConnectionState.Closed ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
+			if (cmd is DbCommand dbCommand)
+			{
+#if NETSTANDARD2_0
+#else
+				await
+#endif
+				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.CancellationToken).ConfigureAwait(false);
+				return await s.transform(dbReader, s.state).ConfigureAwait(false);
+			}
+
+			using IDataReader reader = cmd.ExecuteReader(b);
+			return await s.transform(reader, s.state).ConfigureAwait(false);
+		});
+	}
+
+	/// <inheritdoc />
 	public void ExecuteReader(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		// Open MUST occur before command creation as some DbCommands require it.
-		ConnectionProvider.Open((conn, state) =>
+		ExecuteReader(handler, static (reader, h) =>
 		{
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using TCommand cmd = PrepareCommand(conn);
-			cmd.ExecuteReader(reader => handler(EnsureReaderType(reader)), behavior);
-		});
+			h(EnsureReaderType(reader));
+			return false;
+		}, behavior);
 	}
 
 	/// <inheritdoc />
@@ -389,79 +585,92 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return ConnectionProvider.Open((conn, state) =>
-		{
-			// Open MUST occur before command creation as some DbCommands require it.
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using TCommand cmd = PrepareCommand(conn);
-			return cmd.ExecuteReader(reader => transform(EnsureReaderType(reader)), behavior);
-		});
+		return ExecuteReader(transform, static (reader, f) => f(EnsureReaderType(reader)), behavior);
 	}
 
 	/// <inheritdoc />
 	public ValueTask ExecuteReaderAsync(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
-		return ConnectionProvider.OpenAsync(async (conn, state) =>
-		{
-			// Open MUST occur before command creation as some DbCommands require it.
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using TCommand cmd = PrepareCommand(conn);
-			await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(false);
-		});
+		if (handler is null) throw new ArgumentNullException(nameof(handler));
+		Contract.EndContractBlock();
 
-		ValueTask ExecuteReaderAsyncCore(IDataReader reader)
+		return ValueTaskHelpers.Discard(ExecuteReaderAsync(handler, static (reader, h) =>
 		{
-			handler(EnsureReaderType(reader));
-			return new ValueTask();
-		}
+			h(EnsureReaderType(reader));
+			return new ValueTask<bool>(false);
+		}, behavior));
 	}
 
 	/// <inheritdoc />
 	public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, T> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
-		return ConnectionProvider.OpenAsync(async (conn, state) =>
-		{
-			// Open MUST occur before command creation as some DbCommands require it.
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using TCommand cmd = PrepareCommand(conn);
-			return await cmd.ExecuteReaderAsync(ExecuteReaderAsyncCore, behavior, CancellationToken).ConfigureAwait(false);
-		});
+		if (handler is null) throw new ArgumentNullException(nameof(handler));
+		Contract.EndContractBlock();
 
-		ValueTask<T> ExecuteReaderAsyncCore(IDataReader reader)
-			=> new(handler(EnsureReaderType(reader)));
+		return ExecuteReaderAsync(handler, static (reader, h) => new ValueTask<T>(h(EnsureReaderType(reader))), behavior);
 	}
 
 	/// <inheritdoc />
 	public ValueTask ExecuteReaderAsync(Func<TReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default)
-		=> ConnectionProvider.OpenAsync(async (conn, state) =>
+	{
+		if (handler is null) throw new ArgumentNullException(nameof(handler));
+		Contract.EndContractBlock();
+
+		return ValueTaskHelpers.Discard(ExecuteReaderAsync(handler, static async (reader, h) =>
 		{
-			// Open MUST occur before command creation as some DbCommands require it.
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using TCommand cmd = PrepareCommand(conn);
-			await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(false);
-		});
+			await h(EnsureReaderType(reader)).ConfigureAwait(false);
+			return false;
+		}, behavior));
+	}
 
 	/// <inheritdoc />
 	public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, ValueTask<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
-		=> ConnectionProvider.OpenAsync(async (conn, state) =>
-		{
-			// Open MUST occur before command creation as some DbCommands require it.
-			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using TCommand cmd = PrepareCommand(conn);
-			return await cmd.ExecuteReaderAsync(reader => handler(EnsureReaderType(reader)), behavior, CancellationToken).ConfigureAwait(false);
-		});
+	{
+		if (handler is null) throw new ArgumentNullException(nameof(handler));
+		Contract.EndContractBlock();
+
+		return ExecuteReaderAsync(handler, static (reader, h) => h(EnsureReaderType(reader)), behavior);
+	}
 
 	void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
-		=> ExecuteReader(reader => handler(reader), behavior);
+	{
+		if (handler is null) throw new ArgumentNullException(nameof(handler));
+		Contract.EndContractBlock();
+
+		ExecuteReader(handler, static (reader, h) =>
+		{
+			h(reader);
+			return false;
+		}, behavior);
+	}
 
 	T IExecuteReader.ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior)
-		=> ExecuteReader(reader => transform(reader), behavior);
+	{
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		return ExecuteReader(transform, static (reader, f) => f(reader), behavior);
+	}
 
 	ValueTask IExecuteReader.ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior)
-		=> ExecuteReaderAsync(reader => handler(reader), behavior);
+	{
+		if (handler is null) throw new ArgumentNullException(nameof(handler));
+		Contract.EndContractBlock();
+
+		return ValueTaskHelpers.Discard(ExecuteReaderAsync(handler, static async (reader, h) =>
+		{
+			await h(reader).ConfigureAwait(false);
+			return false;
+		}, behavior));
+	}
 
 	ValueTask<T> IExecuteReader.ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior)
-		=> ExecuteReaderAsync(reader => transform(reader), behavior);
+	{
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		return ExecuteReaderAsync(transform, static (reader, f) => f(reader), behavior);
+	}
 
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
@@ -469,9 +678,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <returns>The value from the return parameter.</returns>
 	public object? ExecuteReturn()
 		// Open MUST occur before command creation as some DbCommands require it.
-		=> ConnectionProvider.Open((conn, _) =>
+		=> ExecuteCore(0, static (cmd, _, _) =>
 		{
-			using TCommand cmd = PrepareCommand(conn);
 			IDbDataParameter returnParameter = cmd.AddReturnParameter();
 			cmd.ExecuteNonQuery();
 			return returnParameter.Value;
@@ -490,16 +698,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <returns>The value from the return parameter.</returns>
 	public ValueTask<object?> ExecuteReturnAsync()
 	{
-		CancellationToken.ThrowIfCancellationRequested();
+		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
 
-		// Open MUST occur before command creation as some DbCommands require it.
-		return ConnectionProvider.OpenAsync(async (conn, _) =>
+		return ExecuteCoreAsync(CancellationToken, static async (cmd, _, token) =>
 		{
-			using TCommand cmd = PrepareCommand(conn);
 			IDbDataParameter returnParameter = cmd.AddReturnParameter();
 
 			if (cmd is DbCommand dbCommand)
-				await dbCommand.ExecuteNonQueryAsync(CancellationToken).ConfigureAwait(false);
+				await dbCommand.ExecuteNonQueryAsync(token).ConfigureAwait(false);
 			else
 				cmd.ExecuteNonQuery();
 

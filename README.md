@@ -102,11 +102,43 @@ var people = cmd.Results<Person>(new Dictionary<string,string>{
 
 ### `Retrieve()` and `RetrieveAsync()`
 
-Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.AsDequeueingMappedEnumerable()` extension will iteratively convert the results to dictionaries for ease of access.
+Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.DequeueAsMappedDictionaries()` extension will iteratively convert the results to dictionaries for ease of access.
 
 ### `ResultsAsync<T>`
 
 `ResultsAsync<T>()` is fully asynchronous from end-to-end but returns an `IEnumerable<T>` that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.
+
+## Mapped queries: `Map<T>()`
+
+`Map<T>()` is the fast, expressive way to read rows into a model. It is deferred: nothing runs until a terminal is called, and rows are mapped as the reader streams.
+
+```cs
+var posts = await connection
+    .Command("select * from posts where author = @author")
+    .AddParam("author", 42)
+    .Map<Post>()
+    .ToArrayAsync();
+
+var page = connection.Command("select * from posts order by id")
+    .Map<Post>()
+    .Skip(20).Take(10)     // skipped rows are advanced, never mapped; reading stops once the take is met
+    .ToArray();
+
+var one = connection.Command("select * from posts where id = @id").AddParam("id", 7).Map<Post>().SingleOrDefault();
+```
+
+Prefer `ToArray` for results you only read: it allocates one exactly-sized array (no spare capacity, no collection object) and an empty result is the shared static empty array. Use `ToList` when you need a mutable collection.
+
+Terminals: `ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` (each with an `…Async` twin) and `Read(...)`/`ReadAsync(...)` for streaming.
+
+How it stays fast:
+
+- The mapping from a result set to `T` is compiled **once per result-set shape** (column names + column types) and cached, so a repeat query does no reflection and no compilation.
+- Values are read with the provider's typed getters (`GetInt32`, `GetString`, …), so nothing is boxed. A column whose type differs from the property converts numerically (`long` → `int`, `int` → enum, …) or through a general conversion (string → enum/`Guid`).
+- `NULL` is honored for reference types and `Nullable<T>` properties. A `NULL` in a column mapped to a non-nullable value-type property is the provider's error to raise, and the exception names the property and column.
+- Columns are matched to properties case-insensitively; unmatched columns are ignored, and unmatched properties keep their defaults. Field/column overrides are supported: `.Map<Post>(("Id", "PostId"), ("Body", null))` (a `null` column ignores the field).
+- Readers are opened with `SequentialAccess | SingleResult` (`SingleRow` for `FirstOrDefault`), like Dapper.
+- The execution path allocates no closures: state-passing `ExecuteReader`/`ExecuteReaderAsync` overloads on `IExecuteReader` take a `static` lambda plus the state it needs.
 
 ## Transactions
 
@@ -138,15 +170,15 @@ public static bool TryTransaction()
 
 - All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
 - Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
-- .NET 8.0 added to targets to ensure potential compliation and performance improvements are available.
+- .NET 8.0 added to targets to ensure potential compilation and performance improvements are available.
 - Improved nullable integrity.
 
 ## 9.0 Release Notes
 
 - Open.Database.Extensions meta-package is discontinued.
 - .NET 9.0 added to targets to ensure potential compilation and performance improvements are available.
-- Impelmented some .NET 8 and 9 specific features.
-- Significant cleanup and simplifcation where possible.
+- Implemented some .NET 8 and 9 specific features.
+- Significant cleanup and simplification where possible.
 
 ## 10.1.0 Release Notes
 
@@ -166,3 +198,33 @@ A modernization and allocation-reduction pass. **Source-compatible with 10.0** �
 - **Lower per-query overhead:** `Transformer<T>` caches its per-type reflection once instead of rebuilding it on every query; buffered/data-table paths pre-size collections and avoid redundant `Select` iterators.
 - Fixed a wasted-allocation / incorrect-return bug in `CopyToDBNullAsNull`.
 - Public API surface is now tracked with `Microsoft.CodeAnalysis.PublicApiAnalyzers`, and unit-test coverage was substantially expanded.
+
+## 11.0.0 Release Notes
+
+> **11.0.0-preview01.** This is a preview: please try it and tell us what you find. See [Known limitations](#known-limitations-in-this-preview) below.
+
+A performance release: **result mapping is rewritten and now beats Dapper 2.1.89** in the included benchmarks (`Benchmarks/`, see `Benchmarks/RESULTS.md`), with a fraction of the allocations on multi-row results.
+
+- **Cached, typed row mapping.** The mapping for a result-set shape is compiled once and reused. Previously every query compiled a setter per property (~1 ms fixed cost per `Map<T>()`). Values are read with typed getters, so nothing is boxed.
+- **Direct read loops.** `ToList`, `ToArray`, `FirstOrDefault`, `SingleOrDefault`, `ToDictionary`, `ToHashSet`, `ToImmutableArray` (and async twins) read straight from the reader. `Skip` advances without mapping, `Take` stops reading when met. They are now instance methods on `MappedQuery<T>` (no boxing of the query struct); the `IMappedQuery<T>` extensions remain for generic code.
+- **No per-call closures.** `IExecuteReader` gained state-passing `ExecuteReader<TState, TResult>` / `ExecuteReaderAsync<TState, TResult>`; pass a `static` lambda and the state it needs.
+- **Leaner commands.** A command created from a connection no longer allocates a pool wrapper, `Params` is created on first use, and async execution skips awaiting when the connection is already open.
+- **Readers use `SequentialAccess | SingleResult`** for `Map<T>()` (and `SingleRow` for `FirstOrDefault`), like Dapper. `Map(selector)` keeps the default access mode because a selector may read columns in any order.
+- **Channel and Dataflow fixes.** `complete: false` no longer runs the command twice. The mapped `ToChannel<T>`/`ToChannelAsync<T>` and `ToTargetBlock<T>` overloads complete your target only after every row has been delivered and the database reader has been released (before, up to about 1,000 buffered rows could be lost with a bounded target), no longer lose the last row when the reader fails mid-stream, and map correctly when the reader has extra unmapped columns.
+- **Connection and command fixes.** `OpenAsync(IDbConnection)` no longer opens a `DbConnection` twice, `EnsureOpenAsync` closes a connection that finished opening just as cancellation arrived, and `FirstOrdinalResults<T>(IDbCommand, behavior)` honors `behavior`.
+
+### Breaking changes
+
+- `IExecuteReader` has two new members (above). Custom implementations must add them; `ExpressiveCommand*` already do.
+- A `NULL` in a column mapped to a **non-nullable value-type** property is the provider's error to raise (it is wrapped in an `InvalidOperationException` naming the property and column). Map nullable columns to `Nullable<T>`/reference properties.
+- Field-mapping overrides naming a property that does not exist throw `ArgumentException` (was `KeyNotFoundException`). Only properties with a public setter are mapped.
+- `FirstOrdinalResults<T>` reads `NULL` as `default`. (`ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable, so items are released to the GC as they are drained.)
+- `ExpressiveCommandBase.Params` is created lazily.
+- Async command execution passes the command's `CancellationToken` to the connection open.
+- Mapped Channel and Dataflow overloads: a mapping failure now faults the target when `complete` is `true`; the target is never completed or faulted before the reader is released; `ArgumentNullException.ParamName` for a null target is `"target"`; and a mapped async channel call that is cancelled succeeds only if the reader had already reported the end of the results, otherwise it throws `OperationCanceledException`.
+
+### Known limitations in this preview
+
+- `Retrieve()` followed by `DequeueAs<T>()` is a two-pass route (rows are copied into `object[]` and mapped as they are drained); it is slower and allocates more than a direct `Map<T>()` at larger sizes. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()`. See `Benchmarks/RESULTS.md`.
+- The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full; the cause is in the underlying channel library and a fix is planned.
+- Benchmarks and tests cover the in-memory provider, SQLite and SQL Server LocalDB. Real-world feedback on other providers and workloads is welcome.

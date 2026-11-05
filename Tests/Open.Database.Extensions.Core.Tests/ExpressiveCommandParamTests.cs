@@ -24,6 +24,20 @@ public static class ExpressiveCommandParamTests
 		Assert.Equal("do_thing", proc.Command);
 	}
 
+	// A literal 0 converts to any enum, so it used to bind to the type-only overload and add a parameter with no value.
+	[Fact]
+	public static void AddParam_LiteralZero_IsTheValue()
+	{
+		ExpressiveCommand cmd = NewCommand()
+			.AddParam("i", 0)
+			.AddParam("l", 0L)
+			.AddParamIf(true, "j", 0)
+			.AddParamIf(true, "k", 0L);
+
+		Assert.Equal([0, 0L, 0, 0L], cmd.Params.Select(p => p.Value));
+		Assert.All(cmd.Params, p => Assert.False(p.Type.HasValue));
+	}
+
 	[Fact]
 	public static void AddParam_AppendsInOrder_WithValues()
 	{

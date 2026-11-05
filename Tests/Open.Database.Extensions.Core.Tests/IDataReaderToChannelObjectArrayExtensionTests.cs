@@ -151,6 +151,11 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		reader.GetName(1).Returns("B");
 		reader.GetName(2).Returns("C");
 		reader.GetName(3).Returns("D");
+		// Rows are now read per column (the mapped path no longer bulk-copies with GetValues).
+		reader.GetValue(0).Returns("Value1");
+		reader.GetValue(1).Returns("Value2");
+		reader.GetValue(2).Returns(0);
+		reader.GetValue(3).Returns(DBNull.Value);
 
 		reader
 			.When(x => x.GetValues(Arg.Any<object[]>()))
@@ -188,6 +193,11 @@ public static class IDataReaderToChannelObjectArrayExtensionTests
 		reader.GetName(1).Returns("B");
 		reader.GetName(2).Returns("C");
 		reader.GetName(3).Returns("D");
+		// Rows are now read per column (the mapped path no longer bulk-copies with GetValues).
+		reader.GetValue(0).Returns("Value1");
+		reader.GetValue(1).Returns("Value2");
+		reader.GetValue(2).Returns(0);
+		reader.GetValue(3).Returns(DBNull.Value);
 
 		reader
 			.When(x => x.GetValues(Arg.Any<object[]>()))

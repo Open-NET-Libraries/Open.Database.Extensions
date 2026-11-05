@@ -958,13 +958,7 @@ public static class DataReaderExtensions
 
 		var results = new Queue<T0>();
 		while (reader.Read())
-		{
-			results.Enqueue(
-				reader.IsDBNull(0)
-				? default!
-				: reader.GetFieldValue<T0>(0)
-			);
-		}
+			results.Enqueue(ColumnReader.Get<T0>(reader, 0));
 
 		return results.DequeueEach();
 	}
@@ -1005,36 +999,24 @@ public static class DataReaderExtensions
 		{
 			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
 			{
+				// Genuinely asynchronous column reads (matters for large values under SequentialAccess).
 				results.Enqueue(
 					await reader.IsDBNullAsync(0, cancellationToken).ConfigureAwait(false)
 					? default!
-					: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false)
-				);
+					: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false));
 			}
 		}
 		else if (cancellationToken.CanBeCanceled)
 		{
 			while (!cancellationToken.IsCancellationRequested && reader.Read())
-			{
-				results.Enqueue(
-					reader.IsDBNull(0)
-					? default!
-					: reader.GetFieldValue<T0>(0)
-				);
-			}
+				results.Enqueue(ColumnReader.Get<T0>(reader, 0));
 
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 		else
 		{
 			while (reader.Read())
-			{
-				results.Enqueue(
-					reader.IsDBNull(0)
-					? default!
-					: reader.GetFieldValue<T0>(0)
-				);
-			}
+				results.Enqueue(ColumnReader.Get<T0>(reader, 0));
 		}
 
 		return results.DequeueEach();

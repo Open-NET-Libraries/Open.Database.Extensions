@@ -104,7 +104,15 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
 	/// This should only be set to true if there is a clear reason why and should be profiled before and after.
 	/// </summary>
-	public bool UseAsyncRead { get; set; }
+	public bool UseAsyncRead
+	{
+		get => _options?.UseAsyncRead ?? false;
+		set
+		{
+			if (!value && _options is null) return;
+			EnsureOptions().UseAsyncRead = value;
+		}
+	}
 
 	/// <summary>
 	/// Sets the UseAsyncRead value.
@@ -120,14 +128,14 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <returns>The integer response from the method.</returns>
 	public ValueTask<int> ExecuteNonQueryAsync()
-		=> ExecuteAsync(command => new ValueTask<int>(command.ExecuteNonQueryAsync(CancellationToken)));
+		=> ExecuteCoreAsync(CancellationToken, static (command, _, token) => new ValueTask<int>(command.ExecuteNonQueryAsync(token)));
 
 	/// <summary>
 	/// Calls ExecuteScalarAsync on the underlying command.
 	/// </summary>
 	/// <returns>The value returned from the method.</returns>
 	public ValueTask<object?> ExecuteScalarAsync()
-		=> ExecuteAsync(command => new ValueTask<object?>(command.ExecuteScalarAsync(CancellationToken)));
+		=> ExecuteCoreAsync(CancellationToken, static (command, _, token) => new ValueTask<object?>(command.ExecuteScalarAsync(token)));
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.
@@ -148,8 +156,9 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <returns>The value returned from the method.</returns>
-	public async ValueTask<T> ExecuteScalarAsync<T>()
-		=> (T)(await ExecuteScalarAsync().ConfigureAwait(false))!;
+	public ValueTask<T> ExecuteScalarAsync<T>()
+		=> ExecuteCoreAsync(CancellationToken, static async (command, _, token)
+			=> (T)(await command.ExecuteScalarAsync(token).ConfigureAwait(false))!);
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.

@@ -1,13 +1,13 @@
 ﻿
-#if NET10_0_OR_GREATER
-using System.Collections.Frozen;
-#endif
-
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
 /// Utility of transforming retrieved data into models matching the type parameter provided.
 /// </summary>
+/// <remarks>
+/// The mapping is a compiled, cached <see cref="RowPlan{T}"/>: constructing a transformer and applying it to
+/// a result no longer rebuilds lookups or property setters per query.
+/// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
 	where T : new()
@@ -29,35 +29,17 @@ public class Transformer<T>
 	/// </summary>
 	public Type Type => typeof(T);
 
-	// Reflection is invariant per T; a static on this generic type is per-T and initialized once
-	// (thread-safe), so GetProperties() and the name->PropertyInfo map aren't rebuilt per query.
-	// Built once, read on every query (property lookups + Keys) -> frozen on the modern target.
-#if NET10_0_OR_GREATER
-	static readonly FrozenDictionary<string, PropertyInfo> PropertiesByName
-		= typeof(T).GetProperties().ToFrozenDictionary(p => p.Name);
-#else
-	static readonly Dictionary<string, PropertyInfo> PropertiesByName
-		= typeof(T).GetProperties().ToDictionary(p => p.Name);
-#endif
-
-	// Allow mapping key = object property, value = column name.
-	readonly Dictionary<string, string> _propertyMap;
-
-	// Column-name -> property lookup, matched case-insensitively (OrdinalIgnoreCase) so no
-	// upper-cased key strings are allocated. This map is per-query (a fresh Transformer is built
-	// per operation) and read only a handful of times, so a plain Dictionary is correct here —
-	// freezing a short-lived map costs more to build than the few lookups would ever recover.
-	readonly Dictionary<string, PropertyInfo> _columnToPropertyMap;
+	readonly RowPlan<T> _plan;
 
 	/// <summary>
 	/// The property names.
 	/// </summary>
-	public IEnumerable<string> PropertyNames => _propertyMap.Keys;
+	public IEnumerable<string> PropertyNames => _plan.PropertyNames;
 
 	/// <summary>
 	/// The column names.
 	/// </summary>
-	public IEnumerable<string> ColumnNames => _propertyMap.Values;
+	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
 	/// Constructs a transformer using the optional field overrides.
@@ -66,27 +48,7 @@ public class Transformer<T>
 	/// The "key" is the field name, and the "value" is the column name.
 	/// </remarks>
 	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
-	{
-		// Per-instance copy of the default (property-name -> same column-name) map, sized exactly,
-		// so the optional overrides can mutate it without touching the shared reflection cache.
-		_propertyMap = [with(PropertiesByName.Count)];
-		foreach (string name in PropertiesByName.Keys)
-			_propertyMap[name] = name;
-
-		if (overrides is not null)
-		{
-			foreach (var kvp in overrides)
-			{
-				if (kvp.Value == null) _propertyMap.Remove(kvp.Key); // Null column indicates 'ignore this field'.
-				else _propertyMap[kvp.Key] = kvp.Value;
-			}
-		}
-
-		// Project column-name -> property directly with a case-insensitive comparer (no upper-cased
-		// key strings). A plain Dictionary — this map lives only for the duration of one query.
-		_columnToPropertyMap = _propertyMap.ToDictionary(
-			kvp => kvp.Value, kvp => PropertiesByName[kvp.Key], StringComparer.OrdinalIgnoreCase);
-	}
+		=> _plan = RowPlan<T>.For(overrides);
 
 	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
 	[ExcludeFromCodeCoverage]
@@ -110,38 +72,13 @@ public class Transformer<T>
 	/// </summary>
 	protected class Processor
 	{
+		Func<object?[], T> _map = static _ => new T(); // Until names are set, as before: an empty model.
+
 		/// <summary>
 		/// Constructs a processor.
 		/// </summary>
 		/// <param name="transformer">The transformer to use.</param>
-		public Processor(Transformer<T> transformer)
-		{
-			Transformer = transformer;
-			Transform = record =>
-			{
-				var model = new T();
-				int count = _names.Length;
-				for (int i = 0; i < count; i++)
-				{
-					Action<T, object?>? p = _propertySetters[i];
-					if (p != null)
-					{
-						object? value = record[i];
-						if (value == DBNull.Value) value = null;
-						try
-						{
-							p(model, value);
-						}
-						catch (Exception ex)
-						{
-							throw new InvalidOperationException($"Unable to set value of property '{_names[i]}'.", ex);
-						}
-					}
-				}
-
-				return model;
-			};
-		}
+		public Processor(Transformer<T> transformer) => Transformer = transformer;
 
 		/// <summary>
 		/// Constructs a processor.
@@ -156,26 +93,17 @@ public class Transformer<T>
 		/// </summary>
 		public Transformer<T> Transformer { get; }
 
-		ImmutableArray<string> _names = [];
-		Action<T, object?>?[] _propertySetters = [];
-
 		/// <summary>
 		/// The resultant transform function.
 		/// </summary>
-		public Func<object?[], T> Transform { get; } // Using a Func<object?[],T> for better type inference.
+		public Func<object?[], T> Transform => _map; // Using a Func<object?[],T> for better type inference.
 
 		/// <summary>
 		/// Allows for deferred initialization.
 		/// </summary>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
-		{
-			var map = Transformer._columnToPropertyMap;
-			_names = names;
-			_propertySetters = names
-				.Select(n => map.TryGetValue(n, out PropertyInfo? p) ? p.BuildUntypedSetter<T>() : null)
-				.ToArray();
-		}
+			=> _map = Transformer._plan.ArrayMapper(names);
 	}
 
 	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object?[]}}, ArrayPool{object?}, bool)" />
@@ -184,10 +112,7 @@ public class Transformer<T>
 		if (results is null) throw new ArgumentNullException(nameof(results));
 		Contract.EndContractBlock();
 
-		var processor = new Processor(this, results.Names);
-		Queue<object?[]> q = results.Result;
-
-		return q.DequeueEach().Select(processor.Transform);
+		return Drain(results.Result, _plan.ArrayMapper(results.Names));
 	}
 
 	/// <summary>
@@ -203,125 +128,32 @@ public class Transformer<T>
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		var processor = new Processor(this, results.Names);
-		Func<object?[], T> transform = processor.Transform;
-		Queue<object[]> q = results.Result;
+		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays);
+	}
 
-		return q.DequeueEach().Select(a =>
+	// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
+	static IEnumerable<T> Drain(Queue<object?[]> queue, Func<object?[], T> map)
+	{
+		while (queue.Count > 0)
+			yield return map(queue.Dequeue());
+	}
+
+	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map, ArrayPool<object> pool, bool clear)
+	{
+		while (queue.Count > 0)
 		{
+			object[] row = queue.Dequeue();
+			T item;
 			try
 			{
-				return transform(a);
+				item = map(row);
 			}
 			finally
 			{
-				arrayPool.Return(a, clearArrays);
+				pool.Return(row, clear);
 			}
-		});
-	}
 
-	// Splits the matched (Name, Ordinal) columns into an ordinal array (which hits the IList<int>
-	// fast path in the reader enumeration) and an exactly-sized immutable name array, in one pass —
-	// avoiding two lazy Select iterators and a growing ImmutableArray builder per query.
-	static (int[] Ordinals, ImmutableArray<string> Names) SplitColumns((string Name, int Ordinal)[] columns)
-	{
-		int n = columns.Length;
-		int[] ordinals = new int[n];
-		var names = ImmutableArray.CreateBuilder<string>(n);
-		names.Count = n;
-		for (int i = 0; i < n; i++)
-		{
-			ordinals[i] = columns[i].Ordinal;
-			names[i] = columns[i].Name;
-		}
-
-		return (ordinals, names.MoveToImmutable());
-	}
-
-	/// <inheritdoc cref="ResultsBuffered(IDataReader, bool)"/>
-	internal IEnumerable<T> Results(IDataReader reader)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		Contract.EndContractBlock();
-
-		// Ignore missing columns.
-		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
-		(int[] ordinals, ImmutableArray<string> names) = SplitColumns(columns);
-		var processor = new Processor(this, names);
-		Func<object?[], T> transform = processor.Transform;
-
-		return reader
-			.AsEnumerable(ordinals, LocalPool)
-			.Select(a =>
-			{
-				try
-				{
-					return transform(a);
-				}
-				finally
-				{
-					LocalPool.Return(a);
-				}
-			});
-	}
-
-	/// <summary>
-	/// Transforms the results
-	/// </summary>
-	/// <param name="reader">The reader to read from.</param>
-	/// <param name="readStarted"></param>
-	/// <returns>An enumerable that transforms the results.</returns>
-	internal IEnumerable<T> ResultsBuffered(IDataReader reader, bool readStarted)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		Contract.EndContractBlock();
-
-		if (!readStarted && !reader.Read())
-			return Enumerable.Empty<T>();
-
-		// Ignore missing columns.
-		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
-
-		// NOTE: pass the lazy projections straight through — RetrieveInternal materializes the
-		// ordinals into an ImmutableArray that QueryResult then reuses zero-copy (Immute fast path);
-		// pre-materializing here would add a redundant array.
-		return AsDequeueingEnumerable(
-			CoreExtensions.RetrieveInternal(
-				LocalPool,
-				reader,
-				columns.Select(c => c.Ordinal),
-				columns.Select(c => c.Name),
-				readStarted: readStarted),
-			LocalPool);
-	}
-
-	/// <param name="reader">The reader to read from.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="ResultsBuffered(IDataReader, bool)"/>
-	internal IAsyncEnumerable<T> ResultsAsync(DbDataReader reader, CancellationToken cancellationToken)
-	{
-		return reader is null
-			? throw new ArgumentNullException(nameof(reader))
-			: ResultsAsyncCore(reader, cancellationToken);
-
-		async IAsyncEnumerable<T> ResultsAsyncCore(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
-		{
-			// Ignore missing columns.
-			(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(_propertyMap.Values, true);
-			(int[] ordinals, ImmutableArray<string> names) = SplitColumns(columns);
-			var processor = new Processor(this, names);
-
-			await foreach (object[] a in reader.AsAsyncEnumerable(ordinals, LocalPool, cancellationToken))
-			{
-				try
-				{
-					yield return processor.Transform(a);
-				}
-				finally
-				{
-					LocalPool.Return(a);
-				}
-			}
+			yield return item;
 		}
 	}
 
