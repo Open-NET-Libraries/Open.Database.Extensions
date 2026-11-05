@@ -1082,6 +1082,10 @@ public static partial class DataflowExtensions
 		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
 	{
+		// The public overloads that call this have already validated their arguments (once); nothing here guards again.
+		System.Diagnostics.Debug.Assert(executeReader is not null);
+		System.Diagnostics.Debug.Assert(target is not null);
+
 		var pipeline = new Dataflow.Transformer<T>.Pipeline(target, complete);
 		long total;
 		try
@@ -1107,6 +1111,10 @@ public static partial class DataflowExtensions
 		CancellationToken cancellationToken)
 		where T : new()
 	{
+		// The public overloads that call this have already validated their arguments (once); nothing here guards again.
+		System.Diagnostics.Debug.Assert(executeReader is not null);
+		System.Diagnostics.Debug.Assert(target is not null);
+
 		var pipeline = new Dataflow.Transformer<T>.Pipeline(target, complete);
 		long total;
 		try

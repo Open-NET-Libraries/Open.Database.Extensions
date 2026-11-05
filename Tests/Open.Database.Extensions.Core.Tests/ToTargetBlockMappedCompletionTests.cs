@@ -722,6 +722,8 @@ public static class ToTargetBlockMappedCompletionTests
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target));
 
 		Assert.IsType(precondition == Precondition.DbCommandWithoutConnectionAsync ? typeof(InvalidOperationException) : typeof(ArgumentNullException), thrown);
+		if (precondition != Precondition.DbCommandWithoutConnectionAsync)
+			Assert.Equal("command", ((ArgumentNullException)thrown).ParamName);
 		AssertUntouched(harness.Target, "a precondition failure must not complete or fault the target");
 		Assert.True(DataflowBlock.Post(harness.Target, new Row()), "the target must still accept rows");
 	}
@@ -1402,5 +1404,32 @@ public static class ToTargetBlockMappedCompletionTests
 		{
 			consumerGate.TrySetResult(true); // Never leave a consumer parked, even when an assertion fails.
 		}
+	}
+
+	// The reader-level calls validate their arguments once, by name.
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static async Task ReaderLevelMapped_NullArguments_ThrowArgumentNullExceptionNamingTheParameter(bool useAsync)
+	{
+		CancellationToken ct = TestContext.Current.CancellationToken;
+		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
+		IDataReader reader = FakeReader.Create(Columns, Rows(3));
+
+		var nullReader = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+		{
+			if (useAsync) await DataflowExtensions.ToTargetBlockAsync<Row>((IDataReader)null!, harness.Target, true, ct);
+			else DataflowExtensions.ToTargetBlock<Row>((IDataReader)null!, harness.Target, true);
+		});
+		var nullTarget = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+		{
+			if (useAsync) await DataflowExtensions.ToTargetBlockAsync<Row>(reader, null!, true, ct);
+			else DataflowExtensions.ToTargetBlock<Row>(reader, null!, true);
+		});
+
+		Assert.Multiple(
+			() => Assert.Equal("reader", nullReader.ParamName),
+			() => Assert.Equal("target", nullTarget.ParamName),
+			() => AssertUntouched(harness.Target, "an argument failure must not complete or fault the target"));
 	}
 }

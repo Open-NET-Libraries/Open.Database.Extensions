@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Open.Database.Extensions.Dataflow;
@@ -66,12 +67,14 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// <param name="options">The options to apply to the transform block.</param>
 		public Pipeline(ITargetBlock<T> target, bool complete, ExecutionDataflowBlockOptions? options = null)
 		{
+			Debug.Assert(target is not null, "The caller validates the target.");
 			_target = target;
 			_block = new TransformBlock<object[], T>(
 				a =>
 				{
 					try
 					{
+						Debug.Assert(_transform is not null, "Bind runs before any row is written.");
 						return _transform!(a);
 					}
 					finally
@@ -109,6 +112,8 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		// The completion signal flowing downstream.  Never runs on a scheduler captured from the caller.
 		async Task FlowCompletionAsync(ITargetBlock<T> target)
 		{
+			Debug.Assert(target is not null);
+
 			// The target must not hear about the end of the pipeline before the reader has been released.
 			await _released.Task.ConfigureAwait(false);
 
@@ -151,6 +156,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// </remarks>
 		void Bind(Transformer<T> transformer, IDataReader reader)
 		{
+			Debug.Assert(transformer is not null);
+			Debug.Assert(reader is not null);
+
 			(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(transformer.ColumnNames, true);
 			int[] ordinals = new int[columns.Length];
 			bool inOrder = true;
@@ -186,6 +194,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// <returns>The number of rows written to the source end.</returns>
 		public long Write(IDataReader reader, Transformer<T> transformer)
 		{
+			Debug.Assert(reader is not null, "The caller validates the reader.");
+			Debug.Assert(transformer is not null);
+
 			Bind(transformer, reader);
 
 			long total = 0;
@@ -207,6 +218,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// <inheritdoc cref="Write"/>
 		public async ValueTask<long> WriteAsync(IDataReader reader, Transformer<T> transformer, CancellationToken cancellationToken)
 		{
+			Debug.Assert(reader is not null, "The caller validates the reader.");
+			Debug.Assert(transformer is not null);
+
 			Bind(transformer, reader);
 
 			using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
@@ -274,6 +288,7 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 		/// </summary>
 		public void Fault(Exception exception)
 		{
+			Debug.Assert(exception is not null, "A null failure would be mistaken for success.");
 			Interlocked.CompareExchange(ref _failure, exception, null);
 			_block.Complete();
 			_released.TrySetResult(true);
