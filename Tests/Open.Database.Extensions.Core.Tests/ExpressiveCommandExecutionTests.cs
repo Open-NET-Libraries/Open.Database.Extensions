@@ -15,7 +15,7 @@ public static class ExpressiveCommandExecutionTests
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 		ExpressiveCommand command = probe.Connection.Command("SELECT 1");
 
-		command.ExecuteReader(r => probe.Calls.Add("Handler"));
+		command.ExecuteReader(_ => probe.Calls.Add("Handler"));
 
 		// "Open MUST occur before command creation as some DbCommands require it."
 		Assert.Equal("Open,CreateCommand,ExecuteReader,Handler,DisposeReader,DisposeCommand,Close", probe.Log);
@@ -28,7 +28,7 @@ public static class ExpressiveCommandExecutionTests
 		var probe = new ConnectionProbe(ConnectionState.Open);
 		ExpressiveCommand command = probe.Connection.Command("SELECT 1");
 
-		command.ExecuteReader(r => probe.Calls.Add("Handler"));
+		command.ExecuteReader(_ => probe.Calls.Add("Handler"));
 
 		Assert.Equal("CreateCommand,ExecuteReader,Handler,DisposeReader,DisposeCommand", probe.Log);
 		Assert.False(probe.Behaviors.Single().HasFlag(CommandBehavior.CloseConnection));
@@ -55,7 +55,7 @@ public static class ExpressiveCommandExecutionTests
 		ExpressiveCommand command = probe.Connection.Command("SELECT 1");
 
 		Assert.Throws<InvalidOperationException>(
-			() => command.ExecuteReader(r => throw new InvalidOperationException()));
+			() => command.ExecuteReader(_ => throw new InvalidOperationException()));
 
 		Assert.Equal("Open,CreateCommand,ExecuteReader,DisposeReader,DisposeCommand,Close", probe.Log);
 		Assert.Equal(ConnectionState.Closed, probe.State);
@@ -66,7 +66,7 @@ public static class ExpressiveCommandExecutionTests
 	{
 		var probe = new ConnectionProbe(ConnectionState.Closed);
 		ExpressiveCommand command = probe.Connection.Command("SELECT 1");
-		ValueTask handler(IDataReader r)
+		ValueTask handler(IDataReader _)
 		{
 			probe.Calls.Add("Handler");
 			return ValueTask.CompletedTask;
@@ -85,7 +85,7 @@ public static class ExpressiveCommandExecutionTests
 		ExpressiveCommand command = probe.Connection.Command("SELECT 1");
 
 		var ex = Assert.Throws<InvalidOperationException>(
-			() => command.Execute(c => command.Execute(_ => { })));
+			() => command.Execute(_ => command.Execute(_ => { })));
 
 		Assert.Contains("Concurrent", ex.Message);
 		Assert.Equal("Open,CreateCommand,DisposeCommand,Close", probe.Log);
@@ -189,7 +189,7 @@ public static class ExpressiveCommandExecutionTests
 		ExpressiveCommand command = probe.CreatePool().Command("SELECT 1");
 
 		Assert.Throws<InvalidOperationException>(
-			() => command.Execute(c => throw new InvalidOperationException()));
+			() => command.Execute(_ => throw new InvalidOperationException()));
 
 		Assert.Equal("Take,Open,CreateCommand,DisposeCommand,Give", probe.Log);
 	}
@@ -214,7 +214,7 @@ public static class ExpressiveCommandExecutionTests
 		ExpressiveCommand command = probe.Connection.Command("SELECT 1").UseCancellationToken(cts.Token);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-			await command.ExecuteAsync(c => ValueTask.CompletedTask));
+			await command.ExecuteAsync(_ => ValueTask.CompletedTask));
 
 		Assert.Equal(string.Empty, probe.Log);
 	}
