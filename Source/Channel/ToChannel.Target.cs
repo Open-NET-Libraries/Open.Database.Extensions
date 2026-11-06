@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 namespace Open.Database.Extensions;
 
 /// <summary>

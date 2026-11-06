@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 [SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
 [SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]

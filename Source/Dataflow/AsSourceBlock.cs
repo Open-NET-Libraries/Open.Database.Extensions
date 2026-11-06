@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for pipelining data with Dataflow blocks.
