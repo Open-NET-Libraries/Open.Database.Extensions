@@ -14,11 +14,11 @@ public static partial class ToChannelPipelineTests
 
 	// ---- a field override that can't be bound ----
 
-	// Master faulted the target here too (measured: with complete: true the target ended faulted with the exception, with
-	// complete: false it stayed open, and the call threw). It is a failure of the operation, not a precondition.
+	// The tuples are turned into a validated map when the call is made, so an override that names an unknown property is a precondition:
+	// the call throws at once, nothing runs, and the target is left alone (it used to be a failure of the operation that faulted the target).
 	[Theory]
 	[MemberData(nameof(KindsAndFlag))]
-	public static async Task Mapped_FieldOverrideCannotBeBound_IsAFailure_TheTargetIsFaultedWhenComplete(Kind kind, bool complete)
+	public static async Task Mapped_FieldOverrideCannotBeBound_IsAPrecondition_TheTargetIsLeftAlone(Kind kind, bool complete)
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
@@ -29,24 +29,16 @@ public static partial class ToChannelPipelineTests
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(target, complete).AsTask().WaitAsync(Prompt, ct));
 
 		Assert.IsType<ArgumentException>(thrown); // 11.0: an override naming an unknown property throws ArgumentException (it was KeyNotFoundException).
-		Assert.Equal(0, probe.Executions); // Nothing ran, so there is no reader that the target could be completed ahead of.
-		if (complete)
-		{
-			Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await channel.Reader.Completion.WaitAsync(Prompt, ct));
-			Assert.Same(thrown, faulted);
-			Assert.Equal(1, target.CompleteCalls);
-		}
-		else
-		{
-			Assert.Equal(0, target.CompleteCalls);
-			Assert.True(channel.Writer.TryWrite(new Row()), "complete: false must leave the target open");
-		}
+		Assert.Equal(0, probe.Executions); // Nothing ran.
+		Assert.Equal(0, target.CompleteCalls);
+		Assert.False(channel.Reader.Completion.IsCompleted, "the target is neither completed nor faulted");
+		Assert.True(channel.Writer.TryWrite(new Row()), "the target stays open");
 	}
 
-	// ... while a precondition that fails first still leaves the target alone.
+	// ... and it is found before the target is looked at: an unbindable map reports itself, not the closed target.
 	[Theory]
 	[MemberData(nameof(Kinds))]
-	public static async Task Mapped_FieldOverrideCannotBeBound_ButTheTargetIsClosed_ReportsTheClosedTarget(Kind kind)
+	public static async Task Mapped_FieldOverrideCannotBeBound_ComesBeforeAClosedTarget(Kind kind)
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
@@ -55,7 +47,7 @@ public static partial class ToChannelPipelineTests
 		channel.Writer.TryComplete();
 		var call = Mapped<Row>(kind, true, probe.Factory(Rows(3)), ct, ConnectionState.Closed, Unbindable);
 
-		await Assert.ThrowsAsync<ChannelClosedException>(async () => await call(target, true));
+		await Assert.ThrowsAsync<ArgumentException>(async () => await call(target, true));
 
 		Assert.Equal(0, target.CompleteCalls);
 		Assert.Equal(0, probe.Executions);

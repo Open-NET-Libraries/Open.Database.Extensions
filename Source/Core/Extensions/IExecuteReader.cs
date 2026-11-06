@@ -419,19 +419,20 @@ public static class IExecuteReaderExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
-	public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
+	/// <seealso cref="RowMap{T}"/>
+	public static IEnumerable<T> Results<T>(this IExecuteReader command, RowMap<T>? map)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (fieldMappingOverrides is null) throw new ArgumentNullException(nameof(fieldMappingOverrides));
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
-			reader => reader.ResultsBuffered<T>(fieldMappingOverrides),
+			reader => reader.ResultsBuffered<T>(map),
 			CommandBehavior.SingleResult);
 	}
 
@@ -439,42 +440,33 @@ public static class IExecuteReaderExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
+	[OverloadResolutionPriority(-1)]
 	public static IEnumerable<T> Results<T>(this IExecuteReader command, IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-	{
-		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (fieldMappingOverrides is null) throw new ArgumentNullException(nameof(fieldMappingOverrides));
-		Contract.EndContractBlock();
-
-		return command.ExecuteReader(
-			reader => reader.ResultsBuffered<T>(fieldMappingOverrides),
-			CommandBehavior.SingleResult);
-	}
+		=> Results<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(1)]
 	public static IEnumerable<T> Results<T>(this IExecuteReader command, params (string Field, string? Column)[] fieldMappingOverrides)
 		where T : new()
-	{
-		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (fieldMappingOverrides is null) throw new ArgumentNullException(nameof(fieldMappingOverrides));
-		Contract.EndContractBlock();
-
-		return command.ExecuteReader(
-			reader => reader.ResultsBuffered<T>(fieldMappingOverrides),
-			CommandBehavior.SingleResult);
-	}
+		=> Results<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// Reads the first column from every record and returns the results as a list..

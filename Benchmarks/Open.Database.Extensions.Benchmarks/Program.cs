@@ -7,4 +7,10 @@ if (args.Contains("--channel-study"))
 	return;
 }
 
+if (args.Contains("--map-memory"))
+{
+	Open.Database.Extensions.Benchmarks.MapMemoryStudy.Run();
+	return;
+}
+
 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);

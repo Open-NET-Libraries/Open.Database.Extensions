@@ -5,11 +5,11 @@ using System.Runtime.CompilerServices;
 namespace Open.Database.Extensions.Dataflow;
 
 /// <inheritdoc />
-internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides = null)
-	: Core.Transformer<T>(fieldMappingOverrides)
+internal class Transformer<T>(RowMap<T>? map = null)
+	: Core.Transformer<T>(map)
 	where T : new()
 {
-	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <inheritdoc cref="Create(RowMap{T}?)"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(1)]
 	public static new Transformer<T> Create()
@@ -18,15 +18,9 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-	public static new Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
-		=> new(fieldMappingOverrides);
-
-	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
-	[ExcludeFromCodeCoverage]
-	[OverloadResolutionPriority(-1)]
-	public static new Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	public static new Transformer<T> Create(RowMap<T>? map)
+		=> new(map);
 
 	/// <summary>
 	/// The internal two-stage pipeline behind the mapped overloads:

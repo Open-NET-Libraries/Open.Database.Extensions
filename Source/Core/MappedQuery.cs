@@ -8,24 +8,31 @@ public static partial class CoreExtensions
 	/// is invoked. The mapping is compiled once per result-set shape and cached, so repeated queries pay no
 	/// reflection or compilation cost; values are read with typed getters, so nothing is boxed.
 	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; <see langword="null"/>, or the overload without a map, reads by column name.
+	/// Declare the <see cref="RowMap{T}"/> once and reuse it: a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call
+	/// (about 0.4 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider, against about 0.1 µs and a few hundred bytes through a declared map; see
+	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
+	/// </para>
+	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
-	/// <param name="fieldMappingOverrides">
-	/// An override map of field (property) names to column names; a null column value ignores that field.
-	/// </param>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <seealso cref="RowMap{T}"/>
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
-		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		RowMap<T>? map = null)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowPlan<T>.For(fieldMappingOverrides), 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, map ?? RowMap<T>.Default, 0, -1));
 	}
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
 	[OverloadResolutionPriority(1)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command)
@@ -34,16 +41,19 @@ public static partial class CoreExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowPlan<T>.Default, 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowMap<T>.Default, 0, -1));
 	}
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
-		=> command.Map<T>(fieldMappingOverrides?.Select(mapping => new KeyValuePair<string, string?>(mapping.Field, mapping.Column)));
+		=> Map<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// Locks in a custom projection and returns a deferred <see cref="MappedQuery{T}"/>. Nothing runs until
@@ -77,11 +87,11 @@ readonly struct MappedQueryCore<T>
 	const CommandBehavior GeneratedMapping = CommandBehavior.SingleResult | CommandBehavior.SequentialAccess;
 
 	readonly IExecuteReader _command;
-	readonly RowSource<T> _source;
+	readonly IRowSource<T> _source;
 	readonly int _skip;
 	readonly int _take; // -1 == unbounded.
 
-	internal MappedQueryCore(IExecuteReader command, RowSource<T> source, int skip, int take)
+	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take)
 	{ _command = command; _source = source; _skip = skip; _take = take; }
 
 	CommandBehavior Behavior => _source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping;
@@ -135,7 +145,7 @@ readonly struct MappedQueryCore<T>
 			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token), Behavior);
 	}
 
-	static IAsyncEnumerable<T> StreamAsync(RowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
+	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
 		=> reader is DbDataReader db
 			? RowReader.StreamAsync(source, db, skip, take, useAsync, token)
 			: RowReader.Stream(source, reader, skip, take).ToAsyncEnumerable();
