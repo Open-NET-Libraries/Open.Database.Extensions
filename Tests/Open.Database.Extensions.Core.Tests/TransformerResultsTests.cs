@@ -42,9 +42,9 @@ public static class TransformerResultsTests
 	public static void To_WithFieldOverride_MapsColumn()
 	{
 		DataTable table = BuildTable();
-		var overrides = new Dictionary<string, string?> { ["LastName"] = "last_name" };
+		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.LastName), "last_name")]);
 
-		List<Person> people = [.. table.To<Person>(overrides)];
+		List<Person> people = [.. table.To<Person>(map)];
 
 		Assert.Equal("Doe", people[0].LastName);
 		Assert.Equal("Roe", people[1].LastName);
@@ -55,9 +55,9 @@ public static class TransformerResultsTests
 	{
 		DataTable table = BuildTable();
 		// Explicitly ignore Age even though an AGE column is present.
-		var overrides = new Dictionary<string, string?> { ["Age"] = null };
+		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.Age), null)]);
 
-		List<Person> people = [.. table.To<Person>(overrides)];
+		List<Person> people = [.. table.To<Person>(map)];
 
 		Assert.Equal(0, people[0].Age); // ignored -> default
 		Assert.Equal("John", people[0].FirstName);

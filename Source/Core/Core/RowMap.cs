@@ -1,138 +1,200 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace Open.Database.Extensions.Core;
+namespace Open.Database.Extensions;
 
 /// <summary>
-/// The compiled mapping from reader rows to <typeparamref name="T"/>.
-/// One plan exists per (<typeparamref name="T"/>, field overrides) pair. Each plan caches one compiled,
-/// typed deserializer per result-set layout (column names + column types), so after the first query of a
-/// given shape no reflection, expression building or compilation happens again.
+/// A validated, read-only mapping of the properties of <typeparamref name="T"/> to the columns that feed them, for when the columns are named differently from the properties.
+/// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …).
 /// </summary>
 /// <remarks>
-/// Values are read with the provider's typed getters (<c>GetInt32</c>, <c>GetString</c>, …) whenever the column
-/// type matches the property type (or converts numerically), so nothing is boxed.
-/// <c>NULL</c> is honored for reference types and <see cref="Nullable{T}"/> properties; a <c>NULL</c> in a
-/// column mapped to a non-nullable value-type property is the provider's error to raise.
+/// Properties the map does not mention still map by name; a <see langword="null"/> column means "do not map this property".
+/// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
+/// or two properties reading one column throw <see cref="ArgumentException"/>.
+/// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// </remarks>
-internal sealed class RowPlan<T> : RowSource<T>
+/// <example>
+/// <code>
+/// public static RowMap&lt;Post&gt; PostMap =&gt; field ??= new([new(nameof(Post.Id), "post_id"), new(nameof(Post.Title), "post_title")]);
+///
+/// var posts = connection.Command("select * from posts").Map&lt;Post&gt;(PostMap).ToList();
+/// </code>
+/// </example>
+/// <typeparam name="T">The model type whose properties are mapped.</typeparam>
+public sealed class RowMap<T> : IRowSource<T>
 	where T : new()
 {
-	// Both caches are bounded so dynamically generated overrides or column lists cannot grow memory forever.
-	// Real applications use a handful of each; when a bound is hit the cache is simply cleared and refills.
-	const int MaxOverridePlans = 128;
+	/// <summary>Creates and validates the map from (property name, column name) pairs; use it where the map is declared, never in a call.</summary>
+	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
+	/// <exception cref="ArgumentNullException"><paramref name="mappings"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>), or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.</exception>
+	public RowMap(IEnumerable<KeyValuePair<string, string?>> mappings)
+		: this(mappings, nameof(mappings))
+	{
+	}
+
+	// The one place the pairs are validated and turned into the column table: the map is held to account for every property it names
+	// and every column it reads. paramName is the name of the parameter the pairs came in through (the tuple convenience overloads take
+	// theirs in through a parameter of their own), for the exceptions.
+	internal RowMap(IEnumerable<KeyValuePair<string, string?>> mappings, string paramName)
+	{
+		if (mappings is null) throw new ArgumentNullException(paramName);
+		if (mappings is ImmutableArray<KeyValuePair<string, string?>> { IsDefault: true }) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
+		Contract.EndContractBlock();
+
+		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
+		var columns = new string?[Properties.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
+
+		bool[] named = Declare(mappings, columns, paramName);
+		RejectSharedColumns(columns, named, paramName);
+
+		_columns = columns;
+	}
+
+	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
+	// so after the first query of a given shape no reflection, expression building or compilation happens again.
+	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
+	// NULL is honored for reference types and Nullable<T> properties; a NULL in a column mapped to a non-nullable value-type property is the provider's error to raise.
+
+	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
+	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
 
-	static readonly ConcurrentDictionary<string, RowPlan<T>> OverridePlans = new(StringComparer.Ordinal);
+	// Settable public instance properties, in declaration order (a property hidden by name keeps the first): reflection runs once per T.
+	static readonly PropertyInfo[] Properties = BuildProperties();
 
-	// Settable public instance properties by name: reflection runs once per T.
-	static readonly Dictionary<string, PropertyInfo> PropertiesByName = BuildProperties();
-
-	static Dictionary<string, PropertyInfo> BuildProperties()
+	static PropertyInfo[] BuildProperties()
 	{
-		var map = new Dictionary<string, PropertyInfo>(StringComparer.Ordinal);
-		foreach (PropertyInfo p in typeof(T).GetProperties())
+		var seen = new HashSet<string>(StringComparer.Ordinal);
+		var list = new List<PropertyInfo>();
+		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
-			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is not null)
-#if NETSTANDARD2_0
-				if (!map.ContainsKey(p.Name)) map.Add(p.Name, p);
-#else
-				map.TryAdd(p.Name, p);
-#endif
+			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is not null && seen.Add(p.Name))
+				list.Add(p);
 		}
 
-		return map;
+		return [.. list];
 	}
 
-	// NOTE: static initializers run in textual order; this must follow PropertiesByName.
-	/// <summary>The plan for the model's default mapping (property name == column name).</summary>
-	public static readonly RowPlan<T> Default = new(null);
+	// NOTE: static initializers run in textual order; each must follow what it uses.
+	static readonly Dictionary<string, int> PropertyIndex = BuildPropertyIndex();
 
-	/// <summary>Gets the plan for the given overrides (field name → column name; null column ignores the field).</summary>
-	public static RowPlan<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
+	static Dictionary<string, int> BuildPropertyIndex()
 	{
-		if (overrides is null) return Default;
-
-		KeyValuePair<string, string?>[] items = overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray();
-		if (items.Length == 0) return Default;
-
-		var sb = new StringBuilder();
-		foreach (KeyValuePair<string, string?> kvp in items)
-			sb.Append(kvp.Key).Append('=').Append(kvp.Value ?? "\0").Append('|');
-
-		string key = sb.ToString();
-		if (OverridePlans.TryGetValue(key, out RowPlan<T>? plan)) return plan;
-
-		plan = new RowPlan<T>(items);
-		if (OverridePlans.Count >= MaxOverridePlans) OverridePlans.Clear();
-		if (OverridePlans.TryAdd(key, plan)) return plan;
-		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : plan; // Lost a race (or the cache was just cleared): either plan is equivalent.
+		var index = new Dictionary<string, int>(Properties.Length, StringComparer.Ordinal);
+		for (int i = 0; i < Properties.Length; i++) index.Add(Properties[i].Name, i);
+		return index;
 	}
 
-	// Property name → column name for every mapped (not ignored) property.
-	readonly Dictionary<string, string> _propertyMap;
+	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
+	internal static readonly RowMap<T> Default = new([], "mappings");
+
+	/// <summary>Converts the pairs of a tuple convenience overload, once, into a strictly validated map for this call. Null or no tuples means the default mapping.</summary>
+	internal static RowMap<T>? FromTuples(IEnumerable<(string Field, string? Column)>? tuples, string paramName)
+	{
+		if (tuples is null) return null;
+
+		ImmutableArray<KeyValuePair<string, string?>>.Builder builder = ImmutableArray.CreateBuilder<KeyValuePair<string, string?>>(tuples is ICollection<(string Field, string? Column)> collection ? collection.Count : 4);
+		foreach ((string field, string? column) in tuples)
+			builder.Add(new(field, column));
+
+		return builder.Count == 0 ? null : new RowMap<T>(builder.DrainToImmutable(), paramName);
+	}
+
+	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
+	// This one array is all the map keeps of the pairs.
+	readonly string?[] _columns;
 
 	/// <summary>The names of the properties that are mapped.</summary>
-	public IEnumerable<string> PropertyNames => _propertyMap.Keys;
+	internal IEnumerable<string> PropertyNames
+	{
+		get
+		{
+			for (int i = 0; i < _columns.Length; i++)
+				if (_columns[i] is not null) yield return Properties[i].Name;
+		}
+	}
 
 	/// <summary>The names of the columns the mapped properties read.</summary>
-	public IEnumerable<string> ColumnNames => _propertyMap.Values;
+	internal IEnumerable<string> ColumnNames
+	{
+		get
+		{
+			foreach (string? column in _columns)
+				if (column is not null) yield return column;
+		}
+	}
 
-	// Column name (case-insensitive) → the property it feeds.
-	readonly Dictionary<string, PropertyInfo> _columnToProperty;
+	// The property a result column feeds: the first mapped property, in declaration order, whose column matches ignoring case.
+	// Called once per column when a result-set layout is compiled, never per row.
+	PropertyInfo? PropertyFor(string column)
+	{
+		for (int i = 0; i < _columns.Length; i++)
+			if (string.Equals(_columns[i], column, StringComparison.OrdinalIgnoreCase)) return Properties[i];
+
+		return null;
+	}
 
 	// Most recently used layout; the overwhelmingly common case is the same shape every time.
 	Layout? _last;
-	readonly ConcurrentDictionary<int, Layout[]> _layouts = new();
+	// Created with the first layout: a map that is never read holds no dictionary.
+	ConcurrentDictionary<int, Layout[]>? _layouts;
 
-	RowPlan(KeyValuePair<string, string?>[]? overrides)
+	// Applies the pairs and reports which properties they named.
+	static bool[] Declare(IEnumerable<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
 	{
-		// field name → column name; defaults to the same name.
-		var fieldToColumn = new Dictionary<string, string?>(PropertiesByName.Count, StringComparer.Ordinal);
-		foreach (string name in PropertiesByName.Keys) fieldToColumn[name] = name;
-
-		if (overrides is not null)
+		var named = new bool[columns.Length];
+		foreach (KeyValuePair<string, string?> pair in mappings)
 		{
-			foreach (KeyValuePair<string, string?> kvp in overrides)
-			{
-				if (!PropertiesByName.ContainsKey(kvp.Key))
-				{
-					if (kvp.Value is null) continue; // Ignoring a field that does not exist is harmless.
-					throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{kvp.Key}'.", nameof(overrides));
-				}
+			if (pair.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
 
-				fieldToColumn[kvp.Key] = kvp.Value; // A null column means 'ignore this field'.
+			bool known = PropertyIndex.TryGetValue(pair.Key, out int index);
+			if (known)
+			{
+				if (named[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", paramName);
+				named[index] = true;
 			}
+
+			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
+			if (!known) throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", paramName);
+
+			columns[index] = pair.Value; // A null column means 'do not map this property'.
 		}
 
-		_propertyMap = new Dictionary<string, string>(fieldToColumn.Count, StringComparer.Ordinal);
-		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
-			if (kvp.Value is not null) _propertyMap[kvp.Key] = kvp.Value;
+		return named;
+	}
 
-		_columnToProperty = new Dictionary<string, PropertyInfo>(fieldToColumn.Count, StringComparer.OrdinalIgnoreCase);
-		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
+	// Each mapped property is compared with the properties before it (the first reader of a column is the one that gets it).
+	// Only what the map names is held to account: the model's own by-name twins are Map<T>()'s business.
+	// The check is quadratic in the property count and runs once per map.
+	static void RejectSharedColumns(string?[] columns, bool[] named, string paramName)
+	{
+		for (int i = 1; i < columns.Length; i++)
 		{
-			if (kvp.Value is not null)
-#if NETSTANDARD2_0
-				if (!_columnToProperty.ContainsKey(kvp.Value)) _columnToProperty.Add(kvp.Value, PropertiesByName[kvp.Key]);
-#else
-				_columnToProperty.TryAdd(kvp.Value, PropertiesByName[kvp.Key]);
-#endif
+			if (columns[i] is not { } column) continue;
+
+			for (int j = 0; j < i; j++)
+			{
+				if (!string.Equals(columns[j], column, StringComparison.OrdinalIgnoreCase)) continue;
+
+				if (named[i] || named[j])
+					throw new ArgumentException($"The properties '{Properties[j].Name}' and '{Properties[i].Name}' both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
+
+				break;
+			}
 		}
 	}
 
-	/// <inheritdoc />
-	public override Func<DbDataReader, T> Mapper(DbDataReader reader)
+	Func<DbDataReader, T> IRowSource<T>.Mapper(DbDataReader reader)
 	{
 		Layout? l = _last;
 		if (l?.Matches(reader) != true) l = Resolve(reader);
 		return l.Db ??= Build<DbDataReader>(l);
 	}
 
-	/// <inheritdoc />
-	public override Func<IDataRecord, T> Mapper(IDataRecord reader)
+	Func<IDataRecord, T> IRowSource<T>.Mapper(IDataRecord reader)
 	{
 		Layout? l = _last;
 		if (l?.Matches(reader) != true) l = Resolve(reader);
@@ -141,10 +203,16 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 	Layout Resolve(IDataRecord reader)
 	{
+		ConcurrentDictionary<int, Layout[]> layouts = Cache(ref _layouts);
 		int hash = Layout.Hash(reader);
-		return _last = Find(_layouts, hash, l => l.Matches(reader))
-			?? Remember(_layouts, hash, new Layout(reader));
+		return _last = Find(layouts, hash, l => l.Matches(reader))
+			?? Remember(layouts, hash, new Layout(reader));
 	}
+
+	// Shared by both layout caches: the dictionary is created on first use (a lost race just drops an empty one).
+	static ConcurrentDictionary<int, TLayout[]> Cache<TLayout>(ref ConcurrentDictionary<int, TLayout[]>? field)
+		where TLayout : class
+		=> Volatile.Read(ref field) ?? Interlocked.CompareExchange(ref field, new(), null) ?? field!;
 
 	// Shared by both layout caches: find a layout by hash and match, or remember a new one.
 	static TLayout? Find<TLayout>(ConcurrentDictionary<int, TLayout[]> cache, int hash, Func<TLayout, bool> matches)
@@ -235,7 +303,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	// Rows that were already copied out of a reader as object[] (boxed values) are mapped by a compiled,
 	// cached per-column-list delegate too, rather than rebuilding lookups and property setters per query.
 	ArrayLayout? _lastArray;
-	readonly ConcurrentDictionary<int, ArrayLayout[]> _arrayLayouts = new();
+	ConcurrentDictionary<int, ArrayLayout[]>? _arrayLayouts;
 
 	sealed class ArrayLayout(string[] names)
 	{
@@ -253,7 +321,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	}
 
 	/// <summary>Gets the mapper from <c>object[]</c> rows whose columns are, in order, <paramref name="names"/>.</summary>
-	public Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
+	internal Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
 	{
 		ArrayLayout? l = _lastArray;
 		if (l?.Matches(names) != true) l = ResolveArray(names);
@@ -265,14 +333,15 @@ internal sealed class RowPlan<T> : RowSource<T>
 		int hash = names.Length;
 		foreach (string n in names) hash = unchecked(hash * 31 + (n?.GetHashCode() ?? 0));
 
-		return _lastArray = Find(_arrayLayouts, hash, l => l.Matches(names))
-			?? Remember(_arrayLayouts, hash, new ArrayLayout([.. names]));
+		ConcurrentDictionary<int, ArrayLayout[]> layouts = Cache(ref _arrayLayouts);
+		return _lastArray = Find(layouts, hash, l => l.Matches(names))
+			?? Remember(layouts, hash, new ArrayLayout([.. names]));
 	}
 
 	Func<object?[], T> BuildArray(ArrayLayout layout)
 	{
 		ParameterExpression row = Expression.Parameter(typeof(object?[]), "row");
-		MethodInfo convert = typeof(RowPlan<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
+		MethodInfo convert = typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
 
 		return Compile<object?[]>(row, layout.Names, (i, property)
 			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))));
@@ -333,7 +402,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 		var assigned = new HashSet<PropertyInfo>();
 		for (int i = 0; i < names.Length; i++)
 		{
-			if (!_columnToProperty.TryGetValue(names[i], out PropertyInfo? property)) continue; // Not mapped: ignore the column.
+			if (PropertyFor(names[i]) is not { } property) continue; // Not mapped: ignore the column.
 			if (!assigned.Add(property)) continue; // The first matching column wins.
 
 			bindings[i] = new Binding(property.Name, names[i]);
@@ -366,7 +435,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 						Expression.Rethrow(typeof(T)),
 						Expression.Throw(
 							Expression.Call(
-								typeof(RowPlan<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
+								typeof(RowMap<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
 								ex, index, Expression.Constant(bindings)),
 							typeof(T))))));
 	}
@@ -399,7 +468,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 
 		// General path: the boxed value, converted. Handles enums, strings → Guid, mismatched types, unknown column types.
 		return Expression.Call(
-			typeof(RowPlan<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
+			typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
 			Expression.Call(r, getValue, ordinal));
 	}
 

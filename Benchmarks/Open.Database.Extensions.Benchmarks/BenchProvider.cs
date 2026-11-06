@@ -26,6 +26,9 @@ public sealed class BenchTable
 		return _ordinals.TryGetValue(name, out int o) ? o : throw new IndexOutOfRangeException(name);
 	}
 
+	/// <summary>The same rows under other column names.</summary>
+	public BenchTable WithNames(string[] names) => new() { Names = names, Types = Types, Columns = Columns, Nulls = Nulls, Rows = Rows };
+
 	public static BenchTable Posts(int rows)
 	{
 		var id = new int[rows]; var title = new string[rows]; var body = new string[rows]; var created = new DateTime[rows];

@@ -1,21 +1,21 @@
 namespace Open.Database.Extensions.Core;
 
 /// <summary>Supplies the per-row mapping delegate for the layout of a reader's current result set.</summary>
-internal abstract class RowSource<T>
+internal interface IRowSource<T>
 {
 	/// <summary>The mapper for a <see cref="DbDataReader"/> (virtual calls; the fast path).</summary>
-	public abstract Func<DbDataReader, T> Mapper(DbDataReader reader);
+	Func<DbDataReader, T> Mapper(DbDataReader reader);
 
 	/// <summary>The mapper for any other <see cref="IDataRecord"/>.</summary>
-	public abstract Func<IDataRecord, T> Mapper(IDataRecord reader);
+	Func<IDataRecord, T> Mapper(IDataRecord reader);
 }
 
 /// <summary>A caller-supplied projection (no reflection involved).</summary>
-internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : RowSource<T>
+internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : IRowSource<T>
 {
 	// A Func<IDataRecord,T> is a Func<DbDataReader,T> by contravariance: no wrapper delegate needed.
-	public override Func<DbDataReader, T> Mapper(DbDataReader reader) => selector;
-	public override Func<IDataRecord, T> Mapper(IDataRecord reader) => selector;
+	public Func<DbDataReader, T> Mapper(DbDataReader reader) => selector;
+	public Func<IDataRecord, T> Mapper(IDataRecord reader) => selector;
 }
 
 /// <summary>Receives each mapped row. Implemented by structs so the read loops specialize and inline <see cref="Add"/>.</summary>
@@ -34,7 +34,7 @@ internal static class RowReader
 {
 	#region Synchronous
 
-	public static void Fill<T, TSink>(RowSource<T> source, IDataReader reader, int skip, int take, ref TSink sink)
+	public static void Fill<T, TSink>(IRowSource<T> source, IDataReader reader, int skip, int take, ref TSink sink)
 		where TSink : struct, IRowSink<T>
 	{
 		if (reader is not DbDataReader db)
@@ -58,7 +58,7 @@ internal static class RowReader
 
 	// The two hottest terminals keep their own loops: with a tiny per-row projection the extra sink
 	// indirection of Fill is measurable (benchmarked), so List and array are written out directly.
-	public static List<T> ToList<T>(RowSource<T> source, IDataReader reader, int skip, int take)
+	public static List<T> ToList<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 	{
 		if (reader is not DbDataReader db)
 			return [.. Stream(source, reader, skip, take)];
@@ -78,14 +78,14 @@ internal static class RowReader
 	}
 
 	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
-	public static Queue<T> ToQueue<T>(RowSource<T> source, IDataReader reader, int skip, int take)
+	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 	{
 		var sink = new QueueSink<T>(new Queue<T>());
 		Fill(source, reader, skip, take, ref sink);
 		return sink.Queue;
 	}
 
-	public static T[] ToArray<T>(RowSource<T> source, IDataReader reader, int skip, int take)
+	public static T[] ToArray<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 	{
 		if (reader is not DbDataReader db)
 			return Stream(source, reader, skip, take).ToArray();
@@ -111,7 +111,7 @@ internal static class RowReader
 		}
 	}
 
-	public static bool TryFirst<T>(RowSource<T> source, IDataReader reader, int skip, int take, out T? item)
+	public static bool TryFirst<T>(IRowSource<T> source, IDataReader reader, int skip, int take, out T? item)
 	{
 		if (reader is DbDataReader db)
 		{
@@ -135,7 +135,7 @@ internal static class RowReader
 		return false;
 	}
 
-	public static bool TrySingle<T>(RowSource<T> source, IDataReader reader, int skip, int take, out T? item)
+	public static bool TrySingle<T>(IRowSource<T> source, IDataReader reader, int skip, int take, out T? item)
 	{
 		if (reader is DbDataReader db)
 		{
@@ -163,7 +163,7 @@ internal static class RowReader
 	}
 
 	/// <summary>A lazy stream. The reader must stay open while it is enumerated.</summary>
-	public static IEnumerable<T> Stream<T>(RowSource<T> source, IDataReader reader, int skip, int take)
+	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 	{
 		if (take == 0) yield break;
 		for (; skip > 0; skip--)
@@ -208,7 +208,7 @@ internal static class RowReader
 
 	// The sink is passed and returned by value because ref parameters can't cross an await.
 	public static async ValueTask<TSink> FillAsync<T, TSink>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, TSink sink, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, TSink sink, CancellationToken cancellationToken)
 		where TSink : struct, IRowSink<T>
 	{
 		if (take == 0
@@ -230,15 +230,15 @@ internal static class RowReader
 	}
 
 	public static async ValueTask<List<T>> ToListAsync<T>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 		=> (await FillAsync(source, reader, skip, take, useReadAsync, new ListSink<T>([]), cancellationToken).ConfigureAwait(false)).List;
 
 	public static async ValueTask<Queue<T>> ToQueueAsync<T>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 		=> (await FillAsync(source, reader, skip, take, useReadAsync, new QueueSink<T>(new Queue<T>()), cancellationToken).ConfigureAwait(false)).Queue;
 
 	public static async ValueTask<T[]> ToArrayAsync<T>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 	{
 		var sink = new ArraySink<T>();
 		try
@@ -253,7 +253,7 @@ internal static class RowReader
 	}
 
 	public static async ValueTask<(bool Found, T? Item)> TryFirstAsync<T>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 		=> take != 0
 		&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 		&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)
@@ -261,7 +261,7 @@ internal static class RowReader
 		: (false, default);
 
 	public static async ValueTask<(bool Found, T? Item)> TrySingleAsync<T>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 	{
 		if (take != 0
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
@@ -277,7 +277,7 @@ internal static class RowReader
 
 	/// <summary>A lazy async stream. The reader must stay open while it is enumerated.</summary>
 	public static async IAsyncEnumerable<T> StreamAsync<T>(
-		RowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
 		if (take == 0) yield break;

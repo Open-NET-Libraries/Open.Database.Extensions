@@ -235,4 +235,4 @@ With the extensions, use `Map(selector)` or the reader helpers for those jobs.
 1. Create the connection factory once and register or inject it.
 2. Replace `using var connection = ...` and `connection.Query<T>(sql, new { ... })` with `connectionFactory.Command(sql).AddParam(...).Map<T>().ToList()` (or `ToArray()`).
 3. If a model uses constructor binding, give it a parameterless constructor and settable properties, or write a `Map(selector)`.
-4. If column names differ from property names, add overrides.
+4. If column names differ from property names, declare a `RowMap<T>` (see [Columns named differently](mapping.md#columns-named-differently)): Dapper's global name matching has no equivalent here.

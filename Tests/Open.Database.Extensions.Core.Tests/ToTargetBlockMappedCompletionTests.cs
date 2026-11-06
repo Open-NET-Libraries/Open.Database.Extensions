@@ -821,20 +821,18 @@ public static class ToTargetBlockMappedCompletionTests
 			() => Assert.Equal(["reader-disposed", "target-completed"], log.ToArray()));
 	}
 
-	// A field override the model can't honor fails while the mapper is being built.  That is an operation failure
-	// (the reader is already open), so with complete: true the target is faulted rather than left waiting.
+	// A field override the model can't honor is found when the map is built from the tuples, at the call: nothing runs and the target is left alone.
 	[Theory]
 	[MemberData(nameof(Kinds))]
-	public static async Task Mapped_FieldOverrideCannotBeBound_CompleteTrue_FaultsTheTarget(Kind kind)
+	public static async Task Mapped_FieldOverrideCannotBeBound_ThrowsAtTheCall_AndLeavesTheTargetAlone(Kind kind)
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
 		var call = Mapped<Row>(kind, true, Rows(3), overrideValues: new (string Field, string? Column)[] { ("NoSuchProperty", "Id") });
 
-		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(harness.Target, true));
-		Exception faulted = await Assert.ThrowsAnyAsync<Exception>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
+		await Assert.ThrowsAsync<ArgumentException>(async () => await call(harness.Target, true));
 
-		Assert.Same(thrown, faulted);
+		Assert.False(harness.Target.Completion.IsCompleted, "the target is neither completed nor faulted");
 	}
 
 	// The reader-level call shares the same pipeline: a read failure after 500 good rows delivers them, then faults the target

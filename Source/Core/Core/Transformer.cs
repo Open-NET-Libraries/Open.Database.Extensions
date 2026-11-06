@@ -5,7 +5,7 @@ namespace Open.Database.Extensions.Core;
 /// Utility of transforming retrieved data into models matching the type parameter provided.
 /// </summary>
 /// <remarks>
-/// The mapping is a compiled, cached <see cref="RowPlan{T}"/>: constructing a transformer and applying it to
+/// The mapping is a compiled, cached <see cref="RowMap{T}"/>: constructing a transformer and applying it to
 /// a result no longer rebuilds lookups or property setters per query.
 /// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
@@ -29,7 +29,7 @@ public class Transformer<T>
 	/// </summary>
 	public Type Type => typeof(T);
 
-	readonly RowPlan<T> _plan;
+	readonly RowMap<T> _plan;
 
 	/// <summary>
 	/// The property names.
@@ -42,15 +42,13 @@ public class Transformer<T>
 	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
-	/// Constructs a transformer using the optional field overrides.
+	/// Constructs a transformer using the optional map.
 	/// </summary>
-	/// <remarks>
-	/// The "key" is the field name, and the "value" is the column name.
-	/// </remarks>
-	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
-		=> _plan = RowPlan<T>.For(overrides);
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	protected internal Transformer(RowMap<T>? map = null)
+		=> _plan = map ?? RowMap<T>.Default;
 
-	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <inheritdoc cref="Create(RowMap{T}?)"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(1)]
 	public static Transformer<T> Create() => new();
@@ -58,14 +56,19 @@ public class Transformer<T>
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	public static Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>>? overrides)
-		=> new(overrides);
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <seealso cref="RowMap{T}"/>
+	public static Transformer<T> Create(RowMap<T>? map)
+		=> new(map);
 
-	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <inheritdoc cref="Create(RowMap{T}?)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <seealso cref="RowMap{T}"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
+		=> new(RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// A sub class for processing the transformer results.
