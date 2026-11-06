@@ -134,7 +134,7 @@ public static class RowMapperTests
 		Exception ex = Assert.Throws<ValueMappingException>(() => Cmd([("Id", typeof(string))], ["abc"]).Map<Simple>().ToList());
 
 		Assert.False(ex is InvalidOperationException);
-		Assert.IsAssignableFrom<DataException>(ex);
+		Assert.IsType<DataException>(ex, exactMatch: false);
 	}
 
 	[Fact]

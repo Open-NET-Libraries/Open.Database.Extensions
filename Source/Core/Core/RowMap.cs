@@ -216,7 +216,11 @@ public sealed class RowMap<T> : IRowSource<T>
 			if (filled[p] || _named[p]) continue;
 
 			index ??= new(_columns.Length, new IgnoreCaseAndUnderscores());
+#if NETSTANDARD2_0
 			if (!index.ContainsKey(name)) index.Add(name, p);
+#else
+			index.TryAdd(name, p);
+#endif
 		}
 
 		return index;
@@ -582,7 +586,7 @@ public sealed class RowMap<T> : IRowSource<T>
 
 	// The expression that is true when the cell of a property that keeps its value is NULL, or null for any other property.
 	// On the typed path the reader answers; on the general path the cell is read once into `cell` and ReadValue converts that same value.
-	static Expression? NullTest(
+	static MethodCallExpression? NullTest(
 		ParameterExpression r, Expression ordinal,
 		Type columnType, Type propertyType,
 		Type readerType, MethodInfo isDbNull, MethodInfo getValue, ParameterExpression cell)

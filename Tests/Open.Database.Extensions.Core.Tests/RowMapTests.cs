@@ -16,7 +16,7 @@ public static class RowMapTests
 		public decimal Total { get; set; }
 		public string? Note { get; set; }
 		public string Computed => "computed" + Id;   // read-only: cannot be mapped
-		public string? Locked { get; private set; } // no public setter: cannot be mapped
+		public string? Locked { get; } // no public setter: cannot be mapped
 	}
 
 	// The same properties under another type, and a model with fewer of them.
@@ -423,14 +423,14 @@ public static class RowMapTests
 			typeof(RowMap<>).Assembly, typeof(ChannelDbExtensions).Assembly, typeof(DataflowExtensions).Assembly,
 			Assembly.Load("Open.Database.Extensions"), Assembly.Load("Open.Database.Extensions.SqlClient"), Assembly.Load("Open.Database.Extensions.MSSqlClient"),
 		];
-		BindingFlags all = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+		const BindingFlags all = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 		MethodBase[] methods = [.. assemblies.SelectMany(a => a.GetExportedTypes()).SelectMany(t => t.GetMethods(all).Cast<MethodBase>().Concat(t.GetConstructors(all)))];
 
 		static bool IsPairs(Type t) => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>) && t.GetGenericArguments()[0] == typeof(KeyValuePair<string, string>);
 		static bool IsMap(Type t) => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(RowMap<>);
 
 		// No public method takes the pairs as a sequence, except the one RowMap<T> constructor that builds a map from them.
-		Assert.Empty(methods.Where(m => m is not ConstructorInfo { DeclaringType: { IsGenericType: true } d } || d.GetGenericTypeDefinition() != typeof(RowMap<>)).Where(m => m.GetParameters().Any(p => IsPairs(p.ParameterType))).Select(m => m.DeclaringType + "." + m.Name));
+		Assert.Empty(methods.Where(m => (m is not ConstructorInfo { DeclaringType: { IsGenericType: true } d } || d.GetGenericTypeDefinition() != typeof(RowMap<>)) && m.GetParameters().Any(p => IsPairs(p.ParameterType))).Select(m => m.DeclaringType + "." + m.Name));
 
 		// A parameter of type RowMap<T> is named map.
 		Assert.Empty(methods.SelectMany(m => m.GetParameters().Where(p => IsMap(p.ParameterType) && p.Name != "map").Select(p => m.DeclaringType + "." + m.Name + "(" + p.Name + ")")));

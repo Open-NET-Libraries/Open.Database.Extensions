@@ -35,6 +35,7 @@ public static class ExecuteScalarNullTests
 		protected override DbCommand CreateDbCommand() => command;
 	}
 
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
 	static ExpressiveDbCommand Async(object? scalar)
 	{
 		DbCommand command = Substitute.For<DbCommand>();

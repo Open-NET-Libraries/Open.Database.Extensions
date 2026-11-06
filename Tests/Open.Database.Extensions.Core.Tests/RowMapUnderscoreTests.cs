@@ -453,10 +453,10 @@ public static class RowMapUnderscoreTests
 	{
 		IEqualityComparer<string> comparer = Comparer();
 
-		Assert.True(comparer.Equals(null!, null!));
-		Assert.False(comparer.Equals("a", null!));
-		Assert.False(comparer.Equals(null!, "a"));
-		string same = "a_b";
+		Assert.True(comparer.Equals(null, null));
+		Assert.False(comparer.Equals("a", null));
+		Assert.False(comparer.Equals(null, "a"));
+		const string same = "a_b";
 		Assert.True(comparer.Equals(same, same));
 	}
 }
