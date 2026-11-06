@@ -120,7 +120,7 @@ Post[] page = connection
     .ToArray();
 ```
 
-Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the `RowMap<T>` for columns with other names. A value that cannot be mapped (a `NULL` for a non-nullable property, say) throws a `ValueMappingException`, a `DataException` that names the property and the column.
+Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the `RowMap<T>` for columns with other names.
 
 ### Renamed columns
 

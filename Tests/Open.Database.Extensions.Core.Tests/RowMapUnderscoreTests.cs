@@ -7,7 +7,7 @@ using System.Threading.Tasks.Dataflow;
 namespace Open.Database.Extensions.Tests;
 
 // A column feeds a property of the same name ignoring case and ignoring every underscore (q_type feeds QType), with no RowMap<T>.
-// The tiers run over the whole result set: exact, then ignoring case, then ignoring case and underscores (tier 3, only for a property mapped by name).
+// The tiers run over the whole result set: exact, then ignoring case, then ignoring case and underscores (tier 3, only for a property no pair named).
 [ExcludeFromCodeCoverage]
 public static class RowMapUnderscoreTests
 {
@@ -123,6 +123,20 @@ public static class RowMapUnderscoreTests
 	}
 
 	[Fact]
+	public static void APairIsExactAndFinal_EvenWhenItsColumnIsThePropertysOwnName()
+	{
+		// The pair names QType, so the underscore tier never looks at it, though the column equals the property's own name.
+		RowMap<QOnly> sameName = new([new(nameof(QOnly.QType), nameof(QOnly.QType))]);
+		Assert.Null(ReadOne(sameName, "q_type").QType);
+		Assert.Equal("QType", ReadOne(sameName, "QType").QType);
+		Assert.Equal("qtype", ReadOne(sameName, "qtype").QType);
+
+		// The same property written with the underscored column does read it.
+		RowMap<QOnly> underscored = new([new(nameof(QOnly.QType), "q_type")]);
+		Assert.Equal("q_type", ReadOne(underscored, "q_type").QType);
+	}
+
+	[Fact]
 	public static void ANullColumn_StillMeansDoNotMap_EvenWhenAnUnderscoredColumnExists()
 	{
 		RowMap<QOnly> ignored = new([new(nameof(QOnly.QType), null)]);
@@ -223,8 +237,8 @@ public static class RowMapUnderscoreTests
 
 	static readonly MethodInfo MatchMethod = typeof(RowMap<Wide>).GetMethod("Match", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-	// The definition, written the slow way: for each column in order, the first property that qualifies (tier 3: among the properties mapped by name and unfilled when it began).
-	static int?[] Reference(string?[] columnOf, string[] names)
+	// The definition, written the slow way: for each column in order, the first property that qualifies (tier 3: among the properties no pair named and unfilled when it began).
+	static int?[] Reference(string?[] columnOf, bool[] named, string[] names)
 	{
 		int?[] feeds = new int?[names.Length];
 		bool[] filled = new bool[columnOf.Length];
@@ -251,7 +265,7 @@ public static class RowMapUnderscoreTests
 		Tier((p, n) => string.Equals(columnOf[p], n, StringComparison.Ordinal), _ => true);
 		Tier((p, n) => string.Equals(columnOf[p], n, StringComparison.OrdinalIgnoreCase), _ => true);
 		Tier((p, n) => string.Equals(Strip(WideProperties[p].Name), Strip(n), StringComparison.OrdinalIgnoreCase),
-			p => !filled[p] && string.Equals(columnOf[p], WideProperties[p].Name, StringComparison.Ordinal));
+			p => !filled[p] && !named[p]);
 		return feeds;
 	}
 
@@ -298,11 +312,20 @@ public static class RowMapUnderscoreTests
 		{
 			// The column each property reads: its own name unless a pair says otherwise.
 			string?[] columnOf = [.. WideProperties.Select(p => p.Name)];
+			bool[] named = new bool[WideProperties.Length]; // The properties a pair named, whatever its column.
 			if (map != RowMap<Wide>.Default)
 			{
-				columnOf[Array.FindIndex(WideProperties, p => p.Name == nameof(Wide.Name))] = "full_name";
-				columnOf[Array.FindIndex(WideProperties, p => p.Name == nameof(Wide.Email))] = null;
-				columnOf[Array.FindIndex(WideProperties, p => p.Name == nameof(Wide.FirstName))] = "First_Name";
+				void Pair(string property, string? column)
+				{
+					int index = Array.FindIndex(WideProperties, p => p.Name == property);
+					columnOf[index] = column;
+					named[index] = true;
+				}
+
+				Pair(nameof(Wide.Name), "full_name");
+				Pair(nameof(Wide.Email), null);
+				Pair(nameof(Wide.FirstName), "First_Name");
+				Pair(nameof(Wide.QType), nameof(Wide.QType)); // A pair whose column is the property's own name is still a pair.
 			}
 
 			for (int trial = 0; trial < 400; trial++)
@@ -310,7 +333,7 @@ public static class RowMapUnderscoreTests
 				string[] names = [.. Enumerable.Range(0, random.Next(0, 15)).Select(_ => RandomName(random, columnOf))];
 
 				var feeds = (PropertyInfo?[])MatchMethod.Invoke(map, [names])!;
-				int?[] expected = Reference(columnOf, names);
+				int?[] expected = Reference(columnOf, named, names);
 
 				Assert.Equal(names.Length, feeds.Length);
 				for (int i = 0; i < names.Length; i++)

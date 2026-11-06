@@ -10,7 +10,7 @@ namespace Open.Database.Extensions;
 /// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …).
 /// </summary>
 /// <remarks>
-/// Properties the map does not mention still map by name: a column feeds the property of that name exactly, else ignoring case, else (once those are settled) when the two names are equal ignoring case with the underscores removed (<c>q_type</c> feeds <c>QType</c>).
+/// Properties the map does not mention still map by name: a column feeds the property of that name exactly, else exactly, else ignoring case, else ignoring case and underscores (<c>q_type</c> feeds <c>QType</c>).
 /// A property with a pair is only matched by its column, exactly or ignoring case; a <see langword="null"/> column means "do not map this property".
 /// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
 /// or two properties reading one column throw <see cref="ArgumentException"/>.
@@ -43,6 +43,7 @@ public sealed class RowMap<T> : IRowSource<T>
 		RejectSharedColumns(columns, named, nameof(mappings));
 
 		_columns = columns;
+		_named = named;
 		_nullLeavesValue = nullLeavesValue;
 	}
 
@@ -74,7 +75,7 @@ public sealed class RowMap<T> : IRowSource<T>
 	/// <summary>
 	/// Creates and validates a map from (property name, column name) pairs, exactly as the constructor does, whose readers skip the assignment when the cell is NULL and the property is a non-nullable value type (an enum counts),
 	/// so the property keeps the value <c>new T()</c> gave it (its initializer, else its default) instead of the read throwing.
-	/// Nullable and reference-type properties still receive <see langword="null"/>, and these maps cost one <c>IsDBNull</c> per non-nullable cell.
+	/// Nullable and reference-type properties still receive <see langword="null"/>.
 	/// </summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property". None maps every property by name.</param>
 	/// <returns>A new map; declare it once.</returns>
@@ -129,8 +130,12 @@ public sealed class RowMap<T> : IRowSource<T>
 	public static readonly RowMap<T> Default = new();
 
 	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
-	// This one array is all the map keeps of the pairs.
+	// With _named, all the map keeps of the pairs.
 	readonly string?[] _columns;
+
+	// Aligned with Properties: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
+	// only a property no pair named is eligible for the underscore tier.
+	readonly bool[] _named;
 
 	// Set only by NullLeavesValue; the compiled readers live in this instance, so the flag needs no cache change.
 	readonly bool _nullLeavesValue;
@@ -156,33 +161,35 @@ public sealed class RowMap<T> : IRowSource<T>
 	}
 
 	/// <summary>
-	/// The columns of the record that feed a property, in ordinal order, each with its actual name in the record: the same match (<see cref="Match"/>) a row read uses,
+	/// The columns of the record that feed a property, as their ordinals in ascending order and, aligned with them, their actual names in the record: the same match (<see cref="Match"/>) a row read uses,
 	/// so the pipelines that pick columns before mapping them agree with <c>Map&lt;T&gt;()</c> on which column feeds which property.
 	/// </summary>
-	internal (string Name, int Ordinal)[] MatchingColumns(IDataRecord record)
+	internal void MatchingColumns(IDataRecord record, out int[] ordinals, out ImmutableArray<string> names)
 	{
-		string[] names = new string[record.FieldCount];
-		for (int i = 0; i < names.Length; i++) names[i] = record.GetName(i);
+		string[] all = new string[record.FieldCount];
+		for (int i = 0; i < all.Length; i++) all[i] = record.GetName(i);
 
-		PropertyInfo?[] feeds = Match(names);
+		PropertyInfo?[] feeds = Match(all);
 		int count = 0;
 		foreach (PropertyInfo? feed in feeds)
 			if (feed is not null) count++;
 
-		var columns = new (string Name, int Ordinal)[count];
+		ordinals = new int[count];
+		var matched = ImmutableArray.CreateBuilder<string>(count);
 		for (int i = 0, next = 0; next < count; i++)
-			if (feeds[i] is not null) columns[next++] = (names[i], i);
+		{
+			if (feeds[i] is null) continue;
 
-		return columns;
+			ordinals[next++] = i;
+			matched.Add(all[i]);
+		}
+
+		names = matched.MoveToImmutable();
 	}
 
-	// The property each result column feeds (null: the column is ignored). Three tiers run over the whole result set, so a lower tier never takes a property
-	// a higher one has filled, whatever the column order: 1. the column is the name the property reads, exactly; 2. the same, ignoring case;
-	// 3. only for a property mapped by name (it reads its own name) that tiers 1 and 2 left unfilled: a column no tier has matched yet whose name
-	// equals the property name ignoring case and ignoring every underscore (q_type feeds QType).
-	// Within a tier the first matching column wins, and a column feeds one property. A property with an explicit pair is only ever matched by its column, exactly or ignoring case.
-	// Runs once when a result-set layout is compiled, never per row, and is linear in the columns plus the properties: each tier is one dictionary built over the properties
-	// and one lookup per column. A tier is only reached while a column is unmatched, and tier 3's dictionary is only built when a by-name property is unfilled.
+	// The property each result column feeds (null: the column is ignored). Never runs per row; linear in the columns plus the properties.
+	// Three tiers run over the whole result set, in order, so a lower tier never takes a property a higher one has filled: the column a property reads exactly, the same ignoring case,
+	// then, only for a property no pair named, a column equal to the property's name ignoring case and underscores. Within a tier the first matching column wins, and a column feeds one property.
 	PropertyInfo?[] Match(string[] names)
 	{
 		var feeds = new PropertyInfo?[names.Length];
@@ -221,7 +228,7 @@ public sealed class RowMap<T> : IRowSource<T>
 		return index;
 	}
 
-	// Tier 3: property name → the first property, in declaration order, of the unfilled properties mapped by name (explicit pairs and unmapped properties are left out), compared
+	// Tier 3: property name → the first property, in declaration order, of the unfilled properties no pair named (every named property is left out, whatever its column), compared
 	// ignoring case and underscores. Null when there is none, so nothing is built for a result set whose properties are all settled.
 	Dictionary<string, int>? NameIndex(bool[] filled)
 	{
@@ -229,7 +236,7 @@ public sealed class RowMap<T> : IRowSource<T>
 		for (int p = 0; p < _columns.Length; p++)
 		{
 			string name = Properties[p].Name;
-			if (filled[p] || !string.Equals(_columns[p], name, StringComparison.Ordinal)) continue;
+			if (filled[p] || _named[p]) continue;
 
 			index ??= new(_columns.Length, new IgnoreCaseAndUnderscores());
 			if (!index.ContainsKey(name)) index.Add(name, p);

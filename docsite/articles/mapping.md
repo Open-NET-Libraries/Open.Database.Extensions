@@ -22,7 +22,7 @@ A column named `q_type` feeds the property `QType` with no `RowMap<T>` declared.
 
 Within a tier the first matching column wins, one column feeds one property, and a column no tier matches is ignored. A property that tier 1 or 2 has filled is never taken by tier 3: with the columns `q_type` and `QType`, `QType` reads the `QType` column and `q_type` is ignored, in either column order.
 
-Only a property that is matched by name is matched in tier 3. A property that a `RowMap<T>` pairs with a column keeps its exact meaning: it reads that column (exactly or ignoring case) and no other, and a `null` column still means "do not map this property", even if a `q_type` column exists. Underscores are the only difference tier 3 ignores, in either name, so `address_2` matches `Address2` and `http_request` matches `HTTPRequest`; it is also why `e_mail` matches `Email`. Tier 3 runs only when the result set has columns that tiers 1 and 2 left unmatched, and only when the row reader for that result-set shape is compiled, so a result whose names already match costs nothing extra.
+Only a property that is matched by name is matched in tier 3. A property that a `RowMap<T>` pairs with a column keeps its exact meaning: it reads that column (exactly or ignoring case) and no other, and a `null` column still means "do not map this property", even if a `q_type` column exists. Underscores are the only difference tier 3 ignores, in either name, so `address_2` matches `Address2` and `http_request` matches `HTTPRequest`.
 
 ```csharp
 public sealed class CountRow
@@ -81,7 +81,7 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 - integers and floating-point values widen to `float`, `double` and `decimal`;
 - anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string`, and otherwise `Convert.ChangeType`.
 
-`NULL` is honored for reference types and for `Nullable<T>` properties. A `NULL` in a column mapped to a non-nullable value-type property fails with a `ValueMappingException` that names the property and the column.
+`NULL` is honored for reference types and for `Nullable<T>` properties. What happens to a `NULL` in a non-nullable value-type column, and how to change it, is in [NULL in a non-nullable value-type column](#null-in-a-non-nullable-value-type-column).
 
 ## NULL in a non-nullable value-type column
 
@@ -91,7 +91,7 @@ By default, a `NULL` in a column that feeds a non-nullable value-type property (
 public static RowMap<Order> OrderMap => field ??= RowMap<Order>.NullLeavesValue();
 ```
 
-With no pairs it still maps every property by name; pass pairs to rename columns, as the constructor does. These maps cost one `IsDBNull` call per non-nullable cell; the default map makes none.
+With no pairs it still maps every property by name; pass pairs to rename columns, as the constructor does. These maps add one null test per non-nullable value-type cell; the default map adds none. A single pair must be written as a collection expression, `NullLeavesValue([new(nameof(Order.Total), "total_amount")])`, because a bare `new(...)` binds to the span's own constructor and does not compile.
 
 ## Terminals
 

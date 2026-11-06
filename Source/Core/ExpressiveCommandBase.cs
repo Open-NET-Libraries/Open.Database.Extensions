@@ -748,7 +748,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		if (value is not (null or DBNull)) return (T)value;
 		if (default(T) is null) return default!;
-		throw new ValueMappingException($"The scalar result was NULL or the query returned no rows, which a '{typeof(T)}' cannot hold. Request a nullable type instead (for example '{typeof(T).Name}?').", null, null, typeof(T));
+		throw new ValueMappingException($"The scalar result was NULL or the query returned no rows, which a '{typeof(T).Name}' cannot hold. Request a nullable type instead (for example '{typeof(T).Name}?').", null, null, typeof(T));
 	}
 
 	/// <summary>

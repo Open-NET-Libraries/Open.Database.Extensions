@@ -42,9 +42,9 @@ public class Transformer<T>
 	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
-	/// The columns of the record that feed a property, in ordinal order, matched exactly as a row read matches them (exactly, ignoring case, then ignoring underscores).
+	/// The columns of the record that feed a property, as their ordinals in ascending order and, aligned with them, their names, matched exactly as a row read matches them (exactly, ignoring case, then ignoring underscores).
 	/// </summary>
-	internal (string Name, int Ordinal)[] MatchingColumns(IDataRecord record) => _plan.MatchingColumns(record);
+	internal void MatchingColumns(IDataRecord record, out int[] ordinals, out ImmutableArray<string> names) => _plan.MatchingColumns(record, out ordinals, out names);
 
 	/// <summary>
 	/// Constructs a transformer using the optional map.

@@ -153,19 +153,15 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			Debug.Assert(transformer is not null);
 			Debug.Assert(reader is not null);
 
-			(string Name, int Ordinal)[] columns = transformer.MatchingColumns(reader);
-			int[] ordinals = new int[columns.Length];
+			transformer.MatchingColumns(reader, out int[] ordinals, out ImmutableArray<string> names);
 			bool inOrder = true;
 			for (int i = 0; i < ordinals.Length; i++)
-			{
-				ordinals[i] = columns[i].Ordinal;
 				if (ordinals[i] != i) inOrder = false;
-			}
 
 			int fieldCount = reader.FieldCount;
 			_ordinals = ordinals;
 			_allColumnsInOrder = inOrder && ordinals.Length == fieldCount ? fieldCount : -1;
-			_transform = new Processor(transformer, columns.Select(m => m.Name).ToImmutableArray()).Transform;
+			_transform = new Processor(transformer, names).Transform;
 		}
 
 		object[] ReadRow(IDataReader reader)
