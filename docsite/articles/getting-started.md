@@ -25,15 +25,61 @@ A model needs a public parameterless constructor and public settable properties.
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 
-There are two ways to start a command. Both end the same way, with `AddParam` for parameters and a terminal that runs the query.
+There are two ways to start a command. Both end the same way, with `AddParam` for parameters and a terminal that runs the query. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
 
-**From a connection factory.** The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards:
+<div class="side-by-side">
+<div>
 
-[!code-csharp[](../samples/ExpressiveCommands.cs#factory_form)]
+**From a connection factory**
 
-**From a connection you already have.** You own the connection. The command opens it only if it is closed and closes only what it opened:
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_list_call)]
 
-[!code-csharp[](../samples/ExpressiveCommands.cs#connection_form)]
+</div>
+<div>
+
+**From a connection you own**
+
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_list_own)]
+
+</div>
+</div>
+
+The factory is created once per application:
+
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
+
+What is different:
+
+- **Who creates the connection.** The factory, for each execution; or you.
+- **Open and close.** In both forms the command opens the connection only if it is closed. The factory form disposes the connection when the terminal returns. In the connection form the command closes only what it opened and never disposes it.
+
+## Before and after
+
+The same query with plain ADO.NET and with the extensions, row against row: the connection, the command, the parameter, then the read loop and the mapping.
+
+<div class="side-by-side">
+<div>
+
+**Plain ADO.NET**
+
+[!code-csharp[](../samples/ConnectionPattern.cs#plain_list_aligned)]
+
+</div>
+<div>
+
+**Open.Database.Extensions (factory)**
+
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_list_aligned)]
+
+</div>
+</div>
+
+Lines you write per call: plain ADO.NET 20, Open.Database.Extensions 4 (plus one line of one-time setup per application).
+
+What is different:
+
+- **Plain ADO.NET** needs you to open the connection, create and dispose the command and the reader, add each parameter by hand and copy each column by ordinal, with an `IsDBNull` check for nullable columns.
+- **With the extensions** the factory opens and disposes the connection, the command is one call, and the terminal does the read loop and the mapping. Matching columns to properties is by name, ignoring case.
 
 ## With SQL Server
 

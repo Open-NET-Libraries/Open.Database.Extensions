@@ -51,7 +51,7 @@
       }
     ],
     "output": "_site",
-    "template": [ "default", "modern" ],
+    "template": [ "default", "modern", "templates/custom" ],
     "globalMetadata": {
       "_appName": "Open.Database.Extensions",
       "_appTitle": "Open.Database.Extensions",

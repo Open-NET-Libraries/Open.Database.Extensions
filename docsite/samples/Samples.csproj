@@ -19,6 +19,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
 		<PackageReference Include="Dapper" Version="2.1.89" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
 	</ItemGroup>
 
 	<ItemGroup>

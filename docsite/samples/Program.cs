@@ -94,6 +94,42 @@ Post? odeFirst = BeforeAfter.OdeFirst(factory);
 Check(plainFirst is not null && odeFirst is not null && (plainFirst.Id, plainFirst.Title, plainFirst.Body) == (odeFirst.Id, odeFirst.Title, odeFirst.Body), "plain ADO.NET first row equals the extension first row");
 Check(BeforeAfter.PlainScalar() == 3 && BeforeAfter.OdeScalar(factory) == 3, "plain and extension scalar agree");
 Check(BeforeAfter.PlainNonQuery() == 3 && BeforeAfter.OdeNonQuery(factory) == 3, "plain and extension non-query agree");
+// The comparisons in the docs: both sides return the same data.
+Db.Seed();
+string connectionString = Db.ConnectionString;
+Check(ConnectionPattern.DapperList(connectionString).Select(p => p.Id).SequenceEqual(ConnectionPattern.OdeList(factory).Select(p => p.Id)), "Dapper and factory list agree");
+Check(ConnectionPattern.OdeListOwn(connectionString).Select(p => p.Id).SequenceEqual([1, 2, 3]), "own-connection list");
+Check(ConnectionPattern.PlainListAligned(connectionString).Select(p => p.Id).SequenceEqual(ConnectionPattern.OdeListAligned(factory).Select(p => p.Id)), "plain ADO.NET and factory aligned list agree");
+Check(ConnectionPattern.DapperFirst(connectionString)?.Title == ConnectionPattern.OdeFirst(factory)?.Title, "Dapper and factory first row agree");
+Check(ConnectionPattern.DapperScalar(connectionString) == 3 && ConnectionPattern.OdeScalar(factory) == 3, "Dapper and factory scalar agree");
+Check(ConnectionPattern.DapperNonQuery(connectionString) == 3 && ConnectionPattern.OdeNonQuery(factory) == 3, "Dapper and factory non-query agree");
+Check(DependencyInjectionSample.ResolveAndUse().Count == 3, "a factory registered once is injected");
+Check(ConnectionPattern.RenamedColumns(connection) is [{ FirstName: "Ada" }, { FirstName: "Alan" }], "renamed columns with nameof");
+Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().SingleOrDefault()), "SingleOrDefault throws for more than one row (again)");
+Check(factory.Command("select * from posts where id = 999").Map<Post>().FirstOrDefault() is null, "FirstOrDefault is null for no rows");
+// Transactions: ADO.NET needs an open connection to begin one; Dapper begins nothing itself.
+long RowsFrom100() => factory.Command("select count(*) from posts where id >= 100").ExecuteScalar<long>();
+void ClearFrom100() => factory.Command("delete from posts where id >= 100").ExecuteNonQuery();
+ConnectionPattern.DapperTransaction(connectionString);
+Check(RowsFrom100() == 2, "the Dapper transaction committed two rows");
+ClearFrom100();
+ConnectionPattern.OdeTransaction(factory);
+Check(RowsFrom100() == 2, "ExecuteTransaction committed two rows");
+ClearFrom100();
+Check(Throws<InvalidOperationException>(() => factory.Using(c => c.ExecuteTransaction(tx =>
+{
+	tx.Command(Sql.InsertSql).AddParam("id", 100).ExecuteNonQuery();
+	throw new InvalidOperationException("boom");
+}))), "ExecuteTransaction propagates the exception");
+Check(RowsFrom100() == 0, "ExecuteTransaction rolled back when the action threw");
+using (var closedConnection = new SqliteConnection(connectionString))
+{
+	closedConnection.ExecuteTransaction(tx => tx.Command("select 1").ExecuteScalar());
+	Check(closedConnection.State == ConnectionState.Closed, "ExecuteTransaction closes a connection it opened");
+}
+
+connection.ExecuteTransaction(tx => tx.Command("select 1").ExecuteScalar());
+Check(connection.State == ConnectionState.Open, "ExecuteTransaction leaves an open connection open");
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
