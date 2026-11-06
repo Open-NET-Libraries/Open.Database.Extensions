@@ -104,6 +104,7 @@ public sealed partial class RowPlan<T> : IEnumerable<KeyValuePair<string, string
 	/// <summary>Creates a plan from <paramref name="mappings"/>; see <see cref="RowPlan{T}(ImmutableArray{KeyValuePair{string, string}})"/>. Use it only at a declaration.</summary>
 	/// <param name="mappings">The (property name, column name) pairs.</param>
 	/// <exception cref="ArgumentException">A property does not exist or cannot be set; a property name is null; a property is listed twice; a column name is empty; two properties would read the same column; or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.</exception>
+	[SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "The public constructor and RowPlan.Create are the named alternates.")]
 	public static implicit operator RowPlan<T>(ImmutableArray<KeyValuePair<string, string?>> mappings)
 		=> new(mappings);
 

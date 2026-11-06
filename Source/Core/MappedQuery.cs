@@ -12,6 +12,7 @@ public static partial class CoreExtensions
 	/// Use this to pass a <see cref="RowPlan{T}"/> or key/value pairs you already hold. For a read that runs more than occasionally, declare a
 	/// <see cref="RowPlan{T}"/> once (collection syntax, <c>field ??=</c>): pairs passed here are matched to a cached plan by their content on every call, a plan is not.
 	/// For a one-off with inline pairs, use the overload that takes <c>params ImmutableArray</c>.
+	/// A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why it takes pairs and no public method takes a plan.
 	/// </remarks>
 	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>

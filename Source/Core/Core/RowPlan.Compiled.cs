@@ -56,10 +56,11 @@ public sealed partial class RowPlan<T>
 	/// <summary>Gets the plan for the given overrides (field name → column name; null column ignores the field). A <see cref="RowPlan{T}"/> is used as it is.</summary>
 	internal static RowPlan<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
 	{
-		if (overrides is RowPlan<T> plan) return plan; // Declared and already validated: no key, no lookup, no allocation.
 		if (overrides is null) return Default;
+		if (overrides is RowPlan<T> plan) return plan; // Declared and already validated: no key, no lookup, no allocation.
 
-		return For((overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray()).AsSpan());
+		KeyValuePair<string, string?>[] items = overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray();
+		return For(items.AsSpan());
 	}
 
 	static RowPlan<T> For(ReadOnlySpan<KeyValuePair<string, string?>> items)
