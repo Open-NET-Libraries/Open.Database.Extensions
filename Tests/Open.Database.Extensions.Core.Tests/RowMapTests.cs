@@ -421,8 +421,8 @@ public static class RowMapTests
 			|| t == typeof((string, string)[]);
 		static bool IsMap(Type t) => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(RowMap<>);
 
-		// No public method takes the pairs as a sequence.
-		Assert.Empty(methods.Where(m => m.GetParameters().Any(p => IsPairs(p.ParameterType))).Select(m => m.DeclaringType + "." + m.Name));
+		// No public method takes the pairs as a sequence, except the one RowMap<T> constructor that builds a map from them.
+		Assert.Empty(methods.Where(m => m is not ConstructorInfo { DeclaringType: { IsGenericType: true } d } || d.GetGenericTypeDefinition() != typeof(RowMap<>)).Where(m => m.GetParameters().Any(p => IsPairs(p.ParameterType))).Select(m => m.DeclaringType + "." + m.Name));
 
 		// A parameter of type RowMap<T> is named map.
 		Assert.Empty(methods.SelectMany(m => m.GetParameters().Where(p => IsMap(p.ParameterType) && p.Name != "map").Select(p => m.DeclaringType + "." + m.Name + "(" + p.Name + ")")));

@@ -4,17 +4,41 @@ using System.Linq.Expressions;
 
 namespace Open.Database.Extensions;
 
-// The compiled half of RowMap<T>: the validated tables and the compiled, cached, typed row readers.
-// One RowMap<T> exists per (T, mapping). Each caches one compiled, typed deserializer per result-set layout
-// (column names + column types), so after the first query of a given shape no reflection, expression building
-// or compilation happens again.
-//
-// Values are read with the provider's typed getters (GetInt32, GetString, …) whenever the column
-// type matches the property type (or converts numerically), so nothing is boxed.
-// NULL is honored for reference types and Nullable<T> properties; a NULL in a
-// column mapped to a non-nullable value-type property is the provider's error to raise.
-public sealed partial class RowMap<T>
+/// <summary>
+/// A validated, read-only mapping of the properties of <typeparamref name="T"/> to the columns that feed them, for when the columns are named differently from the properties.
+/// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …).
+/// </summary>
+/// <remarks>
+/// Properties the map does not mention still map by name; a <see langword="null"/> column means "do not map this property".
+/// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
+/// or two properties reading one column throw <see cref="ArgumentException"/>.
+/// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
+/// </remarks>
+/// <example>
+/// <code>
+/// public static RowMap&lt;Post&gt; PostMap =&gt; field ??= new([new(nameof(Post.Id), "post_id"), new(nameof(Post.Title), "post_title")]);
+///
+/// var posts = connection.Command("select * from posts").Map&lt;Post&gt;(PostMap).ToList();
+/// </code>
+/// </example>
+/// <typeparam name="T">The model type whose properties are mapped.</typeparam>
+public sealed class RowMap<T> : IRowSource<T>
+	where T : new()
 {
+	/// <summary>Creates and validates the map from (property name, column name) pairs; use it where the map is declared, never in a call.</summary>
+	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
+	/// <exception cref="ArgumentNullException"><paramref name="mappings"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>), or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.</exception>
+	public RowMap(IEnumerable<KeyValuePair<string, string?>> mappings)
+		: this(mappings, nameof(mappings))
+	{
+	}
+
+	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
+	// so after the first query of a given shape no reflection, expression building or compilation happens again.
+	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
+	// NULL is honored for reference types and Nullable<T> properties; a NULL in a column mapped to a non-nullable value-type property is the provider's error to raise.
+
 	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
@@ -46,7 +70,7 @@ public sealed partial class RowMap<T>
 	}
 
 	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
-	internal static readonly RowMap<T> Default = new(ImmutableArray<KeyValuePair<string, string?>>.Empty, "mappings");
+	internal static readonly RowMap<T> Default = new([], "mappings");
 
 	/// <summary>Converts the pairs of a tuple convenience overload, once, into a strictly validated map for this call. Null or no tuples means the default mapping.</summary>
 	internal static RowMap<T>? FromTuples(IEnumerable<(string Field, string? Column)>? tuples, string paramName)
@@ -102,9 +126,10 @@ public sealed partial class RowMap<T>
 	// The one place the pairs are validated and turned into the column table: the map is held to account for every property it names
 	// and every column it reads. paramName is the name of the parameter the pairs came in through (the tuple convenience overloads take
 	// theirs in through a parameter of their own), for the exceptions.
-	internal RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings, string paramName)
+	internal RowMap(IEnumerable<KeyValuePair<string, string?>> mappings, string paramName)
 	{
-		if (mappings.IsDefault) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
+		if (mappings is null) throw new ArgumentNullException(paramName);
+		if (mappings is ImmutableArray<KeyValuePair<string, string?>> { IsDefault: true }) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
 		Contract.EndContractBlock();
 
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
@@ -112,13 +137,13 @@ public sealed partial class RowMap<T>
 		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
 
 		bool[] named = Declare(mappings, columns, paramName);
-		if (!mappings.IsEmpty) RejectSharedColumns(columns, named, paramName);
+		RejectSharedColumns(columns, named, paramName);
 
 		_columns = columns;
 	}
 
 	// Applies the pairs and reports which properties they named.
-	static bool[] Declare(ImmutableArray<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
+	static bool[] Declare(IEnumerable<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
 	{
 		var named = new bool[columns.Length];
 		foreach (KeyValuePair<string, string?> pair in mappings)
