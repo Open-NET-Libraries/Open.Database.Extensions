@@ -34,6 +34,25 @@ public sealed class RowMap<T> : IRowSource<T>
 	{
 	}
 
+	// The one place the pairs are validated and turned into the column table: the map is held to account for every property it names
+	// and every column it reads. paramName is the name of the parameter the pairs came in through (the tuple convenience overloads take
+	// theirs in through a parameter of their own), for the exceptions.
+	internal RowMap(IEnumerable<KeyValuePair<string, string?>> mappings, string paramName)
+	{
+		if (mappings is null) throw new ArgumentNullException(paramName);
+		if (mappings is ImmutableArray<KeyValuePair<string, string?>> { IsDefault: true }) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
+		Contract.EndContractBlock();
+
+		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
+		var columns = new string?[Properties.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
+
+		bool[] named = Declare(mappings, columns, paramName);
+		RejectSharedColumns(columns, named, paramName);
+
+		_columns = columns;
+	}
+
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
 	// so after the first query of a given shape no reflection, expression building or compilation happens again.
 	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
@@ -122,25 +141,6 @@ public sealed class RowMap<T> : IRowSource<T>
 	Layout? _last;
 	// Created with the first layout: a map that is never read holds no dictionary.
 	ConcurrentDictionary<int, Layout[]>? _layouts;
-
-	// The one place the pairs are validated and turned into the column table: the map is held to account for every property it names
-	// and every column it reads. paramName is the name of the parameter the pairs came in through (the tuple convenience overloads take
-	// theirs in through a parameter of their own), for the exceptions.
-	internal RowMap(IEnumerable<KeyValuePair<string, string?>> mappings, string paramName)
-	{
-		if (mappings is null) throw new ArgumentNullException(paramName);
-		if (mappings is ImmutableArray<KeyValuePair<string, string?>> { IsDefault: true }) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
-		Contract.EndContractBlock();
-
-		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
-		var columns = new string?[Properties.Length];
-		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
-
-		bool[] named = Declare(mappings, columns, paramName);
-		RejectSharedColumns(columns, named, paramName);
-
-		_columns = columns;
-	}
 
 	// Applies the pairs and reports which properties they named.
 	static bool[] Declare(IEnumerable<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
