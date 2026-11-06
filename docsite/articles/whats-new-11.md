@@ -1,9 +1,15 @@
 # What's new in 11
 
 > [!NOTE]
-> Version 11.0.0 is currently a preview (`11.0.0-preview03`). Please try it and report what you find.
+> Version 11.0.0 is currently a preview (`11.0.0-preview04`). Please try it and report what you find.
 
 Version 11 is a performance release. Result mapping is rewritten around a cached, typed row reader. See [Performance](performance.md) for what that does and does not buy you.
+
+## Preview 04
+
+New since `11.0.0-preview03`:
+
+- **Documentation only.** Corrected statements that were false or misleading (a `NULL` keeps the property's initializer, else its default; exception handling; the README on who opens the connection), stated the three column-matching tiers the same way everywhere, documented the single-pair gotcha, and turned the NULL and matching examples into compiled, checked samples. No behavior or API change. The README inside the NuGet package is corrected in this version.
 
 ## Preview 03
 
