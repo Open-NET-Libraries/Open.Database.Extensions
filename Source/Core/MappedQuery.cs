@@ -11,7 +11,7 @@ public static partial class CoreExtensions
 	/// <remarks>
 	/// <para>
 	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; <see langword="null"/>, or the overload without a map, reads by column name.
-	/// Declare the <see cref="RowMap{T}"/> once and reuse it: a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call
+	/// Declare the <see cref="RowMap{T}"/> once and reuse it: a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call
 	/// (about 0.4 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider, against about 0.1 µs and a few hundred bytes through a declared map; see
 	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
 	/// </para>

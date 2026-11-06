@@ -48,7 +48,7 @@ public static class Mapping
 		{
 			#region map_declared_unknown
 			// "Headline" is deliberately not a property of Post, so creating the map throws ArgumentException.
-			RowMap<Post> map = [new("Headline", "title")];
+			RowMap<Post> map = new RowMap<Post>([new("Headline", "title")]);
 			#endregion
 
 			return "no exception: " + map.GetType().Name;
@@ -65,7 +65,7 @@ public static class Mapping
 		// A one-off: the pairs are written at the call site, so a new map is built, and the row reader compiled, on every call.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>([new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")])
+			.Map<Person>(new RowMap<Person>([new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")]))
 			.ToArray();
 		#endregion
 
@@ -156,53 +156,35 @@ public static class Mapping
 public static class PersonMaps
 {
 	#region map_declared
-	public static RowMap<Person> PersonMap => field ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), "last_name"),
-	];
-	#endregion
-
-	#region map_declared_ignore
-	// A null column means "do not map this property": LastName is not read at all, not even by name,
-	// so it keeps its default value even if the result set has a column called LastName.
-	public static RowMap<Person> PersonNamesOnlyMap => field ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), null),
-	];
-	#endregion
-}
-
-// The other ways to hold a map.
-public static class HoldingAMap
-{
-	#region map_declared_static
-	// Built when the type's static initializer first runs, together with the type's other static fields.
-	public static readonly RowMap<Person> StaticMap = [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), "last_name"),
-	];
-	#endregion
-
-	#region map_declared_ensure
-	// Exactly one instance is published, however many threads race on the first use.
-	public static RowMap<Person> EnsuredMap => LazyInitializer.EnsureInitialized(ref field, static () => [
+	public static RowMap<Person> PersonMap => field ??= new([
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), "last_name"),
 	]);
 	#endregion
 
+	#region map_declared_ignore
+	// A null column means "do not map this property": LastName is not read at all, not even by name,
+	// so it keeps its default value even if the result set has a column called LastName.
+	public static RowMap<Person> PersonNamesOnlyMap => field ??= new([
+		new(nameof(Person.Id), "person_id"),
+		new(nameof(Person.FirstName), "first_name"),
+		new(nameof(Person.LastName), null),
+	]);
+	#endregion
+}
+
+// A map held without the C# 14 field keyword.
+public static class HoldingAMap
+{
 	#region map_declared_backing
 	// Before C# 14 there is no field keyword: write the backing field yourself.
 	static RowMap<Person>? _backingMap;
 
-	public static RowMap<Person> BackingMap => _backingMap ??= [
+	public static RowMap<Person> BackingMap => _backingMap ??= new([
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), "last_name"),
-	];
+	]);
 	#endregion
 }

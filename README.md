@@ -129,11 +129,11 @@ When your columns are named differently from your properties, declare the mappin
 ```cs
 static class PersonMaps
 {
-    public static RowMap<Person> PersonMap => field ??= [
+    public static RowMap<Person> PersonMap => field ??= new([
         new(nameof(Person.Id), "person_id"),
         new(nameof(Person.FirstName), "first_name"),
         new(nameof(Person.LastName), "last_name"),
-    ];
+    ]);
 }
 
 Person[] people = connection
@@ -142,17 +142,17 @@ Person[] people = connection
     .ToArray();
 ```
 
-Declare a map once and reuse it: a collection expression or an array of pairs written at the call site builds a new map, and compiles the row reader, on every call. Older compilers have no `field` keyword; use an explicit backing field. A `static readonly` field also works.
+Declare a map once and reuse it: a `new RowMap<T>([...])` or an `ImmutableArray` of pairs passed to the constructor at the call site builds a new map, and compiles the row reader, on every call. Older compilers have no `field` keyword; use an explicit backing field.
 
 A `null` column means "do not map this property". It is not a no-op: it stops the by-name match, so the property keeps its default value even if the result set has a column with that name. The property must exist; the column need not:
 
 ```cs
 // LastName is not read at all, although the result set has a last_name column.
-public static RowMap<Person> PersonNamesOnlyMap => field ??= [
+public static RowMap<Person> PersonNamesOnlyMap => field ??= new([
     new(nameof(Person.Id), "person_id"),
     new(nameof(Person.FirstName), "first_name"),
     new(nameof(Person.LastName), null),
-];
+]);
 ```
 
 More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).

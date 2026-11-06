@@ -61,7 +61,7 @@ public sealed partial class RowMap<T>
 	}
 
 	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
-	// This one array is all the map keeps of the pairs besides the declared array itself.
+	// This one array is all the map keeps of the pairs.
 	readonly string?[] _columns;
 
 	/// <summary>The names of the properties that are mapped.</summary>
@@ -100,9 +100,13 @@ public sealed partial class RowMap<T>
 	ConcurrentDictionary<int, Layout[]>? _layouts;
 
 	// The one place the pairs are validated and turned into the column table: the map is held to account for every property it names
-	// and every column it reads. paramName is the name of the parameter the pairs came in through, for the exceptions.
-	RowMap(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string paramName)
+	// and every column it reads. paramName is the name of the parameter the pairs came in through (the tuple convenience overloads take
+	// theirs in through a parameter of their own), for the exceptions.
+	internal RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings, string paramName)
 	{
+		if (mappings.IsDefault) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
+		Contract.EndContractBlock();
+
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
 		var columns = new string?[Properties.Length];
 		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
@@ -114,7 +118,7 @@ public sealed partial class RowMap<T>
 	}
 
 	// Applies the pairs and reports which properties they named.
-	static bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
+	static bool[] Declare(ImmutableArray<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
 	{
 		var named = new bool[columns.Length];
 		foreach (KeyValuePair<string, string?> pair in mappings)

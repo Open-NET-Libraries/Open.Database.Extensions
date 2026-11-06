@@ -42,7 +42,7 @@ public static class RenamedColumns
 	public static readonly (string Field, string? Column)[] Tuples = [.. Pairs.Select(p => (p.Key, p.Value))];
 
 	/// <summary>ODE: built once (the implicit conversion from the pairs), passed to every query.</summary>
-	public static readonly RowMap<RenamedPost> Map = Pairs;
+	public static readonly RowMap<RenamedPost> Map = new(Pairs);
 
 	static bool _dapperConfigured;
 

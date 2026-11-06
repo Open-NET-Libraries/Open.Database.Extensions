@@ -13,20 +13,20 @@ public class LazyMapBenchmarks
 
 	static class Hot
 	{
-		public static readonly RowMap<RenamedPost> Map = (RowMap<RenamedPost>)RenamedColumns.Pairs;
+		public static readonly RowMap<RenamedPost> Map = new RowMap<RenamedPost>(RenamedColumns.Pairs);
 	}
 
 	static class Coalescing
 	{
-		public static RowMap<RenamedPost> Map => field ??= (RowMap<RenamedPost>)RenamedColumns.Pairs;
+		public static RowMap<RenamedPost> Map => field ??= new RowMap<RenamedPost>(RenamedColumns.Pairs);
 	}
 
 	static class Ensured
 	{
-		public static RowMap<RenamedPost> Map => LazyInitializer.EnsureInitialized(ref field, static () => (RowMap<RenamedPost>)RenamedColumns.Pairs);
+		public static RowMap<RenamedPost> Map => LazyInitializer.EnsureInitialized(ref field, static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
 	}
 
-	static readonly Lazy<RowMap<RenamedPost>> Wrapped = new(static () => (RowMap<RenamedPost>)RenamedColumns.Pairs);
+	static readonly Lazy<RowMap<RenamedPost>> Wrapped = new(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
 
 	// A call the JIT cannot fold away, so every variant pays the same for consuming the mapping and the differences are the reads.
 	[MethodImpl(MethodImplOptions.NoInlining)]
@@ -75,9 +75,9 @@ public class LazyMapBenchmarks
 
 	/// <summary>Building one 12-field mapping: the cost of a first call, whichever way it is held.</summary>
 	[Benchmark]
-	public RowMap<RenamedPost> BuildOneMapping() => (RowMap<RenamedPost>)RenamedColumns.Pairs;
+	public RowMap<RenamedPost> BuildOneMapping() => new RowMap<RenamedPost>(RenamedColumns.Pairs);
 
 	/// <summary>The extra objects a <see cref="Lazy{T}"/> adds per mapping (the <c>Lazy</c> and its internal helper; the factory delegate is a cached static lambda); the other ways add none.</summary>
 	[Benchmark]
-	public object CreateLazyWrapper() => new Lazy<RowMap<RenamedPost>>(static () => (RowMap<RenamedPost>)RenamedColumns.Pairs);
+	public object CreateLazyWrapper() => new Lazy<RowMap<RenamedPost>>(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
 }

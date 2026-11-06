@@ -52,12 +52,11 @@ Check(declared.Length == 2 && declared[0].Id == 1 && declared[0].FirstName == "A
 Person[] namesOnly = Mapping.MapNamesOnly(connection);
 Check(namesOnly[0].FirstName == "Ada" && namesOnly[0].LastName == "", "a null column in a RowMap means do not map the property, even by name");
 Person[] callSite = Mapping.MapCallSite(connection);
-Check(callSite.Length == 2 && callSite[1].FirstName == "Alan" && callSite[1].LastName == "Turing", "a collection expression at the call site maps the renamed columns");
+Check(callSite.Length == 2 && callSite[1].FirstName == "Alan" && callSite[1].LastName == "Turing", "a new RowMap at the call site maps the renamed columns");
 Person[] tuples = Mapping.MapTuples(connection);
 Check(tuples.Length == 2 && tuples[1].FirstName == "Alan" && tuples[1].LastName == "Turing", "the tuple overload maps the renamed columns");
 Check(ReferenceEquals(PersonMaps.PersonMap, PersonMaps.PersonMap), "a map held with field ??= is built once and shared");
-Check(ReferenceEquals(HoldingAMap.EnsuredMap, HoldingAMap.EnsuredMap) && ReferenceEquals(HoldingAMap.BackingMap, HoldingAMap.BackingMap), "the other ways to hold a map build it once as well");
-Check(connection.Command("select person_id, first_name, last_name from people order by person_id").Map<Person>(HoldingAMap.StaticMap).FirstOrDefault()?.FirstName == "Ada", "a static readonly map maps the renamed columns");
+Check(ReferenceEquals(HoldingAMap.BackingMap, HoldingAMap.BackingMap), "a map held in a backing field is built once and shared");
 Check(Mapping.MapUnknownProperty().Contains("'Headline'", StringComparison.Ordinal), "a RowMap with an unknown property throws when it is created");
 Check(Mapping.MapPaging(connection).Select(p => p.Id).SequenceEqual([2, 3]), "Skip(1).Take(2)");
 (Post? first, Post? single) = Mapping.FirstAndSingle(connection);

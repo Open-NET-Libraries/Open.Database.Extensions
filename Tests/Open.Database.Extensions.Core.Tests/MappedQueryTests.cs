@@ -47,7 +47,7 @@ public static class MappedQueryTests
 	public static void Map_RowMap_MapsRenamedColumns()
 	{
 		var cmd = new FakeExecuteReader(["first", "last"], ["Ada", "Lovelace"]);
-		RowMap<Person> map = [new(nameof(Person.FirstName), "first"), new(nameof(Person.LastName), "last")];
+		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.FirstName), "first"), new(nameof(Person.LastName), "last")]);
 		Person p = cmd.Map<Person>(map).ToList().Single();
 		Assert.Equal("Ada", p.FirstName);
 		Assert.Equal("Lovelace", p.LastName);

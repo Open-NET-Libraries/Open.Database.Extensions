@@ -166,7 +166,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
@@ -358,7 +358,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -510,7 +510,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -717,7 +717,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
@@ -885,7 +885,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -1043,7 +1043,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>

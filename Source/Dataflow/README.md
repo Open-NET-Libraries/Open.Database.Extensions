@@ -73,10 +73,10 @@ If the database fields don't map exactly, declare a `RowMap<T>` once and pass it
 ```cs
 static class PersonMaps
 {
-    public static RowMap<Person> PersonMap => field ??= [
+    public static RowMap<Person> PersonMap => field ??= new([
         new(nameof(Person.FirstName), "first_name"),
         new(nameof(Person.LastName), "last_name"),
-    ];
+    ]);
 }
 
 var people = cmd.Results<Person>(PersonMaps.PersonMap);

@@ -9,7 +9,7 @@ Version 11 is a performance release. Result mapping is rewritten around a cached
 
 New since `11.0.0-preview01`:
 
-- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare an immutable `RowMap<T>` once, from key/value pairs of property name and column name, and pass it as the `map` argument of `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other method that maps rows to a model: `public static RowMap<Post> PostMap => field ??= [new(nameof(Post.Id), "post_id"), ...];`. A map is checked when it is first created: at first use with `field ??=`, at type initialization with `static readonly`. A read through a map allocates what `Map<T>()` allocates on matching names. See [Columns named differently](mapping.md#columns-named-differently).
+- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare an immutable `RowMap<T>` once, from key/value pairs of property name and column name, and pass it as the `map` argument of `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other method that maps rows to a model: `public static RowMap<Post> PostMap => field ??= new([new(nameof(Post.Id), "post_id"), ...]);`. A map is checked when it is created, which with `field ??=` is at first use. A read through a map allocates what `Map<T>()` allocates on matching names. See [Columns named differently](mapping.md#columns-named-differently).
 - **Only public instance properties are mapped.** A static property is no longer treated as a mappable property: name matching ignores it, and a `RowMap<T>` that names one throws when it is created.
 
 ## New and improved

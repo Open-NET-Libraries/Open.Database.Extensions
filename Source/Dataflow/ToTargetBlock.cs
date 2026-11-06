@@ -155,7 +155,7 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -388,7 +388,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -628,7 +628,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -894,7 +894,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1162,7 +1162,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1418,7 +1418,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>

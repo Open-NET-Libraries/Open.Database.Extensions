@@ -11,11 +11,11 @@ public static class MapMemoryStudy
 		var connection = new BenchConnection(BenchTable.Posts(1).WithNames(RenamedColumns.Names));
 
 		// Warm everything that is built once per process (reflection tables, JIT) so only the mappings are counted.
-		RowMap<RenamedPost> warm = (RowMap<RenamedPost>)RenamedColumns.Pairs;
+		RowMap<RenamedPost> warm = new RowMap<RenamedPost>(RenamedColumns.Pairs);
 		_ = connection.Command("select 1").Map<RenamedPost>(warm).ToList();
 
 		long before = GC.GetAllocatedBytesForCurrentThread();
-		for (int i = 0; i < Count; i++) _ = (RowMap<RenamedPost>)RenamedColumns.Pairs;
+		for (int i = 0; i < Count; i++) _ = new RowMap<RenamedPost>(RenamedColumns.Pairs);
 		long allocatedPerBuild = (GC.GetAllocatedBytesForCurrentThread() - before) / Count;
 
 		// The same mapping written out at the call site, as application code writes it.
@@ -25,7 +25,7 @@ public static class MapMemoryStudy
 
 		long baseline = Settled();
 		var maps = new RowMap<RenamedPost>[Count];
-		for (int i = 0; i < Count; i++) maps[i] = (RowMap<RenamedPost>)RenamedColumns.Pairs;
+		for (int i = 0; i < Count; i++) maps[i] = new RowMap<RenamedPost>(RenamedColumns.Pairs);
 		long retainedUnused = (Settled() - baseline) / Count;
 
 		long beforeUse = Settled();
@@ -44,7 +44,7 @@ public static class MapMemoryStudy
 
 		long callDeclared = PerCall(() => connection.Command("select 1").Map<RenamedPost>(RenamedColumns.Map).ToList());
 		long callTuples = PerCall(() => connection.Command("select 1").Map<RenamedPost>(RenamedColumns.Tuples).ToList());
-		long callArray = PerCall(() => connection.Command("select 1").Map<RenamedPost>(RenamedColumns.Pairs).ToList());
+		long callArray = PerCall(() => connection.Command("select 1").Map<RenamedPost>(new RowMap<RenamedPost>(RenamedColumns.Pairs)).ToList());
 		long callLiteral = PerCall(() => connection.Command("select 1").Map<RenamedPost>(Literal()).ToList());
 
 		GC.KeepAlive(maps);
@@ -56,11 +56,11 @@ public static class MapMemoryStudy
 		Console.WriteLine($"Allocated per call, one-row List read of the same model, in-memory provider:");
 		Console.WriteLine($"  declared RowMap<T>:                                  {callDeclared,6} B");
 		Console.WriteLine($"  tuple overload (prebuilt tuple array):               {callTuples,6} B  (+{callTuples - callDeclared} B: builds a map and compiles the reader every call)");
-		Console.WriteLine($"  ImmutableArray of pairs converted at the call site:  {callArray,6} B  (+{callArray - callDeclared} B)");
-		Console.WriteLine($"  collection expression written at the call site:      {callLiteral,6} B  (+{callLiteral - callDeclared} B)");
+		Console.WriteLine($"  ImmutableArray of pairs passed to the constructor at the call site:  {callArray,6} B  (+{callArray - callDeclared} B)");
+		Console.WriteLine($"  new RowMap<T>([...]) written at the call site:           {callLiteral,6} B  (+{callLiteral - callDeclared} B)");
 	}
 
-	static RowMap<RenamedPost> Literal() => [new(nameof(RenamedPost.Id), "post_id"), new(nameof(RenamedPost.Title), "post_title"), new(nameof(RenamedPost.Body), "post_body"), new(nameof(RenamedPost.Created), "post_created"), new(nameof(RenamedPost.Price), "post_price"), new(nameof(RenamedPost.IsPublished), "post_is_published"), new(nameof(RenamedPost.ViewCount), "post_view_count"), new(nameof(RenamedPost.Score), "post_score"), new(nameof(RenamedPost.Key), "post_key"), new(nameof(RenamedPost.Rank), "post_rank"), new(nameof(RenamedPost.Big), "post_big"), new(nameof(RenamedPost.Tag), "post_tag")];
+	static RowMap<RenamedPost> Literal() => new([new(nameof(RenamedPost.Id), "post_id"), new(nameof(RenamedPost.Title), "post_title"), new(nameof(RenamedPost.Body), "post_body"), new(nameof(RenamedPost.Created), "post_created"), new(nameof(RenamedPost.Price), "post_price"), new(nameof(RenamedPost.IsPublished), "post_is_published"), new(nameof(RenamedPost.ViewCount), "post_view_count"), new(nameof(RenamedPost.Score), "post_score"), new(nameof(RenamedPost.Key), "post_key"), new(nameof(RenamedPost.Rank), "post_rank"), new(nameof(RenamedPost.Big), "post_big"), new(nameof(RenamedPost.Tag), "post_tag")]);
 
 	static long Settled()
 	{

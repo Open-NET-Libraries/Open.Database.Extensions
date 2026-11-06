@@ -130,7 +130,7 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
@@ -298,7 +298,7 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -466,7 +466,7 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -618,7 +618,7 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <seealso cref="RowMap{T}"/>
@@ -765,7 +765,7 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <seealso cref="RowMap{T}"/>
@@ -903,7 +903,7 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
 	/// </para>
 	/// </remarks>
 	/// <seealso cref="RowMap{T}"/>

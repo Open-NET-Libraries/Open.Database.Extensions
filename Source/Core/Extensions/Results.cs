@@ -5,7 +5,7 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -45,7 +45,7 @@ public static partial class CoreExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -83,7 +83,7 @@ public static partial class CoreExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -120,7 +120,7 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Asynchronously iterates each record and attempts to map the fields to type T.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -166,7 +166,7 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -188,7 +188,7 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 		public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader,
@@ -224,7 +224,7 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -240,7 +240,7 @@ public static partial class CoreExtensions
 		=> command.ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
@@ -298,7 +298,7 @@ public static partial class CoreExtensions
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -324,7 +324,7 @@ public static partial class CoreExtensions
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>

@@ -42,7 +42,7 @@ public static class TransformerResultsTests
 	public static void To_WithFieldOverride_MapsColumn()
 	{
 		DataTable table = BuildTable();
-		RowMap<Person> map = [new(nameof(Person.LastName), "last_name")];
+		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.LastName), "last_name")]);
 
 		List<Person> people = [.. table.To<Person>(map)];
 
@@ -55,7 +55,7 @@ public static class TransformerResultsTests
 	{
 		DataTable table = BuildTable();
 		// Explicitly ignore Age even though an AGE column is present.
-		RowMap<Person> map = [new(nameof(Person.Age), null)];
+		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.Age), null)]);
 
 		List<Person> people = [.. table.To<Person>(map)];
 
