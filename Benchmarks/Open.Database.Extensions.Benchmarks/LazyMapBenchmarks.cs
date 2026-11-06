@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 
 namespace Open.Database.Extensions.Benchmarks;
 
-// What it costs to hold a RowMap<T>: the four ways to hold one, each read 1000 times warm (bytes per read, time per read),
+// What it costs to hold a RowPlan<T>: the four ways to hold one, each read 1000 times warm (bytes per read, time per read),
 // and what building one costs (the dominant part of the first call, and what a program that built all of its
 // mappings up front would pay for each one).
 [MemoryDiagnoser]
@@ -13,24 +13,24 @@ public class LazyMapBenchmarks
 
 	static class Hot
 	{
-		public static readonly RowMap<RenamedPost> Map = new(RenamedColumns.Pairs);
+		public static readonly RowPlan<RenamedPost> Map = (RowPlan<RenamedPost>)RenamedColumns.Pairs;
 	}
 
 	static class Coalescing
 	{
-		public static RowMap<RenamedPost> Map => field ??= new(RenamedColumns.Pairs);
+		public static RowPlan<RenamedPost> Map => field ??= (RowPlan<RenamedPost>)RenamedColumns.Pairs;
 	}
 
 	static class Ensured
 	{
-		public static RowMap<RenamedPost> Map => LazyInitializer.EnsureInitialized(ref field, static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
+		public static RowPlan<RenamedPost> Map => LazyInitializer.EnsureInitialized(ref field, static () => (RowPlan<RenamedPost>)RenamedColumns.Pairs);
 	}
 
-	static readonly Lazy<RowMap<RenamedPost>> Wrapped = new(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
+	static readonly Lazy<RowPlan<RenamedPost>> Wrapped = new(static () => (RowPlan<RenamedPost>)RenamedColumns.Pairs);
 
 	// A call the JIT cannot fold away, so every variant pays the same for consuming the mapping and the differences are the reads.
 	[MethodImpl(MethodImplOptions.NoInlining)]
-	static RowMap<RenamedPost> Consume(RowMap<RenamedPost> map) => map;
+	static RowPlan<RenamedPost> Consume(RowPlan<RenamedPost> map) => map;
 
 	[GlobalSetup]
 	public void Warm()
@@ -42,42 +42,42 @@ public class LazyMapBenchmarks
 	}
 
 	[Benchmark(Baseline = true, OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> StaticReadonly()
+	public RowPlan<RenamedPost> StaticReadonly()
 	{
-		RowMap<RenamedPost> last = null!;
+		RowPlan<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Hot.Map);
 		return last;
 	}
 
 	[Benchmark(OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> FieldCoalesce()
+	public RowPlan<RenamedPost> FieldCoalesce()
 	{
-		RowMap<RenamedPost> last = null!;
+		RowPlan<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Coalescing.Map);
 		return last;
 	}
 
 	[Benchmark(OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> EnsureInitialized()
+	public RowPlan<RenamedPost> EnsureInitialized()
 	{
-		RowMap<RenamedPost> last = null!;
+		RowPlan<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Ensured.Map);
 		return last;
 	}
 
 	[Benchmark(OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> LazyValue()
+	public RowPlan<RenamedPost> LazyValue()
 	{
-		RowMap<RenamedPost> last = null!;
+		RowPlan<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Wrapped.Value);
 		return last;
 	}
 
 	/// <summary>Building one 12-field mapping: the cost of a first call, whichever way it is held.</summary>
 	[Benchmark]
-	public RowMap<RenamedPost> BuildOneMapping() => new(RenamedColumns.Pairs);
+	public RowPlan<RenamedPost> BuildOneMapping() => (RowPlan<RenamedPost>)RenamedColumns.Pairs;
 
 	/// <summary>The extra objects a <see cref="Lazy{T}"/> adds per mapping (the <c>Lazy</c> and its internal helper; the factory delegate is a cached static lambda); the other ways add none.</summary>
 	[Benchmark]
-	public object CreateLazyWrapper() => new Lazy<RowMap<RenamedPost>>(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
+	public object CreateLazyWrapper() => new Lazy<RowPlan<RenamedPost>>(static () => (RowPlan<RenamedPost>)RenamedColumns.Pairs);
 }
