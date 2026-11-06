@@ -1,8 +1,5 @@
 ﻿namespace Open.Database.Extensions;
 
-/// <summary>
-/// Core non-DB-specific extensions for database connections.
-/// </summary>
 public static partial class ConnectionExtensions
 {
 	/// <returns>The prior connection state.</returns>
