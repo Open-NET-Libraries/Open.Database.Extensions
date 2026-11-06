@@ -124,7 +124,22 @@ Models need `new T()` and settable properties: there is no constructor binding. 
 
 ### Renamed columns
 
-A reusable, declared mapping for columns whose names differ from your properties is being built and will be described here when it ships.
+When your columns are named differently from your properties, declare the mapping once as a `RowPlan<T>`. It is checked where you declare it, built on first use, and passing it costs nothing per call:
+
+```cs
+public static RowPlan<Person> PersonPlan => field ??= [
+    new(nameof(Person.Id), "person_id"),
+    new(nameof(Person.FirstName), "first_name"),
+    new(nameof(Person.LastName), "last_name"),
+];
+
+Person[] people = connection
+    .Command("select person_id, first_name, last_name from people order by person_id")
+    .Map<Person>(PersonPlans.PersonPlan)
+    .ToArray();
+```
+
+A `null` column means "do not map this property": it is not read at all, not even by name, so it keeps its default value even if the result set has a column with that name. For a one-off you can pass the pairs inline, `Map<Person>(new(nameof(Person.Id), "person_id"), ...)`, but that builds a new plan and compiles the row reader on every call (about 30 KB allocated for a one-row read), so declare a plan for anything that runs more than occasionally. More in [Reusing a mapping](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#reusing-a-mapping).
 
 ## Transactions in one expression
 
@@ -170,7 +185,7 @@ Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net47
 
 ## Status of version 11
 
-This is **11.0.0-preview01**. What changed, the breaking changes and the known limitations are in [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html); earlier versions are in the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html). Please try it and tell us what you find.
+This is **11.0.0-preview02**. What changed, the breaking changes and the known limitations are in [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html); earlier versions are in the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html). Please try it and tell us what you find.
 
 ## Contributing and license
 
