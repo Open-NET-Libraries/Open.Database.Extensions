@@ -69,7 +69,12 @@ public sealed partial class RowPlan<T>
 
 		var sb = new StringBuilder();
 		foreach (KeyValuePair<string, string?> kvp in items)
-			sb.Append(kvp.Key).Append('=').Append(kvp.Value ?? "\0").Append('|');
+		{
+			// Length-prefixed, so no two different sets of pairs can produce the same key.
+			sb.Append(kvp.Key?.Length ?? -1).Append(':').Append(kvp.Key);
+			if (kvp.Value is null) sb.Append('!');
+			else sb.Append(kvp.Value.Length).Append(':').Append(kvp.Value);
+		}
 
 		string key = sb.ToString();
 		if (OverridePlans.TryGetValue(key, out RowPlan<T>? built)) return built;

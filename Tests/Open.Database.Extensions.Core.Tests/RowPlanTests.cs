@@ -563,6 +563,24 @@ public static class RowPlanTests
 		Assert.Equal([1, 2], slims.Select(s => s.Id));
 	}
 
+	internal sealed class Collider
+	{
+		public string? Name { get; set; }
+		public string? Note { get; set; }
+	}
+
+	// The cache key of the per-call path used to be "Name=a|Note=b|" for both of these, so the second call got the first call's plan.
+	[Fact]
+	public static void PerCallOverrides_WithSeparatorsInTheirColumns_DoNotShareAPlan()
+	{
+		Collider one = new FakeExecuteReader(["a|Note=b"], ["v"]).Map<Collider>((nameof(Collider.Name), "a|Note=b")).ToList().Single();
+		Collider two = new FakeExecuteReader(["a", "b"], ["x", "y"]).Map<Collider>((nameof(Collider.Name), "a"), (nameof(Collider.Note), "b")).ToList().Single();
+
+		Assert.Equal("v", one.Name);
+		Assert.Null(one.Note);
+		Assert.Equal(("x", "y"), (two.Name, two.Note));
+	}
+
 	// ---- column order and result-set shape ----
 
 	[Fact]
