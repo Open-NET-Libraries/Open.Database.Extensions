@@ -30,17 +30,8 @@ internal class Transformer<T>(RowMap<T>? map = null)
 	private (int[] Ordinals, ImmutableArray<string> Names) ResolveColumns(IDataReader reader)
 	{
 		Debug.Assert(reader is not null);
-		(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(ColumnNames, true);
-		int count = columns.Length;
-		int[] ordinals = new int[count];
-		var names = ImmutableArray.CreateBuilder<string>(count);
-		for (int i = 0; i < count; i++)
-		{
-			ordinals[i] = columns[i].Ordinal;
-			names.Add(columns[i].Name);
-		}
-
-		return (ordinals, names.MoveToImmutable());
+		MatchingColumns(reader, out int[] ordinals, out ImmutableArray<string> names);
+		return (ordinals, names);
 	}
 
 	/// <summary>

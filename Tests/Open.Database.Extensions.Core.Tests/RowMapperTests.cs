@@ -109,9 +109,32 @@ public static class RowMapperTests
 	{
 		var cmd = Cmd([("Id", typeof(int)), ("Name", typeof(string))], [null, "x"]);
 
-		var ex = Assert.Throws<InvalidOperationException>(() => cmd.Map<Simple>().ToList());
+		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
 		Assert.Contains("Id", ex.Message);
 		Assert.NotNull(ex.InnerException);
+	}
+
+	[Fact]
+	public static void Conversion_AFailure_ThrowsValueMappingException_WithThePropertyColumnTypeAndCause()
+	{
+		var cmd = Cmd([("Id", typeof(string)), ("Name", typeof(string))], ["abc", "x"]); // text that is not an int
+
+		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
+		Assert.Contains("Unable to set value of property 'Id' from column 'Id'.", ex.Message);
+		Assert.Equal("Id", ex.PropertyName);
+		Assert.Equal("Id", ex.ColumnName);
+		Assert.Equal(typeof(int), ex.TargetType);
+		Assert.IsType<FormatException>(ex.InnerException);
+	}
+
+	// Application code often catches InvalidOperationException as a business-rule failure and reports its message; a data failure must not be one.
+	[Fact]
+	public static void ValueMappingException_IsADataException_NotAnInvalidOperationException()
+	{
+		Exception ex = Assert.Throws<ValueMappingException>(() => Cmd([("Id", typeof(string))], ["abc"]).Map<Simple>().ToList());
+
+		Assert.False(ex is InvalidOperationException);
+		Assert.IsAssignableFrom<DataException>(ex);
 	}
 
 	[Fact]
@@ -217,7 +240,7 @@ public static class RowMapperTests
 	public static void Narrowing_OverflowThrows_InsteadOfWrapping()
 	{
 		var cmd = Cmd([("Id", typeof(long)), ("Name", typeof(string))], [4_294_967_301L, "x"]);
-		var ex = Assert.Throws<InvalidOperationException>(() => cmd.Map<Simple>().ToList());
+		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
 		Assert.Contains("Id", ex.Message);
 		Assert.IsType<OverflowException>(ex.InnerException);
 	}
@@ -233,7 +256,7 @@ public static class RowMapperTests
 	public static void ByteArray_ToString_IsRejected()
 	{
 		var cmd = Cmd([("Id", typeof(int)), ("Name", typeof(byte[]))], [1, new byte[] { 1, 2 }]);
-		Assert.Throws<InvalidOperationException>(() => cmd.Map<Simple>().ToList());
+		Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
 	}
 
 	[Fact]

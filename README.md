@@ -97,7 +97,7 @@ Stored procedures are `StoredProcedure(name)`, and the terminals include `Execut
 
 ## Row mapping without configuration
 
-`Map<T>()` matches columns to public settable properties by name, ignoring case, and ignores the rest:
+`Map<T>()` matches columns to public settable properties by name, ignoring case and underscores (`first_name` feeds `FirstName`), and ignores the rest:
 
 ```cs
 // Columns are matched to public settable properties by name, ignoring case.
@@ -201,7 +201,7 @@ Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net47
 
 ## Status of version 11
 
-This is **11.0.0-preview02**. What changed, the breaking changes and the known limitations are in [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html); earlier versions are in the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html). Please try it and tell us what you find.
+This is **11.0.0-preview03**. What changed, the breaking changes and the known limitations are in [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html); earlier versions are in the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html). Please try it and tell us what you find.
 
 ## Contributing and license
 

@@ -1130,7 +1130,7 @@ public static class ToTargetBlockMappedCompletionTests
 		Assert.Multiple(
 			() => Assert.True(produced <= TransformBuffer + 64, $"the writer should have stopped within one block of the mapper failing on row 0, but it wrote {produced} of {count} rows"),
 			() => Assert.Single(mapping.InnerExceptions),
-			() => Assert.IsType<InvalidOperationException>(mapping.InnerExceptions[0]), // "Unable to set value of property..." directly, not wrapped again
+			() => Assert.IsType<ValueMappingException>(mapping.InnerExceptions[0]), // "Unable to set value of property..." directly, not wrapped again
 			() => Assert.Single(reader.InnerExceptions),
 			() => Assert.Same(thrown, reader.InnerExceptions[0]));
 	}
@@ -1348,7 +1348,7 @@ public static class ToTargetBlockMappedCompletionTests
 			() => Assert.InRange(produced, 0, 5), // At most the rows read before the stall.
 			() => Assert.Single(faulted.InnerExceptions),
 			() => Assert.NotSame(provider, faulted.InnerExceptions[0]), // The target heard about the mapping failure...
-			() => Assert.IsType<InvalidOperationException>(faulted.InnerExceptions[0]),
+			() => Assert.IsType<ValueMappingException>(faulted.InnerExceptions[0]),
 			() => Assert.Equal(["reader-released", "target-faulted"], log.ToArray()));
 	}
 

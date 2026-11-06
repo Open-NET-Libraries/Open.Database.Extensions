@@ -8,9 +8,32 @@
 
 - **Construction.** `T` must have a public parameterless constructor (`where T : new()`). Each row creates `new T()`.
 - **What is set.** Only public instance properties that have a public setter. Public fields and static properties are not mapped.
-- **Matching.** A column is matched to the property with the same name, ignoring case. A column with no matching property is ignored. A property with no matching column keeps the value its constructor gave it.
+- **Matching.** A column is matched to the property with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching property is ignored. A property with no matching column keeps the value its constructor gave it.
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).
-- **No other conventions.** There is no constructor binding (positional records do not work), no snake_case folding, and no attributes. If a column name differs from the property name, declare a `RowMap<T>`.
+- **No other conventions.** There is no constructor binding (positional records do not work) and no attributes. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
+
+## snake_case columns map to PascalCase properties
+
+A column named `q_type` feeds the property `QType` with no `RowMap<T>` declared. Matching runs in three tiers over the whole result set, so a better match always wins, whatever the order of the columns:
+
+1. The column name equals the property name exactly.
+2. The column name equals the property name, ignoring case.
+3. The column name with its underscores removed equals the property name with its underscores removed, ignoring case.
+
+Within a tier the first matching column wins, one column feeds one property, and a column no tier matches is ignored. A property that tier 1 or 2 has filled is never taken by tier 3: with the columns `q_type` and `QType`, `QType` reads the `QType` column and `q_type` is ignored, in either column order.
+
+Only a property that is matched by name is matched in tier 3. A property that a `RowMap<T>` pairs with a column keeps its exact meaning: it reads that column (exactly or ignoring case) and no other, and a `null` column still means "do not map this property", even if a `q_type` column exists. Underscores are the only difference tier 3 ignores, in either name, so `address_2` matches `Address2` and `http_request` matches `HTTPRequest`.
+
+```csharp
+public sealed class CountRow
+{
+	public string? QType { get; set; }
+	public DateTime MinDate { get; set; }
+}
+
+// select q_type, min_date from counts
+CountRow[] rows = connection.Command("select q_type, min_date from counts").Map<CountRow>().ToArray();
+```
 
 ## Columns named differently
 
@@ -30,7 +53,7 @@ Declare the map once and reuse it. A map is immutable and safe to share between 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_unknown)]
 
-**Ignoring a property.** A `null` column means "do not map this property". It is not a no-op: it stops the by-name match, so the property keeps its default value even if the result set has a column with that name. The property must exist; the column need not. Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere:
+**Ignoring a property.** A `null` column means "do not map this property". It is not a no-op: it stops the by-name match (underscore match included), so the property keeps its default value even if the result set has a column with that name. The property must exist; the column need not. Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_ignore)]
 
@@ -58,7 +81,17 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 - integers and floating-point values widen to `float`, `double` and `decimal`;
 - anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string`, and otherwise `Convert.ChangeType`.
 
-`NULL` is honored for reference types and for `Nullable<T>` properties. A `NULL` in a column mapped to a non-nullable value-type property fails with an `InvalidOperationException` that names the property and the column.
+`NULL` is honored for reference types and for `Nullable<T>` properties. What happens to a `NULL` in a non-nullable value-type column, and how to change it, is in [NULL in a non-nullable value-type column](#null-in-a-non-nullable-value-type-column).
+
+## NULL in a non-nullable value-type column
+
+By default, a `NULL` in a column that feeds a non-nullable value-type property (`int`, `bool`, `DateTime`, an enum, ...) throws a `ValueMappingException` (a `DataException`, not an `InvalidOperationException`) that names the property and the column, with the provider's or conversion error as the inner exception. To keep the property's current value instead (its initializer, else its default), declare the map with `NullLeavesValue`. Nullable and reference-type properties get `null` either way:
+
+```csharp
+public static RowMap<Order> OrderMap => field ??= RowMap<Order>.NullLeavesValue();
+```
+
+With no pairs it still maps every property by name; pass pairs to rename columns, as the constructor does. These maps add one null test per non-nullable value-type cell; the default map adds none. A single pair must be written as a collection expression, `NullLeavesValue([new(nameof(Order.Total), "total_amount")])`, because a bare `new(...)` binds to the span's own constructor and does not compile.
 
 ## Terminals
 

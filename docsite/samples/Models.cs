@@ -11,7 +11,8 @@ public class Post
 }
 #endregion
 
-// Columns are person_id, first_name, last_name, so this model needs field-to-column overrides.
+// Columns are matched to properties exactly, else ignoring case, else ignoring underscores: first_name and last_name feed FirstName and LastName,
+// but person_id matches no property, so this model needs a column override for Id.
 public class Person
 {
 	public int Id { get; set; }

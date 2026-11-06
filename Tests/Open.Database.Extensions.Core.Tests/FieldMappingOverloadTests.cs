@@ -7,7 +7,7 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class FieldMappingOverloadTests
 {
-	static IDataReader Reader() => FakeReader.Create(["first_name", "last_name"], ["Ada", "Lovelace"]);
+	static IDataReader Reader() => FakeReader.Create(["given_name", "family_name"], ["Ada", "Lovelace"]);
 
 	[Fact]
 	public static void NoOverrides_LeavesUnmatchedNull()
