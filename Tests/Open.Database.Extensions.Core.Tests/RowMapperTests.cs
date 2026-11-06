@@ -120,7 +120,7 @@ public static class RowMapperTests
 		var cmd = Cmd([("Id", typeof(string)), ("Name", typeof(string))], ["abc", "x"]); // text that is not an int
 
 		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
-		Assert.Contains("Unable to set value of property 'Id' from column 'Id'.", ex.Message);
+		Assert.Contains("Unable to set value of property 'Id' (Int32) from column 'Id'.", ex.Message);
 		Assert.Equal("Id", ex.PropertyName);
 		Assert.Equal("Id", ex.ColumnName);
 		Assert.Equal(typeof(int), ex.TargetType);
