@@ -209,14 +209,14 @@ The eight-parameter non-query allocates 0.31 KB (about 40 B per parameter) more 
 
 **What a mapping costs to build and retains** (`--map-memory`, managed heap only, 12 fields, averaged over 1,000 mappings; the machine code the JIT emits for a compiled reader is not counted)
 
-| | Before: `RowMap<T>` built from tuples, wrapping a separate plan object | After: `RowPlan<T>` built from an `ImmutableArray` of pairs, is the plan |
-|---|---:|---:|
-| Allocated to build one from a prepared array | 3,392 B | 1,088 B |
-| Allocated to build one from a literal written at the call site | 3,632 B | 1,304 B |
-| Retained while unused | 1,536 B | 936 B |
-| Added by its first read (what `--map-memory` prints as "retained added by its first read": one result-set layout, typed reader compiled) | 6,369 B | 6,369 B |
-| Total retained after the first read | 7,905 B | 7,305 B |
-| Objects allocated to build one (counted from the code, not instrumented) | about 19 | 8 |
+| | Before: `RowMap<T>` built from tuples, wrapping a separate plan object | After: `RowPlan<T>` built from an `ImmutableArray` of pairs, is the plan | After: one column table instead of three structures |
+|---|---:|---:|---:|
+| Allocated to build one from a prepared array | 3,392 B | 1,088 B | 224 B |
+| Allocated to build one from a literal written at the call site | 3,632 B | 1,304 B | 440 B |
+| Retained while unused | 1,536 B | 936 B | 192 B |
+| Added by its first read (what `--map-memory` prints as "retained added by its first read": one result-set layout, typed reader compiled) | 6,369 B | 6,369 B | 6,369 B |
+| Total retained after the first read | 7,905 B | 7,305 B | 6,561 B |
+| Objects allocated to build one (counted from the code, not instrumented) | about 19 | 8 | 3 |
 
 Eliminated: the second object (the wrapper around the plan), the builder and its growing arrays that re-materialised the pairs, the `HashSet` of named properties and the transient property-to-column dictionary (now a `string?[]` and a `bool[]`), the retained property-to-column dictionary (now two small arrays), and the tuple enumeration. The pairs are validated and turned into tables once, in one pass, and the caller's `ImmutableArray` is retained as it is (shared, not copied). The read path is untouched, so the first read adds the same 6,369 B.
 (Before the layout caches were created on first use: 6,000 allocated, 4,144 retained unused, 5,065 added by the first read, 9,209 in total.) Five hundred models cost about 0.5 MB if every map were built up front and about 3.7 MB if every one had been read, which is why the documentation builds each map on first use.

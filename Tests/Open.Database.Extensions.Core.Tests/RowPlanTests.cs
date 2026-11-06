@@ -510,6 +510,59 @@ public static class RowPlanTests
 		Assert.True(inline - viaPlan > 5_000, $"The inline path was expected to build a plan and compile a reader on every call ({inline} B against {viaPlan} B through a declared plan).");
 	}
 
+	// ---- the constructor, and the legacy per-call rules that were only stated in comments ----
+
+	[Fact]
+	public static void Constructor_BuildsTheSamePlanAsTheConversionAndTheCollectionExpression()
+	{
+		var viaConstructor = new RowPlan<Item>(ItemPairs);
+		RowPlan<Item> viaConversion = ItemPairs;
+		RowPlan<Item> viaExpression = [new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")];
+
+		foreach (RowPlan<Item> plan in new[] { viaConstructor, viaConversion, viaExpression })
+		{
+			AssertItems(Cmd(Renamed, 3).Map<Item>(plan).ToList(), 3);
+			Assert.Equal(ItemPairs, [.. (IEnumerable<KeyValuePair<string, string?>>)plan]);
+		}
+
+		Assert.Throws<ArgumentException>(() => new RowPlan<Item>(default));
+	}
+
+	[Fact]
+	public static void PerCallOverrides_LastColumnWins_WhenAPropertyIsListedTwice()
+	{
+		Item item = new FakeExecuteReader(["a", "b"], ["from a", "from b"]).Map<Item>((nameof(Item.Name), "a"), (nameof(Item.Name), "b")).ToList().Single();
+		Assert.Equal("from b", item.Name);
+	}
+
+	[Fact]
+	public static void PerCallOverrides_FirstPropertyReadsASharedColumn()
+	{
+		// Name comes before Note in declaration order, so Name reads the shared column and Note keeps its default.
+		Item item = new FakeExecuteReader(["shared"], ["value"]).Map<Item>((nameof(Item.Name), "shared"), (nameof(Item.Note), "shared")).ToList().Single();
+		Assert.Equal("value", item.Name);
+		Assert.Null(item.Note);
+	}
+
+	[Fact]
+	public static void NullPropertyName_IsAnArgumentNullException_PerCall_AndAnArgumentException_WhenDeclared()
+	{
+		IEnumerable<KeyValuePair<string, string?>> perCall = new KeyValuePair<string, string?>[] { new(null!, "x"), new(nameof(Item.Id), "item_id") };
+		Assert.Throws<ArgumentNullException>(() => Cmd(Renamed, 1).Map<Item>(perCall));
+
+		var declared = Assert.ThrowsAny<ArgumentException>(() => RowPlan.Create<Item>(new(null!, "x"), new(nameof(Item.Id), "item_id")));
+		Assert.IsType<ArgumentException>(declared);
+	}
+
+	[Fact]
+	public static void PlanForAnotherModel_IgnoresANullColumnThatNamesAMissingProperty()
+	{
+		// Slim has no Total; a null column for it is ignored (a non-null column would throw).
+		RowPlan<Item> plan = [new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), null)];
+		var slims = Cmd(Renamed, 2).Map<Slim>(plan).ToList();
+		Assert.Equal([1, 2], slims.Select(s => s.Id));
+	}
+
 	// ---- column order and result-set shape ----
 
 	[Fact]

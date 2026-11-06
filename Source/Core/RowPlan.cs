@@ -2,15 +2,18 @@
 
 /// <summary>
 /// A prebuilt, read-only plan for mapping rows to <typeparamref name="T"/> when the columns are named differently from the properties.
-/// It is created once, where it is declared, from key/value pairs of property name and column name, and then passed wherever
+/// Create it once, where it is declared, from key/value pairs of property name and column name, then pass it wherever
 /// field-mapping overrides are accepted (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …) instead of repeating the pairs in every call.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A plan is created from a collection expression of <see cref="KeyValuePair{TKey, TValue}"/> pairs, or by assigning an
-/// <see cref="ImmutableArray{T}"/> of them to a <c>RowPlan&lt;T&gt;</c>. Either way it is checked where it is declared:
-/// a property that does not exist or cannot be set, a property named twice, an empty column name, or two properties that would read the same column
-/// throw an <see cref="ArgumentException"/> immediately, not on the first query. Properties it does not mention are still matched to columns by name.
+/// Create a plan with a collection expression of <see cref="KeyValuePair{TKey, TValue}"/> pairs, with the constructor, or by assigning an
+/// <see cref="ImmutableArray{T}"/> of them to a <c>RowPlan&lt;T&gt;</c>. Every form validates where the plan is declared, not on the first query, and throws an
+/// <see cref="ArgumentException"/> for: a property that does not exist or cannot be set, a null property name, a property named twice, an empty column name,
+/// or two properties that would read the same column when at least one of them is named in the pairs (properties the model itself maps to the same column by name are left alone). Properties the plan does not mention are still matched to columns by name.
+/// </para>
+/// <para>
+/// The property side of a pair is matched exactly (ordinal, case-sensitive). Column names are matched ignoring case, so two columns that differ only by case collide.
 /// </para>
 /// <para>
 /// A <see langword="null"/> column means "do not map this property": the property is not read at all, not even by name,
@@ -34,13 +37,14 @@
 /// <para>
 /// A plan with an error throws <see cref="ArgumentException"/> where it is declared. With <c>field ??=</c> that is the first use;
 /// in a <c>static readonly</c> field it surfaces as a <see cref="TypeInitializationException"/> wrapping the <see cref="ArgumentException"/>.
+/// A null property name is an <see cref="ArgumentException"/> for a declared plan; the per-call overloads that take pairs or tuples (not plans) throw <see cref="ArgumentNullException"/> for it.
 /// </para>
 /// <para>
 /// The implicit conversion from <see cref="ImmutableArray{T}"/> builds a plan (it validates and allocates), so use it only at a declaration;
 /// no parameter of this library takes a <c>RowPlan&lt;T&gt;</c>, so a call site can never trigger it.
-/// Passing a plan to a query for a different model type is accepted and treated as ordinary overrides:
-/// it works if that type has the same settable properties and throws an <see cref="ArgumentException"/> if it does not,
-/// but it does not get the precompiled speed.
+/// Passing a plan to a query for a different model type is accepted and treated as ordinary overrides: it throws an <see cref="ArgumentException"/>
+/// when a pair with a non-null column names a property that model lacks, while a pair with a null column that names a missing property is ignored.
+/// It does not get the precompiled speed.
 /// </para>
 /// </remarks>
 /// <example>
@@ -79,22 +83,27 @@ public sealed partial class RowPlan<T> : IEnumerable<KeyValuePair<string, string
 	// It exists so the plan can be enumerated by the override parameters that take pairs; a plan built for per-call overrides holds none.
 	readonly ImmutableArray<KeyValuePair<string, string?>> _pairs;
 
-	// Not public: a plan is created by the conversion below or by a collection expression, and nowhere else.
-	internal RowPlan(ImmutableArray<KeyValuePair<string, string?>> mappings)
-		: this(Declared(mappings), mappings, strict: true)
-	{
-	}
-
 	/// <summary>
-	/// Creates the plan from (property name, column name) pairs and validates it. Use it where the plan is declared, never in a call:
-	/// it allocates and validates every time it runs.
+	/// Creates the plan from (property name, column name) pairs and validates it, building its tables once. Use it where the plan is declared, never in a call:
+	/// it allocates and validates every time it runs. The pairs are kept as they are (the array is shared, not copied).
 	/// </summary>
 	/// <param name="mappings">
 	/// The (property name, column name) pairs. Properties not listed are matched to columns by name.
 	/// A pair whose column is <see langword="null"/> means "do not map this property": it is not read at all, not even by name,
 	/// so it keeps its default value even when the result set has a column with its name.
 	/// </param>
-	/// <exception cref="ArgumentException">A property does not exist, cannot be set, is listed twice, has an empty column name, or shares its column with another property; or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.</exception>
+	/// <exception cref="ArgumentException">
+	/// A property does not exist or cannot be set; a property name is null; a property is listed twice; a column name is empty;
+	/// two properties would read the same column (column names match ignoring case); or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.
+	/// </exception>
+	public RowPlan(ImmutableArray<KeyValuePair<string, string?>> mappings)
+		: this(Declared(mappings), mappings, strict: true)
+	{
+	}
+
+	/// <summary>Creates a plan from <paramref name="mappings"/>; see <see cref="RowPlan{T}(ImmutableArray{KeyValuePair{string, string}})"/>. Use it only at a declaration.</summary>
+	/// <param name="mappings">The (property name, column name) pairs.</param>
+	/// <exception cref="ArgumentException">A property does not exist or cannot be set; a property name is null; a property is listed twice; a column name is empty; two properties would read the same column; or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.</exception>
 	public static implicit operator RowPlan<T>(ImmutableArray<KeyValuePair<string, string?>> mappings)
 		=> new(mappings);
 
@@ -122,7 +131,7 @@ public static class RowPlan
 	/// <typeparam name="T">The model type whose properties are mapped.</typeparam>
 	/// <param name="mappings">The (property name, column name) pairs. A pair whose column is <see langword="null"/> means "do not map this property".</param>
 	/// <returns>The validated, read-only plan.</returns>
-	/// <exception cref="ArgumentException">A property does not exist, cannot be set, is listed twice, has an empty column name, or shares its column with another property.</exception>
+	/// <exception cref="ArgumentException">A property does not exist or cannot be set; a property name is null; a property is listed twice; a column name is empty; or two properties would read the same column.</exception>
 	public static RowPlan<T> Create<T>(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 		where T : new()
 		=> new(ImmutableArray.Create(mappings));

@@ -79,81 +79,127 @@ public sealed partial class RowPlan<T>
 		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : built; // Lost a race (or the cache was just cleared): either plan is equivalent.
 	}
 
-	// Property names and the columns they read, for every mapped (not ignored) property, in declaration order.
-	readonly string[] _propertyNames;
-	readonly string[] _columnNames;
+	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
+	// This one array is all the plan keeps of the pairs besides the declared array itself.
+	readonly string?[] _columns;
 
 	/// <summary>The names of the properties that are mapped.</summary>
-	internal IEnumerable<string> PropertyNames => _propertyNames;
+	internal IEnumerable<string> PropertyNames
+	{
+		get
+		{
+			for (int i = 0; i < _columns.Length; i++)
+				if (_columns[i] is not null) yield return Properties[i].Name;
+		}
+	}
 
 	/// <summary>The names of the columns the mapped properties read.</summary>
-	internal IEnumerable<string> ColumnNames => _columnNames;
+	internal IEnumerable<string> ColumnNames
+	{
+		get
+		{
+			foreach (string? column in _columns)
+				if (column is not null) yield return column;
+		}
+	}
 
-	// Column name (case-insensitive) → the property it feeds.
-	readonly Dictionary<string, PropertyInfo> _columnToProperty;
+	// The property a result column feeds: the first mapped property, in declaration order, whose column matches ignoring case.
+	// Called once per column when a result-set layout is compiled, never per row.
+	PropertyInfo? PropertyFor(string column)
+	{
+		for (int i = 0; i < _columns.Length; i++)
+			if (string.Equals(_columns[i], column, StringComparison.OrdinalIgnoreCase)) return Properties[i];
+
+		return null;
+	}
 
 	// Most recently used layout; the overwhelmingly common case is the same shape every time.
 	Layout? _last;
 	// Created with the first layout: a plan that is never read holds no dictionary.
 	ConcurrentDictionary<int, Layout[]>? _layouts;
 
-	// The one place the pairs are validated and turned into tables. A strict plan (the one the application declares) is held
-	// to account for every property it names and every column it reads; a lenient one (per-call overrides) keeps the historical
+	// The one place the pairs are validated and turned into the column table. A strict plan (the one the application declares)
+	// is held to account for every property it names and every column it reads; a lenient one (per-call overrides) keeps the historical
 	// behavior: an unknown property with a null column is harmless, a repeated property takes its last column, and when
 	// properties share a column the first one reads it.
-	RowPlan(ReadOnlySpan<KeyValuePair<string, string?>> pairs, ImmutableArray<KeyValuePair<string, string?>> declared, bool strict)
+	RowPlan(ReadOnlySpan<KeyValuePair<string, string?>> mappings, ImmutableArray<KeyValuePair<string, string?>> declared, bool strict)
 	{
 		_pairs = declared;
-		string paramName = strict ? "mappings" : "overrides";
 
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
 		var columns = new string?[Properties.Length];
 		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
 
-		bool[]? mentioned = strict ? new bool[Properties.Length] : null;
-		foreach (KeyValuePair<string, string?> pair in pairs)
+		if (strict)
 		{
-			if (strict && pair.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
+			bool[] named = Declare(mappings, columns);
+			if (!mappings.IsEmpty) RejectSharedColumns(columns, named, nameof(mappings));
+		}
+		else
+		{
+			Override(mappings, columns);
+		}
 
-			int index = PropertyIndex.TryGetValue(pair.Key, out int found) ? found : -1;
-			if (mentioned is not null)
+		_columns = columns;
+	}
+
+	// Applies a declared plan's pairs and reports which properties they named.
+	static bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns)
+	{
+		var named = new bool[columns.Length];
+		foreach (KeyValuePair<string, string?> pair in mappings)
+		{
+			if (pair.Key is null) throw new ArgumentException("A mapping has no property name.", nameof(mappings));
+
+			bool known = PropertyIndex.TryGetValue(pair.Key, out int index);
+			if (known)
 			{
-				if (index >= 0)
-				{
-					if (mentioned[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", paramName);
-					mentioned[index] = true;
-				}
-
-				if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
+				if (named[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", nameof(mappings));
+				named[index] = true;
 			}
 
-			if (index < 0)
-			{
-				if (pair.Value is null && !strict) continue; // Ignoring a property that does not exist is harmless.
-				throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", paramName);
-			}
+			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", nameof(mappings));
+			if (!known) throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", nameof(mappings));
 
 			columns[index] = pair.Value; // A null column means 'do not map this property'.
 		}
 
-		int mapped = 0;
-		foreach (string? column in columns)
-			if (column is not null) mapped++;
+		return named;
+	}
 
-		_propertyNames = new string[mapped];
-		_columnNames = new string[mapped];
-		_columnToProperty = new Dictionary<string, PropertyInfo>(mapped, StringComparer.OrdinalIgnoreCase);
-		int k = 0;
-		for (int i = 0; i < columns.Length; i++)
+	// Applies per-call overrides, leniently.
+	static void Override(ReadOnlySpan<KeyValuePair<string, string?>> overrides, string?[] columns)
+	{
+		foreach (KeyValuePair<string, string?> pair in overrides)
+		{
+			if (!PropertyIndex.TryGetValue(pair.Key, out int index)) // A null name throws ArgumentNullException here, as it always has.
+			{
+				if (pair.Value is null) continue; // Ignoring a property that does not exist is harmless.
+				throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", nameof(overrides));
+			}
+
+			columns[index] = pair.Value; // A repeated property takes its last column.
+		}
+	}
+
+	// Each mapped property is compared with the properties before it (the first reader of a column is the one that gets it).
+	// Only what the plan names is held to account: the model's own by-name twins are Map<T>()'s business.
+	// The check is quadratic in the property count and runs once per plan.
+	static void RejectSharedColumns(string?[] columns, bool[] named, string paramName)
+	{
+		for (int i = 1; i < columns.Length; i++)
 		{
 			if (columns[i] is not { } column) continue;
 
-			_propertyNames[k] = Properties[i].Name;
-			_columnNames[k++] = column;
-			if (!_columnToProperty.TryGetValue(column, out PropertyInfo? first))
-				_columnToProperty.Add(column, Properties[i]);
-			else if (mentioned is not null && (mentioned[i] || mentioned[PropertyIndex[first.Name]])) // only what the map mentions: the model's own by-name twins are Map<T>()'s business
-				throw new ArgumentException($"The properties '{first.Name}' and '{Properties[i].Name}' both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
+			for (int j = 0; j < i; j++)
+			{
+				if (!string.Equals(columns[j], column, StringComparison.OrdinalIgnoreCase)) continue;
+
+				if (named[i] || named[j])
+					throw new ArgumentException($"The properties '{Properties[j].Name}' and '{Properties[i].Name}' both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
+
+				break;
+			}
 		}
 	}
 
@@ -372,7 +418,7 @@ public sealed partial class RowPlan<T>
 		var assigned = new HashSet<PropertyInfo>();
 		for (int i = 0; i < names.Length; i++)
 		{
-			if (!_columnToProperty.TryGetValue(names[i], out PropertyInfo? property)) continue; // Not mapped: ignore the column.
+			if (PropertyFor(names[i]) is not { } property) continue; // Not mapped: ignore the column.
 			if (!assigned.Add(property)) continue; // The first matching column wins.
 
 			bindings[i] = new Binding(property.Name, names[i]);
