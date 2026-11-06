@@ -155,10 +155,11 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Asynchronously executes scalar on the underlying command and casts to the expected type.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value returned from the method.</returns>
+	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row and <typeparamref name="T"/> is a reference type or <see cref="Nullable{T}"/>.</returns>
+	/// <exception cref="ValueMappingException">The result is NULL or there was no row, and <typeparamref name="T"/> cannot hold that. Request a nullable type.</exception>
 	public ValueTask<T> ExecuteScalarAsync<T>()
 		=> ExecuteCoreAsync(CancellationToken, static async (command, _, token)
-			=> (T)(await command.ExecuteScalarAsync(token).ConfigureAwait(false))!);
+			=> CastScalar<T>(await command.ExecuteScalarAsync(token).ConfigureAwait(false)));
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.

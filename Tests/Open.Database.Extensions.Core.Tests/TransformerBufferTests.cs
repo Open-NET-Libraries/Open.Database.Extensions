@@ -55,7 +55,7 @@ public static class TransformerBufferTests
 
 		IEnumerable<Person> people = Transformer<Person>.Create().AsDequeueingEnumerable(results, pool);
 
-		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => people.ToList());
+		ValueMappingException ex = Assert.Throws<ValueMappingException>(() => people.ToList());
 
 		Assert.Contains("'Id'", ex.Message);
 		Assert.NotNull(ex.InnerException);
@@ -95,7 +95,7 @@ public static class TransformerBufferTests
 		var pool = Substitute.For<ArrayPool<object>>();
 		QueryResult<Queue<object[]>> results = Buffered(["Id"], [DBNull.Value]);
 
-		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+		ValueMappingException ex = Assert.Throws<ValueMappingException>(
 			() => Transformer<Person>.Create().AsDequeueingEnumerable(results, pool).ToList());
 
 		Assert.Contains("'Id'", ex.Message);

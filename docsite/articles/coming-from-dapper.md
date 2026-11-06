@@ -41,9 +41,9 @@ What is different:
 
 - **The connection.** With Dapper you create it and dispose it, and Dapper opens it if it is closed and closes it when the call finishes. With a factory, the factory creates it for each execution, the command opens it only if it is closed and disposes it when the terminal returns, so it is open only for the duration of the call.
 - **Rows.** Dapper's `Query<T>` buffers by default (`buffered = true`) and returns an `IEnumerable<T>`, turned into a list here by `AsList()`. `ToList()` reads every row into a list during the call. `Read(handler)` offers a lazy sequence that is only valid inside the handler.
-- **Mapping.** Both match columns to members by name, ignoring case. Dapper can also bind constructor parameters and fields and, if you turn on `MatchNamesWithUnderscores`, match `first_name` to `FirstName`. The extensions set public settable properties only and do no naming-convention matching: a renamed column needs an override (see [Renamed columns](#renamed-columns)).
+- **Mapping.** Both match columns to members by name, ignoring case. Dapper can also bind constructor parameters and fields and, if you turn on `MatchNamesWithUnderscores`, match `first_name` to `FirstName`. The extensions set public settable properties only, and always ignore underscores when matching after an exact and an ignore-case match (`first_name` feeds `FirstName`, with no option to turn on); any other renamed column needs an override (see [Renamed columns](#renamed-columns)).
 - **Null parameters.** Both convert a null parameter value to `DBNull`.
-- **Mapping errors.** Dapper wraps them in a `DataException` ("Error parsing column ..."). The extensions throw an `InvalidOperationException` that names the property and the column.
+- **Mapping errors.** Dapper wraps them in a `DataException` ("Error parsing column ..."). The extensions throw a `ValueMappingException` (also a `DataException`) that names the property and the column.
 
 ### One row
 
@@ -209,7 +209,7 @@ A singleton is fine because the factory holds no connection: `Create()` returns 
 
 ## Renamed columns
 
-Dapper can match underscored names (`MatchNamesWithUnderscores`) or you can alias the columns in SQL. With the extensions, name the column for each property that needs it. `nameof` keeps the property side checked by the compiler:
+Dapper can match underscored names (`MatchNamesWithUnderscores`) or you can alias the columns in SQL. The extensions ignore underscores when matching, so `first_name` already feeds `FirstName` with no map. For a column that differs by more than case and underscores, name the column for each property that needs it. `nameof` keeps the property side checked by the compiler:
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_renamed_columns)]
 

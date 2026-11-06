@@ -153,7 +153,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			Debug.Assert(transformer is not null);
 			Debug.Assert(reader is not null);
 
-			(string Name, int Ordinal)[] columns = reader.GetMatchingOrdinals(transformer.ColumnNames, true);
+			(string Name, int Ordinal)[] columns = transformer.MatchingColumns(reader);
 			int[] ordinals = new int[columns.Length];
 			bool inOrder = true;
 			for (int i = 0; i < ordinals.Length; i++)

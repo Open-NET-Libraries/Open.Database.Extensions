@@ -1,9 +1,17 @@
 # What's new in 11
 
 > [!NOTE]
-> Version 11.0.0 is currently a preview (`11.0.0-preview02`). Please try it and report what you find.
+> Version 11.0.0 is currently a preview (`11.0.0-preview03`). Please try it and report what you find.
 
 Version 11 is a performance release. Result mapping is rewritten around a cached, typed row reader. See [Performance](performance.md) for what that does and does not buy you.
+
+## Preview 03
+
+New since `11.0.0-preview02`:
+
+- **`RowMap<T>.NullLeavesValue`, and `ExecuteScalar<T>` with NULL.** `RowMap<T>.NullLeavesValue(...)` declares a map that leaves a non-nullable value-type property as it was when its column is `NULL`, instead of throwing, which stays the default (see [NULL in a non-nullable value-type column](mapping.md#null-in-a-non-nullable-value-type-column)). `ExecuteScalar<T>()` and `ExecuteScalarAsync<T>()` now return `default` for a `NULL` result or no rows when `T` is a reference type or `Nullable<T>`, and throw `ValueMappingException` otherwise (before: `InvalidCastException` or `NullReferenceException`).
+- **snake_case columns map to PascalCase properties.** `Map<T>()` and every `RowMap<T>` now also match a column to a property by name with the underscores removed from both, ignoring case, after the exact and ignore-case matches have been settled: `q_type` feeds `QType`, `min_date` feeds `MinDate`, `address_2` feeds `Address2`. This is new default behavior: a column that used to match no property, and was ignored, can now fill one. A property that a pair names keeps its exact meaning, and a `null` column in a pair is the per-property opt-out. See [snake_case columns map to PascalCase properties](mapping.md#snake_case-columns-map-to-pascalcase-properties).
+- **`ValueMappingException` for a value that cannot be mapped.** A failure reading a column into a property, and `ExecuteScalar<T>` with a `NULL` for a non-nullable `T`, now throw `ValueMappingException` (a `DataException` that names the property, the column and the target type) instead of `InvalidOperationException`, so application code that treats `InvalidOperationException` as a business-rule failure no longer catches a data error. See Breaking changes.
 
 ## Preview 02
 
@@ -31,7 +39,8 @@ New since `11.0.0-preview01`:
 - **The value-tuple overloads are removed.** Every overload that took `(string Field, string? Column)` tuples (as `params IEnumerable<...>`, `IEnumerable<...>` or `params (...)[]`) is gone from `Map<T>`, `Results<T>`, `ResultsAsync<T>`, `ResultsBuffered<T>`, `ResultsBufferedAsync<T>`, `ResultsFromDataTable<T>`, `DataTable.To<T>`, `DequeueAs<T>`, `Transformer<T>.Create`, `ExpressiveDbCommandBase.ResultsAsync<T>` and the mapped `ToChannel`, `ToChannelAsync`, `ToTargetBlock`, `ToTargetBlockAsync`, `AsSourceBlock` and `AsSourceBlockAsync` methods. Before: `cmd.Results<Person>(("FirstName", "first_name"), ("LastName", "last_name"))`. Now: declare a map once, `RowMap<Person> map = new([new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")])`, and pass it, `cmd.Results<Person>(map)`. Only `Map<T>` also takes the pairs themselves, `cmd.Map<Person>(new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))`; that builds a new map on every call, so declare a map for anything that runs more than occasionally.
 - **A `RowMap<T>` is checked when it is created.** Cases that were tolerated now throw `ArgumentException`: a property listed twice (the last entry used to win), an empty column name, two properties on one column, and an unknown property with a `null` column (it used to be ignored). A default (uninitialized) `ImmutableArray` of pairs, like an empty list, means no mappings.
 - `IExecuteReader` has two new members (above). Custom implementations must add them; the `ExpressiveCommand*` classes already do.
-- A `NULL` in a column mapped to a non-nullable value-type property is the provider's error to raise, wrapped in an `InvalidOperationException` that names the property and the column. Map nullable columns to `Nullable<T>` or reference properties.
+- A `NULL` in a column mapped to a non-nullable value-type property throws a `ValueMappingException` that names the property and the column. Map nullable columns to `Nullable<T>` or reference properties, or declare the map with `RowMap<T>.NullLeavesValue` to keep the property's value instead.
+- **`ValueMappingException` replaces `InvalidOperationException` for a value that cannot be mapped.** A failure reading a column into a property (a `NULL` for a non-nullable value type, a value that does not convert, an overflow) and `ExecuteScalar<T>` with a `NULL` or no row for a non-nullable `T` now throw `ValueMappingException`, a `DataException`, instead of `InvalidOperationException`. It carries `PropertyName`, `ColumnName` and `TargetType`, with the provider's or conversion error as the inner exception. Catch the new type or `DataException`; provider exceptions (`DbException`) are still not wrapped.
 - A field-mapping override that names a property that does not exist throws `ArgumentException` (it was `KeyNotFoundException`). Only properties with a public setter are mapped.
 - `FirstOrdinalResults<T>` reads `NULL` as `default`. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable, so items are released to the garbage collector as they are drained.
 - `ExpressiveCommandBase.Params` is created lazily.

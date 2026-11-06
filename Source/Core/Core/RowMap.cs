@@ -10,7 +10,8 @@ namespace Open.Database.Extensions;
 /// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …).
 /// </summary>
 /// <remarks>
-/// Properties the map does not mention still map by name; a <see langword="null"/> column means "do not map this property".
+/// Properties the map does not mention still map by name: a column feeds the property of that name exactly, else ignoring case, else (once those are settled) when the two names are equal ignoring case with the underscores removed (<c>q_type</c> feeds <c>QType</c>).
+/// A property with a pair is only matched by its column, exactly or ignoring case; a <see langword="null"/> column means "do not map this property".
 /// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
 /// or two properties reading one column throw <see cref="ArgumentException"/>.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
@@ -29,7 +30,10 @@ public sealed class RowMap<T> : IRowSource<T>
 	/// <summary>Creates and validates the map from (property name, column name) pairs; use it where the map is declared, never in a call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid: an unknown or unsettable property, a property named twice, an empty column name, or two properties reading one column.</exception>
-	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
+	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings) : this(false, mappings) { }
+
+	// The one constructor body. Every public constructor passes false; the NullLeavesValue factory passes true.
+	private RowMap(bool nullLeavesValue, ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 	{
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
 		string?[] columns = new string?[Properties.Length];
@@ -39,17 +43,18 @@ public sealed class RowMap<T> : IRowSource<T>
 		RejectSharedColumns(columns, named, nameof(mappings));
 
 		_columns = columns;
+		_nullLeavesValue = nullLeavesValue;
 	}
 
 	/// <summary>Creates and validates the map from (property name, column name) pairs held in an <see cref="ImmutableArray{T}"/> (a default array is no mappings); use it where the map is declared, never in a call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
 	[OverloadResolutionPriority(-1)]
-	public RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings) : this(mappings.AsSpan()) { }
+	public RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings) : this(false, mappings.AsSpan()) { }
 
 	/// <inheritdoc cref="RowMap{T}.RowMap(ReadOnlySpan{KeyValuePair{string, string?}})"/>
 	[OverloadResolutionPriority(-2)]
-	public RowMap(IEnumerable<KeyValuePair<string, string?>>? mappings) : this(GetMappingSpan(mappings)) { }
+	public RowMap(IEnumerable<KeyValuePair<string, string?>>? mappings) : this(false, GetMappingSpan(mappings)) { }
 
 	private static ReadOnlySpan<KeyValuePair<string, string?>> GetMappingSpan(IEnumerable<KeyValuePair<string, string?>>? mappings) => mappings switch
 	{
@@ -66,10 +71,28 @@ public sealed class RowMap<T> : IRowSource<T>
 	public static RowMap<T> From(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 		=> mappings.Length == 0 ? Default : new RowMap<T>(mappings);
 
+	/// <summary>
+	/// Creates and validates a map from (property name, column name) pairs, exactly as the constructor does, whose readers skip the assignment when the cell is NULL and the property is a non-nullable value type (an enum counts),
+	/// so the property keeps the value <c>new T()</c> gave it (its initializer, else its default) instead of the read throwing.
+	/// Nullable and reference-type properties still receive <see langword="null"/>, and these maps cost one <c>IsDBNull</c> per non-nullable cell.
+	/// </summary>
+	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property". None maps every property by name.</param>
+	/// <returns>A new map; declare it once.</returns>
+	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	/// <example>
+	/// <code>
+	/// static readonly RowMap&lt;Order&gt; OrderMap = RowMap&lt;Order&gt;.NullLeavesValue();
+	/// </code>
+	/// </example>
+	public static RowMap<T> NullLeavesValue(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
+		=> new(true, mappings);
+
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
 	// so after the first query of a given shape no reflection, expression building or compilation happens again.
 	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
-	// NULL is honored for reference types and Nullable<T> properties; a NULL in a column mapped to a non-nullable value-type property is the provider's error to raise.
+	// NULL is honored for reference types and Nullable<T> properties. A NULL in a column mapped to a non-nullable value-type property is an error, wrapped as a ValueMappingException naming the property and column:
+	// on the typed path the provider's typed getter decides (the providers checked throw), on the general path ConvertValue throws InvalidCastException.
+	// A NullLeavesValue map skips the assignment instead, so the property keeps what new T() gave it: one IsDBNull per such cell on the typed path, a single read of the cell on the general path.
 
 	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
@@ -109,6 +132,9 @@ public sealed class RowMap<T> : IRowSource<T>
 	// This one array is all the map keeps of the pairs.
 	readonly string?[] _columns;
 
+	// Set only by NullLeavesValue; the compiled readers live in this instance, so the flag needs no cache change.
+	readonly bool _nullLeavesValue;
+
 	/// <summary>The names of the properties that are mapped.</summary>
 	internal IEnumerable<string> PropertyNames
 	{
@@ -129,14 +155,115 @@ public sealed class RowMap<T> : IRowSource<T>
 		}
 	}
 
-	// The property a result column feeds: the first mapped property, in declaration order, whose column matches ignoring case.
-	// Called once per column when a result-set layout is compiled, never per row.
-	PropertyInfo? PropertyFor(string column)
+	/// <summary>
+	/// The columns of the record that feed a property, in ordinal order, each with its actual name in the record: the same match (<see cref="Match"/>) a row read uses,
+	/// so the pipelines that pick columns before mapping them agree with <c>Map&lt;T&gt;()</c> on which column feeds which property.
+	/// </summary>
+	internal (string Name, int Ordinal)[] MatchingColumns(IDataRecord record)
 	{
-		for (int i = 0; i < _columns.Length; i++)
-			if (string.Equals(_columns[i], column, StringComparison.OrdinalIgnoreCase)) return Properties[i];
+		string[] names = new string[record.FieldCount];
+		for (int i = 0; i < names.Length; i++) names[i] = record.GetName(i);
 
-		return null;
+		PropertyInfo?[] feeds = Match(names);
+		int count = 0;
+		foreach (PropertyInfo? feed in feeds)
+			if (feed is not null) count++;
+
+		var columns = new (string Name, int Ordinal)[count];
+		for (int i = 0, next = 0; next < count; i++)
+			if (feeds[i] is not null) columns[next++] = (names[i], i);
+
+		return columns;
+	}
+
+	// The property each result column feeds (null: the column is ignored). Three tiers run over the whole result set, so a lower tier never takes a property
+	// a higher one has filled, whatever the column order: 1. the column is the name the property reads, exactly; 2. the same, ignoring case;
+	// 3. only for a property mapped by name (it reads its own name) that tiers 1 and 2 left unfilled: a column no tier has matched yet whose name
+	// equals the property name ignoring case and ignoring every underscore (q_type feeds QType).
+	// Within a tier the first matching column wins, and a column feeds one property. A property with an explicit pair is only ever matched by its column, exactly or ignoring case.
+	// Runs once when a result-set layout is compiled, never per row, and is linear in the columns plus the properties: each tier is one dictionary built over the properties
+	// and one lookup per column. A tier is only reached while a column is unmatched, and tier 3's dictionary is only built when a by-name property is unfilled.
+	PropertyInfo?[] Match(string[] names)
+	{
+		var feeds = new PropertyInfo?[names.Length];
+		bool[] filled = new bool[_columns.Length];
+
+		int unmatched = names.Length - Feed(ColumnIndex(StringComparer.Ordinal), names, feeds, filled);
+		if (unmatched > 0) unmatched -= Feed(ColumnIndex(StringComparer.OrdinalIgnoreCase), names, feeds, filled);
+		if (unmatched > 0 && NameIndex(filled) is { } byName) Feed(byName, names, feeds, filled);
+
+		return feeds;
+	}
+
+	// One pass over the columns that no earlier tier matched: each looks up its property, which it takes unless an earlier column already did. Returns how many it fed.
+	static int Feed(Dictionary<string, int> index, string[] names, PropertyInfo?[] feeds, bool[] filled)
+	{
+		int fed = 0;
+		for (int i = 0; i < names.Length; i++)
+		{
+			if (feeds[i] is not null || names[i] is null || !index.TryGetValue(names[i], out int p) || filled[p]) continue;
+
+			filled[p] = true;
+			feeds[i] = Properties[p];
+			fed++;
+		}
+
+		return fed;
+	}
+
+	// Tiers 1 and 2: column name → the first property, in declaration order, that reads it (compared as the tier says).
+	Dictionary<string, int> ColumnIndex(StringComparer comparer)
+	{
+		var index = new Dictionary<string, int>(_columns.Length, comparer);
+		for (int p = 0; p < _columns.Length; p++)
+			if (_columns[p] is { } column && !index.ContainsKey(column)) index.Add(column, p);
+
+		return index;
+	}
+
+	// Tier 3: property name → the first property, in declaration order, of the unfilled properties mapped by name (explicit pairs and unmapped properties are left out), compared
+	// ignoring case and underscores. Null when there is none, so nothing is built for a result set whose properties are all settled.
+	Dictionary<string, int>? NameIndex(bool[] filled)
+	{
+		Dictionary<string, int>? index = null;
+		for (int p = 0; p < _columns.Length; p++)
+		{
+			string name = Properties[p].Name;
+			if (filled[p] || !string.Equals(_columns[p], name, StringComparison.Ordinal)) continue;
+
+			index ??= new(_columns.Length, new IgnoreCaseAndUnderscores());
+			if (!index.ContainsKey(name)) index.Add(name, p);
+		}
+
+		return index;
+	}
+
+	// Equal ignoring case and ignoring every '_' in either name, so no stripped copy of a name is ever made: the hash and the comparison walk the characters.
+	sealed class IgnoreCaseAndUnderscores : IEqualityComparer<string>
+	{
+		public bool Equals(string? x, string? y)
+		{
+			if (ReferenceEquals(x, y)) return true;
+			if (x is null || y is null) return false;
+
+			int i = 0, j = 0;
+			while (true)
+			{
+				while (i < x.Length && x[i] == '_') i++;
+				while (j < y.Length && y[j] == '_') j++;
+				if (i == x.Length || j == y.Length) return i == x.Length && j == y.Length;
+				if (char.ToUpperInvariant(x[i++]) != char.ToUpperInvariant(y[j++])) return false;
+			}
+		}
+
+		public int GetHashCode(string name)
+		{
+			int hash = 17;
+			foreach (char c in name)
+				if (c != '_') hash = unchecked(hash * 31 + char.ToUpperInvariant(c));
+
+			return hash;
+		}
 	}
 
 	// Most recently used layout; the overwhelmingly common case is the same shape every time.
@@ -345,8 +472,16 @@ public sealed class RowMap<T> : IRowSource<T>
 		ParameterExpression row = Expression.Parameter(typeof(object?[]), "row");
 		MethodInfo convert = typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
 
+		MethodInfo isNullCell = typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!;
+
+		// A NullLeavesValue map skips a non-nullable value-type property when its cell is NULL.
+		Func<int, PropertyInfo, Expression?>? isNull = _nullLeavesValue
+			? (i, property) => KeepsValueOnNull(property.PropertyType) ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null
+			: null;
+
 		return Compile<object?[]>(row, layout.Names, (i, property)
-			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))));
+			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))),
+			isNull);
 	}
 
 	#endregion
@@ -369,10 +504,11 @@ public sealed class RowMap<T> : IRowSource<T>
 		[typeof(string)] = nameof(IDataRecord.GetString),
 	}.ToFrozenDictionary();
 
-	sealed class Binding(string property, string column)
+	sealed class Binding(string property, string column, Type type)
 	{
 		public readonly string Property = property;
 		public readonly string Column = column;
+		public readonly Type Type = type;
 	}
 
 	Func<TReader, T> Build<TReader>(Layout layout)
@@ -384,13 +520,23 @@ public sealed class RowMap<T> : IRowSource<T>
 
 		ParameterExpression r = Expression.Parameter(readerType, "r");
 
+		// A NullLeavesValue map only: the general path reads a cell once into `cell`, tests it for NULL, and converts that same value.
+		ParameterExpression? cell = _nullLeavesValue ? Expression.Variable(typeof(object), "cell") : null;
+		Func<int, PropertyInfo, Expression?>? isNull = cell is null
+			? null
+			: (i, property) => NullTest(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell);
+
 		return Compile<TReader>(r, layout.Names, (i, property)
-			=> ReadValue(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue));
+			=> ReadValue(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell),
+			isNull, cell);
 	}
 
 	// The skeleton shared by both mappers: `new T()`, then for each column that maps to a property,
 	// `item.Property = <cell>`. Only how a cell is read differs (a live reader vs buffered object[] rows).
-	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, PropertyInfo, Expression> readCell)
+	// NullLeavesValue maps also pass `isNull`: for a property that must keep its value, the test that the cell is NULL, which wraps the assignment as
+	// `if (!isNull) item.Property = <cell>`; it may leave the raw cell in `cell`, which readCell then converts. Strict maps pass neither and compile exactly as before.
+	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, PropertyInfo, Expression> readCell,
+		Func<int, PropertyInfo, Expression?>? isNull = null, ParameterExpression? cell = null)
 	{
 		ParameterExpression item = Expression.Variable(typeof(T), "item");
 		ParameterExpression index = Expression.Variable(typeof(int), "index");
@@ -401,28 +547,29 @@ public sealed class RowMap<T> : IRowSource<T>
 			Expression.Assign(item, Expression.New(typeof(T))),
 		};
 
-		var assigned = new HashSet<PropertyInfo>();
+		PropertyInfo?[] feeds = Match(names);
 		for (int i = 0; i < names.Length; i++)
 		{
-			if (PropertyFor(names[i]) is not { } property) continue; // Not mapped: ignore the column.
-			if (!assigned.Add(property)) continue; // The first matching column wins.
+			if (feeds[i] is not { } property) continue; // Not mapped: ignore the column.
 
-			bindings[i] = new Binding(property.Name, names[i]);
+			bindings[i] = new Binding(property.Name, names[i], property.PropertyType);
 			statements.Add(Expression.Assign(index, Expression.Constant(i)));
-			statements.Add(Expression.Call(item, property.GetSetMethod()!, readCell(i, property)));
+			Expression assign = Expression.Call(item, property.GetSetMethod()!, readCell(i, property));
+			statements.Add(isNull?.Invoke(i, property) is { } skip ? Expression.IfThen(Expression.Not(skip), assign) : assign);
 		}
 
 		statements.Add(item);
-		return Expression.Lambda<Func<TArg, T>>(Guard(statements, item, index, bindings), arg).Compile();
+		return Expression.Lambda<Func<TArg, T>>(Guard(statements, item, index, cell, bindings), arg).Compile();
 	}
 
 	// `index` tracks the column being read so a failure can name the offending property and column.
-	static BlockExpression Guard(List<Expression> statements, ParameterExpression item, ParameterExpression index, Binding?[] bindings)
+	static BlockExpression Guard(List<Expression> statements, ParameterExpression item, ParameterExpression index, ParameterExpression? cell, Binding?[] bindings)
 	{
 		ParameterExpression ex = Expression.Parameter(typeof(Exception), "ex");
+		ParameterExpression[] variables = cell is null ? [item, index] : [item, index, cell];
 		return Expression.Block(
 			typeof(T),
-			[item, index],
+			variables,
 			Expression.Assign(index, Expression.Constant(-1)),
 			Expression.TryCatch(
 				Expression.Block(typeof(T), statements),
@@ -442,36 +589,64 @@ public sealed class RowMap<T> : IRowSource<T>
 							typeof(T))))));
 	}
 
+	// The typed (unboxed) read of a cell as the target type, or null when the column type has no typed getter or does not convert directly.
+	static Expression? TypedRead(ParameterExpression r, Expression ordinal, Type columnType, Type target, Type readerType)
+	{
+		if (!TypedGetters.TryGetValue(columnType, out string? getterName)) return null;
+
+		MethodInfo getter = readerType.GetMethod(getterName, [typeof(int)])!;
+		return TryConvert(Expression.Call(r, getter, ordinal), target);
+	}
+
+	// A NullLeavesValue map keeps the current value when the cell is NULL for a non-nullable value type (an enum counts):
+	// Nullable<T> and reference types receive null, as in every map.
+	static bool KeepsValueOnNull(Type propertyType)
+		=> propertyType.IsValueType && Nullable.GetUnderlyingType(propertyType) is null;
+
+	// NullLeavesValue maps only: the expression that is true when the cell of a property that keeps its value is NULL, or null for any other property.
+	// On the typed path the reader answers; on the general path the cell is read once into `cell` and ReadValue converts that same value.
+	static Expression? NullTest(
+		ParameterExpression r, Expression ordinal,
+		Type columnType, Type propertyType,
+		Type readerType, MethodInfo isDbNull, MethodInfo getValue, ParameterExpression cell)
+	{
+		if (!KeepsValueOnNull(propertyType)) return null;
+
+		if (TypedRead(r, ordinal, columnType, propertyType, readerType) is not null)
+			return Expression.Call(r, isDbNull, ordinal);
+
+		return Expression.Call(
+			typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!,
+			Expression.Assign(cell, Expression.Call(r, getValue, ordinal)));
+	}
+
 	static Expression ReadValue(
 		ParameterExpression r, Expression ordinal,
 		Type columnType, Type propertyType,
-		Type readerType, MethodInfo isDbNull, MethodInfo getValue)
+		Type readerType, MethodInfo isDbNull, MethodInfo getValue,
+		ParameterExpression? cell = null)
 	{
 		Type? underlying = Nullable.GetUnderlyingType(propertyType);
 		Type target = underlying ?? propertyType;
 		bool nullable = underlying is not null || !propertyType.IsValueType;
 
-		if (TypedGetters.TryGetValue(columnType, out string? getterName))
+		if (TypedRead(r, ordinal, columnType, target, readerType) is { } typed)
 		{
-			MethodInfo getter = readerType.GetMethod(getterName, [typeof(int)])!;
-			Expression? typed = TryConvert(Expression.Call(r, getter, ordinal), target);
-			if (typed is not null)
-			{
-				if (!nullable) return typed;
+			if (!nullable) return typed;
 
-				// NULL → null/default; otherwise the typed value (lifted to Nullable<> when needed).
-				Expression present = underlying is null ? typed : Expression.Convert(typed, propertyType);
-				return Expression.Condition(
-					Expression.Call(r, isDbNull, ordinal),
-					Expression.Default(propertyType),
-					present);
-			}
+			// NULL → null/default; otherwise the typed value (lifted to Nullable<> when needed).
+			Expression present = underlying is null ? typed : Expression.Convert(typed, propertyType);
+			return Expression.Condition(
+				Expression.Call(r, isDbNull, ordinal),
+				Expression.Default(propertyType),
+				present);
 		}
 
 		// General path: the boxed value, converted. Handles enums, strings → Guid, mismatched types, unknown column types.
+		// A NullLeavesValue map has already read the cell of a non-nullable value-type property into `cell` to test it (see NullTest).
 		return Expression.Call(
 			typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
-			Expression.Call(r, getValue, ordinal));
+			cell is not null && !nullable ? cell : Expression.Call(r, getValue, ordinal));
 	}
 
 	// Returns the expression converted to the target type, or null when the types have no direct conversion.
@@ -506,6 +681,8 @@ public sealed class RowMap<T> : IRowSource<T>
 	#endregion
 
 	#region Runtime helpers called from compiled code
+
+	static bool IsNullCell(object? value) => value is null or DBNull;
 
 	static TTarget ConvertValue<TTarget>(object? value)
 	{
@@ -556,7 +733,7 @@ public sealed class RowMap<T> : IRowSource<T>
 	static Exception MapError(Exception ex, int index, Binding?[] bindings)
 	{
 		if (index >= 0 && index < bindings.Length && bindings[index] is { } b)
-			return new InvalidOperationException($"Unable to set value of property '{b.Property}' from column '{b.Column}'.", ex);
+			return new ValueMappingException($"Unable to set value of property '{b.Property}' from column '{b.Column}'.", b.Property, b.Column, b.Type, ex);
 
 		return ex is InvalidOperationException ? ex : new InvalidOperationException($"Unable to create '{typeof(T)}' from the current row.", ex);
 	}

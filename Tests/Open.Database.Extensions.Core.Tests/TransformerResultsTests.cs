@@ -26,7 +26,7 @@ public static class TransformerResultsTests
 	}
 
 	[Fact]
-	public static void To_DefaultMapping_IsCaseInsensitive_UnmappedStayDefault()
+	public static void To_DefaultMapping_IsCaseInsensitive_AndIgnoresUnderscores()
 	{
 		DataTable table = BuildTable();
 
@@ -35,7 +35,7 @@ public static class TransformerResultsTests
 		Assert.Equal(2, people.Count);
 		Assert.Equal("John", people[0].FirstName);
 		Assert.Equal(30, people[0].Age);   // "AGE" column matched property "Age" case-insensitively
-		Assert.Null(people[0].LastName);   // "last_name" != "LastName" -> unmapped, stays default
+		Assert.Equal("Doe", people[0].LastName); // "last_name" matched property "LastName" with the underscore ignored
 	}
 
 	[Fact]

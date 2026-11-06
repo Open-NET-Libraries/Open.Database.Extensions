@@ -312,7 +312,7 @@ public static class ToChannelMappedCompletionTests
 		{
 			await call(channel.Writer, true).AsTask().WaitAsync(Timeout, ct);
 		}
-		catch (InvalidOperationException)
+		catch (ValueMappingException)
 		{
 			// The database is read on one task while the rows are mapped on another: if the mapping fails before the
 			// reading has finished, reading is stopped and the call reports that failure. Either way the target must end faulted.

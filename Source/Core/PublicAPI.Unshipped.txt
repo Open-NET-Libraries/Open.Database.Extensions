@@ -54,7 +54,13 @@ Open.Database.Extensions.RowMap<T>.RowMap(System.Collections.Generic.IEnumerable
 Open.Database.Extensions.RowMap<T>.RowMap(params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> void
 Open.Database.Extensions.RowMap<T>.RowMap(System.Collections.Immutable.ImmutableArray<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> void
 static Open.Database.Extensions.RowMap<T>.From(System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowMap<T>!
+static Open.Database.Extensions.RowMap<T>.NullLeavesValue(params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowMap<T>!
 static readonly Open.Database.Extensions.RowMap<T>.Default -> Open.Database.Extensions.RowMap<T>!
+Open.Database.Extensions.ValueMappingException
+Open.Database.Extensions.ValueMappingException.ColumnName.get -> string?
+Open.Database.Extensions.ValueMappingException.PropertyName.get -> string?
+Open.Database.Extensions.ValueMappingException.TargetType.get -> System.Type!
+Open.Database.Extensions.ValueMappingException.ValueMappingException(string! message, string? propertyName, string? columnName, System.Type! targetType, System.Exception? innerException = null) -> void
 *REMOVED*Open.Database.Extensions.Core.Transformer<T>.Transformer(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string?>>? overrides = null) -> void
 *REMOVED*Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ResultsAsync<T>(params System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string?>>! fieldMappingOverrides) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IEnumerable<T>!>
 *REMOVED*static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs<T>(this Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object?[]!>!>! source, params System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string?>>? fieldMappingOverrides) -> System.Collections.Generic.IEnumerable<T>!
