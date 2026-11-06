@@ -13,11 +13,11 @@ public sealed class ValueMappingException : DataException
 	/// Creates the exception.
 	/// </summary>
 	/// <param name="message">The error message.</param>
-	/// <param name="propertyName">The name of the property being set, or <see langword="null"/> when there is none.</param>
-	/// <param name="columnName">The name of the column being read, or <see langword="null"/> when there is none.</param>
+	/// <param name="propertyName">The name of the property being set.</param>
+	/// <param name="columnName">The name of the column being read.</param>
 	/// <param name="targetType">The .NET type the value was being read as.</param>
 	/// <param name="innerException">The provider's or the conversion's error, if any.</param>
-	public ValueMappingException(string message, string? propertyName, string? columnName, Type targetType, Exception? innerException = null)
+	public ValueMappingException(string message, string propertyName, string columnName, Type targetType, Exception? innerException = null)
 		: base(message, innerException)
 	{
 		PropertyName = propertyName;
@@ -26,14 +26,14 @@ public sealed class ValueMappingException : DataException
 	}
 
 	/// <summary>
-	/// The name of the property being set, or <see langword="null"/> when there is none.
+	/// The name of the property being set.
 	/// </summary>
-	public string? PropertyName { get; }
+	public string PropertyName { get; }
 
 	/// <summary>
-	/// The name of the column being read, or <see langword="null"/> when there is none.
+	/// The name of the column being read.
 	/// </summary>
-	public string? ColumnName { get; }
+	public string ColumnName { get; }
 
 	/// <summary>
 	/// The .NET type the value was being read as.
