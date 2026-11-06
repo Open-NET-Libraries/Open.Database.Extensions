@@ -739,6 +739,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row.</returns>
+	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
 	public T ExecuteScalar<T>()
 		=> CastScalar<T>(ExecuteScalar());
 

@@ -4,6 +4,14 @@
 
 [!code-csharp[](../samples/Mapping.cs#map_default)]
 
+| Your columns | Write |
+|---|---|
+| Named like the properties, or the same with underscores (`first_name` for `FirstName`) | `Map<T>()` |
+| Named differently | Declare a `RowMap<T>` once and pass it: `Map<T>(map)` |
+| One property must not be read | A `null` column for it in the `RowMap<T>` |
+| A column can hold NULL | Declare the property nullable (`int?`, `string?`); a non-nullable value-type property keeps its initializer, else its default |
+| Constructor binding, or your own conversion | `Map(selector)` |
+
 ## The rules
 
 - **Construction.** `T` must have a public parameterless constructor (`where T : new()`). Each row creates `new T()`.
@@ -14,7 +22,7 @@
 
 ## snake_case columns map to PascalCase properties
 
-A column named `q_type` feeds the property `QType` with no `RowMap<T>` declared. Matching runs in three tiers over the whole result set, so a better match always wins, whatever the order of the columns:
+A column named `first_name` feeds the property `FirstName` with no `RowMap<T>` declared. Matching runs in three tiers over the whole result set, so a better match always wins, whatever the order of the columns:
 
 1. The column name equals the property name exactly.
 2. The column name equals the property name, ignoring case.
@@ -24,22 +32,15 @@ Within a tier the first matching column wins, one column feeds one property, and
 
 Only a property that is matched by name is matched in tier 3. A property that a `RowMap<T>` pairs with a column keeps its exact meaning: it reads that column (exactly or ignoring case) and no other, and a `null` column still means "do not map this property", even if a `q_type` column exists. Underscores are the only difference tier 3 ignores, in either name, so `address_2` matches `Address2` and `http_request` matches `HTTPRequest`.
 
-```csharp
-public sealed class CountRow
-{
-	public string? QType { get; set; }
-	public DateTime MinDate { get; set; }
-}
-
-// select q_type, min_date from counts
-CountRow[] rows = connection.Command("select q_type, min_date from counts").Map<CountRow>().ToArray();
-```
+[!code-csharp[](../samples/Mapping.cs#map_snake_case)]
 
 ## Columns named differently
 
-When a column is named differently from its property, declare a `RowMap<T>` once and pass it to every query that reads the model. A map is built from key/value pairs of property name and column name. Write the property name with `nameof`, so the compiler catches a rename; only the column is a string. Properties the map does not mention are still matched to columns by name.
+When a column is named differently from its property, declare a `RowMap<T>` once and pass it to every query that reads the model. A map is built from key/value pairs of property name and column name. Write the property name with `nameof`, so the compiler catches a rename; only the column is a string. Properties the map does not mention are still matched to columns by name. A map with one pair still needs the brackets: `new RowMap<T>([new("A", "b")])`. `new RowMap<T>(new("A", "b"))` does not compile (`Map<T>(new("A", "b"))` with one pair does).
 
-Create the map on first use with the C# 14 `field` keyword and `??=`, so an application with hundreds of models builds only the maps it actually uses:
+[!code-csharp[](../samples/Mapping.cs#map_single_pair)]
+
+Create the map on first use with the C# 14 `field` keyword and `??=`:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared)]
 
@@ -47,13 +48,13 @@ Pass it to `Map<T>`. The same `map` parameter is on `Results`, `ToChannel`, `AsS
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
-Declare the map once and reuse it. A map is immutable and safe to share between threads. Passing it adds no per-call allocation or key, and no dictionary lookup while each query meets the same layout as the previous one: the compiled row reader lives in the map, and each query still matches the result-set layout against the cached one, as `Map<T>()` does.
+Declare the map once and reuse it. A map is immutable and safe to share between threads, and a declared map adds nothing per call beyond a check that the result-set layout matches the one its reader was compiled for.
 
 **When a map is checked.** A map is checked when it is created, which with `field ??=` is at first use. It throws `ArgumentException` for a property that does not exist or cannot be set (a static property, or one without a public setter), a null property name, a property named twice, an empty column name, and two properties that would read the same column. The property side is matched exactly; column names are matched ignoring case:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_unknown)]
 
-**Ignoring a property.** A `null` column means "do not map this property". It is not a no-op: it stops the by-name match (underscore match included), so the property keeps its default value even if the result set has a column with that name. The property must exist; the column need not. Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere:
+**Ignoring a property.** A `null` column means "do not map this property". It is not a no-op: it stops the by-name match (underscore match included), so the property keeps the value `new T()` gave it (its initializer, else its default) even if the result set has a column with that name. The property must exist; the column need not. Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_ignore)]
 
@@ -71,27 +72,27 @@ A one-row read of a 12-property model takes about 0.4 ms and allocates about 29 
 
 [!code-csharp[](../samples/Mapping.cs#map_pairs)]
 
-**Tuples.** The overloads that took value tuples (`(string Field, string? Column)`) are removed in 11.0 (breaking). Before: `cmd.Results<Person>(("FirstName", "first_name"))`. Now: declare a `RowMap<Person>` and pass it, `cmd.Results<Person>(map)`, or on `Map<T>` pass the pairs, `cmd.Map<Person>(new(nameof(Person.FirstName), "first_name"))`. See [What's new in 11](whats-new-11.md).
+**Tuples.** The value-tuple overloads (`(string Field, string? Column)`) are removed in 11.0; see [What's new in 11](whats-new-11.md).
 
 ## Types and NULL
 
 Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...), so nothing is boxed on the common path. When the column type and the property type differ:
 
-- integers convert to other integer types and to enums, range-checked (an overflow throws);
+- integers convert to other integer types and to enums, range-checked (an overflow throws `ValueMappingException`);
 - integers and floating-point values widen to `float`, `double` and `decimal`;
-- anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string`, and otherwise `Convert.ChangeType`.
-
-A `NULL` follows the property's declared type, as described in [NULL in a non-nullable value-type column](#null-in-a-non-nullable-value-type-column).
+- anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value except a `byte[]` to `string` (a `byte[]` to `string` throws), and otherwise `Convert.ChangeType`.
 
 ## NULL in a non-nullable value-type column
 
-A nullable property (`Nullable<T>` or a reference type) gets `null`. A non-nullable value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default; nothing throws:
+A nullable property (`Nullable<T>`) or a reference type gets `null`, even a `string` that has a non-null initializer. A non-nullable value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default; nothing throws. If NULL means something, declare the property nullable (`int?`): that is the only way to tell NULL from 0.
 
-```csharp
-public int Quantity { get; set; } = 1;  // NULL leaves 1
-public int? Discount { get; set; }      // NULL gives null
-public string? Note { get; set; }       // NULL gives null
-```
+[!code-csharp[](../samples/Models.cs#order_line_model)]
+
+## Values that cannot be mapped
+
+A value that cannot be mapped (an unconvertible value, an overflow) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). It carries `PropertyName`, `ColumnName` and `TargetType`, and the conversion error is its `InnerException`. Provider exceptions (`DbException`) and cancellation pass through unwrapped. Any other failure while building a row object throws `InvalidOperationException` (the cause is its inner exception, unless the cause already was an `InvalidOperationException`).
+
+[!code-csharp[](../samples/Mapping.cs#map_value_error)]
 
 ## Terminals
 
@@ -106,6 +107,8 @@ public string? Note { get; set; }       // NULL gives null
 `Read` hands you the rows as a lazy sequence that is only valid inside the handler:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
+
+Every terminal has an `Async` twin that takes a `CancellationToken`:
 
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_async)]
 

@@ -21,7 +21,7 @@ Core does not reference any database provider. Bring your own: the examples in t
 
 ## Your first query
 
-A model needs a public parameterless constructor and public settable properties. Columns are matched to property names, ignoring case.
+A model needs a public parameterless constructor and public settable properties. Columns are matched to property names exactly, else ignoring case, else ignoring case and underscores (`first_name` feeds `FirstName`); see [Mapping rows to objects](mapping.md).
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 
@@ -79,7 +79,7 @@ Lines you write per call: plain ADO.NET 20, Open.Database.Extensions 4 (plus one
 What is different:
 
 - **Plain ADO.NET** needs you to open the connection, create and dispose the command and the reader, add each parameter by hand and copy each column by ordinal, with an `IsDBNull` check for nullable columns.
-- **With the extensions** the factory opens and disposes the connection, the command is one call, and the terminal does the read loop and the mapping. Matching columns to properties is by name, ignoring case.
+- **With the extensions** the factory opens and disposes the connection, the command is one call, and the terminal does the read loop and the mapping. Matching columns to properties is by name, ignoring case and underscores.
 
 ## With SQL Server
 
