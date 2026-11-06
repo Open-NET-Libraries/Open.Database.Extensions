@@ -50,4 +50,4 @@ Dapper's features are described in Dapper's own documentation. The record exampl
 1. Replace the anonymous parameter object with `.AddParam` calls.
 2. Replace `Query<T>(sql, ...)` with `Command(sql)...Map<T>().ToList()` (or `ToArray()`).
 3. If a model uses constructor binding, give it a parameterless constructor and settable properties, or write a `Map(selector)`.
-4. If column names differ from property names, add overrides: Dapper's global name matching has no equivalent here.
+4. If column names differ from property names, declare a `RowMap<T>` (see [Columns named differently](mapping.md#columns-named-differently)): Dapper's global name matching has no equivalent here.

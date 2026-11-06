@@ -20,53 +20,7 @@ public static class Mapping
 		return posts;
 	}
 
-	public static Person[] MapOverrides(SqliteConnection connection)
-	{
-		#region map_overrides
-		// Field-to-column overrides for columns that do not share the property name.
-		Person[] people = connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(("Id", "person_id"), ("FirstName", "first_name"), ("LastName", "last_name"))
-			.ToArray();
-		#endregion
-
-		return people;
-	}
-
-	public static Person[] MapIgnore(SqliteConnection connection)
-	{
-		#region map_ignore
-		// A null column ignores the field: LastName stays at its default.
-		Person[] people = connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(("Id", "person_id"), ("FirstName", "first_name"), ("LastName", null))
-			.ToArray();
-		#endregion
-
-		return people;
-	}
-
-	public static string MapUnknownField(SqliteConnection connection)
-	{
-		try
-		{
-			#region map_unknown_field
-			// A field name that is not a settable public property throws ArgumentException.
-			connection
-				.Command("select * from posts")
-				.Map<Post>(("Headline", "title"))
-				.ToArray();
-			#endregion
-
-			return "no exception";
-		}
-		catch (ArgumentException ex)
-		{
-			return ex.Message;
-		}
-	}
-
-	public static Person[] MapMap(SqliteConnection connection)
+	public static Person[] MapDeclared(SqliteConnection connection)
 	{
 		#region map_declared_use
 		// Pass the declared map. Nothing is built, keyed or looked up per call.
@@ -79,7 +33,7 @@ public static class Mapping
 		return people;
 	}
 
-	public static Person[] MapMapIgnore(SqliteConnection connection)
+	public static Person[] MapNamesOnly(SqliteConnection connection)
 	{
 		// LastName is not read at all, so it stays at its default although the result set has a last_name column.
 		return connection
@@ -88,26 +42,12 @@ public static class Mapping
 			.ToArray();
 	}
 
-	public static Person[] MapInline(SqliteConnection connection)
-	{
-		#region map_inline
-		// A one-off: the pairs are inline, so a new map is built and the row reader is compiled on every call
-		// (about 0.43 ms and 29 KB for a one-row read in the library's in-memory benchmark). Declare a RowMap for anything that runs more than occasionally.
-		Person[] people = connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))
-			.ToArray();
-		#endregion
-
-		return people;
-	}
-
 	public static string MapUnknownProperty()
 	{
 		try
 		{
 			#region map_declared_unknown
-			// A map is checked where it is declared: this throws ArgumentException here, not on the first query.
+			// "Headline" is deliberately not a property of Post, so creating the map throws ArgumentException.
 			RowMap<Post> map = [new("Headline", "title")];
 			#endregion
 
@@ -117,6 +57,32 @@ public static class Mapping
 		{
 			return ex.Message;
 		}
+	}
+
+	public static Person[] MapCallSite(SqliteConnection connection)
+	{
+		#region map_call_site
+		// A one-off: the pairs are written at the call site, so a new map is built, and the row reader compiled, on every call.
+		Person[] people = connection
+			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Map<Person>([new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")])
+			.ToArray();
+		#endregion
+
+		return people;
+	}
+
+	public static Person[] MapTuples(SqliteConnection connection)
+	{
+		#region map_tuples
+		// The tuple overload is a convenience for the same one-off: it builds a new map, and compiles the row reader, on every call.
+		Person[] people = connection
+			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Map<Person>((nameof(Person.Id), "person_id"), (nameof(Person.FirstName), "first_name"), (nameof(Person.LastName), "last_name"))
+			.ToArray();
+		#endregion
+
+		return people;
 	}
 
 	public static Post[] MapPaging(SqliteConnection connection)
@@ -204,6 +170,39 @@ public static class PersonMaps
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), null),
+	];
+	#endregion
+}
+
+// The other ways to hold a map.
+public static class HoldingAMap
+{
+	#region map_declared_static
+	// Built when the type's static initializer first runs, together with the type's other static fields.
+	public static readonly RowMap<Person> StaticMap = [
+		new(nameof(Person.Id), "person_id"),
+		new(nameof(Person.FirstName), "first_name"),
+		new(nameof(Person.LastName), "last_name"),
+	];
+	#endregion
+
+	#region map_declared_ensure
+	// Exactly one instance is published, however many threads race on the first use.
+	public static RowMap<Person> EnsuredMap => LazyInitializer.EnsureInitialized(ref field, static () => [
+		new(nameof(Person.Id), "person_id"),
+		new(nameof(Person.FirstName), "first_name"),
+		new(nameof(Person.LastName), "last_name"),
+	]);
+	#endregion
+
+	#region map_declared_backing
+	// Before C# 14 there is no field keyword: write the backing field yourself.
+	static RowMap<Person>? _backingMap;
+
+	public static RowMap<Person> BackingMap => _backingMap ??= [
+		new(nameof(Person.Id), "person_id"),
+		new(nameof(Person.FirstName), "first_name"),
+		new(nameof(Person.LastName), "last_name"),
 	];
 	#endregion
 }

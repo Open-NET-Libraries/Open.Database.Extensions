@@ -120,18 +120,21 @@ Post[] page = connection
     .ToArray();
 ```
 
-Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the per-call overrides for columns with other names.
+Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the `RowMap<T>` for columns with other names.
 
 ### Renamed columns
 
-When your columns are named differently from your properties, declare the mapping once as a `RowMap<T>`. It is checked where you declare it, built on first use, and passing it costs nothing per call:
+When your columns are named differently from your properties, declare the mapping once as a `RowMap<T>` and reuse it. The map is made from key/value pairs of property name and column name; write the property name with `nameof` so the compiler catches a rename. Create it on first use with `field ??=` (C# 14), so only the maps you use are built. It is checked when it is created, and passing it costs nothing per call:
 
 ```cs
-public static RowMap<Person> PersonMap => field ??= [
-    new(nameof(Person.Id), "person_id"),
-    new(nameof(Person.FirstName), "first_name"),
-    new(nameof(Person.LastName), "last_name"),
-];
+static class PersonMaps
+{
+    public static RowMap<Person> PersonMap => field ??= [
+        new(nameof(Person.Id), "person_id"),
+        new(nameof(Person.FirstName), "first_name"),
+        new(nameof(Person.LastName), "last_name"),
+    ];
+}
 
 Person[] people = connection
     .Command("select person_id, first_name, last_name from people order by person_id")
@@ -139,7 +142,20 @@ Person[] people = connection
     .ToArray();
 ```
 
-A `null` column means "do not map this property": it is not read at all, not even by name, so it keeps its default value even if the result set has a column with that name. For a one-off you can pass the pairs inline, `Map<Person>(new(nameof(Person.Id), "person_id"), ...)`, but that builds a new map and compiles the row reader on every call (about 0.43 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider), so declare a map for anything that runs more than occasionally. More in [Reusing a mapping](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#reusing-a-mapping).
+Declare a map once and reuse it: a collection expression or an array of pairs written at the call site builds a new map, and compiles the row reader, on every call. Older compilers have no `field` keyword; use an explicit backing field. A `static readonly` field also works.
+
+A `null` column means "do not map this property". It is not a no-op: it stops the by-name match, so the property keeps its default value even if the result set has a column with that name. The property must exist; the column need not:
+
+```cs
+// LastName is not read at all, although the result set has a last_name column.
+public static RowMap<Person> PersonNamesOnlyMap => field ??= [
+    new(nameof(Person.Id), "person_id"),
+    new(nameof(Person.FirstName), "first_name"),
+    new(nameof(Person.LastName), null),
+];
+```
+
+More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).
 
 ## Transactions in one expression
 

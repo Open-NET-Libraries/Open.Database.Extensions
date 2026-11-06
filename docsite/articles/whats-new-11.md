@@ -3,16 +3,14 @@
 > [!NOTE]
 > Version 11.0.0 is currently a preview (`11.0.0-preview02`). Please try it and report what you find.
 
-Version 11 is a performance release. Result mapping is rewritten around a cached, typed row plan. See [Performance](performance.md) for what that does and does not buy you.
+Version 11 is a performance release. Result mapping is rewritten around a cached, typed row reader. See [Performance](performance.md) for what that does and does not buy you.
 
 ## Preview 02
 
 New since `11.0.0-preview01`:
 
-- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare a validated, immutable `RowMap<T>` once (`public static RowMap<Post> PostMap => field ??= [new(nameof(Post.Id), "post_id"), ...];`) and pass it to `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other override parameter. A map is checked where it is declared, and a `null` column means "do not map this property". A read through a map allocates what `Map<T>()` allocates on matching names. See [Reusing a mapping](mapping.md#reusing-a-mapping).
-- **`Map<T>` takes the pairs inline.** `Map<Post>(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null))` is for one-offs: it builds a new map and compiles the row reader on every call and caches nothing.
-- **Key/value pair overloads for `ToChannel`, `ToChannelAsync`, `ToTargetBlock`, `ToTargetBlockAsync`, `AsSourceBlock` and `AsSourceBlockAsync`.** They accept pairs, and so a `RowMap<T>`. Their tuple overloads remain as a convenience that converts the tuples to pairs.
-- **Only public instance properties are mapped.** A static property is no longer treated as a mappable property: name matching ignores it, and a `RowMap<T>` that names one throws where it is declared.
+- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare an immutable `RowMap<T>` once, from key/value pairs of property name and column name, and pass it as the `map` argument of `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other method that maps rows to a model: `public static RowMap<Post> PostMap => field ??= [new(nameof(Post.Id), "post_id"), ...];`. A map is checked when it is first created: at first use with `field ??=`, at type initialization with `static readonly`. A read through a map allocates what `Map<T>()` allocates on matching names. See [Columns named differently](mapping.md#columns-named-differently).
+- **Only public instance properties are mapped.** A static property is no longer treated as a mappable property: name matching ignores it, and a `RowMap<T>` that names one throws when it is created.
 
 ## New and improved
 
@@ -29,6 +27,9 @@ New since `11.0.0-preview01`:
 
 ## Breaking changes
 
+- **One `map` parameter.** The overloads that took key/value pairs (`IEnumerable<KeyValuePair<string, string?>>`) are removed from `Map<T>`, `Results<T>`, `ResultsAsync<T>`, `ResultsBuffered<T>`, `ResultsBufferedAsync<T>`, `ResultsFromDataTable<T>`, `DataTable.To<T>`, `DequeueAs<T>`, `Transformer<T>.Create` and the `Transformer<T>` constructor. Each of these methods now takes one `RowMap<T>? map` parameter (default `null`: read by column name) in the same position, and so do the mapped `ToChannel`, `ToChannelAsync`, `ToTargetBlock`, `ToTargetBlockAsync`, `AsSourceBlock` and `AsSourceBlockAsync`. Before: pass the pairs, or a `Dictionary<string, string?>`, to each call. Now: declare a `RowMap<T>` once and pass it. To keep a dictionary, build the map from it with `new RowMap<T>([.. dictionary])`.
+- **The tuple overloads are strict and build a new map on every call.** The tuple (`(string Field, string? Column)`) overloads remain as a convenience; each converts its tuples to a `RowMap<T>`, validates it, and compiles the row reader on every call, with no cache. Declare a `RowMap<T>` once for anything that runs more than occasionally. The checks are the same as for a map, so cases that were tolerated now throw `ArgumentException` at the call: a property listed twice (the last entry used to win), an empty column name, two properties on one column, and an unknown property with a `null` column (it used to be ignored).
+- **Overload priority.** `Results<T>(IExecuteReader, IEnumerable<(string Field, string? Column)>)` now carries `[OverloadResolutionPriority(-1)]`, so that a call with a `RowMap<T>` or `null` binds to the `map` overload. Calls that pass tuples bind as before.
 - `IExecuteReader` has two new members (above). Custom implementations must add them; the `ExpressiveCommand*` classes already do.
 - A `NULL` in a column mapped to a non-nullable value-type property is the provider's error to raise, wrapped in an `InvalidOperationException` that names the property and the column. Map nullable columns to `Nullable<T>` or reference properties.
 - A field-mapping override that names a property that does not exist throws `ArgumentException` (it was `KeyNotFoundException`). Only properties with a public setter are mapped.
