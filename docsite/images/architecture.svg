@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 394" role="img" aria-labelledby="arch-title arch-desc">
+  <title id="arch-title">How Open.Database.Extensions is layered</title>
+  <desc id="arch-desc">Four stacked layers. At the top, row mapping with Map of T. Below it, expressive commands. Below that, a foundation of best-practice extensions on ADO.NET that works with any provider. Underneath all three, a base of performance: short connection time, cached typed mapping and few allocations. A caption lists the companion packages Channel, Dataflow and MSSqlClient.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --map-fill: #ddf4ff;
+      --map-line: #0969da;
+      --cmd-fill: #dafbe1;
+      --cmd-line: #1a7f37;
+      --found-fill: #fff8c5;
+      --found-line: #9a6700;
+      --perf-fill: #fbefff;
+      --perf-line: #8250df;
+      --cap-fill: #f6f8fa;
+      --cap-line: #8c959f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --map-fill: #0c2d6b;
+        --map-line: #58a6ff;
+        --cmd-fill: #0f3d1f;
+        --cmd-line: #3fb950;
+        --found-fill: #3b2e00;
+        --found-line: #d29922;
+        --perf-fill: #2d1b4e;
+        --perf-line: #bc8cff;
+        --cap-fill: #21262d;
+        --cap-line: #8b949e;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); }
+    .title { font-size: 22px; font-weight: 600; }
+    .sub { font-size: 15px; fill: var(--muted); }
+    .caption { font-size: 15px; fill: var(--ink); }
+    .box { stroke-width: 2; }
+    .map { fill: var(--map-fill); stroke: var(--map-line); }
+    .cmd { fill: var(--cmd-fill); stroke: var(--cmd-line); }
+    .found { fill: var(--found-fill); stroke: var(--found-line); }
+    .perf { fill: var(--perf-fill); stroke: var(--perf-line); }
+    .cap { fill: var(--cap-fill); stroke: var(--cap-line); }
+  </style>
+
+  <rect class="box map" x="20" y="14" width="560" height="68" rx="10"/>
+  <text class="title" x="300" y="44" text-anchor="middle">Mapping rows to objects</text>
+  <text class="sub" x="300" y="68" text-anchor="middle">Map&lt;T&gt;() · Skip / Take · ToArray, FirstOrDefault, ...</text>
+
+  <rect class="box cmd" x="20" y="94" width="560" height="68" rx="10"/>
+  <text class="title" x="300" y="124" text-anchor="middle">Expressive commands</text>
+  <text class="sub" x="300" y="148" text-anchor="middle">factory.Command(sql) · .AddParam(...) · terminals</text>
+
+  <rect class="box found" x="20" y="174" width="560" height="68" rx="10"/>
+  <text class="title" x="300" y="204" text-anchor="middle">Foundation</text>
+  <text class="sub" x="300" y="228" text-anchor="middle">Best-practice extensions on ADO.NET, any provider</text>
+
+  <rect class="box perf" x="20" y="262" width="560" height="68" rx="10"/>
+  <text class="title" x="300" y="292" text-anchor="middle">Performance</text>
+  <text class="sub" x="300" y="316" text-anchor="middle">Short connection time · cached typed mapping · few allocations</text>
+
+  <rect class="box cap" x="20" y="342" width="560" height="38" rx="10"/>
+  <text class="caption" x="300" y="367" text-anchor="middle">Companion packages: Channel · Dataflow · MSSqlClient</text>
+</svg>

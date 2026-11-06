@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		Every code block in the documentation site and the README is copied from this project, so the examples
+		are compiled (and run by Program.cs) against the library source. It is intentionally NOT part of the
+		solution file: the docs workflow builds it directly.
+	-->
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>Samples</RootNamespace>
+		<IsPackable>false</IsPackable>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+		<PackageReference Include="Dapper" Version="2.1.89" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+		<ProjectReference Include="..\..\Source\Channel\Open.Database.Extensions.Channel.csproj" />
+		<ProjectReference Include="..\..\Source\Dataflow\Open.Database.Extensions.Dataflow.csproj" />
+		<ProjectReference Include="..\..\Source\MSSqlClient\Open.Database.Extensions.MSSqlClient.csproj" />
+	</ItemGroup>
+
+</Project>
