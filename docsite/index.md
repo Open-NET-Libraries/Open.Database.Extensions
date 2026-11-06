@@ -6,8 +6,6 @@ title: Open.Database.Extensions
 
 Extensions on the standard ADO.NET types that make everyday database work short to write and robust by default. Version 11 is in preview.
 
-![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands on top of it, row mapping on top of that, all resting on a base of performance.](images/architecture.svg)
-
 ## The idea
 
 1. **A foundation of best-practice extensions.** Most of the library is a provider-agnostic collection of extensions on `IDbConnection`, `IDbCommand`, `IDataReader` and friends. They apply the usual best practices (open late, close early, dispose what you create, honor cancellation) so common database work is almost effortless. See [The foundation](articles/foundation.md).
@@ -26,3 +24,7 @@ Extensions on the standard ADO.NET types that make everyday database work short 
 | Look up a type or a method | [API reference](api/index.md) |
 
 Every code sample in this guide is compiled by the build and run against SQLite before the site is published.
+
+## How it fits together
+
+<img src="images/architecture.svg" alt="Four layers: a foundation of best-practice ADO.NET extensions, expressive commands on top of it, row mapping on top of that, all resting on a base of performance." style="max-width: 520px; width: 100%;" />
