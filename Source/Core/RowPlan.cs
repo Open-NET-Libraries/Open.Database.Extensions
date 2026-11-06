@@ -63,7 +63,7 @@
 /// // Body keeps its default value even though the result set has a Body column (for example a heavy column you do not want read).
 /// public static RowPlan&lt;Post&gt; PostSummaryPlan =&gt; field ??= [new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null)];
 /// </code>
-/// For a one-off, pass the pairs inline. That builds a new plan and compiles the row reader on every call and caches nothing (about 30 KB for a one-row read, against a few hundred bytes through a declared plan), so use it only for a one-off:
+/// For a one-off, pass the pairs inline. That builds a new plan and compiles the row reader on every call and caches nothing (about 0.43 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider, against about 0.1 µs and a few hundred bytes through a declared plan), so use it only for a one-off:
 /// <code>
 /// connection.Command("select * from posts").Map&lt;Post&gt;(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null)).ToList();
 /// </code>

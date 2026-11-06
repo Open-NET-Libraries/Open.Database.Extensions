@@ -92,7 +92,7 @@ public static class Mapping
 	{
 		#region map_inline
 		// A one-off: the pairs are inline, so a new plan is built and the row reader is compiled on every call
-		// (about 30 KB allocated for a one-row read). Declare a RowPlan for anything that runs more than occasionally.
+		// (about 0.43 ms and 29 KB for a one-row read in the library's in-memory benchmark). Declare a RowPlan for anything that runs more than occasionally.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))

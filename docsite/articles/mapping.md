@@ -50,7 +50,7 @@ A plan is immutable and safe to share between threads. Passing it adds no per-ca
 
 [!code-csharp[](../samples/Mapping.cs#map_inline)]
 
-This builds a new plan and compiles the row reader on every call and caches nothing: a one-row read allocates about 30 KB in the library's in-memory benchmark, against a few hundred bytes through a declared plan. Use it only for a one-off. A lone pair must be written as a collection expression, `Map<Person>([new(...)])`, because the compiler reads a single `new(...)` as the whole collection.
+This builds a new plan and compiles the row reader on every call and caches nothing: a one-row read of a 12-property model takes about 0.43 ms and allocates about 29 KB in the library's in-memory benchmark, against about 0.1 µs and a few hundred bytes through a declared plan. Use it only for a one-off. A lone pair must be written as a collection expression, `Map<Person>([new(...)])`, because the compiler reads a single `new(...)` as the whole collection.
 
 The tuple form shown under [Overrides](#overrides) is a convenience: the tuples are converted to key/value pairs on each call. Prefer a plan, or key/value pairs.
 

@@ -38,8 +38,8 @@ public static partial class CoreExtensions
 	/// For a read that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once instead.
 	/// </summary>
 	/// <remarks>
-	/// This overload builds a new plan and compiles the row reader on every call, and caches nothing: a one-row read allocates about 30 KB, where a read through a declared
-	/// <see cref="RowPlan{T}"/> allocates a few hundred bytes. It is meant for one-offs. For anything that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once,
+	/// This overload builds a new plan and compiles the row reader on every call, and caches nothing: a one-row read of a 12-property model takes about 0.43 ms and allocates about 29 KB on the in-memory provider, where a read through a declared
+	/// <see cref="RowPlan{T}"/> takes about 0.1 µs and allocates a few hundred bytes. It is meant for one-offs. For anything that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once,
 	/// with the collection syntax and <c>field ??=</c>, and pass that.
 	/// A null column means "do not map this property": it is not read at all, not even by name, so it keeps its default value.
 	/// A lone pair must be written as a collection expression, <c>Map&lt;Post&gt;([new(...)])</c>, because the compiler reads a single <c>new(...)</c> as the whole collection.
