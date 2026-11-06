@@ -200,41 +200,36 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
 	/// </summary>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="table">The <see cref="DataTable"/> to read from.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 	/// <returns>An enumerable used to iterate the results.</returns>
-	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides = null, bool clearSourceTable = false)
+	/// <seealso cref="RowMap{T}"/>
+	public static IEnumerable<T> To<T>(this DataTable table, RowMap<T>? map = null, bool clearSourceTable = false)
 		where T : new()
 		=> Transformer<T>
-		.Create(fieldMappingOverrides)
+		.Create(map)
 		.Results(table, clearSourceTable);
 
-	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
-
-	[OverloadResolutionPriority(-1)]
-	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
-		where T : new()
-		=> Transformer<T>
-		.Create(fieldMappingOverrides)
-		.Results(table, false);
-
-	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+	/// <inheritdoc cref="To{T}(DataTable, RowMap{T}?, bool)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null, bool clearSourceTable = false)
 		where T : new()
-		=> Transformer<T>
-		.Create(fieldMappingOverrides)
-		.Results(table, clearSourceTable);
+		=> To<T>(table, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), clearSourceTable);
 
-	/// <inheritdoc cref="To{T}(DataTable, IEnumerable{KeyValuePair{string, string?}}?, bool)"/>
+	/// <inheritdoc cref="To{T}(DataTable, RowMap{T}?, bool)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-3)]
 	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
-		=> Transformer<T>
-		.Create(fieldMappingOverrides)
-		.Results(table, false);
+		=> To<T>(table, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// Useful extension for dequeuing items from a queue.

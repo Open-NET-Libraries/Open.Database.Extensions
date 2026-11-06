@@ -9,60 +9,31 @@ public static partial class CoreExtensions
 	/// reflection or compilation cost; values are read with typed getters, so nothing is boxed.
 	/// </summary>
 	/// <remarks>
-	/// Use this to pass a <see cref="RowMap{T}"/> or key/value pairs you already hold. For a read that runs more than occasionally, declare a
-	/// <see cref="RowMap{T}"/> once (collection syntax, <c>field ??=</c>): pairs passed here are matched to a cached map by their content on every call, a map is not.
-	/// For a one-off with inline pairs, use the overload that takes <c>params ImmutableArray</c>.
-	/// A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why it takes pairs and no public method takes a map.
+	/// <para>
+	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; <see langword="null"/>, or the overload without a map, reads by column name.
+	/// Declare the <see cref="RowMap{T}"/> once and reuse it: a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call
+	/// (about 0.4 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider, against about 0.1 µs and a few hundred bytes through a declared map; see
+	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
+	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowMap{T}"/>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
-	/// <param name="fieldMappingOverrides">
-	/// An override map of field (property) names to column names. A null column means "do not map this property": it is not read at all, not even by name, so it keeps its default value.
-	/// </param>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <seealso cref="RowMap{T}"/>
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
-		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		RowMap<T>? map = null)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowMap<T>.For(fieldMappingOverrides), 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, map ?? RowMap<T>.Default, 0, -1));
 	}
 
-	/// <summary>
-	/// Use this for a one-off read with the property-to-column pairs given inline:
-	/// <c>.Map&lt;Post&gt;(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null))</c>.
-	/// For a read that runs more than occasionally, declare a <see cref="RowMap{T}"/> once instead.
-	/// </summary>
-	/// <remarks>
-	/// This overload builds a new map and compiles the row reader on every call, and caches nothing: a one-row read of a 12-property model takes about 0.43 ms and allocates about 29 KB on the in-memory provider, where a read through a declared
-	/// <see cref="RowMap{T}"/> takes about 0.1 µs and allocates a few hundred bytes. It is meant for one-offs. For anything that runs more than occasionally, declare a <see cref="RowMap{T}"/> once,
-	/// with the collection syntax and <c>field ??=</c>, and pass that.
-	/// A null column means "do not map this property": it is not read at all, not even by name, so it keeps its default value.
-	/// A lone pair must be written as a collection expression, <c>Map&lt;Post&gt;([new(...)])</c>, because the compiler reads a single <c>new(...)</c> as the whole collection.
-	/// </remarks>
-	/// <seealso cref="RowMap{T}"/>
-	/// <typeparam name="T">The model type to map the values to.</typeparam>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="fieldMappingOverrides">The (property name, column name) pairs. A <see langword="null"/> column means "do not map this property".</param>
-	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
 	[OverloadResolutionPriority(1)]
-	public static MappedQuery<T> Map<T>(
-		this IExecuteReader command,
-		params ImmutableArray<KeyValuePair<string, string?>> fieldMappingOverrides)
-		where T : new()
-	{
-		if (command is null) throw new ArgumentNullException(nameof(command));
-		Contract.EndContractBlock();
-
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, fieldMappingOverrides.IsDefaultOrEmpty ? RowMap<T>.Default : new RowMap<T>(fieldMappingOverrides), 0, -1));
-	}
-
-	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
-	[OverloadResolutionPriority(2)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command)
 		where T : new()
@@ -73,14 +44,16 @@ public static partial class CoreExtensions
 		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowMap<T>.Default, 0, -1));
 	}
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.</remarks>
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
-		=> command.Map<T>(fieldMappingOverrides?.Select(mapping => new KeyValuePair<string, string?>(mapping.Field, mapping.Column)));
+		=> Map<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// Locks in a custom projection and returns a deferred <see cref="MappedQuery{T}"/>. Nothing runs until

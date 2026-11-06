@@ -1,14 +1,13 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace Open.Database.Extensions;
 
 // The compiled half of RowMap<T>: the validated tables and the compiled, cached, typed row readers.
 // One RowMap<T> exists per (T, mapping). Each caches one compiled, typed deserializer per result-set layout
 // (column names + column types), so after the first query of a given shape no reflection, expression building
-// or compilation happens again. A map the application declares and the maps built for legacy per-call overrides are the same type.
+// or compilation happens again.
 //
 // Values are read with the provider's typed getters (GetInt32, GetString, …) whenever the column
 // type matches the property type (or converts numerically), so nothing is boxed.
@@ -16,13 +15,9 @@ namespace Open.Database.Extensions;
 // column mapped to a non-nullable value-type property is the provider's error to raise.
 public sealed partial class RowMap<T>
 {
-	// Both caches are bounded so dynamically generated overrides or column lists cannot grow memory forever.
-	// Real applications use a handful of each; when a bound is hit the cache is simply cleared and refills.
-	const int MaxOverrideMaps = 128;
+	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
+	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
-
-	// The maps built for per-call overrides, by the overrides' text. Declared maps never go through it.
-	static readonly ConcurrentDictionary<string, RowMap<T>> OverrideMaps = new(StringComparer.Ordinal);
 
 	// Settable public instance properties, in declaration order (a property hidden by name keeps the first): reflection runs once per T.
 	static readonly PropertyInfo[] Properties = BuildProperties();
@@ -50,39 +45,19 @@ public sealed partial class RowMap<T>
 		return index;
 	}
 
-	/// <summary>The map for the model's default mapping (property name == column name).</summary>
-	internal static readonly RowMap<T> Default = new(default, [], strict: false);
+	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
+	internal static readonly RowMap<T> Default = new(ImmutableArray<KeyValuePair<string, string?>>.Empty, "mappings");
 
-	/// <summary>Gets the map for the given overrides (field name → column name; null column ignores the field). A <see cref="RowMap{T}"/> is used as it is.</summary>
-	internal static RowMap<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
+	/// <summary>Converts the pairs of a tuple convenience overload, once, into a strictly validated map for this call. Null or no tuples means the default mapping.</summary>
+	internal static RowMap<T>? FromTuples(IEnumerable<(string Field, string? Column)>? tuples, string paramName)
 	{
-		if (overrides is null) return Default;
-		if (overrides is RowMap<T> map) return map; // Declared and already validated: no key, no lookup, no allocation.
+		if (tuples is null) return null;
 
-		KeyValuePair<string, string?>[] items = overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray();
-		return For(items.AsSpan());
-	}
+		ImmutableArray<KeyValuePair<string, string?>>.Builder builder = ImmutableArray.CreateBuilder<KeyValuePair<string, string?>>(tuples is ICollection<(string Field, string? Column)> collection ? collection.Count : 4);
+		foreach ((string field, string? column) in tuples)
+			builder.Add(new(field, column));
 
-	static RowMap<T> For(ReadOnlySpan<KeyValuePair<string, string?>> items)
-	{
-		if (items.Length == 0) return Default;
-
-		var sb = new StringBuilder();
-		foreach (KeyValuePair<string, string?> kvp in items)
-		{
-			// Length-prefixed, so no two different sets of pairs can produce the same key.
-			sb.Append(kvp.Key?.Length ?? -1).Append(':').Append(kvp.Key);
-			if (kvp.Value is null) sb.Append('!');
-			else sb.Append(kvp.Value.Length).Append(':').Append(kvp.Value);
-		}
-
-		string key = sb.ToString();
-		if (OverrideMaps.TryGetValue(key, out RowMap<T>? built)) return built;
-
-		built = new RowMap<T>(items, [], strict: false);
-		if (OverrideMaps.Count >= MaxOverrideMaps) OverrideMaps.Clear();
-		if (OverrideMaps.TryAdd(key, built)) return built;
-		return OverrideMaps.TryGetValue(key, out RowMap<T>? existing) ? existing : built; // Lost a race (or the cache was just cleared): either map is equivalent.
+		return builder.Count == 0 ? null : new RowMap<T>(builder.DrainToImmutable(), paramName);
 	}
 
 	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
@@ -124,68 +99,42 @@ public sealed partial class RowMap<T>
 	// Created with the first layout: a map that is never read holds no dictionary.
 	ConcurrentDictionary<int, Layout[]>? _layouts;
 
-	// The one place the pairs are validated and turned into the column table. A strict map (the one the application declares)
-	// is held to account for every property it names and every column it reads; a lenient one (per-call overrides) keeps the historical
-	// behavior: an unknown property with a null column is harmless, a repeated property takes its last column, and when
-	// properties share a column the first one reads it.
-	RowMap(ReadOnlySpan<KeyValuePair<string, string?>> mappings, ImmutableArray<KeyValuePair<string, string?>> declared, bool strict)
+	// The one place the pairs are validated and turned into the column table: the map is held to account for every property it names
+	// and every column it reads. paramName is the name of the parameter the pairs came in through, for the exceptions.
+	RowMap(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string paramName)
 	{
-		_pairs = declared;
-
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
 		var columns = new string?[Properties.Length];
 		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
 
-		if (strict)
-		{
-			bool[] named = Declare(mappings, columns);
-			if (!mappings.IsEmpty) RejectSharedColumns(columns, named, nameof(mappings));
-		}
-		else
-		{
-			Override(mappings, columns);
-		}
+		bool[] named = Declare(mappings, columns, paramName);
+		if (!mappings.IsEmpty) RejectSharedColumns(columns, named, paramName);
 
 		_columns = columns;
 	}
 
-	// Applies a declared map's pairs and reports which properties they named.
-	static bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns)
+	// Applies the pairs and reports which properties they named.
+	static bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
 	{
 		var named = new bool[columns.Length];
 		foreach (KeyValuePair<string, string?> pair in mappings)
 		{
-			if (pair.Key is null) throw new ArgumentException("A mapping has no property name.", nameof(mappings));
+			if (pair.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
 
 			bool known = PropertyIndex.TryGetValue(pair.Key, out int index);
 			if (known)
 			{
-				if (named[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", nameof(mappings));
+				if (named[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", paramName);
 				named[index] = true;
 			}
 
-			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", nameof(mappings));
-			if (!known) throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", nameof(mappings));
+			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
+			if (!known) throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", paramName);
 
 			columns[index] = pair.Value; // A null column means 'do not map this property'.
 		}
 
 		return named;
-	}
-
-	// Applies per-call overrides, leniently.
-	static void Override(ReadOnlySpan<KeyValuePair<string, string?>> overrides, string?[] columns)
-	{
-		foreach (KeyValuePair<string, string?> pair in overrides)
-		{
-			if (!PropertyIndex.TryGetValue(pair.Key, out int index)) // A null name throws ArgumentNullException here, as it always has.
-			{
-				if (pair.Value is null) continue; // Ignoring a property that does not exist is harmless.
-				throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", nameof(overrides));
-			}
-
-			columns[index] = pair.Value; // A repeated property takes its last column.
-		}
 	}
 
 	// Each mapped property is compared with the properties before it (the first reader of a column is the one that gets it).

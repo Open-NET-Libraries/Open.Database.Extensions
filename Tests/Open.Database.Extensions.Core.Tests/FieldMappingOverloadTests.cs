@@ -43,20 +43,6 @@ public static class FieldMappingOverloadTests
 	}
 
 	[Fact]
-	public static void Dictionary()
-	{
-		var overrides = new Dictionary<string, string?> { ["FirstName"] = "first_name", ["LastName"] = "last_name" };
-		AssertMapped(Reader().Results<Person>(overrides));
-	}
-
-	[Fact]
-	public static void KeyValuePairCollection()
-	{
-		var overrides = new List<KeyValuePair<string, string?>> { new("FirstName", "first_name"), new("LastName", "last_name") };
-		AssertMapped(Reader().Results<Person>(overrides));
-	}
-
-	[Fact]
 	public static void NoOverrides_LeavesUnmatchedNull()
 		=> Assert.Null(Reader().Results<Person>().Single().FirstName);
 
@@ -76,11 +62,4 @@ public static class FieldMappingOverloadTests
 	[Fact]
 	public static void To_CollectionExpressionOfNew()
 		=> Assert.Equal("Ada", OneRowTable().To<Person>([new("FirstName", "first_name")]).Single().FirstName);
-
-	[Fact]
-	public static void To_Dictionary()
-	{
-		var overrides = new Dictionary<string, string?> { ["FirstName"] = "first_name" };
-		Assert.Equal("Ada", OneRowTable().To<Person>(overrides).Single().FirstName);
-	}
 }

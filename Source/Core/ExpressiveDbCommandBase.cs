@@ -254,15 +254,16 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>A task containing the list of results.</returns>
-	[OverloadResolutionPriority(-1)]
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
+	/// <seealso cref="RowMap{T}"/>
+		public ValueTask<IEnumerable<T>> ResultsAsync<T>(RowMap<T>? map = null)
 		where T : new()
-		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
+		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
 
-	/// <inheritdoc cref="ResultsAsync{T}(IEnumerable{KeyValuePair{string, string?}})"/>
+	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>()
 		where T : new()
 		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
@@ -291,9 +292,12 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
 		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
 
-	/// <inheritdoc cref="ResultsAsync{T}(IEnumerable{KeyValuePair{string, string?}})"/>
+	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
 		where T : new()
-		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(fieldMappingOverrides, useReadAsync: UseAsyncRead));
+		=> ResultsAsync<T>(RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 }

@@ -42,15 +42,13 @@ public class Transformer<T>
 	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
-	/// Constructs a transformer using the optional field overrides.
+	/// Constructs a transformer using the optional map.
 	/// </summary>
-	/// <remarks>
-	/// The "key" is the field name, and the "value" is the column name.
-	/// </remarks>
-	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
-		=> _plan = RowMap<T>.For(overrides);
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	protected internal Transformer(RowMap<T>? map = null)
+		=> _plan = map ?? RowMap<T>.Default;
 
-	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <inheritdoc cref="Create(RowMap{T}?)"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(1)]
 	public static Transformer<T> Create() => new();
@@ -58,18 +56,19 @@ public class Transformer<T>
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.</remarks>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
-	public static Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>>? overrides)
-		=> new(overrides);
+	public static Transformer<T> Create(RowMap<T>? map)
+		=> new(map);
 
-	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
-	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.</remarks>
+	/// <inheritdoc cref="Create(RowMap{T}?)"/>
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
+		=> new(RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
 	/// <summary>
 	/// A sub class for processing the transformer results.

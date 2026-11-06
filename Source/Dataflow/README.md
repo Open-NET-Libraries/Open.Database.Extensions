@@ -58,7 +58,7 @@ In order to keep connection open time to a minimum, some methods cache data befo
 
 Queues all the data.  Then using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the `IDataReader`.
 
-Optionally a field to column override map can be passed as a parameter.  If a column is set as `null` then that field is ignored (not applied to the model).
+Optionally a `RowMap<T>` can be passed as the `map` parameter to name the column for a property. A `null` column means "do not map this property": it stops the by-name match, so the property keeps its default value even if the result set has a column with that name.
 
 ### Examples
 
@@ -68,28 +68,26 @@ If all the columns in the database map exactly to a field: (A column that has no
 var people = cmd.Results<Person>();
 ```
 
-If the database fields don't map exactly:
+If the database fields don't map exactly, declare a `RowMap<T>` once and pass it each time. The property name is written with `nameof`, so a rename is caught by the compiler:
+
+```cs
+static class PersonMaps
+{
+    public static RowMap<Person> PersonMap => field ??= [
+        new(nameof(Person.FirstName), "first_name"),
+        new(nameof(Person.LastName), "last_name"),
+    ];
+}
+
+var people = cmd.Results<Person>(PersonMaps.PersonMap);
+```
+
+Tuples are accepted as a convenience for a one-off. They build a new map, and compile the row reader, on every call:
 
 ```cs
 var people = cmd.Results<Person>(
- (Field:"FirstName", Column:"first_name"),
- (Field:"LastName", Column:"last_name")));
-```
-
-or
-
-```cs
-var people = cmd.Results<Person>(
- ("FirstName", "first_name"),
- ("LastName", "last_name"));
-```
-
-or
-
-```cs
-var people = cmd.Results<Person>(new Dictionary<string,string>{
- {"FirstName", "first_name"},
- {"LastName", "last_name"});
+ (nameof(Person.FirstName), "first_name"),
+ (nameof(Person.LastName), "last_name"));
 ```
 
 #### `Retrieve()` and `RetrieveAsync()`

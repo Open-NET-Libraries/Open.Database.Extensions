@@ -219,81 +219,94 @@ public static class QueryResultExtensions
 	/// Returns an enumerable that dequeues the results and attempts to map the
 	/// fields to type T.
 	/// </summary>
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
 	/// <remarks>DBNull values are converted to null.</remarks>
 	/// <param name="source">The query result.  Typically produced by a
 	/// .Retrieve method.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field
-	/// names to column names where the keys are the property names, and values
-	/// are the column names.</param>
+	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>An enumerable that dequeues the results and returns an entity
 	/// of type T.</returns>
+	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> DequeueAs<T>(
 		this QueryResult<Queue<object?[]>> source,
-		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		RowMap<T>? map = null)
 		where T : new()
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();
 
-		var x = new Transformer<T>(fieldMappingOverrides);
+		var x = new Transformer<T>(map);
 		return x.AsDequeueingEnumerable(source);
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}},IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}},RowMap{T}?)" />
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static IEnumerable<T> DequeueAs<T>(
 		this QueryResult<Queue<object?[]>> source,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
-		=> DequeueAs<T>(source, fieldMappingOverrides?.Select(mapping => new KeyValuePair<string, string?>(mapping.Field, mapping.Column)));
+		=> DequeueAs<T>(source, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source,
-		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		RowMap<T>? map = null)
 		where T : new()
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();
 
-		var x = new Transformer<T>(fieldMappingOverrides);
+		var x = new Transformer<T>(map);
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a collection expression or an <see cref="ImmutableArray{T}"/> written at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source,
-		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
+		RowMap<T>? map = null)
 		where T : new()
 	{
-		var x = new Transformer<T>(fieldMappingOverrides);
+		var x = new Transformer<T>(map);
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
-		=> DequeueAs<T>(source, fieldMappingOverrides?.Select(kvp => new KeyValuePair<string, string?>(kvp.Field, kvp.Column)));
+		=> DequeueAs<T>(source, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
+	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source,
 		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
-		=> DequeueAs<T>(source, fieldMappingOverrides?.Select(kvp => new KeyValuePair<string, string?>(kvp.Field, kvp.Column)));
+		=> DequeueAs<T>(source, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source)
 		where T : new()
 		=> DequeueAs<T>(source, null);
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source)

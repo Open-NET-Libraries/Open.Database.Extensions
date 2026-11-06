@@ -1,50 +1,47 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// A prebuilt, read-only map for mapping rows to <typeparamref name="T"/> when the columns are named differently from the properties.
-/// Create it once, where it is declared, from key/value pairs of property name and column name, then pass it wherever
-/// field-mapping overrides are accepted (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …) instead of repeating the pairs in every call.
+/// A prebuilt, read-only mapping of the properties of <typeparamref name="T"/> to the columns that feed them, for when the columns are named
+/// differently from the properties. Declare it once, from key/value pairs of property name and column name, and pass it as the <c>map</c>
+/// argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …) instead of repeating the mapping in every call.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Create a map with a collection expression of <see cref="KeyValuePair{TKey, TValue}"/> pairs, with the constructor, or by assigning an
-/// <see cref="ImmutableArray{T}"/> of them to a <c>RowMap&lt;T&gt;</c>. Every form validates where the map is declared, not on the first query, and throws an
-/// <see cref="ArgumentException"/> for: a property that does not exist or cannot be set, a null property name, a property named twice, an empty column name,
-/// or two properties that would read the same column when at least one of them is named in the pairs (properties the model itself maps to the same column by name are left alone). Properties the map does not mention are still matched to columns by name.
+/// <see cref="ImmutableArray{T}"/> of pairs to a <c>RowMap&lt;T&gt;</c>. It is validated when it is created, and throws an <see cref="ArgumentException"/> for:
+/// a property that does not exist or cannot be set (a static property, or one without a public setter), a null property name, a property named twice, an empty column name,
+/// or two properties that would read the same column when at least one of them is named in the pairs (properties the model itself maps to the same column by name are left alone).
+/// Properties the map does not mention are still matched to columns by name.
 /// </para>
 /// <para>
 /// The property side of a pair is matched exactly (ordinal, case-sensitive). Column names are matched ignoring case, so two columns that differ only by case collide.
 /// </para>
 /// <para>
 /// A <see langword="null"/> column means "do not map this property": the property is not read at all, not even by name,
-/// so it keeps its default value even when the result set has a column with its name. Use it for a heavy column you do not want read,
-/// a name that collides with another mapping, or a property you fill in elsewhere.
+/// so it keeps its default value even when the result set has a column with its name. The property must exist; the column need not.
+/// Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere.
 /// </para>
 /// <para>
-/// Nothing is registered anywhere; the first <c>RowMap&lt;T&gt;</c> for a model does initialize the library's per-model static state
-/// (a one-time reflection pass over the model's properties). A map is immutable and safe to share
-/// between threads, and any number of different maps may exist for the same model. Two maps built from the same
-/// pairs behave identically. The map holds its compiled, typed row reader (built on first use for each result-set layout
-/// it meets), so passing it adds no per-call allocation, key or dictionary lookup; as with <c>Map&lt;T&gt;()</c>, each query
-/// still matches the result-set layout against the cached one.
+/// A map is immutable and safe to share between threads, and any number of different maps may exist for the same model. Two maps built from the same
+/// pairs behave identically. The map holds its compiled, typed row reader, built on first use for each result-set layout it meets (it keeps up to 128 layouts;
+/// a map that meets more clears them when the cache fills, so queries with ever-changing layouts compile again). Passing a map therefore adds no per-call
+/// allocation, key or dictionary lookup; as with <c>Map&lt;T&gt;()</c>, each query still matches the result-set layout against the cached one.
+/// Nothing is registered anywhere; the first <c>RowMap&lt;T&gt;</c> for a model does initialize the library's per-model static state (a one-time reflection pass over the model's properties).
 /// </para>
 /// <para>
-/// Because an application may have hundreds of models, create each map on first use so that only the ones
-/// actually used ever exist. A reference write is atomic and publishing an object reference is a release in the .NET memory model
+/// Declare each map once and reuse it. A collection expression or an <see cref="ImmutableArray{T}"/> written at a call site builds a new map, and compiles its row reader, on every call.
+/// Because an application may have hundreds of models, create each map on first use so that only the ones actually used ever exist.
+/// A reference write is atomic and publishing an object reference is a release in the .NET memory model
 /// (<c>docs/design/specs/Memory-model.md</c> in dotnet/runtime: "Atomic memory accesses", "Object assignment", "Data-dependent reads are ordered", "Examples and common patterns"), so a thread that sees the
 /// map sees it fully built. The one effect of two threads racing on first use is that two equivalent, immutable maps may be built.
 /// </para>
 /// <para>
-/// A map with an error throws <see cref="ArgumentException"/> where it is declared. With <c>field ??=</c> that is the first use;
-/// in a <c>static readonly</c> field it surfaces as a <see cref="TypeInitializationException"/> wrapping the <see cref="ArgumentException"/>.
-/// A null property name is an <see cref="ArgumentException"/> for a declared map; the per-call overloads that take pairs or tuples (not maps) throw <see cref="ArgumentNullException"/> for it.
+/// A map with an error throws <see cref="ArgumentException"/> when it is first created: with <c>field ??=</c> that is at first use, and in a <c>static readonly</c> field it is at type initialization,
+/// where it surfaces as a <see cref="TypeInitializationException"/> wrapping the <see cref="ArgumentException"/>.
 /// </para>
 /// <para>
-/// The implicit conversion from <see cref="ImmutableArray{T}"/> builds a map (it validates and allocates), so use it only at a declaration;
-/// no parameter of this library takes a <c>RowMap&lt;T&gt;</c>, so a call site can never trigger it.
-/// Passing a map to a query for a different model type is accepted and treated as ordinary overrides: it throws an <see cref="ArgumentException"/>
-/// when a pair with a non-null column names a property that model lacks, while a pair with a null column that names a missing property is ignored.
-/// It does not get the precompiled speed.
+/// A map enumerates the mapping it holds: every settable property of the model, in declaration order, with the column it reads (<see langword="null"/>: not mapped).
+/// It is enumerable because the collection syntax requires it.
 /// </para>
 /// </remarks>
 /// <example>
@@ -63,15 +60,11 @@
 /// // Body keeps its default value even though the result set has a Body column (for example a heavy column you do not want read).
 /// public static RowMap&lt;Post&gt; PostSummaryMap =&gt; field ??= [new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null)];
 /// </code>
-/// For a one-off, pass the pairs inline. That builds a new map and compiles the row reader on every call and caches nothing (about 0.43 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider, against about 0.1 µs and a few hundred bytes through a declared map), so use it only for a one-off:
-/// <code>
-/// connection.Command("select * from posts").Map&lt;Post&gt;(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null)).ToList();
-/// </code>
 /// A <c>static readonly RowMap&lt;Post&gt; PostMap = [...]</c> field also works: it is built when its containing type's static initializer
 /// first runs, together with the type's other static fields, so keep such maps in their own small static class.
 /// For exactly one published instance use <c>LazyInitializer.EnsureInitialized(ref field, static () =&gt; [...])</c>
 /// (the factory may still run more than once; it adds a method call per read).
-/// Reading a held map allocates nothing and takes one to two nanoseconds whichever way it is held (see Benchmarks/RESULTS.md).
+/// Reading a held map allocates nothing and takes one to two nanoseconds whichever way it is held.
 /// Compilers older than C# 14 need an explicit backing field: <c>static RowMap&lt;Post&gt;? _post; public static RowMap&lt;Post&gt; PostMap =&gt; _post ??= [...];</c>
 /// </example>
 /// <typeparam name="T">The model type whose properties are mapped.</typeparam>
@@ -79,13 +72,9 @@
 public sealed partial class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRowSource<T>
 	where T : new()
 {
-	// The pairs the map was declared with: the one retained copy, shared with the array the caller built (never copied from it).
-	// It exists so the map can be enumerated by the override parameters that take pairs; a map built for per-call overrides holds none.
-	readonly ImmutableArray<KeyValuePair<string, string?>> _pairs;
-
 	/// <summary>
 	/// Creates the map from (property name, column name) pairs and validates it, building its tables once. Use it where the map is declared, never in a call:
-	/// it allocates and validates every time it runs. The pairs are kept as they are (the array is shared, not copied).
+	/// it allocates and validates every time it runs.
 	/// </summary>
 	/// <param name="mappings">
 	/// The (property name, column name) pairs. Properties not listed are matched to columns by name.
@@ -97,7 +86,13 @@ public sealed partial class RowMap<T> : IEnumerable<KeyValuePair<string, string?
 	/// two properties would read the same column (column names match ignoring case); or <paramref name="mappings"/> is the default <see cref="ImmutableArray{T}"/>.
 	/// </exception>
 	public RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings)
-		: this(Declared(mappings), mappings, strict: true)
+		: this(Declared(mappings, nameof(mappings)), nameof(mappings))
+	{
+	}
+
+	// For the callers that take their pairs in through a parameter of their own (the tuple convenience overloads): the exceptions name it.
+	internal RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings, string paramName)
+		: this(Declared(mappings, paramName), paramName)
 	{
 	}
 
@@ -108,19 +103,24 @@ public sealed partial class RowMap<T> : IEnumerable<KeyValuePair<string, string?
 	public static implicit operator RowMap<T>(ImmutableArray<KeyValuePair<string, string?>> mappings)
 		=> new(mappings);
 
-	static ReadOnlySpan<KeyValuePair<string, string?>> Declared(ImmutableArray<KeyValuePair<string, string?>> mappings)
+	static ReadOnlySpan<KeyValuePair<string, string?>> Declared(ImmutableArray<KeyValuePair<string, string?>> mappings, string paramName)
 	{
-		if (mappings.IsDefault) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", nameof(mappings));
+		if (mappings.IsDefault) throw new ArgumentException("The mappings array is the default (uninitialized) ImmutableArray.", paramName);
 		Contract.EndContractBlock();
 
 		return mappings.AsSpan();
 	}
 
+	// The collection syntax needs a type that can be enumerated. A map enumerates the mapping it holds: every settable property of the model,
+	// in declaration order, with the column it reads (null: the property is not mapped). It keeps nothing but that table.
 	IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator()
-		=> ((IEnumerable<KeyValuePair<string, string?>>)_pairs).GetEnumerator();
+	{
+		for (int i = 0; i < Properties.Length; i++)
+			yield return new(Properties[i].Name, _columns[i]);
+	}
 
 	IEnumerator IEnumerable.GetEnumerator()
-		=> ((IEnumerable<KeyValuePair<string, string?>>)_pairs).GetEnumerator();
+		=> ((IEnumerable<KeyValuePair<string, string?>>)this).GetEnumerator();
 }
 
 /// <summary>
