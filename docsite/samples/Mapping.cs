@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
@@ -84,18 +85,26 @@ public static class Mapping
 		return people;
 	}
 
-	public static Person[] MapSinglePair(SqliteConnection connection)
+	public static RowMap<Person>[] DeclarationForms()
 	{
-		#region map_single_pair
-		// One pair still needs the brackets: new RowMap<Person>(new(...)) does not compile.
-		// The other properties still match by name (first_name feeds FirstName).
-		RowMap<Person> map = new([new(nameof(Person.Id), "person_id")]);
+		#region map_declaration_forms
+		// The collection syntax: one pair or several. The other properties still match by name (first_name feeds FirstName).
+		RowMap<Person> collection = [new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name")];
+		RowMap<Person> onePair = [new(nameof(Person.Id), "person_id")];
+
+		// The constructor: one pair needs no brackets.
+		var singlePair = new RowMap<Person>(new(nameof(Person.Id), "person_id"));
+		var severalPairs = new RowMap<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"));
+
+		// An ImmutableArray of pairs, or any IEnumerable of pairs.
+		ImmutableArray<KeyValuePair<string, string?>> array = [new(nameof(Person.Id), "person_id")];
+		var fromArray = new RowMap<Person>(array);
+
+		// A map enumerates the pairs it was declared with, so it is itself an IEnumerable of pairs: this copy maps like the original.
+		var copy = new RowMap<Person>(collection);
 		#endregion
 
-		return connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(map)
-			.ToArray();
+		return [collection, onePair, singlePair, severalPairs, fromArray, copy];
 	}
 
 	public static Person[] MapSnakeCase(SqliteConnection connection)
@@ -130,6 +139,7 @@ public static class Mapping
 		catch (ValueMappingException ex)
 		{
 			// ex.PropertyName is "Id", ex.ColumnName is "id", ex.TargetType is typeof(int); the overflow is ex.InnerException.
+			// The message names all three: Unable to set value of property 'Id' (Int32) from column 'id'.
 			return ex;
 		}
 		#endregion
@@ -206,21 +216,21 @@ public static class Mapping
 public static class PersonMaps
 {
 	#region map_declared
-	public static RowMap<Person> PersonMap => field ??= new([
+	public static RowMap<Person> PersonMap => field ??= [
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), "last_name"),
-	]);
+	];
 	#endregion
 
 	#region map_declared_ignore
 	// A null column means "do not map this property": LastName is not read at all, not even by name,
 	// so it keeps its initial value even if the result set has a column called LastName.
-	public static RowMap<Person> PersonNamesOnlyMap => field ??= new([
+	public static RowMap<Person> PersonNamesOnlyMap => field ??= [
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), null),
-	]);
+	];
 	#endregion
 }
 
@@ -231,10 +241,10 @@ public static class HoldingAMap
 	// Before C# 14 there is no field keyword: write the backing field yourself.
 	internal static RowMap<Person>? _backingMap;
 
-	public static RowMap<Person> BackingMap => _backingMap ??= new([
+	public static RowMap<Person> BackingMap => _backingMap ??= [
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), "last_name"),
-	]);
+	];
 	#endregion
 }

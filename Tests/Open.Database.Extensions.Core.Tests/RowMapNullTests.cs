@@ -170,7 +170,7 @@ public static class RowMapNullTests
 		row[Array.IndexOf(SolidNames, "Shade")] = "Purple"; // not a member of Shade
 
 		var ex = Assert.Throws<ValueMappingException>(() => Cmd(SolidColumns, row).Map(RowMap<Solid>.Default).ToList());
-		Assert.Contains("property 'Shade' from column 'Shade'", ex.Message);
+		Assert.Contains("property 'Shade' (Shade) from column 'Shade'", ex.Message);
 		Assert.Equal("Shade", ex.PropertyName);
 		Assert.Equal("Shade", ex.ColumnName);
 		Assert.Equal(typeof(Shade), ex.TargetType);

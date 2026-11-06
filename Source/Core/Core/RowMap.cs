@@ -16,18 +16,26 @@ namespace Open.Database.Extensions;
 /// or two properties reading one column throw <see cref="ArgumentException"/>.
 /// A NULL follows the property's declared type: a nullable property (<see cref="Nullable{T}"/> or a reference type) receives <see langword="null"/>; a non-nullable value-type property (an enum counts) keeps the value <c>new T()</c> gave it, its initializer else its default.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
+/// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
 /// </remarks>
 /// <example>
 /// <code>
-/// public static RowMap&lt;Post&gt; PostMap =&gt; field ??= new([new(nameof(Post.Id), "post_id"), new(nameof(Post.Title), "post_title")]);
+/// public static RowMap&lt;Post&gt; PostMap =&gt; field ??= [new(nameof(Post.Id), "post_id"), new(nameof(Post.Title), "post_title")];
 ///
 /// var posts = connection.Command("select * from posts").Map&lt;Post&gt;(PostMap).ToList();
 /// </code>
 /// </example>
 /// <typeparam name="T">The model type whose properties are mapped.</typeparam>
-public sealed class RowMap<T> : IRowSource<T>
+[CollectionBuilder(typeof(RowMap), nameof(RowMap.Create))]
+public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRowSource<T>
 	where T : new()
 {
+	/// <summary>Creates and validates the map from one (property name, column name) pair, so <c>new RowMap&lt;T&gt;(new("A", "b"))</c> compiles. Declare it once: a map built in a call is rebuilt on every call.</summary>
+	/// <param name="mapping">The (property name, column name) pair; a <see langword="null"/> column means "do not map this property".</param>
+	/// <exception cref="ArgumentException">The pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	[OverloadResolutionPriority(1)]
+	public RowMap(KeyValuePair<string, string?> mapping) : this([mapping]) { }
+
 	/// <summary>Creates and validates the map from (property name, column name) pairs. Declare it once: a map built in a call is rebuilt on every call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid: an unknown or unsettable property, a property named twice, an empty column name, or two properties reading one column.</exception>
@@ -68,6 +76,16 @@ public sealed class RowMap<T> : IRowSource<T>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
 	public static RowMap<T> From(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 		=> mappings.Length == 0 ? Default : new RowMap<T>(mappings);
+
+	// A map enumerates the pairs it was declared with, which also makes it a collection-expression target: each property a pair named, in declaration order,
+	// with the column the pair gave it (null: an ignored property). A property no pair named is not yielded, so new RowMap<T>(map) builds an equivalent map.
+	IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator()
+	{
+		for (int i = 0; i < _columns.Length; i++)
+			if (_named[i]) yield return new(Properties[i].Name, _columns[i]);
+	}
+
+	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<KeyValuePair<string, string?>>)this).GetEnumerator();
 
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
 	// so after the first query of a given shape no reflection, expression building or compilation happens again.
@@ -711,10 +729,26 @@ public sealed class RowMap<T> : IRowSource<T>
 	static Exception MapError(Exception ex, int index, Binding?[] bindings)
 	{
 		if (index >= 0 && index < bindings.Length && bindings[index] is { } b)
-			return new ValueMappingException($"Unable to set value of property '{b.Property}' from column '{b.Column}'.", b.Property, b.Column, b.Type, ex);
+			return new ValueMappingException($"Unable to set value of property '{b.Property}' ({TypeName(b.Type)}) from column '{b.Column}'.", b.Property, b.Column, b.Type, ex);
 
 		return ex is InvalidOperationException ? ex : new InvalidOperationException($"Unable to create '{typeof(T)}' from the current row.", ex);
 	}
 
+	// The type as the message names it: the underlying name and a ? for a Nullable<T> (Int32?), else the short name (Int32, String).
+	static string TypeName(Type type) => Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
+
 	#endregion
+}
+
+/// <summary>The builder behind the collection syntax of <see cref="RowMap{T}"/>: <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>.</summary>
+public static class RowMap
+{
+	/// <summary>Creates and validates a <see cref="RowMap{T}"/> from (property name, column name) pairs, exactly as the constructor does. This is what a collection expression of pairs calls; an empty one maps by name.</summary>
+	/// <typeparam name="T">The model type whose properties are mapped.</typeparam>
+	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
+	/// <returns>The new map.</returns>
+	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	public static RowMap<T> Create<T>(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
+		where T : new()
+		=> new(mappings);
 }

@@ -36,17 +36,19 @@ Only a property that is matched by name is matched in tier 3. A property that a 
 
 ## Columns named differently
 
-When a column is named differently from its property, declare a `RowMap<T>` once and pass it to every query that reads the model. A map is built from key/value pairs of property name and column name. Write the property name with `nameof`, so the compiler catches a rename; only the column is a string. Properties the map does not mention are still matched to columns by name. A map with one pair still needs the brackets: `new RowMap<T>([new("A", "b")])`. `new RowMap<T>(new("A", "b"))` does not compile (`Map<T>(new("A", "b"))` with one pair does).
+When a column is named differently from its property, declare a `RowMap<T>` once and pass it to every query that reads the model. A map is built from key/value pairs of property name and column name. Write the property name with `nameof`, so the compiler catches a rename; only the column is a string. Properties the map does not mention are still matched to columns by name.
 
-[!code-csharp[](../samples/Mapping.cs#map_single_pair)]
-
-Create the map on first use with the C# 14 `field` keyword and `??=`:
+Declare it with the collection syntax, created on first use with the C# 14 `field` keyword and `??=`:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared)]
 
 Pass it to `Map<T>`. The same `map` parameter is on `Results`, `ToChannel`, `AsSourceBlock`, `ToTargetBlock` and the other methods that read rows into a model:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
+
+**Other ways to declare it.** All of these make the same map. The constructor takes one pair (no brackets needed) or several, an `ImmutableArray` or any `IEnumerable` of pairs also works, and a map enumerates the pairs it was declared with, so `new RowMap<T>(map)` makes an equal copy. An empty map, `[]`, maps by name like no map at all:
+
+[!code-csharp[](../samples/Mapping.cs#map_declaration_forms)]
 
 Declare the map once and reuse it. A map is immutable and safe to share between threads, and a declared map adds nothing per call beyond a check that the result-set layout matches the one its reader was compiled for.
 
@@ -62,7 +64,7 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_backing)]
 
-**One-off queries.** A `new RowMap<T>([...])`, an `ImmutableArray` of pairs passed to its constructor, or the pairs passed to `Map<T>` build a new map, and compile the row reader, on every call:
+**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, an `ImmutableArray` of pairs passed to the constructor, or the pairs passed to `Map<T>` build a new map, and compile the row reader, on every call:
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
@@ -90,7 +92,7 @@ A nullable property (`Nullable<T>`) or a reference type gets `null`, even a `str
 
 ## Values that cannot be mapped
 
-A value that cannot be mapped (an unconvertible value, an overflow) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). It carries `PropertyName`, `ColumnName` and `TargetType`, and the conversion error is its `InnerException`. Provider exceptions (`DbException`) and cancellation pass through unwrapped. Any other failure while building a row object throws `InvalidOperationException` (the cause is its inner exception, unless the cause already was an `InvalidOperationException`).
+A value that cannot be mapped (an unconvertible value, an overflow) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). It carries `PropertyName`, `ColumnName` and `TargetType`, its message names all three (`Unable to set value of property 'Id' (Int32) from column 'id'.`), and the conversion error is its `InnerException`. Provider exceptions (`DbException`) and cancellation pass through unwrapped. Any other failure while building a row object throws `InvalidOperationException` (the cause is its inner exception, unless the cause already was an `InvalidOperationException`).
 
 [!code-csharp[](../samples/Mapping.cs#map_value_error)]
 

@@ -9,7 +9,10 @@ Version 11 is a performance release. Result mapping is rewritten around a cached
 
 New since `11.0.0-preview03`:
 
-- **Documentation only.** Corrected statements that were false or misleading (a `NULL` keeps the property's initializer, else its default; exception handling; the README on who opens the connection), stated the three column-matching tiers the same way everywhere, documented the single-pair gotcha, and turned the NULL and matching examples into compiled, checked samples. No behavior or API change. The README inside the NuGet package is corrected in this version.
+- **`RowMap<T>` can be declared with the collection syntax.** `public static RowMap<Post> PostMap => field ??= [new(nameof(Post.Id), "post_id"), ...];` takes one pair, several, or none (none maps by name, like no map). A map enumerates the pairs it was declared with, so `new RowMap<T>(map)` makes an equal copy. See [Columns named differently](mapping.md#columns-named-differently).
+- **A single pair works in the constructor.** `new RowMap<T>(new("A", "b"))` compiles and maps. In preview03 it did not compile, and the pair needed brackets.
+- **The `ValueMappingException` message names the target type:** `Unable to set value of property 'Id' (Int32) from column 'id'.` (`Int32?` for a nullable property). The properties of the exception are unchanged.
+- **Documentation corrections.** Corrected statements that were false or misleading (a `NULL` keeps the property's initializer, else its default; exception handling; the README on who opens the connection), stated the three column-matching tiers the same way everywhere, and turned the NULL and matching examples into compiled, checked samples. The README inside the NuGet package is corrected in this version.
 
 ## Preview 03
 
@@ -23,7 +26,7 @@ New since `11.0.0-preview02`:
 
 New since `11.0.0-preview01`:
 
-- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare an immutable `RowMap<T>` once, from key/value pairs of property name and column name, and pass it as the `map` argument of `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other method that maps rows to a model: `public static RowMap<Post> PostMap => field ??= new([new(nameof(Post.Id), "post_id"), ...]);`. A read through a map allocates what `Map<T>()` allocates on matching names. See [Columns named differently](mapping.md#columns-named-differently).
+- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare an immutable `RowMap<T>` once, from key/value pairs of property name and column name, and pass it as the `map` argument of `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other method that maps rows to a model: `public static RowMap<Post> PostMap => field ??= [new(nameof(Post.Id), "post_id"), ...];`. A read through a map allocates what `Map<T>()` allocates on matching names. See [Columns named differently](mapping.md#columns-named-differently).
 - **Only public instance properties are mapped.** A static property is no longer treated as a mappable property: name matching ignores it, and a `RowMap<T>` that names one throws when it is created.
 
 ## New and improved
