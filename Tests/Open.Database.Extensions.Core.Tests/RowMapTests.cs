@@ -488,6 +488,11 @@ public static class RowMapTests
 	}
 
 	// The lazy forms from the docs: no Lazy<T>, and a first-use race may build a mapping more than once.
+	//
+	// What these tests prove: every racer gets a working, equivalent mapping and every read returns correct rows.
+	// What they cannot prove: x86/x64 never reorders the stores that a missing release barrier would expose, so a
+	// memory-model mistake could not show up here. Safe publication rests on the runtime's documented guarantee
+	// (reference assignment is a release), not on these tests.
 	static RowMap<Item> BuildMap(ref int builds)
 	{
 		Interlocked.Increment(ref builds);
@@ -508,30 +513,86 @@ public static class RowMapTests
 		public static RowMap<Item> Map => LazyInitializer.EnsureInitialized(ref field, static () => BuildMap(ref Builds));
 	}
 
-	static void RaceOnFirstUseThenSustained(Func<RowMap<Item>> map)
+	// Every thread is released from a barrier immediately before its first call, so first use is contended.
+	// Returns the instance each racer got from that first call.
+	static RowMap<Item>[] RaceOnFirstUseThenSustained(Func<RowMap<Item>> map)
 	{
 		string[][] shapes = [Renamed, [.. Renamed.Reverse()], ["extra", "item_total", "item_id", "item_name"]];
+		var firsts = new RowMap<Item>[16];
 		Race(16, t =>
 		{
+			firsts[t] = map(); // the contended first call
 			string[] shape = shapes[t % shapes.Length];
-			for (int n = 0; n < 150; n++) // the first pass races on first use; the rest is sustained use
+			for (int n = 0; n < 150; n++) // sustained use after the race
 				AssertItems(Cmd(shape, 5).Map<Item>(map()).ToList(), 5, hasNote: shape.Contains("item_note"));
+		});
+
+		return firsts;
+	}
+
+	static void AssertEquivalent(RowMap<Item>[] maps)
+	{
+		List<KeyValuePair<string, string?>> expected = [.. (IEnumerable<KeyValuePair<string, string?>>)maps[0]];
+		Assert.All(maps, m =>
+		{
+			Assert.NotNull(m);
+			Assert.Equal(expected, [.. (IEnumerable<KeyValuePair<string, string?>>)m]);
 		});
 	}
 
 	[Fact]
-	public static void FieldCoalescingMap_RacedOnFirstUseAndThenSustained_GivesIdenticalRows()
+	public static void FieldCoalescingMap_RacedOnFirstUse_GivesEquivalentMapsAndIdenticalRows()
 	{
-		RaceOnFirstUseThenSustained(() => CoalescingMaps.Map);
+		RowMap<Item>[] got = RaceOnFirstUseThenSustained(() => CoalescingMaps.Map);
+		AssertEquivalent(got); // possibly several instances, all equivalent
 		Assert.InRange(CoalescingMaps.Builds, 1, 16);
 	}
 
 	[Fact]
-	public static void EnsureInitializedMap_RacedOnFirstUseAndThenSustained_GivesIdenticalRows()
+	public static void EnsureInitializedMap_RacedOnFirstUse_PublishesOneInstanceToEveryRacer()
 	{
-		RaceOnFirstUseThenSustained(() => EnsuredMaps.Map);
+		RowMap<Item>[] got = RaceOnFirstUseThenSustained(() => EnsuredMaps.Map);
+		AssertEquivalent(got);
+		Assert.All(got, m => Assert.Same(got[0], m)); // exactly one published instance, though the factory may have run more than once
 		Assert.InRange(EnsuredMaps.Builds, 1, 16);
-		Assert.Same(EnsuredMaps.Map, EnsuredMaps.Map); // exactly one instance was published
+	}
+
+	// The layout cache holds 128 layouts and clears itself when full. Readers keep using one layout while other
+	// threads push 240 distinct layouts through the same map, so the cache fills and clears under them.
+	[Fact]
+	public static void ReadingWhileTheLayoutCacheOverflowsAndClears_GivesCorrectRows()
+	{
+		var shared = new RowMap<Item>(("Id", "item_id"), ("Name", "item_name"), ("Total", "item_total"), ("Note", "item_note"));
+		using var stop = new CancellationTokenSource();
+		var errors = new ConcurrentQueue<Exception>();
+		Thread[] readers = [.. Enumerable.Range(0, 4).Select(_ => new Thread(() =>
+		{
+			try
+			{
+				while (!stop.IsCancellationRequested) AssertItems(Cmd(Renamed, 3).Map<Item>(shared).ToList(), 3);
+			}
+			catch (Exception ex)
+			{
+				errors.Enqueue(ex);
+			}
+		}))];
+
+		foreach (Thread reader in readers) reader.Start();
+		try
+		{
+			Race(4, t =>
+			{
+				for (int n = 0; n < 60; n++) // 4 x 60 = 240 layouts that no other thread shares
+					AssertItems(Cmd([.. Renamed, $"extra_{t}_{n}"], 3).Map<Item>(shared).ToList(), 3);
+			});
+		}
+		finally
+		{
+			stop.Cancel();
+			foreach (Thread reader in readers) reader.Join();
+		}
+
+		Assert.Empty(errors);
 	}
 
 	[Fact]
