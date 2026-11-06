@@ -6,7 +6,9 @@ title: Open.Database.Extensions
 
 Extensions on the standard ADO.NET types that make everyday database work short to write and robust by default. Version 11 is in preview.
 
-![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands on top of it, row mapping on top of that, all resting on a base of performance.](images/architecture.svg)
+**You write the SQL. This library writes the other twenty lines.**
+
+[!code-csharp[](samples/BeforeAfter.cs#ode_list_factory)]
 
 ## The idea
 
@@ -26,3 +28,7 @@ Extensions on the standard ADO.NET types that make everyday database work short 
 | Look up a type or a method | [API reference](api/index.md) |
 
 Every code sample in this guide is compiled by the build and run against SQLite before the site is published.
+
+## How it fits together
+
+<img src="images/architecture.svg" alt="Four layers: a foundation of best-practice ADO.NET extensions, expressive commands on top of it, row mapping on top of that, all resting on a base of performance." style="max-width: 520px; width: 100%;" />
