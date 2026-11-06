@@ -168,26 +168,15 @@ public static class RowMapUnderscoreTests
 		AssertCounts(result.DequeueAs<Counts>().Single());
 	}
 
-	// ---- (g) NullLeavesValue maps get it too ----
+	// ---- (g) a NULL through an underscored column keeps the initializer ----
 
 	[Fact]
-	public static void NullLeavesValueMaps_MapUnderscoredColumns()
+	public static void ANullThroughAnUnderscoredColumn_KeepsTheInitializer()
 	{
-		RowMap<Counts> lenient = RowMap<Counts>.NullLeavesValue();
-
-		AssertCounts(Cmd(CountsColumns, CountsRow()).Map(lenient).ToList().Single());
-		AssertCounts(Cmd(CountsColumns, CountsRow(nullDate: true)).Map(lenient).ToList().Single(), nullDate: true);
+		AssertCounts(Cmd(CountsColumns, CountsRow(nullDate: true)).Map<Counts>().ToList().Single(), nullDate: true);
 
 		QueryResult<Queue<object?[]>> result = new([.. Enumerable.Range(0, CountsNames.Length)], [.. CountsNames], new Queue<object?[]>([CountsRow(nullDate: true)]));
-		AssertCounts(result.DequeueAs(lenient).Single(), nullDate: true);
-	}
-
-	[Fact]
-	public static void StrictMaps_StillThrowOnNull_ThroughAnUnderscoredColumn()
-	{
-		var ex = Assert.Throws<ValueMappingException>(() => Cmd(CountsColumns, CountsRow(nullDate: true)).Map<Counts>().ToList());
-		Assert.Equal(nameof(Counts.MinDate), ex.PropertyName);
-		Assert.Equal("min_date", ex.ColumnName);
+		AssertCounts(result.DequeueAs<Counts>().Single(), nullDate: true);
 	}
 
 	// ---- a wide result set ----
@@ -255,6 +244,7 @@ public static class RowMapUnderscoreTests
 					if (!candidate[p] || !same(p, names[i])) continue;
 
 					if (!filled[p]) { filled[p] = true; feeds[i] = p; }
+
 					break;
 				}
 			}

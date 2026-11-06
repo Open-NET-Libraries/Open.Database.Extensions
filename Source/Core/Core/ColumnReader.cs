@@ -3,7 +3,7 @@ namespace Open.Database.Extensions.Core;
 /// <summary>
 /// Reads one column as the requested type through the provider's typed getter when there is one, so common
 /// value types are not boxed on the way out (other types fall back to <c>GetFieldValue&lt;T&gt;</c>, which may box).
-/// <c>NULL</c> reads as <c>default</c>; unlike the row mappers, a NULL is not an error here.
+/// <c>NULL</c> reads as <c>default</c>.
 /// </summary>
 internal static class ColumnReader
 {
