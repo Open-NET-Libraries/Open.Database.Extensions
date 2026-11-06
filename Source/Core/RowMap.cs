@@ -51,6 +51,7 @@
 /// first runs, together with the type's other static fields, so keep such mappings in their own small static class.
 /// For exactly one published instance use <c>LazyInitializer.EnsureInitialized(ref field, static () =&gt; new(...))</c>
 /// (the factory may still run more than once; it adds a method call per read).
+/// Reading a held mapping allocates nothing and takes one to two nanoseconds whichever way it is held (see Benchmarks/RESULTS.md).
 /// Compilers older than C# 14 need an explicit backing field: <c>static RowMap&lt;Post&gt;? _post; public static RowMap&lt;Post&gt; Post =&gt; _post ??= new(...);</c>
 /// </example>
 /// <typeparam name="T">The model type whose properties are mapped.</typeparam>
