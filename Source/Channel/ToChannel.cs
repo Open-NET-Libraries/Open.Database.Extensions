@@ -141,11 +141,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ChannelReader<T> ToChannel<T>(this IDataReader reader,
 		bool singleReader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
@@ -177,11 +177,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ChannelReader<T> ToChannel<T>(this IDataReader reader,
 		bool singleReader,
@@ -328,11 +328,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ChannelReader<T> ToChannel<T>(this IDbCommand command,
 		bool singleReader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
@@ -364,11 +364,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ChannelReader<T> ToChannel<T>(this IDbCommand command,
 		bool singleReader,
@@ -506,11 +506,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
@@ -540,11 +540,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
@@ -690,11 +690,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
@@ -726,11 +726,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
@@ -877,11 +877,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
@@ -913,11 +913,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
@@ -1054,11 +1054,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
@@ -1088,11 +1088,11 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader,

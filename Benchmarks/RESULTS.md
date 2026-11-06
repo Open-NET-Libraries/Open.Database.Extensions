@@ -126,18 +126,18 @@ What it shows:
 2. **The second stage's one real effect is freeing the reader earlier when the target is bounded and the consumer is slow**, but as implemented it **drops rows**: the target is completed when stage one finishes reading, while stage two still holds up to ~1024 rows. The study measured the same loss on untouched `master` (a separate project against a clean `origin/master` checkout), so this is pre-existing, not caused by this PR.
 3. **Spill keeps the benefit without the loss**: the reader is freed as soon as the 1024-row buffer absorbs the backlog (0.1 ms vs 18.8 ms for 1000 rows), no rows are lost, and it runs at one-stage speed when the target keeps up.
 
-## `RowPlan<T>`: a prebuilt column mapping when every column is named differently
+## `RowMap<T>`: a prebuilt column mapping when every column is named differently
 
 A 12-property model read from a result set whose every column is named differently (`post_id`, `post_title`, …). Five ways to read it:
-`Map<T>()` on a model whose property names are the column names (the control: same result set, same column-name lengths, so the provider does the same work), a prebuilt `RowPlan<T>`, per-call overrides (12 tuples at the call site), inline pairs (`Map<T>(new(...), new(...), …)`, the one-off path), and Dapper with `SqlMapper.SetTypeMap` set once.
+`Map<T>()` on a model whose property names are the column names (the control: same result set, same column-name lengths, so the provider does the same work), a prebuilt `RowMap<T>`, per-call overrides (12 tuples at the call site), inline pairs (`Map<T>(new(...), new(...), …)`, the one-off path), and Dapper with `SqlMapper.SetTypeMap` set once.
 
-**Measured at commit 9840925 (the final shape: the plan is the public type, the interface lookup of the row reader, the collapsed column table).** AMD Ryzen 9 7900 (24 logical cores), Windows 10 22H2, .NET SDK 10.0.403, BenchmarkDotNet 0.15.8, Release, in-process, `--warmupCount 5 --iterationCount 12 --launchCount 1`, normal priority, one benchmark process at a time with the build servers shut down and nothing else running.
+**Measured at commit 9840925 (the final shape: the map is the public type, the interface lookup of the row reader, the collapsed column table).** AMD Ryzen 9 7900 (24 logical cores), Windows 10 22H2, .NET SDK 10.0.403, BenchmarkDotNet 0.15.8, Release, in-process, `--warmupCount 5 --iterationCount 12 --launchCount 1`, normal priority, one benchmark process at a time with the build servers shut down and nothing else running.
 Total CPU was sampled for 15 s (1 s samples) before and after each class: before 6.9% (in-memory), 9.8% (LocalDB), 7.3% (lazy); after 5.3%, 9.1%, 5.7%. All are under the 12% threshold set for calling a class noisy, so none is labelled noisy; single-second peaks reached 15.9%. The samples are of the machine around each class, not during it.
 Reproduce: `dotnet <benchmarks dll> --filter "*.RenamedColumnBenchmarks.*" --warmupCount 5 --iterationCount 12 --launchCount 1 --inprocess` (in-memory), `"*.SqlServerRenamedColumnBenchmarks.*"` (LocalDB), `"*.LazyMapBenchmarks.*"`, and `--map-memory`.
 
 **In-memory provider: time per call (ns)**
 
-| Scenario | Rows | `Map<T>()` same names | `RowPlan<T>` | Per-call overrides | Inline pairs (one-off) | Dapper `SetTypeMap` | Plan ÷ control | Plan ÷ Dapper |
+| Scenario | Rows | `Map<T>()` same names | `RowMap<T>` | Per-call overrides | Inline pairs (one-off) | Dapper `SetTypeMap` | Map ÷ control | Map ÷ Dapper |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | List | 1 | 114.5 | 113.3 | 358.4 | 444,904 | 338.8 | 0.99 | 0.33 |
 | List | 100 | 3,127.6 | 3,214.2 | 3,550.4 | 451,093 | 11,678.3 | 1.03 | 0.28 |
@@ -148,18 +148,18 @@ Reproduce: `dotnet <benchmarks dll> --filter "*.RenamedColumnBenchmarks.*" --war
 
 **In-memory provider: allocated bytes per call**
 
-| Scenario | Rows | `Map<T>()` same names | `RowPlan<T>` | Per-call overrides | Inline pairs (one-off) | Dapper `SetTypeMap` |
+| Scenario | Rows | `Map<T>()` same names | `RowMap<T>` | Per-call overrides | Inline pairs (one-off) | Dapper `SetTypeMap` |
 |---|---:|---:|---:|---:|---:|---:|
 | List | 1 | 368 | 368 | 2,200 | 29,557 | 856 |
 | List | 100 | 13,560 | 13,560 | 15,392 | 42,754 | 36,440 |
 | List | 1000 | 128,768 | 128,768 | 130,600 | 157,964 | 355,048 |
 | First | 1, 100, 1000 | 280 | 280 | 2,112 | 29,462-29,470 | 576 |
 
-**The one-off inline path** builds a new plan and compiles the row reader on every call and caches nothing. On the in-memory provider with the 12-property model a one-row read takes about 0.43-0.45 ms (`First` 428.9 µs, `List` 444.9 µs) and allocates about 29.5 KB, against about 0.1 µs and 280-368 B through a declared plan. The cost does not shrink with the result size: 451 µs and 42.8 KB at 100 rows, 473 µs and 158 KB at 1000.
+**The one-off inline path** builds a new map and compiles the row reader on every call and caches nothing. On the in-memory provider with the 12-property model a one-row read takes about 0.43-0.45 ms (`First` 428.9 µs, `List` 444.9 µs) and allocates about 29.5 KB, against about 0.1 µs and 280-368 B through a declared map. The cost does not shrink with the result size: 451 µs and 42.8 KB at 100 rows, 473 µs and 158 KB at 1000.
 
 **SQL Server LocalDB (Microsoft.Data.SqlClient 7.1.1): time per call (µs)**
 
-| Scenario | Rows | `Map<T>()` same names | `RowPlan<T>` | Per-call overrides | Dapper `SetTypeMap` | Plan ÷ control | Plan ÷ Dapper |
+| Scenario | Rows | `Map<T>()` same names | `RowMap<T>` | Per-call overrides | Dapper `SetTypeMap` | Map ÷ control | Map ÷ Dapper |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | List | 1 | 70.4 | 69.2 | 71.0 | 72.3 | 0.98 | 0.96 |
 | List | 100 | 132.4 | 133.6 | 135.6 | 142.5 | 1.01 | 0.94 |
@@ -172,7 +172,7 @@ The 95% confidence half-widths on LocalDB run from 0.3 µs at one row to 8.4 µs
 
 **SQL Server LocalDB: allocated memory per call**
 
-| Scenario | Rows | `Map<T>()` same names | `RowPlan<T>` | Per-call overrides | Dapper `SetTypeMap` |
+| Scenario | Rows | `Map<T>()` same names | `RowMap<T>` | Per-call overrides | Dapper `SetTypeMap` |
 |---|---:|---:|---:|---:|---:|
 | List | 1 | 4.62 KB | 4.62 KB | 6.41 KB | 5.10 KB |
 | List | 100 | 27.95 KB | 27.95 KB | 29.74 KB | 47.96 KB |
@@ -180,12 +180,12 @@ The 95% confidence half-widths on LocalDB run from 0.3 µs at one row to 8.4 µs
 | First | 1, 100, 1000 | 4.52 KB (4.54 at 1000) | 4.52 KB (4.53-4.54 at 100, 1000) | 6.31 KB (6.32 at 100, 1000) | 4.82 KB (4.83 at 100, 1000) |
 
 **Verdict on the criterion (same-run ratios above).**
-- *Allocation:* holds everywhere. A `RowPlan<T>` read allocates exactly what `Map<T>()` allocates on matching names (0 B difference in memory, at most 0.01 KB on LocalDB), at 1, 100 and 1000 rows, and less than Dapper with a type map in every scenario (in memory 0.43x at one row and 0.36-0.37x at 100 and 1000; on LocalDB 0.91x, 0.58x and 0.55x, and 0.94x for `First`).
-- *Time against `Map<T>()` on matching names:* holds. In memory the ratios are 0.96-1.03; the 1.03 at 100 rows is matched by the short-named `Map<Post>()` at 1.04 in the same run, so it follows the model class, not the plan. On LocalDB 0.98-1.04 are ties within the intervals.
-- *Time against Dapper with `SetTypeMap`:* holds. In memory a plan read takes 0.11-0.33x Dapper's time. On LocalDB it is 0.94-1.04x, a tie within noise; the two `First` rows at 100 and 1000 rows are 1.04x (+5 µs and +20 µs, inside the ±8 µs and ±25 µs intervals): not below Dapper, not distinguishable from it.
-- *The "before":* per-call overrides take 3.2x a plan read of one in-memory `List` row (358 vs 113 ns) and 3.7x for `First` (368 vs 99 ns), and 1.8 KB more memory per call. They converge with larger results (1.0-1.1x at 100 and 1000 rows). The one-off inline path is far more expensive (about 0.43 ms and 29.5 KB per call, above). On LocalDB per-call overrides are a tie with everything else.
+- *Allocation:* holds everywhere. A `RowMap<T>` read allocates exactly what `Map<T>()` allocates on matching names (0 B difference in memory, at most 0.01 KB on LocalDB), at 1, 100 and 1000 rows, and less than Dapper with a type map in every scenario (in memory 0.43x at one row and 0.36-0.37x at 100 and 1000; on LocalDB 0.91x, 0.58x and 0.55x, and 0.94x for `First`).
+- *Time against `Map<T>()` on matching names:* holds. In memory the ratios are 0.96-1.03; the 1.03 at 100 rows is matched by the short-named `Map<Post>()` at 1.04 in the same run, so it follows the model class, not the map. On LocalDB 0.98-1.04 are ties within the intervals.
+- *Time against Dapper with `SetTypeMap`:* holds. In memory a map read takes 0.11-0.33x Dapper's time. On LocalDB it is 0.94-1.04x, a tie within noise; the two `First` rows at 100 and 1000 rows are 1.04x (+5 µs and +20 µs, inside the ±8 µs and ±25 µs intervals): not below Dapper, not distinguishable from it.
+- *The "before":* per-call overrides take 3.2x a map read of one in-memory `List` row (358 vs 113 ns) and 3.7x for `First` (368 vs 99 ns), and 1.8 KB more memory per call. They converge with larger results (1.0-1.1x at 100 and 1000 rows). The one-off inline path is far more expensive (about 0.43 ms and 29.5 KB per call, above). On LocalDB per-call overrides are a tie with everything else.
 - *No scenario fails.* The qualifications are the LocalDB ties.
-- *The interface lookup of the row reader* (`RowSource<T>` became an internal interface so the plan can be the public type) cost nothing measurable. The control `Map<T>()` took the same change, and against the earlier run on the first design it moved from 119.9 to 114.5 ns (List, 1 row), 3,434.6 to 3,127.6 ns (100 rows), 31,675.5 to 31,857.5 ns (1000 rows), and 104.5 to 101.5, 102.0 to 100.6, 103.1 to 103.9 ns for `First`: between -9% and +0.8%, while the Dapper column drifted by up to +8% (10,778 to 11,678 ns at 100 rows) between the two runs, so run-to-run noise is of that size. The plan itself moved from 121.0 to 113.3 ns, 3,471.7 to 3,214.2 ns and 32,358.4 to 30,856.0 ns (List) and 101.8 to 99.5, 102.0 to 100.7, 102.8 to 99.6 ns (First): never slower.
+- *The interface lookup of the row reader* (`RowSource<T>` became an internal interface so the map can be the public type) cost nothing measurable. The control `Map<T>()` took the same change, and against the earlier run on the first design it moved from 119.9 to 114.5 ns (List, 1 row), 3,434.6 to 3,127.6 ns (100 rows), 31,675.5 to 31,857.5 ns (1000 rows), and 104.5 to 101.5, 102.0 to 100.6, 103.1 to 103.9 ns for `First`: between -9% and +0.8%, while the Dapper column drifted by up to +8% (10,778 to 11,678 ns at 100 rows) between the two runs, so run-to-run noise is of that size. The map itself moved from 121.0 to 113.3 ns, 3,471.7 to 3,214.2 ns and 32,358.4 to 30,856.0 ns (List) and 101.8 to 99.5, 102.0 to 100.7, 102.8 to 99.6 ns (First): never slower.
 - Against `Map<T>()` on the *short-named* table the renamed result set allocates 0.13 KB more on LocalDB (4.49 vs 4.62 KB for `List` of one row), consistent with SqlClient allocating each column name on every query (62 more characters across the 12 columns is 124 B); the control uses the same names for that reason.
 
 **Two commands outside mapping, ODE vs Dapper on LocalDB (allocation; not touched by this work)**
@@ -197,9 +197,9 @@ The 95% confidence half-widths on LocalDB run from 0.3 µs at one row to 8.4 µs
 
 The eight-parameter non-query allocates 0.31 KB (about 40 B per parameter) more than Dapper; the scalar ties. Both are fixed per-call costs in the command path, not in mapping. (These two rows come from an earlier allocation-only run; their times were not re-measured.)
 
-**What a plan costs to build and retains** (`--map-memory`, managed heap only, 12 fields, averaged over 1,000 plans; the machine code the JIT emits for a compiled reader is not counted)
+**What a map costs to build and retains** (`--map-memory`, managed heap only, 12 fields, averaged over 1,000 maps; the machine code the JIT emits for a compiled reader is not counted)
 
-| | First design: `RowMap<T>` built from tuples, wrapping a separate plan object | `RowPlan<T>` built from an `ImmutableArray` of pairs | One column table instead of three structures (final) |
+| | First design: `RowMap<T>` built from tuples, wrapping a separate map object | `RowMap<T>` built from an `ImmutableArray` of pairs | One column table instead of three structures (final) |
 |---|---:|---:|---:|
 | Allocated to build one from a prepared array | 3,392 B | 1,088 B | 224 B |
 | Allocated to build one from a literal written at the call site | 3,632 B | 1,304 B | 440 B |
@@ -208,9 +208,9 @@ The eight-parameter non-query allocates 0.31 KB (about 40 B per parameter) more 
 | Total retained after the first read | 7,905 B | 7,305 B | 6,561 B |
 | Objects allocated to build one (counted from the code, not instrumented) | about 19 | 8 | 3 |
 
-Eliminated: the second object (the wrapper around the plan), the builder and its growing arrays that re-materialised the pairs, the `HashSet` of named properties and the transient property-to-column dictionary (now a `string?[]` and a `bool[]`), the retained property-to-column dictionary, the two name arrays, and the tuple enumeration. The pairs are validated and turned into the column table once, in one pass, and the caller's `ImmutableArray` is retained as it is (shared, not copied). The first read adds the same 6,369 B in every design. Five hundred models cost about 0.1-0.2 MB if every plan were built up front and about 3.3 MB if every one had been read, which is why the documentation builds each plan on first use.
+Eliminated: the second object (the wrapper around the map), the builder and its growing arrays that re-materialised the pairs, the `HashSet` of named properties and the transient property-to-column dictionary (now a `string?[]` and a `bool[]`), the retained property-to-column dictionary, the two name arrays, and the tuple enumeration. The pairs are validated and turned into the column table once, in one pass, and the caller's `ImmutableArray` is retained as it is (shared, not copied). The first read adds the same 6,369 B in every design. Five hundred models cost about 0.1-0.2 MB if every map were built up front and about 3.3 MB if every one had been read, which is why the documentation builds each map on first use.
 
-**Holding a plan** (`LazyMapBenchmarks`; warm reads, 1,000 per invocation, each through a non-inlined call so the JIT cannot fold the read away, so each time includes that call; per-operation figures; two quiet runs shown: the earlier one on the first design, the final one at 9840925)
+**Holding a map** (`LazyMapBenchmarks`; warm reads, 1,000 per invocation, each through a non-inlined call so the JIT cannot fold the read away, so each time includes that call; per-operation figures; two quiet runs shown: the earlier one on the first design, the final one at 9840925)
 
 | Variant | Time per read (earlier, final) | Allocated per read |
 |---|---:|---:|
@@ -218,7 +218,7 @@ Eliminated: the second object (the wrapper around the plan), the builder and its
 | `field ??= [...]` | 1.194 ns, 1.856 ns | 0 B |
 | `Lazy<T>.Value` | 1.186 ns, 1.180 ns | 0 B |
 | `LazyInitializer.EnsureInitialized(ref field, static () => ...)` | 1.989 ns, 2.009 ns | 0 B |
-| Build one 12-field plan (the first-call cost, before compiling the reader) | 996 ns / 3,360 B (first design), 200.4 ns / 224 B (final) | |
+| Build one 12-field map (the first-call cost, before compiling the reader) | 996 ns / 3,360 B (first design), 200.4 ns / 224 B (final) | |
 | Create the `Lazy<T>` (the `Lazy<T>` and its internal helper object; the factory delegate is a cached static lambda and is not counted) | 5.6 ns, 5.7 ns | 72 B |
 
-Every variant reads in about 1-2 ns and allocates nothing. The differences between variants (up to about 1 ns) are small, and the `field ??=` figure moved by 0.7 ns between the two runs with nothing changed in that code, so do not read an ordering into them; all of them are negligible next to a query that costs at least 70 µs. A first call costs about 0.2 µs to build the plan, plus compiling the reader for the result-set layout (the same as for `Map<T>()`).
+Every variant reads in about 1-2 ns and allocates nothing. The differences between variants (up to about 1 ns) are small, and the `field ??=` figure moved by 0.7 ns between the two runs with nothing changed in that code, so do not read an ordering into them; all of them are negligible next to a query that costs at least 70 µs. A first call costs about 0.2 µs to build the map, plus compiling the reader for the result-set layout (the same as for `Map<T>()`).

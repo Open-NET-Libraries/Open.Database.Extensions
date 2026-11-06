@@ -66,33 +66,33 @@ public static class Mapping
 		}
 	}
 
-	public static Person[] MapPlan(SqliteConnection connection)
+	public static Person[] MapMap(SqliteConnection connection)
 	{
-		#region map_plan_use
-		// Pass the declared plan. Nothing is built, keyed or looked up per call.
+		#region map_declared_use
+		// Pass the declared map. Nothing is built, keyed or looked up per call.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(PersonPlans.PersonPlan)
+			.Map<Person>(PersonMaps.PersonMap)
 			.ToArray();
 		#endregion
 
 		return people;
 	}
 
-	public static Person[] MapPlanIgnore(SqliteConnection connection)
+	public static Person[] MapMapIgnore(SqliteConnection connection)
 	{
 		// LastName is not read at all, so it stays at its default although the result set has a last_name column.
 		return connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(PersonPlans.PersonNamesOnlyPlan)
+			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
 			.ToArray();
 	}
 
 	public static Person[] MapInline(SqliteConnection connection)
 	{
 		#region map_inline
-		// A one-off: the pairs are inline, so a new plan is built and the row reader is compiled on every call
-		// (about 0.43 ms and 29 KB for a one-row read in the library's in-memory benchmark). Declare a RowPlan for anything that runs more than occasionally.
+		// A one-off: the pairs are inline, so a new map is built and the row reader is compiled on every call
+		// (about 0.43 ms and 29 KB for a one-row read in the library's in-memory benchmark). Declare a RowMap for anything that runs more than occasionally.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))
@@ -102,16 +102,16 @@ public static class Mapping
 		return people;
 	}
 
-	public static string PlanUnknownProperty()
+	public static string MapUnknownProperty()
 	{
 		try
 		{
-			#region map_plan_unknown
-			// A plan is checked where it is declared: this throws ArgumentException here, not on the first query.
-			RowPlan<Post> plan = [new("Headline", "title")];
+			#region map_declared_unknown
+			// A map is checked where it is declared: this throws ArgumentException here, not on the first query.
+			RowMap<Post> map = [new("Headline", "title")];
 			#endregion
 
-			return "no exception: " + plan.GetType().Name;
+			return "no exception: " + map.GetType().Name;
 		}
 		catch (ArgumentException ex)
 		{
@@ -185,22 +185,22 @@ public static class Mapping
 	}
 }
 
-// Declared once and built on first use: a large application only ever builds the plans it actually uses.
+// Declared once and built on first use: a large application only ever builds the maps it actually uses.
 // The property name is written with nameof, so a rename is caught by the compiler; only the column is a string.
-public static class PersonPlans
+public static class PersonMaps
 {
-	#region map_plan
-	public static RowPlan<Person> PersonPlan => field ??= [
+	#region map_declared
+	public static RowMap<Person> PersonMap => field ??= [
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), "last_name"),
 	];
 	#endregion
 
-	#region map_plan_ignore
+	#region map_declared_ignore
 	// A null column means "do not map this property": LastName is not read at all, not even by name,
 	// so it keeps its default value even if the result set has a column called LastName.
-	public static RowPlan<Person> PersonNamesOnlyPlan => field ??= [
+	public static RowMap<Person> PersonNamesOnlyMap => field ??= [
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), null),

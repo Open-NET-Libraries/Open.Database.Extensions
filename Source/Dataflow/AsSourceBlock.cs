@@ -130,11 +130,11 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
@@ -164,11 +164,11 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
@@ -297,11 +297,11 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
@@ -331,11 +331,11 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
@@ -464,11 +464,11 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
@@ -498,11 +498,11 @@ public static partial class DataflowExtensions
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
@@ -615,10 +615,10 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null,
@@ -644,10 +644,10 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
@@ -761,10 +761,10 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null,
@@ -790,10 +790,10 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
@@ -898,10 +898,10 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
@@ -925,10 +925,10 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,

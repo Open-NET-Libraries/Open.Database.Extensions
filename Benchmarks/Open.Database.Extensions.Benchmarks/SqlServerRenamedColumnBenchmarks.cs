@@ -7,7 +7,7 @@ using Microsoft.Data.SqlClient;
 namespace Open.Database.Extensions.Benchmarks;
 
 // The renamed-column comparison against SQL Server (LocalDB): the same rows in a table whose every column is
-// snake_case, read through a predefined RowPlan<T>, through per-call overrides, and through Dapper with a type map set once.
+// snake_case, read through a predefined RowMap<T>, through per-call overrides, and through Dapper with a type map set once.
 // A throwaway database is created in Setup and dropped in Cleanup.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -77,7 +77,7 @@ public class SqlServerRenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowPlan(), List_PerCallOverrides(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PerCallOverrides(), List_DapperTypeMap() })
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
 	}
@@ -101,7 +101,7 @@ public class SqlServerRenamedColumnBenchmarks
 	public List<Post> List_ShortNames() => _conn.Command(Sql).Map<Post>().ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_RowPlan() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Plan).ToList();
+	public List<RenamedPost> List_RowMap() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Map).ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_PerCallOverrides() => _conn.Command(RenamedSql).Map<RenamedPost>(
@@ -119,7 +119,7 @@ public class SqlServerRenamedColumnBenchmarks
 	public Post? First_ShortNames() => _conn.Command(Sql).Map<Post>().FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_RowPlan() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Plan).FirstOrDefault();
+	public RenamedPost? First_RowMap() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_PerCallOverrides() => _conn.Command(RenamedSql).Map<RenamedPost>(

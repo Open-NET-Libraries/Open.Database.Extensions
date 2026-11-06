@@ -39,7 +39,7 @@ public static class RenamedColumns
 	public static readonly string[] Names = [.. Pairs.Select(p => p.Value!)];
 
 	/// <summary>ODE: built once (the implicit conversion from the pairs), passed to every query.</summary>
-	public static readonly RowPlan<RenamedPost> Plan = Pairs;
+	public static readonly RowMap<RenamedPost> Map = Pairs;
 
 	static bool _dapperConfigured;
 
@@ -64,7 +64,7 @@ public static class RenamedColumns
 }
 
 // Criterion 2 of the declared-mapping work: with every column named differently from its property, a read through a
-// predefined RowPlan<T> should cost what Map<T>() costs on matching names (the baseline), and no more than Dapper
+// predefined RowMap<T> should cost what Map<T>() costs on matching names (the baseline), and no more than Dapper
 // with an equivalent type map set once. Per-call overrides are the "before".
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -90,7 +90,7 @@ public class RenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowPlan(), List_PerCallOverrides(), List_InlinePairs(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PerCallOverrides(), List_InlinePairs(), List_DapperTypeMap() })
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
 	}
@@ -104,7 +104,7 @@ public class RenamedColumnBenchmarks
 	public List<Post> List_ShortNames() => _matching.Command(Sql).Map<Post>().ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_RowPlan() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Plan).ToList();
+	public List<RenamedPost> List_RowMap() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Map).ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_PerCallOverrides() => _renamed.Command(Sql).Map<RenamedPost>(
@@ -112,7 +112,7 @@ public class RenamedColumnBenchmarks
 		(nameof(RenamedPost.Price), "post_price"), (nameof(RenamedPost.IsPublished), "post_is_published"), (nameof(RenamedPost.ViewCount), "post_view_count"), (nameof(RenamedPost.Score), "post_score"),
 		(nameof(RenamedPost.Key), "post_key"), (nameof(RenamedPost.Rank), "post_rank"), (nameof(RenamedPost.Big), "post_big"), (nameof(RenamedPost.Tag), "post_tag")).ToList();
 
-	// The one-off path: inline pairs build a new plan and compile the row reader on every call.
+	// The one-off path: inline pairs build a new map and compile the row reader on every call.
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_InlinePairs() => _renamed.Command(Sql).Map<RenamedPost>(new(nameof(RenamedPost.Id), "post_id"), new(nameof(RenamedPost.Title), "post_title"), new(nameof(RenamedPost.Body), "post_body"), new(nameof(RenamedPost.Created), "post_created"), new(nameof(RenamedPost.Price), "post_price"), new(nameof(RenamedPost.IsPublished), "post_is_published"), new(nameof(RenamedPost.ViewCount), "post_view_count"), new(nameof(RenamedPost.Score), "post_score"), new(nameof(RenamedPost.Key), "post_key"), new(nameof(RenamedPost.Rank), "post_rank"), new(nameof(RenamedPost.Big), "post_big"), new(nameof(RenamedPost.Tag), "post_tag")).ToList();
 
@@ -126,7 +126,7 @@ public class RenamedColumnBenchmarks
 	public Post? First_ShortNames() => _matching.Command(Sql).Map<Post>().FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_RowPlan() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Plan).FirstOrDefault();
+	public RenamedPost? First_RowMap() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_PerCallOverrides() => _renamed.Command(Sql).Map<RenamedPost>(

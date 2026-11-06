@@ -1,5 +1,5 @@
 #if !NET8_0_OR_GREATER
-// Polyfill for System.Runtime.CompilerServices.CollectionBuilderAttribute (in-box from .NET 8), so RowPlan<T> can be
+// Polyfill for System.Runtime.CompilerServices.CollectionBuilderAttribute (in-box from .NET 8), so RowMap<T> can be
 // created from a collection expression on every target framework. Internal, like the OverloadResolutionPriority polyfill:
 // the C# compiler recognizes the attribute by its full metadata name.
 namespace System.Runtime.CompilerServices;

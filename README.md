@@ -124,10 +124,10 @@ Models need `new T()` and settable properties: there is no constructor binding. 
 
 ### Renamed columns
 
-When your columns are named differently from your properties, declare the mapping once as a `RowPlan<T>`. It is checked where you declare it, built on first use, and passing it costs nothing per call:
+When your columns are named differently from your properties, declare the mapping once as a `RowMap<T>`. It is checked where you declare it, built on first use, and passing it costs nothing per call:
 
 ```cs
-public static RowPlan<Person> PersonPlan => field ??= [
+public static RowMap<Person> PersonMap => field ??= [
     new(nameof(Person.Id), "person_id"),
     new(nameof(Person.FirstName), "first_name"),
     new(nameof(Person.LastName), "last_name"),
@@ -135,11 +135,11 @@ public static RowPlan<Person> PersonPlan => field ??= [
 
 Person[] people = connection
     .Command("select person_id, first_name, last_name from people order by person_id")
-    .Map<Person>(PersonPlans.PersonPlan)
+    .Map<Person>(PersonMaps.PersonMap)
     .ToArray();
 ```
 
-A `null` column means "do not map this property": it is not read at all, not even by name, so it keeps its default value even if the result set has a column with that name. For a one-off you can pass the pairs inline, `Map<Person>(new(nameof(Person.Id), "person_id"), ...)`, but that builds a new plan and compiles the row reader on every call (about 0.43 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider), so declare a plan for anything that runs more than occasionally. More in [Reusing a mapping](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#reusing-a-mapping).
+A `null` column means "do not map this property": it is not read at all, not even by name, so it keeps its default value even if the result set has a column with that name. For a one-off you can pass the pairs inline, `Map<Person>(new(nameof(Person.Id), "person_id"), ...)`, but that builds a new map and compiles the row reader on every call (about 0.43 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider), so declare a map for anything that runs more than occasionally. More in [Reusing a mapping](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#reusing-a-mapping).
 
 ## Transactions in one expression
 

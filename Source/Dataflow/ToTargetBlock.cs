@@ -155,11 +155,11 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static long ToTargetBlock<T>(this IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete,
@@ -183,11 +183,11 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static long ToTargetBlock<T>(this IDataReader reader,
 		ITargetBlock<T> target,
@@ -387,11 +387,11 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -422,11 +422,11 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
@@ -626,11 +626,11 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -661,11 +661,11 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
@@ -891,12 +891,12 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToTargetBlockAsync<T>(this IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete,
@@ -922,12 +922,12 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToTargetBlockAsync<T>(this IDataReader reader,
 		ITargetBlock<T> target,
@@ -1158,12 +1158,12 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -1202,12 +1202,12 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
@@ -1413,11 +1413,11 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -1451,11 +1451,11 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,

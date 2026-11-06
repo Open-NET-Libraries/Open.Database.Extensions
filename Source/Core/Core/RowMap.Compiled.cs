@@ -5,8 +5,8 @@ using System.Text;
 
 namespace Open.Database.Extensions;
 
-// The compiled half of RowPlan<T>: the validated tables and the compiled, cached, typed row readers.
-// One RowPlan<T> exists per (T, mapping). Each caches one compiled, typed deserializer per result-set layout
+// The compiled half of RowMap<T>: the validated tables and the compiled, cached, typed row readers.
+// One RowMap<T> exists per (T, mapping). Each caches one compiled, typed deserializer per result-set layout
 // (column names + column types), so after the first query of a given shape no reflection, expression building
 // or compilation happens again. A map the application declares and the maps built for legacy per-call overrides are the same type.
 //
@@ -14,15 +14,15 @@ namespace Open.Database.Extensions;
 // type matches the property type (or converts numerically), so nothing is boxed.
 // NULL is honored for reference types and Nullable<T> properties; a NULL in a
 // column mapped to a non-nullable value-type property is the provider's error to raise.
-public sealed partial class RowPlan<T>
+public sealed partial class RowMap<T>
 {
 	// Both caches are bounded so dynamically generated overrides or column lists cannot grow memory forever.
 	// Real applications use a handful of each; when a bound is hit the cache is simply cleared and refills.
-	const int MaxOverridePlans = 128;
+	const int MaxOverrideMaps = 128;
 	const int MaxLayouts = 128;
 
-	// The plans built for per-call overrides, by the overrides' text. Declared plans never go through it.
-	static readonly ConcurrentDictionary<string, RowPlan<T>> OverridePlans = new(StringComparer.Ordinal);
+	// The maps built for per-call overrides, by the overrides' text. Declared maps never go through it.
+	static readonly ConcurrentDictionary<string, RowMap<T>> OverrideMaps = new(StringComparer.Ordinal);
 
 	// Settable public instance properties, in declaration order (a property hidden by name keeps the first): reflection runs once per T.
 	static readonly PropertyInfo[] Properties = BuildProperties();
@@ -50,20 +50,20 @@ public sealed partial class RowPlan<T>
 		return index;
 	}
 
-	/// <summary>The plan for the model's default mapping (property name == column name).</summary>
-	internal static readonly RowPlan<T> Default = new(default, [], strict: false);
+	/// <summary>The map for the model's default mapping (property name == column name).</summary>
+	internal static readonly RowMap<T> Default = new(default, [], strict: false);
 
-	/// <summary>Gets the plan for the given overrides (field name → column name; null column ignores the field). A <see cref="RowPlan{T}"/> is used as it is.</summary>
-	internal static RowPlan<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
+	/// <summary>Gets the map for the given overrides (field name → column name; null column ignores the field). A <see cref="RowMap{T}"/> is used as it is.</summary>
+	internal static RowMap<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
 	{
 		if (overrides is null) return Default;
-		if (overrides is RowPlan<T> plan) return plan; // Declared and already validated: no key, no lookup, no allocation.
+		if (overrides is RowMap<T> map) return map; // Declared and already validated: no key, no lookup, no allocation.
 
 		KeyValuePair<string, string?>[] items = overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray();
 		return For(items.AsSpan());
 	}
 
-	static RowPlan<T> For(ReadOnlySpan<KeyValuePair<string, string?>> items)
+	static RowMap<T> For(ReadOnlySpan<KeyValuePair<string, string?>> items)
 	{
 		if (items.Length == 0) return Default;
 
@@ -77,16 +77,16 @@ public sealed partial class RowPlan<T>
 		}
 
 		string key = sb.ToString();
-		if (OverridePlans.TryGetValue(key, out RowPlan<T>? built)) return built;
+		if (OverrideMaps.TryGetValue(key, out RowMap<T>? built)) return built;
 
-		built = new RowPlan<T>(items, [], strict: false);
-		if (OverridePlans.Count >= MaxOverridePlans) OverridePlans.Clear();
-		if (OverridePlans.TryAdd(key, built)) return built;
-		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : built; // Lost a race (or the cache was just cleared): either plan is equivalent.
+		built = new RowMap<T>(items, [], strict: false);
+		if (OverrideMaps.Count >= MaxOverrideMaps) OverrideMaps.Clear();
+		if (OverrideMaps.TryAdd(key, built)) return built;
+		return OverrideMaps.TryGetValue(key, out RowMap<T>? existing) ? existing : built; // Lost a race (or the cache was just cleared): either map is equivalent.
 	}
 
 	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
-	// This one array is all the plan keeps of the pairs besides the declared array itself.
+	// This one array is all the map keeps of the pairs besides the declared array itself.
 	readonly string?[] _columns;
 
 	/// <summary>The names of the properties that are mapped.</summary>
@@ -121,14 +121,14 @@ public sealed partial class RowPlan<T>
 
 	// Most recently used layout; the overwhelmingly common case is the same shape every time.
 	Layout? _last;
-	// Created with the first layout: a plan that is never read holds no dictionary.
+	// Created with the first layout: a map that is never read holds no dictionary.
 	ConcurrentDictionary<int, Layout[]>? _layouts;
 
-	// The one place the pairs are validated and turned into the column table. A strict plan (the one the application declares)
+	// The one place the pairs are validated and turned into the column table. A strict map (the one the application declares)
 	// is held to account for every property it names and every column it reads; a lenient one (per-call overrides) keeps the historical
 	// behavior: an unknown property with a null column is harmless, a repeated property takes its last column, and when
 	// properties share a column the first one reads it.
-	RowPlan(ReadOnlySpan<KeyValuePair<string, string?>> mappings, ImmutableArray<KeyValuePair<string, string?>> declared, bool strict)
+	RowMap(ReadOnlySpan<KeyValuePair<string, string?>> mappings, ImmutableArray<KeyValuePair<string, string?>> declared, bool strict)
 	{
 		_pairs = declared;
 
@@ -149,7 +149,7 @@ public sealed partial class RowPlan<T>
 		_columns = columns;
 	}
 
-	// Applies a declared plan's pairs and reports which properties they named.
+	// Applies a declared map's pairs and reports which properties they named.
 	static bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns)
 	{
 		var named = new bool[columns.Length];
@@ -189,8 +189,8 @@ public sealed partial class RowPlan<T>
 	}
 
 	// Each mapped property is compared with the properties before it (the first reader of a column is the one that gets it).
-	// Only what the plan names is held to account: the model's own by-name twins are Map<T>()'s business.
-	// The check is quadratic in the property count and runs once per plan.
+	// Only what the map names is held to account: the model's own by-name twins are Map<T>()'s business.
+	// The check is quadratic in the property count and runs once per map.
 	static void RejectSharedColumns(string?[] columns, bool[] named, string paramName)
 	{
 		for (int i = 1; i < columns.Length; i++)
@@ -363,7 +363,7 @@ public sealed partial class RowPlan<T>
 	Func<object?[], T> BuildArray(ArrayLayout layout)
 	{
 		ParameterExpression row = Expression.Parameter(typeof(object?[]), "row");
-		MethodInfo convert = typeof(RowPlan<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
+		MethodInfo convert = typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
 
 		return Compile<object?[]>(row, layout.Names, (i, property)
 			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))));
@@ -457,7 +457,7 @@ public sealed partial class RowPlan<T>
 						Expression.Rethrow(typeof(T)),
 						Expression.Throw(
 							Expression.Call(
-								typeof(RowPlan<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
+								typeof(RowMap<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
 								ex, index, Expression.Constant(bindings)),
 							typeof(T))))));
 	}
@@ -490,7 +490,7 @@ public sealed partial class RowPlan<T>
 
 		// General path: the boxed value, converted. Handles enums, strings → Guid, mismatched types, unknown column types.
 		return Expression.Call(
-			typeof(RowPlan<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
+			typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
 			Expression.Call(r, getValue, ordinal));
 	}
 

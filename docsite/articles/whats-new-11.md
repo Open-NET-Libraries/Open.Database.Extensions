@@ -9,10 +9,10 @@ Version 11 is a performance release. Result mapping is rewritten around a cached
 
 New since `11.0.0-preview01`:
 
-- **`RowPlan<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare a validated, immutable `RowPlan<T>` once (`public static RowPlan<Post> PostPlan => field ??= [new(nameof(Post.Id), "post_id"), ...];`) and pass it to `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other override parameter. A plan is checked where it is declared, and a `null` column means "do not map this property". A read through a plan allocates what `Map<T>()` allocates on matching names. See [Reusing a mapping](mapping.md#reusing-a-mapping).
-- **`Map<T>` takes the pairs inline.** `Map<Post>(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null))` is for one-offs: it builds a new plan and compiles the row reader on every call and caches nothing.
-- **Key/value pair overloads for `ToChannel`, `ToChannelAsync`, `ToTargetBlock`, `ToTargetBlockAsync`, `AsSourceBlock` and `AsSourceBlockAsync`.** They accept pairs, and so a `RowPlan<T>`. Their tuple overloads remain as a convenience that converts the tuples to pairs.
-- **Only public instance properties are mapped.** A static property is no longer treated as a mappable property: name matching ignores it, and a `RowPlan<T>` that names one throws where it is declared.
+- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, declare a validated, immutable `RowMap<T>` once (`public static RowMap<Post> PostMap => field ??= [new(nameof(Post.Id), "post_id"), ...];`) and pass it to `Map<T>`, `Results<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and every other override parameter. A map is checked where it is declared, and a `null` column means "do not map this property". A read through a map allocates what `Map<T>()` allocates on matching names. See [Reusing a mapping](mapping.md#reusing-a-mapping).
+- **`Map<T>` takes the pairs inline.** `Map<Post>(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null))` is for one-offs: it builds a new map and compiles the row reader on every call and caches nothing.
+- **Key/value pair overloads for `ToChannel`, `ToChannelAsync`, `ToTargetBlock`, `ToTargetBlockAsync`, `AsSourceBlock` and `AsSourceBlockAsync`.** They accept pairs, and so a `RowMap<T>`. Their tuple overloads remain as a convenience that converts the tuples to pairs.
+- **Only public instance properties are mapped.** A static property is no longer treated as a mappable property: name matching ignores it, and a `RowMap<T>` that names one throws where it is declared.
 
 ## New and improved
 

@@ -9,12 +9,12 @@ public static partial class CoreExtensions
 	/// reflection or compilation cost; values are read with typed getters, so nothing is boxed.
 	/// </summary>
 	/// <remarks>
-	/// Use this to pass a <see cref="RowPlan{T}"/> or key/value pairs you already hold. For a read that runs more than occasionally, declare a
-	/// <see cref="RowPlan{T}"/> once (collection syntax, <c>field ??=</c>): pairs passed here are matched to a cached plan by their content on every call, a plan is not.
+	/// Use this to pass a <see cref="RowMap{T}"/> or key/value pairs you already hold. For a read that runs more than occasionally, declare a
+	/// <see cref="RowMap{T}"/> once (collection syntax, <c>field ??=</c>): pairs passed here are matched to a cached map by their content on every call, a map is not.
 	/// For a one-off with inline pairs, use the overload that takes <c>params ImmutableArray</c>.
-	/// A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why it takes pairs and no public method takes a plan.
+	/// A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why it takes pairs and no public method takes a map.
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
 	/// <param name="fieldMappingOverrides">
@@ -29,22 +29,22 @@ public static partial class CoreExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowPlan<T>.For(fieldMappingOverrides), 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowMap<T>.For(fieldMappingOverrides), 0, -1));
 	}
 
 	/// <summary>
 	/// Use this for a one-off read with the property-to-column pairs given inline:
 	/// <c>.Map&lt;Post&gt;(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null))</c>.
-	/// For a read that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once instead.
+	/// For a read that runs more than occasionally, declare a <see cref="RowMap{T}"/> once instead.
 	/// </summary>
 	/// <remarks>
-	/// This overload builds a new plan and compiles the row reader on every call, and caches nothing: a one-row read of a 12-property model takes about 0.43 ms and allocates about 29 KB on the in-memory provider, where a read through a declared
-	/// <see cref="RowPlan{T}"/> takes about 0.1 µs and allocates a few hundred bytes. It is meant for one-offs. For anything that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once,
+	/// This overload builds a new map and compiles the row reader on every call, and caches nothing: a one-row read of a 12-property model takes about 0.43 ms and allocates about 29 KB on the in-memory provider, where a read through a declared
+	/// <see cref="RowMap{T}"/> takes about 0.1 µs and allocates a few hundred bytes. It is meant for one-offs. For anything that runs more than occasionally, declare a <see cref="RowMap{T}"/> once,
 	/// with the collection syntax and <c>field ??=</c>, and pass that.
 	/// A null column means "do not map this property": it is not read at all, not even by name, so it keeps its default value.
 	/// A lone pair must be written as a collection expression, <c>Map&lt;Post&gt;([new(...)])</c>, because the compiler reads a single <c>new(...)</c> as the whole collection.
 	/// </remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
 	/// <param name="fieldMappingOverrides">The (property name, column name) pairs. A <see langword="null"/> column means "do not map this property".</param>
@@ -58,7 +58,7 @@ public static partial class CoreExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, fieldMappingOverrides.IsDefaultOrEmpty ? RowPlan<T>.Default : new RowPlan<T>(fieldMappingOverrides), 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, fieldMappingOverrides.IsDefaultOrEmpty ? RowMap<T>.Default : new RowMap<T>(fieldMappingOverrides), 0, -1));
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
@@ -70,11 +70,11 @@ public static partial class CoreExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowPlan<T>.Default, 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowMap<T>.Default, 0, -1));
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.</remarks>
 	[OverloadResolutionPriority(-2)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,

@@ -166,7 +166,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.</remarks>
+	/// <remarks>Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
@@ -176,7 +176,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -190,7 +190,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
+	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
@@ -200,7 +200,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
@@ -357,14 +357,14 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -388,14 +388,14 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
@@ -508,12 +508,12 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -535,12 +535,12 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
@@ -714,7 +714,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.</remarks>
+	/// <remarks>Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
@@ -724,7 +724,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -738,7 +738,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
+	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
@@ -748,7 +748,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
@@ -881,14 +881,14 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -912,14 +912,14 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
@@ -1038,12 +1038,12 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -1065,12 +1065,12 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
-	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,

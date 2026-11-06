@@ -5,7 +5,7 @@ namespace Open.Database.Extensions.Core;
 /// Utility of transforming retrieved data into models matching the type parameter provided.
 /// </summary>
 /// <remarks>
-/// The mapping is a compiled, cached <see cref="RowPlan{T}"/>: constructing a transformer and applying it to
+/// The mapping is a compiled, cached <see cref="RowMap{T}"/>: constructing a transformer and applying it to
 /// a result no longer rebuilds lookups or property setters per query.
 /// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
@@ -29,7 +29,7 @@ public class Transformer<T>
 	/// </summary>
 	public Type Type => typeof(T);
 
-	readonly RowPlan<T> _plan;
+	readonly RowMap<T> _plan;
 
 	/// <summary>
 	/// The property names.
@@ -48,7 +48,7 @@ public class Transformer<T>
 	/// The "key" is the field name, and the "value" is the column name.
 	/// </remarks>
 	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
-		=> _plan = RowPlan<T>.For(overrides);
+		=> _plan = RowMap<T>.For(overrides);
 
 	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
 	[ExcludeFromCodeCoverage]
@@ -58,14 +58,14 @@ public class Transformer<T>
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <remarks>Pass a <see cref="RowMap{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowMap{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a map.</remarks>
+	/// <seealso cref="RowMap{T}"/>
 	public static Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>>? overrides)
 		=> new(overrides);
 
 	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
-	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
+	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowMap{T}"/> or key/value pairs.</remarks>
+	/// <seealso cref="RowMap{T}"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
