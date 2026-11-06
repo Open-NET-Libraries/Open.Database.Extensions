@@ -9,7 +9,7 @@ public static class Mapping
 	public static Post[] MapDefault(SqliteConnection connection)
 	{
 		#region map_default
-		// Columns are matched to public settable properties by name, ignoring case.
+		// Columns are matched to public settable properties by name, ignoring case and underscores.
 		// The extra "views" column has no property, so it is ignored.
 		Post[] posts = connection
 			.Command("select * from posts order by id")
@@ -23,7 +23,7 @@ public static class Mapping
 	public static Person[] MapDeclared(SqliteConnection connection)
 	{
 		#region map_declared_use
-		// Pass the declared map. Nothing is built, keyed or looked up per call.
+		// Pass the declared map. It is built once; each call only checks that the result-set layout matches the one its reader was compiled for.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(PersonMaps.PersonMap)
@@ -34,7 +34,7 @@ public static class Mapping
 	}
 
 	public static Person[] MapNamesOnly(SqliteConnection connection)
-		// LastName is not read at all, so it stays at its default although the result set has a last_name column.
+		// LastName is not read at all, so it keeps its initial value although the result set has a last_name column.
 		=> connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
@@ -82,6 +82,57 @@ public static class Mapping
 		#endregion
 
 		return people;
+	}
+
+	public static Person[] MapSinglePair(SqliteConnection connection)
+	{
+		#region map_single_pair
+		// One pair still needs the brackets: new RowMap<Person>(new(...)) does not compile.
+		// The other properties still match by name (first_name feeds FirstName).
+		RowMap<Person> map = new([new(nameof(Person.Id), "person_id")]);
+		#endregion
+
+		return connection
+			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Map<Person>(map)
+			.ToArray();
+	}
+
+	public static Person[] MapSnakeCase(SqliteConnection connection)
+	{
+		#region map_snake_case
+		// No RowMap<T>: first_name feeds FirstName and last_name feeds LastName (case and underscores ignored).
+		// person_id matches no property, so Id keeps its default.
+		Person[] people = connection
+			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Map<Person>()
+			.ToArray();
+		#endregion
+
+		return people;
+	}
+
+	public static OrderLine? MapNulls(SqliteConnection connection)
+		=> connection
+			.Command("select null as quantity, null as discount, null as note, null as title")
+			.Map<OrderLine>()
+			.FirstOrDefault();
+
+	public static ValueMappingException? MapValueError(SqliteConnection connection)
+	{
+		#region map_value_error
+		try
+		{
+			// 3000000000 does not fit the int property Post.Id.
+			_ = connection.Command("select 3000000000 as id").Map<Post>().ToArray();
+			return null;
+		}
+		catch (ValueMappingException ex)
+		{
+			// ex.PropertyName is "Id", ex.ColumnName is "id", ex.TargetType is typeof(int); the overflow is ex.InnerException.
+			return ex;
+		}
+		#endregion
 	}
 
 	public static Post[] MapPaging(SqliteConnection connection)
@@ -164,7 +215,7 @@ public static class PersonMaps
 
 	#region map_declared_ignore
 	// A null column means "do not map this property": LastName is not read at all, not even by name,
-	// so it keeps its default value even if the result set has a column called LastName.
+	// so it keeps its initial value even if the result set has a column called LastName.
 	public static RowMap<Person> PersonNamesOnlyMap => field ??= new([
 		new(nameof(Person.Id), "person_id"),
 		new(nameof(Person.FirstName), "first_name"),

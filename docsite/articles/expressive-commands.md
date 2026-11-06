@@ -58,7 +58,7 @@ Pass a `CommandType` as the second argument of `Command` if you need `TableDirec
 
 `ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout.
 
-`ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type; a `NULL` or no rows returns `default(T)`. SQLite returns a `long` for `count(*)` and SQL Server returns an `int`. To convert, pass a function instead:
+`ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type (any other type throws `InvalidCastException`); a `NULL` or no rows returns `default(T)`, so use `long?` when you need to tell that from 0. SQLite returns a `long` for `count(*)` and SQL Server returns an `int`. To convert, pass a function instead:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#scalar_and_nonquery)]
 

@@ -50,6 +50,8 @@ Post[] posts = await connectionFactory
     .ToArrayAsync();
 ```
 
+`connectionFactory` is created once per application, for example `new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString))`; see [Registering the factory once](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html#registering-the-factory-once).
+
 The same four jobs, counted from the compiled snippets in [`docsite/samples/BeforeAfter.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/BeforeAfter.cs) (lines of code, not counting blank lines):
 
 | Job | Plain ADO.NET | Open.Database.Extensions |
@@ -71,7 +73,7 @@ These figures come from the 11.0.0-preview01 build, re-run independently on a no
 
 ## Expressive commands
 
-Start from a connection factory and the command opens, runs and disposes its own connection:
+Start from a connection factory and the command opens, runs and disposes its own connection. The call that runs the command (`ToArrayAsync()` here) is called the terminal:
 
 ```cs
 // The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
@@ -93,14 +95,14 @@ Post[] posts = connection
     .ToArray();
 ```
 
-Stored procedures are `StoredProcedure(name)`, and the terminals include `ExecuteNonQuery`, `ExecuteScalar`, `Map<T>()` and their async twins. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html).
+Stored procedures are `StoredProcedure(name)`. Terminals include `ExecuteNonQuery`, `ExecuteScalar` and, after `Map<T>()`, `ToArray`, `ToList` and `FirstOrDefault`. On a `DbConnection` or an `IDbConnectionFactory<TConnection>` each has an `Async` twin. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html).
 
 ## Row mapping without configuration
 
 `Map<T>()` matches columns to public settable properties by name, ignoring case and underscores (`first_name` feeds `FirstName`), and ignores the rest:
 
 ```cs
-// Columns are matched to public settable properties by name, ignoring case.
+// Columns are matched to public settable properties by name, ignoring case and underscores.
 // The extra "views" column has no property, so it is ignored.
 Post[] posts = connection
     .Command("select * from posts order by id")
@@ -108,23 +110,11 @@ Post[] posts = connection
     .ToArray();
 ```
 
-Paging reads only what it needs, and skipped rows are never mapped:
-
-```cs
-// Skipped rows are advanced without being mapped, and reading stops once the take is satisfied.
-Post[] page = connection
-    .Command("select * from posts order by id")
-    .Map<Post>()
-    .Skip(1)
-    .Take(2)
-    .ToArray();
-```
-
 Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the `RowMap<T>` for columns with other names.
 
 ### Renamed columns
 
-When your columns are named differently from your properties, declare the mapping once as a `RowMap<T>` and reuse it. The map is made from key/value pairs of property name and column name; write the property name with `nameof` so the compiler catches a rename. Create it on first use with `field ??=` (C# 14), so only the maps you use are built. It is checked when it is created, and passing it costs nothing per call:
+When your columns are named differently from your properties, declare the mapping once as a `RowMap<T>` and reuse it. The map is made from key/value pairs of property name and column name; write the property name with `nameof` so the compiler catches a rename. Create it on first use with `field ??=` (C# 14), so only the maps you use are built. A declared map adds nothing per call beyond a check of the result-set layout:
 
 ```cs
 static class PersonMaps
@@ -142,25 +132,16 @@ Person[] people = connection
     .ToArray();
 ```
 
-Declare a map once and reuse it: a `new RowMap<T>([...])` or an `ImmutableArray` of pairs passed to the constructor at the call site builds a new map, and compiles the row reader, on every call. Older compilers have no `field` keyword; use an explicit backing field.
-
-A `null` column means "do not map this property". It is not a no-op: it stops the by-name match, so the property keeps its default value even if the result set has a column with that name. The property must exist; the column need not:
-
-```cs
-// LastName is not read at all, although the result set has a last_name column.
-public static RowMap<Person> PersonNamesOnlyMap => field ??= new([
-    new(nameof(Person.Id), "person_id"),
-    new(nameof(Person.FirstName), "first_name"),
-    new(nameof(Person.LastName), null),
-]);
-```
+Declare a map once and reuse it: a `new RowMap<T>([...])` built at the call site is rebuilt, and its row reader recompiled, on every call. A map with one pair still needs the brackets: `new RowMap<T>([new(...)])`. A `null` column in a pair means "do not map this property": it stops the by-name match too, so the property keeps the value `new T()` gave it. Older compilers have no `field` keyword; use an explicit backing field.
 
 More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).
 
 ## Transactions in one expression
 
+`Using` gives your action a connection from the factory and disposes it afterwards.
+
 ```cs
-// The factory opens a connection and starts a transaction. Returning true commits; false (or a throw) rolls back.
+// The factory creates the connection; ExecuteTransactionConditional opens it if it is closed and starts the transaction. Returning true commits; false (or a throw) rolls back.
 bool committed = connectionFactory.Using(connection =>
     connection.ExecuteTransactionConditional(transaction =>
     {
@@ -193,15 +174,11 @@ bool committed = connectionFactory.Using(connection =>
 dotnet add package Open.Database.Extensions.Core --prerelease
 ```
 
-Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview.
+Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview (`11.0.0-preview04`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
 
 ## How it fits together
 
 ![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands, row mapping, all resting on performance.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/architecture.svg)
-
-## Status of version 11
-
-This is **11.0.0-preview03**. What changed, the breaking changes and the known limitations are in [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html); earlier versions are in the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html). Please try it and tell us what you find.
 
 ## Contributing and license
 

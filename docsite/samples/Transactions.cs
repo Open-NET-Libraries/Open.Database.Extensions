@@ -8,7 +8,7 @@ public static class Transactions
 	public static (bool Committed, long RowsAfter) Conditional(IDbConnectionFactory<SqliteConnection> connectionFactory, bool shouldCommit)
 	{
 		#region transaction
-		// The factory opens a connection and starts a transaction. Returning true commits; false (or a throw) rolls back.
+		// The factory creates the connection; ExecuteTransactionConditional opens it if it is closed and starts the transaction. Returning true commits; false (or a throw) rolls back.
 		bool committed = connectionFactory.Using(connection =>
 			connection.ExecuteTransactionConditional(transaction =>
 			{

@@ -156,6 +156,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row.</returns>
+	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
 	public ValueTask<T> ExecuteScalarAsync<T>()
 		=> ExecuteCoreAsync(CancellationToken, static async (command, _, token)
 			=> CastScalar<T>(await command.ExecuteScalarAsync(token).ConfigureAwait(false)));

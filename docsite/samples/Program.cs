@@ -42,6 +42,11 @@ Check(openBefore == ConnectionState.Open && openAfter == ConnectionState.Open, "
 Check(count == 3 && updated == 3, "scalar and non-query");
 Check(ExpressiveCommands.ConvertedScalar(factory) == 5, "ExecuteScalar with a conversion");
 Check(Throws<InvalidCastException>(() => factory.Command("select count(*) from posts").ExecuteScalar<int>()), "ExecuteScalar<int> over a SQLite integer is a failed cast");
+Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over NULL is default");
+Check(factory.Command("select id from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over no rows is default");
+Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long?>() is null, "ExecuteScalar<long?> over NULL is null");
+Check(factory.Command("select max(id) from posts where id <= 3").ExecuteScalar<long?>() == 3, "ExecuteScalar<long?> reads a value");
+Check(await factory.Command("select id from posts where id > 1000").ExecuteScalarAsync<long>() == 0, "ExecuteScalarAsync<long> over no rows is default");
 
 // Mapping.
 Db.Seed();
@@ -55,6 +60,21 @@ Person[] callSite = Mapping.MapCallSite(connection);
 Check(callSite.Length == 2 && callSite[1].FirstName == "Alan" && callSite[1].LastName == "Turing", "a new RowMap at the call site maps the renamed columns");
 Person[] pairs = Mapping.MapPairs(connection);
 Check(pairs.Length == 2 && pairs[1].FirstName == "Alan" && pairs[1].LastName == "Turing", "Map<T> with pairs maps the renamed columns");
+Check(Mapping.MapSinglePair(connection) is [{ Id: 1, FirstName: "Ada" }, { Id: 2, FirstName: "Alan" }], "a RowMap with one pair maps that pair and matches the rest by name");
+Person[] snake = Mapping.MapSnakeCase(connection);
+Check(snake[0] is { Id: 0, FirstName: "Ada", LastName: "Lovelace" }, "snake_case columns feed PascalCase properties with no map");
+Person? exactFirst = connection.Command("select 'Alan' as first_name, 'Ada' as FirstName").Map<Person>().FirstOrDefault();
+Person? exactSecond = connection.Command("select 'Ada' as FirstName, 'Alan' as first_name").Map<Person>().FirstOrDefault();
+Check(exactFirst?.FirstName == "Ada" && exactSecond?.FirstName == "Ada", "an exact column beats an underscore match, in either column order");
+RowMap<Person> nullPair = new([new(nameof(Person.FirstName), null)]);
+Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).FirstOrDefault()?.FirstName == "", "a null pair stops the underscore match");
+RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
+Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName == "", "a property named by a pair is not matched by an underscore column");
+Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: null }, "NULL keeps a non-nullable value-type initializer and gives null to nullable and reference-type properties");
+ValueMappingException? bad = Mapping.MapValueError(connection);
+Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
+Exception? badException = bad;
+Check(badException is DataException && badException is not InvalidOperationException, "ValueMappingException is a DataException, not an InvalidOperationException");
 Check(ReferenceEquals(PersonMaps.PersonMap, PersonMaps.PersonMap), "a map held with field ??= is built once and shared");
 Check(ReferenceEquals(HoldingAMap.BackingMap, HoldingAMap.BackingMap), "a map held in a backing field is built once and shared");
 Check(Mapping.MapUnknownProperty().Contains("'Headline'", StringComparison.Ordinal), "a RowMap with an unknown property throws when it is created");

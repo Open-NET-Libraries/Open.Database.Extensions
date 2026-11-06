@@ -10,7 +10,7 @@ namespace Open.Database.Extensions;
 /// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …).
 /// </summary>
 /// <remarks>
-/// Properties the map does not mention still map by name: a column feeds the property of that name exactly, else exactly, else ignoring case, else ignoring case and underscores (<c>q_type</c> feeds <c>QType</c>).
+/// Properties the map does not mention still map by name: a column feeds the property of that name exactly, else ignoring case, else ignoring case and underscores (<c>q_type</c> feeds <c>QType</c>).
 /// A property with a pair is only matched by its column, exactly or ignoring case; a <see langword="null"/> column means "do not map this property".
 /// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
 /// or two properties reading one column throw <see cref="ArgumentException"/>.
@@ -28,7 +28,7 @@ namespace Open.Database.Extensions;
 public sealed class RowMap<T> : IRowSource<T>
 	where T : new()
 {
-	/// <summary>Creates and validates the map from (property name, column name) pairs; use it where the map is declared, never in a call.</summary>
+	/// <summary>Creates and validates the map from (property name, column name) pairs. Declare it once: a map built in a call is rebuilt on every call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid: an unknown or unsettable property, a property named twice, an empty column name, or two properties reading one column.</exception>
 	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
@@ -44,7 +44,7 @@ public sealed class RowMap<T> : IRowSource<T>
 		_named = named;
 	}
 
-	/// <summary>Creates and validates the map from (property name, column name) pairs held in an <see cref="ImmutableArray{T}"/> (a default array is no mappings); use it where the map is declared, never in a call.</summary>
+	/// <summary>Creates and validates the map from (property name, column name) pairs held in an <see cref="ImmutableArray{T}"/> (a default array is no mappings). Declare it once: a map built in a call is rebuilt on every call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
 	[OverloadResolutionPriority(-1)]
