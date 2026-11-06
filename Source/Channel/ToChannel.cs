@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Runtime.CompilerServices;
+namespace Open.Database.Extensions;
 
 [SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "Intentionally running in the background.")]
 [SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'.", Justification = "<Pending>")]
@@ -94,6 +95,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
@@ -102,7 +105,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<T> ToChannel<T>(this IDataReader reader,
 		bool singleReader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
@@ -113,6 +116,25 @@ public static partial class ChannelDbExtensions
 		_ = ToChannel(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
+
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ChannelReader<T> ToChannel<T>(this IDataReader reader,
+		bool singleReader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannel<T>(reader, singleReader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
@@ -205,6 +227,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to acquire a reader from to iterate.</param>
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
@@ -213,7 +237,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<T> ToChannel<T>(this IDbCommand command,
 		bool singleReader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
@@ -224,6 +248,25 @@ public static partial class ChannelDbExtensions
 		_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
+
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to acquire a reader from to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ChannelReader<T> ToChannel<T>(this IDbCommand command,
+		bool singleReader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannel<T>(command, singleReader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to an unbound channel.
@@ -308,6 +351,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The IDataReader to iterate.</param>
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
@@ -315,7 +360,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -325,6 +370,23 @@ public static partial class ChannelDbExtensions
 		_ = ToChannel(command, channel.Writer, true, fieldMappingOverrides);
 		return channel.Reader;
 	}
+
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The IDataReader to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
+		bool singleReader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToChannel<T>(command, singleReader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
@@ -418,6 +480,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
@@ -426,7 +490,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
@@ -437,6 +501,25 @@ public static partial class ChannelDbExtensions
 		_ = ToChannelAsync(reader, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
+
+	/// <summary>
+	/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
+		bool singleReader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannelAsync<T>(reader, singleReader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to an unbound channel.
@@ -529,6 +612,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to acquire a reader from to iterate.</param>
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
@@ -537,7 +622,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
@@ -548,6 +633,25 @@ public static partial class ChannelDbExtensions
 		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides, cancellationToken);
 		return channel.Reader;
 	}
+
+	/// <summary>
+	/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to acquire a reader from to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
+		bool singleReader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannelAsync<T>(command, singleReader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to an unbound channel.
@@ -631,6 +735,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The IDataReader to iterate.</param>
 	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
@@ -638,7 +744,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The channel reader containing the results.</returns>
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -648,4 +754,21 @@ public static partial class ChannelDbExtensions
 		_ = ToChannelAsync(command, channel.Writer, true, fieldMappingOverrides);
 		return channel.Reader;
 	}
+
+	/// <summary>
+	/// Asynchronously iterates an DbDataReader mapping the results to classes of type <typeparamref name="T"/> and writes each record an unbound channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The IDataReader to iterate.</param>
+	/// <param name="singleReader">True will cause the resultant reader to optimize for the assumption that no concurrent read operations will occur.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The channel reader containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
+		bool singleReader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToChannelAsync<T>(command, singleReader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
 }

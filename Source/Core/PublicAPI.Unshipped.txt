@@ -49,5 +49,8 @@ Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, T
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParamIf(bool condition, string! name, int value, TDbType? type = null, System.Data.ParameterDirection direction = System.Data.ParameterDirection.Input) -> TThis!
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParam(string! name, long value, TDbType? type = null, System.Data.ParameterDirection direction = System.Data.ParameterDirection.Input) -> TThis!
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParamIf(bool condition, string! name, long value, TDbType? type = null, System.Data.ParameterDirection direction = System.Data.ParameterDirection.Input) -> TThis!
-Open.Database.Extensions.RowMap<T>
-Open.Database.Extensions.RowMap<T>.RowMap(params System.Collections.Generic.IEnumerable<(string! Field, string? Column)>! mappings) -> void
+Open.Database.Extensions.RowPlan
+Open.Database.Extensions.RowPlan<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this Open.Database.Extensions.IExecuteReader! command, params System.Collections.Immutable.ImmutableArray<System.Collections.Generic.KeyValuePair<string!, string?>> fieldMappingOverrides) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.RowPlan.Create<T>(params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowPlan<T>!
+static Open.Database.Extensions.RowPlan<T>.implicit operator Open.Database.Extensions.RowPlan<T>!(System.Collections.Immutable.ImmutableArray<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowPlan<T>!

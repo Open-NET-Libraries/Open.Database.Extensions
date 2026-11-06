@@ -29,17 +29,17 @@ public class Transformer<T>
 	/// </summary>
 	public Type Type => typeof(T);
 
-	readonly RowPlan<T> _plan;
+	readonly RowPlan<T> _map;
 
 	/// <summary>
 	/// The property names.
 	/// </summary>
-	public IEnumerable<string> PropertyNames => _plan.PropertyNames;
+	public IEnumerable<string> PropertyNames => _map.PropertyNames;
 
 	/// <summary>
 	/// The column names.
 	/// </summary>
-	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
+	public IEnumerable<string> ColumnNames => _map.ColumnNames;
 
 	/// <summary>
 	/// Constructs a transformer using the optional field overrides.
@@ -48,7 +48,7 @@ public class Transformer<T>
 	/// The "key" is the field name, and the "value" is the column name.
 	/// </remarks>
 	protected internal Transformer(IEnumerable<KeyValuePair<string, string?>>? overrides = null)
-		=> _plan = RowPlan<T>.For(overrides);
+		=> _map = RowPlan<T>.For(overrides);
 
 	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
 	[ExcludeFromCodeCoverage]
@@ -65,7 +65,7 @@ public class Transformer<T>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides is RowMap<T> map ? map : fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
+		=> new(fieldMappingOverrides?.Select(f => new KeyValuePair<string, string?>(f.Field, f.Column)));
 
 	/// <summary>
 	/// A sub class for processing the transformer results.
@@ -100,7 +100,7 @@ public class Transformer<T>
 		/// </summary>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
-			=> Transform = Transformer._plan.ArrayMapper(names);
+			=> Transform = Transformer._map.ArrayMapper(names);
 	}
 
 	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object?[]}}, ArrayPool{object?}, bool)" />
@@ -109,7 +109,7 @@ public class Transformer<T>
 		if (results is null) throw new ArgumentNullException(nameof(results));
 		Contract.EndContractBlock();
 
-		return Drain(results.Result, _plan.ArrayMapper(results.Names));
+		return Drain(results.Result, _map.ArrayMapper(results.Names));
 	}
 
 	/// <summary>
@@ -125,7 +125,7 @@ public class Transformer<T>
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays);
+		return Drain(results.Result, _map.ArrayMapper(results.Names), arrayPool, clearArrays);
 	}
 
 	// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.

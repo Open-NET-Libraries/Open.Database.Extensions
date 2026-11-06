@@ -1,62 +1,69 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Open.Database.Extensions.Core;
+namespace Open.Database.Extensions;
 
-/// <summary>
-/// The compiled mapping from reader rows to <typeparamref name="T"/>.
-/// One plan exists per (<typeparamref name="T"/>, field overrides) pair. Each plan caches one compiled,
-/// typed deserializer per result-set layout (column names + column types), so after the first query of a
-/// given shape no reflection, expression building or compilation happens again.
-/// </summary>
-/// <remarks>
-/// Values are read with the provider's typed getters (<c>GetInt32</c>, <c>GetString</c>, …) whenever the column
-/// type matches the property type (or converts numerically), so nothing is boxed.
-/// <c>NULL</c> is honored for reference types and <see cref="Nullable{T}"/> properties; a <c>NULL</c> in a
-/// column mapped to a non-nullable value-type property is the provider's error to raise.
-/// </remarks>
-internal sealed class RowPlan<T> : RowSource<T>
-	where T : new()
+// The compiled half of RowPlan<T>: the validated tables and the compiled, cached, typed row readers.
+// One RowPlan<T> exists per (T, mapping). Each caches one compiled, typed deserializer per result-set layout
+// (column names + column types), so after the first query of a given shape no reflection, expression building
+// or compilation happens again. A map the application declares and the maps built for legacy per-call overrides are the same type.
+//
+// Values are read with the provider's typed getters (GetInt32, GetString, …) whenever the column
+// type matches the property type (or converts numerically), so nothing is boxed.
+// NULL is honored for reference types and Nullable<T> properties; a NULL in a
+// column mapped to a non-nullable value-type property is the provider's error to raise.
+public sealed partial class RowPlan<T>
 {
 	// Both caches are bounded so dynamically generated overrides or column lists cannot grow memory forever.
 	// Real applications use a handful of each; when a bound is hit the cache is simply cleared and refills.
 	const int MaxOverridePlans = 128;
 	const int MaxLayouts = 128;
 
+	// The plans built for per-call overrides, by the overrides' text. Declared plans never go through it.
 	static readonly ConcurrentDictionary<string, RowPlan<T>> OverridePlans = new(StringComparer.Ordinal);
 
-	// Settable public instance properties by name: reflection runs once per T.
-	static readonly Dictionary<string, PropertyInfo> PropertiesByName = BuildProperties();
+	// Settable public instance properties, in declaration order (a property hidden by name keeps the first): reflection runs once per T.
+	static readonly PropertyInfo[] Properties = BuildProperties();
 
-	static Dictionary<string, PropertyInfo> BuildProperties()
+	static PropertyInfo[] BuildProperties()
 	{
-		var map = new Dictionary<string, PropertyInfo>(StringComparer.Ordinal);
+		var seen = new HashSet<string>(StringComparer.Ordinal);
+		var list = new List<PropertyInfo>();
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
-			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is not null)
-#if NETSTANDARD2_0
-				if (!map.ContainsKey(p.Name)) map.Add(p.Name, p);
-#else
-				map.TryAdd(p.Name, p);
-#endif
+			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is not null && seen.Add(p.Name))
+				list.Add(p);
 		}
 
-		return map;
+		return [.. list];
 	}
 
-	// NOTE: static initializers run in textual order; this must follow PropertiesByName.
-	/// <summary>The plan for the model's default mapping (property name == column name).</summary>
-	public static readonly RowPlan<T> Default = new(default, strict: false);
+	// NOTE: static initializers run in textual order; each must follow what it uses.
+	static readonly Dictionary<string, int> PropertyIndex = BuildPropertyIndex();
 
-	/// <summary>Gets the plan for the given overrides (field name → column name; null column ignores the field).</summary>
-	public static RowPlan<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
+	static Dictionary<string, int> BuildPropertyIndex()
 	{
-		if (overrides is RowMap<T> map) return map.Plan; // Predefined and already validated: no key, no lookup, no allocation.
+		var index = new Dictionary<string, int>(Properties.Length, StringComparer.Ordinal);
+		for (int i = 0; i < Properties.Length; i++) index.Add(Properties[i].Name, i);
+		return index;
+	}
+
+	/// <summary>The plan for the model's default mapping (property name == column name).</summary>
+	internal static readonly RowPlan<T> Default = new(default, [], strict: false);
+
+	/// <summary>Gets the plan for the given overrides (field name → column name; null column ignores the field). A <see cref="RowPlan{T}"/> is used as it is.</summary>
+	internal static RowPlan<T> For(IEnumerable<KeyValuePair<string, string?>>? overrides)
+	{
+		if (overrides is RowPlan<T> plan) return plan; // Declared and already validated: no key, no lookup, no allocation.
 		if (overrides is null) return Default;
 
-		KeyValuePair<string, string?>[] items = overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray();
+		return For((overrides as KeyValuePair<string, string?>[] ?? overrides.ToArray()).AsSpan());
+	}
+
+	static RowPlan<T> For(ReadOnlySpan<KeyValuePair<string, string?>> items)
+	{
 		if (items.Length == 0) return Default;
 
 		var sb = new StringBuilder();
@@ -64,89 +71,100 @@ internal sealed class RowPlan<T> : RowSource<T>
 			sb.Append(kvp.Key).Append('=').Append(kvp.Value ?? "\0").Append('|');
 
 		string key = sb.ToString();
-		if (OverridePlans.TryGetValue(key, out RowPlan<T>? plan)) return plan;
+		if (OverridePlans.TryGetValue(key, out RowPlan<T>? built)) return built;
 
-		plan = new RowPlan<T>(items, strict: false);
+		built = new RowPlan<T>(items, [], strict: false);
 		if (OverridePlans.Count >= MaxOverridePlans) OverridePlans.Clear();
-		if (OverridePlans.TryAdd(key, plan)) return plan;
-		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : plan; // Lost a race (or the cache was just cleared): either plan is equivalent.
+		if (OverridePlans.TryAdd(key, built)) return built;
+		return OverridePlans.TryGetValue(key, out RowPlan<T>? existing) ? existing : built; // Lost a race (or the cache was just cleared): either plan is equivalent.
 	}
 
-	/// <summary>Builds the plan for a <see cref="RowMap{T}"/>: every field it names must exist and be settable, and no two properties may read one column.</summary>
-	public static RowPlan<T> Validated(ReadOnlySpan<KeyValuePair<string, string?>> mappings) => new(mappings, strict: true);
-
-	// Property name → column name for every mapped (not ignored) property.
-	readonly Dictionary<string, string> _propertyMap;
+	// Property names and the columns they read, for every mapped (not ignored) property, in declaration order.
+	readonly string[] _propertyNames;
+	readonly string[] _columnNames;
 
 	/// <summary>The names of the properties that are mapped.</summary>
-	public IEnumerable<string> PropertyNames => _propertyMap.Keys;
+	internal IEnumerable<string> PropertyNames => _propertyNames;
 
 	/// <summary>The names of the columns the mapped properties read.</summary>
-	public IEnumerable<string> ColumnNames => _propertyMap.Values;
+	internal IEnumerable<string> ColumnNames => _columnNames;
 
 	// Column name (case-insensitive) → the property it feeds.
 	readonly Dictionary<string, PropertyInfo> _columnToProperty;
 
 	// Most recently used layout; the overwhelmingly common case is the same shape every time.
 	Layout? _last;
-	// Created with the first layout: a mapping that is never used holds no dictionary.
+	// Created with the first layout: a plan that is never read holds no dictionary.
 	ConcurrentDictionary<int, Layout[]>? _layouts;
 
-	// A strict plan (a RowMap) is held to account for every field it names, and for every column it reads;
-	// a lenient one (a per-call override) keeps the historical behavior: an unknown field with a null column is
-	// harmless, a repeated field takes its last column, and when properties share a column the first one reads it.
-	RowPlan(ReadOnlySpan<KeyValuePair<string, string?>> overrides, bool strict)
+	// The one place the pairs are validated and turned into tables. A strict plan (the one the application declares) is held
+	// to account for every property it names and every column it reads; a lenient one (per-call overrides) keeps the historical
+	// behavior: an unknown property with a null column is harmless, a repeated property takes its last column, and when
+	// properties share a column the first one reads it.
+	RowPlan(ReadOnlySpan<KeyValuePair<string, string?>> pairs, ImmutableArray<KeyValuePair<string, string?>> declared, bool strict)
 	{
-		string paramName = strict ? "mappings" : nameof(overrides);
+		_pairs = declared;
+		string paramName = strict ? "mappings" : "overrides";
 
-		// field name → column name; defaults to the same name.
-		var fieldToColumn = new Dictionary<string, string?>(PropertiesByName.Count, StringComparer.Ordinal);
-		foreach (string name in PropertiesByName.Keys) fieldToColumn[name] = name;
+		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
+		var columns = new string?[Properties.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
 
-		HashSet<string>? named = strict ? new(StringComparer.Ordinal) : null;
-		foreach (KeyValuePair<string, string?> kvp in overrides)
+		bool[]? mentioned = strict ? new bool[Properties.Length] : null;
+		foreach (KeyValuePair<string, string?> pair in pairs)
 		{
-			if (named is not null)
+			if (strict && pair.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
+
+			int index = PropertyIndex.TryGetValue(pair.Key, out int found) ? found : -1;
+			if (mentioned is not null)
 			{
-				if (kvp.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
-				if (!named.Add(kvp.Key)) throw new ArgumentException($"The property '{kvp.Key}' is mapped more than once.", paramName);
-				if (kvp.Value is { Length: 0 }) throw new ArgumentException($"The property '{kvp.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
+				if (index >= 0)
+				{
+					if (mentioned[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", paramName);
+					mentioned[index] = true;
+				}
+
+				if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
 			}
 
-			if (!PropertiesByName.ContainsKey(kvp.Key))
+			if (index < 0)
 			{
-				if (kvp.Value is null && !strict) continue; // Ignoring a field that does not exist is harmless.
-				throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{kvp.Key}'.", paramName);
+				if (pair.Value is null && !strict) continue; // Ignoring a property that does not exist is harmless.
+				throw new ArgumentException($"'{typeof(T)}' has no settable public property named '{pair.Key}'.", paramName);
 			}
 
-			fieldToColumn[kvp.Key] = kvp.Value; // A null column means 'ignore this field'.
+			columns[index] = pair.Value; // A null column means 'do not map this property'.
 		}
 
-		_propertyMap = new Dictionary<string, string>(fieldToColumn.Count, StringComparer.Ordinal);
-		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
-			if (kvp.Value is not null) _propertyMap[kvp.Key] = kvp.Value;
+		int mapped = 0;
+		foreach (string? column in columns)
+			if (column is not null) mapped++;
 
-		_columnToProperty = new Dictionary<string, PropertyInfo>(fieldToColumn.Count, StringComparer.OrdinalIgnoreCase);
-		foreach (KeyValuePair<string, string?> kvp in fieldToColumn)
+		_propertyNames = new string[mapped];
+		_columnNames = new string[mapped];
+		_columnToProperty = new Dictionary<string, PropertyInfo>(mapped, StringComparer.OrdinalIgnoreCase);
+		int k = 0;
+		for (int i = 0; i < columns.Length; i++)
 		{
-			if (kvp.Value is null) continue;
-			if (!_columnToProperty.TryGetValue(kvp.Value, out PropertyInfo? first))
-				_columnToProperty.Add(kvp.Value, PropertiesByName[kvp.Key]);
-			else if (named is not null && (named.Contains(kvp.Key) || named.Contains(first.Name))) // only what the map mentions: the model's own by-name twins are Map<T>()'s business
-				throw new ArgumentException($"The properties '{first.Name}' and '{kvp.Key}' both read column '{kvp.Value}'. Map one of them to another column, or to null to ignore it.", paramName);
+			if (columns[i] is not { } column) continue;
+
+			_propertyNames[k] = Properties[i].Name;
+			_columnNames[k++] = column;
+			if (!_columnToProperty.TryGetValue(column, out PropertyInfo? first))
+				_columnToProperty.Add(column, Properties[i]);
+			else if (mentioned is not null && (mentioned[i] || mentioned[PropertyIndex[first.Name]])) // only what the map mentions: the model's own by-name twins are Map<T>()'s business
+				throw new ArgumentException($"The properties '{first.Name}' and '{Properties[i].Name}' both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
 		}
 	}
 
-	/// <inheritdoc />
-	public override Func<DbDataReader, T> Mapper(DbDataReader reader)
+	Func<DbDataReader, T> IRowSource<T>.Mapper(DbDataReader reader)
 	{
 		Layout? l = _last;
 		if (l?.Matches(reader) != true) l = Resolve(reader);
 		return l.Db ??= Build<DbDataReader>(l);
 	}
 
-	/// <inheritdoc />
-	public override Func<IDataRecord, T> Mapper(IDataRecord reader)
+	Func<IDataRecord, T> IRowSource<T>.Mapper(IDataRecord reader)
 	{
 		Layout? l = _last;
 		if (l?.Matches(reader) != true) l = Resolve(reader);
@@ -273,7 +291,7 @@ internal sealed class RowPlan<T> : RowSource<T>
 	}
 
 	/// <summary>Gets the mapper from <c>object[]</c> rows whose columns are, in order, <paramref name="names"/>.</summary>
-	public Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
+	internal Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
 	{
 		ArrayLayout? l = _lastArray;
 		if (l?.Matches(names) != true) l = ResolveArray(names);

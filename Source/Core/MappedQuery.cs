@@ -8,10 +8,16 @@ public static partial class CoreExtensions
 	/// is invoked. The mapping is compiled once per result-set shape and cached, so repeated queries pay no
 	/// reflection or compilation cost; values are read with typed getters, so nothing is boxed.
 	/// </summary>
+	/// <remarks>
+	/// Use this to pass a <see cref="RowPlan{T}"/> or key/value pairs you already hold. For a read that runs more than occasionally, declare a
+	/// <see cref="RowPlan{T}"/> once (collection syntax, <c>field ??=</c>): pairs passed here are matched to a cached plan by their content on every call, a plan is not.
+	/// For a one-off with inline pairs, use the overload that takes <c>params ImmutableArray</c>.
+	/// </remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
 	/// <param name="fieldMappingOverrides">
-	/// An override map of field (property) names to column names; a null column value ignores that field.
+	/// An override map of field (property) names to column names. A null column means "do not map this property": it is not read at all, not even by name, so it keeps its default value.
 	/// </param>
 	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
 	public static MappedQuery<T> Map<T>(
@@ -25,8 +31,37 @@ public static partial class CoreExtensions
 		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowPlan<T>.For(fieldMappingOverrides), 0, -1));
 	}
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <summary>
+	/// Use this for a one-off read with the property-to-column pairs given inline:
+	/// <c>.Map&lt;Post&gt;(new(nameof(Post.Id), "post_id"), new(nameof(Post.Body), null))</c>.
+	/// For a read that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once instead.
+	/// </summary>
+	/// <remarks>
+	/// This overload builds a new plan and compiles the row reader on every call, and caches nothing: a one-row read allocates about 30 KB, where a read through a declared
+	/// <see cref="RowPlan{T}"/> allocates a few hundred bytes. It is meant for one-offs. For anything that runs more than occasionally, declare a <see cref="RowPlan{T}"/> once,
+	/// with the collection syntax and <c>field ??=</c>, and pass that.
+	/// A null column means "do not map this property": it is not read at all, not even by name, so it keeps its default value.
+	/// A lone pair must be written as a collection expression, <c>Map&lt;Post&gt;([new(...)])</c>, because the compiler reads a single <c>new(...)</c> as the whole collection.
+	/// </remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The model type to map the values to.</typeparam>
+	/// <param name="command">The command to read from.</param>
+	/// <param name="fieldMappingOverrides">The (property name, column name) pairs. A <see langword="null"/> column means "do not map this property".</param>
+	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
 	[OverloadResolutionPriority(1)]
+	public static MappedQuery<T> Map<T>(
+		this IExecuteReader command,
+		params ImmutableArray<KeyValuePair<string, string?>> fieldMappingOverrides)
+		where T : new()
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, fieldMappingOverrides.IsDefaultOrEmpty ? RowPlan<T>.Default : new RowPlan<T>(fieldMappingOverrides), 0, -1));
+	}
+
+	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
+	[OverloadResolutionPriority(2)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command)
 		where T : new()
@@ -38,6 +73,7 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
 	[OverloadResolutionPriority(-2)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
@@ -77,11 +113,11 @@ readonly struct MappedQueryCore<T>
 	const CommandBehavior GeneratedMapping = CommandBehavior.SingleResult | CommandBehavior.SequentialAccess;
 
 	readonly IExecuteReader _command;
-	readonly RowSource<T> _source;
+	readonly IRowSource<T> _source;
 	readonly int _skip;
 	readonly int _take; // -1 == unbounded.
 
-	internal MappedQueryCore(IExecuteReader command, RowSource<T> source, int skip, int take)
+	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take)
 	{ _command = command; _source = source; _skip = skip; _take = take; }
 
 	CommandBehavior Behavior => _source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping;
@@ -135,7 +171,7 @@ readonly struct MappedQueryCore<T>
 			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token), Behavior);
 	}
 
-	static IAsyncEnumerable<T> StreamAsync(RowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
+	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
 		=> reader is DbDataReader db
 			? RowReader.StreamAsync(source, db, skip, take, useAsync, token)
 			: RowReader.Stream(source, reader, skip, take).ToAsyncEnumerable();

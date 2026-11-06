@@ -419,6 +419,8 @@ public static class IExecuteReaderExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -439,6 +441,8 @@ public static class IExecuteReaderExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -460,6 +464,8 @@ public static class IExecuteReaderExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>

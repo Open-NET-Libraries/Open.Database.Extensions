@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Runtime.CompilerServices;
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for pipelining data with Dataflow blocks.
@@ -125,6 +126,8 @@ public static partial class DataflowExtensions
 	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target block to receive the results.</param>
@@ -134,13 +137,33 @@ public static partial class DataflowExtensions
 	public static long ToTargetBlock<T>(this IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 		=> Dataflow.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
+	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="target">The target block to receive the results.</param>
+	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The number of records processed.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static long ToTargetBlock<T>(this IDataReader reader,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToTargetBlock<T>(reader, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
+
+	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -296,6 +319,8 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
@@ -305,7 +330,7 @@ public static partial class DataflowExtensions
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -314,6 +339,28 @@ public static partial class DataflowExtensions
 
 		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, fieldMappingOverrides);
 	}
+
+	/// <summary>
+	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="target">The target block to receive the results.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static long ToTargetBlock<T>(this IDbCommand command,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToTargetBlock<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and posts each record as an array to the target block.
@@ -471,6 +518,8 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
@@ -480,7 +529,7 @@ public static partial class DataflowExtensions
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -489,6 +538,28 @@ public static partial class DataflowExtensions
 
 		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, fieldMappingOverrides);
 	}
+
+	/// <summary>
+	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the target block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="target">The target block to receive the results.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static long ToTargetBlock<T>(this IExecuteReader command,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToTargetBlock<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
@@ -672,6 +743,8 @@ public static partial class DataflowExtensions
 	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target block to receive the results.</param>
@@ -682,12 +755,34 @@ public static partial class DataflowExtensions
 	public static ValueTask<long> ToTargetBlockAsync<T>(this IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 		=> Dataflow.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
+
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="target">The target block to receive the results.</param>
+	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records processed.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToTargetBlockAsync<T>(this IDataReader reader,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToTargetBlockAsync<T>(reader, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
@@ -865,6 +960,8 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
@@ -875,7 +972,7 @@ public static partial class DataflowExtensions
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 	{
@@ -891,6 +988,29 @@ public static partial class DataflowExtensions
 			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
 			target, complete, fieldMappingOverrides, cancellationToken).ConfigureAwait(false);
 	}
+
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="target">The target block to receive the results.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToTargetBlockAsync<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the target block.
@@ -1048,6 +1168,8 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target block to receive the results.</param>
@@ -1057,7 +1179,7 @@ public static partial class DataflowExtensions
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -1070,6 +1192,27 @@ public static partial class DataflowExtensions
 			target, complete, fieldMappingOverrides, command.CancellationToken).ConfigureAwait(false);
 	}
 
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the target block.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="target">The target block to receive the results.</param>
+	/// <param name="complete">If true, the <paramref name="target"/> is completed once every record read has been delivered to it (after the internal buffer has drained, which can be after this method has returned), or faulted with the exception if reading or mapping failed; it is never completed or faulted before the reader has been released.  If false, the target is left open and is never completed or faulted by this method; a record that cannot be mapped then ends the pipeline silently, because the mapping runs behind this call and no exception reaches the caller.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The number of records read and handed to the internal buffer.  Delivery to the <paramref name="target"/> continues in the background, so some of them may not have reached it yet when this returns.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
+		ITargetBlock<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToTargetBlockAsync<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
+
 	// Shared by the mapped command-level overloads.
 	//
 	// The internal pipeline (source end -> mapper -> target) exists before anything can fail, and the only thing this
@@ -1079,7 +1222,7 @@ public static partial class DataflowExtensions
 		Func<Func<IDataReader, long>, long> executeReader,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		// The public overloads that call this have already validated their arguments (once); nothing here guards again.
@@ -1107,7 +1250,7 @@ public static partial class DataflowExtensions
 		Func<Func<IDataReader, ValueTask<long>>, ValueTask<long>> executeReader,
 		ITargetBlock<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken)
 		where T : new()
 	{

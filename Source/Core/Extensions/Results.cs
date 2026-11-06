@@ -5,6 +5,8 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Iterates each record and attempts to map the fields to type T.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -32,6 +34,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="Results{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)"/>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IEnumerable<T> Results<T>(this IDataReader reader, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
@@ -41,6 +45,8 @@ public static partial class CoreExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -66,6 +72,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
@@ -75,6 +83,8 @@ public static partial class CoreExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -100,6 +110,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="Results{T}(IDbCommand, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static IEnumerable<T> Results<T>(this IDbCommand command, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
@@ -108,6 +120,8 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Asynchronously iterates each record and attempts to map the fields to type T.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -126,6 +140,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static IAsyncEnumerable<T> ResultsAsync<T>(
 		this DbDataReader reader,
@@ -136,6 +152,8 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(reader, cancellationToken, fieldMappingOverrides);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, CancellationToken)" />
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	public static IAsyncEnumerable<T> ResultsAsync<T>(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -144,6 +162,8 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(reader, fieldMappingOverrides, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static IAsyncEnumerable<T> ResultsAsync<T>(
 		this DbDataReader reader,
@@ -155,6 +175,8 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -175,6 +197,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader,
@@ -184,6 +208,8 @@ public static partial class CoreExtensions
 		=> ResultsBufferedAsync<T>(reader, fieldMappingOverrides, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader, CancellationToken cancellationToken,
 		params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
@@ -191,6 +217,8 @@ public static partial class CoreExtensions
 		=> ResultsBufferedAsync<T>(reader, fieldMappingOverrides, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader,
@@ -202,6 +230,8 @@ public static partial class CoreExtensions
 		=> ResultsBufferedAsync<T>(reader, fieldMappingOverrides?.Select(mapping => new KeyValuePair<string, string?>(mapping.Field, mapping.Column)), useReadAsync, cancellationToken);
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader, CancellationToken cancellationToken,
@@ -212,6 +242,8 @@ public static partial class CoreExtensions
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -226,6 +258,8 @@ public static partial class CoreExtensions
 		=> command.ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(fieldMappingOverrides, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
 		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
@@ -234,6 +268,8 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(command, fieldMappingOverrides, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
@@ -250,6 +286,8 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(command, null, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
@@ -259,6 +297,8 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(command, fieldMappingOverrides?.Select(mapping => new KeyValuePair<string, string?>(mapping.Field, mapping.Column)), useReadAsync, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
 		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
@@ -267,6 +307,8 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(command, fieldMappingOverrides, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, IEnumerable{KeyValuePair{string, string?}}?, bool, CancellationToken)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
@@ -280,6 +322,8 @@ public static partial class CoreExtensions
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -292,6 +336,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsFromDataTable{T}(IDataReader, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDataReader reader, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()
@@ -301,6 +347,8 @@ public static partial class CoreExtensions
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
@@ -313,6 +361,8 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsFromDataTable{T}(IDbCommand, IEnumerable{KeyValuePair{string, string?}}?)" />
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDbCommand command, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
 		where T : new()

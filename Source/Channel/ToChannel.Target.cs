@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Runtime.CompilerServices;
+using System.Diagnostics;
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -158,6 +159,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target channel to receive the results.</param>
@@ -168,12 +171,33 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 		=> Channel.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsTo(reader, target, complete, cancellationToken);
+
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="target">The target channel to receive the results.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
+		ChannelWriter<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannel<T>(reader, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -284,6 +308,8 @@ public static partial class ChannelDbExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The DbCommand to generate a reader from.</param>
 	/// <param name="target">The target channel to receive the results.</param>
@@ -294,10 +320,33 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 		=> ToChannelMapped(command, target, complete, fieldMappingOverrides, cancellationToken);
+
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The DbCommand to generate a reader from.</param>
+	/// <param name="target">The target channel to receive the results.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
+		ChannelWriter<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannel<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
@@ -373,6 +422,8 @@ public static partial class ChannelDbExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target channel writer to receive the results.</param>
@@ -382,9 +433,30 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 		=> ToChannelMapped(command, target, complete, fieldMappingOverrides);
+
+	/// <summary>
+	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="target">The target channel writer to receive the results.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
+		ChannelWriter<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToChannel<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
 
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		DbCommand command,
@@ -540,6 +612,8 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="target">The target channel to receive the results.</param>
@@ -550,12 +624,33 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 		=> Channel.Transformer<T>
 			.Create(fieldMappingOverrides)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
+
+	/// <summary>
+	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="target">The target channel to receive the results.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
+		ChannelWriter<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannelAsync<T>(reader, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -642,6 +737,8 @@ public static partial class ChannelDbExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The DbCommand to generate a reader from.</param>
 	/// <param name="target">The target channel to receive the results.</param>
@@ -652,10 +749,33 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken = default)
 		where T : new()
 		=> ToChannelMappedAsync(command, target, complete, fieldMappingOverrides, cancellationToken);
+
+	/// <summary>
+	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The DbCommand to generate a reader from.</param>
+	/// <param name="target">The target channel to receive the results.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
+		ChannelWriter<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> ToChannelAsync<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
@@ -737,6 +857,8 @@ public static partial class ChannelDbExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="target">The target channel writer to receive the results.</param>
@@ -746,9 +868,30 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 		=> ToChannelMappedAsync(command, target, complete, fieldMappingOverrides);
+
+	/// <summary>
+	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="target">The target channel writer to receive the results.</param>
+	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
+		ChannelWriter<T> target,
+		bool complete,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
+		where T : new()
+		=> ToChannelAsync<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)));
 
 	// A field override that the model can't honor is a failure of the operation, not a precondition: with `complete` the target is
 	// faulted with it (so that whoever awaits the target isn't left waiting), and the call throws. Nothing has been executed and there
@@ -756,7 +899,7 @@ public static partial class ChannelDbExtensions
 	// (The preconditions - null arguments, no connection, a closed target, a cancelled token - have been checked before this, and
 	// leave the target alone.)
 	private static Channel.Transformer<T> CreateMapper<T>(
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		ChannelWriter<T> target,
 		bool complete)
 		where T : new()
@@ -786,7 +929,7 @@ public static partial class ChannelDbExtensions
 		IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken)
 		where T : new()
 	{
@@ -811,7 +954,7 @@ public static partial class ChannelDbExtensions
 		IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
@@ -833,7 +976,7 @@ public static partial class ChannelDbExtensions
 		DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		CancellationToken cancellationToken)
 		where T : new()
 	{
@@ -858,7 +1001,7 @@ public static partial class ChannelDbExtensions
 		IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
-		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		where T : new()
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it

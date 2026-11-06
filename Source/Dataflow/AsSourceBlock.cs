@@ -1,4 +1,5 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Runtime.CompilerServices;
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Extensions for pipelining data with Dataflow blocks.
@@ -79,13 +80,15 @@ public static partial class DataflowExtensions
 	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 	/// <returns>The source block containing the results.</returns>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
@@ -95,6 +98,24 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
+	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <returns>The source block containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		DataflowBlockOptions? options = null)
+		where T : new()
+		=> AsSourceBlock<T>(reader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), options);
+
+	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
@@ -175,13 +196,15 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 	/// <returns>The source block containing the results.</returns>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
@@ -189,6 +212,26 @@ public static partial class DataflowExtensions
 		ToTargetBlock(command, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}
+
+	/// <summary>
+	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <returns>The source block containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		DataflowBlockOptions? options = null)
+		where T : new()
+		=> AsSourceBlock<T>(command, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), options);
 
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and posts each record as an array to the block.
@@ -271,13 +314,15 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 	/// <returns>The source block containing the results.</returns>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
@@ -285,6 +330,26 @@ public static partial class DataflowExtensions
 		ToTargetBlock(command, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}
+
+	/// <summary>
+	/// Iterates a data reader mapping the results to classes of type <typeparamref name="T"/> and posts each record to the block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <returns>The source block containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		DataflowBlockOptions? options = null)
+		where T : new()
+		=> AsSourceBlock<T>(command, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), options);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the block.
@@ -365,6 +430,8 @@ public static partial class DataflowExtensions
 	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
 	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
@@ -372,7 +439,7 @@ public static partial class DataflowExtensions
 	/// <param name="cancellationToken">An optional cancellation token.</param>
 	/// <returns>The source block containing the results.</returns>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 		where T : new()
@@ -381,6 +448,26 @@ public static partial class DataflowExtensions
 		_ = ToTargetBlockAsync(reader, buffer, true, fieldMappingOverrides, cancellationToken);
 		return buffer;
 	}
+
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+	/// Will stop reading if the target rejects (is complete). If rejected, the current record will be the rejected record.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="reader">The IDataReader to iterate.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The source block containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> AsSourceBlockAsync<T>(reader, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), options, cancellationToken);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the block.
@@ -467,6 +554,8 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
@@ -475,7 +564,7 @@ public static partial class DataflowExtensions
 	/// <returns>The source block containing the results.</returns>
 	/// <returns>The number of records processed.</returns>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
 		where T : new()
@@ -484,6 +573,28 @@ public static partial class DataflowExtensions
 		_ = ToTargetBlockAsync(command, buffer, true, fieldMappingOverrides, cancellationToken);
 		return buffer;
 	}
+
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <returns>The source block containing the results.</returns>
+	/// <returns>The number of records processed.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
+		where T : new()
+		=> AsSourceBlockAsync<T>(command, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), options, cancellationToken);
 
 	/// <summary>
 	/// Iterates a data reader (asynchronous read if possible) and asynchronously sends each record as an array to the block.
@@ -561,13 +672,15 @@ public static partial class DataflowExtensions
 	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
 	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
 	/// </summary>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
 	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
 	/// <returns>The source block containing the results.</returns>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides,
 		DataflowBlockOptions? options = null)
 		where T : new()
 	{
@@ -575,4 +688,23 @@ public static partial class DataflowExtensions
 		_ = ToTargetBlockAsync(command, buffer, true, fieldMappingOverrides);
 		return buffer;
 	}
+
+	/// <summary>
+	/// Iterates a data reader (asynchronous read if possible) mapping the results to classes of type <typeparamref name="T"/> and asynchronously sends each record to the block.
+	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
+	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// </summary>
+	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
+	/// <seealso cref="RowPlan{T}"/>
+	/// <typeparam name="T">The return type of the transform function.</typeparam>
+	/// <param name="command">The command to generate a reader from.</param>
+	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <param name="options">Optional DataflowBlockOptions for configuring the source block.</param>
+	/// <returns>The source block containing the results.</returns>
+	[OverloadResolutionPriority(-2)]
+	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
+		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
+		DataflowBlockOptions? options = null)
+		where T : new()
+		=> AsSourceBlockAsync<T>(command, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), options);
 }

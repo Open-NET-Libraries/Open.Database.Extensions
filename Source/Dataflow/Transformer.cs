@@ -19,14 +19,14 @@ internal class Transformer<T>(IEnumerable<KeyValuePair<string, string?>>? fieldM
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="fieldMappingOverrides">An optional override map of field names to column names where the keys are the property names, and values are the column names.</param>
-	public static new Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>> fieldMappingOverrides)
+	public static new Transformer<T> Create(params IEnumerable<KeyValuePair<string, string?>>? fieldMappingOverrides)
 		=> new(fieldMappingOverrides);
 
 	/// <inheritdoc cref="Create(IEnumerable{KeyValuePair{string, string?}}?)"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(-1)]
 	public static new Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(fieldMappingOverrides is RowMap<T> map ? map : fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
+		=> new(fieldMappingOverrides?.Select(kv => new KeyValuePair<string, string?>(kv.Field, kv.Column)));
 
 	/// <summary>
 	/// The internal two-stage pipeline behind the mapped overloads:
