@@ -5,8 +5,8 @@ using System.Reflection;
 
 namespace Open.Database.Extensions.Tests;
 
-// NULL in a column that feeds a non-nullable value-type property: a strict map (the default) throws a ValueMappingException, naming the property and column;
-// a RowMap<T>.NullLeavesValue map skips the assignment, so the property keeps what new T() gave it. Nullable and reference properties get null either way.
+// The declared type of the property decides what a NULL does: a nullable or reference property gets null; a non-nullable value-type property keeps what new T() gave it
+// (its initializer, else its default). Every map does this, RowMap<T>.Default included; only a value that cannot be mapped throws a ValueMappingException.
 [ExcludeFromCodeCoverage]
 public static class RowMapNullTests
 {
@@ -36,6 +36,14 @@ public static class RowMapNullTests
 		public Shade? Tint { get; set; } = Shade.Green;
 	}
 
+	// No initializers: a NULL leaves the default.
+	public sealed class Plain
+	{
+		public int Count { get; set; }
+		public DateTime Created { get; set; }
+		public Shade Shade { get; set; }
+	}
+
 	static readonly ImmutableArray<ColumnDef> SolidColumns =
 	[
 		("Count", typeof(int)), ("Big", typeof(long)), ("Flag", typeof(bool)), ("Price", typeof(decimal)),
@@ -46,10 +54,8 @@ public static class RowMapNullTests
 
 	public static TheoryData<string> NonNullable => [.. SolidNames];
 
-	static readonly RowMap<Solid> Lenient = RowMap<Solid>.NullLeavesValue();
-
 	// The default map, built both ways it can be built.
-	static readonly RowMap<Solid>[] StrictMaps = [RowMap<Solid>.Default, new()];
+	static readonly RowMap<Solid>[] Maps = [RowMap<Solid>.Default, new()];
 
 	// A row of valid cells, except that the cell of `nullColumn` is NULL.
 	static object?[] SolidRow(string? nullColumn = null)
@@ -92,63 +98,78 @@ public static class RowMapNullTests
 		}
 	}
 
-	// ---- strict (the default): NULL into a non-nullable value type throws, naming the property and the column ----
+	// ---- a non-nullable value-type property keeps what new T() gave it; every other cell is read ----
 
 	[Theory]
 	[MemberData(nameof(NonNullable))]
-	public static void Strict_NullInANonNullableValueColumn_Throws_NamingThePropertyAndColumn(string column)
+	public static void NullInANonNullableValueColumn_KeepsWhatNewTGave(string column)
 	{
-		foreach (RowMap<Solid> map in StrictMaps)
+		PropertyInfo property = typeof(Solid).GetProperty(column)!;
+
+		foreach (RowMap<Solid> map in Maps)
 		{
 			foreach (Func<RowMap<Solid>, string?, List<Solid>> route in Routes)
 			{
-				var ex = Assert.Throws<ValueMappingException>(() => route(map, column));
-				Assert.Contains($"Unable to set value of property '{column}' from column '{column}'.", ex.Message);
-				Assert.Equal(column, ex.PropertyName);
-				Assert.Equal(column, ex.ColumnName);
-				Assert.Equal(typeof(Solid).GetProperty(column)!.PropertyType, ex.TargetType);
-				Assert.NotNull(ex.InnerException);
+				Solid expected = Valid();
+				property.SetValue(expected, property.GetValue(new Solid())); // the initializer
+
+				AssertSame(expected, Assert.Single(route(map, column)));
 			}
 		}
 
 		// Map<T>() with no map is the same default.
-		Assert.Throws<ValueMappingException>(() => Cmd(SolidColumns, SolidRow(column)).Map<Solid>().ToList());
+		Solid viaNoMap = Assert.Single(Cmd(SolidColumns, SolidRow(column)).Map<Solid>().ToList());
+		Assert.Equal(property.GetValue(new Solid()), property.GetValue(viaNoMap));
 	}
 
-	// ---- lenient (NullLeavesValue): the property keeps what new T() gave it, every other cell is read ----
-
-	[Theory]
-	[MemberData(nameof(NonNullable))]
-	public static void Lenient_NullInANonNullableValueColumn_KeepsWhatNewTGave(string column)
+	[Fact]
+	public static void NullInEveryColumn_KeepsEveryInitializer()
 	{
-		PropertyInfo property = typeof(Solid).GetProperty(column)!;
+		object?[] allNull = new object?[SolidNames.Length];
 
-		foreach (Func<RowMap<Solid>, string?, List<Solid>> route in Routes)
+		foreach (RowMap<Solid> map in Maps)
 		{
-			Solid expected = Valid();
-			property.SetValue(expected, property.GetValue(new Solid())); // the initializer
+			AssertSame(new Solid(), Assert.Single(Cmd(SolidColumns, allNull).Map(map).ToList()));
 
-			AssertSame(expected, Assert.Single(route(Lenient, column)));
+			QueryResult<Queue<object?[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object?[]>([allNull]));
+			AssertSame(new Solid(), Assert.Single(result.DequeueAs(map).ToList()));
 		}
 	}
 
 	[Fact]
-	public static void BothMaps_ReadEveryCellWhenNothingIsNull()
+	public static void NullInAPropertyWithoutAnInitializer_LeavesTheDefault()
 	{
-		foreach (Func<RowMap<Solid>, string?, List<Solid>> route in Routes)
+		ImmutableArray<ColumnDef> columns = [("Count", typeof(int)), ("Created", typeof(DateTime)), ("Shade", typeof(string))];
+
+		Plain viaReader = Assert.Single(Cmd(columns, new object?[] { null, null, null }).Map<Plain>().ToList());
+		Assert.Equal(0, viaReader.Count);
+		Assert.Equal(default, viaReader.Created);
+		Assert.Equal(Shade.None, viaReader.Shade);
+
+		QueryResult<Queue<object?[]>> result = new([0, 1, 2], ["Count", "Created", "Shade"], new Queue<object?[]>([[null, DBNull.Value, DBNull.Value]]));
+		Plain viaArray = Assert.Single(result.DequeueAs(RowMap<Plain>.Default).ToList());
+		Assert.Equal(0, viaArray.Count);
+		Assert.Equal(default, viaArray.Created);
+		Assert.Equal(Shade.None, viaArray.Shade);
+	}
+
+	[Fact]
+	public static void ARealValue_StillMaps()
+	{
+		foreach (RowMap<Solid> map in Maps)
 		{
-			AssertSame(Valid(), Assert.Single(route(Lenient, null)));
-			foreach (RowMap<Solid> map in StrictMaps) AssertSame(Valid(), Assert.Single(route(map, null)));
+			foreach (Func<RowMap<Solid>, string?, List<Solid>> route in Routes)
+				AssertSame(Valid(), Assert.Single(route(map, null)));
 		}
 	}
 
 	[Fact]
-	public static void Lenient_AFailureThatIsNotNull_StillNamesThePropertyAndColumn()
+	public static void AValueThatCannotBeMapped_StillNamesThePropertyAndColumn()
 	{
 		object?[] row = SolidRow();
 		row[Array.IndexOf(SolidNames, "Shade")] = "Purple"; // not a member of Shade
 
-		var ex = Assert.Throws<ValueMappingException>(() => Cmd(SolidColumns, row).Map(Lenient).ToList());
+		var ex = Assert.Throws<ValueMappingException>(() => Cmd(SolidColumns, row).Map(RowMap<Solid>.Default).ToList());
 		Assert.Contains("property 'Shade' from column 'Shade'", ex.Message);
 		Assert.Equal("Shade", ex.PropertyName);
 		Assert.Equal("Shade", ex.ColumnName);
@@ -156,84 +177,27 @@ public static class RowMapNullTests
 		Assert.NotNull(ex.InnerException);
 	}
 
-	// ---- nullable and reference properties get null, whichever map ----
+	// ---- nullable and reference properties get null ----
 
-	static void AssertNullableAndReferenceGetNull(RowMap<Optional> map)
+	[Fact]
+	public static void NullableAndReferenceProperties_GetNull()
 	{
 		ImmutableArray<ColumnDef> columns = [("Maybe", typeof(int)), ("Text", typeof(string)), ("Tint", typeof(string))];
 
-		Optional viaReader = ReadOptional(columns, new object?[] { null, null, null }, map);
+		Optional viaReader = Assert.Single(Cmd(columns, new object?[] { null, null, null }).Map(RowMap<Optional>.Default).ToList());
 		Assert.Null(viaReader.Maybe);
 		Assert.Null(viaReader.Text);
 		Assert.Null(viaReader.Tint);
 
 		// Buffered rows: a C# null and a DBNull both count as NULL.
 		QueryResult<Queue<object?[]>> result = new([0, 1, 2], ["Maybe", "Text", "Tint"], new Queue<object?[]>([[null, DBNull.Value, DBNull.Value]]));
-		Optional viaArray = Assert.Single(result.DequeueAs(map).ToList());
+		Optional viaArray = Assert.Single(result.DequeueAs(RowMap<Optional>.Default).ToList());
 		Assert.Null(viaArray.Maybe);
 		Assert.Null(viaArray.Text);
 		Assert.Null(viaArray.Tint);
 	}
 
-	static Optional ReadOptional(ImmutableArray<ColumnDef> columns, object?[] row, RowMap<Optional> map)
-		=> Assert.Single(Cmd(columns, row).Map(map).ToList());
-
-	[Fact]
-	public static void StrictMap_NullableAndReferenceProperties_GetNull()
-		=> AssertNullableAndReferenceGetNull(RowMap<Optional>.Default);
-
-	[Fact]
-	public static void LenientMap_NullableAndReferenceProperties_GetNull()
-		=> AssertNullableAndReferenceGetNull(RowMap<Optional>.NullLeavesValue());
-
-	// ---- the factory ----
-
-	[Fact]
-	public static void NullLeavesValue_WithNoPairs_IsAMapOfItsOwn_NotTheDefault()
-	{
-		RowMap<Solid> lenient = RowMap<Solid>.NullLeavesValue();
-
-		Assert.NotSame(RowMap<Solid>.Default, lenient);
-		Assert.NotSame(lenient, RowMap<Solid>.NullLeavesValue());
-
-		// The strict default and the lenient map do not share compiled readers: same T, same result-set layout, opposite outcomes.
-		Assert.Throws<ValueMappingException>(() => ViaReader(RowMap<Solid>.Default, "Count"));
-		Assert.Equal(7, Assert.Single(ViaReader(lenient, "Count")).Count);
-		Assert.Throws<ValueMappingException>(() => ViaReader(RowMap<Solid>.Default, "Count"));
-	}
-
-	[Fact]
-	public static void NullLeavesValue_WithARename_ReadsTheRenamedColumn()
-	{
-		ImmutableArray<ColumnDef> columns = [("n_count", typeof(int))];
-		KeyValuePair<string, string?> rename = new(nameof(Solid.Count), "n_count");
-		RowMap<Solid> lenient = RowMap<Solid>.NullLeavesValue(rename);
-		var strict = new RowMap<Solid>(rename);
-
-		Assert.Equal(5, Assert.Single(Cmd(columns, new object?[] { 5 }).Map(lenient).ToList()).Count);
-		Assert.Equal(7, Assert.Single(Cmd(columns, new object?[] { null }).Map(lenient).ToList()).Count);
-
-		var ex = Assert.Throws<ValueMappingException>(() => Cmd(columns, new object?[] { null }).Map(strict).ToList());
-		Assert.Contains("property 'Count' from column 'n_count'", ex.Message);
-	}
-
-	[Fact]
-	public static void NullLeavesValue_ANullColumn_StillMeansDoNotMap()
-	{
-		ImmutableArray<ColumnDef> columns = [("Count", typeof(int))];
-		RowMap<Solid> lenient = RowMap<Solid>.NullLeavesValue([new(nameof(Solid.Count), null)]);
-
-		Assert.Equal(7, Assert.Single(Cmd(columns, new object?[] { 99 }).Map(lenient).ToList()).Count);
-	}
-
-	[Fact]
-	public static void NullLeavesValue_ValidatesLikeTheConstructor()
-	{
-		Assert.Throws<ArgumentException>(() => RowMap<Solid>.NullLeavesValue([new("Nope", "x")]));
-		Assert.Throws<ArgumentException>(() => RowMap<Solid>.NullLeavesValue(new(nameof(Solid.Count), "x"), new(nameof(Solid.Count), "y")));
-	}
-
-	// ---- cost: strict maps read nothing extra; lenient maps pay one IsDBNull per typed non-nullable cell and read a general cell once ----
+	// ---- cost: one IsDBNull per typed non-nullable cell, and a general cell is read once ----
 
 	sealed class CountingReader(ImmutableArray<ColumnDef> columns, object?[][] rows) : TypedReader(columns, rows)
 	{
@@ -261,23 +225,14 @@ public static class RowMapNullTests
 		return reader!;
 	}
 
-	// Pins the zero cost of the default: the compiled readers of a strict map make no IsDBNull call for a non-nullable cell.
 	[Fact]
-	public static void StrictMap_NeverCallsIsDBNull_ForNonNullableCells()
+	public static void DefaultMap_CostsOneIsDBNullPerTypedCell_AndReadsAGeneralCellOnce()
 	{
-		foreach (RowMap<Solid> map in StrictMaps)
+		foreach (RowMap<Solid> map in Maps)
 		{
 			CountingReader reader = ReadValidRows(map, 3);
-			Assert.Equal(0, reader.IsDBNullCalls);
-			Assert.Equal(3 * 2, reader.GetValueCalls); // the two text columns, once per row
+			Assert.Equal(3 * 6, reader.IsDBNullCalls); // six typed columns per row
+			Assert.Equal(3 * 2, reader.GetValueCalls); // the two general-path columns, read once per row, not once to test and once to convert
 		}
-	}
-
-	[Fact]
-	public static void LenientMap_CostsOneIsDBNullPerTypedCell_AndReadsAGeneralCellOnce()
-	{
-		CountingReader reader = ReadValidRows(Lenient, 3);
-		Assert.Equal(3 * 6, reader.IsDBNullCalls); // six typed columns per row
-		Assert.Equal(3 * 2, reader.GetValueCalls); // the two general-path columns, read once per row, not once to test and once to convert
 	}
 }

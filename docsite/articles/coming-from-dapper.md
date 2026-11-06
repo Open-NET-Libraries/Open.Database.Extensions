@@ -93,7 +93,7 @@ Lines you write per call: Dapper 3, Open.Database.Extensions 3 (plus the one-tim
 
 What is different:
 
-- **The value's type.** Dapper converts the provider's value to `T` where it can (it uses `Convert.ChangeType`) and returns `default` for `NULL`. The extensions' `ExecuteScalar<T>()` casts the value exactly as the provider returns it, so `T` must be that type (SQLite counts as `long`, SQL Server as `int`). To convert, pass a function: `ExecuteScalar(value => ...)`.
+- **The value's type.** Dapper converts the provider's value to `T` where it can (it uses `Convert.ChangeType`) and returns `default` for `NULL`. The extensions' `ExecuteScalar<T>()` also returns `default` for `NULL` or no rows, and otherwise casts the value exactly as the provider returns it, so `T` must be that type (SQLite counts as `long`, SQL Server as `int`). To convert, pass a function: `ExecuteScalar(value => ...)`.
 
 ### A command with no result set
 

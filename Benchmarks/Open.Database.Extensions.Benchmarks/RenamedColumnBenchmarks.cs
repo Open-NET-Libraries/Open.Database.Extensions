@@ -41,9 +41,6 @@ public static class RenamedColumns
 	/// <summary>ODE: built once from the pairs, passed to every query.</summary>
 	public static readonly RowMap<RenamedPost> Map = new(Pairs);
 
-	/// <summary>ODE: the same pairs, for a map whose readers skip a NULL cell of a non-nullable property (one IsDBNull per such cell, measured against <see cref="Map"/>).</summary>
-	public static readonly RowMap<RenamedPost> NullLeavesMap = RowMap<RenamedPost>.NullLeavesValue(Pairs.AsSpan());
-
 	static bool _dapperConfigured;
 
 	/// <summary>Dapper's equivalent: a type map set once per type (global state, as Dapper requires).</summary>
@@ -93,7 +90,7 @@ public class RenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_RowMapNullLeavesValue(), List_PairsOverload(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PairsOverload(), List_DapperTypeMap() })
 		{
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
@@ -111,10 +108,6 @@ public class RenamedColumnBenchmarks
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_RowMap() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Map).ToList();
 
-	// The same declared map, but NullLeavesValue: one IsDBNull per non-nullable cell more than List_RowMap.
-	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_RowMapNullLeavesValue() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.NullLeavesMap).ToList();
-
 	// The one-off path: builds a new map and compiles the row reader on every call.
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_PairsOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).ToList();
@@ -130,9 +123,6 @@ public class RenamedColumnBenchmarks
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_RowMap() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
-
-	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_RowMapNullLeavesValue() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.NullLeavesMap).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_PairsOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).FirstOrDefault();

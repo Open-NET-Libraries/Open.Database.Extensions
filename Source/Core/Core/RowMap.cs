@@ -14,6 +14,7 @@ namespace Open.Database.Extensions;
 /// A property with a pair is only matched by its column, exactly or ignoring case; a <see langword="null"/> column means "do not map this property".
 /// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
 /// or two properties reading one column throw <see cref="ArgumentException"/>.
+/// A NULL follows the property's declared type: a nullable property (<see cref="Nullable{T}"/> or a reference type) receives <see langword="null"/>; a non-nullable value-type property (an enum counts) keeps the value <c>new T()</c> gave it, its initializer else its default.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// </remarks>
 /// <example>
@@ -30,10 +31,7 @@ public sealed class RowMap<T> : IRowSource<T>
 	/// <summary>Creates and validates the map from (property name, column name) pairs; use it where the map is declared, never in a call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid: an unknown or unsettable property, a property named twice, an empty column name, or two properties reading one column.</exception>
-	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings) : this(false, mappings) { }
-
-	// The one constructor body. Every public constructor passes false; the NullLeavesValue factory passes true.
-	private RowMap(bool nullLeavesValue, ReadOnlySpan<KeyValuePair<string, string?>> mappings)
+	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 	{
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
 		string?[] columns = new string?[Properties.Length];
@@ -44,18 +42,17 @@ public sealed class RowMap<T> : IRowSource<T>
 
 		_columns = columns;
 		_named = named;
-		_nullLeavesValue = nullLeavesValue;
 	}
 
 	/// <summary>Creates and validates the map from (property name, column name) pairs held in an <see cref="ImmutableArray{T}"/> (a default array is no mappings); use it where the map is declared, never in a call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
 	[OverloadResolutionPriority(-1)]
-	public RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings) : this(false, mappings.AsSpan()) { }
+	public RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings) : this(mappings.AsSpan()) { }
 
 	/// <inheritdoc cref="RowMap{T}.RowMap(ReadOnlySpan{KeyValuePair{string, string?}})"/>
 	[OverloadResolutionPriority(-2)]
-	public RowMap(IEnumerable<KeyValuePair<string, string?>>? mappings) : this(false, GetMappingSpan(mappings)) { }
+	public RowMap(IEnumerable<KeyValuePair<string, string?>>? mappings) : this(GetMappingSpan(mappings)) { }
 
 	private static ReadOnlySpan<KeyValuePair<string, string?>> GetMappingSpan(IEnumerable<KeyValuePair<string, string?>>? mappings) => mappings switch
 	{
@@ -72,28 +69,11 @@ public sealed class RowMap<T> : IRowSource<T>
 	public static RowMap<T> From(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 		=> mappings.Length == 0 ? Default : new RowMap<T>(mappings);
 
-	/// <summary>
-	/// Creates and validates a map from (property name, column name) pairs, exactly as the constructor does, whose readers skip the assignment when the cell is NULL and the property is a non-nullable value type (an enum counts),
-	/// so the property keeps the value <c>new T()</c> gave it (its initializer, else its default) instead of the read throwing.
-	/// Nullable and reference-type properties still receive <see langword="null"/>.
-	/// </summary>
-	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property". None maps every property by name.</param>
-	/// <returns>A new map; declare it once.</returns>
-	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
-	/// <example>
-	/// <code>
-	/// static readonly RowMap&lt;Order&gt; OrderMap = RowMap&lt;Order&gt;.NullLeavesValue();
-	/// </code>
-	/// </example>
-	public static RowMap<T> NullLeavesValue(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		=> new(true, mappings);
-
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
 	// so after the first query of a given shape no reflection, expression building or compilation happens again.
 	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
-	// NULL is honored for reference types and Nullable<T> properties. A NULL in a column mapped to a non-nullable value-type property is an error, wrapped as a ValueMappingException naming the property and column:
-	// on the typed path the provider's typed getter decides (the providers checked throw), on the general path ConvertValue throws InvalidCastException.
-	// A NullLeavesValue map skips the assignment instead, so the property keeps what new T() gave it: one IsDBNull per such cell on the typed path, a single read of the cell on the general path.
+	// The property's declared type decides what a NULL does: a reference type or Nullable<T> receives null; a non-nullable value type (an enum counts) is skipped,
+	// so it keeps what new T() gave it (its initializer, else its default): one IsDBNull per such cell on the typed path, a single read of the cell on the general path.
 
 	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
@@ -136,9 +116,6 @@ public sealed class RowMap<T> : IRowSource<T>
 	// Aligned with Properties: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
 	// only a property no pair named is eligible for the underscore tier.
 	readonly bool[] _named;
-
-	// Set only by NullLeavesValue; the compiled readers live in this instance, so the flag needs no cache change.
-	readonly bool _nullLeavesValue;
 
 	/// <summary>The names of the properties that are mapped.</summary>
 	internal IEnumerable<string> PropertyNames
@@ -481,14 +458,10 @@ public sealed class RowMap<T> : IRowSource<T>
 
 		MethodInfo isNullCell = typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!;
 
-		// A NullLeavesValue map skips a non-nullable value-type property when its cell is NULL.
-		Func<int, PropertyInfo, Expression?>? isNull = _nullLeavesValue
-			? (i, property) => KeepsValueOnNull(property.PropertyType) ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null
-			: null;
-
+		// A non-nullable value-type property is skipped when its cell is NULL.
 		return Compile<object?[]>(row, layout.Names, (i, property)
 			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))),
-			isNull);
+			(i, property) => KeepsValueOnNull(property.PropertyType) ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null);
 	}
 
 	#endregion
@@ -527,23 +500,21 @@ public sealed class RowMap<T> : IRowSource<T>
 
 		ParameterExpression r = Expression.Parameter(readerType, "r");
 
-		// A NullLeavesValue map only: the general path reads a cell once into `cell`, tests it for NULL, and converts that same value.
-		ParameterExpression? cell = _nullLeavesValue ? Expression.Variable(typeof(object), "cell") : null;
-		Func<int, PropertyInfo, Expression?>? isNull = cell is null
-			? null
-			: (i, property) => NullTest(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell);
+		// The general path reads a cell once into `cell`, tests it for NULL, and converts that same value.
+		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
 
 		return Compile<TReader>(r, layout.Names, (i, property)
 			=> ReadValue(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell),
-			isNull, cell);
+			(i, property) => NullTest(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell),
+			cell);
 	}
 
 	// The skeleton shared by both mappers: `new T()`, then for each column that maps to a property,
 	// `item.Property = <cell>`. Only how a cell is read differs (a live reader vs buffered object[] rows).
-	// NullLeavesValue maps also pass `isNull`: for a property that must keep its value, the test that the cell is NULL, which wraps the assignment as
-	// `if (!isNull) item.Property = <cell>`; it may leave the raw cell in `cell`, which readCell then converts. Strict maps pass neither and compile exactly as before.
+	// `isNull` gives, for a property that must keep its value on NULL, the test that the cell is NULL, which wraps the assignment as
+	// `if (!isNull) item.Property = <cell>`; it may leave the raw cell in `cell`, which readCell then converts.
 	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, PropertyInfo, Expression> readCell,
-		Func<int, PropertyInfo, Expression?>? isNull = null, ParameterExpression? cell = null)
+		Func<int, PropertyInfo, Expression?> isNull, ParameterExpression? cell = null)
 	{
 		ParameterExpression item = Expression.Variable(typeof(T), "item");
 		ParameterExpression index = Expression.Variable(typeof(int), "index");
@@ -562,7 +533,7 @@ public sealed class RowMap<T> : IRowSource<T>
 			bindings[i] = new Binding(property.Name, names[i], property.PropertyType);
 			statements.Add(Expression.Assign(index, Expression.Constant(i)));
 			Expression assign = Expression.Call(item, property.GetSetMethod()!, readCell(i, property));
-			statements.Add(isNull?.Invoke(i, property) is { } skip ? Expression.IfThen(Expression.Not(skip), assign) : assign);
+			statements.Add(isNull(i, property) is { } skip ? Expression.IfThen(Expression.Not(skip), assign) : assign);
 		}
 
 		statements.Add(item);
@@ -605,12 +576,11 @@ public sealed class RowMap<T> : IRowSource<T>
 		return TryConvert(Expression.Call(r, getter, ordinal), target);
 	}
 
-	// A NullLeavesValue map keeps the current value when the cell is NULL for a non-nullable value type (an enum counts):
-	// Nullable<T> and reference types receive null, as in every map.
+	// A NULL leaves the current value for a non-nullable value type (an enum counts): Nullable<T> and reference types receive null.
 	static bool KeepsValueOnNull(Type propertyType)
 		=> propertyType.IsValueType && Nullable.GetUnderlyingType(propertyType) is null;
 
-	// NullLeavesValue maps only: the expression that is true when the cell of a property that keeps its value is NULL, or null for any other property.
+	// The expression that is true when the cell of a property that keeps its value is NULL, or null for any other property.
 	// On the typed path the reader answers; on the general path the cell is read once into `cell` and ReadValue converts that same value.
 	static Expression? NullTest(
 		ParameterExpression r, Expression ordinal,
@@ -650,7 +620,7 @@ public sealed class RowMap<T> : IRowSource<T>
 		}
 
 		// General path: the boxed value, converted. Handles enums, strings → Guid, mismatched types, unknown column types.
-		// A NullLeavesValue map has already read the cell of a non-nullable value-type property into `cell` to test it (see NullTest).
+		// NullTest has already read the cell of a non-nullable value-type property into `cell` to test it.
 		return Expression.Call(
 			typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
 			cell is not null && !nullable ? cell : Expression.Call(r, getValue, ordinal));
@@ -693,11 +663,8 @@ public sealed class RowMap<T> : IRowSource<T>
 
 	static TTarget ConvertValue<TTarget>(object? value)
 	{
-		if (value is null or DBNull)
-		{
-			if (default(TTarget) is null) return default!;
-			throw new InvalidCastException($"A NULL value cannot be assigned to a non-nullable '{typeof(TTarget)}'. Map the column to a nullable property or COALESCE it.");
-		}
+		// A NULL never reaches here for a non-nullable value type: the compiled readers skip that assignment.
+		if (value is null or DBNull) return default!;
 
 		if (value is TTarget exact) return exact;
 

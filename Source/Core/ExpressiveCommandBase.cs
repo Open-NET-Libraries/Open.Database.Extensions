@@ -738,18 +738,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Calls ExecuteScalar on the underlying command and casts to the expected type.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row and <typeparamref name="T"/> is a reference type or <see cref="Nullable{T}"/>.</returns>
-	/// <exception cref="ValueMappingException">The result is NULL or there was no row, and <typeparamref name="T"/> cannot hold that. Request a nullable type.</exception>
+	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row.</returns>
 	public T ExecuteScalar<T>()
 		=> CastScalar<T>(ExecuteScalar());
 
-	// NULL and no row (null or DBNull) become default when T can hold that, and a clear error when it cannot; anything else is the plain cast.
+	// NULL and no row (null or DBNull) become default(T) for every T; anything else is the plain cast.
 	private protected static T CastScalar<T>(object? value)
-	{
-		if (value is not (null or DBNull)) return (T)value;
-		if (default(T) is null) return default!;
-		throw new ValueMappingException($"The scalar result was NULL or the query returned no rows, which a '{typeof(T).Name}' cannot hold. Request a nullable type instead (for example '{typeof(T).Name}?').", null, null, typeof(T));
-	}
+		=> value is null or DBNull ? default! : (T)value;
 
 	/// <summary>
 	/// Calls ExecuteScalar on the underlying command.

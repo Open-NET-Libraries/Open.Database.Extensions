@@ -105,13 +105,13 @@ public static class RowMapperTests
 	}
 
 	[Fact]
-	public static void Typed_NullInNonNullableValueProperty_ThrowsNamingTheColumn()
+	public static void Typed_NullInNonNullableValueProperty_LeavesTheDefault()
 	{
 		var cmd = Cmd([("Id", typeof(int)), ("Name", typeof(string))], [null, "x"]);
 
-		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
-		Assert.Contains("Id", ex.Message);
-		Assert.NotNull(ex.InnerException);
+		Simple item = Assert.Single(cmd.Map<Simple>().ToList());
+		Assert.Equal(0, item.Id);
+		Assert.Equal("x", item.Name);
 	}
 
 	[Fact]

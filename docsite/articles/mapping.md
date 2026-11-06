@@ -81,17 +81,17 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 - integers and floating-point values widen to `float`, `double` and `decimal`;
 - anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string`, and otherwise `Convert.ChangeType`.
 
-`NULL` is honored for reference types and for `Nullable<T>` properties. What happens to a `NULL` in a non-nullable value-type column, and how to change it, is in [NULL in a non-nullable value-type column](#null-in-a-non-nullable-value-type-column).
+A `NULL` follows the property's declared type, as described in [NULL in a non-nullable value-type column](#null-in-a-non-nullable-value-type-column).
 
 ## NULL in a non-nullable value-type column
 
-By default, a `NULL` in a column that feeds a non-nullable value-type property (`int`, `bool`, `DateTime`, an enum, ...) throws a `ValueMappingException` (a `DataException`, not an `InvalidOperationException`) that names the property and the column, with the provider's or conversion error as the inner exception. To keep the property's current value instead (its initializer, else its default), declare the map with `NullLeavesValue`. Nullable and reference-type properties get `null` either way:
+A nullable property (`Nullable<T>` or a reference type) gets `null`. A non-nullable value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default; nothing throws:
 
 ```csharp
-public static RowMap<Order> OrderMap => field ??= RowMap<Order>.NullLeavesValue();
+public int Quantity { get; set; } = 1;  // NULL leaves 1
+public int? Discount { get; set; }      // NULL gives null
+public string? Note { get; set; }       // NULL gives null
 ```
-
-With no pairs it still maps every property by name; pass pairs to rename columns, as the constructor does. These maps add one null test per non-nullable value-type cell; the default map adds none. A single pair must be written as a collection expression, `NullLeavesValue([new(nameof(Order.Total), "total_amount")])`, because a bare `new(...)` binds to the span's own constructor and does not compile.
 
 ## Terminals
 

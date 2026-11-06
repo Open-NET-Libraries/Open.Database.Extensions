@@ -90,15 +90,14 @@ public static class TransformerBufferTests
 	}
 
 	[Fact]
-	public static void Transform_DBNullForNonNullableProperty_ThrowsNamingTheProperty()
+	public static void Transform_DBNullForNonNullableProperty_LeavesTheDefault()
 	{
 		var pool = Substitute.For<ArrayPool<object>>();
 		QueryResult<Queue<object[]>> results = Buffered(["Id"], [DBNull.Value]);
 
-		ValueMappingException ex = Assert.Throws<ValueMappingException>(
-			() => Transformer<Person>.Create().AsDequeueingEnumerable(results, pool).ToList());
+		Person person = Transformer<Person>.Create().AsDequeueingEnumerable(results, pool).Single();
 
-		Assert.Contains("'Id'", ex.Message);
+		Assert.Equal(0, person.Id);
 	}
 
 	[Fact]
