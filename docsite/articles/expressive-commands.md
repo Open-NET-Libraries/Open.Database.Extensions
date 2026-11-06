@@ -4,15 +4,24 @@ An expressive command is a small fluent object: pick the SQL (or stored procedur
 
 ## Two starting points
 
-The factory form and the connection form look the same after the first call.
+The factory form (`connectionFactory.Command(sql)` or `connectionFactory.StoredProcedure(name)`) and the connection form (`connection.Command(sql)` or `connection.StoredProcedure(name)`) look the same after the first call. Side by side, row against row:
 
-**Factory form** (`connectionFactory.Command(sql)` or `connectionFactory.StoredProcedure(name)`):
+<div class="side-by-side">
+<div>
 
-[!code-csharp[](../samples/ExpressiveCommands.cs#factory_form)]
+**Factory form**
 
-**Connection form** (`connection.Command(sql)` or `connection.StoredProcedure(name)`):
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_list_call)]
 
-[!code-csharp[](../samples/ExpressiveCommands.cs#connection_form)]
+</div>
+<div>
+
+**Connection form**
+
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_list_own)]
+
+</div>
+</div>
 
 In the factory form the command creates, opens and disposes a connection for every terminal. In the connection form the connection is yours: the command opens it only when it is closed, closes only what it opened, and never disposes it. See [who owns the connection](foundation.md#who-owns-the-connection).
 
