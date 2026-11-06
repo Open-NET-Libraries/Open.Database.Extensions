@@ -261,7 +261,7 @@ public static partial class CoreExtensions
 	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
 	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
 	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
+	[OverloadResolutionPriority(-3)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
 		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null,
@@ -273,7 +273,7 @@ public static partial class CoreExtensions
 	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
 	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
 	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-1)]
+	[OverloadResolutionPriority(-2)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
 		IEnumerable<(string Field, string? Column)>? fieldMappingOverrides,

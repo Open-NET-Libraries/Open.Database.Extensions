@@ -23,7 +23,7 @@
 /// </para>
 /// <para>
 /// A map is immutable and safe to share between threads, and any number of different maps may exist for the same model. Two maps built from the same
-/// pairs behave identically. The map holds its compiled, typed row reader, built on first use for each result-set layout it meets (it keeps up to 128 layouts;
+/// pairs behave identically. The map holds its compiled, typed row reader, built on first use for each result-set layout it meets (it keeps up to 128 layout hashes, about 128 layouts;
 /// a map that meets more clears them when the cache fills, so queries with ever-changing layouts compile again). Passing a map therefore adds no per-call
 /// allocation, key or dictionary lookup; as with <c>Map&lt;T&gt;()</c>, each query still matches the result-set layout against the cached one.
 /// Nothing is registered anywhere; the first <c>RowMap&lt;T&gt;</c> for a model does initialize the library's per-model static state (a one-time reflection pass over the model's properties).

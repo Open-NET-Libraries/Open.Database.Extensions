@@ -24,7 +24,7 @@ Pass it to `Map<T>`. The same `map` parameter is on `Results`, `ToChannel`, `AsS
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
-Declare the map once and reuse it. A map is immutable and safe to share between threads. Passing it adds no per-call allocation, key or dictionary lookup: the compiled row reader lives in the map, and each query still matches the result-set layout against the cached one, as `Map<T>()` does. A map keeps up to 128 distinct result-set layouts; a map that meets more clears them, and its queries compile again.
+Declare the map once and reuse it. A map is immutable and safe to share between threads. Passing it adds no per-call allocation, key or dictionary lookup: the compiled row reader lives in the map, and each query still matches the result-set layout against the cached one, as `Map<T>()` does. A map keeps about 128 distinct result-set layouts (the cache is keyed by layout hash); a map that meets more clears them, and its queries compile again.
 
 **When a map is checked.** A map is checked when it is first created: at first use with `field ??=`, at type initialization with `static readonly`. It throws `ArgumentException` for a property that does not exist or cannot be set (a static property, or one without a public setter), a null property name, a property named twice, an empty column name, and two properties that would read the same column. The property side is matched exactly; column names are matched ignoring case:
 
