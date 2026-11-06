@@ -12,6 +12,15 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class RowMapFamilyTests
 {
+	[Fact]
+	public static void ExecuteReaderResults_WithoutAMap_ReadsByColumnName()
+	{
+		var command = new FakeExecuteReader(["Id", "Name"], [1, "one"]);
+
+		Assert.Equal(1, command.Results<RowMapTests.Item>().Single().Id);
+		Assert.Equal(1, command.Results<RowMapTests.Item>(null).Single().Id);
+	}
+
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
 	{
 		public bool UseAsyncRead => false;

@@ -429,7 +429,6 @@ public static class IExecuteReaderExtensions
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (map is null) throw new ArgumentNullException(nameof(map));
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
