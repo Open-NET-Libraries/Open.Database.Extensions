@@ -38,15 +38,17 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_backing)]
 
-**One-off queries.** A `new RowMap<T>([...])`, an `ImmutableArray` of pairs passed to its constructor, or tuples written at the call site build a new map, and compile the row reader, on every call:
+**One-off queries.** A `new RowMap<T>([...])`, an `ImmutableArray` of pairs passed to its constructor, or the pairs passed to `Map<T>` build a new map, and compile the row reader, on every call:
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
 A one-row read of a 12-property model takes about 0.4 ms and allocates about 29 KB in the library's in-memory benchmark, against about 0.1 µs and a few hundred bytes through a declared map. The cost does not shrink with the result size. Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
 
-The tuple overloads of `Map<T>` and the other methods are a convenience for the same one-off. They are checked as strictly as a map, so an unknown or repeated property throws `ArgumentException` at the call, and they cost the same. Key/value pairs are what a map stores; tuples are only a way in:
+`Map<T>` also takes the pairs themselves, with no `RowMap<T>` written; it is the same one-off and costs the same:
 
-[!code-csharp[](../samples/Mapping.cs#map_tuples)]
+[!code-csharp[](../samples/Mapping.cs#map_pairs)]
+
+**Tuples.** The overloads that took value tuples (`(string Field, string? Column)`) are removed in 11.0 (breaking). Before: `cmd.Results<Person>(("FirstName", "first_name"))`. Now: declare a `RowMap<Person>` and pass it, `cmd.Results<Person>(map)`, or on `Map<T>` pass the pairs, `cmd.Map<Person>(new(nameof(Person.FirstName), "first_name"))`. See [What's new in 11](whats-new-11.md).
 
 ## Types and NULL
 

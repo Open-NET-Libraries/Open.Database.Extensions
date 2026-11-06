@@ -62,14 +62,6 @@ public class Transformer<T>
 	public static Transformer<T> Create(RowMap<T>? map)
 		=> new(map);
 
-	/// <inheritdoc cref="Create(RowMap{T}?)"/>
-	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
-	/// <seealso cref="RowMap{T}"/>
-	[ExcludeFromCodeCoverage]
-	[OverloadResolutionPriority(-1)]
-	public static Transformer<T> Create(params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		=> new(RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
-
 	/// <summary>
 	/// A sub class for processing the transformer results.
 	/// </summary>

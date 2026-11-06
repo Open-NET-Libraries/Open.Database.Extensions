@@ -123,7 +123,7 @@ public static class QueryResultTests
 		QueryResult<Queue<object?[]>> result = null!;
 
 		// Not deferred until enumeration.
-		Assert.Throws<ArgumentNullException>(() => result.DequeueAsMappedDictionaries());
+		Assert.Throws<ArgumentNullException>(result.DequeueAsMappedDictionaries);
 	}
 
 	[Fact]

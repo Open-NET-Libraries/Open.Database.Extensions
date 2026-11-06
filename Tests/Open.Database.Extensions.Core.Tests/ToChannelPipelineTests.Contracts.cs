@@ -10,68 +10,6 @@ namespace Open.Database.Extensions.Tests;
 // the operation (a target that is to be completed ends faulted), what the parameters are called, and how cancellation reads.
 public static partial class ToChannelPipelineTests
 {
-	static readonly (string Field, string? Column)[] Unbindable = [("NoSuchProperty", "Id")];
-
-	// ---- a field override that can't be bound ----
-
-	// The tuples are turned into a validated map when the call is made, so an override that names an unknown property is a precondition:
-	// the call throws at once, nothing runs, and the target is left alone (it used to be a failure of the operation that faulted the target).
-	[Theory]
-	[MemberData(nameof(KindsAndFlag))]
-	public static async Task Mapped_FieldOverrideCannotBeBound_IsAPrecondition_TheTargetIsLeftAlone(Kind kind, bool complete)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		var probe = new Probe();
-		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var target = new GateWriter<Row>(channel.Writer);
-		var call = Mapped<Row>(kind, true, probe.Factory(Rows(3)), ct, mapping: Unbindable);
-
-		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(async () => await call(target, complete).AsTask().WaitAsync(Prompt, ct));
-
-		Assert.IsType<ArgumentException>(thrown); // 11.0: an override naming an unknown property throws ArgumentException (it was KeyNotFoundException).
-		Assert.Equal(0, probe.Executions); // Nothing ran.
-		Assert.Equal(0, target.CompleteCalls);
-		Assert.False(channel.Reader.Completion.IsCompleted, "the target is neither completed nor faulted");
-		Assert.True(channel.Writer.TryWrite(new Row()), "the target stays open");
-	}
-
-	// ... and it is found before the target is looked at: an unbindable map reports itself, not the closed target.
-	[Theory]
-	[MemberData(nameof(Kinds))]
-	public static async Task Mapped_FieldOverrideCannotBeBound_ComesBeforeAClosedTarget(Kind kind)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		var probe = new Probe();
-		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var target = new GateWriter<Row>(channel.Writer);
-		channel.Writer.TryComplete();
-		var call = Mapped<Row>(kind, true, probe.Factory(Rows(3)), ct, ConnectionState.Closed, Unbindable);
-
-		await Assert.ThrowsAsync<ArgumentException>(async () => await call(target, true));
-
-		Assert.Equal(0, target.CompleteCalls);
-		Assert.Equal(0, probe.Executions);
-	}
-
-	// The reader-level calls have no command: they throw at once and never touch the target (as they did).
-	[Theory]
-	[InlineData(false)]
-	[InlineData(true)]
-	public static void ReaderLevel_FieldOverrideCannotBeBound_ThrowsAtOnce_AndLeavesTheTargetAlone(bool useAsync)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
-		var reader = (SpyReader)new Probe().Factory(Rows(1))();
-		Func<ValueTask<long>> call = useAsync
-			? () => reader.ToChannelAsync(channel.Writer, true, Unbindable, ct)
-			: () => reader.ToChannel(channel.Writer, true, Unbindable, ct);
-
-		Assert.Throws<ArgumentException>(() => NeverReturns(call()));
-
-		Assert.False(channel.Reader.Completion.IsCompleted);
-		Assert.False(reader.IsDisposed);
-	}
-
 	// ---- parameter names ----
 
 	[Fact]
@@ -238,12 +176,12 @@ public static partial class ToChannelPipelineTests
 		Names("target", () => NeverReturns(reader.ToChannelAsync<Row>(null!, true, Overrides, ct)));
 	}
 
-	// No overrides is no overrides, however it is spelled.
+	// A null map is no map.
 	[Fact]
-	public static async Task Mapped_NullFieldMappingOverrides_MeanNone()
+	public static async Task Mapped_NullMap_MeansNone()
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
-		var none = (IEnumerable<(string Field, string? Column)>)null!;
+		RowMap<Row>? none = null;
 		Func<DbDataReader> factory = new Probe().Factory(Rows(3));
 		(IDbCommand dbCommand, _) = NewDbCommand(factory, ConnectionState.Open);
 		FakeDbCommand fakeCommand = NewFakeDbCommand(factory, ConnectionState.Open);
@@ -255,30 +193,5 @@ public static partial class ToChannelPipelineTests
 		Assert.Equal(3, await fakeCommand.ToChannelAsync(writer, false, none, ct));
 		Assert.Equal(3, await executeReader.ToChannel(writer, false, none));
 		Assert.Equal(3, await executeReaderAsync.ToChannelAsync(writer, false, none));
-	}
-
-	// Whatever is wrong with the overrides, the answer is never a NullReferenceException.
-	[Fact]
-	public static async Task Mapped_ANullFieldInAnOverride_IsNotANullReference()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		var oddly = new (string Field, string? Column)[] { (null!, "Id") };
-		Func<DbDataReader> factory = new Probe().Factory(Rows(3));
-		(IDbCommand dbCommand, _) = NewDbCommand(factory, ConnectionState.Open);
-		IExecuteReader executeReader = new ScriptedCommand(factory, false, ct);
-		ChannelWriter<Row> writer = BoundedChannel.CreateUnbounded<Row>().Writer;
-
-		Exception? thrown = null;
-		try
-		{
-			await dbCommand.ToChannel(writer, false, oddly, ct);
-			await executeReader.ToChannel(writer, false, oddly);
-		}
-		catch (Exception ex)
-		{
-			thrown = ex;
-		}
-
-		Assert.IsNotType<NullReferenceException>(thrown);
 	}
 }

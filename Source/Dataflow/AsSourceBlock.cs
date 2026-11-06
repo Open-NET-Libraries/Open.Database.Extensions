@@ -146,38 +146,6 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/> to the end, posting each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to a new <see cref="BufferBlock{T}"/>, and returns the block.
-	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
-	/// </para>
-	/// <para>
-	/// Records are posted without waiting for room. With the default unbounded options every record is accepted, but if <paramref name="options"/> sets a bounded capacity, a full block declines the next record, which silently stops the reading early and drops that record. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
-	/// </para>
-	/// <para>
-	/// Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
-		DataflowBlockOptions? options = null)
-		where T : new()
-		=> AsSourceBlock<T>(reader, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), options);
-
-	/// <summary>
 	/// Reads the results of an <see cref="IDbCommand"/> to the end, posting each record as an array of values to a new <see cref="BufferBlock{T}"/>, and returns the block.
 	/// </summary>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -312,38 +280,6 @@ public static partial class DataflowExtensions
 		ToTargetBlock(command, buffer, true, map);
 		return buffer;
 	}
-
-	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/> to the end, posting each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to a new <see cref="BufferBlock{T}"/>, and returns the block.
-	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
-	/// </para>
-	/// <para>
-	/// Records are posted without waiting for room. With the default unbounded options every record is accepted, but if <paramref name="options"/> sets a bounded capacity, a full block declines the next record, which silently stops the reading early and drops that record. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
-	/// </para>
-	/// <para>
-	/// Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
-		DataflowBlockOptions? options = null)
-		where T : new()
-		=> AsSourceBlock<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), options);
 
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record as an array of values to a new <see cref="BufferBlock{T}"/>, and returns the block.
@@ -482,38 +418,6 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to a new <see cref="BufferBlock{T}"/>, and returns the block.
-	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
-	/// </para>
-	/// <para>
-	/// Records are posted without waiting for room. With the default unbounded options every record is accepted, but if <paramref name="options"/> sets a bounded capacity, a full block declines the next record, which silently stops the reading early and drops that record. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
-	/// </para>
-	/// <para>
-	/// Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
-		DataflowBlockOptions? options = null)
-		where T : new()
-		=> AsSourceBlock<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), options);
-
-	/// <summary>
 	/// Starts reading an <see cref="IDataReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record as an array of values as it is read.
 	/// </summary>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
@@ -632,33 +536,6 @@ public static partial class DataflowExtensions
 		_ = ToTargetBlockAsync(reader, buffer, true, map, cancellationToken);
 		return buffer;
 	}
-
-	/// <summary>
-	/// Starts reading an <see cref="IDataReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides as it is read.
-	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The block is then faulted with the resulting exception.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
-		DataflowBlockOptions? options = null,
-		CancellationToken cancellationToken = default)
-		where T : new()
-		=> AsSourceBlockAsync<T>(reader, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), options, cancellationToken);
 
 	/// <summary>
 	/// Starts reading the results of an <see cref="IDbCommand"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record as an array of values as it is read.
@@ -781,33 +658,6 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Starts reading the results of an <see cref="IDbCommand"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides as it is read.
-	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The block is then faulted with the resulting exception.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
-		DataflowBlockOptions? options = null,
-		CancellationToken cancellationToken = default)
-		where T : new()
-		=> AsSourceBlockAsync<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), options, cancellationToken);
-
-	/// <summary>
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record as an array of values as it is read.
 	/// </summary>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -916,29 +766,4 @@ public static partial class DataflowExtensions
 		_ = ToTargetBlockAsync(command, buffer, true, map);
 		return buffer;
 	}
-
-	/// <summary>
-	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides as it is read.
-	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
-		IEnumerable<(string Field, string? Column)> fieldMappingOverrides,
-		DataflowBlockOptions? options = null)
-		where T : new()
-		=> AsSourceBlockAsync<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), options);
 }

@@ -92,7 +92,7 @@ public class SyncBenchmarks
 	public List<Post> QueryResult_Dapper() => _conn.Query<Post>(Sql).AsList();
 
 	[BenchmarkCategory("QueryResult"), Benchmark]
-	public List<Post> QueryResult_ODE() => _conn.Command(Sql).Retrieve().DequeueAs<Post>().ToList();
+	public List<Post> QueryResult_ODE() => ((QueryResult<Queue<object?[]>>)(object)_conn.Command(Sql).Retrieve()).DequeueAs<Post>().ToList(); // The same type: Retrieve() annotates its rows object[] and DequeueAs object?[], so the cast goes through object.
 
 	[BenchmarkCategory("Dictionary"), Benchmark(Baseline = true)]
 	public Dictionary<int, Post> Dictionary_Dapper() => _conn.Query<Post>(Sql).ToDictionary(p => p.Id);

@@ -50,12 +50,16 @@ public class SqlServerBenchmarks
 			("Price", typeof(decimal)), ("IsPublished", typeof(bool)), ("ViewCount", typeof(int)), ("Score", typeof(double)),
 			("Key", typeof(Guid)), ("Rank", typeof(short)), ("Big", typeof(long)), ("Tag", typeof(string)),
 		})
+		{
 			table.Columns.Add(name, type);
+		}
 
 		for (int i = 1; i <= Rows; i++)
-			table.Rows.Add(i, "Post number " + i, i % 3 == 0 ? DBNull.Value : "Lorem ipsum " + i, new DateTime(2024, 1, 1).AddMinutes(i),
-				10m + i, i % 2 == 0, i % 4 == 0 ? DBNull.Value : i * 3, i * 1.5, Guid.NewGuid(), (short)(i % 100), (long)i << 20,
-				i % 2 == 0 ? DBNull.Value : "t" + (i % 7));
+		{
+				table.Rows.Add(i, "Post number " + i, i % 3 == 0 ? DBNull.Value : "Lorem ipsum " + i, new DateTime(2024, 1, 1).AddMinutes(i),
+					10m + i, i % 2 == 0, i % 4 == 0 ? DBNull.Value : i * 3, i * 1.5, Guid.NewGuid(), (short)(i % 100), (long)i << 20,
+					i % 2 == 0 ? DBNull.Value : "t" + (i % 7));
+		}
 
 		using (var bulk = new SqlBulkCopy(_conn) { DestinationTableName = "posts" })
 		{

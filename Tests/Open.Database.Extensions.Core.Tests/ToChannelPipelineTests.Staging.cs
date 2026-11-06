@@ -59,10 +59,10 @@ public static partial class ToChannelPipelineTests
 	static Func<ChannelWriter<T>, bool, ValueTask<long>> Mapped<T>(
 		Kind kind, bool overrides, Func<DbDataReader> factory,
 		CancellationToken token, ConnectionState state = ConnectionState.Open,
-		IEnumerable<(string Field, string? Column)>? mapping = null)
+		RowMap<T>? mapping = null)
 		where T : new()
 	{
-		IEnumerable<(string Field, string? Column)> map = mapping ?? Overrides;
+		RowMap<T> map = mapping ?? new([new("Id", "Id")]);
 		switch (kind)
 		{
 			case Kind.ExecuteReader:

@@ -7,7 +7,7 @@ using Microsoft.Data.SqlClient;
 namespace Open.Database.Extensions.Benchmarks;
 
 // The renamed-column comparison against SQL Server (LocalDB): the same rows in a table whose every column is
-// snake_case, read through a declared RowMap<T>, through the tuple overload (which builds a new map on every call), and through Dapper with a type map set once.
+// snake_case, read through a declared RowMap<T>, through the pairs overload of Map<T> (which builds a new map on every call), and through Dapper with a type map set once.
 // A throwaway database is created in Setup and dropped in Cleanup.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -56,12 +56,16 @@ public class SqlServerRenamedColumnBenchmarks
 			("c4", typeof(decimal)), ("c5", typeof(bool)), ("c6", typeof(int)), ("c7", typeof(double)),
 			("c8", typeof(Guid)), ("c9", typeof(short)), ("c10", typeof(long)), ("c11", typeof(string)),
 		})
+		{
 			table.Columns.Add(name, type);
+		}
 
 		for (int i = 1; i <= Rows; i++)
-			table.Rows.Add(i, "Post number " + i, i % 3 == 0 ? DBNull.Value : "Lorem ipsum " + i, new DateTime(2024, 1, 1).AddMinutes(i),
-				10m + i, i % 2 == 0, i % 4 == 0 ? DBNull.Value : i * 3, i * 1.5, Guid.NewGuid(), (short)(i % 100), (long)i << 20,
-				i % 2 == 0 ? DBNull.Value : "t" + (i % 7));
+		{
+				table.Rows.Add(i, "Post number " + i, i % 3 == 0 ? DBNull.Value : "Lorem ipsum " + i, new DateTime(2024, 1, 1).AddMinutes(i),
+					10m + i, i % 2 == 0, i % 4 == 0 ? DBNull.Value : i * 3, i * 1.5, Guid.NewGuid(), (short)(i % 100), (long)i << 20,
+					i % 2 == 0 ? DBNull.Value : "t" + (i % 7));
+		}
 
 		// Both tables get the same rows (the same Guids too), by ordinal.
 		foreach (string destination in new[] { "posts", "posts_renamed" })
@@ -77,9 +81,11 @@ public class SqlServerRenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_TupleOverload(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PairsOverload(), List_DapperTypeMap() })
+		{
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
+		}
 	}
 
 	[GlobalCleanup]
@@ -105,7 +111,7 @@ public class SqlServerRenamedColumnBenchmarks
 
 	// The one-off path: builds a new map and compiles the row reader on every call.
 	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_TupleOverload() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Tuples).ToList();
+	public List<RenamedPost> List_PairsOverload() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_DapperTypeMap() => _conn.Query<RenamedPost>(RenamedSql).AsList();
@@ -120,7 +126,7 @@ public class SqlServerRenamedColumnBenchmarks
 	public RenamedPost? First_RowMap() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_TupleOverload() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Tuples).FirstOrDefault();
+	public RenamedPost? First_PairsOverload() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_DapperTypeMap() => _conn.QueryFirstOrDefault<RenamedPost>(RenamedSql);

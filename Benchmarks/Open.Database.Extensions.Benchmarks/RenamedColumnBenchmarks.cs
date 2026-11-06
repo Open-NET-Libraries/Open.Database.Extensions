@@ -38,10 +38,7 @@ public static class RenamedColumns
 
 	public static readonly string[] Names = [.. Pairs.Select(p => p.Value!)];
 
-	/// <summary>The same mapping as tuples, for the tuple overloads. They convert it to pairs, build a new map and compile the row reader on every call.</summary>
-	public static readonly (string Field, string? Column)[] Tuples = [.. Pairs.Select(p => (p.Key, p.Value))];
-
-	/// <summary>ODE: built once (the implicit conversion from the pairs), passed to every query.</summary>
+	/// <summary>ODE: built once from the pairs, passed to every query.</summary>
 	public static readonly RowMap<RenamedPost> Map = new(Pairs);
 
 	static bool _dapperConfigured;
@@ -67,7 +64,7 @@ public static class RenamedColumns
 }
 
 // With every column named differently from its property, a read through a declared RowMap<T> should cost what Map<T>() costs
-// on matching names (the baseline), and no more than Dapper with an equivalent type map set once. The tuple overload is the
+// on matching names (the baseline), and no more than Dapper with an equivalent type map set once. The pairs overload of Map<T> is the
 // one-off path: it builds a new map and compiles the row reader on every call, so it is here to show what declaring a map saves.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -93,9 +90,11 @@ public class RenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_TupleOverload(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PairsOverload(), List_DapperTypeMap() })
+		{
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
+		}
 	}
 
 	// The control: Map<T>() by name over the very same result set (same column names, so the provider allocates the same).
@@ -111,7 +110,7 @@ public class RenamedColumnBenchmarks
 
 	// The one-off path: builds a new map and compiles the row reader on every call.
 	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_TupleOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Tuples).ToList();
+	public List<RenamedPost> List_PairsOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_DapperTypeMap() => _renamed.Query<RenamedPost>(Sql).AsList();
@@ -126,7 +125,7 @@ public class RenamedColumnBenchmarks
 	public RenamedPost? First_RowMap() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_TupleOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Tuples).FirstOrDefault();
+	public RenamedPost? First_PairsOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_DapperTypeMap() => _renamed.QueryFirstOrDefault<RenamedPost>(Sql);

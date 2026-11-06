@@ -42,9 +42,9 @@ public static class TransformerResultsTests
 	public static void To_WithFieldOverride_MapsColumn()
 	{
 		DataTable table = BuildTable();
-		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.LastName), "last_name")]);
+		var map = new RowMap<Person>([new(nameof(Person.LastName), "last_name")]);
 
-		List<Person> people = [.. table.To<Person>(map)];
+		List<Person> people = [.. table.To(map)];
 
 		Assert.Equal("Doe", people[0].LastName);
 		Assert.Equal("Roe", people[1].LastName);
@@ -55,9 +55,9 @@ public static class TransformerResultsTests
 	{
 		DataTable table = BuildTable();
 		// Explicitly ignore Age even though an AGE column is present.
-		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.Age), null)]);
+		var map = new RowMap<Person>([new(nameof(Person.Age), null)]);
 
-		List<Person> people = [.. table.To<Person>(map)];
+		List<Person> people = [.. table.To(map)];
 
 		Assert.Equal(0, people[0].Age); // ignored -> default
 		Assert.Equal("John", people[0].FirstName);
@@ -76,8 +76,8 @@ public static class TransformerResultsTests
 			["first_name", "AGE"],
 			queue);
 
-		var overrides = new (string Field, string? Column)[] { ("FirstName", "first_name") };
-		List<Person> people = [.. result.DequeueAs<Person>(overrides)];
+		var map = new RowMap<Person>([new(nameof(Person.FirstName), "first_name")]);
+		List<Person> people = [.. result.DequeueAs(map)];
 
 		Assert.Equal(2, people.Count);
 		Assert.Equal("Jane", people[0].FirstName);

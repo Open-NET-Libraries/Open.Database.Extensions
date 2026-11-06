@@ -160,9 +160,8 @@ public static class ConnectionPattern
 	}
 
 	public static void OdeTransaction(IDbConnectionFactory<SqliteConnection> connectionFactory)
-	{
 		#region ode_transaction_call
-		connectionFactory.Using(connection =>
+		=> connectionFactory.Using(connection =>
 			// nothing: ExecuteTransaction opens the connection if it is closed
 			// nothing: ExecuteTransaction begins the transaction
 			connection.ExecuteTransaction(transaction =>
@@ -174,7 +173,6 @@ public static class ConnectionPattern
 		// nothing: it rolls back if the action throws
 		// nothing: Using disposes the connection
 		#endregion
-	}
 	public static List<Post> PlainListAligned(string connectionString)
 	{
 		#region plain_list_aligned
@@ -226,9 +224,9 @@ public static class ConnectionPattern
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(
-				(nameof(Person.Id), "person_id"),
-				(nameof(Person.FirstName), "first_name"),
-				(nameof(Person.LastName), "last_name"))
+				new(nameof(Person.Id), "person_id"),
+				new(nameof(Person.FirstName), "first_name"),
+				new(nameof(Person.LastName), "last_name"))
 			.ToArray();
 		#endregion
 

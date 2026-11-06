@@ -291,13 +291,4 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
 		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
-
-	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
-	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>(params IEnumerable<(string Field, string? Column)> fieldMappingOverrides)
-		where T : new()
-		=> ResultsAsync<T>(RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
 }

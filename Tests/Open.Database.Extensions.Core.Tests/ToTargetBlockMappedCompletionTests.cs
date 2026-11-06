@@ -32,7 +32,7 @@ public static class ToTargetBlockMappedCompletionTests
 	static readonly long ConsumerTicks = Stopwatch.Frequency / 10_000; // ~100 microseconds per item
 
 	static readonly string[] Columns = ["Id"];
-	static readonly (string Field, string? Column)[] Overrides = [("Id", "Id")];
+	static readonly RowMap<Row> Overrides = new([new("Id", "Id")]);
 
 	sealed class Row
 	{
@@ -425,11 +425,10 @@ public static class ToTargetBlockMappedCompletionTests
 	static Func<ITargetBlock<TRow>, bool, ValueTask<long>> Mapped<TRow>(
 		Kind kind, bool overrides, object?[][] rows,
 		Exception? failure = null, Action<string>? log = null,
-		IEnumerable<(string Field, string? Column)>? overrideValues = null,
 		string[]? columns = null, Func<DbDataReader>? readerFactory = null, CancellationToken? callToken = null)
 		where TRow : new()
 	{
-		IEnumerable<(string Field, string? Column)> ov = overrideValues ?? Overrides;
+		RowMap<TRow> ov = new([new("Id", "Id")]);
 		string[] cols = columns ?? Columns;
 		DbDataReader NewReader() => failure is not null
 			? throw failure
@@ -464,13 +463,13 @@ public static class ToTargetBlockMappedCompletionTests
 
 			case Kind.ExecuteReaderSync:
 				{
-					IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
+					IExecuteReader command = new ScriptedCommand(NewReader, log, callToken ?? default);
 					return (t, c) => ValueTask.FromResult(overrides ? command.ToTargetBlock(t, c, ov) : command.ToTargetBlock(t, c));
 				}
 
 			default:
 				{
-					IExecuteReader command = new ScriptedCommand(() => NewReader(), log, callToken ?? default);
+					IExecuteReader command = new ScriptedCommand(NewReader, log, callToken ?? default);
 					return (t, c) => overrides ? command.ToTargetBlockAsync(t, c, ov) : command.ToTargetBlockAsync(t, c);
 				}
 		}
@@ -507,7 +506,7 @@ public static class ToTargetBlockMappedCompletionTests
 			default:
 				{
 					IExecuteReader command = new FakeExecuteReader(Columns, rows);
-					return (t, c) => command.ToTargetBlockAsync(t, c);
+					return command.ToTargetBlockAsync;
 				}
 		}
 	}
@@ -819,20 +818,6 @@ public static class ToTargetBlockMappedCompletionTests
 		Assert.Multiple(
 			() => Assert.Equal(count, outcome.Consumed),
 			() => Assert.Equal(["reader-disposed", "target-completed"], log.ToArray()));
-	}
-
-	// A field override the model can't honor is found when the map is built from the tuples, at the call: nothing runs and the target is left alone.
-	[Theory]
-	[MemberData(nameof(Kinds))]
-	public static async Task Mapped_FieldOverrideCannotBeBound_ThrowsAtTheCall_AndLeavesTheTargetAlone(Kind kind)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
-		var call = Mapped<Row>(kind, true, Rows(3), overrideValues: new (string Field, string? Column)[] { ("NoSuchProperty", "Id") });
-
-		await Assert.ThrowsAsync<ArgumentException>(async () => await call(harness.Target, true));
-
-		Assert.False(harness.Target.Completion.IsCompleted, "the target is neither completed nor faulted");
 	}
 
 	// The reader-level call shares the same pipeline: a read failure after 500 good rows delivers them, then faults the target

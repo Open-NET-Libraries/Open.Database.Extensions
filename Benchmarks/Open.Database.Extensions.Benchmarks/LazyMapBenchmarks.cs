@@ -33,7 +33,7 @@ public class LazyMapBenchmarks
 	static RowMap<RenamedPost> Consume(RowMap<RenamedPost> map) => map;
 
 	[GlobalSetup]
-	public void Warm()
+	public static void Warm()
 	{
 		_ = Hot.Map;
 		_ = Coalescing.Map;
@@ -42,7 +42,7 @@ public class LazyMapBenchmarks
 	}
 
 	[Benchmark(Baseline = true, OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> StaticReadonly()
+	public static RowMap<RenamedPost> StaticReadonly()
 	{
 		RowMap<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Hot.Map);
@@ -50,7 +50,7 @@ public class LazyMapBenchmarks
 	}
 
 	[Benchmark(OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> FieldCoalesce()
+	public static RowMap<RenamedPost> FieldCoalesce()
 	{
 		RowMap<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Coalescing.Map);
@@ -58,7 +58,7 @@ public class LazyMapBenchmarks
 	}
 
 	[Benchmark(OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> EnsureInitialized()
+	public static RowMap<RenamedPost> EnsureInitialized()
 	{
 		RowMap<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Ensured.Map);
@@ -66,7 +66,7 @@ public class LazyMapBenchmarks
 	}
 
 	[Benchmark(OperationsPerInvoke = Reads)]
-	public RowMap<RenamedPost> LazyValue()
+	public static RowMap<RenamedPost> LazyValue()
 	{
 		RowMap<RenamedPost> last = null!;
 		for (int i = 0; i < Reads; i++) last = Consume(Wrapped.Value);
@@ -75,9 +75,9 @@ public class LazyMapBenchmarks
 
 	/// <summary>Building one 12-field mapping: the cost of a first call, whichever way it is held.</summary>
 	[Benchmark]
-	public RowMap<RenamedPost> BuildOneMapping() => new RowMap<RenamedPost>(RenamedColumns.Pairs);
+	public static RowMap<RenamedPost> BuildOneMapping() => new RowMap<RenamedPost>(RenamedColumns.Pairs);
 
 	/// <summary>The extra objects a <see cref="Lazy{T}"/> adds per mapping (the <c>Lazy</c> and its internal helper; the factory delegate is a cached static lambda); the other ways add none.</summary>
 	[Benchmark]
-	public object CreateLazyWrapper() => new Lazy<RowMap<RenamedPost>>(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
+	public static object CreateLazyWrapper() => new Lazy<RowMap<RenamedPost>>(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
 }

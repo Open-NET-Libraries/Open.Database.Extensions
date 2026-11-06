@@ -20,7 +20,7 @@ public static class ToChannelMappedCompletionTests
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
 	static readonly string[] Columns = ["Id"];
-	static readonly (string Field, string? Column)[] Overrides = [("Id", "Id")];
+	static readonly RowMap<Row> Overrides = new([new("Id", "Id")]);
 
 	sealed class Row
 	{

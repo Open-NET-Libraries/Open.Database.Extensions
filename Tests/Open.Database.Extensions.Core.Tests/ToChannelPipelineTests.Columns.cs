@@ -14,7 +14,7 @@ public static partial class ToChannelPipelineTests
 		public string? Name { get; set; }
 	}
 
-	static readonly (string Field, string? Column)[] WideOverrides = [("Id", "Id"), ("Name", "Name")];
+	static readonly RowMap<Wide> WideOverrides = new([new("Id", "Id"), new("Name", "Name")]);
 
 	static readonly string[][] Layouts =
 	[

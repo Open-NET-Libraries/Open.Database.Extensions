@@ -10,50 +10,57 @@ public static partial class CoreExtensions
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; <see langword="null"/>, or the overload without a map, reads by column name.
+	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; the overload without a map reads by column name.
 	/// Declare the <see cref="RowMap{T}"/> once and reuse it: a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call
-	/// (about 0.4 ms and 29 KB for a one-row read of a 12-property model on the in-memory provider, against about 0.1 µs and a few hundred bytes through a declared map; see
+	/// (about 29 KB and a reader compile for a one-row read of a 12-property model, against 464 B through a declared map; see
 	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
 	/// </para>
 	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with.</param>
 	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="map"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
+	[OverloadResolutionPriority(1)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
-		RowMap<T>? map = null)
+		RowMap<T> map)
 		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (map is null) throw new ArgumentNullException(nameof(map));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, map ?? RowMap<T>.Default, 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, map, 0, -1));
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
-	[OverloadResolutionPriority(1)]
+	/// <param name="command">The command to read from.</param>
+	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
+	[OverloadResolutionPriority(2)]
+	public static MappedQuery<T> Map<T>(
+		this IExecuteReader command,
+		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
+		where T : new()
+		=> Map(command, RowMap<T>.From(mappings));
+
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
+	/// <param name="command">The command to read from.</param>
+	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
+	[OverloadResolutionPriority(3)]
+	public static MappedQuery<T> Map<T>(
+		this IExecuteReader command,
+		KeyValuePair<string, string?> mapping)
+		where T : new()
+		=> Map(command, new RowMap<T>(mapping));
+
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
+	[OverloadResolutionPriority(4)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command)
 		where T : new()
-	{
-		if (command is null) throw new ArgumentNullException(nameof(command));
-		Contract.EndContractBlock();
-
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, RowMap<T>.Default, 0, -1));
-	}
-
-	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
-	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static MappedQuery<T> Map<T>(
-		this IExecuteReader command,
-		params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		where T : new()
-		=> Map<T>(command, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
+		=> Map(command, RowMap<T>.Default);
 
 	/// <summary>
 	/// Locks in a custom projection and returns a deferred <see cref="MappedQuery{T}"/>. Nothing runs until

@@ -43,7 +43,7 @@ public static class MapMemoryStudy
 		}
 
 		long callDeclared = PerCall(() => connection.Command("select 1").Map<RenamedPost>(RenamedColumns.Map).ToList());
-		long callTuples = PerCall(() => connection.Command("select 1").Map<RenamedPost>(RenamedColumns.Tuples).ToList());
+		long callPairs = PerCall(() => connection.Command("select 1").Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).ToList());
 		long callArray = PerCall(() => connection.Command("select 1").Map<RenamedPost>(new RowMap<RenamedPost>(RenamedColumns.Pairs)).ToList());
 		long callLiteral = PerCall(() => connection.Command("select 1").Map<RenamedPost>(Literal()).ToList());
 
@@ -55,7 +55,7 @@ public static class MapMemoryStudy
 		Console.WriteLine($"  retained added by its first read:       {retainedAfterFirstRead,6} B (one result-set layout, typed DbDataReader reader)");
 		Console.WriteLine($"Allocated per call, one-row List read of the same model, in-memory provider:");
 		Console.WriteLine($"  declared RowMap<T>:                                  {callDeclared,6} B");
-		Console.WriteLine($"  tuple overload (prebuilt tuple array):               {callTuples,6} B  (+{callTuples - callDeclared} B: builds a map and compiles the reader every call)");
+		Console.WriteLine($"  pairs overload of Map<T> (prebuilt pairs):           {callPairs,6} B  (+{callPairs - callDeclared} B: builds a map and compiles the reader every call)");
 		Console.WriteLine($"  ImmutableArray of pairs passed to the constructor at the call site:  {callArray,6} B  (+{callArray - callDeclared} B)");
 		Console.WriteLine($"  new RowMap<T>([...]) written at the call site:           {callLiteral,6} B  (+{callLiteral - callDeclared} B)");
 	}

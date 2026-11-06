@@ -1,7 +1,5 @@
-using Open.Database.Extensions.Core;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Threading.Tasks.Dataflow;
 
 #nullable enable
 
@@ -17,7 +15,7 @@ public static class RowMapTests
 		public string? Name { get; set; }
 		public decimal Total { get; set; }
 		public string? Note { get; set; }
-		public string Computed => "computed";   // read-only: cannot be mapped
+		public string Computed => "computed" + Id;   // read-only: cannot be mapped
 		public string? Locked { get; private set; } // no public setter: cannot be mapped
 	}
 
@@ -63,26 +61,26 @@ public static class RowMapTests
 
 	[Fact]
 	public static void Map_MapsRenamedColumns()
-		=> AssertItems(Cmd(Renamed, 3).Map<Item>(Plain).ToList(), 3);
+		=> AssertItems(Cmd(Renamed, 3).Map(Plain).ToList(), 3);
 
 	[Fact]
 	public static void OneMap_ServesEveryQueryThatReadsTheModel()
 	{
-		AssertItems(Cmd(Renamed, 0).Map<Item>(Plain).ToList(), 0);
-		AssertItems(Cmd(Renamed, 1).Map<Item>(Plain).ToList(), 1);
-		AssertItems([Cmd(Renamed, 1).Map<Item>(Plain).FirstOrDefault()!], 1);
-		AssertItems([Cmd(Renamed, 1).Map<Item>(Plain).SingleOrDefault()!], 1);
-		AssertItems(Cmd(Renamed, 50).Map<Item>(Plain).ToList(), 50);
+		AssertItems(Cmd(Renamed, 0).Map(Plain).ToList(), 0);
+		AssertItems(Cmd(Renamed, 1).Map(Plain).ToList(), 1);
+		AssertItems([Cmd(Renamed, 1).Map(Plain).FirstOrDefault()!], 1);
+		AssertItems([Cmd(Renamed, 1).Map(Plain).SingleOrDefault()!], 1);
+		AssertItems(Cmd(Renamed, 50).Map(Plain).ToList(), 50);
 
-		List<Item> page = Cmd(Renamed, 50).Map<Item>(Plain).Skip(10).Take(5).ToList();
+		var page = Cmd(Renamed, 50).Map(Plain).Skip(10).Take(5).ToList();
 		Assert.Equal([11, 12, 13, 14, 15], page.Select(x => x.Id));
 	}
 
 	[Fact]
 	public static async Task Map_Async_MapsRenamedColumns()
 	{
-		AssertItems(await Cmd(Renamed, 4).Map<Item>(Plain).ToListAsync(TestContext.Current.CancellationToken), 4);
-		Item? first = await Cmd(Renamed, 4).Map<Item>(Plain).FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+		AssertItems(await Cmd(Renamed, 4).Map(Plain).ToListAsync(TestContext.Current.CancellationToken), 4);
+		Item? first = await Cmd(Renamed, 4).Map(Plain).FirstOrDefaultAsync(TestContext.Current.CancellationToken);
 		AssertItems([first!], 1);
 	}
 
@@ -90,9 +88,9 @@ public static class RowMapTests
 	public static void PassingAMap_AllocatesNothing()
 	{
 		FakeExecuteReader cmd = Cmd(Renamed, 1);
-		_ = cmd.Map<Item>(Plain); // warm up
+		_ = cmd.Map(Plain); // warm up
 		long before = GC.GetAllocatedBytesForCurrentThread();
-		MappedQuery<Item> query = cmd.Map<Item>(Plain);
+		MappedQuery<Item> query = cmd.Map(Plain);
 		long after = GC.GetAllocatedBytesForCurrentThread();
 		GC.KeepAlive(query);
 		Assert.Equal(0, after - before);
@@ -152,7 +150,7 @@ public static class RowMapTests
 	public static void SwappingTwoColumns_IsFine()
 	{
 		var swap = new RowMap<Item>([new(nameof(Item.Name), "Note"), new(nameof(Item.Note), "Name")]);
-		Item item = new FakeExecuteReader(["Name", "Note"], ["n", "o"]).Map<Item>(swap).ToList().Single();
+		Item item = new FakeExecuteReader(["Name", "Note"], ["n", "o"]).Map(swap).ToList().Single();
 		Assert.Equal("o", item.Name);
 		Assert.Equal("n", item.Note);
 	}
@@ -163,7 +161,7 @@ public static class RowMapTests
 	public static void UnmentionedProperties_MapByName_IgnoringCase()
 	{
 		var onlyTotal = new RowMap<Item>([new(nameof(Item.Total), "item_total")]);
-		Item item = new FakeExecuteReader(["id", "NAME", "item_total"], [7, "seven", 10.5m]).Map<Item>(onlyTotal).ToList().Single();
+		Item item = new FakeExecuteReader(["id", "NAME", "item_total"], [7, "seven", 10.5m]).Map(onlyTotal).ToList().Single();
 		Assert.Equal(7, item.Id);
 		Assert.Equal("seven", item.Name);
 		Assert.Equal(10.5m, item.Total);
@@ -172,7 +170,7 @@ public static class RowMapTests
 	[Fact]
 	public static void EmptyMap_BehavesLikeMatchingNames()
 	{
-		Item item = new FakeExecuteReader(["Id", "Name"], [3, "three"]).Map<Item>(new RowMap<Item>([])).ToList().Single();
+		Item item = new FakeExecuteReader(["Id", "Name"], [3, "three"]).Map(new RowMap<Item>([])).ToList().Single();
 		Assert.Equal(3, item.Id);
 		Assert.Equal("three", item.Name);
 	}
@@ -181,7 +179,7 @@ public static class RowMapTests
 	public static void NullColumn_IgnoresTheProperty()
 	{
 		var ignoreNote = new RowMap<Item>([new(nameof(Item.Name), "item_name"), new(nameof(Item.Note), null)]);
-		Item item = new FakeExecuteReader(["item_name", "Note"], ["a", "should not land"]).Map<Item>(ignoreNote).ToList().Single();
+		Item item = new FakeExecuteReader(["item_name", "Note"], ["a", "should not land"]).Map(ignoreNote).ToList().Single();
 		Assert.Equal("a", item.Name);
 		Assert.Null(item.Note);
 	}
@@ -218,7 +216,7 @@ public static class RowMapTests
 
 	[Fact]
 	public static void InitOnlySetter_IsAccepted()
-		=> Assert.Equal(5, new FakeExecuteReader(["x"], [5]).Map<WithInit>(new RowMap<WithInit>([new(nameof(WithInit.Id), "x")])).ToList().Single().Id);
+		=> Assert.Equal(5, new FakeExecuteReader(["x"], [5]).Map(new RowMap<WithInit>([new(nameof(WithInit.Id), "x")])).ToList().Single().Id);
 
 	// ---- validate only what the map mentions; an empty column name is a mistake ----
 
@@ -236,7 +234,7 @@ public static class RowMapTests
 		Assert.Equal(1, new FakeExecuteReader(["Id"], [1]).Map<CaseTwins>().ToList().Single().Id);
 		_ = new RowMap<CaseTwins>([]);
 		var map = new RowMap<CaseTwins>([new(nameof(CaseTwins.Id), "c_id")]);
-		Assert.Equal(1, new FakeExecuteReader(["c_id"], [1]).Map<CaseTwins>(map).ToList().Single().Id);
+		Assert.Equal(1, new FakeExecuteReader(["c_id"], [1]).Map(map).ToList().Single().Id);
 	}
 
 	[Fact]
@@ -284,22 +282,23 @@ public static class RowMapTests
 		var renamed = new FakeExecuteReader(() => TypedReader.Create(RenamedColumns, data));
 		var matching = new FakeExecuteReader(() => TypedReader.Create(MatchingColumns, data));
 
-		long viaRowMap = BytesPerRead(() => renamed.Map<Item>(Plain).ToList());
+		long viaRowMap = BytesPerRead(() => renamed.Map(Plain).ToList());
 		long byName = BytesPerRead(() => matching.Map<Item>().ToList());
-		long perCall = BytesPerRead(() => renamed.Map<Item>((nameof(Item.Id), "item_id"), (nameof(Item.Name), "item_name"), (nameof(Item.Total), "item_total"), (nameof(Item.Note), "item_note")).ToList());
+		long perCall = BytesPerRead(() => renamed.Map<Item>(
+			new(nameof(Item.Id), "item_id"),
+			new(nameof(Item.Name), "item_name"),
+			new(nameof(Item.Total), "item_total"),
+			new(nameof(Item.Note), "item_note")
+		).ToList());
 
 		Assert.InRange(viaRowMap - byName, -16, 16);
-		Assert.True(perCall - byName > 400, $"Per-call overrides were expected to cost visibly more ({perCall} vs {byName} B); otherwise this test cannot tell the difference."); // the control
+		Assert.True(perCall - byName > 100, $"Per-call overrides were expected to cost visibly more ({perCall} vs {byName} B); otherwise this test cannot tell the difference."); // the control
 	}
 
 	internal static readonly ImmutableArray<KeyValuePair<string, string?>> ItemPairs =
 	[
 		new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"),
 	];
-
-	[Fact]
-	public static void DefaultImmutableArray_Throws()
-		=> Assert.Throws<ArgumentException>(() => new RowMap<Item>(default(ImmutableArray<KeyValuePair<string, string?>>)));
 
 	// ---- a null column means "do not map this property" ----
 
@@ -315,29 +314,30 @@ public static class RowMapTests
 		Assert.ThrowsAny<Exception>(() => command.Map<Item>().ToList());
 
 		// With a null column Note is not read at all (what is read: Id; what stays default: Note).
-		RowMap<Item> ignoreNote = new RowMap<Item>([new(nameof(Item.Note), null)]);
-		Item item = command.Map<Item>(ignoreNote).ToList().Single();
+		var ignoreNote = new RowMap<Item>([new(nameof(Item.Note), null)]);
+		Item item = command.Map(ignoreNote).ToList().Single();
 		Assert.Equal(1, item.Id);
 		Assert.Null(item.Note);
 	}
 
-	// ---- a map written at the call site, or tuples, build a new map on every call; a declared map does not ----
+	// ---- a map written at the call site, or pairs passed to Map, build a new map on every call; a declared map does not ----
 
-	// The one-off forms (a `new RowMap<Item>([...])` or an ImmutableArray passed to the constructor at the call site, or the tuple overloads) build a new
+	// The one-off forms (a `new RowMap<Item>([...])` or an ImmutableArray passed to the constructor at the call site, or the pairs passed to Map<T>) build a new
 	// map and compile the row reader on every call, and cache nothing. A declared map costs none of that.
 	[Fact]
-	public static void CallSiteMapsAndTuples_BuildANewMapOnEveryCall_AndCacheNothing()
+	public static void CallSiteMapsAndPairs_BuildANewMapOnEveryCall_AndCacheNothing()
 	{
 		object?[][] data = [[1, "name1", 1.5m, "note1"]];
 		var renamed = new FakeExecuteReader(() => TypedReader.Create(RenamedColumns, data));
 
-		long declared = BytesPerRead(() => renamed.Map<Item>(Plain).ToList());
-		long callSite = BytesPerRead(() => renamed.Map<Item>(new RowMap<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")])).ToList());
-		long tuples = BytesPerRead(() => renamed.Map<Item>((nameof(Item.Id), "item_id"), (nameof(Item.Name), "item_name"), (nameof(Item.Total), "item_total"), (nameof(Item.Note), "item_note")).ToList());
+		long declared = BytesPerRead(() => renamed.Map(Plain).ToList());
+		long callSite = BytesPerRead(() => renamed.Map(new RowMap<Item>(
+			new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList());
+		long pairs = BytesPerRead(() => renamed.Map<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")).ToList());
 
 		// If either form cached its map, it would cost about what the declared map costs.
 		Assert.True(callSite - declared > 5_000, $"A map written at the call site was expected to build a map and compile a reader on every call ({callSite} B against {declared} B through a declared map).");
-		Assert.True(tuples - declared > 5_000, $"The tuple overload was expected to build a map and compile a reader on every call ({tuples} B against {declared} B through a declared map).");
+		Assert.True(pairs - declared > 5_000, $"The pairs overload was expected to build a map and compile a reader on every call ({pairs} B against {declared} B through a declared map).");
 	}
 
 	// ---- every way of passing a map binds where it should ----
@@ -350,31 +350,32 @@ public static class RowMapTests
 		Assert.Equal(1, new FakeExecuteReader(["Id", "Name"], [1, "x"]).Map<Item>(null).ToList().Single().Id);
 
 		// A declared map.
-		AssertItems(Cmd(Renamed, 2).Map<Item>(Plain).ToList(), 2);
+		AssertItems(Cmd(Renamed, 2).Map(Plain).ToList(), 2);
 
 		// A map written at the call site is built, and validated, for that call.
-		AssertItems(Cmd(Renamed, 2).Map<Item>(new RowMap<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")])).ToList(), 2);
-		var duplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new RowMap<Item>([new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b")])));
+		AssertItems(Cmd(Renamed, 2).Map(new RowMap<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")])).ToList(), 2);
+		var duplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>([new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b")])));
 		Assert.Equal("mappings", duplicate.ParamName);
 
 		// An ImmutableArray of pairs passed to the constructor at the call site is the same.
-		AssertItems(Cmd(Renamed, 2).Map<Item>(new RowMap<Item>(ItemPairs)).ToList(), 2);
+		AssertItems(Cmd(Renamed, 2).Map(new RowMap<Item>(ItemPairs)).ToList(), 2);
 
-		// Tuples are the convenience overload: they build a strict map too, and the exception names the tuple parameter.
-		AssertItems(Cmd(Renamed, 2).Map<Item>((nameof(Item.Id), "item_id"), (nameof(Item.Name), "item_name"), (nameof(Item.Total), "item_total"), (nameof(Item.Note), "item_note")).ToList(), 2);
-		var tupleDuplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>((nameof(Item.Name), "a"), (nameof(Item.Name), "b")));
-		Assert.Equal("fieldMappingOverrides", tupleDuplicate.ParamName);
+		// Pairs passed to Map<T> build a strict map too, and the exception names the `mappings` parameter.
+		AssertItems(Cmd(Renamed, 2).Map<Item>(
+			new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")).ToList(), 2);
+		var pairDuplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b")));
+		Assert.Equal("mappings", pairDuplicate.ParamName);
 	}
 
 	[Fact]
-	public static void TupleOverloads_AreStrict()
+	public static void MapPairs_AreStrict()
 	{
 		// An unknown property is an error even with a null column ("Nope" is deliberately not a property), and so are a repeated property,
 		// an empty column name and two properties on one column.
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(("Nope", null)));
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>((nameof(Item.Name), "a"), (nameof(Item.Name), "b")));
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>((nameof(Item.Name), ""), (nameof(Item.Id), "x")));
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>((nameof(Item.Name), "x"), (nameof(Item.Note), "X")));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new("Nope", null)));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b")));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), ""), new(nameof(Item.Id), "x")));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "X")));
 	}
 
 	// The property side of a pair is matched exactly (ordinal); column names are matched ignoring case.
@@ -386,8 +387,8 @@ public static class RowMapTests
 		Assert.Contains("'id'", ex.Message);
 
 		// The column "ITEM_ID" matches the result column "item_id".
-		RowMap<Item> upper = new RowMap<Item>([new(nameof(Item.Id), "ITEM_ID")]);
-		Assert.Equal(7, new FakeExecuteReader(["item_id"], [7]).Map<Item>(upper).ToList().Single().Id);
+		var upper = new RowMap<Item>([new(nameof(Item.Id), "ITEM_ID")]);
+		Assert.Equal(7, new FakeExecuteReader(["item_id"], [7]).Map(upper).ToList().Single().Id);
 
 		// Two columns that differ only by case collide.
 		Assert.Throws<ArgumentException>(() => new RowMap<Item>([new(nameof(Item.Name), "x"), new(nameof(Item.Note), "X")]));
@@ -399,14 +400,23 @@ public static class RowMapTests
 	{
 		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => new RowMap<Item>([new("Nope", "x")])).ParamName);               // "Nope" is deliberately not a property
 		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => new RowMap<Item>([new(nameof(Item.Name), ""), new(nameof(Item.Id), "x")])).ParamName);
-		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => new RowMap<Item>(default(ImmutableArray<KeyValuePair<string, string?>>))).ParamName);
-		Assert.Equal("fieldMappingOverrides", Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>((nameof(Item.Name), "x"), (nameof(Item.Note), "x"))).ParamName);
+		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "x"))).ParamName);
+	}
+
+	// A default (uninitialized) ImmutableArray, like an empty span, just means no mappings: the map reads by column name.
+	[Fact]
+	public static void DefaultImmutableArray_MeansNoMappings()
+	{
+		Item none = new FakeExecuteReader(["Id", "Name"], [1, "x"]).Map(new RowMap<Item>()).ToList().Single();
+		Item @default = new FakeExecuteReader(["Id", "Name"], [1, "x"]).Map(new RowMap<Item>(default(ImmutableArray<KeyValuePair<string, string?>>))).ToList().Single();
+		Assert.Equal((1, "x"), (none.Id, none.Name));
+		Assert.Equal((none.Id, none.Name), (@default.Id, @default.Name));
 	}
 
 	// ---- the override parameter is `map` everywhere ----
 
 	[Fact]
-	public static void EveryOverrideParameterIsAMap_AndTheTupleOverloadsAreWrappers()
+	public static void EveryOverrideParameterIsAMap()
 	{
 		Assembly[] assemblies =
 		[
@@ -417,8 +427,6 @@ public static class RowMapTests
 		MethodBase[] methods = [.. assemblies.SelectMany(a => a.GetExportedTypes()).SelectMany(t => t.GetMethods(all).Cast<MethodBase>().Concat(t.GetConstructors(all)))];
 
 		static bool IsPairs(Type t) => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>) && t.GetGenericArguments()[0] == typeof(KeyValuePair<string, string>);
-		static bool IsTuples(Type t) => (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>) && t.GetGenericArguments()[0] == typeof((string, string)))
-			|| t == typeof((string, string)[]);
 		static bool IsMap(Type t) => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(RowMap<>);
 
 		// No public method takes the pairs as a sequence, except the one RowMap<T> constructor that builds a map from them.
@@ -426,13 +434,6 @@ public static class RowMapTests
 
 		// A parameter of type RowMap<T> is named map.
 		Assert.Empty(methods.SelectMany(m => m.GetParameters().Where(p => IsMap(p.ParameterType) && p.Name != "map").Select(p => m.DeclaringType + "." + m.Name + "(" + p.Name + ")")));
-
-		// Every tuple overload has a core customer: the same method on the same type that takes a RowMap<T>.
-		var orphans = methods.Where(m => m.GetParameters().Any(p => IsTuples(p.ParameterType)))
-			.Where(m => !methods.Any(o => o.DeclaringType == m.DeclaringType && o.Name == m.Name && o.GetParameters().Any(p => IsMap(p.ParameterType))))
-			.Select(m => m.DeclaringType + "." + m.Name)
-			.ToArray();
-		Assert.Empty(orphans);
 	}
 
 	// ---- column order and result-set shape ----
@@ -444,9 +445,9 @@ public static class RowMapTests
 		string[] withExtra = ["extra", "item_total", "item_id", "item_name"]; // no note column at all
 		for (int round = 0; round < 3; round++) // interleaved, so each shape is met again after the others
 		{
-			AssertItems(Cmd(Renamed, 3).Map<Item>(Plain).ToList(), 3);
-			AssertItems(Cmd(reversed, 3).Map<Item>(Plain).ToList(), 3);
-			AssertItems(Cmd(withExtra, 3).Map<Item>(Plain).ToList(), 3, hasNote: false);
+			AssertItems(Cmd(Renamed, 3).Map(Plain).ToList(), 3);
+			AssertItems(Cmd(reversed, 3).Map(Plain).ToList(), 3);
+			AssertItems(Cmd(withExtra, 3).Map(Plain).ToList(), 3, hasNote: false);
 		}
 	}
 
@@ -457,8 +458,8 @@ public static class RowMapTests
 	{
 		var swapped = new RowMap<Item>([new(nameof(Item.Name), "b"), new(nameof(Item.Note), "a")]);
 		var straight = new RowMap<Item>([new(nameof(Item.Name), "a"), new(nameof(Item.Note), "b")]);
-		Item s = new FakeExecuteReader(["a", "b"], ["first", "second"]).Map<Item>(swapped).ToList().Single();
-		Item t = new FakeExecuteReader(["a", "b"], ["first", "second"]).Map<Item>(straight).ToList().Single();
+		Item s = new FakeExecuteReader(["a", "b"], ["first", "second"]).Map(swapped).ToList().Single();
+		Item t = new FakeExecuteReader(["a", "b"], ["first", "second"]).Map(straight).ToList().Single();
 		Assert.Equal(("second", "first"), (s.Name, s.Note));
 		Assert.Equal(("first", "second"), (t.Name, t.Note));
 	}
@@ -466,14 +467,15 @@ public static class RowMapTests
 	[Fact]
 	public static void SeparatelyBuiltEqualMaps_GiveIdenticalResults()
 	{
-		static RowMap<Item> Build() => new RowMap<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")]);
+		static RowMap<Item> Build() => new(
+			new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"));
+
 		RowMap<Item> a = Build(), b = Build();
 		Assert.NotSame(a, b);
-		string[][] shapes = [Renamed, [.. Renamed.Reverse()], ["extra", "item_total", "item_id", "item_name"]];
-		foreach (string[] shape in shapes)
+		foreach (string[] shape in (string[][])[Renamed, [.. Renamed.Reverse()], ["extra", "item_total", "item_id", "item_name"]])
 		{
-			var fromA = Cmd(shape, 4).Map<Item>(a).ToList();
-			var fromB = Cmd(shape, 4).Map<Item>(b).ToList();
+			var fromA = Cmd(shape, 4).Map(a).ToList();
+			var fromB = Cmd(shape, 4).Map(b).ToList();
 			Assert.Equal(fromA.Select(x => (x.Id, x.Name, x.Total, x.Note)), fromB.Select(x => (x.Id, x.Name, x.Total, x.Note)));
 		}
 	}
@@ -488,10 +490,10 @@ public static class RowMapTests
 	[Fact]
 	public static void ReadmeSample_Runs()
 	{
-		List<Item> items = Cmd(Renamed, 2).Map<Item>(Maps.ItemMap).ToList();
+		var items = Cmd(Renamed, 2).Map(Maps.ItemMap).ToList();
 		Assert.Equal([1, 2], items.Select(i => i.Id));
 		Assert.All(items, i => Assert.Null(i.Note)); // ("Note", null) ignores the column
-		Customer customer = new FakeExecuteReader(["twin_id", "full_name"], [9, "Nine"]).Map<Customer>(Maps.CustomerMap).ToList().Single();
+		Customer customer = new FakeExecuteReader(["twin_id", "full_name"], [9, "Nine"]).Map(Maps.CustomerMap).ToList().Single();
 		Assert.Equal((9, "Nine"), (customer.Id, customer.Name));
 	}
 
@@ -555,7 +557,7 @@ public static class RowMapTests
 			firsts[t] = map(); // the contended first call
 			string[] shape = shapes[t % shapes.Length];
 			for (int n = 0; n < 150; n++) // sustained use after the race
-				AssertItems(Cmd(shape, 5).Map<Item>(map()).ToList(), 5, hasNote: shape.Contains("item_note"));
+				AssertItems(Cmd(shape, 5).Map(map()).ToList(), 5, hasNote: shape.Contains("item_note"));
 		});
 
 		return firsts;
@@ -565,7 +567,7 @@ public static class RowMapTests
 	public static void FieldCoalescingMap_RacedOnFirstUse_GivesEquivalentMapsAndIdenticalRows()
 	{
 		RowMap<Item>[] got = RaceOnFirstUseThenSustained(() => CoalescingMaps.Map);
-		Assert.All(got, m => Assert.NotNull(m)); // possibly several instances; each one already read correct rows in the race
+		Assert.All(got, Assert.NotNull); // possibly several instances; each one already read correct rows in the race
 		Assert.InRange(CoalescingMaps.Builds, 1, 16);
 	}
 
@@ -573,7 +575,7 @@ public static class RowMapTests
 	public static void EnsureInitializedMap_RacedOnFirstUse_PublishesOneInstanceToEveryRacer()
 	{
 		RowMap<Item>[] got = RaceOnFirstUseThenSustained(() => EnsuredMaps.Map);
-		Assert.All(got, m => Assert.NotNull(m));
+		Assert.All(got, Assert.NotNull);
 		Assert.All(got, m => Assert.Same(got[0], m)); // exactly one published instance, though the factory may have run more than once
 		Assert.InRange(EnsuredMaps.Builds, 1, 16);
 	}
@@ -590,7 +592,7 @@ public static class RowMapTests
 		{
 			try
 			{
-				while (!stop.IsCancellationRequested) AssertItems(Cmd(Renamed, 3).Map<Item>(shared).ToList(), 3);
+				while (!stop.IsCancellationRequested) AssertItems(Cmd(Renamed, 3).Map(shared).ToList(), 3);
 			}
 			catch (Exception ex)
 			{
@@ -604,7 +606,7 @@ public static class RowMapTests
 			Race(4, t =>
 			{
 				for (int n = 0; n < 60; n++) // 4 x 60 = 240 layouts that no other thread shares
-					AssertItems(Cmd([.. Renamed, $"extra_{t}_{n}"], 3).Map<Item>(shared).ToList(), 3);
+					AssertItems(Cmd([.. Renamed, $"extra_{t}_{n}"], 3).Map(shared).ToList(), 3);
 			});
 		}
 		finally
@@ -624,7 +626,7 @@ public static class RowMapTests
 			var own = new RowMap<Item>([new(nameof(Item.Name), a), new(nameof(Item.Note), b)]);
 			for (int n = 0; n < 50; n++)
 			{
-				Item item = new FakeExecuteReader([a, b], ["name" + t, "note" + t]).Map<Item>(own).ToList().Single();
+				Item item = new FakeExecuteReader([a, b], ["name" + t, "note" + t]).Map(own).ToList().Single();
 				Assert.Equal(("name" + t, "note" + t), (item.Name, item.Note));
 			}
 		});

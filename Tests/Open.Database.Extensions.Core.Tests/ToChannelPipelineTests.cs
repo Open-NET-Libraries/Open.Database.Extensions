@@ -25,7 +25,7 @@ public static partial class ToChannelPipelineTests
 	static readonly TimeSpan Prompt = TimeSpan.FromSeconds(10);
 
 	static readonly string[] Columns = ["Id"];
-	static readonly (string Field, string? Column)[] Overrides = [("Id", "Id")];
+	static readonly RowMap<Row> Overrides = new([new("Id", "Id")]);
 
 	sealed class Row
 	{
@@ -61,7 +61,7 @@ public static partial class ToChannelPipelineTests
 		return data;
 	}
 
-	// 0 = unmapped, 1 = mapped, 2 = mapped with field mapping overrides.
+	// 0 = unmapped, 1 = mapped, 2 = mapped with a map.
 	public static TheoryData<Kind, int> Modes { get; } = BuildModes();
 
 	static TheoryData<Kind, int> BuildModes()
@@ -292,14 +292,14 @@ public static partial class ToChannelPipelineTests
 			case Kind.ExecuteReader:
 				{
 					IExecuteReader command = new ScriptedCommand(factory, false, default);
-					return (w, c) => command.ToChannel(w, c);
+					return command.ToChannel;
 				}
 
 			case Kind.ExecuteReaderAsync:
 			case Kind.ExecuteReaderAsyncUsingAsyncRead:
 				{
 					IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, default);
-					return (w, c) => command.ToChannelAsync(w, c);
+					return command.ToChannelAsync;
 				}
 
 			case Kind.DbCommandInterface:

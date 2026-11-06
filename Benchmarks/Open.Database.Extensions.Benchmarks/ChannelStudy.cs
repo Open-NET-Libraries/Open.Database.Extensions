@@ -25,30 +25,34 @@ public static class ChannelStudy
 	{
 		Console.WriteLine("rows  target-cap  consumer-us/item  design        reader-held-ms  total-ms   (median of {0}; LOST = rows never delivered)", Runs);
 		foreach (int rows in new[] { 1_000, 10_000 })
-		foreach (int capacity in new[] { 0, 100 }) // 0 = unbounded
-		foreach (int delayUs in new[] { 0, 2, 20 })
 		{
-			var conn = new BenchConnection(BenchTable.Posts(rows));
-			foreach ((string name, Producer produce) in new (string, Producer)[]
+			foreach (int capacity in new[] { 0, 100 }) // 0 = unbounded
 			{
-				("one-stage", OneStage),
-				("two-stage", TwoStage),
-				("spill", Spill),
-			})
-			{
-				var held = new List<double>();
-				var total = new List<double>();
-				var delivered = new List<double>();
-				for (int i = 0; i < Warmup + Runs; i++)
+				foreach (int delayUs in new[] { 0, 2, 20 })
 				{
-					(double h, double t, long n) = await MeasureAsync(conn, capacity, delayUs, produce);
-					if (i >= Warmup) { held.Add(h); total.Add(t); delivered.Add(n); }
-				}
+					var conn = new BenchConnection(BenchTable.Posts(rows));
+					foreach ((string name, Producer produce) in new (string, Producer)[]
+					{
+						("one-stage", OneStage),
+						("two-stage", TwoStage),
+						("spill", Spill),
+					})
+					{
+						var held = new List<double>();
+						var total = new List<double>();
+						var delivered = new List<double>();
+						for (int i = 0; i < Warmup + Runs; i++)
+						{
+							(double h, double t, long n) = await MeasureAsync(conn, capacity, delayUs, produce);
+							if (i >= Warmup) { held.Add(h); total.Add(t); delivered.Add(n); }
+						}
 
-				double lost = rows - Median(delivered);
-				Console.WriteLine("{0,-5} {1,-11} {2,-17} {3,-13} {4,-15:F2} {5,-9:F2} {6}",
-					rows, capacity == 0 ? "unbounded" : capacity, delayUs, name, Median(held), Median(total),
-					lost == 0 ? "" : $"LOST {lost:F0} of {rows} rows");
+						double lost = rows - Median(delivered);
+						Console.WriteLine("{0,-5} {1,-11} {2,-17} {3,-13} {4,-15:F2} {5,-9:F2} {6}",
+							rows, capacity == 0 ? "unbounded" : capacity, delayUs, name, Median(held), Median(total),
+							lost == 0 ? "" : $"LOST {lost:F0} of {rows} rows");
+					}
+				}
 			}
 		}
 	}
@@ -130,7 +134,7 @@ public static class ChannelStudy
 					pump = Task.Run(async () =>
 					{
 						await foreach (Post queued in buffer.Reader.ReadAllAsync()) await target.WriteAsync(queued);
-					});
+					}, ct);
 				}
 
 				await overflow.Writer.WriteAsync(p, ct);

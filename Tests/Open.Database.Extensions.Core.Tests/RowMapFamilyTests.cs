@@ -1,13 +1,13 @@
+using Open.Database.Extensions.Core;
 using System.Data.Common;
 using System.Threading.Tasks.Dataflow;
-using Open.Database.Extensions.Core;
 using Item = Open.Database.Extensions.Tests.RowMapTests.Item;
 
 #nullable enable
 
 namespace Open.Database.Extensions.Tests;
 
-// Every override-taking public method through each receiver, once with a map and once with the tuple convenience overload.
+// Every override-taking public method through each receiver, through a map.
 // The columns are renamed, so a wrapper that swaps Field and Column, or does not forward its map, fails here.
 [ExcludeFromCodeCoverage]
 public static class RowMapFamilyTests
@@ -17,8 +17,8 @@ public static class RowMapFamilyTests
 	{
 		var command = new FakeExecuteReader(["Id", "Name"], [1, "one"]);
 
-		Assert.Equal(1, command.Results<RowMapTests.Item>().Single().Id);
-		Assert.Equal(1, command.Results<RowMapTests.Item>((RowMap<RowMapTests.Item>?)null).Single().Id);
+		Assert.Equal(1, command.Results<Item>().Single().Id);
+		Assert.Equal(1, command.Results((RowMap<Item>?)null).Single().Id);
 	}
 
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
@@ -37,15 +37,14 @@ public static class RowMapFamilyTests
 		public ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReaderAsync(transform, behavior);
 	}
 
-	static readonly (string, string?)[] Tuples =
-		[(nameof(Item.Id), "item_id"), (nameof(Item.Name), "item_name"), (nameof(Item.Total), "item_total"), (nameof(Item.Note), "item_note")];
-
 	static object?[][] Rows => [RowMapTests.Row(RowMapTests.Renamed, 1), RowMapTests.Row(RowMapTests.Renamed, 2)];
 
 	// ---- receivers ----
 	static IDataReader Reader() => FakeReader.Create(RowMapTests.Renamed, Rows);
 	static DbDataReader DbReader() => FakeReader.CreateDb(RowMapTests.Renamed, Rows);
 	static FakeExecuteReader Exec() => RowMapTests.Cmd(RowMapTests.Renamed, 2);
+
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
 	static AsyncCommand Async() => new(Exec());
 
 	static IDbCommand Command()
@@ -58,7 +57,7 @@ public static class RowMapFamilyTests
 		return command;
 	}
 
-	static DbCommand DbCmd()
+	static FakeDbCommand DbCmd()
 	{
 		var connection = new FakeDbConnection();
 		connection.SetState(ConnectionState.Open);
@@ -114,64 +113,60 @@ public static class RowMapFamilyTests
 
 	static Task<List<Item>> Now(IEnumerable<Item> items) => Task.FromResult(items.ToList());
 
-	// name -> (through a map, through the tuple convenience overload)
-	static readonly Dictionary<string, (Func<RowMap<Item>, Task<List<Item>>> ViaMap, Func<(string, string?)[], Task<List<Item>>> ViaTuples)> Cases = new()
+	// name -> the call, through a map
+	static readonly Dictionary<string, Func<RowMap<Item>, Task<List<Item>>>> Cases = new()
 	{
 		// Core
-		["Map(IExecuteReader)"] = (m => Now(Exec().Map<Item>(m).ToList()), t => Now(Exec().Map<Item>(t).ToList())),
-		["Results(IDataReader)"] = (m => Now(Reader().Results<Item>(m)), t => Now(Reader().Results<Item>(t))),
-		["ResultsBuffered(IDataReader)"] = (m => Now(Reader().ResultsBuffered<Item>(m)), t => Now(Reader().ResultsBuffered<Item>(t))),
-		["Results(IDbCommand)"] = (m => Now(Command().Results<Item>(m)), t => Now(Command().Results<Item>(t))),
-		["Results(IExecuteReader)"] = (m => Now(Exec().Results<Item>(m)), t => Now(Exec().Results<Item>(t))),
-		["ResultsAsync(DbDataReader)"] = (m => Enumerate(DbReader().ResultsAsync<Item>(m)), t => Enumerate(DbReader().ResultsAsync<Item>(t))),
-		["ResultsBufferedAsync(DbDataReader)"] = (async m => (await DbReader().ResultsBufferedAsync<Item>(m)).ToList(), async t => (await DbReader().ResultsBufferedAsync<Item>(t)).ToList()),
-		["ResultsAsync(DbCommand)"] = (async m => (await DbCmd().ResultsAsync<Item>(m)).ToList(), async t => (await DbCmd().ResultsAsync<Item>(t)).ToList()),
-		["To(DataTable)"] = (m => Now(Table().To<Item>(m)), t => Now(Table().To<Item>(t))),
-		["DequeueAs(QueryResult)"] = (m => Now(Queued().DequeueAs<Item>(m)), t => Now(Queued().DequeueAs<Item>(t))),
-		["DequeueAs(Task)"] = (async m => (await Task.FromResult(Queued()).DequeueAs<Item>(m)).ToList(), async t => (await Task.FromResult(Queued()).DequeueAs<Item>(t)).ToList()),
-		["DequeueAs(ValueTask)"] = (async m => (await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs<Item>(m)).ToList(), async t => (await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs<Item>(t)).ToList()),
+		["Map(IExecuteReader)"] = m => Now(Exec().Map(m).ToList()),
+		["Results(IDataReader)"] = m => Now(Reader().Results(m)),
+		["ResultsBuffered(IDataReader)"] = m => Now(Reader().ResultsBuffered(m)),
+		["Results(IDbCommand)"] = m => Now(Command().Results(m)),
+		["Results(IExecuteReader)"] = m => Now(Exec().Results(m)),
+		["ResultsAsync(DbDataReader)"] = m => Enumerate(DbReader().ResultsAsync(m)),
+		["ResultsBufferedAsync(DbDataReader)"] = async m => (await DbReader().ResultsBufferedAsync(m)).ToList(),
+		["ResultsAsync(DbCommand)"] = async m => (await DbCmd().ResultsAsync(m)).ToList(),
+		["To(DataTable)"] = m => Now(Table().To(m)),
+		["DequeueAs(QueryResult)"] = m => Now(Queued().DequeueAs(m)),
+		["DequeueAs(Task)"] = async m => (await Task.FromResult(Queued()).DequeueAs(m)).ToList(),
+		["DequeueAs(ValueTask)"] = async m => (await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs(m)).ToList(),
 
 		// Channel: a new channel
-		["ToChannel(IDataReader)"] = (m => Drain(Reader().ToChannel<Item>(true, m)), t => Drain(Reader().ToChannel<Item>(true, t))),
-		["ToChannel(IDbCommand)"] = (m => Drain(Command().ToChannel<Item>(true, m)), t => Drain(Command().ToChannel<Item>(true, t))),
-		["ToChannel(IExecuteReader)"] = (m => Drain(Exec().ToChannel<Item>(true, m)), t => Drain(Exec().ToChannel<Item>(true, t))),
-		["ToChannelAsync(DbDataReader)"] = (m => Drain(DbReader().ToChannelAsync<Item>(true, m)), t => Drain(DbReader().ToChannelAsync<Item>(true, t))),
-		["ToChannelAsync(DbCommand)"] = (m => Drain(DbCmd().ToChannelAsync<Item>(true, m)), t => Drain(DbCmd().ToChannelAsync<Item>(true, t))),
-		["ToChannelAsync(IExecuteReaderAsync)"] = (m => Drain(Async().ToChannelAsync<Item>(true, m)), t => Drain(Async().ToChannelAsync<Item>(true, t))),
+		["ToChannel(IDataReader)"] = m => Drain(Reader().ToChannel(true, m)),
+		["ToChannel(IDbCommand)"] = m => Drain(Command().ToChannel(true, m)),
+		["ToChannel(IExecuteReader)"] = m => Drain(Exec().ToChannel(true, m)),
+		["ToChannelAsync(DbDataReader)"] = m => Drain(DbReader().ToChannelAsync(true, m)),
+		["ToChannelAsync(DbCommand)"] = m => Drain(DbCmd().ToChannelAsync(true, m)),
+		["ToChannelAsync(IExecuteReaderAsync)"] = m => Drain(Async().ToChannelAsync(true, m)),
 
 		// Channel: the caller's writer
-		["ToChannel(writer, IDataReader)"] = (m => ToWriter(w => Reader().ToChannel(w, true, m)), t => ToWriter(w => Reader().ToChannel(w, true, t))),
-		["ToChannel(writer, IDbCommand)"] = (m => ToWriter(w => Command().ToChannel(w, true, m)), t => ToWriter(w => Command().ToChannel(w, true, t))),
-		["ToChannel(writer, IExecuteReader)"] = (m => ToWriter(w => Exec().ToChannel(w, true, m)), t => ToWriter(w => Exec().ToChannel(w, true, t))),
-		["ToChannelAsync(writer, DbDataReader)"] = (m => ToWriter(w => DbReader().ToChannelAsync(w, true, m)), t => ToWriter(w => DbReader().ToChannelAsync(w, true, t))),
-		["ToChannelAsync(writer, DbCommand)"] = (m => ToWriter(w => DbCmd().ToChannelAsync(w, true, m)), t => ToWriter(w => DbCmd().ToChannelAsync(w, true, t))),
-		["ToChannelAsync(writer, IExecuteReaderAsync)"] = (m => ToWriter(w => Async().ToChannelAsync(w, true, m)), t => ToWriter(w => Async().ToChannelAsync(w, true, t))),
+		["ToChannel(writer, IDataReader)"] = m => ToWriter(w => Reader().ToChannel(w, true, m)),
+		["ToChannel(writer, IDbCommand)"] = m => ToWriter(w => Command().ToChannel(w, true, m)),
+		["ToChannel(writer, IExecuteReader)"] = m => ToWriter(w => Exec().ToChannel(w, true, m)),
+		["ToChannelAsync(writer, DbDataReader)"] = m => ToWriter(w => DbReader().ToChannelAsync(w, true, m)),
+		["ToChannelAsync(writer, DbCommand)"] = m => ToWriter(w => DbCmd().ToChannelAsync(w, true, m)),
+		["ToChannelAsync(writer, IExecuteReaderAsync)"] = m => ToWriter(w => Async().ToChannelAsync(w, true, m)),
 
 		// Dataflow: into a block
-		["ToTargetBlock(IDataReader)"] = (m => ToBlock(b => new ValueTask<long>(Reader().ToTargetBlock(b, true, m))), t => ToBlock(b => new ValueTask<long>(Reader().ToTargetBlock(b, true, t)))),
-		["ToTargetBlock(IDbCommand)"] = (m => ToBlock(b => new ValueTask<long>(Command().ToTargetBlock(b, true, m))), t => ToBlock(b => new ValueTask<long>(Command().ToTargetBlock(b, true, t)))),
-		["ToTargetBlock(IExecuteReader)"] = (m => ToBlock(b => new ValueTask<long>(Exec().ToTargetBlock(b, true, m))), t => ToBlock(b => new ValueTask<long>(Exec().ToTargetBlock(b, true, t)))),
-		["ToTargetBlockAsync(IDataReader)"] = (m => ToBlock(b => Reader().ToTargetBlockAsync(b, true, m)), t => ToBlock(b => Reader().ToTargetBlockAsync(b, true, t))),
-		["ToTargetBlockAsync(IDbCommand)"] = (m => ToBlock(b => Command().ToTargetBlockAsync(b, true, m)), t => ToBlock(b => Command().ToTargetBlockAsync(b, true, t))),
-		["ToTargetBlockAsync(IExecuteReader)"] = (m => ToBlock(b => Exec().ToTargetBlockAsync(b, true, m)), t => ToBlock(b => Exec().ToTargetBlockAsync(b, true, t))),
+		["ToTargetBlock(IDataReader)"] = m => ToBlock(b => new ValueTask<long>(Reader().ToTargetBlock(b, true, m))),
+		["ToTargetBlock(IDbCommand)"] = m => ToBlock(b => new ValueTask<long>(Command().ToTargetBlock(b, true, m))),
+		["ToTargetBlock(IExecuteReader)"] = m => ToBlock(b => new ValueTask<long>(Exec().ToTargetBlock(b, true, m))),
+		["ToTargetBlockAsync(IDataReader)"] = m => ToBlock(b => Reader().ToTargetBlockAsync(b, true, m)),
+		["ToTargetBlockAsync(IDbCommand)"] = m => ToBlock(b => Command().ToTargetBlockAsync(b, true, m)),
+		["ToTargetBlockAsync(IExecuteReader)"] = m => ToBlock(b => Exec().ToTargetBlockAsync(b, true, m)),
 
 		// Dataflow: a new source block
-		["AsSourceBlock(IDataReader)"] = (m => Receive(Reader().AsSourceBlock<Item>(m)), t => Receive(Reader().AsSourceBlock<Item>(t))),
-		["AsSourceBlock(IDbCommand)"] = (m => Receive(Command().AsSourceBlock<Item>(m)), t => Receive(Command().AsSourceBlock<Item>(t))),
-		["AsSourceBlock(IExecuteReader)"] = (m => Receive(Exec().AsSourceBlock<Item>(m)), t => Receive(Exec().AsSourceBlock<Item>(t))),
-		["AsSourceBlockAsync(IDataReader)"] = (m => Receive(Reader().AsSourceBlockAsync<Item>(m)), t => Receive(Reader().AsSourceBlockAsync<Item>(t))),
-		["AsSourceBlockAsync(IDbCommand)"] = (m => Receive(Command().AsSourceBlockAsync<Item>(m)), t => Receive(Command().AsSourceBlockAsync<Item>(t))),
-		["AsSourceBlockAsync(IExecuteReader)"] = (m => Receive(Exec().AsSourceBlockAsync<Item>(m)), t => Receive(Exec().AsSourceBlockAsync<Item>(t))),
+		["AsSourceBlock(IDataReader)"] = m => Receive(Reader().AsSourceBlock(m)),
+		["AsSourceBlock(IDbCommand)"] = m => Receive(Command().AsSourceBlock(m)),
+		["AsSourceBlock(IExecuteReader)"] = m => Receive(Exec().AsSourceBlock(m)),
+		["AsSourceBlockAsync(IDataReader)"] = m => Receive(Reader().AsSourceBlockAsync(m)),
+		["AsSourceBlockAsync(IDbCommand)"] = m => Receive(Command().AsSourceBlockAsync(m)),
+		["AsSourceBlockAsync(IExecuteReader)"] = m => Receive(Exec().AsSourceBlockAsync(m)),
 	};
 
 	public static TheoryData<string> Names => [.. Cases.Keys];
 
 	[Theory]
 	[MemberData(nameof(Names))]
-	public static async Task RenamedColumns_AreMappedThroughTheOverload_WithAMapAndWithTuples(string name)
-	{
-		var (viaMap, viaTuples) = Cases[name];
-		RowMapTests.AssertItems(await viaMap(RowMapTests.Plain), 2);
-		RowMapTests.AssertItems(await viaTuples(Tuples), 2);
-	}
+	public static async Task RenamedColumns_AreMappedThroughTheOverload(string name)
+		=> RowMapTests.AssertItems(await Cases[name](RowMapTests.Plain), 2);
 }

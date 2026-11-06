@@ -129,7 +129,7 @@ What it shows:
 ## `RowMap<T>`: a prebuilt column mapping when every column is named differently
 
 A 12-property model read from a result set whose every column is named differently (`post_id`, `post_title`, …). Four ways to read it:
-`Map<T>()` on a model whose property names are the column names (the control: same result set, same column-name lengths, so the provider does the same work), a declared `RowMap<T>`, the tuple overload (`Map<T>(RenamedColumns.Tuples)`, which builds a new map and compiles the row reader on every call), and Dapper with `SqlMapper.SetTypeMap` set once.
+`Map<T>()` on a model whose property names are the column names (the control: same result set, same column-name lengths, so the provider does the same work), a declared `RowMap<T>`, the pairs overload (`Map<T>(RenamedColumns.Pairs.AsSpan())`, which builds a new map and compiles the row reader on every call; the timings below were taken with the value-tuple overload that preceded it, removed in 11.0, which did the same work), and Dapper with `SqlMapper.SetTypeMap` set once.
 
 **What was measured when.** The timings below were taken at commit 9840925, before the final API of 11.0.0-preview02. The compiled reader and the per-layout cache of a declared map were not changed afterwards (a query now also reads `map ?? RowMap<T>.Default` once), but the tables were not re-timed on the final code. The scenarios that existed then and no longer exist (a cached, lenient per-call overload and an inline-pairs overload) are not reported as current results; the one-off column below is the inline-pairs overload, which built a new map and compiled the row reader on every call, the same work that a collection expression written at the call site and the tuple overloads do now (`List_TupleOverload` and `First_TupleOverload` in the benchmark classes were added after that run and have not been timed). The allocation figures for the final code come from `--map-memory`, below.
 
@@ -164,7 +164,7 @@ Reproduce: `dotnet <benchmarks dll> --filter "*.RenamedColumnBenchmarks.*" --war
 | Way of passing the mapping | Allocated per call | Over a declared map |
 |---|---:|---:|
 | Declared `RowMap<T>` | 464 B | - |
-| Tuple overload (a prebuilt array of 12 tuples) | 29,568 B | +29,104 B |
+| Tuple overload (removed in 11.0; a prebuilt array of 12 tuples) | 29,568 B | +29,104 B |
 | `ImmutableArray` of pairs passed to the constructor at the call site | 29,288 B | +28,824 B |
 | `new RowMap<T>([...])` of 12 pairs written at the call site | 29,507 B | +29,043 B |
 
@@ -196,7 +196,7 @@ The 95% confidence half-widths on LocalDB run from 0.3 µs at one row to 8.4 µs
 - *Allocation:* a `RowMap<T>` read allocates exactly what `Map<T>()` allocates on matching names (0 B difference in memory, at most 0.01 KB on LocalDB), at 1, 100 and 1000 rows, and less than Dapper with a type map in every scenario (in memory 0.43x at one row and 0.36-0.37x at 100 and 1000; on LocalDB 0.91x, 0.58x and 0.55x, and 0.94x for `First`).
 - *Time against `Map<T>()` on matching names:* in memory the ratios are 0.96-1.03; the 1.03 at 100 rows is matched by the short-named `Map<Post>()` at 1.04 in the same run, so it follows the model class, not the map. On LocalDB 0.98-1.04 are ties within the intervals.
 - *Time against Dapper with `SetTypeMap`:* in memory a map read takes 0.11-0.33x Dapper's time. On LocalDB it is 0.94-1.04x, a tie within noise; the two `First` rows at 100 and 1000 rows are 1.04x (+5 µs and +20 µs, inside the ±8 µs and ±25 µs intervals): not below Dapper, not distinguishable from it.
-- *What declaring a map saves:* a one-row in-memory read through a map takes about 0.1 µs; the one-off path took about 0.43 ms and allocated about 29.5 KB, and the cost does not shrink with larger results (above). The tuple overloads and a `new RowMap<T>([...])` written at the call site do that same work on every call.
+- *What declaring a map saves:* a one-row in-memory read through a map takes about 0.1 µs; the one-off path took about 0.43 ms and allocated about 29.5 KB, and the cost does not shrink with larger results (above). The pairs overload of `Map<T>` and a `new RowMap<T>([...])` written at the call site do that same work on every call.
 - *The interface lookup of the row reader* (`RowSource<T>` became an internal interface so the map can be the public type) cost nothing measurable. The control `Map<T>()` took the same change, and against the earlier run on the first design it moved from 119.9 to 114.5 ns (List, 1 row), 3,434.6 to 3,127.6 ns (100 rows), 31,675.5 to 31,857.5 ns (1000 rows), and 104.5 to 101.5, 102.0 to 100.6, 103.1 to 103.9 ns for `First`: between -9% and +0.8%, while the Dapper column drifted by up to +8% (10,778 to 11,678 ns at 100 rows) between the two runs, so run-to-run noise is of that size. The map itself moved from 121.0 to 113.3 ns, 3,471.7 to 3,214.2 ns and 32,358.4 to 30,856.0 ns (List) and 101.8 to 99.5, 102.0 to 100.7, 102.8 to 99.6 ns (First): never slower.
 - Against `Map<T>()` on the *short-named* table the renamed result set allocates 0.13 KB more on LocalDB (4.49 vs 4.62 KB for `List` of one row), consistent with SqlClient allocating each column name on every query (62 more characters across the 12 columns is 124 B); the control uses the same names for that reason.
 

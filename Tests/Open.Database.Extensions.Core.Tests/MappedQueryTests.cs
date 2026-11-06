@@ -35,10 +35,10 @@ public static class MappedQueryTests
 	}
 
 	[Fact]
-	public static void Map_TupleOverride_MapsRenamedColumns()
+	public static void Map_PairsOverride_MapsRenamedColumns()
 	{
 		var cmd = new FakeExecuteReader(["first", "last"], ["Ada", "Lovelace"]);
-		Person p = cmd.Map<Person>(("FirstName", "first"), ("LastName", "last")).ToList().Single();
+		Person p = cmd.Map<Person>(new("FirstName", "first"), new("LastName", "last")).ToList().Single();
 		Assert.Equal("Ada", p.FirstName);
 		Assert.Equal("Lovelace", p.LastName);
 	}
@@ -47,8 +47,8 @@ public static class MappedQueryTests
 	public static void Map_RowMap_MapsRenamedColumns()
 	{
 		var cmd = new FakeExecuteReader(["first", "last"], ["Ada", "Lovelace"]);
-		RowMap<Person> map = new RowMap<Person>([new(nameof(Person.FirstName), "first"), new(nameof(Person.LastName), "last")]);
-		Person p = cmd.Map<Person>(map).ToList().Single();
+		var map = new RowMap<Person>([new(nameof(Person.FirstName), "first"), new(nameof(Person.LastName), "last")]);
+		Person p = cmd.Map(map).ToList().Single();
 		Assert.Equal("Ada", p.FirstName);
 		Assert.Equal("Lovelace", p.LastName);
 	}

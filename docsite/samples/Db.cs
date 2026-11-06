@@ -12,10 +12,7 @@ public static class Db
 	#region factory_definition
 	// A connection factory: each command built from it opens its own connection and disposes it afterwards.
 	// Held in a lazily created field (the C# 14 `field` keyword). The factory is stateless, so a benign race costs nothing.
-	public static IDbConnectionFactory<SqliteConnection> Factory
-	{
-		get => field ??= new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(ConnectionString));
-	}
+	public static IDbConnectionFactory<SqliteConnection> Factory => field ??= new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(ConnectionString));
 	#endregion
 
 	/// <summary>Opens the connection that keeps the in-memory database alive between factory-built commands.</summary>

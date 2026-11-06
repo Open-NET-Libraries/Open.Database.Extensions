@@ -82,12 +82,12 @@ static class PersonMaps
 var people = cmd.Results<Person>(PersonMaps.PersonMap);
 ```
 
-Tuples are accepted as a convenience for a one-off. They build a new map, and compile the row reader, on every call:
+The value-tuple overloads are removed in 11.0: pass a `RowMap<T>`, as above. `Map<T>` also takes the pairs themselves, a one-off that builds a new map, and compiles the row reader, on every call:
 
 ```cs
-var people = cmd.Results<Person>(
- (nameof(Person.FirstName), "first_name"),
- (nameof(Person.LastName), "last_name"));
+var people = cmd.Map<Person>(
+ new(nameof(Person.FirstName), "first_name"),
+ new(nameof(Person.LastName), "last_name")).ToList();
 ```
 
 #### `Retrieve()` and `RetrieveAsync()`

@@ -213,24 +213,6 @@ public static partial class CoreExtensions
 		.Create(map)
 		.Results(table, clearSourceTable);
 
-	/// <inheritdoc cref="To{T}(DataTable, RowMap{T}?, bool)"/>
-	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-2)]
-	public static IEnumerable<T> To<T>(this DataTable table, IEnumerable<(string Field, string? Column)>? fieldMappingOverrides = null, bool clearSourceTable = false)
-		where T : new()
-		=> To<T>(table, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)), clearSourceTable);
-
-	/// <inheritdoc cref="To{T}(DataTable, RowMap{T}?, bool)"/>
-	/// <remarks>Convenience overload. It builds a new <see cref="RowMap{T}"/> and compiles its row reader on every call; declare a <see cref="RowMap{T}"/> once and pass it for anything that runs more than occasionally. The tuples are validated strictly: an unknown or repeated property, an empty column name, or two properties on one column throw <see cref="ArgumentException"/>.</remarks>
-	/// <exception cref="ArgumentException">The tuples are not a valid map: an unknown or repeated property, an empty column name, or two properties that read the same column.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[OverloadResolutionPriority(-3)]
-	public static IEnumerable<T> To<T>(this DataTable table, params IEnumerable<(string Field, string? Column)>? fieldMappingOverrides)
-		where T : new()
-		=> To<T>(table, RowMap<T>.FromTuples(fieldMappingOverrides, nameof(fieldMappingOverrides)));
-
 	/// <summary>
 	/// Useful extension for dequeuing items from a queue.
 	/// Not thread safe but queueing/dequeuing items in between items is supported.

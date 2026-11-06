@@ -34,13 +34,12 @@ public static class Mapping
 	}
 
 	public static Person[] MapNamesOnly(SqliteConnection connection)
-	{
 		// LastName is not read at all, so it stays at its default although the result set has a last_name column.
-		return connection
+		=> connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
 			.ToArray();
-	}
+
 
 	public static string MapUnknownProperty()
 	{
@@ -72,13 +71,13 @@ public static class Mapping
 		return people;
 	}
 
-	public static Person[] MapTuples(SqliteConnection connection)
+	public static Person[] MapPairs(SqliteConnection connection)
 	{
-		#region map_tuples
-		// The tuple overload is a convenience for the same one-off: it builds a new map, and compiles the row reader, on every call.
+		#region map_pairs
+		// Map<T> also takes the pairs themselves: the same one-off, a new map built, and the row reader compiled, on every call.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>((nameof(Person.Id), "person_id"), (nameof(Person.FirstName), "first_name"), (nameof(Person.LastName), "last_name"))
+			.Map<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))
 			.ToArray();
 		#endregion
 
@@ -179,7 +178,7 @@ public static class HoldingAMap
 {
 	#region map_declared_backing
 	// Before C# 14 there is no field keyword: write the backing field yourself.
-	static RowMap<Person>? _backingMap;
+	internal static RowMap<Person>? _backingMap;
 
 	public static RowMap<Person> BackingMap => _backingMap ??= new([
 		new(nameof(Person.Id), "person_id"),
