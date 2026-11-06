@@ -7,7 +7,7 @@ using Microsoft.Data.SqlClient;
 namespace Open.Database.Extensions.Benchmarks;
 
 // The renamed-column comparison against SQL Server (LocalDB): the same rows in a table whose every column is
-// snake_case, read through a predefined RowMap<T>, through per-call overrides, and through Dapper with a type map set once.
+// snake_case, read through a declared RowMap<T>, through the tuple overload (which builds a new map on every call), and through Dapper with a type map set once.
 // A throwaway database is created in Setup and dropped in Cleanup.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -77,7 +77,7 @@ public class SqlServerRenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PerCallOverrides(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_TupleOverload(), List_DapperTypeMap() })
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
 	}
@@ -103,11 +103,9 @@ public class SqlServerRenamedColumnBenchmarks
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_RowMap() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Map).ToList();
 
+	// The one-off path: builds a new map and compiles the row reader on every call.
 	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_PerCallOverrides() => _conn.Command(RenamedSql).Map<RenamedPost>(
-		(nameof(RenamedPost.Id), "post_id"), (nameof(RenamedPost.Title), "post_title"), (nameof(RenamedPost.Body), "post_body"), (nameof(RenamedPost.Created), "post_created"),
-		(nameof(RenamedPost.Price), "post_price"), (nameof(RenamedPost.IsPublished), "post_is_published"), (nameof(RenamedPost.ViewCount), "post_view_count"), (nameof(RenamedPost.Score), "post_score"),
-		(nameof(RenamedPost.Key), "post_key"), (nameof(RenamedPost.Rank), "post_rank"), (nameof(RenamedPost.Big), "post_big"), (nameof(RenamedPost.Tag), "post_tag")).ToList();
+	public List<RenamedPost> List_TupleOverload() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Tuples).ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_DapperTypeMap() => _conn.Query<RenamedPost>(RenamedSql).AsList();
@@ -122,10 +120,7 @@ public class SqlServerRenamedColumnBenchmarks
 	public RenamedPost? First_RowMap() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_PerCallOverrides() => _conn.Command(RenamedSql).Map<RenamedPost>(
-		(nameof(RenamedPost.Id), "post_id"), (nameof(RenamedPost.Title), "post_title"), (nameof(RenamedPost.Body), "post_body"), (nameof(RenamedPost.Created), "post_created"),
-		(nameof(RenamedPost.Price), "post_price"), (nameof(RenamedPost.IsPublished), "post_is_published"), (nameof(RenamedPost.ViewCount), "post_view_count"), (nameof(RenamedPost.Score), "post_score"),
-		(nameof(RenamedPost.Key), "post_key"), (nameof(RenamedPost.Rank), "post_rank"), (nameof(RenamedPost.Big), "post_big"), (nameof(RenamedPost.Tag), "post_tag")).FirstOrDefault();
+	public RenamedPost? First_TupleOverload() => _conn.Command(RenamedSql).Map<RenamedPost>(RenamedColumns.Tuples).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_DapperTypeMap() => _conn.QueryFirstOrDefault<RenamedPost>(RenamedSql);
