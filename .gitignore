@@ -290,3 +290,9 @@ __pycache__/
 log.txt
 .vscode/launch.json
 .vscode/tasks.json
+
+# DocFX output and generated API metadata (rebuilt by .github/workflows/docs.yml)
+docsite/_site/
+docsite/api/*.yml
+docsite/api/.manifest
+/docfx-log.json

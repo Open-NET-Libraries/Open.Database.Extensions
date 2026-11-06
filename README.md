@@ -1,230 +1,177 @@
 # Open.Database.Extensions
 
-[![NuGet](https://img.shields.io/nuget/v/Open.Database.Extensions.Core.svg?style=flat)](https://www.nuget.org/packages/Open.Database.Extensions.Core/)
+[![NuGet](https://img.shields.io/nuget/vpre/Open.Database.Extensions.Core.svg?style=flat)](https://www.nuget.org/packages/Open.Database.Extensions.Core/)
+[![Docs](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml/badge.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/LICENSE)
 
-Useful set of utilities and abstractions for simplifying modern database operations and ensuring dependency injection compatibility.
+**You write the SQL. This library writes the other twenty lines.**
 
-## Principles
+Open.Database.Extensions turns the ADO.NET boilerplate around your own SQL into one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider, is built for short connection times and low allocations, and sits on the standard types you already use.
 
-- Minimize connection open time.
-- Deferred/lazy transformation.
-- Optimize for specific use cases.
-- Minimize boilerplate code.
+**[Documentation](https://open-net-libraries.github.io/Open.Database.Extensions/)** · [Getting started](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html) · [API reference](https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html) · [Benchmarks](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)
 
-## Features
-- Provides a fluent interface for database operations.
-- Supports dependency injection for connection factories.
-- Support both synchronous and asynchronous operations.
-- Provides expressive commands for executing SQL queries and stored procedures.
+## Before and after
 
-### Connection Factories
-
-Connection factories facilitate creation and disposal of connections without the concern of a connection reference or need for awareness of a connection string.
-A `SqlConnectionFactory` is provided and can be overridden to provide more specific dependency injection configurations.
-
-### Expressive Commands
-
-The provided expressive command classes allow for an expressive means to append parameters and execute the results without lengthy complicated setup.
-
-Extensions are provided to create commands from connection factories.
-
-### Example
+Fetch one author's posts, with plain ADO.NET:
 
 ```cs
-var result = connectionFactory
-   .StoredProcedure("[procedure name]")
-   .AddParam("a",1)
-   .AddParam("b",true)
-   .AddParam("c","hello")
-   .ExecuteScalar();
-```
+var posts = new List<Post>();
 
-## Extensions
+using var connection = new SqliteConnection(Db.ConnectionString);
+connection.Open();
 
-Instead of writing this:
+using var command = connection.CreateCommand();
+command.CommandText = "select id, author, title, body from posts where author = @author order by id";
+var parameter = command.CreateParameter();
+parameter.ParameterName = "@author";
+parameter.Value = 42;
+command.Parameters.Add(parameter);
 
-```cs
-var myResult = new List<T>();
-using(var reader = await mySqlCommand.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+using var reader = command.ExecuteReader();
+while (reader.Read())
 {
-    while(await reader.ReadAsync())
-        myResult.Add(transform(reader));
+    posts.Add(new Post
+    {
+        Id = reader.GetInt32(0),
+        Author = reader.GetInt32(1),
+        Title = reader.GetString(2),
+        Body = reader.IsDBNull(3) ? null : reader.GetString(3),
+    });
 }
 ```
 
-Is now simplified to this:
+And with Open.Database.Extensions:
 
 ```cs
-var myResult = await mySqlCommand.ToListAsync(transform);
-```
-
-## Deferred Transformation
-
-In order to keep connection open time to a minimum, some methods cache data before closing the connection and then subsequently applying the transformations as needed.
-
-### `Results<T>()` and `ResultsAsync<T>()`
-
-Queues all the data.  Then using the provided type `T` entity, the data is coerced by which properties intersect with the ones available to the `IDataReader`.
-
-Optionally a field to column override map can be passed as a parameter.  If a column is set as `null` then that field is ignored (not applied to the model).
-
-### Examples
-
-If all the columns in the database map exactly to a field: (A column that has no associated field/property is ignored.)
-
-```cs
-var people = cmd.Results<Person>();
-```
-
-If the database fields don't map exactly:
-
-```cs
-var people = cmd.Results<Person>(
- (Field:"FirstName", Column:"first_name"),
- (Field:"LastName", Column:"last_name")));
-```
-
-or
-
-```cs
-var people = cmd.Results<Person>(
- ("FirstName", "first_name"),
- ("LastName", "last_name"));
-```
-
-or
-
-```cs
-var people = cmd.Results<Person>(new Dictionary<string,string>{
- {"FirstName", "first_name"},
- {"LastName", "last_name"});
-```
-
-### `Retrieve()` and `RetrieveAsync()`
-
-Queues all the data.  Returns a `QueryResult<Queue<object[]>>` containing the requested data and column information.  The `.DequeueAsMappedDictionaries()` extension will iteratively convert the results to dictionaries for ease of access.
-
-### `ResultsAsync<T>`
-
-`ResultsAsync<T>()` is fully asynchronous from end-to-end but returns an `IEnumerable<T>` that although has fully buffered the all the data into memory, has deferred the transformation until enumerated.  This way, the asynchronous data pipeline is fully complete before synchronously transforming the data.
-
-## Mapped queries: `Map<T>()`
-
-`Map<T>()` is the fast, expressive way to read rows into a model. It is deferred: nothing runs until a terminal is called, and rows are mapped as the reader streams.
-
-```cs
-var posts = await connection
-    .Command("select * from posts where author = @author")
+Post[] posts = await connectionFactory
+    .Command("select * from posts where author = @author order by id")
     .AddParam("author", 42)
     .Map<Post>()
     .ToArrayAsync();
-
-var page = connection.Command("select * from posts order by id")
-    .Map<Post>()
-    .Skip(20).Take(10)     // skipped rows are advanced, never mapped; reading stops once the take is met
-    .ToArray();
-
-var one = connection.Command("select * from posts where id = @id").AddParam("id", 7).Map<Post>().SingleOrDefault();
 ```
 
-Prefer `ToArray` for results you only read: it allocates one exactly-sized array (no spare capacity, no collection object) and an empty result is the shared static empty array. Use `ToList` when you need a mutable collection.
+The same four jobs, counted from the compiled snippets in [`docsite/samples/BeforeAfter.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/BeforeAfter.cs) (lines of code, not counting blank lines):
 
-Terminals: `ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` (each with an `…Async` twin) and `Read(...)`/`ReadAsync(...)` for streaming.
+| Job | Plain ADO.NET | Open.Database.Extensions |
+|---|---:|---:|
+| A list of mapped objects | 20 | 5 |
+| One row | 20 | 5 |
+| A scalar | 9 | 4 |
+| A command with no result set | 9 | 4 |
 
-How it stays fast:
+What you no longer write: opening and closing the connection, creating the command and setting its text, creating and adding every parameter, the read loop, copying columns into properties (ordinals, `IsDBNull`), and disposing all of it.
 
-- The mapping from a result set to `T` is compiled **once per result-set shape** (column names + column types) and cached, so a repeat query does no reflection and no compilation.
-- Values are read with the provider's typed getters (`GetInt32`, `GetString`, …), so nothing is boxed. A column whose type differs from the property converts numerically (`long` → `int`, `int` → enum, …) or through a general conversion (string → enum/`Guid`).
-- `NULL` is honored for reference types and `Nullable<T>` properties. A `NULL` in a column mapped to a non-nullable value-type property is the provider's error to raise, and the exception names the property and column.
-- Columns are matched to properties case-insensitively; unmatched columns are ignored, and unmatched properties keep their defaults. Field/column overrides are supported: `.Map<Post>(("Id", "PostId"), ("Body", null))` (a `null` column ignores the field).
-- Readers are opened with `SequentialAccess | SingleResult` (`SingleRow` for `FirstOrDefault`), like Dapper.
-- The execution path allocates no closures: state-passing `ExecuteReader`/`ExecuteReaderAsync` overloads on `IExecuteReader` take a `static` lambda plus the state it needs.
+## Why it is fast
 
-## Transactions
+- **Measured against Dapper 2.1.89 on an in-memory provider:** `Map<T>()` is roughly 2 to 3 times faster at 100 or more rows, with about a third of the allocations (0.33 to 0.38 of Dapper's on multi-row results).
+- **With a real database the database dominates:** against SQL Server LocalDB it is on par to a few percent faster (ratios 0.89 to 1.08, mostly ties) with about 0.55 to 0.6 times the allocations on multi-row results.
+- **Built to hold a connection briefly:** the row mapping is compiled once per result shape and cached, values are read with typed getters (nothing is boxed), `Skip` advances without mapping, and a command built from a factory opens its connection when it runs and disposes it afterwards.
 
-Example:
+These figures come from the 11.0.0-preview01 build, re-run independently on a noisy machine, so read the timing ratios as indicative. The SQLite results are published but were not independently re-run, and a re-baseline is pending. Channels, Dataflow and `Retrieve().DequeueAs<T>()` are conveniences, not speed-ups. See [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html).
+
+## Expressive commands
+
+Start from a connection factory and the command opens, runs and disposes its own connection:
 
 ```cs
-// Returns true if the transaction is successful.
-public static bool TryTransaction()
-=> ConnectionFactory.Using(connection =>
-    // Open a connection and start a transaction.
-    connection.ExecuteTransactionConditional(transaction => {
+// The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
+Post[] posts = await connectionFactory
+    .Command("select * from posts where author = @author order by id")
+    .AddParam("author", 42)
+    .Map<Post>()
+    .ToArrayAsync();
+```
 
-        // First procedure does some updates.
-        var count = transaction
-            .StoredProcedure("[Updated Procedure]")
+Or start from a connection you already have. You own it; the command opens it only if it is closed and closes only what it opened:
+
+```cs
+// You own the connection. The command opens it only if it is closed, and closes only what it opened.
+Post[] posts = connection
+    .Command("select * from posts where author = @author order by id")
+    .AddParam("author", 42)
+    .Map<Post>()
+    .ToArray();
+```
+
+Stored procedures are `StoredProcedure(name)`, and the terminals include `ExecuteNonQuery`, `ExecuteScalar`, `Map<T>()` and their async twins. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html).
+
+## Row mapping without configuration
+
+`Map<T>()` matches columns to public settable properties by name, ignoring case, and ignores the rest:
+
+```cs
+// Columns are matched to public settable properties by name, ignoring case.
+// The extra "views" column has no property, so it is ignored.
+Post[] posts = connection
+    .Command("select * from posts order by id")
+    .Map<Post>()
+    .ToArray();
+```
+
+Paging reads only what it needs, and skipped rows are never mapped:
+
+```cs
+// Skipped rows are advanced without being mapped, and reading stops once the take is satisfied.
+Post[] page = connection
+    .Command("select * from posts order by id")
+    .Map<Post>()
+    .Skip(1)
+    .Take(2)
+    .ToArray();
+```
+
+Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the per-call overrides for columns with other names.
+
+### Renamed columns
+
+A reusable, declared mapping for columns whose names differ from your properties is being built and will be described here when it ships.
+
+## Transactions in one expression
+
+```cs
+// The factory opens a connection and starts a transaction. Returning true commits; false (or a throw) rolls back.
+bool committed = connectionFactory.Using(connection =>
+    connection.ExecuteTransactionConditional(transaction =>
+    {
+        transaction
+            .Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
             .ExecuteNonQuery();
 
-        // Second procedure validates the results.
-        // If it returns true, then the transaction is committed.
-        // If it returns false, then the transaction is rolled back.
-        return transaction
-            .StoredProcedure("[Validation Procedure]")
-            .AddParam("@ExpectedCount", count)
-            .ExecuteScalar<bool>();
+        return shouldCommit;
     }));
 ```
 
-## 8.0 Release Notes
+## And more
 
-- All `.ConfigureAwait(true)` are now `.ConfigureAwait(false)` as they should be.  The caller will need to `.ConfigureAwait(true)` if they need to resume on the calling context.
-- Added `Open.Database.Extensions.MSSqlClient` for `Microsoft.Data.SqlClient` support.
-- .NET 8.0 added to targets to ensure potential compilation and performance improvements are available.
-- Improved nullable integrity.
+- **Channels and Dataflow:** stream rows into a `Channel<T>` or a dataflow block. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/channels-and-dataflow.html)
+- **SQL Server:** `SqlConnectionFactory` and stored procedures on `Microsoft.Data.SqlClient`. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html)
+- **Coming from Dapper:** the same jobs side by side. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html)
 
-## 9.0 Release Notes
+## Install
 
-- Open.Database.Extensions meta-package is discontinued.
-- .NET 9.0 added to targets to ensure potential compilation and performance improvements are available.
-- Implemented some .NET 8 and 9 specific features.
-- Significant cleanup and simplification where possible.
+| Package | What it is |
+|---|---|
+| `Open.Database.Extensions.Core` | The foundation, expressive commands and `Map<T>()`. Provider-agnostic. |
+| `Open.Database.Extensions.Channel` | Rows into `System.Threading.Channels`. |
+| `Open.Database.Extensions.Dataflow` | Rows into TPL Dataflow blocks. |
+| `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
+| `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Legacy: prefer `MSSqlClient`. |
+| `Open.Database.Extensions` | A meta-package for Core. The last published version is 9.0.3: use Core. |
 
-## 10.1.0 Release Notes
+```sh
+dotnet add package Open.Database.Extensions.Core --prerelease
+```
 
-A modernization and allocation-reduction pass. **Source-compatible with 10.0** — existing code recompiles cleanly.
+Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview.
 
-- **Target frameworks:** `net10.0` is now the primary/modern target. `netstandard2.0` and `netstandard2.1` are retained as shimmed legacy paths (net8/net9 consumers use the `netstandard2.1` build); `Open.Database.Extensions.MSSqlClient` also targets `net472`. The explicit `net8.0`/`net9.0` targets were dropped.
-- **Fewer allocations on the hot paths:** case-insensitive column-to-property matching now uses `StringComparer.OrdinalIgnoreCase` (and `FrozenDictionary` on `net10.0`) instead of allocating an upper-cased string per column; assorted per-query LINQ and dead code removed.
-- **Ergonomic field-mapping overrides:** `Results<T>`, `ResultsAsync<T>`, `To<T>`, etc. now accept target-typed `new(...)` and collection expressions:
+## How it fits together
 
-  ```cs
-  cmd.Results<Person>(new("FirstName", "first_name"), new("LastName", "last_name"));
-  cmd.Results<Person>([new("FirstName", "first_name"), new("LastName", "last_name")]);
-  ```
+![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands, row mapping, all resting on performance.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/architecture.svg)
 
-- **Modernized `params`:** ordinal helpers (`Retrieve`, `AsEnumerable`, …) accept `params IEnumerable<int>`/`params IEnumerable<string>` — any enumerable, not just arrays.
-- **Read-only inputs:** several read-only `IList<T>` parameters were widened to `IReadOnlyList<T>` (`GetValuesFromOrdinals`, `EnumerateValuesFromOrdinals`, `ToDictionary`). Arrays, `List<T>`, `ImmutableArray<T>`, etc. all still bind. *(A custom type implementing only `IList<T>` — and not also `IReadOnlyList<T>` — would need to recompile; no BCL collection is affected.)*
-- **Lower per-query overhead:** `Transformer<T>` caches its per-type reflection once instead of rebuilding it on every query; buffered/data-table paths pre-size collections and avoid redundant `Select` iterators.
-- Fixed a wasted-allocation / incorrect-return bug in `CopyToDBNullAsNull`.
-- Public API surface is now tracked with `Microsoft.CodeAnalysis.PublicApiAnalyzers`, and unit-test coverage was substantially expanded.
+## Status of version 11
 
-## 11.0.0 Release Notes
+This is **11.0.0-preview01**. What changed, the breaking changes and the known limitations are in [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html); earlier versions are in the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html). Please try it and tell us what you find.
 
-> **11.0.0-preview01.** This is a preview: please try it and tell us what you find. See [Known limitations](#known-limitations-in-this-preview) below.
+## Contributing and license
 
-A performance release: **result mapping is rewritten and now beats Dapper 2.1.89** in the included benchmarks (`Benchmarks/`, see `Benchmarks/RESULTS.md`), with a fraction of the allocations on multi-row results.
-
-- **Cached, typed row mapping.** The mapping for a result-set shape is compiled once and reused. Previously every query compiled a setter per property (~1 ms fixed cost per `Map<T>()`). Values are read with typed getters, so nothing is boxed.
-- **Direct read loops.** `ToList`, `ToArray`, `FirstOrDefault`, `SingleOrDefault`, `ToDictionary`, `ToHashSet`, `ToImmutableArray` (and async twins) read straight from the reader. `Skip` advances without mapping, `Take` stops reading when met. They are now instance methods on `MappedQuery<T>` (no boxing of the query struct); the `IMappedQuery<T>` extensions remain for generic code.
-- **No per-call closures.** `IExecuteReader` gained state-passing `ExecuteReader<TState, TResult>` / `ExecuteReaderAsync<TState, TResult>`; pass a `static` lambda and the state it needs.
-- **Leaner commands.** A command created from a connection no longer allocates a pool wrapper, `Params` is created on first use, and async execution skips awaiting when the connection is already open.
-- **Readers use `SequentialAccess | SingleResult`** for `Map<T>()` (and `SingleRow` for `FirstOrDefault`), like Dapper. `Map(selector)` keeps the default access mode because a selector may read columns in any order.
-- **Channel and Dataflow fixes.** `complete: false` no longer runs the command twice. The mapped `ToChannel<T>`/`ToChannelAsync<T>` and `ToTargetBlock<T>` overloads complete your target only after every row has been delivered and the database reader has been released (before, up to about 1,000 buffered rows could be lost with a bounded target), no longer lose the last row when the reader fails mid-stream, and map correctly when the reader has extra unmapped columns.
-- **Connection and command fixes.** `OpenAsync(IDbConnection)` no longer opens a `DbConnection` twice, `EnsureOpenAsync` closes a connection that finished opening just as cancellation arrived, and `FirstOrdinalResults<T>(IDbCommand, behavior)` honors `behavior`.
-
-### Breaking changes
-
-- `IExecuteReader` has two new members (above). Custom implementations must add them; `ExpressiveCommand*` already do.
-- A `NULL` in a column mapped to a **non-nullable value-type** property is the provider's error to raise (it is wrapped in an `InvalidOperationException` naming the property and column). Map nullable columns to `Nullable<T>`/reference properties.
-- Field-mapping overrides naming a property that does not exist throw `ArgumentException` (was `KeyNotFoundException`). Only properties with a public setter are mapped.
-- `FirstOrdinalResults<T>` reads `NULL` as `default`. (`ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable, so items are released to the GC as they are drained.)
-- `ExpressiveCommandBase.Params` is created lazily.
-- Async command execution passes the command's `CancellationToken` to the connection open.
-- Mapped Channel and Dataflow overloads: a mapping failure now faults the target when `complete` is `true`; the target is never completed or faulted before the reader is released; `ArgumentNullException.ParamName` for a null target is `"target"`; and a mapped async channel call that is cancelled succeeds only if the reader had already reported the end of the results, otherwise it throws `OperationCanceledException`.
-
-### Known limitations in this preview
-
-- `Retrieve()` followed by `DequeueAs<T>()` is a two-pass route (rows are copied into `object[]` and mapped as they are drained); it is slower and allocates more than a direct `Map<T>()` at larger sizes. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()`. See `Benchmarks/RESULTS.md`.
-- The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full; the cause is in the underlying channel library and a fix is planned.
-- Benchmarks and tests cover the in-memory provider, SQLite and SQL Server LocalDB. Real-world feedback on other providers and workloads is welcome.
+Documentation lives next to the code and is rebuilt and published from `master` automatically; see [where each kind of documentation lives](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/CONTRIBUTING-DOCS.md). Released under the [MIT license](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/LICENSE).

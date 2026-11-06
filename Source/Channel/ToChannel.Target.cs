@@ -80,13 +80,15 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
+	/// Iterates an <see cref="IDataReader"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel(this IDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -98,14 +100,16 @@ public static partial class ChannelDbExtensions
 			cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
+	/// Iterates an <see cref="IDataReader"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
+	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel(this IDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -118,15 +122,17 @@ public static partial class ChannelDbExtensions
 			cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to the channel.
+	/// Iterates an <see cref="IDataReader"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
+	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -139,14 +145,16 @@ public static partial class ChannelDbExtensions
 			cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -157,17 +165,19 @@ public static partial class ChannelDbExtensions
 			.PipeResultsTo(reader, target, complete, cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.</remarks>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -179,17 +189,19 @@ public static partial class ChannelDbExtensions
 			.PipeResultsTo(reader, target, complete, cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
@@ -200,15 +212,22 @@ public static partial class ChannelDbExtensions
 		=> ToChannel<T>(reader, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IDbCommand"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel(this IDbCommand command,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -218,16 +237,23 @@ public static partial class ChannelDbExtensions
 			reader => ToChannel(reader, target, false, cancellationToken));
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IDbCommand"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the channel is responsible for returning each array to the pool.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel(this IDbCommand command,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -238,17 +264,24 @@ public static partial class ChannelDbExtensions
 			reader => ToChannel(reader, target, false, arrayPool, cancellationToken));
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> through the transform function and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IDbCommand"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static async ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -286,16 +319,23 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IDbCommand"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -304,19 +344,28 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMapped(command, target, complete, null, cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IDbCommand"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -326,19 +375,28 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMapped(command, target, complete, fieldMappingOverrides, cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IDbCommand"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
@@ -349,14 +407,19 @@ public static partial class ChannelDbExtensions
 		=> ToChannel<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannel(this IExecuteReader command,
 		ChannelWriter<object[]> target,
 		bool complete)
@@ -365,15 +428,20 @@ public static partial class ChannelDbExtensions
 			reader => reader.ToChannel(target, false, command.CancellationToken));
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the channel is responsible for returning each array to the pool.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannel(this IExecuteReader command,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -383,16 +451,21 @@ public static partial class ChannelDbExtensions
 			reader => reader.ToChannel(target, false, arrayPool, command.CancellationToken));
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and through the transform function and posts each record it to the target channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -402,15 +475,20 @@ public static partial class ChannelDbExtensions
 			reader => reader.ToChannel(target, false, transform, command.CancellationToken));
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete)
@@ -418,18 +496,25 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMapped(command, target, complete, null);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -438,18 +523,25 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMapped(command, target, complete, fieldMappingOverrides);
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
@@ -529,12 +621,15 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -546,13 +641,16 @@ public static partial class ChannelDbExtensions
 			cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
+	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
+	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync(this DbDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -565,14 +663,17 @@ public static partial class ChannelDbExtensions
 			cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
+	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
+	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -592,14 +693,16 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -610,17 +713,19 @@ public static partial class ChannelDbExtensions
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.</remarks>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
 		bool complete,
@@ -632,17 +737,19 @@ public static partial class ChannelDbExtensions
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
+	/// Asynchronously iterates a <see cref="DbDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the reading or the mapping).</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <remarks>Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.</remarks>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannelAsync<T>(this DbDataReader reader,
 		ChannelWriter<T> target,
@@ -653,15 +760,22 @@ public static partial class ChannelDbExtensions
 		=> ToChannelAsync<T>(reader, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of a <see cref="DbCommand"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync(this DbCommand command,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -671,16 +785,23 @@ public static partial class ChannelDbExtensions
 			reader => ToChannelAsync(reader, target, false, cancellationToken));
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of a <see cref="DbCommand"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the channel is responsible for returning each array to the pool.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync(this DbCommand command,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -691,17 +812,24 @@ public static partial class ChannelDbExtensions
 			reader => ToChannelAsync(reader, target, false, arrayPool, cancellationToken));
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of a <see cref="DbCommand"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -715,16 +843,23 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of a <see cref="DbCommand"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -733,19 +868,28 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMappedAsync(command, target, complete, null, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of a <see cref="DbCommand"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -755,19 +899,28 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMappedAsync(command, target, complete, fieldMappingOverrides, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an mapping the results to classes of type <typeparamref name="T"/> and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of a <see cref="DbCommand"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The DbCommand to generate a reader from.</param>
-	/// <param name="target">The target channel to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
+	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannelAsync<T>(this DbCommand command,
 		ChannelWriter<T> target,
@@ -778,14 +931,19 @@ public static partial class ChannelDbExtensions
 		=> ToChannelAsync<T>(command, target, complete, fieldMappingOverrides?.Select(static m => new KeyValuePair<string, string?>(m.Field, m.Column)), cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
 		ChannelWriter<object[]> target,
 		bool complete)
@@ -796,15 +954,20 @@ public static partial class ChannelDbExtensions
 				: reader.ToChannel(target, false, command.CancellationToken));
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader and writes each record as an array to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
 		ChannelWriter<object[]> target,
 		bool complete,
@@ -816,16 +979,21 @@ public static partial class ChannelDbExtensions
 				: reader.ToChannel(target, false, arrayPool, command.CancellationToken));
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, will call .Complete() if all the results have successfully been written (or the source is emtpy).</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <returns>The number of records processed.</returns>
+	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
+	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
+	/// <returns>The number of records written to the target.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -837,15 +1005,20 @@ public static partial class ChannelDbExtensions
 				: reader.ToChannel(target, false, transform, command.CancellationToken));
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete)
@@ -853,18 +1026,25 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMappedAsync(command, target, complete, null);
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally; pairs passed here are matched to a cached plan by their content on every call.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Pass a <see cref="RowPlan{T}"/> declared once for a read that runs more than occasionally. A <see cref="RowPlan{T}"/> flows through this <c>IEnumerable&lt;KeyValuePair&lt;string, string?&gt;&gt;</c> parameter, which is why the pair overloads take it and no public method takes a plan.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
@@ -873,18 +1053,25 @@ public static partial class ChannelDbExtensions
 		=> ToChannelMappedAsync(command, target, complete, fieldMappingOverrides);
 
 	/// <summary>
-	/// Asynchronously iterates an DbDataReader through the transform function and writes each record to the channel.
-	/// If a connection is desired to remain open after completion, you must open the connection before calling this method.
-	/// If the connection is already open, the reading will commence immediately.  Otherwise this will yield to the caller.
+	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target channel.
 	/// </summary>
-	/// <remarks>Convenience overload: the tuples are converted once to key/value pairs. Prefer a <see cref="RowPlan{T}"/> declared once, or key/value pairs.</remarks>
-	/// <seealso cref="RowPlan{T}"/>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="target">The target channel writer to receive the results.</param>
-	/// <param name="complete">If true, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
-	/// <param name="fieldMappingOverrides">An optional override map of field names to column names.</param>
+	/// <typeparam name="T">The type each record is mapped to.</typeparam>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="target">The channel writer that receives the records.</param>
+	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
+	/// <param name="fieldMappingOverrides">An override map of field names to column names, applied on top of the default name-based mapping.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// </para>
+	/// <para>
+	/// Convenience overload: the tuples are converted to key/value pairs; prefer a <see cref="RowPlan{T}"/> or key/value pairs.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <seealso cref="RowPlan{T}"/>
 	[OverloadResolutionPriority(-2)]
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,

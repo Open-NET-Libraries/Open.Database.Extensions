@@ -5,7 +5,15 @@ public static partial class CommandExtensions
 	private const string ParameterNamesNotEmptyMessage = "Parameter names cannot be empty or white space.";
 	private const string ParameterNamesOnlyNullForReturn = "Parameter names can only be null for a return parameter.";
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a parameter with the given name and value to the command, leaving the provider to infer the database type from the value.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter. It is assigned as given: a <see langword="null"/> is not converted to <see cref="DBNull.Value"/>, and providers differ in how they treat it, so pass <see cref="DBNull.Value"/> to send a database null.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -26,69 +34,152 @@ public static partial class CommandExtensions
 		return c;
 	}
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a string parameter (<see cref="DbType.String"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter. A <see langword="null"/> is assigned as given and is not converted to <see cref="DBNull.Value"/>.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		string? value) => AddParameter(target, name, value, DbType.String);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a 32-bit integer parameter (<see cref="DbType.Int32"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		int value) => AddParameter(target, name, value, DbType.Int32);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a 64-bit integer parameter (<see cref="DbType.Int64"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		long value) => AddParameter(target, name, value, DbType.Int64);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a 16-bit integer parameter (<see cref="DbType.Int16"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		short value) => AddParameter(target, name, value, DbType.Int16);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a date and time parameter (<see cref="DbType.DateTime"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		DateTime value) => AddParameter(target, name, value, DbType.DateTime);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a double-precision floating point parameter (<see cref="DbType.Double"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		double value) => AddParameter(target, name, value, DbType.Double);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a decimal parameter (<see cref="DbType.Decimal"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		decimal value) => AddParameter(target, name, value, DbType.Decimal);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a GUID parameter (<see cref="DbType.Guid"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		Guid value) => AddParameter(target, name, value, DbType.Guid);
 
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <summary>
+	/// Adds a date and time with offset parameter (<see cref="DbType.DateTimeOffset"/>) with the given name and value to the command.
+	/// </summary>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
 		DateTimeOffset value) => AddParameter(target, name, value, DbType.DateTimeOffset);
 
 	/// <summary>
-	/// Shortcut for adding a command parameter.
+	/// Adds a typed parameter with the given name, value, and direction to the command.
 	/// </summary>
-	/// <param name="target">The command to add a parameter to.</param>
+	/// <param name="target">The command to add the parameter to.</param>
 	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
+	/// <param name="value">The value of the parameter. It is assigned as given: a <see langword="null"/> is not converted to <see cref="DBNull.Value"/>, so pass <see cref="DBNull.Value"/> to send a database null.</param>
 	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
-	/// <returns>The created <see cref="IDbDataParameter"/>.</returns>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -103,9 +194,15 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Shortcut for adding a typed (non-input) command parameter.
+	/// Adds a parameter of the given type and direction to the command without assigning a value.
 	/// </summary>
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter. It can be <see langword="null"/> only when <paramref name="direction"/> is <see cref="ParameterDirection.ReturnValue"/>.</param>
+	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
+	/// <param name="direction">The direction of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection. Set its value afterwards if it is an input parameter.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> is <see langword="null"/>, or <paramref name="name"/> is <see langword="null"/> and <paramref name="direction"/> is not <see cref="ParameterDirection.ReturnValue"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
 	public static IDbDataParameter AddParameterType(
 		this IDbCommand target,
 		string? name,
@@ -129,9 +226,14 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Shortcut for adding command a typed return parameter.
+	/// Adds a typed return-value parameter to the command.
 	/// </summary>
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
+	/// <param name="name">The optional name of the parameter.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection. Read its value after the command has executed.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
 	public static IDbDataParameter AddReturnParameter(
 		this IDbCommand target,
 		DbType type,
@@ -139,9 +241,12 @@ public static partial class CommandExtensions
 		=> target.AddParameterType(name, type, ParameterDirection.ReturnValue);
 
 	/// <summary>
-	/// Shortcut for adding command a return parameter.
+	/// Adds a return-value parameter to the command, leaving the provider to determine its type.
 	/// </summary>
-	/// <inheritdoc cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <param name="target">The command to add the parameter to.</param>
+	/// <param name="name">The optional name of the parameter. It is ignored if it is <see langword="null"/>, empty, or white space.</param>
+	/// <returns>The created parameter, which has already been added to the command's parameter collection. Read its value after the command has executed.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="target"/> is <see langword="null"/>.</exception>
 	public static IDbDataParameter AddReturnParameter(this IDbCommand target,
 		string? name = null)
 	{

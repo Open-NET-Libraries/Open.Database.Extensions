@@ -1,0 +1,9 @@
+- name: Guide
+  href: articles/
+- name: API reference
+  href: api/
+  homepage: api/index.md
+- name: GitHub
+  href: https://github.com/Open-NET-Libraries/Open.Database.Extensions
+- name: NuGet
+  href: https://www.nuget.org/packages/Open.Database.Extensions.Core
