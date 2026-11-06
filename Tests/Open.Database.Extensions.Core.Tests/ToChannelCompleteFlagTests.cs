@@ -1,6 +1,3 @@
-using System.Data.Common;
-using System.Threading.Channels;
-
 #nullable enable
 
 namespace Open.Database.Extensions.Tests;

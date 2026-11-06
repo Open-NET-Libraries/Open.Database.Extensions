@@ -1,7 +1,4 @@
-﻿using System.Data.Common;
-using System.Runtime.CompilerServices;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// SqlClient extensions for building a command and retrieving data using best practices.

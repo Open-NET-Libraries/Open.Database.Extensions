@@ -1,8 +1,12 @@
 ﻿namespace Open.Database.Extensions;
 
+/// <summary>
+/// ConnectionExtensions
+/// </summary>
 /// <remarks>
 /// <para>
-/// The <c>Command</c> and <c>StoredProcedure</c> extension methods are the entry points to the expressive API. They create an <see cref="ExpressiveCommand"/> (or an <see cref="ExpressiveDbCommand"/> when the source is a <see cref="DbConnection"/>, a <see cref="DbTransaction"/>, or a typed factory or pool) from a connection, a transaction, a connection factory, a connection pool, or a factory function. Creating the command does no work; the database is first touched when an execute method is called on it.
+/// The <c>Command</c> and <c>StoredProcedure</c> extension methods are the entry points to the expressive API.
+/// They create an <see cref="ExpressiveCommand"/> (or an <see cref="ExpressiveDbCommand"/> when the source is a <see cref="DbConnection"/>, a <see cref="DbTransaction"/>, or a typed factory or pool) from a connection, a transaction, a connection factory, a connection pool, or a factory function. Creating the command does no work; the database is first touched when an execute method is called on it.
 /// </para>
 /// <para>
 /// The source decides who owns the connection:

@@ -284,7 +284,8 @@ public static class MappedQueryExtensions
 	{
 #if NETSTANDARD2_0
 		var result = new HashSet<T>(comparer);
-		return query.Read(items => {
+		return query.Read(items =>
+		{
 			foreach (var item in items)
 			{
 				result.Add(item);
@@ -315,7 +316,8 @@ public static class MappedQueryExtensions
 	{
 #if NETSTANDARD2_0
 		var result = new HashSet<T>(comparer);
-		return query.ReadAsync(cancellationToken, async (items, token) => {
+		return query.ReadAsync(cancellationToken, async (items, token) =>
+		{
 			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
 			{
 				result.Add(item);

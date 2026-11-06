@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Threading.Channels;
 
 #nullable enable
 
@@ -73,42 +72,42 @@ public static class ToChannelCoreEdgeTests
 		switch (kind)
 		{
 			case Kind.ExecuteReader:
-			{
-				var command = new ScriptedCommand(failure);
-				return new Subject((w, c) => ((IExecuteReader)command).ToChannel(w, c), () => command.Executions);
-			}
+				{
+					var command = new ScriptedCommand(failure);
+					return new Subject((w, c) => ((IExecuteReader)command).ToChannel(w, c), () => command.Executions);
+				}
 
 			case Kind.ExecuteReaderAsync:
-			{
-				var command = new ScriptedCommand(failure);
-				return new Subject((w, c) => command.ToChannelAsync(w, c), () => command.Executions);
-			}
+				{
+					var command = new ScriptedCommand(failure);
+					return new Subject((w, c) => command.ToChannelAsync(w, c), () => command.Executions);
+				}
 
 			case Kind.DbCommandInterface:
-			{
-				var command = Substitute.For<IDbCommand>();
-				var connection = Substitute.For<IDbConnection>();
-				int executions = 0;
-				command.Connection.Returns(hasConnection ? connection : null);
-				connection.State.Returns(connectionOpen ? ConnectionState.Open : ConnectionState.Closed);
-				command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ =>
 				{
-					executions++;
-					if (failure is not null) throw failure;
-					return FakeReader.Create(Columns, ThreeRows);
-				});
-				return new Subject((w, c) => command.ToChannel(w, c), () => executions);
-			}
+					var command = Substitute.For<IDbCommand>();
+					var connection = Substitute.For<IDbConnection>();
+					int executions = 0;
+					command.Connection.Returns(hasConnection ? connection : null);
+					connection.State.Returns(connectionOpen ? ConnectionState.Open : ConnectionState.Closed);
+					command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ =>
+					{
+						executions++;
+						if (failure is not null) throw failure;
+						return FakeReader.Create(Columns, ThreeRows);
+					});
+					return new Subject((w, c) => command.ToChannel(w, c), () => executions);
+				}
 
 			default:
-			{
-				var connection = new FakeDbConnection();
-				connection.SetState(connectionOpen ? ConnectionState.Open : ConnectionState.Closed);
-				var command = new FakeDbCommand(hasConnection ? connection : null!, () => failure is null
-					? FakeReader.CreateDb(Columns, ThreeRows)
-					: throw failure);
-				return new Subject((w, c) => command.ToChannelAsync(w, c), () => command.Behaviors.Count);
-			}
+				{
+					var connection = new FakeDbConnection();
+					connection.SetState(connectionOpen ? ConnectionState.Open : ConnectionState.Closed);
+					var command = new FakeDbCommand(hasConnection ? connection : null!, () => failure is null
+						? FakeReader.CreateDb(Columns, ThreeRows)
+						: throw failure);
+					return new Subject((w, c) => command.ToChannelAsync(w, c), () => command.Behaviors.Count);
+				}
 		}
 	}
 
