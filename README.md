@@ -136,31 +136,9 @@ How it stays fast:
 - The mapping from a result set to `T` is compiled **once per result-set shape** (column names + column types) and cached, so a repeat query does no reflection and no compilation.
 - Values are read with the provider's typed getters (`GetInt32`, `GetString`, …), so nothing is boxed. A column whose type differs from the property converts numerically (`long` → `int`, `int` → enum, …) or through a general conversion (string → enum/`Guid`).
 - `NULL` is honored for reference types and `Nullable<T>` properties. A `NULL` in a column mapped to a non-nullable value-type property is the provider's error to raise, and the exception names the property and column.
-- Columns are matched to properties case-insensitively; unmatched columns are ignored, and unmatched properties keep their defaults. Field/column overrides are supported: `.Map<Post>(("Id", "PostId"), ("Body", null))` (a `null` column ignores the field). To reuse them, define a `RowMap<T>` once (below).
+- Columns are matched to properties case-insensitively; unmatched columns are ignored, and unmatched properties keep their defaults. Field/column overrides are supported: `.Map<Post>(("Id", "PostId"), ("Body", null))` (a `null` column ignores the field).
 - Readers are opened with `SequentialAccess | SingleResult` (`SingleRow` for `FirstOrDefault`), like Dapper.
 - The execution path allocates no closures: state-passing `ExecuteReader`/`ExecuteReaderAsync` overloads on `IExecuteReader` take a `static` lambda plus the state it needs.
-
-### Column names that differ from the properties: `RowMap<T>`
-
-Per-call overrides repeat the mapping at every call site. Define a `RowMap<T>` once instead and pass it wherever overrides are accepted (`Map`, `Results`, `ToChannel`, …). It is checked where you create it (a property that does not exist or cannot be set, a property named twice, or two properties on one column throws `ArgumentException` right there, not on the first query), it is immutable, and it holds its own compiled reader, so passing it adds no per-call allocation, key or dictionary lookup (each query still matches the result-set layout against the cached one, as `Map<T>()` does). In our benchmarks (`Benchmarks/RESULTS.md`) a read through a `RowMap<T>` allocates exactly what `Map<T>()` allocates on matching names and takes 0.95-1.02 times as long, against 0.12-0.35 times Dapper's time in memory and 0.92-1.01 times (a tie within noise) on SQL Server LocalDB; per-call overrides took 3.6-4.0 times as long as a `RowMap<T>` read of one in-memory row. Properties it does not mention still map by name, and a `null` column ignores the property.
-
-Create each mapping on first use with the C# 14 `field` keyword. A large app (hundreds of models) then builds only the mappings it actually uses, instead of all of them at startup:
-
-```cs
-static class Maps
-{
-    public static RowMap<Post> Post => field ??= new(("Id", "post_id"), ("Title", "post_title"), ("Body", null));
-    public static RowMap<Customer> Customer => field ??= new(("Id", "customer_id"), ("Name", "full_name"));
-}
-
-var posts = connection.Command("select * from posts").Map<Post>(Maps.Post).ToList();
-```
-
-- **Concurrency.** A reference write is atomic and publishing an object reference is a release in the .NET memory model ([`Memory-model.md`](https://github.com/dotnet/runtime/blob/main/docs/design/specs/Memory-model.md): *Atomic memory accesses*, *Object assignment*, *Data-dependent reads are ordered*, *Examples and common patterns*), so a thread that sees the mapping sees it fully built. The one effect of two threads racing on first use is that two equivalent, immutable mappings may be built; either works.
-- **`static readonly`** also works: `static readonly RowMap<Post> PostMap = new(...);`. It is built when its containing type's static initializer first runs, together with every other static field of that type, so keep such mappings in their own small static class. A mapping with an error throws `ArgumentException` where it is built: with `field ??=` that is the first use; in a `static readonly` field it surfaces as a `TypeInitializationException` wrapping the `ArgumentException`.
-- **Exactly one instance:** `public static RowMap<Post> Post => LazyInitializer.EnsureInitialized(ref field, static () => new(("Id", "post_id")));` publishes with `Interlocked.CompareExchange` (the factory may still run more than once) and adds a method call per read. `Lazy<T>` works too, at the price of extra objects per mapping (the `Lazy<T>` and its internal helper).
-- **What holding it costs.** A read of a held mapping allocates nothing and takes about 1-2 ns however it is held (measured including a call: `static readonly` 0.99 ns, `field ??=` and `Lazy<T>` 1.19 ns, `EnsureInitialized` 1.99 ns), which is negligible next to a query.
-- Compilers older than C# 14 need an explicit backing field: `static RowMap<Post>? _post; public static RowMap<Post> Post => _post ??= new(("Id", "post_id"));`.
 
 ## Transactions
 
@@ -228,7 +206,6 @@ A modernization and allocation-reduction pass. **Source-compatible with 10.0** �
 A performance release: **result mapping is rewritten and now beats Dapper 2.1.89** in the included benchmarks (`Benchmarks/`, see `Benchmarks/RESULTS.md`), with a fraction of the allocations on multi-row results.
 
 - **Cached, typed row mapping.** The mapping for a result-set shape is compiled once and reused. Previously every query compiled a setter per property (~1 ms fixed cost per `Map<T>()`). Values are read with typed getters, so nothing is boxed.
-- **`RowMap<T>`: declare a column mapping once.** When a query's columns are named differently from the model's properties, define a validated, immutable `RowMap<T>` once (for example `public static RowMap<Post> Post => field ??= new(("Id", "post_id"), ...)`) and pass it to `Map<T>`, `Results<T>`, `ToChannel` and every other override parameter. Reads through it allocate what `Map<T>()` allocates on matching names and, in our benchmarks, take the same time within 2% in memory (a tie within noise on SQL Server LocalDB). See [Mapped queries](#mapped-queries-mapt).
 - **Direct read loops.** `ToList`, `ToArray`, `FirstOrDefault`, `SingleOrDefault`, `ToDictionary`, `ToHashSet`, `ToImmutableArray` (and async twins) read straight from the reader. `Skip` advances without mapping, `Take` stops reading when met. They are now instance methods on `MappedQuery<T>` (no boxing of the query struct); the `IMappedQuery<T>` extensions remain for generic code.
 - **No per-call closures.** `IExecuteReader` gained state-passing `ExecuteReader<TState, TResult>` / `ExecuteReaderAsync<TState, TResult>`; pass a `static` lambda and the state it needs.
 - **Leaner commands.** A command created from a connection no longer allocates a pool wrapper, `Params` is created on first use, and async execution skips awaiting when the connection is already open.
