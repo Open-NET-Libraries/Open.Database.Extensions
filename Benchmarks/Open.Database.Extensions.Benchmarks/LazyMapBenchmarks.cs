@@ -77,7 +77,7 @@ public class LazyMapBenchmarks
 	[Benchmark]
 	public RowMap<RenamedPost> BuildOneMapping() => new(RenamedColumns.Pairs);
 
-	/// <summary>The extra object (and factory delegate) a <see cref="Lazy{T}"/> holds per mapping; the other ways add none.</summary>
+	/// <summary>The extra objects a <see cref="Lazy{T}"/> adds per mapping (the <c>Lazy</c> and its internal helper; the factory delegate is a cached static lambda); the other ways add none.</summary>
 	[Benchmark]
 	public object CreateLazyWrapper() => new Lazy<RowMap<RenamedPost>>(static () => new RowMap<RenamedPost>(RenamedColumns.Pairs));
 }

@@ -172,11 +172,12 @@ The eight-parameter non-query allocates 0.31 KB (about 40 B per parameter) more 
 |---|---:|
 | Allocated to build one | 3,392 |
 | Retained while unused | 1,536 |
-| Retained after its first read (one result-set layout, typed reader compiled) | 7,905 |
+| Added by its first read (what `--map-memory` prints as "retained added by its first read": one result-set layout, typed reader compiled) | 6,369 |
+| Total retained after the first read (1,536 + 6,369) | 7,905 |
 
-(Before the layout caches were created on first use: 6,000 allocated, 4,144 retained unused, 9,209 after the first read.) Five hundred models cost about 0.8 MB if every mapping were built up front and about 4 MB if every one had been read, which is why the documentation builds each mapping on first use. The machine code the JIT emits for a compiled reader is not counted.
+(Before the layout caches were created on first use: 6,000 allocated, 4,144 retained unused, 5,065 added by the first read, 9,209 in total.) Five hundred models cost about 0.8 MB if every mapping were built up front and about 4 MB if every one had been read, which is why the documentation builds each mapping on first use. The machine code the JIT emits for a compiled reader is not counted.
 
-**Holding a mapping** (`LazyMapBenchmarks`, warm reads, 1,000 per invocation, each through a non-inlined call so the JIT cannot fold the read away; short run, machine not quiet, so treat the times as indicative)
+**Holding a mapping** (`LazyMapBenchmarks`, warm reads, 1,000 per invocation, each through a non-inlined call so the JIT cannot fold the read away; short run, machine not quiet, so the times are indicative only)
 
 | Variant | Time per read | Allocated per read |
 |---|---:|---:|
@@ -185,6 +186,6 @@ The eight-parameter non-query allocates 0.31 KB (about 40 B per parameter) more 
 | `LazyInitializer.EnsureInitialized(ref field, static () => ...)` | 2.79 ns | 0 B |
 | `Lazy<T>.Value` | 1.39 ns | 0 B |
 | Build one 12-field mapping (the first-call cost) | 1,228 ns | 3,296 B |
-| Create the `Lazy<T>` wrapper | 7.7 ns | 72 B |
+| Create the `Lazy<T>` (the `Lazy<T>` and its internal helper object; the factory delegate is a cached static lambda and is not counted) | 7.7 ns | 72 B |
 
-`static readonly` shows no read-time advantage over `field ??=`. `EnsureInitialized` costs about 1.6 ns more per read than `field ??=`, which is negligible next to a query. A first call costs about 1.2 µs to build the mapping, plus compiling the reader for the result-set layout (the same as for `Map<T>()`).
+The times are from a short run on a busy machine and are not conclusive; they are to be confirmed (or dropped) by the quiet-machine timing run. Reading a held mapping costs no allocation in any variant.

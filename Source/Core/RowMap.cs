@@ -13,16 +13,22 @@
 /// column ignores the property.
 /// </para>
 /// <para>
-/// Building a mapping has no side effects and nothing is registered anywhere. A mapping is immutable and safe to share
+/// Nothing is registered anywhere; the first <c>RowMap&lt;T&gt;</c> for a model does initialize the library's per-model static state
+/// (a one-time reflection pass over the model's properties). A mapping is immutable and safe to share
 /// between threads, and any number of different mappings may exist for the same model. Two mappings built from the same
 /// pairs behave identically. It holds its own compiled, typed row reader (built on first use for each result-set layout
-/// it meets), so passing it costs nothing per call: no allocation, key or lookup.
+/// it meets), so passing it adds no per-call allocation, key or dictionary lookup; as with <c>Map&lt;T&gt;()</c>, each query
+/// still matches the result-set layout against the cached one.
 /// </para>
 /// <para>
 /// Because an application may have hundreds of models, create each mapping on first use so that only the ones
 /// actually used ever exist. A reference write is atomic and publishing an object reference is a release in the .NET memory model
-/// (<c>docs/design/specs/Memory-model.md</c> in dotnet/runtime: "Atomic memory accesses", "Object assignment"), so a thread that sees the
+/// (<c>docs/design/specs/Memory-model.md</c> in dotnet/runtime: "Atomic memory accesses", "Object assignment", "Data-dependent reads are ordered", "Examples and common patterns"), so a thread that sees the
 /// mapping sees it fully built. The one effect of two threads racing on first use is that two equivalent, immutable mappings may be built.
+/// </para>
+/// <para>
+/// A mapping with an error throws <see cref="ArgumentException"/> where it is built. With <c>field ??=</c> that is the first use;
+/// in a <c>static readonly</c> field it surfaces as a <see cref="TypeInitializationException"/> wrapping the <see cref="ArgumentException"/>.
 /// </para>
 /// <para>
 /// Passing a mapping to a query for a different model type is accepted and treated as ordinary overrides:
@@ -42,10 +48,9 @@
 /// var posts = connection.Command("select * from posts").Map&lt;Post&gt;(Maps.Post).ToList();
 /// </code>
 /// A <c>static readonly RowMap&lt;Post&gt; PostMap = new(...)</c> field also works: it is built when its containing type's static initializer
-/// first runs, together with the type's other static fields, so keep such mappings in their own small static class
-/// (reading it was no faster than <c>field ??=</c> in a micro-benchmark, about 1.2 ns either way). For exactly one published instance use
-/// <c>LazyInitializer.EnsureInitialized(ref field, static () =&gt; new(...))</c> (the factory may still run more than once;
-/// it adds a method call per read, about 2.8 ns instead of 1.2 ns in the same micro-benchmark).
+/// first runs, together with the type's other static fields, so keep such mappings in their own small static class.
+/// For exactly one published instance use <c>LazyInitializer.EnsureInitialized(ref field, static () =&gt; new(...))</c>
+/// (the factory may still run more than once; it adds a method call per read).
 /// Compilers older than C# 14 need an explicit backing field: <c>static RowMap&lt;Post&gt;? _post; public static RowMap&lt;Post&gt; Post =&gt; _post ??= new(...);</c>
 /// </example>
 /// <typeparam name="T">The model type whose properties are mapped.</typeparam>
