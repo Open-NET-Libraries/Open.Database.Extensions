@@ -103,19 +103,7 @@ public static partial class SqlCommandExtensions
 		await handler(reader).ConfigureAwait(false);
 	}
 
-	/// <summary>
-	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the handler. The reader is disposed afterwards.
-	/// </summary>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="handler">The function that reads from the reader. Do not let the reader escape it.</param>
-	/// <param name="behavior">The behavior to use with the data reader. <see cref="CommandBehavior.CloseConnection"/> is added when the command opens a closed connection.</param>
-	/// <param name="cancellationToken">A token that can cancel opening the connection and executing the command.</param>
-	/// <returns>A task that completes after <paramref name="handler"/> has completed and the reader has been disposed.</returns>
-	/// <remarks>
-	/// Exceptions from the provider (for example <see cref="SqlException"/>) propagate unchanged. The reader is disposed, and with it a connection that this method opened, even when the handler throws.
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="handler"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <inheritdoc cref="ExecuteReaderAsync(SqlCommand, Func{SqlDataReader, ValueTask}, CommandBehavior, CancellationToken)"/>
 	public static async ValueTask ExecuteReaderAsync(this SqlCommand command,
 		Action<SqlDataReader> handler,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -174,20 +162,7 @@ public static partial class SqlCommandExtensions
 		return transform(reader);
 	}
 
-	/// <summary>
-	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the transform function, returning its result. The reader is disposed afterwards.
-	/// </summary>
-	/// <typeparam name="T">The type returned by the transform function.</typeparam>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="transform">The function that reads from the reader and produces the result. Do not let the reader escape it.</param>
-	/// <param name="behavior">The behavior to use with the data reader. <see cref="CommandBehavior.CloseConnection"/> is added when the command opens a closed connection.</param>
-	/// <param name="cancellationToken">A token that can cancel opening the connection and executing the command.</param>
-	/// <returns>A task that produces the value returned by <paramref name="transform"/>.</returns>
-	/// <remarks>
-	/// Exceptions from the provider (for example <see cref="SqlException"/>) propagate unchanged. The reader is disposed, and with it a connection that this method opened, even when the transform function throws.
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="transform"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(SqlCommand, Func{SqlDataReader, T}, CommandBehavior, CancellationToken)"/>
 	public static async ValueTask<T> ExecuteReaderAsync<T>(this SqlCommand command,
 		Func<SqlDataReader, ValueTask<T>> transform,
 		CommandBehavior behavior = CommandBehavior.Default,

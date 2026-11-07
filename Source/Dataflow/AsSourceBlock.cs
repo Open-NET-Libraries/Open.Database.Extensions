@@ -284,9 +284,6 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record as an array of values to a new <see cref="BufferBlock{T}"/>, and returns the block.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
 	/// <para>
 	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
@@ -296,6 +293,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, DataflowBlockOptions?)"/>
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
 	{
@@ -307,10 +305,6 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record as an array of values rented from an array pool to a new <see cref="BufferBlock{T}"/>, and returns the block.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the records is responsible for returning each array to the pool.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
 	/// <para>
 	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
@@ -320,6 +314,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, ArrayPool{object}, DataflowBlockOptions?)"/>
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 		ArrayPool<object> arrayPool,
 		DataflowBlockOptions? options = null)
@@ -332,11 +327,6 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record after it has been transformed by <paramref name="transform"/> to a new <see cref="BufferBlock{T}"/>, and returns the block.
 	/// </summary>
-	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item delivered to the block.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
 	/// <para>
 	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
@@ -346,6 +336,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, Func{IDataRecord, T}, DataflowBlockOptions?)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		Func<IDataRecord, T> transform,
 		DataflowBlockOptions? options = null)
@@ -358,10 +349,6 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record mapped to a new instance of <typeparamref name="T"/> to a new <see cref="BufferBlock{T}"/>, and returns the block.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
 	/// <para>
 	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
@@ -374,6 +361,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, DataflowBlockOptions?)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
 		where T : new()
@@ -386,11 +374,6 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/> to the end, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to a new <see cref="BufferBlock{T}"/>, and returns the block.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
-	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
 	/// <para>
 	/// This method is synchronous: it returns only after the source has been read to the end (or the block declined a record), so the calling thread is blocked while the database responds. Exceptions from reading propagate to the caller.
@@ -406,7 +389,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowMap{T}"/>
+	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, RowMap{T}?, DataflowBlockOptions?)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null)

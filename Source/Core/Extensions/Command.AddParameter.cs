@@ -67,13 +67,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a 64-bit integer parameter (<see cref="DbType.Int64"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -82,13 +76,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a 16-bit integer parameter (<see cref="DbType.Int16"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -97,13 +85,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a date and time parameter (<see cref="DbType.DateTime"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -112,13 +94,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a double-precision floating point parameter (<see cref="DbType.Double"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -127,13 +103,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a decimal parameter (<see cref="DbType.Decimal"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -142,13 +112,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a GUID parameter (<see cref="DbType.Guid"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -157,13 +121,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a date and time with offset parameter (<see cref="DbType.DateTimeOffset"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParameter(IDbCommand, string, int)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,

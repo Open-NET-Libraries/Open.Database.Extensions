@@ -88,15 +88,8 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates a text <see cref="DbCommand"/> from a <see cref="DbConnection"/>.
 	/// </summary>
-	/// <param name="connection">The connection to create the command from.</param>
-	/// <param name="commandText">The command text to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out. The default is 60 seconds.</param>
 	/// <returns>A new <see cref="DbCommand"/> that the caller owns and disposes. It is not associated with a transaction.</returns>
-	/// <remarks>
-	/// The connection is not opened by this method; open it (see <see cref="EnsureOpen(IDbConnection)"/>) before executing the command.
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="commandText"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="commandText"/> is empty or white space.</exception>
+	/// <inheritdoc cref="CreateTextCommand(IDbConnection, string, int)"/>
 	public static DbCommand CreateTextCommand(this DbConnection connection,
 		string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> connection.CreateCommand(CommandType.Text, commandText, secondsTimeout);

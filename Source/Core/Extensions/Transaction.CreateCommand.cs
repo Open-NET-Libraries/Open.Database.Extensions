@@ -54,11 +54,7 @@ public static partial class TransactionExtensions
 	/// <summary>
 	/// Shortcut for creating an DbCommand from any DbTransaction.
 	/// </summary>
-	/// <param name="transaction">The transaction to create a command from.</param>
-	/// <param name="type">The command type.  Text, StoredProcedure, or TableDirect.</param>
-	/// <param name="commandText">The command text or stored procedure name to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-	/// <returns>The created SqlCommand.</returns>
+	/// <inheritdoc cref="CreateCommand(IDbTransaction, CommandType, string, int)"/>
 	public static DbCommand CreateCommand(this DbTransaction transaction,
 		CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 	{
@@ -76,10 +72,7 @@ public static partial class TransactionExtensions
 	/// <summary>
 	/// Shortcut for creating a text DbCommand from any DbTransaction.
 	/// </summary>
-	/// <param name="transaction">The transaction to create a command from.</param>
-	/// <param name="commandText">The command text or stored procedure name to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-	/// <returns>The created SqlCommand.</returns>
+	/// <inheritdoc cref="CreateTextCommand(IDbTransaction, string, int)"/>
 	public static DbCommand CreateTextCommand(this DbTransaction transaction,
 		string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> transaction.CreateCommand(CommandType.Text, commandText, secondsTimeout);
@@ -87,10 +80,7 @@ public static partial class TransactionExtensions
 	/// <summary>
 	/// Shortcut for creating a stored procedure DbCommand from any DbTransaction.
 	/// </summary>
-	/// <param name="transaction">The transaction to create a command from.</param>
-	/// <param name="procedureName">The command text or stored procedure name to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out.</param>
-	/// <returns>The created SqlCommand.</returns>
+	/// <inheritdoc cref="CreateStoredProcedureCommand(IDbTransaction, string, int)"/>
 	public static DbCommand CreateStoredProcedureCommand(this DbTransaction transaction,
 		string procedureName, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> transaction.CreateCommand(CommandType.StoredProcedure, procedureName, secondsTimeout);

@@ -697,7 +697,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
-	/// <returns>The value from the return parameter.</returns>
+	/// <inheritdoc cref="ExecuteReturn()"/>
 	public ValueTask<object?> ExecuteReturnAsync()
 	{
 		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
@@ -718,9 +718,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
-	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value from the return parameter; <see langword="default"/> when it is NULL.</returns>
-	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
+	/// <inheritdoc cref="ExecuteReturn{T}()"/>
 	public async ValueTask<T> ExecuteReturnAsync<T>()
 		=> CastScalar<T>(await ExecuteReturnAsync().ConfigureAwait(false));
 

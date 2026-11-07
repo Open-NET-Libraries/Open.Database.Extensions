@@ -39,12 +39,7 @@ public static class IExecuteReaderExtensions
 			behavior | CommandBehavior.SingleResult);
 	}
 
-	/// <summary>
-	/// Iterates a reader on a command with a handler function.
-	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <inheritdoc cref="IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"/>
 	public static ValueTask IterateReaderAsync(this IExecuteReaderAsync command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -63,12 +58,7 @@ public static class IExecuteReaderExtensions
 			behavior | CommandBehavior.SingleResult);
 	}
 
-	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true.
-	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <inheritdoc cref="IterateReaderWhile(IExecuteReader, Func{IDataRecord, bool}, CommandBehavior)"/>
 	public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -87,12 +77,7 @@ public static class IExecuteReaderExtensions
 			behavior | CommandBehavior.SingleResult);
 	}
 
-	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true.
-	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <inheritdoc cref="IterateReaderWhile(IExecuteReader, Func{IDataRecord, bool}, CommandBehavior)"/>
 	public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, ValueTask<bool>> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));

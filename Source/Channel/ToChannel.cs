@@ -467,19 +467,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading a <see cref="DbDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel(IDataReader, bool, CancellationToken)"/>
 	public static ChannelReader<object[]> ToChannelAsync(this DbDataReader reader,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
@@ -526,21 +514,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading a <see cref="DbDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record after it has been transformed by <paramref name="transform"/>.
 	/// </summary>
-	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel{T}(IDataReader, bool, Func{IDataRecord, T}, CancellationToken)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
 		Func<IDataRecord, T> transform,
@@ -558,20 +532,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading a <see cref="DbDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel{T}(IDataReader, bool, CancellationToken)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
@@ -588,25 +549,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading a <see cref="DbDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// <para>
-	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowMap{T}"/>
+	/// <inheritdoc cref="ToChannel{T}(IDataReader, bool, RowMap{T}?, CancellationToken)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
 		RowMap<T>? map,
@@ -624,19 +567,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values.
 	/// </summary>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel(IDbCommand, bool, CancellationToken)"/>
 	public static ChannelReader<object[]> ToChannelAsync(this DbCommand command,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
@@ -652,20 +583,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values rented from an array pool.
 	/// </summary>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the channel is responsible for returning each array to the pool.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel(IDbCommand, bool, ArrayPool{object}, CancellationToken)"/>
 	public static ChannelReader<object[]> ToChannelAsync(this DbCommand command,
 		bool singleReader,
 		ArrayPool<object> arrayPool,
@@ -683,21 +601,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record after it has been transformed by <paramref name="transform"/>.
 	/// </summary>
-	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel{T}(IDbCommand, bool, Func{IDataRecord, T}, CancellationToken)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
 		Func<IDataRecord, T> transform,
@@ -715,20 +619,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel{T}(IDbCommand, bool, CancellationToken)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
@@ -745,25 +636,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="cancellationToken">A token that can cancel the reading. The channel is then completed with the resulting exception.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// <para>
-	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowMap{T}"/>
+	/// <inheritdoc cref="ToChannel{T}(IDbCommand, bool, RowMap{T}?, CancellationToken)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
 		RowMap<T>? map,
@@ -781,18 +654,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel(IExecuteReader, bool)"/>
 	public static ChannelReader<object[]> ToChannelAsync(this IExecuteReaderAsync command,
 		bool singleReader)
 	{
@@ -835,20 +697,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record after it has been transformed by <paramref name="transform"/>.
 	/// </summary>
-	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, bool, Func{IDataRecord, T})"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader,
 		Func<IDataRecord, T> transform)
@@ -865,19 +714,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, bool)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader)
 		where T : new()
@@ -893,24 +730,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
-	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
-	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
-	/// <remarks>
-	/// <para>
-	/// The call returns immediately without waiting for rows: reading begins at once and continues on a background task, and its failures are reported only through the returned reader's <see cref="ChannelReader{T}.Completion"/>. Await it, or read the channel until it is completed, to know when the work has finished.
-	/// </para>
-	/// <para>
-	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
-	/// </para>
-	/// <para>
-	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <seealso cref="RowMap{T}"/>
+	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, bool, RowMap{T}?)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader,
 		RowMap<T>? map)

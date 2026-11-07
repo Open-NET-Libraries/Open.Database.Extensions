@@ -133,7 +133,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Calls ExecuteScalarAsync on the underlying command.
 	/// </summary>
-	/// <returns>The value returned from the method.</returns>
+	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExecuteScalar()"/>
 	public ValueTask<object?> ExecuteScalarAsync()
 		=> ExecuteCoreAsync(CancellationToken, static (command, _, token) => new ValueTask<object?>(command.ExecuteScalarAsync(token)));
 
@@ -154,9 +154,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command and casts to the expected type.
 	/// </summary>
-	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row.</returns>
-	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
+	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExecuteScalar{T}()"/>
 	public ValueTask<T> ExecuteScalarAsync<T>()
 		=> ExecuteCoreAsync(CancellationToken, static async (command, _, token)
 			=> CastScalar<T>(await command.ExecuteScalarAsync(token).ConfigureAwait(false)));

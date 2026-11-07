@@ -257,14 +257,7 @@ public static partial class DataRecordExtensions
 		}
 	}
 
-	/// <summary>
-	/// Lazily enumerates the values of the columns at the specified ordinals.
-	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
-	/// <param name="ordinals">The ordinals to read. The values are returned in this order.</param>
-	/// <returns>An enumerable of values matching the ordinals requested. The values are read from the record as the enumerable is enumerated.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinals"/> is <see langword="null"/>.</exception>
-	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record. It is thrown while the result is enumerated.</exception>
+	/// <inheritdoc cref="EnumerateValuesFromOrdinals(IDataRecord, IEnumerable{int})"/>
 	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, IReadOnlyList<int> ordinals)
 	{
 		return record is null
@@ -564,15 +557,7 @@ public static partial class DataRecordExtensions
 		return e;
 	}
 
-	/// <summary>
-	/// Reads the named columns of the current row into a dictionary keyed by column name.
-	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
-	/// <param name="columnNames">The names of the columns to read. Each name is looked up with the record's string indexer.</param>
-	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">A name is repeated.</exception>
-	/// <exception cref="IndexOutOfRangeException">A name is not a column of the record.</exception>
+	/// <inheritdoc cref="ToDictionary(IDataRecord, IEnumerable{string})"/>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IReadOnlyList<string> columnNames)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
