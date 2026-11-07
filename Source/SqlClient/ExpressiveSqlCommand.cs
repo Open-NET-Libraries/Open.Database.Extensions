@@ -139,7 +139,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <summary>
 	/// Reads the parameter names a stored procedure declares from <c>sys.all_parameters</c>, so parameters added with <c>AddParam(value)</c> find their real names.
 	/// </summary>
-	/// <remarks>The procedure is looked up in the connection's current database; a name that does not resolve there (a three-part name into another database, a missing procedure, no permission to see it) gives no names, and the last member of each argument is used as written.</remarks>
+	/// <remarks>The procedure is looked up in the connection's current database; a name that does not resolve there (a missing procedure, no permission to see it) gives no names, and a name with a database part (<c>otherdb.dbo.proc</c>) is not looked up at all, because the lookup runs in the current database: in both cases the last member of each argument is used as written.</remarks>
 	/// <inheritdoc />
 	protected override ImmutableArray<string> GetProcedureParameterNames(SqlConnection connection, string procedure)
 	{
@@ -159,7 +159,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	SqlCommand ProcedureNamesCommand(SqlConnection connection, string procedure)
 	{
 		SqlCommand command = connection.CreateCommand();
-		command.CommandText = "select name from sys.all_parameters where object_id = object_id(@procedure) and parameter_id > 0 order by parameter_id";
+		command.CommandText = "select name from sys.all_parameters where object_id = object_id(@procedure) and parsename(@procedure, 3) is null and parameter_id > 0 order by parameter_id";
 		command.Parameters.Add("@procedure", SqlDbType.NVarChar, 776).Value = procedure;
 		if (Transaction is SqlTransaction transaction) command.Transaction = transaction;
 		return command;

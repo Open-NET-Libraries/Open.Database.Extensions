@@ -291,7 +291,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Anything else (a call, an index, an operator, a literal) throws <see cref="ArgumentException"/>: use <see cref="AddParam(string, object?, ParameterDirection)"/> and name the parameter.</para>
 	/// <para>The name is settled when the command executes. For a stored procedure the provider is asked for the procedure's real parameter names, and the argument is matched to one of them:
 	/// exactly, else ignoring case, else ignoring case and underscores, so <c>CompanySerialNum</c> finds <c>@company_serial_num</c>. A chain tries its more specific endings first:
-	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing throws <see cref="InvalidOperationException"/> listing what the procedure expects.
+	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing, matches two parameters at one tier, or is claimed by two arguments throws <see cref="InvalidOperationException"/> listing what the procedure expects.
+	/// The names are remembered for five minutes per connection factory, pool or connection, and read again once if the remembered names do not fit.
 	/// Where the real names are not available (a text command, or a provider that does not supply them) the last member is used as written.</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>

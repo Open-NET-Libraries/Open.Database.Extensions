@@ -53,7 +53,7 @@ For a stored procedure the name is settled when the command runs. The provider r
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_derived_names)]
 
-`AddParams(object)` sends the public properties and fields of an object. When the procedure's names are known, only the members it declares are sent; a parameter added by name always wins over a member.
+`AddParams(source)` sends the public properties and fields of an object (those of its static type, so pass a variable of the type you mean, not an `object`). When the procedure's names are known, only the members it declares are sent; a parameter added by name always wins over a member.
 
 An argument that is not a plain member chain (a call, an index, an operator, a literal) throws `ArgumentException` where you wrote it: name the parameter with `AddParam("name", value)`. A name that matches none of the procedure's parameters, or two of them, throws `InvalidOperationException` that lists what the procedure declares.
 
