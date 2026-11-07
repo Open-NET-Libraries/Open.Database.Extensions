@@ -14,9 +14,9 @@ DateTime, Guid, strings, three of them nullable).
 | Array | 1 | 329 ns | 122 ns | 0.37 | 888 B | 344 B | 0.39 |
 | Array | 100 | 11594 ns | 3368 ns | 0.29 | 37264 B | 12224 B | 0.33 |
 | Array | 1000 | 106683 ns | 33787 ns | 0.32 | 363072 B | 120224 B | 0.33 |
-| Column | 1 | 209 ns | 74 ns | 0.35 | 536 B | 336 B | 0.63 |
-| Column | 100 | 1250 ns | 358 ns | 0.29 | 4024 B | 1840 B | 0.46 |
-| Column | 1000 | 9915 ns | 2528 ns | 0.25 | 32864 B | 12680 B | 0.39 |
+| Column | 1 | 201 ns | 91 ns | 0.45 | 536 B | 368 B | 0.69 |
+| Column | 100 | 1203 ns | 823 ns | 0.68 | 4024 B | 2592 B | 0.64 |
+| Column | 1000 | 9772 ns | 6626 ns | 0.68 | 32864 B | 17072 B | 0.52 |
 | Dictionary | 1 | 333 ns | 131 ns | 0.39 | 1072 B | 528 B | 0.49 |
 | Dictionary | 100 | 11366 ns | 4180 ns | 0.37 | 39568 B | 21592 B | 0.55 |
 | Dictionary | 1000 | 112348 ns | 38255 ns | 0.34 | 386064 B | 214416 B | 0.56 |
@@ -94,10 +94,12 @@ Both libraries return identical objects (checked in setup).
 | Feature | 1 row | 100 rows | 1000 rows | alloc |
 |---|---:|---:|---:|---:|
 | ToChannel (drain a channel) | 3.1 vs 1.3 µs (2.4x slower) | 45 vs 36 µs (1.24x slower) | 359 vs 284 µs (1.26x slower) | 2.20 / 1.09 / 1.01 |
-| Dataflow (`BufferBlock`) | 9.6 vs 2.2 µs (4.4x slower) | 42.7 vs 15.0 µs (2.8x slower) | 322 vs 130 µs (2.5x slower) | 2.85 / 1.12 / 1.01 |
+| Dataflow (`BufferBlock`) | 20.1 vs 2.1 µs (9.6x slower) | 39.3 vs 19.6 µs (2.0x slower) | 325 vs 156 µs (2.1x slower) | 2.80 / 1.15 / 1.04 |
 | DataTable | 84.8 vs 86.2 µs | 244 vs 247 µs | 2,019 vs 2,007 µs | 1.00 (a tie) |
 | Transaction | 4.05 vs 4.12 µs | 5.56 vs 5.79 µs | 20.3 vs 20.3 µs | 1.08 |
 | `Retrieve().DequeueAs<T>()` | **0.94x** (290 vs 308 ns) | **1.29x** slower | **1.33x** slower | 1.48 / 1.39 / 1.39 |
+
+**Re-measured rows (2026-11-07).** The `Column` and `Dataflow` rows above were re-run as scoped jobs (`--inprocess`, 5 warm-up and 12 measured iterations, 4 cores at BelowNormal priority under a watchdog). The earlier `Column` figures (74, 358 and 2,528 ns) were recorded from an intermediate working state and are not what the committed code does: an allocation harness over the same fake provider gives identical numbers (614 ns and 2,592 B per call at 100 rows) at the commit that recorded them and at today's `master`, and the `FirstOrdinalResults` path has not changed since. `Column` buffers into a queue and returns a dequeuing enumerable, which `ToList()` then copies, so it allocates more than a direct read. The `Dataflow` one-row time is dominated by handing rows between threads and moves a lot with scheduling (9.6 µs in the earlier run, 20.1 µs here at BelowNormal priority on 4 cores); its allocation ratios and its 100- and 1,000-row ratios are the figures to read.
 
 **ToChannel and Dataflow:** these keep their original two-stage design (raw rows into a bounded 1024-row buffer, a second stage maps them). The "Dapper" rows above are a hand-written single-stage loop. See the channel study below before reading anything into the gap.
 
