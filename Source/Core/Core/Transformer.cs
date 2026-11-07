@@ -62,7 +62,7 @@ public class Transformer<T>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	public static Transformer<T> Create(RowMap<T>? map)
 		=> new(map);
