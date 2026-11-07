@@ -35,7 +35,7 @@ public static partial class CoreExtensions
 		return new MappedQuery<T>(new MappedQueryCore<T>(command, map, 0, -1));
 	}
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
 	/// <param name="command">The command to read from.</param>
 	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
 	[OverloadResolutionPriority(2)]
@@ -45,7 +45,7 @@ public static partial class CoreExtensions
 		where T : new()
 		=> Map(command, RowMap<T>.From(mappings));
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
+	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
 	/// <param name="command">The command to read from.</param>
 	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
 	[OverloadResolutionPriority(3)]

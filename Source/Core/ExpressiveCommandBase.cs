@@ -298,7 +298,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="value">The value of the parameter.</param>
 	/// <param name="type">The database type of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
-	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)" path="/*[not(self::param)]"/>
 	public TThis AddParamIf(bool condition, string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 

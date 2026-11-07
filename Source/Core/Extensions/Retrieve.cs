@@ -60,13 +60,13 @@ public static partial class CoreExtensions
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, int n, params IEnumerable<int> others)
 		=> RetrieveInternal(reader, others.Prepend(n));
 
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="columnNames">The column names to select.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 	{
 		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames);
@@ -78,13 +78,13 @@ public static partial class CoreExtensions
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, string c, params IEnumerable<string> others)
 		=> Retrieve(reader, others.Prepend(c));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="behavior">The <see cref="CommandBehavior"/> flags to use with the data reader.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
 		=> command.ExecuteReader(reader => reader.Retrieve(), behavior | CommandBehavior.SequentialAccess);
 
@@ -96,27 +96,27 @@ public static partial class CoreExtensions
 	/// <para>The default behavior will open a connection, execute the reader and close the connection it if was not already open.</para></remarks>
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, IEnumerable<int> ordinals)
 		=> command.ExecuteReader(reader => reader.Retrieve(ordinals));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, int n, params IEnumerable<int> others)
 		=> command.ExecuteReader(reader => RetrieveInternal(reader, others.Prepend(n)));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="columnNames">The column names to select.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
 		=> command.ExecuteReader(reader => reader.Retrieve(columnNames));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, string c, params IEnumerable<string> others)
 		=> command.ExecuteReader(reader => Retrieve(reader, others.Prepend(c)));
 
@@ -217,7 +217,7 @@ public static partial class CoreExtensions
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)"/>
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		IEnumerable<int> ordinals,
@@ -243,7 +243,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{int}, bool, CancellationToken)" />
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{int}, bool, CancellationToken)" path="/*[not(self::param)]" />
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -259,7 +259,7 @@ public static partial class CoreExtensions
 	/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		IEnumerable<string> columnNames,
@@ -300,7 +300,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)"/>
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -314,7 +314,7 @@ public static partial class CoreExtensions
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		bool useReadAsync = true,
@@ -339,7 +339,7 @@ public static partial class CoreExtensions
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		IEnumerable<int> ordinals,
@@ -354,7 +354,7 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> RetrieveAsyncInternal(command, cancellationToken, ordinals);
 	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, CancellationToken, int, IEnumerable{int})" path="/param[@name='n' or @name='others']"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		int n,
@@ -365,7 +365,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		CancellationToken cancellationToken,
@@ -378,7 +378,7 @@ public static partial class CoreExtensions
 	/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, bool, CancellationToken)"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		IEnumerable<string> columnNames,
@@ -413,7 +413,7 @@ public static partial class CoreExtensions
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <param name="columnName">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="otherColumnNames">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		CancellationToken cancellationToken,

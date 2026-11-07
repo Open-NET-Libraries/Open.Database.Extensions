@@ -276,14 +276,14 @@ public static class DataReaderExtensions
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
 		=> AsEnumerableInternal(reader, others.Prepend(n), false);
 
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
 		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
 
@@ -410,7 +410,7 @@ public static class DataReaderExtensions
 
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		CancellationToken cancellationToken = default)
@@ -421,7 +421,7 @@ public static class DataReaderExtensions
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		ArrayPool<object>? arrayPool,
@@ -527,7 +527,7 @@ public static class DataReaderExtensions
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool, CancellationToken cancellationToken = default)
 		=> arrayPool is null
 		? AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken)
@@ -537,7 +537,7 @@ public static class DataReaderExtensions
 	/// <param name="cancellationToken">The iteration cancellation token.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}?, CancellationToken)"/>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}?, CancellationToken)" path="/*[not(self::param)]"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
 		=> AsAsyncEnumerable(reader, others.Prepend(n), cancellationToken);
 
@@ -546,7 +546,7 @@ public static class DataReaderExtensions
 	/// <param name="cancellationToken">The iteration cancellation token.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param)]"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
 		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool, cancellationToken);
 
@@ -826,7 +826,7 @@ public static class DataReaderExtensions
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
 	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -905,7 +905,7 @@ public static class DataReaderExtensions
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
 	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
