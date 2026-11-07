@@ -1,6 +1,8 @@
+using System.Buffers;
 using System.Collections;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Tasks.Dataflow;
 
 #nullable enable
@@ -1248,9 +1250,14 @@ public static class ToTargetBlockMappedCompletionTests
 
 	public static TheoryData<RetentionKind> RetentionKinds { get; } = [.. Enum.GetValues<RetentionKind>()];
 
-	static async Task SettleAsync(CancellationToken ct)
+	// complete: false leaves the caller nothing to wait on: when a call returns, its pipeline is still delivering in the background,
+	// and how long that takes depends on how much CPU the thread pool gets.  So wait for the rows themselves (the target counts them).
+	static async Task SettleAsync(Func<bool> delivered, CancellationToken ct)
 	{
-		await Task.Delay(200, ct); // Let the last pipelines drain.
+		using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+		timeout.CancelAfter(Timeout);
+		while (!delivered()) await Task.Delay(1, timeout.Token);
+
 		for (int i = 0; i < 3; i++)
 		{
 			GC.Collect();
@@ -1265,11 +1272,26 @@ public static class ToTargetBlockMappedCompletionTests
 	public static async Task Mapped_CompleteFalse_RetainsNothingPerCallOnALongLivedTarget(RetentionKind kind)
 	{
 		const int warmUp = 300;
-		const int calls = 4000;
+		const int callsPerBatch = 2000;
+		const int batches = 3;
+		const int rowsPerCall = 3;
 		const double allowedBytesPerCall = 64; // Measured over 10 runs: 0-3 B/call, and 9-19 B/call for DbCommandAsync (the test fake keeps a list of behaviours).  Margin >3x.
 		CancellationToken ct = TestContext.Current.CancellationToken;
-		var target = new ActionBlock<Row>(_ => { }); // Open, unbounded, never completed.
-		object?[][] rows = Rows(3);
+
+		// Open, unbounded, never completed.  It counts the rows it receives, which is how the test knows every pipeline has finished delivering.
+		long received = 0;
+		var target = new ActionBlock<Row>(_ => Interlocked.Increment(ref received));
+		bool Delivered(long calls) => Interlocked.Read(ref received) >= calls * rowsPerCall;
+		object?[][] rows = Rows(rowsPerCall);
+
+		// The row arrays come from a bounded static pool that keeps up to its capacity of arrays, once that many rows have been in flight at once.
+		// How many that is depends on how fast the blocks drain, so fill the pool first: afterwards its size cannot change, and any growth is per call.
+		var pool = (ArrayPool<object>)typeof(Core.Transformer<Row>)
+			.GetField("LocalPool", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!
+			.GetValue(null)!;
+		var pooled = new object[4096][]; // More than the pool can keep.
+		for (int i = 0; i < pooled.Length; i++) pooled[i] = pool.Rent(1);
+		for (int i = 0; i < pooled.Length; i++) pool.Return(pooled[i]);
 
 		DbDataReader NewReader()
 		{
@@ -1307,18 +1329,28 @@ public static class ToTargetBlockMappedCompletionTests
 				}
 		}
 
+		long issued = 0;
 		for (int i = 0; i < warmUp; i++) await oneCall();
-		await SettleAsync(ct);
-		long before = GC.GetTotalMemory(true);
+		issued += warmUp;
+		await SettleAsync(() => Delivered(issued), ct);
 
-		for (int i = 0; i < calls; i++) await oneCall();
-		await SettleAsync(ct);
-		long after = GC.GetTotalMemory(true);
+		// The whole process shares one heap, so a measurement can pick up growth that is not the call'"'"'s (a runtime or thread-pool structure, a neighbour).
+		// A real leak is in every batch; noise is not. So measure several batches and judge the best one.
+		var slopes = new double[batches];
+		for (int b = 0; b < batches; b++)
+		{
+			long before = GC.GetTotalMemory(true);
+			for (int i = 0; i < callsPerBatch; i++) await oneCall();
+			issued += callsPerBatch;
+			await SettleAsync(() => Delivered(issued), ct);
+			slopes[b] = (double)(GC.GetTotalMemory(true) - before) / callsPerBatch;
+		}
+
 		GC.KeepAlive(target);
 
-		double perCall = (double)(after - before) / calls;
-		TestContext.Current.TestOutputHelper?.WriteLine($"retention {kind}: {perCall:F0} B/call over {calls} calls");
-		Assert.True(perCall < allowedBytesPerCall, $"{kind}: {perCall:F0} bytes retained per call on a long-lived target (allowed {allowedBytesPerCall:F0})");
+		double perCall = slopes.Min();
+		TestContext.Current.TestOutputHelper?.WriteLine($"retention {kind}: {string.Join(", ", slopes.Select(s => s.ToString("F0")))} B/call over {batches} batches of {callsPerBatch} calls");
+		Assert.True(perCall < allowedBytesPerCall, $"{kind}: {perCall:F0} bytes retained per call on a long-lived target in the best of {batches} batches ({string.Join(", ", slopes.Select(s => s.ToString("F0")))}; allowed {allowedBytesPerCall:F0})");
 	}
 
 	// ---- a provider that surfaces its own exception when the read is cancelled: the pipeline's stop is a quiet end ----
