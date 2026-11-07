@@ -219,7 +219,7 @@ public static class QueryResultExtensions
 	/// Returns an enumerable that dequeues the results and attempts to map the
 	/// fields to type T.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <remarks>DBNull values are converted to null.</remarks>
 	/// <param name="source">The query result.  Typically produced by a
 	/// .Retrieve method.</param>
@@ -240,7 +240,7 @@ public static class QueryResultExtensions
 	}
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source,
@@ -255,7 +255,7 @@ public static class QueryResultExtensions
 	}
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source,

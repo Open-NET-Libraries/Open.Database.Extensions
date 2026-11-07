@@ -419,7 +419,7 @@ public static class IExecuteReaderExtensions
 	/// Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
-	/// <remarks>Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.</remarks>
+	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>

@@ -142,7 +142,7 @@ public static partial class DataflowExtensions
 			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target block, and stops when the target declines a record.
+	/// Reads an <see cref="IDataReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
@@ -155,7 +155,7 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -344,7 +344,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/>, posting each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IDbCommand"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -360,7 +360,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -553,7 +553,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -569,7 +569,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -790,7 +790,7 @@ public static partial class DataflowExtensions
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target block, and stops when the target declines a record.
+	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
@@ -804,7 +804,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1024,7 +1024,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously reads the results of an <see cref="IDbCommand"/>, sending each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target block, and stops when the target declines a record.
+	/// Asynchronously reads the results of an <see cref="IDbCommand"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -1041,7 +1041,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1247,7 +1247,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides to the target block, and stops when the target declines a record.
+	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -1263,7 +1263,7 @@ public static partial class DataflowExtensions
 	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>

@@ -125,7 +125,7 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Starts reading an <see cref="IDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides.
+	/// Starts reading an <see cref="IDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
@@ -141,7 +141,7 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
@@ -282,7 +282,7 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Starts reading the results of an <see cref="IDbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides.
+	/// Starts reading the results of an <see cref="IDbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -298,7 +298,7 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -431,7 +431,7 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides.
+	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -446,7 +446,7 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -586,7 +586,7 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Starts asynchronously reading a <see cref="DbDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides.
+	/// Starts asynchronously reading a <see cref="DbDataReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
@@ -602,7 +602,7 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
@@ -743,7 +743,7 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides.
+	/// Starts asynchronously reading the results of a <see cref="DbCommand"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -759,7 +759,7 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -891,7 +891,7 @@ public static partial class ChannelDbExtensions
 	}
 
 	/// <summary>
-	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>, using the field-to-column overrides.
+	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -906,7 +906,7 @@ public static partial class ChannelDbExtensions
 	/// The channel is unbounded, so a consumer that is slower than the database lets records accumulate in memory. Use the overloads that take a <see cref="ChannelWriter{T}"/> target, for example one of a bounded channel, when back-pressure is needed.
 	/// </para>
 	/// <para>
-	/// Declare a <see cref="RowMap{T}"/> once and pass it here; a <c>new RowMap&lt;T&gt;([...])</c> or an <see cref="ImmutableArray{T}"/> passed to the constructor at the call site builds a new map, and compiles its row reader, on every call.
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
