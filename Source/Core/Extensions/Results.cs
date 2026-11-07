@@ -112,6 +112,13 @@ public static partial class CoreExtensions
 		return RowReader.StreamAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync: true, cancellationToken);
 	}
 
+	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, RowMap{T}?, CancellationToken)" />
+	public static IAsyncEnumerable<T> ResultsAsync<T>(
+		this DbDataReader reader,
+		CancellationToken cancellationToken)
+		where T : new()
+		=> ResultsAsync<T>(reader, null, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
@@ -145,6 +152,13 @@ public static partial class CoreExtensions
 	CancellationToken cancellationToken)
 	where T : new()
 	=> ResultsBufferedAsync<T>(reader, map, true, cancellationToken);
+
+	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />
+	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
+		this DbDataReader reader,
+		CancellationToken cancellationToken)
+		where T : new()
+		=> ResultsBufferedAsync<T>(reader, null, true, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
