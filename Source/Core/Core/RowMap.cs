@@ -97,6 +97,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
 
+	// The per-model-type statics below (Properties, PropertyIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
+	// lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it. Nothing that does not depend on T belongs here.
+
 	// Settable public instance properties, in declaration order (a property hidden by name keeps the first): reflection runs once per T.
 	static readonly ImmutableArray<PropertyInfo> Properties = BuildProperties();
 
@@ -490,22 +493,6 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	#region Compilation
 
-	static readonly FrozenDictionary<Type, string> TypedGetters = new Dictionary<Type, string>()
-	{
-		[typeof(bool)] = nameof(IDataRecord.GetBoolean),
-		[typeof(byte)] = nameof(IDataRecord.GetByte),
-		[typeof(char)] = nameof(IDataRecord.GetChar),
-		[typeof(short)] = nameof(IDataRecord.GetInt16),
-		[typeof(int)] = nameof(IDataRecord.GetInt32),
-		[typeof(long)] = nameof(IDataRecord.GetInt64),
-		[typeof(float)] = nameof(IDataRecord.GetFloat),
-		[typeof(double)] = nameof(IDataRecord.GetDouble),
-		[typeof(decimal)] = nameof(IDataRecord.GetDecimal),
-		[typeof(DateTime)] = nameof(IDataRecord.GetDateTime),
-		[typeof(Guid)] = nameof(IDataRecord.GetGuid),
-		[typeof(string)] = nameof(IDataRecord.GetString),
-	}.ToFrozenDictionary();
-
 	sealed class Binding(string property, string column, Type type)
 	{
 		public readonly string Property = property;
@@ -592,7 +579,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// The typed (unboxed) read of a cell as the target type, or null when the column type has no typed getter or does not convert directly.
 	static Expression? TypedRead(ParameterExpression r, Expression ordinal, Type columnType, Type target, Type readerType)
 	{
-		if (!TypedGetters.TryGetValue(columnType, out string? getterName)) return null;
+		if (!TypedGetters.ByType.TryGetValue(columnType, out string? getterName)) return null;
 
 		MethodInfo getter = readerType.GetMethod(getterName, [typeof(int)])!;
 		return TryConvert(Expression.Call(r, getter, ordinal), target);
@@ -738,6 +725,27 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	static string TypeName(Type type) => Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
 
 	#endregion
+}
+
+// The typed getter of each type a column can be read as without boxing. It does not depend on the model type, so it lives here, not in RowMap<T>,
+// where a static field is created once per model type.
+static class TypedGetters
+{
+	internal static readonly FrozenDictionary<Type, string> ByType = new Dictionary<Type, string>()
+	{
+		[typeof(bool)] = nameof(IDataRecord.GetBoolean),
+		[typeof(byte)] = nameof(IDataRecord.GetByte),
+		[typeof(char)] = nameof(IDataRecord.GetChar),
+		[typeof(short)] = nameof(IDataRecord.GetInt16),
+		[typeof(int)] = nameof(IDataRecord.GetInt32),
+		[typeof(long)] = nameof(IDataRecord.GetInt64),
+		[typeof(float)] = nameof(IDataRecord.GetFloat),
+		[typeof(double)] = nameof(IDataRecord.GetDouble),
+		[typeof(decimal)] = nameof(IDataRecord.GetDecimal),
+		[typeof(DateTime)] = nameof(IDataRecord.GetDateTime),
+		[typeof(Guid)] = nameof(IDataRecord.GetGuid),
+		[typeof(string)] = nameof(IDataRecord.GetString),
+	}.ToFrozenDictionary();
 }
 
 /// <summary>The builder behind the collection syntax of <see cref="RowMap{T}"/>: <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>.</summary>
