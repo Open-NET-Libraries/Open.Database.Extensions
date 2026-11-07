@@ -43,6 +43,20 @@ Pass a `CommandType` as the second argument of `Command` if you need `TableDirec
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_if)]
 
+### Name a parameter from its argument
+
+`AddParam(value)` takes the name from the argument itself, so you do not spell it twice. The argument must be a variable or a chain of members (properties and fields, members of members): `search.Author`, `order.Customer.Id`.
+
+[!code-csharp[](../samples/ExpressiveCommands.cs#param_from_argument)]
+
+For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does) and each argument is matched to one of them: exactly, else ignoring case, else ignoring case and underscores, so `TitleContains` finds `@title_contains`. A chain tries its longer endings first (`order.Customer.Id` tries `OrderCustomerId`, `CustomerId`, then `Id`), so `@customer_id` is chosen over a bare `@id`. The names are read once and remembered for five minutes per connection factory. When the real names are not available, as with a text command or another provider, the last member is used as written.
+
+[!code-csharp[](../samples/SqlServer.cs#sql_server_derived_names)]
+
+`AddParams(object)` sends the public properties and fields of an object. When the procedure's names are known, only the members it declares are sent; a parameter added by name always wins over a member.
+
+An argument that is not a plain member chain (a call, an index, an operator, a literal) throws `ArgumentException` where you wrote it: name the parameter with `AddParam("name", value)`. A name that matches none of the procedure's parameters, or two of them, throws `InvalidOperationException` that lists what the procedure declares.
+
 `AddReturnParam` registers a return value; call `ExecuteReturn<T>()` to read it.
 
 ## Terminals

@@ -47,17 +47,26 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// A parameter added without a name, AddParam(value): Expression is the text of the argument, whose real name is resolved when the command executes.
 		// Until then Name holds the last member of the expression as written, which is also the name used when the procedure's real names are not known.
-		private Param(string name, object? value, string expression)
+		private Param(string name, object? value, string expression, bool fromObject)
 			: this(name, value)
 		{
 			Expression = expression;
+			FromObject = fromObject;
 		}
 
 		internal static Param Derived(string name, string expression, object? value)
-			=> new(name, value, expression);
+			=> new(name, value, expression, fromObject: false);
+
+		// A member of an object given to AddParams(object): its expression is the member's name, and when the procedure's real names are known a member
+		// that none of them matches is simply not sent.
+		internal static Param OfObject(string member, object? value)
+			=> new(member, value, member, fromObject: true);
 
 		/// <summary>The argument expression a name is still to be resolved from, or <see langword="null"/> once the name is final.</summary>
 		internal string? Expression { get; }
+
+		/// <summary>True for a member of an object given to <c>AddParams</c>, which the procedure may not take.</summary>
+		internal bool FromObject { get; }
 
 		/// <summary>
 		/// Gets the name of the parameter.

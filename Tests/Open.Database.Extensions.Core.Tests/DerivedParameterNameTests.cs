@@ -83,6 +83,9 @@ public static class DerivedParameterNameTests
 
 	static string[] SentNames(ConnectionProbe probe) => [.. probe.Parameters.Select(p => p.ParameterName)];
 
+	// What was sent, by name: the order members of an object are read in is not part of the contract.
+	static Dictionary<string, object?> Sent(ConnectionProbe probe) => probe.Parameters.ToDictionary(p => p.ParameterName, p => p.Value);
+
 	// ---- the name as written, when the real names are not known ----
 
 	[Fact]
@@ -628,5 +631,156 @@ public static class DerivedParameterNameTests
 		Assert.Equal(["a", "b", "c", "d", "e", "f", "g", "h"], SentNames(probe));
 		Assert.Equal(["text", 0, 5L, DBNull.Value, null, "text", 0, 3], probe.Parameters.Select(p => p.Value is DBNull ? DBNull.Value : p.Value));
 		Assert.Equal(0, proc.Lookups); // nothing was derived, so the provider was never asked
+	}
+
+	// ---- AddParams(object): the members of an object ----
+
+	sealed class SearchArgs
+	{
+		public int CompanySerialNum { get; set; } = 42;     // a property
+		public string? Region = "west";                     // a field
+		public DateTime? EndDate { get; set; }              // a nullable property
+		public string Unrelated = "not a parameter";        // the procedure does not declare it
+		public static int Shared = 1;                       // static: ignored
+		public int this[int index] => index;                // an indexer: ignored
+#pragma warning disable CS0414 // never used: it is private, which is the point
+		int _hidden = 5;                                    // not public: ignored
+#pragma warning restore CS0414
+		public override string ToString() => _hidden.ToString();
+	}
+
+	readonly record struct RecordArgs(int CompanySerialNum, string Region);
+
+	class BaseArgs { public int CompanySerialNum { get; set; } = 1; }
+
+	sealed class DerivedArgs : BaseArgs { public string Extra = "x"; }
+
+	[Fact]
+	public static void AddParams_SendsOnlyTheMembersTheProcedureDeclares_FoundByTheSameTiers()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		Proc(probe, "@company_serial_num", "@REGION", "@end_date", "@something_else")
+			.AddParams(new SearchArgs())
+			.ExecuteNonQuery();
+
+		// Property, field and nullable property found by underscores, case and underscores; Unrelated is not sent; @something_else is left to its default.
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 42, ["@REGION"] = "west", ["@end_date"] = DBNull.Value }, Sent(probe));
+	}
+
+	[Fact]
+	public static void AddParams_AParameterNamedByTheCaller_WinsOverTheMember()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		var filter = new Filter { Region = "east" };
+		Proc(probe, "@company_serial_num", "@region")
+			.AddParams(new SearchArgs())
+			.AddParam("@region", "override")      // by name
+			.ExecuteNonQuery();
+
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 42, ["@region"] = "override" }, Sent(probe));
+		Assert.Equal(2, probe.Parameters.Count);
+
+		// The same when the caller's parameter is derived from an argument.
+		var probe2 = new ConnectionProbe(ConnectionState.Open);
+		Proc(probe2, "@company_serial_num", "@region")
+			.AddParams(new SearchArgs())
+			.AddParam(filter.Region)               // derived: finds @region
+			.ExecuteNonQuery();
+
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 42, ["@region"] = "east" }, Sent(probe2));
+		Assert.Equal(2, probe2.Parameters.Count);
+	}
+
+	[Fact]
+	public static void AddParams_WithoutRealNames_SendsEveryPublicInstanceMemberAsWritten()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		Proc(probe /* the provider supplies no names */).AddParams(new SearchArgs()).ExecuteNonQuery();
+
+		Assert.Equal(
+			new Dictionary<string, object?> { ["CompanySerialNum"] = 42, ["Region"] = "west", ["EndDate"] = DBNull.Value, ["Unrelated"] = "not a parameter" },
+			Sent(probe));
+
+		// A text command has no procedure to ask: the same.
+		var textProbe = new ConnectionProbe(ConnectionState.Open);
+		var text = new ProcCommand(textProbe.Connection, CommandType.Text, "select @CompanySerialNum", "@never");
+		text.AddParams(new RecordArgs(7, "r")).ExecuteNonQuery();
+		Assert.Equal(new Dictionary<string, object?> { ["CompanySerialNum"] = 7, ["Region"] = "r" }, Sent(textProbe));
+		Assert.Equal(0, text.Lookups);
+	}
+
+	[Fact]
+	public static void AddParams_Members_AreReadWhenTheMethodIsCalled()
+	{
+		var args = new SearchArgs { CompanySerialNum = 1 };
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		ProcCommand proc = Proc(probe, "@company_serial_num");
+		proc.AddParams(args);
+		args.CompanySerialNum = 2; // too late
+
+		proc.ExecuteNonQuery();
+
+		Assert.Equal([1], probe.Parameters.Select(p => p.Value));
+	}
+
+	[Fact]
+	public static void AddParams_AcceptsARecordStruct_AndUsesTheStaticTypesMembers()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		Proc(probe, "@company_serial_num", "@region", "@extra").AddParams(new RecordArgs(7, "r")).ExecuteNonQuery();
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 7, ["@region"] = "r" }, Sent(probe));
+
+		// The members are those of the static type: a Derived held as a Base sends only Base's members.
+		var baseProbe = new ConnectionProbe(ConnectionState.Open);
+		BaseArgs asBase = new DerivedArgs();
+		Proc(baseProbe, "@company_serial_num", "@extra").AddParams(asBase).ExecuteNonQuery();
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 1 }, Sent(baseProbe));
+
+		var derivedProbe = new ConnectionProbe(ConnectionState.Open);
+		Proc(derivedProbe, "@company_serial_num", "@extra").AddParams(new DerivedArgs()).ExecuteNonQuery();
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 1, ["@extra"] = "x" }, Sent(derivedProbe));
+	}
+
+	[Fact]
+	public static void AddParams_TwoMembersThatResolveToOneParameter_Throws()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		ProcCommand proc = Proc(probe, "@foo_bar");
+		proc.AddParams(new TwoSpellings());
+
+		var ex = Assert.Throws<InvalidOperationException>(() => proc.ExecuteNonQuery());
+		Assert.Contains("Two parameters resolve to '@foo_bar'", ex.Message);
+	}
+
+	sealed class TwoSpellings
+	{
+		public int FooBar = 1;
+		public int Foo_Bar = 2;
+	}
+
+	[Fact]
+	public static void AddParams_Null_Throws_AndAnObjectWithNoMembersAddsNothing()
+	{
+		var cmd = new ConnectionProbe(ConnectionState.Open).Connection.Command("select 1");
+
+		var ex = Assert.Throws<ArgumentNullException>(() => cmd.AddParams<SearchArgs>(null!));
+		Assert.Equal("source", ex.ParamName);
+
+		cmd.AddParams(new object());
+		Assert.Empty(cmd.Params);
+	}
+
+	[Fact]
+	public static void AddParams_MixesWithDerivedAndNamedParams_InAnyOrder()
+	{
+		var filter = new Filter();
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		Proc(probe, "@mode", "@company_serial_num", "@region", "@limit")
+			.AddParam("@mode", 1)
+			.AddParams(new SearchArgs())
+			.AddParam(filter.Limit)
+			.ExecuteNonQuery();
+
+		Assert.Equal(new Dictionary<string, object?> { ["@mode"] = 1, ["@company_serial_num"] = 42, ["@region"] = "west", ["@limit"] = 10 }, Sent(probe));
 	}
 }

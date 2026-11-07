@@ -26,4 +26,29 @@ public static class SqlServer
 		_ = touched;
 		return posts;
 	}
+
+	public static async Task<Post[]> DerivedNames()
+	{
+		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
+		var search = new PostSearch { Author = 42, TitleContains = "ode" };
+
+		#region sql_server_derived_names
+		// The procedure declares @author and @title_contains. Each argument is matched to a real parameter, so search.TitleContains finds @title_contains.
+		Post[] posts = await connectionFactory
+			.StoredProcedure("[dbo].[SearchPosts]")
+			.AddParam(search.Author)
+			.AddParam(search.TitleContains)
+			.Map<Post>()
+			.ToArrayAsync();
+
+		// Or give it the whole object: the members the procedure declares are sent, the rest are ignored.
+		posts = await connectionFactory
+			.StoredProcedure("[dbo].[SearchPosts]")
+			.AddParams(search)
+			.Map<Post>()
+			.ToArrayAsync();
+		#endregion
+
+		return posts;
+	}
 }

@@ -33,6 +33,7 @@ Check(connection.State == ConnectionState.Open, "connection form leaves an open 
 Check(ExpressiveCommands.FirstPost(factory)?.Title == "Post 3", "FirstOrDefault by id");
 Check(ExpressiveCommands.ConditionalParam(factory, null).Length == 5, "AddParamIf skipped: all rows");
 Check(ExpressiveCommands.ConditionalParam(factory, 7).Length == 2, "AddParamIf applied: author 7 has 2 posts");
+Check(ExpressiveCommands.ParamNamedFromTheArgument(factory).Length == 2, "AddParam(search.Author) names the parameter from the argument");
 
 (ConnectionState closedBefore, ConnectionState closedAfter, ConnectionState openBefore, ConnectionState openAfter) = ExpressiveCommands.Ownership(connection);
 Check(closedBefore == ConnectionState.Closed && closedAfter == ConnectionState.Closed, "a closed connection is closed again after the call");

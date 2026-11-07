@@ -316,6 +316,37 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	public TThis AddParamIf<T>(bool condition, T value, [CallerArgumentExpression(nameof(value))] string? expression = null)
 		=> condition ? AddDerivedParam(value, expression) : CheckDerivable(expression);
 
+	/// <summary>
+	/// Adds a parameter for each public property and field of <paramref name="source"/>, named for the member: <c>AddParams(filter)</c> adds <c>CompanySerialNum</c>, <c>Region</c> and so on.
+	/// </summary>
+	/// <remarks>
+	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>: exactly, else ignoring case, else ignoring case and underscores.
+	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures; parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
+	/// A parameter you add by name always wins over a member that resolves to the same name. Where the real names are not known (a text command, or a provider that does not supply them) every member is sent as written.</para>
+	/// <para>Members are read when this method is called, like any other value. Static members and indexers are ignored; the members are those of the static type <typeparamref name="T"/>, and nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
+	/// </remarks>
+	/// <typeparam name="T">The type of the object whose members are the parameters.</typeparam>
+	/// <param name="source">The object to read the values from.</param>
+	/// <returns>This instance for use in method chaining.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
+	public TThis AddParams<T>(T source)
+		where T : notnull
+	{
+		if (source is null) throw new ArgumentNullException(nameof(source));
+		Contract.EndContractBlock();
+
+		string[] names = ParamSource<T>.Names;
+		Func<T, object?>[] getters = ParamSource<T>.Getters;
+		if (names.Length == 0) return (TThis)this;
+
+		List<Param> list = Params;
+		for (int i = 0; i < names.Length; i++)
+			list.Add(Param.OfObject(names[i], getters[i](source)));
+
+		EnsureOptions().HasDerivedParams = true;
+		return (TThis)this;
+	}
+
 	TThis AddDerivedParam(object? value, string? expression)
 	{
 		if (!ParameterNames.IsDerivable(expression))
@@ -473,31 +504,62 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	void ApplyDerivedNames(ImmutableArray<string> real)
 	{
 		List<Param> list = Params;
-		for (int i = 0; i < list.Count; i++)
+		var kept = new List<Param>(list.Count);
+		var fromObject = new List<bool>(list.Count); // aligned with kept: a member of an object given to AddParams
+
+		foreach (Param p in list)
 		{
-			Param p = list[i];
-			if (p.Expression is not { } expression) continue;
+			if (p.Expression is not { } expression)
+			{
+				kept.Add(p);
+				fromObject.Add(false);
+				continue;
+			}
 
 			// Without the real names the last member is used as written.
-			string name = real.IsDefaultOrEmpty
-				? p.Name
-				: ParameterNames.Match(ParameterNames.Candidates(expression), real) ?? throw NoMatch(expression, real);
+			string? name = real.IsDefaultOrEmpty ? p.Name : ParameterNames.Match(ParameterNames.Candidates(expression), real);
+			if (name is null)
+			{
+				// A member of an object that the procedure does not take is simply not sent; an argument named by the caller must match.
+				if (p.FromObject) continue;
+				throw NoMatch(expression, real);
+			}
 
-			list[i] = new Param(name, p.Value, p.Type, p.Direction);
+			kept.Add(new Param(name, p.Value, p.Type, p.Direction));
+			fromObject.Add(p.FromObject);
 		}
 
-		// Two arguments that resolve to one parameter would silently overwrite each other.
-		for (int i = 0; i < list.Count; i++)
+		// A parameter named by the caller wins over a member of an object that resolves to the same name.
+		for (int i = kept.Count - 1; i >= 0; i--)
 		{
-			for (int j = i + 1; j < list.Count; j++)
+			if (!fromObject[i]) continue;
+			for (int j = 0; j < kept.Count; j++)
 			{
-				if (string.Equals(BareName(list[i].Name), BareName(list[j].Name), StringComparison.OrdinalIgnoreCase))
-					throw new InvalidOperationException($"Two parameters resolve to '{list[i].Name}'. Name one of them explicitly: AddParam(\"name\", value).");
+				if (j != i && !fromObject[j] && SameName(kept[i].Name, kept[j].Name))
+				{
+					kept.RemoveAt(i);
+					fromObject.RemoveAt(i);
+					break;
+				}
 			}
 		}
 
+		// Two arguments that resolve to one parameter would silently overwrite each other.
+		for (int i = 0; i < kept.Count; i++)
+		{
+			for (int j = i + 1; j < kept.Count; j++)
+			{
+				if (SameName(kept[i].Name, kept[j].Name))
+					throw new InvalidOperationException($"Two parameters resolve to '{kept[i].Name}'. Name one of them explicitly: AddParam(\"name\", value).");
+			}
+		}
+
+		list.Clear();
+		list.AddRange(kept);
 		_options!.HasDerivedParams = false;
 	}
+
+	static bool SameName(string a, string b) => string.Equals(BareName(a), BareName(b), StringComparison.OrdinalIgnoreCase);
 
 	static string BareName(string name) => name.Length > 0 && name[0] == '@' ? name.Substring(1) : name;
 
