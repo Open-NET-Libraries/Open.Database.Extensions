@@ -45,6 +45,20 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			Value = isInput ? (value ?? DBNull.Value) : value;
 		}
 
+		// A parameter added without a name, AddParam(value): Expression is the text of the argument, whose real name is resolved when the command executes.
+		// Until then Name holds the last member of the expression as written, which is also the name used when the procedure's real names are not known.
+		private Param(string name, object? value, string expression)
+			: this(name, value)
+		{
+			Expression = expression;
+		}
+
+		internal static Param Derived(string name, string expression, object? value)
+			=> new(name, value, expression);
+
+		/// <summary>The argument expression a name is still to be resolved from, or <see langword="null"/> once the name is final.</summary>
+		internal string? Expression { get; }
+
 		/// <summary>
 		/// Gets the name of the parameter.
 		/// </summary>

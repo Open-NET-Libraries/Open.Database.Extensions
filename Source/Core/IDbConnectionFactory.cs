@@ -63,6 +63,9 @@ public static class DbConnectionFactoryExtensions
 		public IDbConnection Take()
 			=> factory();
 
+		// See the typed adapter: the factory object that commands made from it share.
+		internal object Identity => factory.Target ?? factory;
+
 		/// <inheritdoc />
 		/// <remarks>Disposes <paramref name="connection"/>; nothing is retained for reuse.</remarks>
 		public void Give(IDbConnection connection)
@@ -92,6 +95,10 @@ public static class DbConnectionFactoryExtensions
 		/// <remarks>Creates a new connection by invoking the factory function.</remarks>
 		public TConnection Take()
 			=> factory();
+
+		// What stays the same from one command to the next: the factory object itself (the target of its Create method), which is what remembered
+		// procedure names belong to. A function with no target (a static lambda) has no such identity, and its own delegate is returned.
+		internal object Identity => factory.Target ?? factory;
 
 		IDbConnection IDbConnectionPool.Take()
 			=> Take();

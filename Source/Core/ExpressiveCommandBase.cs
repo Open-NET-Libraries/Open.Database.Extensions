@@ -46,6 +46,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		public CancellationToken CancellationToken;
 		public ushort Timeout = CommandTimeout.DEFAULT_SECONDS;
 		public bool UseAsyncRead;
+
+		// Set while a parameter added by AddParam(value) is still waiting for its name to be resolved.
+		public bool HasDerivedParams;
 	}
 
 	private protected CommandOptions? _options;
@@ -275,9 +278,60 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	public TThis AddParam(string name, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, null, type, direction));
 
+	// The direction is required so that a single argument never binds here: AddParam(filter.Name) with a string argument must reach AddParam<T>(T value, ...) below, not be read as a parameter name.
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
-	public TThis AddParam(string name, ParameterDirection direction = ParameterDirection.Input)
+	public TThis AddParam(string name, ParameterDirection direction)
 		=> AddParam(new(name, null, null, direction));
+
+	/// <summary>
+	/// Adds an input parameter whose name is taken from the argument expression: <c>AddParam(filter.CompanySerialNum)</c> adds a parameter named for <c>CompanySerialNum</c>.
+	/// </summary>
+	/// <remarks>
+	/// <para>The argument must be a variable or a chain of member accesses (properties and fields alike): <c>startDate</c>, <c>filter.CompanySerialNum</c>, <c>order.Customer.Id</c>.
+	/// Anything else (a call, an index, an operator, a literal) throws <see cref="ArgumentException"/>: use <see cref="AddParam(string, object?, ParameterDirection)"/> and name the parameter.</para>
+	/// <para>The name is settled when the command executes. For a stored procedure the provider is asked for the procedure's real parameter names, and the argument is matched to one of them:
+	/// exactly, else ignoring case, else ignoring case and underscores, so <c>CompanySerialNum</c> finds <c>@company_serial_num</c>. A chain tries its more specific endings first:
+	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing throws <see cref="InvalidOperationException"/> listing what the procedure expects.
+	/// Where the real names are not available (a text command, or a provider that does not supply them) the last member is used as written.</para>
+	/// </remarks>
+	/// <typeparam name="T">The type of the value.</typeparam>
+	/// <param name="value">The value of the parameter. A <see langword="null"/> is sent as a database null.</param>
+	/// <param name="expression">The text of the argument, supplied by the compiler. Do not pass it.</param>
+	/// <returns>This instance for use in method chaining.</returns>
+	/// <exception cref="ArgumentException">A parameter name cannot be derived from the argument.</exception>
+	[OverloadResolutionPriority(-1)]
+	public TThis AddParam<T>(T value, [CallerArgumentExpression(nameof(value))] string? expression = null)
+		=> AddDerivedParam(value, expression);
+
+	/// <summary>
+	/// Conditionally adds an input parameter whose name is taken from the argument expression. See <see cref="AddParam{T}(T, string?)"/>.
+	/// </summary>
+	/// <typeparam name="T">The type of the value.</typeparam>
+	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <param name="expression">The text of the argument, supplied by the compiler. Do not pass it.</param>
+	/// <returns>This instance for use in method chaining.</returns>
+	/// <exception cref="ArgumentException">A parameter name cannot be derived from the argument (checked even when <paramref name="condition"/> is false).</exception>
+	[OverloadResolutionPriority(-1)]
+	public TThis AddParamIf<T>(bool condition, T value, [CallerArgumentExpression(nameof(value))] string? expression = null)
+		=> condition ? AddDerivedParam(value, expression) : CheckDerivable(expression);
+
+	TThis AddDerivedParam(object? value, string? expression)
+	{
+		if (!ParameterNames.IsDerivable(expression))
+			throw NotDerivable(expression);
+
+		// Name is the last member as written; the real name replaces it at execution when the procedure's names are known.
+		Params.Add(Param.Derived(ParameterNames.LastMember(expression!), expression!, value));
+		EnsureOptions().HasDerivedParams = true;
+		return (TThis)this;
+	}
+
+	TThis CheckDerivable(string? expression)
+		=> ParameterNames.IsDerivable(expression) ? (TThis)this : throw NotDerivable(expression);
+
+	static ArgumentException NotDerivable(string? expression)
+		=> new($"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.CompanySerialNum, or name the parameter: AddParam(\"name\", value).", "value");
 
 	/// <summary>
 	/// Adds a return parameter to the params list.
@@ -329,7 +383,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		=> condition ? AddParam(name, type, direction) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
-	public TThis AddParamIf(bool condition, string name, ParameterDirection direction = ParameterDirection.Input)
+	public TThis AddParamIf(bool condition, string name, ParameterDirection direction)
 		=> condition ? AddParam(name, direction) : (TThis)this;
 
 	/// <summary>
@@ -350,6 +404,108 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return (TThis)this;
 	}
 
+	#region Derived parameter names
+
+	/// <summary>
+	/// Gets the names of the parameters a stored procedure declares, so a parameter added with <c>AddParam(value)</c> can be matched to the real one.
+	/// A provider that can look this up overrides it; the default returns nothing, and the last member of each argument is used as written.
+	/// </summary>
+	/// <param name="connection">An open connection to run the lookup on. A command that executes inside a transaction must use <see cref="Transaction"/>.</param>
+	/// <param name="procedure">The procedure name as given to the command.</param>
+	/// <returns>The names as the provider reports them (a leading <c>@</c> is fine), or an empty or default array when they are not known.</returns>
+	protected virtual ImmutableArray<string> GetProcedureParameterNames(TConnection connection, string procedure)
+		=> default;
+
+	/// <summary>The asynchronous twin of <see cref="GetProcedureParameterNames"/>.</summary>
+	/// <param name="connection">An open connection to run the lookup on.</param>
+	/// <param name="procedure">The procedure name as given to the command.</param>
+	/// <param name="cancellationToken">The command's cancellation token.</param>
+	/// <returns>The names as the provider reports them, or an empty or default array when they are not known.</returns>
+	protected virtual ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(TConnection connection, string procedure, CancellationToken cancellationToken)
+		=> new(GetProcedureParameterNames(connection, procedure));
+
+	// Runs after the connection is open and before the command is built, once per command: it replaces the provisional names with the real ones.
+	void ResolveDerivedParams(TConnection connection)
+	{
+		if (_options is not { HasDerivedParams: true }) return;
+
+		ImmutableArray<string> names = default;
+		if (Type == CommandType.StoredProcedure)
+		{
+			string key = ProcedureKey(connection);
+			if (!ProcedureNameCache.TryGet(NameCacheOwner, key, out names))
+			{
+				names = GetProcedureParameterNames(connection, Command);
+				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
+			}
+		}
+
+		ApplyDerivedNames(names);
+	}
+
+	async ValueTask ResolveDerivedParamsAsync(TConnection connection)
+	{
+		ImmutableArray<string> names = default;
+		if (Type == CommandType.StoredProcedure)
+		{
+			string key = ProcedureKey(connection);
+			if (!ProcedureNameCache.TryGet(NameCacheOwner, key, out names))
+			{
+				names = await GetProcedureParameterNamesAsync(connection, Command, CancellationToken).ConfigureAwait(false);
+				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
+			}
+		}
+
+		ApplyDerivedNames(names);
+	}
+
+	// Remembered names belong to the object commands take connections from: a factory (not the wrapper made around it for each command), a pool, or the bare connection.
+	object NameCacheOwner => _poolOrConnection switch
+	{
+		DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection> typed => typed.Identity,
+		DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter untyped => untyped.Identity,
+		_ => _poolOrConnection,
+	};
+
+	// The database is part of the key: one connection can be switched to another database, where the same procedure name may be a different procedure.
+	string ProcedureKey(TConnection connection) => connection.Database + "\n" + Command;
+
+	void ApplyDerivedNames(ImmutableArray<string> real)
+	{
+		List<Param> list = Params;
+		for (int i = 0; i < list.Count; i++)
+		{
+			Param p = list[i];
+			if (p.Expression is not { } expression) continue;
+
+			// Without the real names the last member is used as written.
+			string name = real.IsDefaultOrEmpty
+				? p.Name
+				: ParameterNames.Match(ParameterNames.Candidates(expression), real) ?? throw NoMatch(expression, real);
+
+			list[i] = new Param(name, p.Value, p.Type, p.Direction);
+		}
+
+		// Two arguments that resolve to one parameter would silently overwrite each other.
+		for (int i = 0; i < list.Count; i++)
+		{
+			for (int j = i + 1; j < list.Count; j++)
+			{
+				if (string.Equals(BareName(list[i].Name), BareName(list[j].Name), StringComparison.OrdinalIgnoreCase))
+					throw new InvalidOperationException($"Two parameters resolve to '{list[i].Name}'. Name one of them explicitly: AddParam(\"name\", value).");
+			}
+		}
+
+		_options!.HasDerivedParams = false;
+	}
+
+	static string BareName(string name) => name.Length > 0 && name[0] == '@' ? name.Substring(1) : name;
+
+	InvalidOperationException NoMatch(string expression, ImmutableArray<string> real)
+		=> new($"The argument '{expression}' matches none of the parameters of '{Command}' (tried {string.Join(", ", ParameterNames.Candidates(expression))}). The procedure declares: {string.Join(", ", real)}. Name the parameter explicitly: AddParam(\"name\", value).");
+
+	#endregion
+
 	#region Execution core
 
 	// Every execution path funnels through these two methods: take the connection, make sure it is open,
@@ -368,6 +524,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		try
 		{
 			ConnectionState prior = conn.EnsureOpen();
+			ResolveDerivedParams(conn);
 			using TCommand cmd = PrepareCommand(conn);
 			return func(cmd, prior, state);
 		}
@@ -388,6 +545,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			try
 			{
 				ConnectionState prior = await OpenIfNeededAsync(single, CancellationToken).ConfigureAwait(false);
+				if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(single).ConfigureAwait(false);
 				using TCommand cmd = PrepareCommand(single);
 				return await func(cmd, prior, state).ConfigureAwait(false);
 			}
@@ -402,6 +560,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		try
 		{
 			ConnectionState prior = await OpenIfNeededAsync(conn, CancellationToken).ConfigureAwait(false);
+			if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(conn).ConfigureAwait(false);
 			using TCommand cmd = PrepareCommand(conn);
 			return await func(cmd, prior, state).ConfigureAwait(false);
 		}
@@ -427,6 +586,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		try
 		{
 			ConnectionState prior = single.EnsureOpen();
+			ResolveDerivedParams(single);
 			using TCommand cmd = PrepareCommand(single);
 			return func(cmd, prior, state);
 		}
