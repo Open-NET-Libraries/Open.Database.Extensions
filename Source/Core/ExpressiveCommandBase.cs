@@ -302,7 +302,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <exception cref="ArgumentException">A parameter name cannot be derived from the argument.</exception>
 	[OverloadResolutionPriority(-1)]
 	public TThis AddParam<T>(T value, [CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> AddDerivedParam(value, expression);
+		=> AddDerivedParam(value, expression, typeof(T));
 
 	/// <summary>
 	/// Conditionally adds an input parameter whose name is taken from the argument expression. See <see cref="AddParam{T}(T, string?)"/>.
@@ -315,7 +315,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <exception cref="ArgumentException">A parameter name cannot be derived from the argument (checked even when <paramref name="condition"/> is false).</exception>
 	[OverloadResolutionPriority(-1)]
 	public TThis AddParamIf<T>(bool condition, T value, [CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> condition ? AddDerivedParam(value, expression) : CheckDerivable(expression);
+		=> condition ? AddDerivedParam(value, expression, typeof(T)) : CheckDerivable(expression);
 
 	/// <summary>
 	/// Adds a parameter for each public property and field of <paramref name="source"/>, named for the member: <c>AddParams(filter)</c> adds <c>CompanySerialNum</c>, <c>Region</c> and so on.
@@ -338,23 +338,24 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		string[] names = ParamSource<T>.Names;
 		Func<T, object?>[] getters = ParamSource<T>.Getters;
+		Type[] types = ParamSource<T>.Types;
 		if (names.Length == 0) return (TThis)this;
 
 		List<Param> list = Params;
 		for (int i = 0; i < names.Length; i++)
-			list.Add(Param.OfObject(names[i], getters[i](source)));
+			list.Add(Param.OfObject(names[i], getters[i](source), types[i]));
 
 		EnsureOptions().HasDerivedParams = true;
 		return (TThis)this;
 	}
 
-	TThis AddDerivedParam(object? value, string? expression)
+	TThis AddDerivedParam(object? value, string? expression, Type clrType)
 	{
 		if (!ParameterNames.IsDerivable(expression))
 			throw NotDerivable(expression);
 
 		// Name is the last member as written; the real name replaces it at execution when the procedure's names are known.
-		Params.Add(Param.Derived(ParameterNames.LastMember(expression!), expression!, value));
+		Params.Add(Param.Derived(ParameterNames.LastMember(expression!), expression!, value, clrType));
 		EnsureOptions().HasDerivedParams = true;
 		return (TThis)this;
 	}
@@ -542,7 +543,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				throw NoMatch(expression, real);
 			}
 
-			kept.Add(new Param(name, p.Value, p.Type, p.Direction));
+			kept.Add(p.Resolved(name));
 			fromObject.Add(p.FromObject);
 		}
 

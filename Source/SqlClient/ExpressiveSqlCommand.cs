@@ -124,6 +124,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 			{
 				np = command.CreateParameter();
 				np.ParameterName = p.Name;
+				command.Parameters.Add(np); // a parameter with no value (output, return value) must still reach the command
 			}
 			else
 			{
@@ -133,6 +134,8 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 			np.Direction = p.Direction;
 			if (p.Type.HasValue)
 				np.SqlDbType = p.Type.Value;
+			else if (p.NullDbType is { } nullType)
+				np.DbType = nullType; // a NULL carries no type, so give it the argument's
 		}
 	}
 

@@ -142,6 +142,7 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 		{
 			IDbDataParameter np = command.AddParameter(p.Name, p.Value);
 			if (p.Type.HasValue) np.DbType = p.Type.Value;
+			else if (p.NullDbType is { } nullType) np.DbType = nullType; // a NULL carries no type, so give it the argument's
 		}
 	}
 }

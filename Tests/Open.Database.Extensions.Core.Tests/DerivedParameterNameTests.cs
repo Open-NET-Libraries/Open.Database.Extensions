@@ -658,6 +658,75 @@ public static class DerivedParameterNameTests
 		Assert.Equal(0, proc.Lookups); // nothing was derived, so the provider was never asked
 	}
 
+	// ---- a NULL carries no type, so the argument's type is sent with it ----
+
+	[Fact]
+	public static void NullArguments_AreSentWithTheDatabaseTypeOfTheArgument()
+	{
+		byte[]? blob = null;
+		int? count = null;
+		string? text = null;
+		DateTime? stamp = null;
+		Guid? key = null;
+		decimal? price = null;
+		bool? flag = null;
+		DayOfWeek? day = null; // an enum is sent as its underlying type
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		Proc(probe)
+			.AddParam(blob).AddParam(count).AddParam(text).AddParam(stamp).AddParam(key).AddParam(price).AddParam(flag).AddParam(day)
+			.ExecuteNonQuery();
+
+		Assert.Equal(
+			[DbType.Binary, DbType.Int32, DbType.String, DbType.DateTime, DbType.Guid, DbType.Decimal, DbType.Boolean, DbType.Int32],
+			probe.Parameters.Select(p => p.DbType));
+		Assert.All(probe.Parameters, p => Assert.Equal(DBNull.Value, p.Value));
+	}
+
+	[Fact]
+	public static void ValuesAndExplicitTypes_AreLeftAlone()
+	{
+		var filter = new Filter();
+		int? present = 5;
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		Proc(probe)
+			.AddParam(filter.CompanySerialNum)                 // a value: the provider types it
+			.AddParam(present)                                 // a nullable with a value
+			.AddParam("@by_name", (object?)null)               // by name: no static type to use
+			.AddParam("@typed", (object)null!, DbType.Int64)    // an explicit type always wins
+			.ExecuteNonQuery();
+
+		Assert.Equal(default, probe.Parameters[0].DbType);
+		Assert.Equal(default, probe.Parameters[1].DbType);
+		Assert.Equal(default, probe.Parameters[2].DbType);
+		Assert.Equal(DbType.Int64, probe.Parameters[3].DbType);
+	}
+
+	[Fact]
+	public static void AddParams_NullMembers_AreSentWithTheTypeOfTheMember()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		Proc(probe, "@end_date", "@region", "@company_serial_num").AddParams(new SearchArgs { Region = null }).ExecuteNonQuery();
+
+		Assert.Equal(DbType.DateTime, probe.Parameters.Single(p => p.ParameterName == "@end_date").DbType);   // DateTime? property, null
+		Assert.Equal(DbType.String, probe.Parameters.Single(p => p.ParameterName == "@region").DbType);        // string? field, null
+		Assert.Equal(default, probe.Parameters.Single(p => p.ParameterName == "@company_serial_num").DbType);  // int, a value
+	}
+
+	[Fact]
+	public static void ATypedNull_KeepsItsTypeThroughNameResolution()
+	{
+		DateTime? stamp = null;
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		Proc(probe, "@stamp").AddParam(stamp).ExecuteNonQuery();
+
+		Assert.Equal(["@stamp"], SentNames(probe));
+		Assert.Equal(DbType.DateTime, probe.Parameters[0].DbType);
+	}
+
 	// ---- AddParams(object): the members of an object ----
 
 	sealed class SearchArgs

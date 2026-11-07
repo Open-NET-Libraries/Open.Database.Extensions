@@ -10,11 +10,13 @@ static class ParamSource<T>
 {
 	internal static readonly string[] Names;
 	internal static readonly Func<T, object?>[] Getters;
+	internal static readonly Type[] Types;
 
 	static ParamSource()
 	{
 		var names = new List<string>();
 		var getters = new List<Func<T, object?>>();
+		var types = new List<Type>();
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 		ParameterExpression source = Expression.Parameter(typeof(T), "source");
 
@@ -28,10 +30,12 @@ static class ParamSource<T>
 
 			Expression value = Expression.Convert(Expression.MakeMemberAccess(source, member), typeof(object));
 			names.Add(member.Name);
+			types.Add(member is PropertyInfo p ? p.PropertyType : ((FieldInfo)member).FieldType);
 			getters.Add(Expression.Lambda<Func<T, object?>>(value, source).Compile());
 		}
 
 		Names = [.. names];
 		Getters = [.. getters];
+		Types = [.. types];
 	}
 }

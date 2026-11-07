@@ -47,20 +47,31 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// A parameter added without a name, AddParam(value): Expression is the text of the argument, whose real name is resolved when the command executes.
 		// Until then Name holds the last member of the expression as written, which is also the name used when the procedure's real names are not known.
-		private Param(string name, object? value, string expression, bool fromObject)
-			: this(name, value)
+		private Param(string name, object? value, string? expression, bool fromObject, Type? clrType, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+			: this(name, value, type, direction)
 		{
 			Expression = expression;
 			FromObject = fromObject;
+			ClrType = clrType;
 		}
 
-		internal static Param Derived(string name, string expression, object? value)
-			=> new(name, value, expression, fromObject: false);
+		internal static Param Derived(string name, string expression, object? value, Type clrType)
+			=> new(name, value, expression, fromObject: false, clrType);
 
 		// A member of an object given to AddParams(object): its expression is the member's name, and when the procedure's real names are known a member
 		// that none of them matches is simply not sent.
-		internal static Param OfObject(string member, object? value)
-			=> new(member, value, member, fromObject: true);
+		internal static Param OfObject(string member, object? value, Type clrType)
+			=> new(member, value, member, fromObject: true, clrType);
+
+		// The same parameter once its real name is known: no longer waiting for a name, but still knowing the CLR type of the argument.
+		internal Param Resolved(string name)
+			=> new(name, Value, expression: null, fromObject: false, ClrType, Type, Direction);
+
+		/// <summary>The CLR type of the argument a derived parameter came from, so a <see langword="NULL"/> can be sent with a type.</summary>
+		internal Type? ClrType { get; }
+
+		/// <summary>The database type to send a <see langword="NULL"/> derived parameter as when no type was given; <see langword="null"/> to let the provider infer.</summary>
+		internal DbType? NullDbType => Value is DBNull && !Type.HasValue && ClrType is { } clr ? ClrDbTypes.From(clr) : null;
 
 		/// <summary>The argument expression a name is still to be resolved from, or <see langword="null"/> once the name is final.</summary>
 		internal string? Expression { get; }
