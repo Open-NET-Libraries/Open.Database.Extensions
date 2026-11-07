@@ -11,14 +11,14 @@
 	</ItemGroup>
 
 	<!-- Public API surface tracking (clean-upgrade-path guardrail). Enabled on the modern
-	     target only; the public API legitimately differs on the netstandard/net472 shims. -->
+	     target only; the public API legitimately differs on the netstandard/net472 shims.
+	     The package's own targets add PublicAPI.Shipped.txt and PublicAPI.Unshipped.txt as AdditionalFiles
+	     when they sit next to the project, so they are not listed here (listing them added each file twice). -->
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
 		<PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<AdditionalFiles Include="PublicAPI.Shipped.txt" />
-		<AdditionalFiles Include="PublicAPI.Unshipped.txt" />
 	</ItemGroup>
 
 	<!-- The sibling assemblies use Core's internals: the internal OverloadResolutionPriorityAttribute polyfill on the netstandard shims, and on every

@@ -298,7 +298,7 @@ public static partial class CommandExtensions
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
 	public static async ValueTask ExecuteReaderAsync(this IDbCommand command,
 		Func<IDataReader, ValueTask> handler,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -324,7 +324,7 @@ public static partial class CommandExtensions
 	/// <param name="handler">The handler function for the <see cref="DbDataReader"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
 	public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 		Func<DbDataReader, ValueTask> handler,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -376,7 +376,7 @@ public static partial class CommandExtensions
 	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, T}, CommandBehavior, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
 		Func<IDataReader, ValueTask<T>> transform,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -436,7 +436,7 @@ public static partial class CommandExtensions
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
-	/// <inheritdoc cref="ExecuteReader{T}(IDbCommand, Func{IDataReader, T}, CommandBehavior)"/>
+	/// <inheritdoc cref="ExecuteReader{T}(IDbCommand, Func{IDataReader, T}, CommandBehavior)" path="/*[not(self::param)]"/>
 	public static TResult IterateReader<TEntity, TResult>(
 		this IDbCommand command,
 		CommandBehavior behavior,
@@ -757,7 +757,7 @@ public static partial class CommandExtensions
 		: command.FirstOrdinalResults(behavior | CommandBehavior.SingleResult).Cast<T0>();
 
 	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
-	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
+	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)" path="/*[not(self::typeparam)]"/>
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
