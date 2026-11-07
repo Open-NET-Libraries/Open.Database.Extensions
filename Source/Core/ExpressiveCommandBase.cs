@@ -688,9 +688,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
-	/// <returns>The value from the return parameter.</returns>
+	/// <typeparam name="T">The type expected.</typeparam>
+	/// <returns>The value from the return parameter; <see langword="default"/> when it is NULL.</returns>
+	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
 	public T ExecuteReturn<T>()
-		=> (T)ExecuteReturn()!;
+		=> CastScalar<T>(ExecuteReturn());
 
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
@@ -716,9 +718,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
-	/// <returns>The value from the return parameter.</returns>
+	/// <typeparam name="T">The type expected.</typeparam>
+	/// <returns>The value from the return parameter; <see langword="default"/> when it is NULL.</returns>
+	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
 	public async ValueTask<T> ExecuteReturnAsync<T>()
-		=> (T)(await ExecuteReturnAsync().ConfigureAwait(false))!;
+		=> CastScalar<T>(await ExecuteReturnAsync().ConfigureAwait(false));
 
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command.

@@ -39,6 +39,7 @@ New since `11.0.0-preview01`:
 
 ## Fixes
 
+- **`ExecuteReturn<T>()` and `ExecuteReturnAsync<T>()` return `default(T)` for a `NULL` return value,** as `ExecuteScalar<T>()` does, instead of throwing `NullReferenceException` for a value type.
 - **Channels and Dataflow.** With `complete: false`, the command no longer runs twice. The mapped `ToChannel<T>`, `ToChannelAsync<T>` and `ToTargetBlock<T>` overloads complete your target only after every row has been delivered and the reader has been released (before, up to about 1,000 buffered rows could be lost with a bounded target). They no longer lose the last row when the reader fails mid-stream, and they map correctly when the reader has extra unmapped columns.
 - **Connections and commands.** `OpenAsync(IDbConnection)` no longer opens a `DbConnection` twice. `EnsureOpenAsync` closes a connection that finished opening just as cancellation arrived. `FirstOrdinalResults<T>(IDbCommand, behavior)` honors `behavior`.
 
