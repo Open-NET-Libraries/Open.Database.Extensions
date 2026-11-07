@@ -305,6 +305,31 @@ public static class DerivedParameterNameTests
 	}
 
 	[Fact]
+	public static void RealNames_ARememberedListThatNoLongerFits_IsReadAgainOnceBeforeFailing()
+	{
+		var filter = new Filter();
+		var probe = new ConnectionProbe(ConnectionState.Open);
+		const string Procedure = "dbo.changed_procedure";
+
+		new ProcCommand(probe.Connection, CommandType.StoredProcedure, Procedure, "@region")
+			.AddParam(filter.Region)
+			.ExecuteNonQuery(); // remembers [@region]
+
+		// The procedure now takes @company_serial_num instead: the remembered list does not fit, is read again once, and the call succeeds.
+		var after = new ProcCommand(probe.Connection, CommandType.StoredProcedure, Procedure, "@company_serial_num");
+		after.AddParam(filter.CompanySerialNum).ExecuteNonQuery();
+		Assert.Equal(1, after.Lookups);
+		Assert.Equal(["@region", "@company_serial_num"], SentNames(probe));
+
+		// A name that still matches nothing after the re-read throws, and says what the procedure declares now.
+		var wrong = new ProcCommand(probe.Connection, CommandType.StoredProcedure, Procedure, "@company_serial_num");
+		wrong.AddParam(filter.Region);
+		var ex = Assert.Throws<InvalidOperationException>(() => wrong.ExecuteNonQuery());
+		Assert.Equal(1, wrong.Lookups);
+		Assert.Contains("@company_serial_num", ex.Message);
+	}
+
+	[Fact]
 	public static void RealNames_ProviderThatKnowsNothing_FallsBackToTheNameAsWritten()
 	{
 		var filter = new Filter();
