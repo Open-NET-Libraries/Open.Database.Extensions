@@ -46,4 +46,6 @@ Several helpers exist to keep the time a connection is open short:
 
 ## Reader and command helpers
 
-The foundation also includes helpers you can use without the expressive syntax: `ForEach` and `ForEachAsync` over a reader, `Select` and `SelectAsync`, `AsEnumerable` and `AsAsyncEnumerable` (rows as `object[]`), `ToList`, `ToArray`, `ToDataTable` and friends on commands. See the [API reference](xref:Open.Database.Extensions) for the full list.
+The foundation also includes helpers you can use without the expressive syntax: `ForEach` and `ForEachAsync` over a reader, `Select` and `SelectAsync`, `AsEnumerable` and `AsAsyncEnumerable` (rows as `object[]`), `ToList`, `ToArray`, `ToDataTable` and friends on commands. Buffered reads copy the rows out of the reader first, so the connection can be released early: `Retrieve()` copies every row into a queue of `object[]`, and `DequeueAs<T>()` maps that queue to `T` as you enumerate it. `Results<T>()` buffers and maps in one call, and `FirstOrdinalResults<T>()` reads the first column of every row as `T`. For typed rows `Map<T>()` is the better route (see [Performance](performance.md#where-it-is-not-faster)).
+
+See the [API reference](xref:Open.Database.Extensions) for the full list.

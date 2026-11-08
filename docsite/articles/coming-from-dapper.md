@@ -16,7 +16,7 @@ Each comparison lists the same four steps in the same order, row against row: (1
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-After that, no call site writes any connection code. The counts below are the lines of the samples shown with them, without this one line of one-time setup and without the `// nothing` comments.
+After that, no call site writes any connection code. The counts below are the lines of the samples shown with them, without this one line of one-time setup and without the `// nothing` comments. The samples are compact (`Command(sql)` on the declaration line; `author` and `id` are declared above them as `int author = 42;` and `int id = 3;`), so the extensions' counts are one or two lines lower than the one-call-per-line counts in the README and Getting started. Compare the two sides on this page, not across pages.
 
 ### A list of rows
 
@@ -44,7 +44,7 @@ What is different:
 - **The connection.** With Dapper you create it and dispose it, and Dapper opens it if it is closed and closes it when the call finishes. With a factory, the factory creates it for each execution, the command opens it only if it is closed and disposes it when the terminal returns, so it is open only for the duration of the call.
 - **Rows.** Dapper's `Query<T>` buffers by default (`buffered = true`) and returns an `IEnumerable<T>`, turned into a list in the sample by Dapper's `AsList()`. `ToList()` reads every row into a list during the call. `Read(handler)` offers a lazy sequence that is only valid inside the handler.
 - **Mapping.** Both match columns to members by name, ignoring case. Dapper can also bind constructor parameters and fields and, if you turn on `MatchNamesWithUnderscores`, match `first_name` to `FirstName`. The extensions set public settable properties (`init` and `required` ones too) and bind the one public constructor of a record or class (see [Positional records](#positional-records)), but never set fields. They always ignore underscores when no exact or ignore-case match exists (`first_name` feeds `FirstName`; there is nothing to turn on). A column that differs by more than case and underscores needs a `RowMap<T>` (see [Renamed columns](#renamed-columns)).
-- **NULL.** A `NULL` in a nullable property (`int?`, `string?`), or in a reference-type property in code with nullable annotations off, gives `null`. In a property the type declares non-nullable (`int`, `bool`, `DateTime`, an enum, or a `string` with nullable annotations on) it leaves the initializer, else the default, and nothing throws: declare the property `int?` when you need to tell NULL from 0. See [Types and NULL](mapping.md#types-and-null).
+- **NULL.** A `NULL` in a nullable property (`int?`, `string?`), or in a reference-type property in code with nullable annotations off, gives `null`. In a property the type declares non-nullable (`int`, `bool`, `DateTime`, an enum, or a `string` with `<Nullable>enable</Nullable>`) it leaves the initializer, else the default, and nothing throws: declare the property `int?` when you need to tell NULL from 0. See [Types and NULL](mapping.md#types-and-null).
 - **Null parameters.** Both convert a null parameter value to `DBNull`.
 - **Mapping errors.** Dapper wraps them in a `DataException` ("Error parsing column ..."). The extensions throw a `ValueMappingException` (also a `DataException`) that names the property and the column.
 
@@ -252,7 +252,7 @@ What is different:
 
 ## Async and cancellation
 
-Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call.
+Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call. Await a `ValueTask` once, as usual; to pass it to `Task.WhenAll`, call `.AsTask()` first.
 
 ## Where Dapper does more
 
@@ -262,9 +262,23 @@ Dapper has features this library does not offer:
 - **Multi-mapping and `QueryMultiple`.** Dapper maps several types from one row and reads several result sets from one call.
 - **Type handlers and custom type maps.** `SqlMapper.AddTypeHandler` and `SqlMapper.SetTypeMap`.
 - **Dynamic results.** `Query(sql)` without a type returns dynamic rows.
-- **Parameter bags and output parameters.** An anonymous object, `new { id = 1 }`, becomes `AddParams(new { id = 1 })` (see [Name a parameter from its argument](expressive-commands.md#name-a-parameter-from-its-argument)). `DynamicParameters` has no equivalent: add each value with `AddParam`. Output parameters can be sent, but their values cannot yet be read back, so a procedure that returns values through them stays on Dapper for now.
+- **Batch execution.** `Execute(sql, IEnumerable<parameters>)` runs one command once for every item. The extensions have no equivalent: loop over the items and run the command for each, inside one `ExecuteTransaction` (see [A transaction](#a-transaction)).
+- **Parameter bags and output parameters.** An anonymous object, `new { id = 1 }`, becomes `AddParams(new { id = 1 })` (see [Name a parameter from its argument](expressive-commands.md#name-a-parameter-from-its-argument)). `DynamicParameters` has no equivalent: add each value with `AddParam`. Output parameters can be sent, but their values cannot yet be read back, so a procedure that returns values through them stays on Dapper or plain ADO.NET for now. The return value is readable: `ExecuteReturn<T>()` (see [Return values and output parameters](expressive-commands.md#return-values-and-output-parameters)).
 
 With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for those jobs. For dynamic rows, the reader's `AsEnumerable()` (see [Reader and command helpers](foundation.md#reader-and-command-helpers)) gives each row as an `object[]`.
+
+## Which method becomes which terminal
+
+| Dapper | Open.Database.Extensions, after `Command(sql)` and `AddParam(...)` |
+|---|---|
+| `Query<T>` | `Map<T>().ToList()` (or `ToArray()`) |
+| `QueryFirstOrDefault<T>`, `QuerySingleOrDefault<T>` | `Map<T>().FirstOrDefault()`, `Map<T>().SingleOrDefault()` |
+| `QueryFirst<T>`, `QuerySingle<T>` | No throwing form: call `FirstOrDefault()` or `SingleOrDefault()` and check for `null` |
+| `Query<int>` over one column | `FirstOrdinalResults<T>()`, which casts the first column of every row to `T`, so `T` is the provider's own type (`long` for an integer on SQLite). `Map<int>()` throws: a single value is not a row model |
+| `ExecuteScalar<T>` | `ExecuteScalar<T>()`; `T` must be the type the provider returns |
+| `Execute` | `ExecuteNonQuery()` |
+| `QueryAsync<T>` | `Map<T>().ToListAsync()`, which returns a `ValueTask` |
+| A transaction passed to each call | Start from the transaction: `transaction.Command(sql)` |
 
 ## Migrating a call site
 
@@ -272,3 +286,5 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 2. Replace `using var connection = ...` and `connection.Query<T>(sql, new { ... })` with `connectionFactory.Command(sql).AddParam(...).Map<T>().ToList()` (or `ToArray()`); an anonymous parameter object becomes `AddParams(new { ... })`.
 3. A positional record or a class with one public constructor needs nothing. If a model has two or more public constructors and none without parameters, make all but one non-public, or write a `Map(selector)`.
 4. If a column name differs from its property name by more than case and underscores, declare a `RowMap<T>` (see [Columns named differently](mapping.md#columns-named-differently)). Names that differ only by case or underscores need nothing.
+5. Replace the transaction you passed to each call with `transaction.Command(sql)` inside `ExecuteTransaction` (see [A transaction](#a-transaction)).
+6. Check the table above for the rest: a scalar `T` is the provider's own type (`long` for `count(*)` on SQLite, `int` on SQL Server), and a procedure that returns values through output parameters stays on Dapper for now.

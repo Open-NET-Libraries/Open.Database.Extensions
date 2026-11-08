@@ -23,15 +23,21 @@ Core does not reference any database provider. Bring your own: the examples in t
 dotnet add package Microsoft.Data.Sqlite
 ```
 
-The `connectionString` in the examples is `Db.ConnectionString`, defined in [`Db.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/Db.cs): a shared in-memory SQLite database.
+`connectionString` in the examples is your own, such as `"Data Source=blog.db"`. The runnable samples use a shared in-memory SQLite database that [`Db.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/Db.cs) creates.
 
 ## Your first query
 
-A model is a class with public settable properties, as below, or a positional record or a class with one public constructor, which is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)). Columns are matched to property and constructor parameter names exactly, else ignoring case, else ignoring case and underscores (`first_name` feeds `FirstName`); see [Mapping rows to objects](mapping.md).
+A model is a class with public settable properties, as below. A positional record or a class with one public constructor works too: it is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)).
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 
-There are two ways to start a command. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToList()`). `connectionFactory` is created once per application, as shown after the table. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
+Columns are matched to property and constructor parameter names exactly, else ignoring case, else ignoring case and underscores (`first_name` feeds `FirstName`); see [Mapping rows to objects](mapping.md).
+
+A command needs a connection. A connection factory creates them, and you create it once per application:
+
+[!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
+
+There are two ways to start a command: from the factory, or from a connection you own. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToList()`). In the samples `author` is a variable (`int author = 42;`) and `AddParam(author)` names the parameter `author` after it; `AddParam("author", 42)` names it yourself. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
 
 <div class="side-by-side">
 <div>
@@ -49,10 +55,6 @@ There are two ways to start a command. Both end the same way, with `AddParam` fo
 
 </div>
 </div>
-
-The factory is created once per application:
-
-[!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
 What is different:
 
@@ -80,7 +82,7 @@ The same query with plain ADO.NET and with the extensions, row against row: the 
 </div>
 </div>
 
-Lines you write per call in the two samples above, not counting blank lines or the `// nothing` comment: plain ADO.NET 20, Open.Database.Extensions 4 (plus one line of one-time setup per application).
+Lines you write per call in the two samples above, not counting blank lines, `// nothing` comments or the `int author = 42;` that declares the value: plain ADO.NET 20, Open.Database.Extensions 5, plus one line of one-time setup per application. These are the counts of the list job in the table of the README.
 
 What is different:
 
