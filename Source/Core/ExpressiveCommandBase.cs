@@ -290,7 +290,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <para>The argument must be a variable or a chain of member accesses (properties and fields alike): <c>startDate</c>, <c>filter.CompanySerialNum</c>, <c>order.Customer.Id</c>.
 	/// Anything else (a call, an index, an operator, a literal) throws <see cref="ArgumentException"/>: use <see cref="AddParam(string, object?, ParameterDirection)"/> and name the parameter.</para>
 	/// <para>The name is settled when the command executes. For a stored procedure the provider is asked for the procedure's real parameter names, and the argument is matched to one of them:
-	/// exactly, else ignoring case, else ignoring case and underscores, so <c>CompanySerialNum</c> finds <c>@company_serial_num</c>. A chain tries its more specific endings first:
+	/// exactly, else ignoring case, else ignoring case and underscores, so <c>CompanySerialNum</c> finds <c>@company_serial_num</c>; when none of those match, after removing one common parameter prefix from the real name
+	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c>, <c>v_</c>, or a lone <c>p</c> before a capital letter), so <c>Author</c> finds <c>@p_author</c> and <c>@pAuthor</c>.
+	/// A field prefix on the last member (<c>m_</c>, <c>s_</c> or <c>_</c>) is also tried without. A chain tries its more specific endings first:
 	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing, matches two parameters at one tier, or is claimed by two arguments throws <see cref="InvalidOperationException"/> listing what the procedure expects.
 	/// The names are remembered for five minutes per connection factory, pool or connection, and read again once if the remembered names do not fit.
 	/// Where the real names are not available (a text command, or a provider that does not supply them) the last member is used as written.</para>
@@ -321,7 +323,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Adds a parameter for each public property and field of <paramref name="source"/>, named for the member: <c>AddParams(filter)</c> adds <c>CompanySerialNum</c>, <c>Region</c> and so on.
 	/// </summary>
 	/// <remarks>
-	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>: exactly, else ignoring case, else ignoring case and underscores.
+	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>: exactly, else ignoring case, else ignoring case and underscores, else without one common parameter prefix such as <c>p_</c>.
 	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures; parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
 	/// A parameter you add by name always wins over a member that resolves to the same name. Where the real names are not known (a text command, or a provider that does not supply them) every member is sent as written.</para>
 	/// <para>Members are read when this method is called, like any other value. Static members and indexers are ignored; the members are those of the static type <typeparamref name="T"/>, and nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
