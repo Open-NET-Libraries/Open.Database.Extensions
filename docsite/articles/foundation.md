@@ -10,7 +10,7 @@ The expressive commands and the row mapping are built on this layer.
 
 A connection factory creates connections without the caller knowing a connection string:
 
-- `IDbConnectionFactory` and `IDbConnectionFactory<TConnection>` are the abstractions, which fit dependency injection.
+- `IDbConnectionFactory` and `IDbConnectionFactory<TConnection>` are the abstractions, which fit dependency injection. The `Async` terminals need a `DbConnection`, so a service that awaits should depend on `IDbConnectionFactory<DbConnection>` (or a factory of a specific `DbConnection` type); commands from the non-generic `IDbConnectionFactory` have no `Async` twins.
 - `DbConnectionFactory<TConnection>` wraps any `Func<TConnection>`.
 - `SqlConnectionFactory` (in the `MSSqlClient` package) wraps a connection string for SQL Server.
 

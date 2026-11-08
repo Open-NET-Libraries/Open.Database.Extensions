@@ -17,7 +17,13 @@ Most applications need one package. The others add integrations.
 dotnet add package Open.Database.Extensions.Core --prerelease
 ```
 
-Core does not reference any database provider. Bring your own: the examples in this guide use `Microsoft.Data.Sqlite` so that you can run them without a server.
+Core does not reference any database provider. Bring your own: the examples in this guide use `Microsoft.Data.Sqlite` so that you can run them without a server:
+
+```sh
+dotnet add package Microsoft.Data.Sqlite
+```
+
+The `connectionString` in the examples is `Db.ConnectionString`, defined in [`Db.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/Db.cs): a shared in-memory SQLite database.
 
 ## Your first query
 
@@ -25,7 +31,7 @@ A model needs a public parameterless constructor and public settable properties.
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 
-There are two ways to start a command. Both end the same way, with `AddParam` for parameters and a terminal that runs the query. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
+There are two ways to start a command. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToList()`). Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
 
 <div class="side-by-side">
 <div>
@@ -74,7 +80,7 @@ The same query with plain ADO.NET and with the extensions, row against row: the 
 </div>
 </div>
 
-Lines you write per call: plain ADO.NET 20, Open.Database.Extensions 4 (plus one line of one-time setup per application).
+Lines you write per call in the two samples above, not counting blank lines or the `// nothing` comment: plain ADO.NET 20, Open.Database.Extensions 4 (plus one line of one-time setup per application).
 
 What is different:
 

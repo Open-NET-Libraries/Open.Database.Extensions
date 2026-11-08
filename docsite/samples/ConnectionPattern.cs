@@ -221,7 +221,7 @@ public static class ConnectionPattern
 	public static Person[] RenamedColumns(SqliteConnection connection)
 	{
 		#region ode_renamed_columns
-		// PersonMaps.PersonMap is declared once (shown above).
+		// PersonMaps.PersonMap is the RowMap<Person> declared once in the map_declared sample (Mapping.cs).
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
 			.Map<Person>(PersonMaps.PersonMap)

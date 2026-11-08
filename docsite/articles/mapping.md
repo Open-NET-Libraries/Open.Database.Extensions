@@ -68,7 +68,7 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
-A one-row read of a 12-property model takes about 0.4 ms and allocates about 29 KB in the library's in-memory benchmark, against about 0.1 µs and a few hundred bytes through a declared map. The cost does not shrink with the result size. Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
+A one-row read of a 12-property model takes about 0.43 to 0.45 ms and allocates about 29.5 KB in the library's in-memory benchmark (the [`RowMap<T>` scenario](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently)), against about 0.1 µs and a few hundred bytes through a declared map. The cost does not shrink with the result size. Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
 
 `Map<T>` also takes the pairs themselves, with no `RowMap<T>` written; it is the same one-off and costs the same:
 
@@ -82,7 +82,7 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 
 - integers convert to other integer types and to enums, range-checked (an overflow throws `ValueMappingException`);
 - integers and floating-point values widen to `float`, `double` and `decimal`;
-- anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value except a `byte[]` to `string` (a `byte[]` to `string` throws), and otherwise `Convert.ChangeType`.
+- anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string` except a `byte[]`, which throws, and otherwise `Convert.ChangeType`.
 
 ## NULL in a non-nullable value-type column
 
@@ -98,7 +98,7 @@ A value that cannot be mapped (an unconvertible value, an overflow) throws `Valu
 
 ## Terminals
 
-`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` and `Read`, each with an `Async` twin. Prefer `ToArray` for results you only read: it allocates one exactly sized array. An empty result is the shared empty array.
+`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` and `Read`, each with an `Async` twin. There is no throwing `First` or `Single`: the `OrDefault` forms return `null` for no rows. Prefer `ToArray` for results you only read: it allocates one exactly sized array. An empty result is the shared empty array.
 
 [!code-csharp[](../samples/Mapping.cs#map_first_single)]
 

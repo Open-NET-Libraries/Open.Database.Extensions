@@ -40,7 +40,7 @@ while (reader.Read())
 }
 ```
 
-And with Open.Database.Extensions:
+And with Open.Database.Extensions (`connectionFactory`, created once per application, is explained just below):
 
 ```cs
 Post[] posts = await connectionFactory
@@ -52,7 +52,7 @@ Post[] posts = await connectionFactory
 
 `connectionFactory` is created once per application, for example `new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString))`; see [Registering the factory once](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html#registering-the-factory-once).
 
-The same four jobs, counted from the compiled snippets in [`docsite/samples/BeforeAfter.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/BeforeAfter.cs) (lines of code, not counting blank lines):
+The same four jobs, counted from the `plain_*` and `ode_*` regions of [`docsite/samples/BeforeAfter.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/BeforeAfter.cs) (lines of code, not counting blank lines):
 
 | Job | Plain ADO.NET | Open.Database.Extensions |
 |---|---:|---:|
@@ -145,11 +145,11 @@ More in [Columns named differently](https://open-net-libraries.github.io/Open.Da
 bool committed = connectionFactory.Using(connection =>
     connection.ExecuteTransactionConditional(transaction =>
     {
-        transaction
+        int inserted = transaction
             .Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
             .ExecuteNonQuery();
 
-        return shouldCommit;
+        return inserted == 1;
     }));
 ```
 
