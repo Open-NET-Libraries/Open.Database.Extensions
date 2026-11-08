@@ -52,7 +52,7 @@ public static class ConstructorBindingTests
 
 		public string Title
 		{
-			get => field;
+			get;
 			init
 			{
 				TitleSets++;
@@ -100,7 +100,7 @@ public static class ConstructorBindingTests
 		Assert.Equal(all.ToHashSet(), command.Map<Post>().ToHashSet());
 		Assert.Equal(all[0], command.Map<Post>().FirstOrDefault());
 		Assert.Equal<Post>(all[1..], command.Map<Post>().Skip(1).ToList());
-		Assert.Equal<Post>(all[..2], command.Map<Post>().Take(2).ToArray());
+		Assert.Equal<Post>(all.Take(2), command.Map<Post>().Take(2).ToArray());
 		Assert.Equal<Post>(all[1..2], command.Map<Post>().Skip(1).Take(1).ToList());
 
 		Assert.Equal<Post>(all, await command.Map<Post>().ToListAsync(ct));
@@ -191,7 +191,7 @@ public static class ConstructorBindingTests
 	];
 
 	static void AssertDeclaredDefaults(WithDefaults item, int id)
-		=> Assert.Equal((id, 3, 9.99m, Tone.Green, default(DateTime), 4, "none", null), (item.Id, item.Views, item.Price, item.Tone, item.At, item.Count, item.Note, item.Bare));
+		=> Assert.Equal((id, 3, 9.99m, Tone.Green, default, 4, "none", null), (item.Id, item.Views, item.Price, item.Tone, item.At, item.Count, item.Note, item.Bare));
 
 	[Theory]
 	[MemberData(nameof(Routes))]
@@ -340,7 +340,7 @@ public static class ConstructorBindingTests
 	{
 		var none = new FakeExecuteReader(() => TypedReader.Create(PostColumns));
 		Assert.Empty(none.Map<RecordStruct>().ToList());
-		Assert.Equal(default(RecordStruct), none.Map<RecordStruct>().FirstOrDefault());
+		Assert.Equal(default, none.Map<RecordStruct>().FirstOrDefault());
 	}
 
 	// A struct built through its constructor that also has properties the constructor does not cover: they are set on the struct after it is built.
@@ -648,6 +648,7 @@ public static class ConstructorBindingTests
 		Assert.IsType<NotSupportedException>(ex.InnerException);
 	}
 
+	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 	sealed class ProviderFailure : DbException
 	{
 		public ProviderFailure() : base("the provider failed") { }
@@ -656,7 +657,7 @@ public static class ConstructorBindingTests
 	// The constructor is the last thing to run after every column was read, so a failure in it must not be blamed on the last column.
 	public sealed class ThrowingConstructor
 	{
-		public static Exception? Failure;
+		public static Exception? Failure { get; set; }
 
 		public ThrowingConstructor(int id, string? name)
 		{

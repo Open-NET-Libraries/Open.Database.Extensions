@@ -51,11 +51,12 @@ public static class UnmappableTypeTests
 		public int Id { get; set; } = id + 1000; public string? Title { get; set; } = title + "!";
 	}
 
+	// The parameter names are part of what the test asserts (the error lists them), so each one is kept and read once to count as used.
 	public sealed class ThreeConstructorShape
 	{
-		public ThreeConstructorShape(int a) { }
-		public ThreeConstructorShape(string b, int a, int c) { }
-		public ThreeConstructorShape(int a, string b) { }
+		public ThreeConstructorShape(int a) => _ = a;
+		public ThreeConstructorShape(string b, int a, int c) { _ = b; _ = a; _ = c; }
+		public ThreeConstructorShape(int a, string b) { _ = a; _ = b; }
 	}
 
 	public struct TwoConstructorStructShape
@@ -75,7 +76,7 @@ public static class UnmappableTypeTests
 	{
 		public OneOfSeveralShape(int id) { Id = id; Built = "public"; }
 		internal OneOfSeveralShape(int id, string other) { Id = id; Built = other; }
-		protected OneOfSeveralShape(string text) { Built = text; }
+		protected OneOfSeveralShape(string text) => Built = text;
 		public int Id { get; }
 		public string? Built { get; }
 	}
@@ -83,8 +84,8 @@ public static class UnmappableTypeTests
 	// A struct with its own public parameterless constructor is built as ever, whatever else it declares: that constructor is not called, as it never was.
 	public struct StructWithPublicParameterlessConstructor
 	{
-		public StructWithPublicParameterlessConstructor() { Id = -1; }
-		public StructWithPublicParameterlessConstructor(int id) { Id = id + 1000; }
+		public StructWithPublicParameterlessConstructor() => Id = -1;
+		public StructWithPublicParameterlessConstructor(int id) => Id = id + 1000;
 		public int Id { get; set; }
 	}
 

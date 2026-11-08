@@ -34,7 +34,7 @@ public static class SqlServer
 
 		#region sql_server_derived_names
 		// The procedure declares @author and @title_contains. Each argument is matched to a real parameter, so search.TitleContains finds @title_contains.
-		Post[] posts = await connectionFactory
+		Post[] byArguments = await connectionFactory
 			.StoredProcedure("[dbo].[SearchPosts]")
 			.AddParam(search.Author)
 			.AddParam(search.TitleContains)
@@ -42,13 +42,14 @@ public static class SqlServer
 			.ToArrayAsync();
 
 		// Or give it the whole object: the members the procedure declares are sent, the rest are ignored.
-		posts = await connectionFactory
+		Post[] posts = await connectionFactory
 			.StoredProcedure("[dbo].[SearchPosts]")
 			.AddParams(search)
 			.Map<Post>()
 			.ToArrayAsync();
 		#endregion
 
+		_ = byArguments;
 		return posts;
 	}
 }

@@ -216,7 +216,7 @@ static class ParameterNames
 		return null;
 	}
 
-	static string Bare(string name) => name.Length > 0 && name[0] == '@' ? name.Substring(1) : name;
+	static string Bare(string name) => name.Length > 0 && name[0] == '@' ? name[1..] : name;
 
 	static bool Same(string a, string b, int tier) => tier switch
 	{

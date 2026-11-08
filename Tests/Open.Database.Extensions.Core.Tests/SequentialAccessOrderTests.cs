@@ -66,10 +66,10 @@ public static class SequentialAccessOrderTests
 		("unmapped_2", typeof(string)), ("Gamma", typeof(decimal)), ("Beta", typeof(string)), ("Alpha", typeof(int)),
 	];
 
-	static object?[] Row(int n, bool withNulls = false) =>
-	[
-		n, "u1", Stamp, "Green", withNulls ? null : n + 1, "u2", n * 1.5m, withNulls ? null : "beta" + n, withNulls ? null : n + 2,
-	];
+	static object?[] Row(int n, bool withNulls = false)
+		=> [
+			n, "u1", Stamp, "Green", withNulls ? null : n + 1, "u2", n * 1.5m, withNulls ? null : "beta" + n, withNulls ? null : n + 2,
+		];
 
 	static readonly int[] MappedOrdinals = [0, 2, 3, 4, 6, 7, 8];
 

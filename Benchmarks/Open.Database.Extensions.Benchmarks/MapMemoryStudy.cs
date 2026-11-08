@@ -11,7 +11,7 @@ public static class MapMemoryStudy
 		var connection = new BenchConnection(BenchTable.Posts(1).WithNames(RenamedColumns.Names));
 
 		// Warm everything that is built once per process (reflection tables, JIT) so only the mappings are counted.
-		RowMap<RenamedPost> warm = new RowMap<RenamedPost>(RenamedColumns.Pairs);
+		RowMap<RenamedPost> warm = new(RenamedColumns.Pairs);
 		_ = connection.Command("select 1").Map<RenamedPost>(warm).ToList();
 
 		long before = GC.GetAllocatedBytesForCurrentThread();

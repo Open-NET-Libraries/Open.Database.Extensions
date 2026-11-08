@@ -89,8 +89,8 @@ public static class ParameterNameExplicitTests
 	[Fact]
 	public static void ExplicitName_WithAnArgumentThatCouldBeANameItself_IsNeverDerived()
 	{
-		string region = "west";
-		int limit = 10;
+		const string region = "west";
+		const int limit = 10;
 		object? thing = null;
 		var search = new { Author = 5 };
 		var run = new SyncNameRun(Tempting);

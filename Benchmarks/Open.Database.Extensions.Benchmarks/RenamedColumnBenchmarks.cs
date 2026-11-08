@@ -8,6 +8,8 @@ namespace Open.Database.Extensions.Benchmarks;
 /// <summary>The 12-property <see cref="Post"/> model, read from a query whose every column is named differently from its property.</summary>
 public sealed class RenamedPost : Post;
 
+// The property names are the SQL column names on purpose (an exact-name match is what this scenario measures), so they stay snake_case.
+#pragma warning disable IDE1006
 /// <summary>The same columns as <see cref="RenamedPost"/> reads, but a model whose property names are the column names, so <c>Map&lt;T&gt;()</c> matches by name.</summary>
 public sealed class SnakePost
 {
@@ -24,6 +26,7 @@ public sealed class SnakePost
 	public long post_big { get; set; }
 	public string? post_tag { get; set; }
 }
+#pragma warning restore IDE1006
 
 /// <summary>The one mapping of <see cref="RenamedPost"/>, defined once for every scenario that reads it.</summary>
 public static class RenamedColumns

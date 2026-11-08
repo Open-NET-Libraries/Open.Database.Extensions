@@ -48,7 +48,7 @@ public static class PerCallCancellationTests
 	}
 
 	// The same calls on each type: the instance terminals of the three structs, and the extension methods on IMappedQuery<T>.
-	static Task Call(MappedQuery<TokenItem> q, QueryTerminal terminal, CancellationToken token, TokenRig rig) => terminal switch
+	static Task Call(MappedQuery<TokenItem> q, QueryTerminal terminal, TokenRig rig, CancellationToken token) => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -64,7 +64,7 @@ public static class PerCallCancellationTests
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Call(MappedQueryWithSkip<TokenItem> q, QueryTerminal terminal, CancellationToken token, TokenRig rig) => terminal switch
+	static Task Call(MappedQueryWithSkip<TokenItem> q, QueryTerminal terminal, TokenRig rig, CancellationToken token) => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -80,7 +80,7 @@ public static class PerCallCancellationTests
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Call(MappedQueryWithTake<TokenItem> q, QueryTerminal terminal, CancellationToken token, TokenRig rig) => terminal switch
+	static Task Call(MappedQueryWithTake<TokenItem> q, QueryTerminal terminal, TokenRig rig, CancellationToken token) => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -96,7 +96,9 @@ public static class PerCallCancellationTests
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Call(IMappedQuery<TokenItem> q, QueryTerminal terminal, CancellationToken token, TokenRig rig) => terminal switch
+	// The generic constraint makes the calls below the extension methods on IMappedQuery<T>, never the instance methods of the struct.
+	static Task CallInterface<TQuery>(TQuery q, QueryTerminal terminal, TokenRig rig, CancellationToken token)
+		where TQuery : IMappedQuery<TokenItem> => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -112,12 +114,12 @@ public static class PerCallCancellationTests
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Run(ExpressiveDbCommand command, QueryShape shape, QueryTerminal terminal, CancellationToken token, TokenRig rig) => shape switch
+	static Task Run(ExpressiveDbCommand command, QueryShape shape, QueryTerminal terminal, TokenRig rig, CancellationToken token) => shape switch
 	{
-		QueryShape.Plain => Call(command.Map<TokenItem>(), terminal, token, rig),
-		QueryShape.Skip => Call(command.Map<TokenItem>().Skip(0), terminal, token, rig),
-		QueryShape.Take => Call(command.Map<TokenItem>().Take(100), terminal, token, rig),
-		QueryShape.Interface => Call((IMappedQuery<TokenItem>)command.Map<TokenItem>(), terminal, token, rig),
+		QueryShape.Plain => Call(command.Map<TokenItem>(), terminal, rig, token),
+		QueryShape.Skip => Call(command.Map<TokenItem>().Skip(0), terminal, rig, token),
+		QueryShape.Take => Call(command.Map<TokenItem>().Take(100), terminal, rig, token),
+		QueryShape.Interface => CallInterface(command.Map<TokenItem>(), terminal, rig, token),
 		_ => throw new ArgumentOutOfRangeException(nameof(shape)),
 	};
 
@@ -126,7 +128,7 @@ public static class PerCallCancellationTests
 	// A closed connection, a stored procedure with a derived parameter, and async reads: one call goes through every step that takes a token.
 	static ExpressiveDbCommand Procedure(TokenRig rig)
 	{
-		int id = 5;
+		const int id = 5;
 		return new TokenProcCommand(rig, new TokenConnection(rig), "dbo.proc" + Interlocked.Increment(ref _procedures))
 			.AddParam(id)
 			.EnableAsyncRead();
@@ -151,8 +153,10 @@ public static class PerCallCancellationTests
 	{
 		var data = new TheoryData<QueryShape, QueryTerminal>();
 		foreach (QueryShape shape in Enum.GetValues<QueryShape>())
+		{
 			foreach (QueryTerminal terminal in Enum.GetValues<QueryTerminal>())
 				data.Add(shape, terminal);
+		}
 
 		return data;
 	}
@@ -163,9 +167,13 @@ public static class PerCallCancellationTests
 	{
 		var data = new TheoryData<QueryShape, QueryTerminal, TokenSetup>();
 		foreach (QueryShape shape in Enum.GetValues<QueryShape>())
+		{
 			foreach (QueryTerminal terminal in Enum.GetValues<QueryTerminal>())
+			{
 				foreach (TokenSetup setup in Enum.GetValues<TokenSetup>())
 					data.Add(shape, terminal, setup);
+			}
+		}
 
 		return data;
 	}
@@ -176,8 +184,10 @@ public static class PerCallCancellationTests
 	{
 		var data = new TheoryData<TokenStage, CancelBy>();
 		foreach (TokenStage stage in Enum.GetValues<TokenStage>())
+		{
 			foreach (CancelBy by in Enum.GetValues<CancelBy>())
 				data.Add(stage, by);
+		}
 
 		return data;
 	}
@@ -193,7 +203,7 @@ public static class PerCallCancellationTests
 		using var canceled = new CancellationTokenSource();
 		canceled.Cancel();
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, canceled.Token, rig));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, rig, canceled.Token));
 
 		Assert.Empty(rig.Log); // not opened, not looked up, not executed
 	}
@@ -218,7 +228,7 @@ public static class PerCallCancellationTests
 		using var live = new CancellationTokenSource();
 		ExpressiveDbCommand command = Procedure(rig).UseCancellationToken(canceled.Token);
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, live.Token, rig));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, rig, live.Token));
 
 		Assert.Empty(rig.Log);
 	}
@@ -246,7 +256,7 @@ public static class PerCallCancellationTests
 				break;
 		}
 
-		await Run(command, shape, terminal, call, rig);
+		await Run(command, shape, terminal, rig, call);
 
 		CancellationToken seen = Assert.Single(rig.Open);
 		Assert.Equal(seen, Assert.Single(rig.Lookup));
@@ -400,7 +410,7 @@ public static class PerCallCancellationTests
 	{
 		var rig = new TokenRig();
 		IDbConnectionFactory<DbConnection> factory = DbConnectionFactory.Create<DbConnection>(() => new TokenConnection(rig));
-		int id = 5;
+		const int id = 5;
 		ExpressiveDbCommand command = new TokenProcCommand(rig, factory, "dbo.proc" + Interlocked.Increment(ref _procedures)).AddParam(id).EnableAsyncRead();
 		using var callSource = new CancellationTokenSource();
 		using var commandSource = new CancellationTokenSource();
@@ -424,8 +434,8 @@ public static class PerCallCancellationTests
 		var rig = new TokenRig();
 		var connection = new TokenConnection(rig, ConnectionState.Open);
 		string procedure = "dbo.proc" + Interlocked.Increment(ref _procedures);
-		int id = 5;
-		int other = 6;
+		const int id = 5;
+		const int other = 6;
 		using var callSource = new CancellationTokenSource();
 		using var commandSource = new CancellationTokenSource();
 
@@ -479,7 +489,7 @@ public static class PerCallCancellationTests
 	{
 		IExecuteReader command = Text(new TokenRig());
 
-		Assert.Throws<ArgumentNullException>(() => command.ExecuteReaderAsync<int, int>(0, null!, CommandBehavior.Default, CancellationToken.None));
+		Assert.Throws<ArgumentNullException>(() => { _ = command.ExecuteReaderAsync<int, int>(0, null!, CommandBehavior.Default, CancellationToken.None).AsTask(); });
 	}
 }
 

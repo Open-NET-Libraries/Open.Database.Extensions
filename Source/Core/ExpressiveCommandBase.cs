@@ -610,7 +610,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	static bool SameName(string a, string b) => string.Equals(BareName(a), BareName(b), StringComparison.OrdinalIgnoreCase);
 
-	static string BareName(string name) => name.Length > 0 && name[0] == '@' ? name.Substring(1) : name;
+	static string BareName(string name) => name.Length > 0 && name[0] == '@' ? name[1..] : name;
 
 	InvalidOperationException NoMatch(string expression, ImmutableArray<string> real)
 		=> new($"The argument '{expression}' matches none of the parameters of '{Command}' (tried {string.Join(", ", ParameterNames.Candidates(expression))}). The procedure declares: {string.Join(", ", real)}. Name the parameter explicitly: AddParam(\"name\", value).");
