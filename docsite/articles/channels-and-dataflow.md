@@ -17,6 +17,8 @@ They work on expressive commands, on `IDbCommand` and on readers, and map rows t
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel)]
 
+The overloads that take a `ChannelWriter` as the target return the number of rows read and handed to the internal buffer, not the number delivered. With `complete: true` the writer is completed after the last row has been delivered and the reader released, which can be after the call has returned.
+
 ## Dataflow
 
 ![Open.Database.Extensions.Dataflow: You write the SQL. The library writes the other twenty lines.](../images/hero-dataflow.svg)
@@ -30,3 +32,4 @@ They work on expressive commands, on `IDbCommand` and on readers, and map rows t
 - These are conveniences for pipelines, not speed-ups. In the published benchmarks, draining a channel or a `BufferBlock` is slower than reading rows in a plain loop; see [Performance](performance.md).
 - The mapped overloads read raw rows into a bounded buffer of about 1,024 rows and map them in a second stage. The channel study in the [benchmark results](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) explains the trade-off.
 - The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. This is a known limitation of version 11.
+- The synchronous `ToTargetBlock` overloads post each row without waiting. When the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error and the number the call returns is the only sign of the shortfall. To feed a bounded target, use `ToTargetBlockAsync`, which waits.

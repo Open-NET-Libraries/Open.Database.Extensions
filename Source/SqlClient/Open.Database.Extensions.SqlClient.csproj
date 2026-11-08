@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Description>Useful set of utilities and abstractions for simplifying modern SQL Client data-access operations and ensuring DI compatibility.</Description>
+		<Description>Deprecated in favor of Open.Database.Extensions.MSSqlClient (Microsoft.Data.SqlClient). Utilities and abstractions for simplifying System.Data.SqlClient data-access operations and ensuring DI compatibility.</Description>
 		<PackageTags>ado;ado extensions;sql;connection factory;extensions;</PackageTags>
 	</PropertyGroup>
 
