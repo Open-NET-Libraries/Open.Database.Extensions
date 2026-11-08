@@ -158,7 +158,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> Channel.Transformer<T>
 			.Create()
 			.PipeResultsTo(reader, target, complete, cancellationToken);
@@ -182,7 +181,6 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> Channel.Transformer<T>
 			.Create(map)
 			.PipeResultsTo(reader, target, complete, cancellationToken);
@@ -316,7 +314,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> ToChannelMapped(command, target, complete, null, cancellationToken);
 
 	/// <summary>
@@ -347,7 +344,6 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> ToChannelMapped(command, target, complete, map, cancellationToken);
 
 	/// <summary>
@@ -436,7 +432,6 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete)
-		where T : new()
 		=> ToChannelMapped(command, target, complete, null);
 
 	/// <summary>
@@ -463,7 +458,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 		=> ToChannelMapped(command, target, complete, map);
 
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
@@ -595,7 +589,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> Channel.Transformer<T>
 			.Create()
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
@@ -609,7 +602,6 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> Channel.Transformer<T>
 			.Create(map)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
@@ -663,7 +655,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> ToChannelMappedAsync(command, target, complete, null, cancellationToken);
 
 	/// <summary>
@@ -675,7 +666,6 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> ToChannelMappedAsync(command, target, complete, map, cancellationToken);
 
 	/// <summary>
@@ -737,7 +727,6 @@ public static partial class ChannelDbExtensions
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete)
-		where T : new()
 		=> ToChannelMappedAsync(command, target, complete, null);
 
 	/// <summary>
@@ -748,7 +737,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 		=> ToChannelMappedAsync(command, target, complete, map);
 
 	// A map that the model can't honor is a failure of the operation, not a precondition: with `complete` the target is
@@ -760,7 +748,6 @@ public static partial class ChannelDbExtensions
 		RowMap<T>? map,
 		ChannelWriter<T> target,
 		bool complete)
-		where T : new()
 	{
 		Debug.Assert(target is not null);
 
@@ -789,7 +776,6 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken)
-		where T : new()
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
 		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
@@ -813,7 +799,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
 		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
@@ -836,7 +821,6 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken)
-		where T : new()
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
 		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
@@ -860,7 +844,6 @@ public static partial class ChannelDbExtensions
 		ChannelWriter<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
 		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.

@@ -7,7 +7,6 @@ namespace Open.Database.Extensions.Dataflow;
 /// <inheritdoc />
 internal class Transformer<T>(RowMap<T>? map = null)
 	: Core.Transformer<T>(map)
-	where T : new()
 {
 	/// <inheritdoc cref="Create(RowMap{T}?)"/>
 	[ExcludeFromCodeCoverage]

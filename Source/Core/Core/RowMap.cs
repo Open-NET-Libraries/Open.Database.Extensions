@@ -14,6 +14,8 @@ namespace Open.Database.Extensions;
 /// A property with a pair is only matched by its column, exactly or ignoring case; a <see langword="null"/> column means "do not map this property".
 /// The pairs are validated when the map is constructed: an unknown or unsettable property, a property named twice, an empty column name,
 /// or two properties reading one column throw <see cref="ArgumentException"/>.
+/// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the map is constructed or <see cref="Default"/> is read, which every query method does at the call, even when the result is empty:
+/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/> and, for now, a type with no public parameterless constructor or with <c>required</c> members.
 /// A NULL follows the property's declared type: a nullable property (<see cref="Nullable{T}"/> or a reference type) receives <see langword="null"/>; a non-nullable value-type property (an enum counts) keeps the value <c>new T()</c> gave it, its initializer else its default.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
@@ -28,19 +30,23 @@ namespace Open.Database.Extensions;
 /// <typeparam name="T">The model type whose properties are mapped.</typeparam>
 [CollectionBuilder(typeof(RowMap), nameof(RowMap.Create))]
 public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRowSource<T>
-	where T : new()
 {
 	/// <summary>Creates and validates the map from one (property name, column name) pair, so <c>new RowMap&lt;T&gt;(new("A", "b"))</c> compiles. Declare it once: a map built in a call is rebuilt on every call.</summary>
 	/// <param name="mapping">The (property name, column name) pair; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">The pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
 	[OverloadResolutionPriority(1)]
 	public RowMap(KeyValuePair<string, string?> mapping) : this([mapping]) { }
 
 	/// <summary>Creates and validates the map from (property name, column name) pairs. Declare it once: a map built in a call is rebuilt on every call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid: an unknown or unsettable property, a property named twice, an empty column name, or two properties reading one column.</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
 	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 	{
+		// A model type that cannot be mapped fails here, at the call, not when the first row is read.
+		TypeShape.ThrowIfUnmappable();
+
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
 		string?[] columns = new string?[Slots.Length];
 		for (int i = 0; i < columns.Length; i++) columns[i] = Slots[i].Name;
@@ -55,6 +61,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <summary>Creates and validates the map from (property name, column name) pairs held in an <see cref="ImmutableArray{T}"/> (a default array is no mappings). Declare it once: a map built in a call is rebuilt on every call.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
 	[OverloadResolutionPriority(-1)]
 	public RowMap(ImmutableArray<KeyValuePair<string, string?>> mappings) : this(mappings.AsSpan()) { }
 
@@ -74,6 +81,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <returns>The default map, or a new map built from <paramref name="mappings"/>.</returns>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
 	public static RowMap<T> From(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 		=> mappings.Length == 0 ? Default : new RowMap<T>(mappings);
 
@@ -97,14 +105,19 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
 
-	// The per-model-type statics below (Slots, SlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
+	// The per-model-type statics below (TypeShape, Slots, SlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
 	// lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it. Nothing that does not depend on T belongs here.
+
+	// Whether T can be mapped at all, judged from its shape; never throws (an unmappable T holds its error), so no static initializer here can fail with it.
+	static readonly Shape TypeShape = Shape.Of(typeof(T));
 
 	// What a column can feed: one slot per settable public instance property, in declaration order (a property hidden by name keeps the first). Reflection runs once per T.
 	static readonly ImmutableArray<Slot> Slots = BuildSlots();
 
 	static ImmutableArray<Slot> BuildSlots()
 	{
+		if (TypeShape.Error is not null) return [];
+
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 		var list = new List<Slot>();
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -127,8 +140,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
-	// Declared after Slots and SlotIndex: its constructor reads them.
-	public static readonly RowMap<T> Default = new();
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped: it is an interface, an abstract class, a delegate or a single value such as <see cref="int"/> or <see cref="string"/>, or it is a type that cannot be mapped yet (see <see cref="RowMap{T}"/>).</exception>
+	public static RowMap<T> Default
+	{
+		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
+		get => field ?? throw new InvalidOperationException(TypeShape.Error);
+	} = TypeShape.Error is null ? new() : null!; // Declared after TypeShape, Slots and SlotIndex: its constructor reads them.
 
 	// The column each property reads, aligned with Slots; null means the property is not mapped (ignored).
 	// With _named, all the map keeps of the pairs.
@@ -716,13 +733,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	static Exception MapError(Exception ex, int index, Binding?[] bindings)
 	{
 		if (index >= 0 && index < bindings.Length && bindings[index] is { } b)
-			return new ValueMappingException($"Unable to set value of property '{b.Property}' ({TypeName(b.Type)}) from column '{b.Column}'.", b.Property, b.Column, b.Type, ex);
+			return new ValueMappingException($"Unable to set value of property '{b.Property}' ({Shape.TypeName(b.Type)}) from column '{b.Column}'.", b.Property, b.Column, b.Type, ex);
 
 		return ex is InvalidOperationException ? ex : new InvalidOperationException($"Unable to create '{typeof(T)}' from the current row.", ex);
 	}
-
-	// The type as the message names it: the underlying name and a ? for a Nullable<T> (Int32?), else the short name (Int32, String).
-	static string TypeName(Type type) => Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
 
 	#endregion
 }
@@ -757,6 +771,75 @@ sealed class Slot(string name, Type type, MethodInfo setter)
 	public readonly MethodInfo Setter = setter;
 }
 
+// Whether a model type can be mapped at all, decided once per model type from its shape, so that a type that cannot be mapped fails at the call, not at the first row.
+// Reflection runs once and never throws: the reason is held as the message of the InvalidOperationException that RowMap<T> raises where every entry point passes
+// (its constructor and RowMap<T>.Default). It does not depend on the model type, so it is not generic.
+// Only the shape is judged so far. A type that needs constructor binding or `required` enforcement is rejected as not mappable yet, never mapped half-way.
+sealed class Shape
+{
+	const string RequiredMemberAttributeName = "System.Runtime.CompilerServices.RequiredMemberAttribute";
+
+	Shape(string? error) => Error = error;
+
+	// Why the type cannot be mapped (the message), or null when it can.
+	public readonly string? Error;
+
+	public static Shape Of(Type type) => new(Judge(type));
+
+	public void ThrowIfUnmappable()
+	{
+		if (Error is not null) throw new InvalidOperationException(Error);
+	}
+
+	// The type as the messages name it: the underlying name and a ? for a Nullable<T> (Int32?), else the short name (Int32, String).
+	public static string TypeName(Type type) => Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
+
+	static string? Judge(Type type)
+	{
+		string name = TypeName(type);
+
+		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().";
+		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
+		if (HasRequiredMembers(type)) return $"'{name}' cannot be mapped yet: it has required members (required-member support arrives in a later phase).";
+		if (!IsConstructible(type)) return $"'{name}' cannot be mapped yet: it has no public parameterless constructor (constructor binding arrives in a later phase).";
+
+		return null;
+	}
+
+	// A single value, not a row: a column of it, not a model with properties. Nullable<T> of these is one too.
+	static bool IsScalar(Type type)
+	{
+		type = Nullable.GetUnderlyingType(type) ?? type;
+		return type.IsPrimitive || type.IsEnum
+			|| type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(DateTimeOffset)
+			|| type == typeof(TimeSpan) || type == typeof(Guid) || type == typeof(byte[]);
+	}
+
+	// What it is when it cannot be created at all, else null.
+	static string? NotConcrete(Type type)
+		=> type.IsInterface ? "an interface"
+		: type.ContainsGenericParameters ? "an open generic type"
+		: typeof(Delegate).IsAssignableFrom(type) ? "a delegate"
+		: type.IsAbstract ? "an abstract class"
+		: null;
+
+	// A class needs a public parameterless constructor. A struct always has one, which reflection does not list, unless it declares public constructors of its own and none of them is parameterless.
+	static bool IsConstructible(Type type)
+		=> type.GetConstructor(Type.EmptyTypes) is not null || (type.IsValueType && type.GetConstructors().Length == 0);
+
+	// The compiler marks each type that declares a required member, so a base type's marker finds the members a derived type inherits. Matched by name: a consumer's own polyfill counts.
+	static bool HasRequiredMembers(Type type)
+	{
+		for (Type? t = type; t is not null && t != typeof(object); t = t.BaseType)
+		{
+			foreach (CustomAttributeData attribute in CustomAttributeData.GetCustomAttributes(t))
+				if (attribute.AttributeType.FullName == RequiredMemberAttributeName) return true;
+		}
+
+		return false;
+	}
+}
+
 /// <summary>The builder behind the collection syntax of <see cref="RowMap{T}"/>: <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>.</summary>
 public static class RowMap
 {
@@ -765,7 +848,7 @@ public static class RowMap
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <returns>The new map.</returns>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
 	public static RowMap<T> Create<T>(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		where T : new()
 		=> new(mappings);
 }

@@ -104,7 +104,6 @@ public static partial class DataflowExtensions
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(reader, buffer, true);
@@ -138,7 +137,6 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDataReader reader,
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(reader, buffer, true, map);
@@ -240,7 +238,6 @@ public static partial class DataflowExtensions
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true);
@@ -274,7 +271,6 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IDbCommand command,
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true, map);
@@ -364,7 +360,6 @@ public static partial class DataflowExtensions
 	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, DataflowBlockOptions?)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true);
@@ -393,7 +388,6 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		ToTargetBlock(command, buffer, true, map);
@@ -484,7 +478,6 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDataReader reader,
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, cancellationToken);
@@ -513,7 +506,6 @@ public static partial class DataflowExtensions
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(reader, buffer, true, map, cancellationToken);
@@ -604,7 +596,6 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, cancellationToken);
@@ -633,7 +624,6 @@ public static partial class DataflowExtensions
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, map, cancellationToken);
@@ -716,7 +706,6 @@ public static partial class DataflowExtensions
 	/// </remarks>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true);
@@ -743,7 +732,6 @@ public static partial class DataflowExtensions
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null)
-		where T : new()
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
 		_ = ToTargetBlockAsync(command, buffer, true, map);

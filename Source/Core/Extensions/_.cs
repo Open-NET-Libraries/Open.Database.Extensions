@@ -208,7 +208,6 @@ public static partial class CoreExtensions
 	/// <returns>An enumerable used to iterate the results.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> To<T>(this DataTable table, RowMap<T>? map = null, bool clearSourceTable = false)
-		where T : new()
 		=> Transformer<T>
 		.Create(map)
 		.Results(table, clearSourceTable);
