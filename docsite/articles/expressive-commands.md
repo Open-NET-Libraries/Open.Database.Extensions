@@ -45,7 +45,7 @@ Name a parameter in the way that fits what you have:
 - **A literal, or any other expression, or a compiler older than C# 10:** name it yourself, `AddParam("author", 42)`.
 - **An object holds several values:** `AddParams(search)`.
 
-A name you write is sent exactly as written: the library never adds or removes an `@`. Write it without one (`"author"` for `@author`), as the samples do; a derived name never has one either. SQLite accepts a name with or without the `@`, as the samples check.
+A name you write is sent exactly as written: the library never adds or removes an `@`. Write it without one (`"author"` for `@author`), as the samples do. A name derived from an argument has none either; for a stored procedure it is replaced by the provider's real name, which has one (`@title_contains`). SQLite accepts a name with or without the `@`, as the samples check.
 
 ### Name a parameter from its argument
 
