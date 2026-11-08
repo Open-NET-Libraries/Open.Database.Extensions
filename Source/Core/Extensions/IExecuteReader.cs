@@ -415,6 +415,9 @@ public static class IExecuteReaderExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
+		// An unmappable T fails here, before the command runs.
+		RowMap<T>.ThrowIfUnmappable();
+
 		return command.ExecuteReader(
 			reader => reader.ResultsBuffered(map),
 			CommandBehavior.SingleResult);

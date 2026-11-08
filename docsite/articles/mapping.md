@@ -14,7 +14,7 @@
 
 ## The rules
 
-- **Construction.** `T` must have a public parameterless constructor (a struct with no constructor of its own has one). Each row creates `new T()`. Any other type, such as an interface, an abstract class, a single value like `int` or `string`, or a positional record, throws `InvalidOperationException` at the call, even when the result is empty.
+- **Construction.** `T` must have a public parameterless constructor (a struct always does). Each row creates `new T()`. Any other type, such as an interface, an abstract class, a single value like `int` or `string`, or a positional record class, throws `InvalidOperationException` at the call, even when the result is empty.
 - **What is set.** Only public instance properties that have a public setter. Public fields and static properties are not mapped.
 - **Matching.** A column is matched to the property with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching property is ignored. A property with no matching column keeps the value its constructor gave it.
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).

@@ -147,6 +147,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		get => field ?? throw new InvalidOperationException(TypeShape.Error);
 	} = TypeShape.Error is null ? new() : null!; // Declared after TypeShape, Slots and SlotIndex: its constructor reads them.
 
+	// For an entry point that runs a command before it maps a row: checking the type first makes an unmappable T fail at the call, with nothing executed.
+	internal static void ThrowIfUnmappable() => TypeShape.ThrowIfUnmappable();
+
 	// The column each property reads, aligned with Slots; null means the property is not mapped (ignored).
 	// With _named, all the map keeps of the pairs.
 	readonly string?[] _columns;
@@ -774,7 +777,8 @@ sealed class Slot(string name, Type type, MethodInfo setter)
 // Whether a model type can be mapped at all, decided once per model type from its shape, so that a type that cannot be mapped fails at the call, not at the first row.
 // Reflection runs once and never throws: the reason is held as the message of the InvalidOperationException that RowMap<T> raises where every entry point passes
 // (its constructor and RowMap<T>.Default). It does not depend on the model type, so it is not generic.
-// Only the shape is judged so far. A type that needs constructor binding or `required` enforcement is rejected as not mappable yet, never mapped half-way.
+// Only the shape is judged so far. A class that needs constructor binding, or a type with `required` members, is rejected as not mappable yet, never mapped half-way.
+// A struct is mapped as it always was (its default value, then its settable members), whatever constructors it declares.
 sealed class Shape
 {
 	const string RequiredMemberAttributeName = "System.Runtime.CompilerServices.RequiredMemberAttribute";
@@ -823,9 +827,9 @@ sealed class Shape
 		: type.IsAbstract ? "an abstract class"
 		: null;
 
-	// A class needs a public parameterless constructor. A struct always has one, which reflection does not list, unless it declares public constructors of its own and none of them is parameterless.
+	// A class needs a public parameterless constructor. A struct always can be created (as its default value, then set), whatever constructors it declares: it is mapped as it always was.
 	static bool IsConstructible(Type type)
-		=> type.GetConstructor(Type.EmptyTypes) is not null || (type.IsValueType && type.GetConstructors().Length == 0);
+		=> type.IsValueType || type.GetConstructor(Type.EmptyTypes) is not null;
 
 	// The compiler marks each type that declares a required member, so a base type's marker finds the members a derived type inherits. Matched by name: a consumer's own polyfill counts.
 	static bool HasRequiredMembers(Type type)
