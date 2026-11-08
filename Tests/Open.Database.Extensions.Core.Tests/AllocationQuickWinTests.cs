@@ -215,21 +215,21 @@ public static class AllocationQuickWinTests
 			yield return "Id";
 		}
 
-		Dictionary<string, object?> byName = record.ToDictionary(Names());
+		var byName = record.ToDictionary(Names());
 		IEnumerable<KeyValuePair<int, string>> Pairs()
 		{
 			yield return new(2, "v");
 			yield return new(0, "i");
 		}
 
-		Dictionary<string, object?> byPairs = record.ToDictionary(Pairs());
+		var byPairs = record.ToDictionary(Pairs());
 		IEnumerable<(string Name, int Ordinal)> Tuples()
 		{
 			yield return ("a", 1);
 			yield return ("b", 0);
 		}
 
-		Dictionary<string, object?> byTuples = record.ToDictionary(Tuples());
+		var byTuples = record.ToDictionary(Tuples());
 
 		Assert.Equal(1, enumerations);
 		Assert.Equal(["Name", "Id"], byName.Keys);
