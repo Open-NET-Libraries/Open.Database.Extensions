@@ -10,15 +10,15 @@
 | Named differently | Declare a `RowMap<T>` once and pass it: `Map<T>(map)` |
 | One property must not be read | A `null` column for it in the `RowMap<T>` |
 | A column can hold NULL | Declare the property nullable (`int?`, `string?`); a non-nullable value-type property keeps its initializer, else its default |
-| Constructor binding, or your own conversion | `Map(selector)` |
+| Your own conversion | `Map(selector)` |
 
 ## The rules
 
-- **Construction.** `T` must have a public parameterless constructor (a struct always does). Each row creates `new T()`. Any other type, such as an interface, an abstract class, a single value like `int` or `string`, or a positional record class, throws `InvalidOperationException` at the call, even when the result is empty.
-- **What is set.** Only public instance properties that have a public setter. Public fields and static properties are not mapped.
-- **Matching.** A column is matched to the property with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching property is ignored. A property with no matching column keeps the value its constructor gave it.
+- **Construction.** A class with a public parameterless constructor, or a struct with no public constructor, is built with `new T()` for each row, and then its properties are set. Any other type is built through its one public constructor: a positional record, a record struct, or a class with a single public constructor. Two or more public constructors and none without parameters, an interface, an abstract class, a single value like `int` or `string` and, for now, a type with `required` members throw `InvalidOperationException` at the call, even when the result is empty.
+- **What is set.** The parameters of the constructor, when the type is built through one, and the public instance properties that have a public setter (a record's `init` property included). A parameter and a property of the same name, ignoring case, are one member: it is fed once, through the constructor. Public fields and static properties are not mapped.
+- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`); so does a parameter of a non-nullable value type when the cell is `NULL`.
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).
-- **No other conventions.** There is no constructor binding (positional records do not work) and no attributes. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
+- **No other conventions.** There are no attributes. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
 
 ## snake_case columns map to PascalCase properties
 
