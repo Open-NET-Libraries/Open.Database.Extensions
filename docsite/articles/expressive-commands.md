@@ -72,7 +72,7 @@ An argument that is not a plain member chain (a call, an index, an operator, a l
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
-`ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout.
+`ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds.
 
 `ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type (any other type throws `InvalidCastException`); a `NULL` or no rows returns `default(T)`, so use `long?` when you need to tell that from 0. SQLite returns a `long` for `count(*)` and SQL Server returns an `int`. To convert, pass a function instead:
 

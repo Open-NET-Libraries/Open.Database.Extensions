@@ -16,7 +16,7 @@ Each comparison lists the same four steps in the same order, row against row: (1
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-After that, no call site writes any connection code. The counts below do not include this one line of one-time setup.
+After that, no call site writes any connection code. The counts below are the lines of the samples shown with them, without this one line of one-time setup and without the `// nothing` comments.
 
 ### A list of rows
 
@@ -37,7 +37,7 @@ After that, no call site writes any connection code. The counts below do not inc
 </div>
 </div>
 
-Lines you write per call: Dapper 4, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write per call in the two samples above: Dapper 4, Open.Database.Extensions 3 (plus the one-time setup).
 
 What is different:
 
@@ -183,7 +183,7 @@ What is different:
 
 ### The total
 
-Across the four calls above Dapper takes 13 lines and the extensions 12, plus one line of one-time setup. The counts are close: the difference is what the lines are. None of the extensions' per-call lines creates, owns or disposes a connection, so there is nothing to forget, to leak or to keep open too long, and connection handling lives in one place instead of at every call site.
+Across the list, one row, scalar and no-result-set calls above, Dapper takes 13 lines and the extensions 12, plus one line of one-time setup. The counts are close: the difference is what the lines are. None of the extensions' per-call lines creates, owns or disposes a connection, so there is nothing to forget, to leak or to keep open too long, and connection handling lives in one place instead of at every call site.
 
 ## Who owns what
 
@@ -237,7 +237,7 @@ Dapper has features this library does not offer:
 
 [!code-csharp[](../samples/DapperComparison.cs#dapper_record)]
 
-With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for those jobs.
+With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for those jobs. For dynamic rows, the reader's `AsEnumerable()` (see [Reader and command helpers](foundation.md#reader-and-command-helpers)) gives each row as an `object[]`.
 
 ## Migrating a call site
 
