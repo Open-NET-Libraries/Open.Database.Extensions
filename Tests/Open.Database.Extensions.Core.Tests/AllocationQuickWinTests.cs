@@ -47,7 +47,7 @@ public static class AllocationQuickWinTests
 	static bool Enumerates(string overload) => overload is "KeyValuePairs" or "TuplesEnumerable" or "NamesEnumerable";
 
 	// Calls one overload with the columns `names` of the record, passing them in the shape that overload takes.
-	static Func<Dictionary<string, object?>> Prepare(string overload, IDataRecord record, string[] names)
+	static Func<Dictionary<string, object?>> Prepare(string overload, DataTableReader record, string[] names)
 	{
 		KeyValuePair<int, string>[] pairs = [.. names.Select(n => new KeyValuePair<int, string>(record.GetOrdinal(n), n))];
 		(string Name, int Ordinal)[] tuples = [.. names.Select(n => (n, record.GetOrdinal(n)))];
@@ -201,9 +201,7 @@ public static class AllocationQuickWinTests
 	[InlineData("NamesList")]
 	[InlineData("NamesSpan")]
 	public static void ToDictionary_NothingToRead_IsAnEmptyDictionary(string overload)
-	{
-		Assert.Empty(Prepare(overload, PositionedSample(), [])());
-	}
+		=> Assert.Empty(Prepare(overload, PositionedSample(), [])());
 
 	[Fact]
 	public static void ToDictionary_AnEnumerableThatIsNotACollection_IsReadOnce_InOrder()
@@ -288,7 +286,7 @@ public static class AllocationQuickWinTests
 		{
 			var bare = new string[real.Length];
 			for (int i = 0; i < real.Length; i++)
-				bare[i] = real[i].Substring(1);
+				bare[i] = real[i][1..];
 		});
 
 		Assert.True(actual <= ideal + Slack, $"{actual} B per Match, the cheapest possible is {ideal} B.");
@@ -297,7 +295,7 @@ public static class AllocationQuickWinTests
 	[Fact]
 	public static void Match_NamesWithoutAnAt_AllocateNothing()
 	{
-		ImmutableArray<string> plain = [.. RealNames.Select(n => n.Substring(1))];
+		ImmutableArray<string> plain = [.. RealNames.Select(n => n[1..])];
 
 		Assert.Equal("customer_id", Match(Candidates, plain));
 		Assert.Equal(0, BytesPerCall(() => Match(Candidates, plain)));
@@ -386,7 +384,7 @@ public static class AllocationQuickWinTests
 
 	static QueryResult<Queue<object[]>> Buffered(params object[][] rows)
 		=> new(
-			Enumerable.Range(0, 2).ToImmutableArray(),
+			[.. Enumerable.Range(0, 2)],
 			ImmutableArray.Create("Id", "Name"),
 			new Queue<object[]>(rows));
 
