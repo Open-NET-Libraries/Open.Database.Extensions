@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 200" role="img" aria-labelledby="t d">
+  <title id="t">ODX Dataflow</title>
+  <desc id="d">You write the SQL. The library writes the other twenty lines. Rows travel from a database into a glass dataflow block, which passes them on to two more blocks.</desc>
+  <style>
+    :root {
+      --bg1: #eef2f7; --bg2: #e1e7f0; --edge: #cdd6e2; --ink: #263040; --ink2: #3c4759; --mute: #6a778a;
+      --glass: #f7f9fc; --glassT: #fbfcfe; --glassS: #dfe5ee; --gline: #b9c4d3; --sh: #3e4d66; --sho: .22; --well: #d6dde8;
+      --a: #7a5bc4; --a2: #c5b5ea; --a3: #5f43a6; --at: #6446ad;
+      --tf: #d8d3ed; --tt: #e2e1f2; --ts: #c8bfe6; --te: #b3a4dd;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg1: #1b2434; --bg2: #222c40; --edge: #34425a; --ink: #d6dee9; --ink2: #b4bfcf; --mute: #8592a6;
+        --glass: #2b3850; --glassT: #34435e; --glassS: #222d42; --gline: #4b5b77; --sh: #05080f; --sho: .5; --well: #1d2638;
+      --a: #a68fe6; --a2: #cdbff3; --a3: #7e66c2; --at: #b7a4f0;
+      --tf: #4a4a72; --tt: #3a3e5e; --ts: #615c90; --te: #8173b8;
+      }
+    }
+    .s1 { stop-color: var(--bg1); } .s2 { stop-color: var(--bg2); } .ga { stop-color: var(--a); } .gb { stop-color: var(--a3); }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); }
+    .tag1 { font-size: 40px; font-weight: 600; letter-spacing: -.2px; }
+    .tag2 { font-size: 31px; font-weight: 400; fill: var(--ink2); letter-spacing: -.2px; }
+    .acc { fill: var(--at); }
+    .pk { font-size: 26px; font-weight: 600; fill: var(--at); letter-spacing: .3px; }
+    .lbl { font-size: 21px; font-weight: 600; fill: var(--ink); }
+    .word { font-size: 18px; fill: var(--ink2); }
+    .mono { font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, Menlo, monospace; font-size: 19px; fill: var(--ink2); }
+    .letters { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .rule { stroke: var(--edge); stroke-width: 2; }
+    .af { fill: var(--a); } .at { fill: var(--a2); } .as { fill: var(--a3); }
+    .gf { fill: var(--glass); fill-opacity: .6; stroke: var(--gline); stroke-width: 2; }
+    .gt { fill: var(--glassT); fill-opacity: .75; stroke: var(--gline); stroke-width: 2; }
+    .gs { fill: var(--glassS); fill-opacity: .7; stroke: var(--gline); stroke-width: 2; }
+    .tf { fill: var(--tf); stroke: var(--te); stroke-width: 2; } .tt { fill: var(--tt); stroke: var(--te); stroke-width: 2; } .ts { fill: var(--ts); stroke: var(--te); stroke-width: 2; }
+    .nf, .ns { fill: var(--glassS); stroke: var(--gline); stroke-width: 2; } .nt { fill: var(--glassT); stroke: var(--gline); stroke-width: 2; }
+    .sh { fill: var(--sh); fill-opacity: var(--sho); }
+    .row rect { fill: var(--a); } .row path { stroke: var(--a2); stroke-width: 2; fill: none; }
+    .row.hi rect { fill: var(--at); }
+    .wire { fill: none; stroke: var(--gline); stroke-width: 2.6; stroke-linecap: round; }
+    .wire.on { stroke: var(--a); stroke-width: 3.2; }
+    .ghost { opacity: .55; }
+    .ms { fill: url(#disk); } .mt { fill: var(--a2); stroke: var(--a); stroke-width: 2; }
+    .hop { animation: hop 5s ease-in-out infinite; }
+    @keyframes hop { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(8px); } }
+    @media (prefers-reduced-motion: reduce) { .mv { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="s1"/><stop offset="1" class="s2"/></linearGradient>
+    <linearGradient id="disk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="ga"/><stop offset="1" class="gb"/></linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" class="ga" stop-opacity=".14"/><stop offset="1" class="ga" stop-opacity="0"/></radialGradient>
+    <filter id="blur" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+
+  </defs>
+  <rect x="1" y="1" width="1278" height="198" rx="16" fill="url(#bg)" stroke="var(--edge)" stroke-width="2"/>
+  <ellipse cx="1070" cy="100" rx="250" ry="110" fill="url(#glow)"/>
+
+  <g transform="translate(0 -6)">
+    <path class="ms" d="M48 101v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="101" rx="22" ry="6.5"/><path class="ms" d="M48 88v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="88" rx="22" ry="6.5"/><path class="ms" d="M48 75v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="75" rx="22" ry="6.5"/><path class="letters" d="M120 74.5a13.5 16.5 0 1 0 0.01 0ZM147.5 74.5V107.5H154.5A15 16.5 0 0 0 154.5 74.5ZM182.5 74.5L206.5 107.5M206.5 74.5L182.5 107.5"/>
+    <text class="pk" x="125" y="143" text-anchor="middle">Dataflow</text>
+    <path class="rule" d="M248 52V150"/>
+  </g>
+  <text class="tag1" x="274" y="88">You write the <tspan class="acc">SQL.</tspan></text>
+  <text class="tag2" x="275" y="142">The library writes the other twenty lines.</text>
+  <g transform="translate(326.8 19) scale(0.739)"><rect class="sh" x="760" y="166" width="90" height="12" rx="6" filter="url(#blur)"/><rect class="sh" x="930" y="170" width="130" height="12" rx="6" filter="url(#blur)"/><rect class="sh" x="1110" y="104" width="80" height="10" rx="5" filter="url(#blur)"/><rect class="sh" x="1152" y="184" width="90" height="10" rx="5" filter="url(#blur)"/><path class="ts" d="M766 130v22a34 10 0 0 0 68 0v-22z"/><ellipse class="tt" cx="800" cy="130" rx="34" ry="10"/><path class="ts" d="M766 102v22a34 10 0 0 0 68 0v-22z"/><ellipse class="tt" cx="800" cy="102" rx="34" ry="10"/><path class="ts" d="M766 74v22a34 10 0 0 0 68 0v-22z"/><ellipse class="tt" cx="800" cy="74" rx="34" ry="10"/><path class="wire" d="M848 150H938"/><path class="wire" d="M1062 120C1090 120 1088 78 1112 78M1062 140C1104 140 1112 158 1150 158"/><g class="mv hop"><g class="row"><rect x="852" y="138" width="30" height="16" rx="4"/><path d="M862 142v8M872 142v8"/></g><g class="row"><rect x="892" y="138" width="30" height="16" rx="4"/><path d="M902 142v8M912 142v8"/></g></g><rect class="gf" x="940" y="64" width="108" height="100"/><polygon class="gt" points="940,64 1048,64 1081,41.2 973,41.2"/><polygon class="gs" points="1048,64 1081,41.2 1081,141.2 1048,164"/><rect class="af" x="960" y="142" width="60" height="14"/><polygon class="at" points="960,142 1020,142 1038.7,129.1 978.7,129.1"/><polygon class="as" points="1020,142 1038.7,129.1 1038.7,143.1 1020,156"/><rect class="af" x="960" y="120" width="60" height="14"/><polygon class="at" points="960,120 1020,120 1038.7,107.1 978.7,107.1"/><polygon class="as" points="1020,120 1038.7,107.1 1038.7,121.1 1020,134"/><rect class="af" x="960" y="98" width="60" height="14"/><polygon class="at" points="960,98 1020,98 1038.7,85.1 978.7,85.1"/><polygon class="as" points="1020,98 1038.7,85.1 1038.7,99.1 1020,112"/><rect class="gf" x="940" y="64" width="108" height="100" style="fill-opacity:.35"/><rect class="gf" x="1112" y="44" width="64" height="56"/><polygon class="gt" points="1112,44 1176,44 1198,28.8 1134,28.8"/><polygon class="gs" points="1176,44 1198,28.8 1198,84.8 1176,100"/><rect class="af" x="1124" y="78" width="34" height="12"/><polygon class="at" points="1124,78 1158,78 1169,70.4 1135,70.4"/><polygon class="as" points="1158,78 1169,70.4 1169,82.4 1158,90"/><rect class="gf" x="1150" y="122" width="74" height="60"/><polygon class="gt" points="1150,122 1224,122 1248.2,105.3 1174.2,105.3"/><polygon class="gs" points="1224,122 1248.2,105.3 1248.2,165.3 1224,182"/><rect class="af" x="1162" y="160" width="40" height="12"/><polygon class="at" points="1162,160 1202,160 1215.2,150.9 1175.2,150.9"/><polygon class="as" points="1202,160 1215.2,150.9 1215.2,162.9 1202,172"/><rect class="af" x="1162" y="144" width="40" height="12"/><polygon class="at" points="1162,144 1202,144 1215.2,134.9 1175.2,134.9"/><polygon class="as" points="1202,144 1215.2,134.9 1215.2,146.9 1202,156"/></g>
+</svg>
