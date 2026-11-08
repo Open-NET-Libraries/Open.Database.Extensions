@@ -138,6 +138,14 @@ public class ExpressiveCommand : ExpressiveCommandBase<IDbConnection, IDbCommand
 	{
 	}
 
+	/// <summary>
+	/// Reads the parameter names a stored procedure declares through the ADO.NET schema collection <c>ProcedureParameters</c> when the connection is a <see cref="DbConnection"/> whose provider supports it (SQL Server does), so parameters added with <c>AddParam(value)</c> find their real names.
+	/// </summary>
+	/// <remarks>Any other connection gives no names, and the last member of each argument is used as written. See <see cref="ExpressiveDbCommand"/> for what is looked up and what is thrown.</remarks>
+	/// <inheritdoc />
+	protected override ImmutableArray<string> GetProcedureParameterNames(IDbConnection connection, string procedure)
+		=> connection is DbConnection db ? ProcedureSchemaNames.Get(db, procedure) : default;
+
 	/// <inheritdoc />
 	protected override void AddParams(IDbCommand command)
 	{
