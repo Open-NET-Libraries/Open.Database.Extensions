@@ -85,7 +85,28 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 	public override bool HasRows => rows.Length > 0;
 	public override bool IsClosed => false;
 	public override int RecordsAffected => -1;
-	public override bool NextResult() => false;
+	/// <summary>How many times <see cref="NextResult"/> has been called (the async twin calls it).</summary>
+	public int NextResultCalls { get; private set; }
+
+	/// <summary>How many times <see cref="NextResultAsync(CancellationToken)"/> has been called.</summary>
+	public int NextResultAsyncCalls { get; private set; }
+
+	/// <summary>When set, <see cref="NextResult"/> throws it: the error a provider raises for a statement that follows the rows.</summary>
+	public Exception? NextResultError { get; set; }
+
+	public override bool NextResult()
+	{
+		NextResultCalls++;
+		if (NextResultError is { } error) throw error;
+		return false;
+	}
+
+	public override Task<bool> NextResultAsync(CancellationToken cancellationToken)
+	{
+		NextResultAsyncCalls++;
+		return base.NextResultAsync(cancellationToken);
+	}
+
 	public override IEnumerator GetEnumerator()
 		=> throw new NotSupportedException();
 }
