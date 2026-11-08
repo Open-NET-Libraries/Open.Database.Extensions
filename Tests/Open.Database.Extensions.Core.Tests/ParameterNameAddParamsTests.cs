@@ -142,8 +142,8 @@ public static class ParameterNameAddParamsTests
 	[Fact]
 	public static void SeveralParameters_AreSentInTheOrderTheyWereAdded_EachWithItsValue()
 	{
-		int companySerialNum = 42;
-		string? region = "west";
+		const int companySerialNum = 42;
+		const string? region = "west";
 		DateTime? endDate = null;
 		var run = new SyncNameRun("@company_serial_num", "@mode", "@region", "@end_date");
 
@@ -156,8 +156,8 @@ public static class ParameterNameAddParamsTests
 	[Fact]
 	public static async Task SeveralParameters_AreSentInTheOrderTheyWereAdded_EachWithItsValue_Async()
 	{
-		int companySerialNum = 42;
-		string? region = "west";
+		const int companySerialNum = 42;
+		const string? region = "west";
 		DateTime? endDate = null;
 		var run = new AsyncNameRun("@company_serial_num", "@mode", "@region", "@end_date");
 
