@@ -532,7 +532,7 @@ public static class RequiredMemberTests
 		ConstructorInfo required = DefineAttribute(module, requiredAttribute);
 		ConstructorInfo? sets = setsAttribute is null ? null : DefineAttribute(module, setsAttribute);
 
-		TypeBuilder model = module.DefineType("PolyfilledModel", TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed);
+		TypeBuilder model = module.DefineType("PolyfilledModel", TypeAttributes.Public | TypeAttributes.Sealed);
 		ConstructorBuilder constructor = model.DefineDefaultConstructor(MethodAttributes.Public);
 		if (sets is not null) constructor.SetCustomAttribute(new CustomAttributeBuilder(sets, []));
 
@@ -543,7 +543,7 @@ public static class RequiredMemberTests
 
 	static ConstructorInfo DefineAttribute(ModuleBuilder module, string fullName)
 	{
-		TypeBuilder attribute = module.DefineType(fullName, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed, typeof(Attribute));
+		TypeBuilder attribute = module.DefineType(fullName, TypeAttributes.Public | TypeAttributes.Sealed, typeof(Attribute));
 		attribute.DefineDefaultConstructor(MethodAttributes.Public);
 		return attribute.CreateType().GetConstructor(Type.EmptyTypes)!;
 	}
