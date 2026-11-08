@@ -901,6 +901,53 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 				return Convert.ToString(value, CultureInfo.InvariantCulture)!;
 			}
 
+			// The date and time types are not IConvertible, so Convert.ChangeType cannot read them from what a provider returns: a DateTime for a date column,
+			// a TimeSpan for a time column, text from SQLite. A value that is already the target type never gets here.
+			if (u == typeof(DateTimeOffset))
+			{
+				return value switch
+				{
+					DateTime dt => new DateTimeOffset(dt),
+					string ds => DateTimeOffset.Parse(ds, CultureInfo.InvariantCulture),
+					_ => throw new InvalidCastException($"Cannot convert '{value.GetType()}' to DateTimeOffset."),
+				};
+			}
+
+			if (u == typeof(TimeSpan))
+			{
+				return value switch
+				{
+					DateTime dt => dt.TimeOfDay,
+					string ts => TimeSpan.Parse(ts, CultureInfo.InvariantCulture),
+					_ => throw new InvalidCastException($"Cannot convert '{value.GetType()}' to TimeSpan."),
+				};
+			}
+
+#if NET10_0_OR_GREATER
+			if (u == typeof(DateOnly))
+			{
+				return value switch
+				{
+					DateTime dt => DateOnly.FromDateTime(dt),
+					DateTimeOffset dto => DateOnly.FromDateTime(dto.DateTime),
+					string ds => DateOnly.Parse(ds, CultureInfo.InvariantCulture),
+					_ => throw new InvalidCastException($"Cannot convert '{value.GetType()}' to DateOnly."),
+				};
+			}
+
+			if (u == typeof(TimeOnly))
+			{
+				return value switch
+				{
+					TimeSpan ts => TimeOnly.FromTimeSpan(ts),
+					DateTime dt => TimeOnly.FromDateTime(dt),
+					DateTimeOffset dto => TimeOnly.FromDateTime(dto.DateTime),
+					string text => TimeOnly.Parse(text, CultureInfo.InvariantCulture),
+					_ => throw new InvalidCastException($"Cannot convert '{value.GetType()}' to TimeOnly."),
+				};
+			}
+#endif
+
 			return Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
 		}
 	}
