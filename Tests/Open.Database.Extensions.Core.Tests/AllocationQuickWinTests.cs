@@ -53,7 +53,7 @@ public static class AllocationQuickWinTests
 		(string Name, int Ordinal)[] tuples = [.. names.Select(n => (n, record.GetOrdinal(n)))];
 		return overload switch
 		{
-			"KeyValuePairs" => () => record.ToDictionary((IEnumerable<KeyValuePair<int, string>>)pairs),
+			"KeyValuePairs" => () => record.ToDictionary(pairs),
 			"TuplesEnumerable" => () => record.ToDictionary((IEnumerable<(string Name, int Ordinal)>)tuples),
 			"TuplesList" => () => record.ToDictionary((IReadOnlyList<(string Name, int Ordinal)>)tuples),
 			"TuplesSpan" => () => record.ToDictionary(new ReadOnlySpan<(string Name, int Ordinal)>(tuples)),
@@ -385,7 +385,7 @@ public static class AllocationQuickWinTests
 	static QueryResult<Queue<object[]>> Buffered(params object[][] rows)
 		=> new(
 			[.. Enumerable.Range(0, 2)],
-			ImmutableArray.Create("Id", "Name"),
+			["Id", "Name"],
 			new Queue<object[]>(rows));
 
 	[Fact]
