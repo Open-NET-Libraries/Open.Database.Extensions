@@ -29,7 +29,7 @@
     <ProjectReference Include="..\..\Source\Dataflow\Open.Database.Extensions.Dataflow.csproj" />
     <ProjectReference Include="..\..\Source\Extensions\Open.Database.Extensions.csproj" />
     <ProjectReference Include="..\..\Source\SqlClient\Open.Database.Extensions.SqlClient.csproj" />
-    <ProjectReference Include="..\..\Source\MSSqlClient\Open.Database.Extensions.MSSqlClient.csproj" />
+    <ProjectReference Include="..\..\Source\MSSqlClient\Open.Database.Extensions.MSSqlClient.csproj" Aliases="mssql" />
   </ItemGroup>
 
   <ItemGroup>
