@@ -6,7 +6,7 @@
 
 **You write the SQL. This library writes the other twenty lines.**
 
-Open.Database.Extensions turns the ADO.NET code around your own SQL into one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider and the ADO.NET types you already use, holds a connection open as briefly as it can, and allocates little.
+Open.Database.Extensions replaces the ADO.NET code around your own SQL with one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider and the ADO.NET types you already use, holds a connection open as briefly as it can, and allocates little.
 
 **[Documentation](https://open-net-libraries.github.io/Open.Database.Extensions/)** · [Getting started](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html) · [API reference](https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html) · [Benchmarks](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)
 
@@ -53,9 +53,9 @@ Post[] posts = await connectionFactory
     .ToArrayAsync();
 ```
 
-`AddParam(author)` names the parameter `author` after the variable. To name it yourself, write `.AddParam("author", 42)`. `connectionFactory` is created once per application, for example `new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString))`: see [Registering the factory once](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html#registering-the-factory-once). The examples run on SQLite (`Microsoft.Data.Sqlite`); any ADO.NET provider works.
+`AddParam(author)` names the parameter `author` after the variable. To name it yourself, write `.AddParam("author", 42)`. `connectionFactory` is created once per application, for example `new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString))`: see [Registering the factory once](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html#registering-the-factory-once).
 
-Each job below is one complete call: open the connection, run the SQL with one parameter, return the result. The lines are counted from the `plain_*` and `ode_*` regions of [`docsite/samples/BeforeAfter.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/BeforeAfter.cs): lines of code, not counting blank lines or the `int author = 42;` that declares the value.
+Each job is one complete call: open the connection, run the SQL with one parameter, return the result. Lines you write, counted from the `plain_*` and `ode_*` regions of [`docsite/samples/BeforeAfter.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/BeforeAfter.cs) (not counting blank lines or the `int author = 42;` that declares the value):
 
 | The job | Lines you write: plain ADO.NET | Lines you write: Open.Database.Extensions |
 |---|---:|---:|
@@ -65,6 +65,26 @@ Each job below is one complete call: open the connection, run the SQL with one p
 | A command with no result set (`update`) | 9 | 4 |
 
 What you no longer write: opening and closing the connection, creating the command and setting its text, creating and adding every parameter, the read loop, copying columns into properties (ordinals, `IsDBNull`), and disposing all of it.
+
+## Install
+
+```sh
+dotnet add package Open.Database.Extensions.Core --prerelease
+dotnet add package Microsoft.Data.Sqlite
+```
+
+`Microsoft.Data.Sqlite` is the provider the examples use; Core works with any ADO.NET provider. `connectionString` is yours (for example `Data Source=blog.db`), and the examples use a `posts` table (`id`, `author`, `title`, `body`, `views`).
+
+| Package | What it is |
+|---|---|
+| `Open.Database.Extensions.Core` | The foundation, expressive commands and `Map<T>()`. Provider-agnostic: start here. |
+| `Open.Database.Extensions.Channel` | Rows into `System.Threading.Channels`. |
+| `Open.Database.Extensions.Dataflow` | Rows into TPL Dataflow blocks. |
+| `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
+| `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Deprecated: use `MSSqlClient`. |
+| `Open.Database.Extensions` | Discontinued. It only referenced Core: use `Open.Database.Extensions.Core`. The last published version is 9.0.3. |
+
+Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview (`11.0.0-preview06`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
 
 ## How it fits together
 
@@ -161,8 +181,8 @@ Person[] people = connection
 Everything above rests on keeping a connection open for as short a time as possible and allocating as little as possible while it is.
 
 - **Measured against Dapper 2.1.89 on an in-memory ADO.NET provider (no I/O):** `Map<T>()` is roughly 2 to 3 times faster at 100 or more rows, with about a third of the allocations (0.33 to 0.38 of Dapper's on multi-row results).
-- **With a real database the database dominates:** against SQL Server LocalDB it is on par to a few percent faster (ratios 0.89 to 1.08, mostly ties) with about 0.55 to 0.6 times the allocations on multi-row results.
-- **Built to hold a connection briefly:** the row mapping is compiled once per result shape and cached, values are read with typed getters (nothing is boxed), `Skip` advances without mapping, and a command built from a factory opens its connection when it runs and disposes it afterwards.
+- **With a real database the database dominates:** against SQL Server LocalDB it is on par, within about 10% either way (ratios 0.89 to 1.08, mostly ties; this library's time over Dapper's, so below 1 is faster) with about 0.55 to 0.6 times the allocations on multi-row results.
+- **Built to hold a connection briefly:** the row mapping is compiled once per result shape and cached, values are read with typed getters (nothing is boxed on the common path), `Skip` advances without mapping, and a command built from a factory opens its connection when it runs and disposes it afterwards.
 
 These figures come from the 11.0.0-preview01 build, re-run independently on a noisy machine, so read the timing ratios as indicative. The SQLite results are published but were not independently re-run, and a re-baseline is pending. Channels and Dataflow are conveniences, not speed-ups. See [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html).
 
@@ -171,23 +191,6 @@ These figures come from the 11.0.0-preview01 build, re-run independently on a no
 - **Channels and Dataflow:** stream rows into a `Channel<T>` or a dataflow block. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/channels-and-dataflow.html)
 - **SQL Server:** `SqlConnectionFactory` and stored procedures on `Microsoft.Data.SqlClient`. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html#with-sql-server)
 - **Coming from Dapper:** the same jobs side by side. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html)
-
-## Install
-
-| Package | What it is |
-|---|---|
-| `Open.Database.Extensions.Core` | The foundation, expressive commands and `Map<T>()`. Provider-agnostic: start here. |
-| `Open.Database.Extensions.Channel` | Rows into `System.Threading.Channels`. |
-| `Open.Database.Extensions.Dataflow` | Rows into TPL Dataflow blocks. |
-| `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
-| `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Deprecated: use `MSSqlClient`. |
-| `Open.Database.Extensions` | Discontinued. It only referenced Core: use `Open.Database.Extensions.Core`. The last published version is 9.0.3. |
-
-```sh
-dotnet add package Open.Database.Extensions.Core --prerelease
-```
-
-Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview (`11.0.0-preview06`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
 
 ## Contributing and license
 

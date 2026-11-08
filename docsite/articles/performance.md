@@ -28,7 +28,7 @@ An independent re-run of preview01 checked the published claims. Timings came fr
 | Provider | Time compared with Dapper | Allocations compared with Dapper |
 |---|---|---|
 | In-memory, 100 or more rows | Roughly 2 to 3 times faster | About 0.33 to 0.38 of Dapper's on multi-row results |
-| SQL Server LocalDB | On par to a few percent faster (ratios 0.89 to 1.08, mostly ties) | About 0.55 to 0.6 times on multi-row results |
+| SQL Server LocalDB | On par, within about 10% either way (ratios 0.89 to 1.08, mostly ties) | About 0.55 to 0.6 times on multi-row results |
 | SQLite | Published as faster, not independently re-run | Published as lower, not independently re-run |
 
 With a real database the server and the network dominate the time, so the speed difference shrinks to a tie or a few percent. The allocation difference remains, which matters for garbage-collection pressure on busy services.

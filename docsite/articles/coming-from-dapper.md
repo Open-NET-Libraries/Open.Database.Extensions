@@ -16,7 +16,7 @@ Each comparison lists the same four steps in the same order, row against row: (1
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-After that, no call site writes any connection code. The counts below are the lines of the samples shown with them, without this one line of one-time setup and without the `// nothing` comments. The samples are compact (`Command(sql)` on the declaration line; `author` and `id` are declared above them as `int author = 42;` and `int id = 3;`), so the extensions' counts are one or two lines lower than the one-call-per-line counts in the README and Getting started. Compare the two sides on this page, not across pages.
+After that, no call site writes any connection code. Each count below names the sample it counts (in `ConnectionPattern.cs`), without the one line of one-time setup, the `// nothing` comments and the `author` and `id` declarations. These compact samples put `Command(sql)` on the declaration line, so they count one or two lines fewer for the extensions than the README and Getting started samples, which give each call its own line: compare the two sides on this page, not across pages.
 
 ### A list of rows
 
@@ -37,15 +37,15 @@ After that, no call site writes any connection code. The counts below are the li
 </div>
 </div>
 
-Lines you write per call in the two samples above: Dapper 4, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_list_call` and `ode_list_call`: Dapper 4, Open.Database.Extensions 3 (plus the one-time setup).
 
 What is different:
 
 - **The connection.** With Dapper you create it and dispose it, and Dapper opens it if it is closed and closes it when the call finishes. With a factory, the factory creates it for each execution, the command opens it only if it is closed and disposes it when the terminal returns, so it is open only for the duration of the call.
-- **Rows.** Dapper's `Query<T>` buffers by default (`buffered = true`) and returns an `IEnumerable<T>`, turned into a list in the sample by Dapper's `AsList()`. `ToList()` reads every row into a list during the call. `Read(handler)` offers a lazy sequence that is only valid inside the handler.
+- **Rows.** Dapper's `Query<T>` buffers by default (`buffered = true`) and returns an `IEnumerable<T>`, turned into a list in the sample by Dapper's `AsList()`. Unlike `Query<T>`, `Map<T>()` runs nothing by itself: the query runs when a terminal such as `ToList()` is called. `ToList()` reads every row into a list during the call. `Read(handler)` offers a lazy sequence that is only valid inside the handler.
 - **Mapping.** Both match columns to members by name, ignoring case. Dapper can also bind constructor parameters and fields and, if you turn on `MatchNamesWithUnderscores`, match `first_name` to `FirstName`. The extensions set public settable properties (`init` and `required` ones too) and bind the one public constructor of a record or class (see [Positional records](#positional-records)), but never set fields. They always ignore underscores when no exact or ignore-case match exists (`first_name` feeds `FirstName`; there is nothing to turn on). A column that differs by more than case and underscores needs a `RowMap<T>` (see [Renamed columns](#renamed-columns)).
 - **NULL.** A `NULL` in a nullable property (`int?`, `string?`), or in a reference-type property in code with nullable annotations off, gives `null`. In a property the type declares non-nullable (`int`, `bool`, `DateTime`, an enum, or a `string` with `<Nullable>enable</Nullable>`) it leaves the initializer, else the default, and nothing throws: declare the property `int?` when you need to tell NULL from 0. See [Types and NULL](mapping.md#types-and-null).
-- **Null parameters.** Both convert a null parameter value to `DBNull`.
+- **Null parameters.** The extensions send a `null` value as a database NULL, and `AddParam(note)` also sends the argument's database type (see [Name a parameter from its argument](expressive-commands.md#name-a-parameter-from-its-argument)).
 - **Mapping errors.** Dapper wraps them in a `DataException` ("Error parsing column ..."). The extensions throw a `ValueMappingException` (also a `DataException`) that names the property and the column.
 
 ### One row
@@ -67,7 +67,7 @@ What is different:
 </div>
 </div>
 
-Lines you write per call: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_first_call` and `ode_first_call`: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
 
 What is different:
 
@@ -92,7 +92,7 @@ What is different:
 </div>
 </div>
 
-Lines you write per call: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_scalar_call` and `ode_scalar_call`: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
 
 What is different:
 
@@ -117,7 +117,7 @@ What is different:
 </div>
 </div>
 
-Lines you write per call: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_nonquery_call` and `ode_nonquery_call`: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
 
 What is different:
 
@@ -144,7 +144,7 @@ Dapper opens a closed connection for plain queries and closes it again afterward
 </div>
 </div>
 
-Lines you write per call: Dapper 14, Open.Database.Extensions 6 (plus the one-time setup).
+Lines you write, counted from `dapper_transaction_call` and `ode_transaction_call`: Dapper 14, Open.Database.Extensions 6 (plus the one-time setup).
 
 What is different:
 
@@ -174,7 +174,7 @@ If you would rather own the connection, the extensions work on a connection the 
 </div>
 </div>
 
-Lines you write per call: Dapper 4, Open.Database.Extensions 4.
+Lines you write, counted from `dapper_list_call` and `ode_list_own`: Dapper 4, Open.Database.Extensions 4.
 
 What is different:
 
@@ -209,7 +209,7 @@ For SQL Server, register `SqlConnectionFactory` as `IDbConnectionFactory<SqlConn
 
 [!code-csharp[](../samples/ConnectionPattern.cs#sql_server_registration)]
 
-A singleton is fine because the factory holds no connection: `Create()` returns a new connection object each time.
+A singleton is fine because the factory holds no connection: its `Create()` method returns a new connection object each time.
 
 ## Renamed columns
 
@@ -258,7 +258,7 @@ Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation to
 
 Dapper has features this library does not offer:
 
-- **Choosing a constructor by the columns.** Dapper picks the constructor that fits the columns of the query. The extensions use the one public constructor, whatever the columns (see [Positional records](#positional-records)).
+- **Choosing a constructor by the columns.** The extensions use the one public constructor, whatever the columns (see [Positional records](#positional-records)).
 - **Multi-mapping and `QueryMultiple`.** Dapper maps several types from one row and reads several result sets from one call.
 - **Type handlers and custom type maps.** `SqlMapper.AddTypeHandler` and `SqlMapper.SetTypeMap`.
 - **Dynamic results.** `Query(sql)` without a type returns dynamic rows.
@@ -277,14 +277,15 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 | `Query<int>` over one column | `FirstOrdinalResults<T>()`, which casts the first column of every row to `T`, so `T` is the provider's own type (`long` for an integer on SQLite). `Map<int>()` throws: a single value is not a row model |
 | `ExecuteScalar<T>` | `ExecuteScalar<T>()`; `T` must be the type the provider returns |
 | `Execute` | `ExecuteNonQuery()` |
-| `QueryAsync<T>` | `Map<T>().ToListAsync()`, which returns a `ValueTask` |
+| `QueryAsync<T>` | `Map<T>().ToListAsync()`, which returns a `ValueTask` (async terminals need a factory of a `DbConnection` type) |
+| `Execute("usp_x", ..., commandType: CommandType.StoredProcedure)` | `StoredProcedure("usp_x")`, then `AddParam(...)` and `ExecuteNonQuery()` (see [Return values and output parameters](expressive-commands.md#return-values-and-output-parameters)) |
 | A transaction passed to each call | Start from the transaction: `transaction.Command(sql)` |
 
 ## Migrating a call site
 
-1. Create the connection factory once and register or inject it.
+1. Create the connection factory once and register or inject it. For async code use `IDbConnectionFactory<DbConnection>` (any factory of a `DbConnection` type converts to it) or `SqlConnectionFactory`; the non-generic `IDbConnectionFactory` has no `Async` terminals.
 2. Replace `using var connection = ...` and `connection.Query<T>(sql, new { ... })` with `connectionFactory.Command(sql).AddParam(...).Map<T>().ToList()` (or `ToArray()`); an anonymous parameter object becomes `AddParams(new { ... })`.
 3. A positional record or a class with one public constructor needs nothing. If a model has two or more public constructors and none without parameters, make all but one non-public, or write a `Map(selector)`.
 4. If a column name differs from its property name by more than case and underscores, declare a `RowMap<T>` (see [Columns named differently](mapping.md#columns-named-differently)). Names that differ only by case or underscores need nothing.
 5. Replace the transaction you passed to each call with `transaction.Command(sql)` inside `ExecuteTransaction` (see [A transaction](#a-transaction)).
-6. Check the table above for the rest: a scalar `T` is the provider's own type (`long` for `count(*)` on SQLite, `int` on SQL Server), and a procedure that returns values through output parameters stays on Dapper for now.
+6. Check the table above for the rest: a scalar `T` is the provider's own type, and values returned through output parameters cannot be read back yet.

@@ -82,7 +82,7 @@ The same query with plain ADO.NET and with the extensions, row against row: the 
 </div>
 </div>
 
-Lines you write per call in the two samples above, not counting blank lines, `// nothing` comments or the `int author = 42;` that declares the value: plain ADO.NET 20, Open.Database.Extensions 5, plus one line of one-time setup per application. These are the counts of the list job in the table of the README.
+Lines you write, counted from `plain_list_aligned` and `ode_list_aligned` (`ConnectionPattern.cs`; not counting blank lines, `// nothing` comments or the `int author = 42;` that declares the value): plain ADO.NET 20, Open.Database.Extensions 5, plus one line of one-time setup per application. The README table counts the same job.
 
 What is different:
 

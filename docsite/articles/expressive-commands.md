@@ -53,9 +53,17 @@ A name you write is sent exactly as written: the library never adds or removes a
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_from_argument)]
 
-For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does) and each argument is matched to one of them: exactly, else ignoring case, else ignoring case and underscores, so `TitleContains` finds `@title_contains`. When none of those match, the same argument is tried against the real name with one common parameter prefix removed (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter), so `Author` also finds `@p_author` and `@pAuthor`; a field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it. A chain tries its longer endings first, each one through all of those steps before the next (`order.Customer.Id` tries `OrderCustomerId`, `CustomerId`, then `Id`), so `@customer_id` and `@p_customer_id` are chosen over a bare `@id`. The names are read once and remembered for five minutes on the connection factory (or on the connection itself when you start from a connection), so register the factory once; a procedure that changes can show its old names for up to five minutes, and when a remembered name no longer fits, the names are read again once before anything fails. When the real names are not available, as with a text command or another provider, the last member is used as written, without an `@`.
+For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does), and each argument is matched to one of them:
 
-A NULL argument is sent with the database type of the argument (`int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept it for a typed parameter such as `varbinary`; a NULL passed by name has no type to use.
+1. Exactly, else ignoring case, else ignoring case and underscores: `TitleContains` finds `@title_contains`.
+2. Else with one common parameter prefix removed from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
+3. A chain tries its longer endings first, each through all of those steps before the next: `order.Customer.Id` tries `OrderCustomerId`, `CustomerId`, then `Id`, so `@customer_id` and `@p_customer_id` are chosen over a bare `@id`.
+
+The names are read once and remembered for five minutes on the connection factory (or on the connection itself when you start from a connection), so register the factory once. A procedure that changes can show its old names for up to five minutes; when a remembered name no longer fits, the names are read again once before anything fails. When the real names are not available, as with a text command or another provider, the last member is used as written, without an `@`.
+
+A `null` value is sent as a database NULL. `AddParam(note)` also sends the database type of the argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`. A `null` passed by name has no type to use, so pass one:
+
+[!code-csharp[](../samples/SqlServer.cs#sql_server_null_by_name)]
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_derived_names)]
 
@@ -68,6 +76,12 @@ An argument that is not a plain member chain (a call, an index, an operator, a l
 `AddParam(name, value)` adds an input parameter under the name you give. Overloads accept a database type and a `ParameterDirection`. `AddParamIf(condition, value)` (or `AddParamIf(condition, name, value)`) adds the parameter only when the condition is true, which keeps the SQL text constant:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_if)]
+
+### A generated id
+
+To get the id an insert generated, select it in the same command and read it with `ExecuteScalar<T>()` (the statement that returns the id depends on your database; SQLite is shown). `ExecuteReturn<T>()` is only for a procedure's `RETURN` code.
+
+[!code-csharp[](../samples/ExpressiveCommands.cs#generated_id)]
 
 ### Return values and output parameters
 
@@ -84,7 +98,7 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `ExecuteNonQuery()` | Rows affected |
 | `ExecuteScalar<T>()`, `ExecuteScalar(value => ...)`, `ExecuteScalar()` | The first column of the first row: [which form](#which-scalar-form) |
 | `ExecuteReturn<T>()` | The value of the return-value parameter: [see above](#return-values-and-output-parameters) |
-| `Execute(command => ...)` | Whatever your function returns, given the raw `IDbCommand` |
+| `Execute(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
 | `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
