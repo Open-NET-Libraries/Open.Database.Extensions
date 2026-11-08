@@ -41,8 +41,10 @@ public static class TransformerBufferTests
 
 		Assert.Equal([1, 2], list.Select(p => p.Id));
 		Assert.Equal(["a", "b"], list.Select(p => p.Name));
-		pool.Received(1).Return(first, true);
-		pool.Received(1).Return(second, true);
+		pool.Received(1).Return(first, false); // The transformer clears the columns itself, so the pool is not asked to clear the whole array.
+		pool.Received(1).Return(second, false);
+		Assert.All(first, v => Assert.Null(v));
+		Assert.All(second, v => Assert.Null(v));
 		Assert.Empty(results.Result);
 	}
 

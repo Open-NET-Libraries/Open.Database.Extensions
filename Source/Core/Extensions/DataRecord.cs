@@ -469,10 +469,15 @@ public static partial class DataRecordExtensions
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same key.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<KeyValuePair<int, string>> columnMap)
-		=> columnMap
-		.ToDictionary(
-			c => c.Value,
-			c => CoreExtensions.DBNullValueToNull(record.GetValue(c.Key)));
+	{
+		if (columnMap is null) throw new ArgumentNullException(nameof(columnMap));
+		Contract.EndContractBlock();
+
+		var e = new Dictionary<string, object?>(columnMap is ICollection<KeyValuePair<int, string>> collection ? collection.Count : 0);
+		foreach (KeyValuePair<int, string> c in columnMap)
+			e.Add(c.Value, CoreExtensions.DBNullValueToNull(record.GetValue(c.Key)));
+		return e;
+	}
 
 	/// <summary>
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
@@ -482,10 +487,15 @@ public static partial class DataRecordExtensions
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same name.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<(string Name, int Ordinal)> ordinalMapping)
-		=> ordinalMapping
-		.ToDictionary(
-			c => c.Name,
-			c => CoreExtensions.DBNullValueToNull(record.GetValue(c.Ordinal)));
+	{
+		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
+		Contract.EndContractBlock();
+
+		var e = new Dictionary<string, object?>(ordinalMapping is ICollection<(string Name, int Ordinal)> collection ? collection.Count : 0);
+		foreach ((string name, int ordinal) in ordinalMapping)
+			e.Add(name, CoreExtensions.DBNullValueToNull(record.GetValue(ordinal)));
+		return e;
+	}
 
 	/// <summary>
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
@@ -501,8 +511,8 @@ public static partial class DataRecordExtensions
 		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
 		Contract.EndContractBlock();
 
-		var e = new Dictionary<string, object?>();
 		int count = ordinalMapping.Count;
+		var e = new Dictionary<string, object?>(count);
 		for (int i = 0; i < count; i++)
 		{
 			(string name, int ordinal) = ordinalMapping[i];
@@ -525,8 +535,8 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var e = new Dictionary<string, object?>();
 		int count = ordinalMapping.Length;
+		var e = new Dictionary<string, object?>(count);
 		for (int i = 0; i < count; i++)
 		{
 			(string name, int ordinal) = ordinalMapping[i];
@@ -551,7 +561,7 @@ public static partial class DataRecordExtensions
 		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
 		Contract.EndContractBlock();
 
-		var e = new Dictionary<string, object?>();
+		var e = new Dictionary<string, object?>(columnNames is ICollection<string> collection ? collection.Count : 0);
 		foreach (string name in columnNames)
 			e.Add(name, CoreExtensions.DBNullValueToNull(record[name]));
 		return e;
@@ -564,8 +574,8 @@ public static partial class DataRecordExtensions
 		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
 		Contract.EndContractBlock();
 
-		var e = new Dictionary<string, object?>();
 		int count = columnNames.Count;
+		var e = new Dictionary<string, object?>(count);
 		for (int i = 0; i < count; i++)
 		{
 			string name = columnNames[i];
@@ -589,8 +599,8 @@ public static partial class DataRecordExtensions
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
-		var e = new Dictionary<string, object?>();
 		int count = columnNames.Length;
+		var e = new Dictionary<string, object?>(count);
 		for (int i = 0; i < count; i++)
 		{
 			string name = columnNames[i];

@@ -293,7 +293,7 @@ public static partial class SqlTransactionExtensions
 	// repaired by EnsureOpen, is a connection this operation opened, so it is closed again here.
 	static void RestoreConnection(SqlConnection connection, ConnectionState priorState)
 	{
-		if (priorState.HasFlag(ConnectionState.Open))
+		if ((priorState & ConnectionState.Open) != 0)
 			return;
 
 		try
@@ -315,7 +315,7 @@ public static partial class SqlTransactionExtensions
 #else
 	static async ValueTask RestoreConnectionAsync(SqlConnection connection, ConnectionState priorState)
 	{
-		if (priorState.HasFlag(ConnectionState.Open))
+		if ((priorState & ConnectionState.Open) != 0)
 			return;
 
 		try
