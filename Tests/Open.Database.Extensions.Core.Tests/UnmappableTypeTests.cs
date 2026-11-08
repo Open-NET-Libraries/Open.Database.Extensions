@@ -46,11 +46,9 @@ public static class UnmappableTypeTests
 
 	public readonly record struct ReadonlyPositionalStructShape(int Id, string Title);
 
-	public struct StructWithConstructorOnly
+	public struct StructWithConstructorOnly(int id, string title)
 	{
-		public StructWithConstructorOnly(int id, string title) { Id = id + 1000; Title = title + "!"; }
-		public int Id { get; set; }
-		public string? Title { get; set; }
+		public int Id { get; set; } = id + 1000; public string? Title { get; set; } = title + "!";
 	}
 
 	public sealed class ThreeConstructorShape
@@ -68,10 +66,9 @@ public static class UnmappableTypeTests
 		public string? Title { get; set; }
 	}
 
-	public sealed class ByReferenceShape
+	public sealed class ByReferenceShape(in int id)
 	{
-		public ByReferenceShape(in int id) => Id = id;
-		public int Id { get; }
+		public int Id { get; } = id;
 	}
 
 	public class OneOfSeveralShape

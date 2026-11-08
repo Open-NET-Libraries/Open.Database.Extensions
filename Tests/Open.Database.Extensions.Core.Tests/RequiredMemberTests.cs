@@ -66,39 +66,26 @@ public static class RequiredMemberTests
 		public required string Title { get; init; } = title;
 	}
 
-	public sealed class SetsViaParameterless
+	[method: SetsRequiredMembers]
+	public sealed class SetsViaParameterless()
 	{
-		[SetsRequiredMembers]
-		public SetsViaParameterless()
-		{
-			Id = -1;
-			Title = "ctor";
-		}
-
-		public required int Id { get; set; }
-		public required string Title { get; set; }
+		public required int Id { get; set; } = -1;
+		public required string Title { get; set; } = "ctor";
 	}
 
-	public sealed class SetsViaConstructor
+	[method: SetsRequiredMembers]
+	public sealed class SetsViaConstructor(int id)
 	{
-		[SetsRequiredMembers]
-		public SetsViaConstructor(int id)
-		{
-			Id = id;
-			Title = "ctor";
-		}
-
-		public required int Id { get; init; }
-		public required string Title { get; init; }
+		public required int Id { get; init; } = id;
+		public required string Title { get; init; } = "ctor";
 	}
 
 	// A required field is a type-shape error, unless the constructor sets the required members itself.
-	public sealed class SetsRequiredField
+	[method: SetsRequiredMembers]
+	// A required field is a type-shape error, unless the constructor sets the required members itself.
+	public sealed class SetsRequiredField()
 	{
-		[SetsRequiredMembers]
-		public SetsRequiredField() => Id = 7;
-
-		public required int Id;
+		public required int Id = 7;
 		public string? Title { get; set; }
 	}
 

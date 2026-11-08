@@ -18,17 +18,11 @@ internal static class ParameterNameHarness
 /// same connection and procedure, so the second run reads the names from memory; <see cref="Lookups"/> counts the times the provider was asked.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal sealed class SyncNameRun
+internal sealed class SyncNameRun(CommandType type, params string[] real)
 {
 	readonly string _procedure = ParameterNameHarness.NewProcedure();
-	readonly CommandType _type;
-	readonly string[] _real;
-
-	public SyncNameRun(CommandType type, params string[] real)
-	{
-		_type = type;
-		_real = real;
-	}
+	readonly CommandType _type = type;
+	readonly string[] _real = real;
 
 	public SyncNameRun(params string[] real) : this(CommandType.StoredProcedure, real) { }
 

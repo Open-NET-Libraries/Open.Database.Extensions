@@ -501,16 +501,10 @@ public static class ConstructorBindingTests
 	}
 
 	// Two parameters whose names differ only in case, and one property: the exact name wins, so `Id` feeds the property and `id` is a slot of its own.
-	public sealed class Competing
+	public sealed class Competing(int id, int Id)
 	{
-		public Competing(int id, int Id)
-		{
-			Lower = id;
-			this.Id = Id;
-		}
-
-		public int Id { get; }
-		public int Lower { get; }
+		public int Id { get; } = Id;
+		public int Lower { get; } = id;
 	}
 
 	[Theory]
