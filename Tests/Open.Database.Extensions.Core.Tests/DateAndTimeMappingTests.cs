@@ -116,8 +116,8 @@ public static class DateAndTimeMappingTests
 
 		Stamps item = Assert.Single(cmd.Map<Stamps>().ToList());
 
-		Assert.Equal(default(DateOnly), item.Day);
-		Assert.Equal(default(TimeOnly), item.Time);
+		Assert.Equal(default, item.Day);
+		Assert.Equal(default, item.Time);
 	}
 
 	[Fact]
