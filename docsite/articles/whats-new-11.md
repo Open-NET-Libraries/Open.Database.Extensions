@@ -61,6 +61,8 @@ These can change behavior without a compile error, most likely first:
 - **The synchronization context.** The async transaction helpers and the `ExecuteReaderAsync` overloads of the two SQL Server packages no longer resume on the caller's synchronization context: they await with `ConfigureAwait(false)`, and so does the connection open they trigger. A caller that blocked on one from a thread with a synchronization context no longer waits on that context inside the library.
 - **A parameter with no value is now sent by both SQL Server packages.** It was never added to the command, so an output parameter (`AddParam(name, direction)`) never reached SQL Server. SQL Server needs a type and size for an output parameter and refuses the command without them.
 - **`AddParam("name", someString)` swapped the name and the value on a compiler older than C# 13** (the .NET 8 SDK). It was found in `11.0.0-preview05` and fixed in `11.0.0-preview06`: `AddParam(string, string?)` and `AddParamIf(bool, string, string?)` use the name you write on every compiler.
+- **`AddParam(name, value, dbType)` compiles again.** In the 11.0 previews a call that gave a value and a database type, such as `AddParam("@id", id, SqlDbType.Int)`, failed with an ambiguous-call error (CS0121) for an `int`, `long`, `short`, `byte` or `string` value (the `int` forms compiled in 10.1.0). New overloads with a required database type, on `AddParam` and `AddParamIf`, make every such call bind to one overload; no existing member changed.
+- **A `char` is sent as the character again.** In the 11.0 previews, `AddParam("x", 'c')` bound to the `int` overload and sent the number 99; 10.1.0 sent the character. It does again.
 
 ## Known limitations
 
