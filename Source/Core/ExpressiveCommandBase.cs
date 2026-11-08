@@ -270,6 +270,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	public TThis AddParam(string name, long value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
 
+	// A char converts implicitly to int, so without this overload AddParam("x", 'c') would send the character code (99), not the character (as it did before the int overload existed).
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParam(string name, char value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> AddParam(new(name, value, type, direction));
+
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam(string name, string? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
@@ -463,6 +468,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParamIf(bool condition, string name, long value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
+		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
+
+	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
+	public TThis AddParamIf(bool condition, string name, char value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
