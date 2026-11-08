@@ -178,29 +178,40 @@ static class ParameterNames
 	}
 
 	/// <summary>
-	/// Finds the real parameter that a derived name stands for. Candidates are tried most specific first, so <c>order.Customer.Id</c> finds <c>@customer_id</c> before a bare <c>@id</c>;
+	/// Finds the real parameter that a derived name stands for. The candidates of the expression are tried most specific first, so <c>order.Customer.Id</c> finds <c>@customer_id</c> before a bare <c>@id</c>;
 	/// within a candidate the match is exact, else ignoring case, else ignoring case and underscores, the same tiers columns use.
 	/// When a candidate matches in none of those three tiers, a fourth tier compares it with the real name after one common parameter prefix is removed
 	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c> or <c>v_</c> in any case, or a lone lower-case <c>p</c> before an upper-case letter), ignoring case and underscores:
-	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>. The four tiers run inside each candidate's turn, so <c>order.Customer.Id</c> finds <c>@p_customer_id</c> before a bare <c>@id</c>.
+	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>. The four tiers run inside each candidate's turn.
 	/// </summary>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="parameterNames">The procedure's real parameter names, as the provider reports them (a leading <c>@</c> is allowed).</param>
+	/// <param name="expression">The text of the argument as the caller wrote it (<c>order.Customer.Id</c>), which the message of an ambiguity quotes.</param>
+	/// <param name="procedure">The procedure's name, for the message of an ambiguity.</param>
 	/// <returns>The real name as the provider reported it, or <see langword="null"/> when no candidate matches any parameter.</returns>
-	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier.</exception>
-	internal static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames)
+	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier. The message says what the caller wrote, the candidate, the tier and what the procedure declares.</exception>
+	internal static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames, string expression, string procedure)
 	{
 		// Every candidate in every tier compares against the same bare names: remove the @ once, here.
 		ImmutableArray<string> bareNames = BareNames(parameterNames);
 		foreach (string candidate in candidates)
 		{
-			if (Find(candidate, parameterNames, bareNames) is { } found) return found;
+			if (Find(expression, procedure, candidate, parameterNames, bareNames) is { } found) return found;
 		}
 
 		return null;
 	}
 
-	static string? Find(string candidate, ImmutableArray<string> parameterNames, ImmutableArray<string> bareNames)
+	// How a tier compares a candidate with a real name, for the message of an ambiguity.
+	static string TierText(int tier) => tier switch
+	{
+		1 => "exactly",
+		2 => "ignoring case",
+		3 => "ignoring case and underscores",
+		_ => "ignoring case and underscores once one parameter prefix (p_, in_, i_, prm_, par_, v_ or a lone p) is removed from the real name",
+	};
+
+	static string? Find(string expression, string procedure, string candidate, ImmutableArray<string> parameterNames, ImmutableArray<string> bareNames)
 	{
 		// Tier 1: exact. Tier 2: ignoring case. Tier 3: ignoring case and underscores. Tier 4: the same without one common parameter prefix.
 		for (int tier = 1; tier <= 4; tier++)
@@ -211,7 +222,13 @@ static class ParameterNames
 				if (!Same(candidate, bareNames[i], tier)) continue;
 				string real = parameterNames[i];
 				if (found is not null)
-					throw new InvalidOperationException($"The argument name '{candidate}' matches both '{found}' and '{real}'. Name the parameter explicitly: AddParam(\"name\", value).");
+				{
+					throw new InvalidOperationException(
+						$"The argument '{expression}' matches both '{found}' and '{real}' of '{procedure}'. "
+						+ $"Its candidate name '{candidate}' fits each of them {TierText(tier)}. "
+						+ $"The procedure declares: {string.Join(", ", parameterNames)}. Name the parameter explicitly: AddParam(\"name\", value).");
+				}
+
 				found = real;
 			}
 

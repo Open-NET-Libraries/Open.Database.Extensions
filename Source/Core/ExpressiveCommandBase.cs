@@ -334,8 +334,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// exactly, else ignoring case, else ignoring case and underscores, so <c>CompanySerialNum</c> finds <c>@company_serial_num</c>; failing those, for the same argument, after removing one common parameter prefix from the real name
 	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c>, <c>v_</c>, or a lone <c>p</c> before a capital letter), so <c>Author</c> finds <c>@p_author</c> and <c>@pAuthor</c>.
 	/// A field prefix on the last member (<c>m_</c>, <c>s_</c> or <c>_</c>) is also tried without. A chain tries its more specific endings first:
-	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing, matches two parameters at one tier, or is claimed by two arguments throws <see cref="InvalidOperationException"/> listing what the procedure expects.
-	/// The names are remembered for five minutes per connection factory, pool or connection, and read again once if the remembered names do not fit.
+	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing, matches two parameters at one tier, or is claimed by two arguments throws <see cref="InvalidOperationException"/> that says what you wrote and, when the names are known, what the procedure declares.
+	/// The names are remembered for five minutes per connection factory, pool or connection. When an argument matches none of the remembered names they are read again once before that throws; nothing else triggers a read, so an ambiguity, a collision and a less specific match are decided from the remembered names.
 	/// Where the real names are not available (a text command, or a provider that does not supply them) the last member is used as written.</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>
@@ -361,13 +361,15 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		=> condition ? AddDerivedParam(value, expression, typeof(T)) : CheckDerivable(expression);
 
 	/// <summary>
-	/// Adds a parameter for each public property and field of <paramref name="source"/>, named for the member: <c>AddParams(filter)</c> adds <c>CompanySerialNum</c>, <c>Region</c> and so on.
+	/// Adds the public properties and fields of <paramref name="source"/> as parameters. A member the stored procedure declares is sent under the procedure's real name (<c>CompanySerialNum</c> as <c>@company_serial_num</c>), a member it does not declare is skipped,
+	/// and where the procedure's names are not known (a text command, or a provider that does not supply them) every member is sent under its own name.
 	/// </summary>
 	/// <remarks>
-	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>: exactly, else ignoring case, else ignoring case and underscores, else without one common parameter prefix such as <c>p_</c>.
+	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>.
 	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures; parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
-	/// A parameter you add by name always wins over a member that resolves to the same name. Where the real names are not known (a text command, or a provider that does not supply them) every member is sent as written.</para>
-	/// <para>Members are read when this method is called, like any other value. Static members and indexers are ignored; the members are those of the static type <typeparamref name="T"/>, and nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
+	/// A parameter you add with <c>AddParam</c>, by name or from an argument, wins over a member that resolves to the same name.</para>
+	/// <para>Every public readable property and field is read when this method is called, whether or not the procedure declares it, so a getter that throws or loads lazily runs then. Static members and indexers are ignored.
+	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: a variable typed <see cref="object"/> has no members and adds nothing, and an interface adds only its own. Nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the object whose members are the parameters.</typeparam>
 	/// <param name="source">The object to read the values from.</param>
@@ -527,6 +529,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Gets the names of the parameters a stored procedure declares, so a parameter added with <c>AddParam(value)</c> can be matched to the real one.
 	/// A provider that can look this up overrides it; the default returns nothing, and the last member of each argument is used as written.
 	/// </summary>
+	/// <remarks>
+	/// Return the names exactly as the provider spells them: a leading <c>@</c> is ignored when matching, nothing else is changed, and the name that is sent is the one returned.
+	/// An empty or default array means "not known", which also covers a procedure that declares no parameters; it is never remembered.
+	/// </remarks>
 	/// <param name="connection">An open connection to run the lookup on. A command that executes inside a transaction must use <see cref="Transaction"/>.</param>
 	/// <param name="procedure">The procedure name as given to the command.</param>
 	/// <returns>The names as the provider reports them (a leading <c>@</c> is fine), or an empty or default array when they are not known.</returns>
@@ -598,27 +604,28 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		_ => _poolOrConnection,
 	};
 
-	// The database is part of the key: one connection can be switched to another database, where the same procedure name may be a different procedure.
-	string ProcedureKey(TConnection connection) => connection.Database + "\n" + Command;
+	// The server and the database are part of the key: one connection can be switched to another database, and one factory can hand out connections to different servers,
+	// where the same procedure name may be a different procedure. IDbConnection has no server name, so a connection that is not a DbConnection contributes none.
+	string ProcedureKey(TConnection connection) => (connection as DbConnection)?.DataSource + "\n" + connection.Database + "\n" + Command;
 
 	// Returns false, leaving the parameters untouched, when an argument named by the caller matches none of the real names and `final` is false (the names may be out of date).
 	bool ApplyDerivedNames(ImmutableArray<string> real, bool final)
 	{
 		List<Param> list = Params;
 		var kept = new List<Param>(list.Count);
-		var fromObject = new List<bool>(list.Count); // aligned with kept: a member of an object given to AddParams
+		var original = new List<Param>(list.Count); // aligned with kept: the parameter as it was added, to say what the caller wrote and whether it is a member of an object given to AddParams
 
 		foreach (Param p in list)
 		{
 			if (p.Expression is not { } expression)
 			{
 				kept.Add(p);
-				fromObject.Add(false);
+				original.Add(p);
 				continue;
 			}
 
 			// Without the real names the last member is used as written.
-			string? name = real.IsDefaultOrEmpty ? p.Name : ParameterNames.Match(ParameterNames.Candidates(expression), real);
+			string? name = real.IsDefaultOrEmpty ? p.Name : ParameterNames.Match(ParameterNames.Candidates(expression), real, expression, Command);
 			if (name is null)
 			{
 				// A member of an object that the procedure does not take is simply not sent; an argument named by the caller must match.
@@ -628,19 +635,19 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			}
 
 			kept.Add(p.Resolved(name));
-			fromObject.Add(p.FromObject);
+			original.Add(p);
 		}
 
 		// A parameter named by the caller wins over a member of an object that resolves to the same name.
 		for (int i = kept.Count - 1; i >= 0; i--)
 		{
-			if (!fromObject[i]) continue;
+			if (!original[i].FromObject) continue;
 			for (int j = 0; j < kept.Count; j++)
 			{
-				if (j != i && !fromObject[j] && SameName(kept[i].Name, kept[j].Name))
+				if (j != i && !original[j].FromObject && SameName(kept[i].Name, kept[j].Name))
 				{
 					kept.RemoveAt(i);
-					fromObject.RemoveAt(i);
+					original.RemoveAt(i);
 					break;
 				}
 			}
@@ -652,7 +659,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			for (int j = i + 1; j < kept.Count; j++)
 			{
 				if (SameName(kept[i].Name, kept[j].Name))
-					throw new InvalidOperationException($"Two parameters resolve to '{kept[i].Name}'. Name one of them explicitly: AddParam(\"name\", value).");
+					throw Collision(kept[i].Name, original[i], original[j], real);
 			}
 		}
 
@@ -665,6 +672,19 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	static bool SameName(string a, string b) => string.Equals(BareName(a), BareName(b), StringComparison.OrdinalIgnoreCase);
 
 	static string BareName(string name) => name.Length > 0 && name[0] == '@' ? name[1..] : name;
+
+	// What the caller wrote for a parameter, for the message of a collision.
+	static string Written(Param original)
+		=> original.Expression is { } expression
+			? original.FromObject ? $"the member '{expression}' of the AddParams object" : $"the argument '{expression}'"
+			: $"the name '{original.Name}' you passed";
+
+	InvalidOperationException Collision(string name, Param first, Param second, ImmutableArray<string> real)
+		=> new($"Two parameters resolve to '{name}': {Written(first)} and {Written(second)}. "
+			+ (real.IsDefaultOrEmpty
+				? "The parameter names are not known, so each argument is used under its last member as written."
+				: $"The procedure '{Command}' declares: {string.Join(", ", real)}.")
+			+ " Name one of them explicitly: AddParam(\"name\", value).");
 
 	InvalidOperationException NoMatch(string expression, ImmutableArray<string> real)
 		=> new($"The argument '{expression}' matches none of the parameters of '{Command}' (tried {string.Join(", ", ParameterNames.Candidates(expression))}). The procedure declares: {string.Join(", ", real)}. Name the parameter explicitly: AddParam(\"name\", value).");

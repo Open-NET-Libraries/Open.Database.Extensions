@@ -49,7 +49,7 @@ A name you write is sent exactly as written: the library never adds or removes a
 
 ### Name a parameter from its argument
 
-`AddParam(value)` takes the name from the argument, so you do not spell it twice. The argument must be a variable or a chain of members (properties and fields, members of members): `author`, `search.Author`, `order.Customer.Id`. Deriving needs C# 10 or newer; an older compiler gets an `ArgumentException` and must pass the name.
+`AddParam(value)` takes the name from the argument, so you do not spell it twice. The argument must be a variable or a chain of members (properties and fields, members of members): `author`, `search.Author`, `order.Customer.Id`. A type-qualified static or constant is a chain too: `DateTime.UtcNow` derives the name `UtcNow` and `string.Empty` derives `Empty`, so name such a value yourself unless that is the name you want. Deriving needs C# 10 or newer; an older compiler gets an `ArgumentException` and must pass the name.
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_from_argument)]
 
@@ -57,19 +57,40 @@ For a stored procedure the name is settled when the command runs. The provider r
 
 1. Exactly, else ignoring case, else ignoring case and underscores: `TitleContains` finds `@title_contains`.
 2. Else with one common parameter prefix removed from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
-3. A chain tries its longer endings first, each through all of those steps before the next: `order.Customer.Id` tries `OrderCustomerId`, `CustomerId`, then `Id`, so `@customer_id` and `@p_customer_id` are chosen over a bare `@id`.
+3. A chain tries its longer endings first, each through all of those steps before the next: `order.Customer.Id` tries `orderCustomerId`, `CustomerId`, then `Id`, so `@customer_id` and `@p_customer_id` are chosen over a bare `@id`.
 
-The names are read once and remembered for five minutes on the connection factory (or on the connection itself when you start from a connection), so register the factory once. A procedure that changes can show its old names for up to five minutes; when a remembered name no longer fits, the names are read again once before anything fails. When the real names are not available, as with a text command or another provider, the last member is used as written, without an `@`.
+For example `AddParam(search.Author)` sends `@p_author` when the procedure declares that, `@Author` or `@author` when it declares one of those, and throws when it declares none of them. The prefix step (rule 2) can bind a parameter whose name only starts like a prefix: `Stock` finds `@in_stock`, `Value` finds `@par_value` and `Progress` finds `@in_progress`. When that is not the parameter you mean, name it yourself: `AddParam("stock", stock)`.
 
-A `null` value is sent as a database NULL. `AddParam(note)` also sends the database type of the argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`. A `null` passed by name has no type to use, so pass one:
+When the real names are not available, as with a text command or another provider, the last member is used as written, without an `@`: `Author`. The names are read once and then remembered: see [Remembered names](#remembered-names).
+
+A `null` value is sent as a database NULL. `AddParam(note)` also sends the database type of the argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`. A `null` given with a name, `AddParam("note", null)`, has no type to use, so pass one:
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_null_by_name)]
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_derived_names)]
 
-`AddParams(source)` sends the public properties and fields of an object (those of its static type, so pass a variable of the type you mean, not an `object`). When the procedure's names are known, only the members it declares are sent; a parameter added by name always wins over a member. Without the procedure's names (a text command, another provider) every member is sent, named as written. A procedure parameter that no member fills is left alone: it takes its default, or you add it with `AddParam`; a misspelled member is simply not sent. An anonymous object works: `AddParams(new { search.Author, TitleContains = "ode" })`. Pass only an object you trust: every declared member is sent, so an object bound from a request can fill a parameter you meant to decide on the server (a tenant, a deleted-rows flag). Add such a value with `AddParam("name", value)`, which wins.
+`AddParams(source)` sends the public properties and fields of an object. When the procedure's names are known, only the members it declares are sent, under the procedure's real names; a parameter you add with `AddParam`, by name or from an argument, wins over a member. Without the procedure's names (a text command, another provider) every member is sent, named as written. A procedure parameter that no member fills is left alone: it takes its default, or you add it with `AddParam`; a misspelled member is simply not sent. Pass only an object you trust: every declared member is sent, so an object bound from a request can fill a parameter you meant to decide on the server (a tenant, a deleted-rows flag). Add such a value with `AddParam("name", value)`, which wins.
 
-An argument that is not a plain member chain (a call, an index, an operator, a literal) throws `ArgumentException` where you wrote it: name the parameter with `AddParam("name", value)`. A name that matches no parameter, or more than one, throws `InvalidOperationException` that lists what the procedure declares.
+The members are those of the static type of the argument, not of the object's runtime type: a variable typed `object` has no members and sends nothing, an interface sends only its own members, and a `Dictionary<,>` sends its own properties (`Count`, `Keys`) rather than its entries. Pass a variable of the type you mean. Every public readable property is read when you call `AddParams`, even one the procedure does not declare, so a getter that throws or loads lazily runs then. An anonymous object works: `AddParams(new { search.Author, TitleContains = "ode" })`.
+
+An argument that is not a plain member chain (a call, an index, an operator, a literal) throws `ArgumentException` where you wrote it: name the parameter with `AddParam("name", value)`. A name that matches no parameter, or more than one, or two arguments that resolve to the same parameter, throws `InvalidOperationException` that says what you wrote and, when the names are known, what the procedure declares.
+
+#### Remembered names
+
+The names are read once and remembered for five minutes, per server, database and procedure name, on the connection factory (or on the connection itself when you start from a connection). Register the factory once: a connection or a factory you create for each call starts with nothing remembered, so its names are read for every command. Names read inside a transaction are remembered too, even if the transaction rolls back.
+
+A procedure that changes can show its old names for up to five minutes. Only one case reads again before it fails: an argument from `AddParam(value)` that matches none of the remembered names makes the library read the names once more. Everything else uses the remembered names as they are until they expire:
+
+- a member of an `AddParams` object that the remembered names do not declare is skipped, so a new optional parameter is not sent;
+- a less specific match is kept while a more specific new parameter exists (`@id` for `order.Customer.Id` although `@customer_id` now exists);
+- an ambiguity, or two arguments that resolve to the same parameter, is reported from the remembered names;
+- when the second read finds nothing (the procedure is no longer visible to the login), the argument is sent as written and the old names stay until they expire.
+
+#### What was sent?
+
+Before a terminal runs, `command.Params` lists what you added: a name you wrote as written, an argument-derived name as its last member (nothing has been matched yet), and the members of an `AddParams` object under their member names. After a terminal has run, `command.Params` holds the names that were sent. To see what reached the provider, give `Execute(command => ...)` a function that reads the provider's command: its `CommandText`, `CommandType` and `Parameters` (name and value of each) already have the real names. The library keeps no log of the statement and has no other hook.
+
+A derived name stays as written when no real names were read: a text command, another provider, a procedure name with a database part (`otherdb.dbo.proc`), a procedure the login cannot see or that does not exist, or one that declares no parameters. Name the parameters yourself when you call a procedure in another database.
 
 ### Name a parameter yourself
 
@@ -103,7 +124,7 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
-`ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds.
+`ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds. On SQL Server the lookup of a stored procedure's parameter names uses the same timeout. A failed lookup throws the provider's own exception (a `SqlException` stays a `SqlException`, so a retry policy still sees it), with the procedure's name in `Exception.Data["Procedure"]`.
 
 `UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is used together with it, and either one cancels the call. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
 
