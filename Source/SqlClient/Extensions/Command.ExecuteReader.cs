@@ -21,7 +21,7 @@ public static partial class SqlCommandExtensions
 #if DEBUG
 		if (command.Connection is null) throw new ArgumentException("Cannot execute a command with a null connection.");
 #endif
-		return command.Connection!.EnsureOpenAsync(cancellationToken);
+		return command.Connection!.EnsureOpenAsync(false, cancellationToken);
 	}
 	#endregion
 
@@ -96,10 +96,11 @@ public static partial class SqlCommandExtensions
 		ConnectionState state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		await handler(reader).ConfigureAwait(false);
 	}
 
@@ -119,10 +120,11 @@ public static partial class SqlCommandExtensions
 
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		handler(reader);
 	}
 
@@ -155,10 +157,11 @@ public static partial class SqlCommandExtensions
 
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		return transform(reader);
 	}
 
@@ -178,10 +181,11 @@ public static partial class SqlCommandExtensions
 
 		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-		return await transform(reader);
+#else
+		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
+		return await transform(reader).ConfigureAwait(false);
 	}
 }

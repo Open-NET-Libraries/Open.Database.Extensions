@@ -85,7 +85,7 @@ public static partial class SqlTransactionExtensions
 		Contract.EndContractBlock();
 
 		// Remember the prior state so a connection that is opened here is closed again here.
-		ConnectionState priorState = await connection.EnsureOpenAsync(cancellationToken);
+		ConnectionState priorState = await connection.EnsureOpenAsync(false, cancellationToken).ConfigureAwait(false);
 		try
 		{
 			// Disposing the transaction (at the end of this block, before the connection is closed)
@@ -95,9 +95,10 @@ public static partial class SqlTransactionExtensions
 #if NET472
 			using SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
 #else
-			await using SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
+			SqlTransaction transaction = connection.BeginTransaction(isolationLevel);
+			await using var transactionDisposal = transaction.ConfigureAwait(false);
 #endif
-			(bool Commit, T Value) result = await conditionalAction(transaction, cancellationToken);
+			(bool Commit, T Value) result = await conditionalAction(transaction, cancellationToken).ConfigureAwait(false);
 
 			// Same contract as the synchronous path: a cancelled token never commits.
 			cancellationToken.ThrowIfCancellationRequested();
@@ -109,7 +110,7 @@ public static partial class SqlTransactionExtensions
 #if NET472
 				transaction.Commit();
 #else
-				await transaction.CommitAsync(CancellationToken.None);
+				await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
 #endif
 			}
 
@@ -117,7 +118,7 @@ public static partial class SqlTransactionExtensions
 		}
 		finally
 		{
-			await RestoreConnectionAsync(connection, priorState);
+			await RestoreConnectionAsync(connection, priorState).ConfigureAwait(false);
 		}
 	}
 
