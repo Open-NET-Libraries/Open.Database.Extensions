@@ -223,7 +223,7 @@ and pass it to `Map<T>`:
 
 ## Async and cancellation
 
-Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used when a terminal is not given one.
+Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call.
 
 ## Where Dapper does more
 
