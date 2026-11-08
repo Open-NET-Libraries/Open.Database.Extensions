@@ -1,7 +1,7 @@
 # What's new in 11
 
 > [!NOTE]
-> Version 11.0.0 is currently a preview (`11.0.0-preview04`). Please try it and report what you find.
+> Version 11.0.0 is currently a preview (`11.0.0-preview05`). Please try it and report what you find.
 
 Version 11 is a performance release. Result mapping is rewritten around a cached, typed row reader. See [Performance](performance.md) for what that does and does not buy you.
 
@@ -10,6 +10,9 @@ Version 11 is a performance release. Result mapping is rewritten around a cached
 New since `11.0.0-preview04`:
 
 - **Name a parameter from its argument.** `AddParam(search.Author)` and `AddParamIf(condition, search.Author)` take the parameter name from the argument expression (a variable or a chain of properties and fields). For a stored procedure the provider reports the real parameter names and the argument is matched to one (exactly, ignoring case, ignoring case and underscores), so `TitleContains` finds `@title_contains`; SQL Server is supported in both SQL Server packages. `AddParams(source)` sends the public properties and fields of the static type of `source` that the procedure declares. See [Parameters](expressive-commands.md#name-a-parameter-from-its-argument).
+- **The token-only `DbDataReader` overloads are back.** `ResultsAsync<T>(CancellationToken)` and `ResultsBufferedAsync<T>(CancellationToken)` are available again; they were not in `11.0.0-preview04`.
+- **A parameter with no value is now sent by both SQL Server packages.** It was never added to the command, so an output parameter (`AddParam(name, direction)`) never reached SQL Server. SqlClient needs a type and size for an output parameter and refuses the command without them.
+- **A `NULL` is sent with the type of its argument,** for the new `AddParam(value)` and `AddParamIf(condition, value)`, so SQL Server does not have to guess the type of a bare `NULL`.
 
 ## Preview 04
 
@@ -45,7 +48,7 @@ New since `11.0.0-preview01`:
 
 ## Fixes
 
-- **`ExecuteReturn<T>()` and `ExecuteReturnAsync<T>()` return `default(T)` for a `NULL` return value,** as `ExecuteScalar<T>()` does, instead of throwing `NullReferenceException` for a value type.
+- (preview05) **`ExecuteReturn<T>()` and `ExecuteReturnAsync<T>()` return `default(T)` for a `NULL` return value,** as `ExecuteScalar<T>()` does, instead of throwing `NullReferenceException` for a value type.
 - **Channels and Dataflow.** With `complete: false`, the command no longer runs twice. The mapped `ToChannel<T>`, `ToChannelAsync<T>` and `ToTargetBlock<T>` overloads complete your target only after every row has been delivered and the reader has been released (before, up to about 1,024 buffered rows could be lost with a bounded target). They no longer lose the last row when the reader fails mid-stream, and they map correctly when the reader has extra unmapped columns.
 - **Connections and commands.** `OpenAsync(IDbConnection)` no longer opens a `DbConnection` twice. `EnsureOpenAsync` closes a connection that finished opening just as cancellation arrived. `FirstOrdinalResults<T>(IDbCommand, behavior)` honors `behavior`.
 
