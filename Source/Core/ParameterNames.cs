@@ -40,7 +40,7 @@ static class ParameterNames
 		if (!TryScan(expression, segments, out _, out _))
 			throw new ArgumentException($"Cannot derive a parameter name from the expression '{expression}'.", nameof(expression));
 
-		var names = new string[segments.Count];
+		string[] names = new string[segments.Count];
 		for (int i = 0; i < names.Length; i++)
 			names[i] = expression.Substring(segments[i].Start, segments[i].Length);
 
@@ -124,8 +124,10 @@ static class ParameterNames
 	static bool IsNotAName(string expression, int start, int length)
 	{
 		foreach (string word in NotNames)
+		{
 			if (word.Length == length && string.CompareOrdinal(expression, start, word, 0, length) == 0)
 				return true;
+		}
 
 		return false;
 	}

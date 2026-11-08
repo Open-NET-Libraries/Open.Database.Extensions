@@ -154,8 +154,13 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <inheritdoc cref="GetProcedureParameterNames(SqlConnection, string)"/>
 	protected override async ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(SqlConnection connection, string procedure, CancellationToken cancellationToken)
 	{
+#if NETSTANDARD2_0
 		using SqlCommand command = ProcedureNamesCommand(connection, procedure);
 		using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+#else
+		await using SqlCommand command = ProcedureNamesCommand(connection, procedure);
+		await using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+#endif
 		return await ReadNamesAsync(reader, cancellationToken).ConfigureAwait(false);
 	}
 

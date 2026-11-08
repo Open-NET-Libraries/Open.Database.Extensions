@@ -307,7 +307,7 @@ public static class RowMapDeclarationTests
 	[Fact]
 	public static void RowMapCreate_BuildsTheSameMapAsTheConstructor()
 	{
-		RowMap<Item> map = RowMap.Create<Item>([new(nameof(Item.Id), "item_id")]);
+		var map = RowMap.Create<Item>([new(nameof(Item.Id), "item_id")]);
 
 		AssertSeven(OneRow().Map(map).ToList());
 		Assert.Equal([(nameof(Item.Id), "item_id")], Pairs(map));

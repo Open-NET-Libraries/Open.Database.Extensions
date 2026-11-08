@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Open.Database.Extensions;
 
@@ -26,7 +25,7 @@ static class ProcedureNameCache
 
 	sealed class Entries
 	{
-		public readonly Dictionary<string, Entry> ByProcedure = new(StringComparer.OrdinalIgnoreCase);
+		public readonly Dictionary<string, Entry> ByProcedure = [with(StringComparer.OrdinalIgnoreCase)];
 	}
 
 	internal static bool TryGet(object source, string key, out ImmutableArray<string> names)

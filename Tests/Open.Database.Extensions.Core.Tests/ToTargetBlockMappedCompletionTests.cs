@@ -1289,7 +1289,7 @@ public static class ToTargetBlockMappedCompletionTests
 		var pool = (ArrayPool<object>)typeof(Core.Transformer<Row>)
 			.GetField("LocalPool", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!
 			.GetValue(null)!;
-		var pooled = new object[4096][]; // More than the pool can keep.
+		object[][] pooled = new object[4096][]; // More than the pool can keep.
 		for (int i = 0; i < pooled.Length; i++) pooled[i] = pool.Rent(1);
 		for (int i = 0; i < pooled.Length; i++) pool.Return(pooled[i]);
 
@@ -1336,7 +1336,7 @@ public static class ToTargetBlockMappedCompletionTests
 
 		// The whole process shares one heap, so a measurement can pick up growth that is not the call'"'"'s (a runtime or thread-pool structure, a neighbour).
 		// A real leak is in every batch; noise is not. So measure several batches and judge the best one.
-		var slopes = new double[batches];
+		double[] slopes = new double[batches];
 		for (int b = 0; b < batches; b++)
 		{
 			long before = GC.GetTotalMemory(true);

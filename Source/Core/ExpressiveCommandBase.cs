@@ -363,6 +363,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	TThis CheckDerivable(string? expression)
 		=> ParameterNames.IsDerivable(expression) ? (TThis)this : throw NotDerivable(expression);
 
+	[SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly")]
 	static ArgumentException NotDerivable(string? expression)
 		=> new($"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.CompanySerialNum, or name the parameter: AddParam(\"name\", value).", "value");
 

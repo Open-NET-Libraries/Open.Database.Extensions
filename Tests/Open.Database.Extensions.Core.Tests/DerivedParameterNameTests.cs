@@ -93,9 +93,9 @@ public static class DerivedParameterNameTests
 	{
 		var filter = new Filter();
 		var order = new Order();
-		int startDate = 5;
-		int pageSize = 25;
-		string @class = "c";
+		const int startDate = 5;
+		const int pageSize = 25;
+		const string @class = "c";
 		Filter? maybe = filter;
 
 		var probe = new ConnectionProbe(ConnectionState.Open);
@@ -109,7 +109,7 @@ public static class DerivedParameterNameTests
 			.AddParam(order.Filter.Customer.Email)  // a property of a property of a field
 			.AddParam(maybe?.Limit)                 // null-conditional
 			.AddParam(maybe!.Offset)                // null-forgiving, a field
-			.AddParam((pageSize))                   // parentheses
+			.AddParam(pageSize)                   // parentheses
 			.AddParam(@class)                       // a verbatim identifier
 			.ExecuteNonQuery();
 
@@ -134,7 +134,7 @@ public static class DerivedParameterNameTests
 	sealed class Holder
 	{
 		public int Quantity { get; set; } = 3;
-		public ExpressiveCommand Add(ExpressiveCommand command) => command.AddParam(this.Quantity);
+		public ExpressiveCommand Add(ExpressiveCommand command) => command.AddParam(Quantity);
 	}
 
 	// ---- matched to the real parameter names ----
@@ -249,7 +249,6 @@ public static class DerivedParameterNameTests
 		Assert.Equal(["CompanySerialNum"], SentNames(textProbe));
 	}
 
-
 	[Fact]
 	public static void RealNames_AreRemembered_PerConnectionSource_AndNotShared_ByDifferentSources()
 	{
@@ -279,7 +278,7 @@ public static class DerivedParameterNameTests
 	{
 		var filter = new Filter();
 		var probe = new ConnectionProbe(ConnectionState.Open);
-		DbConnectionFactory<IDbConnection> factory = DbConnectionFactory.Create(() => probe.Connection);
+		var factory = DbConnectionFactory.Create(() => probe.Connection);
 
 		// Each command wraps the factory in its own pool object; what is remembered belongs to the factory, so the second command does not ask again.
 		var first = new ProcCommand(factory, CommandType.StoredProcedure, "dbo.factory_names", "@region");
@@ -500,7 +499,7 @@ public static class DerivedParameterNameTests
 	{
 		var filter = new Filter { EndDate = DateTime.Today };
 		int[] values = [1, 2];
-		int a = 1, b = 2;
+		const int a = 1, b = 2;
 		string Text() => "x";
 		var cmd = new ConnectionProbe(ConnectionState.Open).Connection.Command("select 1");
 
@@ -665,7 +664,7 @@ public static class DerivedParameterNameTests
 	{
 		byte[]? blob = null;
 		int? count = null;
-		string? text = null;
+		const string? text = null;
 		DateTime? stamp = null;
 		Guid? key = null;
 		decimal? price = null;
@@ -738,7 +737,7 @@ public static class DerivedParameterNameTests
 		public static int Shared = 1;                       // static: ignored
 		public int this[int index] => index;                // an indexer: ignored
 #pragma warning disable CS0414 // never used: it is private, which is the point
-		int _hidden = 5;                                    // not public: ignored
+		readonly int _hidden = 5;                                    // not public: ignored
 #pragma warning restore CS0414
 		public override string ToString() => _hidden.ToString();
 	}

@@ -1,4 +1,3 @@
-using System.Data.Common;
 using Simple = Open.Database.Extensions.Tests.RowMapperTests.Simple;
 
 #nullable enable
@@ -16,11 +15,11 @@ public static class ReaderTokenOverloadTests
 	static readonly RowMap<Simple> Renames = new([new(nameof(Simple.Id), "item_id"), new(nameof(Simple.Name), "item_name")]);
 
 	// Columns match the property names: read by name, no map needed.
-	static DbDataReader Named()
+	static TypedReader Named()
 		=> TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
 
 	// Columns do not match the property names: only a map finds them.
-	static DbDataReader Renamed()
+	static TypedReader Renamed()
 		=> TypedReader.Create([("item_id", typeof(int)), ("item_name", typeof(string))], [1, "a"], [2, "b"]);
 
 	static CancellationTokenSource Cancelled()
