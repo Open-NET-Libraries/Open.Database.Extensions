@@ -75,6 +75,19 @@ Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).Fi
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName == "", "a property named by a pair is not matched by an underscore column");
 Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
+PostRecord[] records = Mapping.MapRecord(connection);
+Check(records.Length == 5 && records[0] == new PostRecord(1, 42, "Post 1", "Body 1") && records[1] == new PostRecord(2, 42, "Post 2", null), "a positional record is built through its constructor, NULL included");
+Check(Mapping.MapRecordExtra(connection)[0] == new PostSummary(1, "Post 1") { Views = 10 }, "a record with an init property: the constructor, then the init property from its column, unmatched columns ignored, an init property with no column keeps its initializer");
+Check(Mapping.MapRecordDeclared(connection) is [{ Title: "Post 1" }, ..], "a pair that names a positional property feeds its constructor parameter from the column");
+(PostInput[] inputs, ValueMappingException? missingTitle) = Mapping.MapRequired(connection);
+Check(inputs is [{ Title: "Post 1", Body: "Body 1" }, { Title: "Post 2", Body: null }, ..] && inputs.Length == 5, "a required property is mapped when a column feeds it");
+Check(missingTitle is { PropertyName: "Title", ColumnName: "Title", InnerException: null }, "a result shape with no column for a required property throws ValueMappingException at its first row");
+Check(missingTitle?.Message == "No column feeds the required property 'Title' (String) of 'PostInput'; expected a column named 'Title'.", "the missing required column message names the property, its type, the model and the column looked for");
+Check(connection.Command("select body from posts where id = 999").Map<PostInput>().ToArray().Length == 0, "an empty result does not report a missing required column");
+(Review? withNulls, Review? withoutColumns) = Mapping.MapCtorNullColumn(connection);
+Check(withNulls == new Review(7, "untitled", 3, null), "a NULL into a non-nullable parameter takes its declared default, and a NULL into a nullable one is null");
+Check(withoutColumns == new Review(7), "a parameter with no column takes its declared default, a nullable one included");
+Check(Mapping.MapUnmappable(connection) == "'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).", "a type with two public constructors and none without parameters throws at the call");
 ValueMappingException? bad = Mapping.MapValueError(connection);
 Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
 Check(bad?.Message == "Unable to set value of property 'Id' (Int32) from column 'id'.", "the ValueMappingException message names the property, its type and the column");
@@ -107,6 +120,7 @@ Check(DapperComparison.DapperFirst(connection)?.Title == DapperComparison.OdeFir
 Check(DapperComparison.DapperScalar(connection) == DapperComparison.OdeScalar(connection), "same scalar");
 Check(DapperComparison.DapperExecute(connection) == DapperComparison.OdeExecute(connection), "same execute");
 Check(DapperComparison.DapperRecords(connection).Count == 5, "Dapper binds a positional record");
+Check(DapperComparison.OdeRecords(connection).SequenceEqual(DapperComparison.DapperRecords(connection)), "Map<PostRecord>() builds the same positional records as Dapper");
 
 // Before and after: plain ADO.NET and the extensions return the same data.
 Db.Seed();

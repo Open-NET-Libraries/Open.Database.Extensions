@@ -23,7 +23,7 @@ namespace Open.Database.Extensions;
 /// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the map is constructed or <see cref="Default"/> is read, which every query method does at the call, even when the result is empty:
 /// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
 /// A NULL never overwrites a member the C# type declares non-nullable: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
-/// A property of such a type keeps the value <c>new T()</c> gave it, its initializer else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
+/// A property of such a type keeps the value its constructor or initializer gave it, else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
 /// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
 /// The annotations are read from the assembly the model is declared in, once per model type.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
@@ -109,7 +109,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
 	// The member's declared type decides what a NULL does: Nullable<T>, a reference type declared nullable and a reference type in a context without nullable annotations receive null;
 	// a member the C# type declares non-nullable (a value type, an enum included, or a reference type with nullable annotations on) is skipped,
-	// so a property keeps what new T() gave it (its initializer, else its default) and a constructor parameter gets its fallback: one IsDBNull per such cell on the typed path,
+	// so a property keeps what its constructor or initializer gave it (else its default) and a constructor parameter gets its fallback: one IsDBNull per such cell on the typed path,
 	// a single read of the cell on the general path. Which reference types are declared non-nullable is read once per model type, when the slots are built (NullAnnotations).
 
 	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.

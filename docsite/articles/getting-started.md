@@ -27,7 +27,7 @@ The `connectionString` in the examples is `Db.ConnectionString`, defined in [`Db
 
 ## Your first query
 
-A model needs a public parameterless constructor and public settable properties. Columns are matched to property names exactly, else ignoring case, else ignoring case and underscores (`first_name` feeds `FirstName`); see [Mapping rows to objects](mapping.md).
+A model is a class with public settable properties, as below, or a positional record or a class with one public constructor, which is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)). Columns are matched to property and parameter names exactly, else ignoring case, else ignoring case and underscores (`first_name` feeds `FirstName`); see [Mapping rows to objects](mapping.md).
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 

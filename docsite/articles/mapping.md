@@ -7,18 +7,115 @@
 | Your columns | Write |
 |---|---|
 | Named like the properties, or the same with underscores (`first_name` for `FirstName`) | `Map<T>()` |
+| Read into a positional record, or a class with one public constructor | `Map<T>()`: the constructor is called ([Records and constructors](#records-and-constructors)) |
 | Named differently | Declare a `RowMap<T>` once and pass it: `Map<T>(map)` |
 | One property must not be read | A `null` column for it in the `RowMap<T>` |
+| A property must always be read | Declare it `required` ([`required` and `init` members](#required-and-init-members)) |
 | A column can hold NULL | Declare the property nullable (`int?`, `string?`); a property the type declares non-nullable (`int`, or a `string` with nullable annotations on) keeps its initializer, else its default |
 | Your own conversion | `Map(selector)` |
 
 ## The rules
 
-- **Construction.** A class with a public parameterless constructor, or a struct with no public constructor, is built with `new T()` for each row, and then its properties are set. Any other type is built through its one public constructor: a positional record, a record struct, or a class with a single public constructor. Two or more public constructors and none without parameters, an interface, an abstract class, a single value like `int` or `string`, and a type with a `required` public field (a field cannot be set) throw `InvalidOperationException` at the call, even when the result is empty.
+- **Construction.** A class with a public parameterless constructor, or a struct with no public constructor, is built with `new T()` for each row, and then its properties are set. Any other type is built through its one public constructor: a positional record, a record struct, or a class with a single public constructor (see [Records and constructors](#records-and-constructors)). These throw `InvalidOperationException` at the call, even when the result is empty: an interface, an abstract class, a delegate, a single value like `int` or `string`, a class with no public constructor, two or more public constructors and none without parameters, and a type with a `required` public field (a field cannot be set).
 - **What is set.** The parameters of the constructor, when the type is built through one, and the public instance properties that have a public setter (a record's `init` property included). A parameter and a property of the same name, ignoring case, are one member: it is fed once, through the constructor. Public fields and static properties are not mapped.
 - **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`); so does a parameter the type declares non-nullable (a value type, or a reference type with nullable annotations on) when the cell is `NULL`.
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).
-- **No other conventions.** There are no attributes. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
+- **No other conventions.** The library has no mapping attributes of its own. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
+
+## Records and constructors
+
+A positional record is read with plain `Map<T>()`. This table:
+
+| id | author | title | body |
+|---|---|---|---|
+| 1 | 42 | Post 1 | Body 1 |
+| 2 | 42 | Post 2 | NULL |
+
+is read into this record:
+
+[!code-csharp[](../samples/Models.cs#record_post_model)]
+
+with this call:
+
+[!code-csharp[](../samples/Mapping.cs#map_record)]
+
+The result is `PostRecord(1, 42, "Post 1", "Body 1")` and `PostRecord(2, 42, "Post 2", null)`: each column feeds the constructor parameter of the same name, and a NULL into `string? Body` is `null`. The `long` parameters match what SQLite returns for an `INTEGER` column; an `int` parameter works too, because integers convert.
+
+### Which types are built through a constructor
+
+| The type | How a row is built |
+|---|---|
+| A class with a public parameterless constructor (it may have other constructors) | `new T()`, then its properties are set. The other constructors are never used |
+| A struct with no public constructor, or with a public parameterless one | Its default value, then its properties are set. A struct's own parameterless constructor is not called |
+| A positional record, a record struct, or any class or struct with exactly one public constructor | Through that constructor, then the properties it does not cover are set |
+| A class or struct with two or more public constructors and none without parameters | Not mappable: `InvalidOperationException` at the call. Use `Map(selector)`, or make all but one constructor non-public |
+
+Only public constructors count. The choice depends on the type alone, never on the columns of a query. Use `Map(selector)` when you need to choose a constructor by the columns.
+
+### How parameters are matched to columns
+
+A constructor parameter is matched like a property: the same three tiers (exact, ignoring case, ignoring case and underscores) over the whole result set, with the same [`RowMap<T>` pairs](#columns-named-differently). A record's positional property and its parameter are one member: its column feeds the constructor once, and the `init` setter of the positional property is never called. The properties the constructor does not cover are set after it, from their own columns:
+
+[!code-csharp[](../samples/Models.cs#record_extra_model)]
+
+[!code-csharp[](../samples/Mapping.cs#map_record_extra)]
+
+### `required` and `init` members
+
+An `init` property is set like any other settable property. A `required` property is set the same way, and it must be fed:
+
+- **A column must feed it in every result shape** (a `required` property of a base class too). When none does, the first row of that shape throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it. `Retrieve()` with `DequeueAs<T>()`, `DataTable.To<T>()`, `ToChannel` and the Dataflow methods have the columns before any row, so they report it even for no rows.
+- **A constructor parameter's default does not feed it.** A `required` property needs its own column, even when a constructor parameter has the same name.
+- **It cannot be ignored.** A `RowMap<T>` pair with a `null` column for a `required` property throws `ArgumentException` when the map is created.
+- **`[SetsRequiredMembers]`.** When the constructor the type is built through carries it, nothing is enforced: the members are ordinary properties.
+- **A `required` public field** cannot be set, because fields are never mapped, so the type throws `InvalidOperationException` at the call. Declare it as a property.
+
+[!code-csharp[](../samples/Models.cs#required_model)]
+
+[!code-csharp[](../samples/Mapping.cs#map_required)]
+
+### A missing column and a NULL
+
+A property no column feeds keeps what the constructor or its initializer gave it. A constructor parameter no column feeds takes its declared default value (`int stars = 3` gives `3`), else `default` (`0`, `null`). A NULL cell follows the rule in [NULL in a non-nullable column](#null-in-a-non-nullable-column), which for a parameter means its declared default instead of the initializer:
+
+| The member is declared | A NULL gives a property | A NULL gives a constructor parameter |
+|---|---|---|
+| A value type: `int`, `bool`, `DateTime`, an enum | Its initializer, else its default | Its declared default, else `default` |
+| A `string` with nullable annotations on | Its initializer, else `null` | Its declared default, else `null` |
+| `int?`, `string?`, or `[AllowNull]` on a property | `null` | `null` (the declared default is not used: a NULL is a value) |
+| A `string` with nullable annotations off, or a type parameter | `null` | `null` |
+
+[!code-csharp[](../samples/Models.cs#review_model)]
+
+[!code-csharp[](../samples/Mapping.cs#map_ctor_null_column)]
+
+### A `RowMap<T>` for a record
+
+A pair names a member by its property name, so `nameof(PostRecord.Title)` reaches the positional parameter `Title` (for a parameter the case of the name does not matter). A parameter that has no property of its name is named by the parameter itself. A `null` column means the parameter is not read: it takes its declared default, else `default`.
+
+[!code-csharp[](../samples/Mapping.cs#map_record_declared)]
+
+[!code-csharp[](../samples/Mapping.cs#map_record_declared_use)]
+
+### Errors
+
+A type that cannot be mapped throws `InvalidOperationException` at the call, before the query runs, even when the result would be empty. The name in the message is the type's short name:
+
+[!code-csharp[](../samples/Models.cs#ambiguous_constructor_model)]
+
+[!code-csharp[](../samples/Mapping.cs#map_unmappable)]
+
+| The type | Message |
+|---|---|
+| An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
+| An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
+| A single value (`int`, `string`, ...) | `'Int32' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().` |
+| No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
+| Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
+| A `required` public field | `'Post' cannot be mapped: its required field 'Title' cannot be set. Make it a property.` |
+| A constructor parameter that is `ref`, `in`, `out` or a pointer | `'Post' cannot be mapped: its constructor parameter 'id' is passed by reference or is a pointer. Use Map(selector).` |
+
+Errors in the data throw per row: a missing `required` column and an unconvertible value throw `ValueMappingException`, and a constructor that throws is wrapped (see [Values that cannot be mapped](#values-that-cannot-be-mapped)).
 
 ## snake_case columns map to PascalCase properties
 
@@ -52,11 +149,11 @@ Pass it to `Map<T>`. The same `map` parameter is on `Results`, `ToChannel`, `AsS
 
 Declare the map once and reuse it. A map is immutable and safe to share between threads, and a declared map adds nothing per call beyond a check that the result-set layout matches the one its reader was compiled for.
 
-**When a map is checked.** A map is checked when it is created, which with `field ??=` is at first use. It throws `ArgumentException` for a property that does not exist or cannot be set (a static property, or one without a public setter), a null property name, a property named twice, an empty column name, and two properties that would read the same column. The property side is matched exactly; column names are matched ignoring case:
+**When a map is checked.** A map is checked when it is created, which with `field ??=` is at first use. It throws `ArgumentException` for a property or constructor parameter that does not exist (a static property, or one without a public setter that no constructor parameter covers, is not a name either), a null name, a member named twice (a positional record's property and its parameter are one member), an empty column name, a `null` column for a `required` property, and two members that would read the same column. A property name is matched exactly; a constructor parameter's name ignoring case; column names are matched ignoring case:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_unknown)]
 
-**Ignoring a property.** A `null` column means "do not map this property". It is not a no-op: it stops the by-name match (underscore match included), so the property keeps the value `new T()` gave it (its initializer, else its default) even if the result set has a column with that name. The property must exist; the column need not. Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere:
+**Ignoring a property.** A `null` column means "do not map this property". It is not a no-op: it stops the by-name match (underscore match included), so the property keeps the value its constructor or initializer gave it (else its default), and a constructor parameter takes its declared default (else `default`), even if the result set has a column with that name. The property must exist; the column need not. A `required` property cannot be ignored. Use it for a heavy column you do not want read, a name that collides with another mapping, or a property you fill in elsewhere:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_ignore)]
 
@@ -94,7 +191,7 @@ The rule reads the nullable annotations the compiler stores in the assembly, so 
 
 ## Values that cannot be mapped
 
-A value that cannot be mapped (an unconvertible value, an overflow) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). It carries `PropertyName`, `ColumnName` and `TargetType`, its message names all three (`Unable to set value of property 'Id' (Int32) from column 'id'.`), and the conversion error is its `InnerException`. Provider exceptions (`DbException`) and cancellation pass through unwrapped. Any other failure while building a row object throws `InvalidOperationException` (the cause is its inner exception, unless the cause already was an `InvalidOperationException`).
+A value that cannot be mapped (an unconvertible value, an overflow) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). It carries `PropertyName`, `ColumnName` and `TargetType`, its message names all three (`Unable to set value of property 'Id' (Int32) from column 'id'.`), and the conversion error is its `InnerException`. A value that cannot be passed to a constructor parameter says so (`Unable to pass value of column 'post_id' to constructor parameter 'Id' (Int32) of 'Post'.`); `PropertyName` is then the member's name. A `required` property no column feeds throws it too, without an inner exception (see [`required` and `init` members](#required-and-init-members)). Provider exceptions (`DbException`) and cancellation pass through unwrapped. Any other failure while building a row object throws `InvalidOperationException` (the cause is its inner exception, unless the cause already was an `InvalidOperationException`); when a constructor throws, its message is `Unable to create 'MyApp.Post' from the current row.`, with the type's full name.
 
 [!code-csharp[](../samples/Mapping.cs#map_value_error)]
 
