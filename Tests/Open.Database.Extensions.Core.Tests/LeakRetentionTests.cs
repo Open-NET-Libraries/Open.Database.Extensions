@@ -160,7 +160,7 @@ public static class LeakRetentionTests
 	static List<WeakReference> RunProcedures(TrackedFactory factory, int count)
 	{
 		var uniqueNames = new List<WeakReference>(count);
-		int companySerialNum = 7;
+		const int companySerialNum = 7;
 		for (int i = 0; i < count; i++)
 			new ProcCommand(factory, "dbo.proc" + i, uniqueNames).AddParam(companySerialNum).ExecuteNonQuery();
 

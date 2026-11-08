@@ -23,6 +23,7 @@ public static class LeakMatrixTests
 		public string? Name { get; set; }
 	}
 
+	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors", Justification = "Test Only")]
 	sealed class ExecuteFailed : Exception;
 
 	public enum Outcome
@@ -57,6 +58,7 @@ public static class LeakMatrixTests
 			return Task.CompletedTask;
 		});
 
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
 	static Terminal<TCommand> Async<TCommand, TResult>(string name, Traits traits, Func<TCommand, CancellationToken, ValueTask<TResult>> run)
 		=> new(name, traits | Traits.Async, async (c, ct) => await run(c, ct));
 
@@ -226,7 +228,7 @@ public static class LeakMatrixTests
 				Assert.IsType<ExecuteFailed>(thrown);
 				break;
 			case Outcome.CancelledBefore:
-				Assert.IsAssignableFrom<OperationCanceledException>(thrown);
+				Assert.IsType<OperationCanceledException>(thrown, exactMatch: false);
 				break;
 			case Outcome.ReadThrowsFirst or Outcome.MappingThrows:
 				Assert.NotNull(thrown);

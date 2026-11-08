@@ -90,7 +90,7 @@ public static class LeakTransactionTests
 				Assert.IsType<InvalidOperationException>(thrown);
 				break;
 			default:
-				Assert.IsAssignableFrom<OperationCanceledException>(thrown);
+				Assert.IsType<OperationCanceledException>(thrown, exactMatch: false);
 				break;
 		}
 
