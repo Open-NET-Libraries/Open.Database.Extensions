@@ -1,5 +1,7 @@
 # Open.Database.Extensions.Dataflow
 
+![Open.Database.Extensions.Dataflow: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-dataflow.svg)
+
 Read query results straight into a TPL Dataflow pipeline. `ToTargetBlock<T>()` posts each row to a block, and `AsSourceBlock<T>()` exposes the results as a source block. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), and rows are mapped the same way as `Map<T>()`.
 
 ```sh
@@ -28,7 +30,7 @@ It works on expressive commands, on `IDbCommand` and on readers. See [Channels a
 |---|---|---|
 | [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/) | The foundation, expressive commands and `Map<T>()`. Provider-agnostic: start here. | netstandard2.0, netstandard2.1, net10.0 |
 | [Open.Database.Extensions.MSSqlClient](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/) | `SqlConnectionFactory` and stored procedures on `Microsoft.Data.SqlClient`. | net472, net10.0 |
-| [Open.Database.Extensions.SqlClient](https://www.nuget.org/packages/Open.Database.Extensions.SqlClient/) | The same API on the older `System.Data.SqlClient`. Legacy: prefer MSSqlClient. | netstandard2.0, netstandard2.1, net10.0 |
+| [Open.Database.Extensions.SqlClient](https://www.nuget.org/packages/Open.Database.Extensions.SqlClient/) | The same API on the older `System.Data.SqlClient`. Deprecated: use MSSqlClient. | netstandard2.0, netstandard2.1, net10.0 |
 | [Open.Database.Extensions.Channel](https://www.nuget.org/packages/Open.Database.Extensions.Channel/) | Rows into `System.Threading.Channels`. | netstandard2.0, netstandard2.1, net10.0 |
 | **Open.Database.Extensions.Dataflow** (this package) | Rows into TPL Dataflow blocks. | netstandard2.0, netstandard2.1, net10.0 |
 

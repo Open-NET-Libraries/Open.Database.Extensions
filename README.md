@@ -167,7 +167,7 @@ bool committed = connectionFactory.Using(connection =>
 | `Open.Database.Extensions.Channel` | Rows into `System.Threading.Channels`. |
 | `Open.Database.Extensions.Dataflow` | Rows into TPL Dataflow blocks. |
 | `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
-| `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Legacy: prefer `MSSqlClient`. |
+| `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Deprecated: use `MSSqlClient`. |
 | `Open.Database.Extensions` | A meta-package for Core. The last published version is 9.0.3: use Core. |
 
 ```sh

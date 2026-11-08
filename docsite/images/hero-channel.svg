@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 200" role="img" aria-labelledby="t d">
+  <title id="t">ODX Channel</title>
+  <desc id="d">You write the SQL. The library writes the other twenty lines. Rows drift through a glass pipe into an open channel, where they queue for the reader.</desc>
+  <style>
+    :root {
+      --bg1: #eef2f7; --bg2: #e1e7f0; --edge: #cdd6e2; --ink: #263040; --ink2: #3c4759; --mute: #6a778a;
+      --glass: #f7f9fc; --glassT: #fbfcfe; --glassS: #dfe5ee; --gline: #b9c4d3; --sh: #3e4d66; --sho: .22; --well: #d6dde8;
+      --a: #2a9467; --a2: #9fd6bd; --a3: #1f7352; --at: #1b6e4b;
+      --tf: #c6e0d9; --tt: #d8e8e6; --ts: #acd3c6; --te: #88c2ac;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg1: #1b2434; --bg2: #222c40; --edge: #34425a; --ink: #d6dee9; --ink2: #b4bfcf; --mute: #8592a6;
+        --glass: #2b3850; --glassT: #34435e; --glassS: #222d42; --gline: #4b5b77; --sh: #05080f; --sho: .5; --well: #1d2638;
+      --a: #6cc59c; --a2: #a9e0c6; --a3: #4a9e78; --at: #7fd0ab;
+      --tf: #385a5c; --tt: #2f4851; --ts: #46756c; --te: #579a82;
+      }
+    }
+    .s1 { stop-color: var(--bg1); } .s2 { stop-color: var(--bg2); } .ga { stop-color: var(--a); } .gb { stop-color: var(--a3); }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); }
+    .tag1 { font-size: 40px; font-weight: 600; letter-spacing: -.2px; }
+    .tag2 { font-size: 31px; font-weight: 400; fill: var(--ink2); letter-spacing: -.2px; }
+    .acc { fill: var(--at); }
+    .pk { font-size: 26px; font-weight: 600; fill: var(--at); letter-spacing: .3px; }
+    .lbl { font-size: 21px; font-weight: 600; fill: var(--ink); }
+    .word { font-size: 18px; fill: var(--ink2); }
+    .mono { font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, Menlo, monospace; font-size: 19px; fill: var(--ink2); }
+    .letters { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .rule { stroke: var(--edge); stroke-width: 2; }
+    .af { fill: var(--a); } .at { fill: var(--a2); } .as { fill: var(--a3); }
+    .gf { fill: var(--glass); fill-opacity: .6; stroke: var(--gline); stroke-width: 2; }
+    .gt { fill: var(--glassT); fill-opacity: .75; stroke: var(--gline); stroke-width: 2; }
+    .gs { fill: var(--glassS); fill-opacity: .7; stroke: var(--gline); stroke-width: 2; }
+    .tf { fill: var(--tf); stroke: var(--te); stroke-width: 2; } .tt { fill: var(--tt); stroke: var(--te); stroke-width: 2; } .ts { fill: var(--ts); stroke: var(--te); stroke-width: 2; }
+    .nf, .ns { fill: var(--glassS); stroke: var(--gline); stroke-width: 2; } .nt { fill: var(--glassT); stroke: var(--gline); stroke-width: 2; }
+    .sh { fill: var(--sh); fill-opacity: var(--sho); }
+    .row rect { fill: var(--a); } .row path { stroke: var(--a2); stroke-width: 2; fill: none; }
+    .row.hi rect { fill: var(--at); }
+    .wire { fill: none; stroke: var(--gline); stroke-width: 2.6; stroke-linecap: round; }
+    .wire.on { stroke: var(--a); stroke-width: 3.2; }
+    .ghost { opacity: .55; }
+    .ms { fill: url(#disk); } .mt { fill: var(--a2); stroke: var(--a); stroke-width: 2; }
+    .tube { fill: url(#tubeg); stroke: var(--gline); stroke-width: 2; }
+    .tg1 { stop-color: var(--glassT); } .tg2 { stop-color: var(--glassS); }
+    .tubehi { fill: var(--glassT); fill-opacity: .7; }
+    .drift { animation: drift 4.8s linear infinite; }
+    @keyframes drift { to { transform: translateX(58px); } }
+    @media (prefers-reduced-motion: reduce) { .mv { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="s1"/><stop offset="1" class="s2"/></linearGradient>
+    <linearGradient id="disk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="ga"/><stop offset="1" class="gb"/></linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" class="ga" stop-opacity=".14"/><stop offset="1" class="ga" stop-opacity="0"/></radialGradient>
+    <filter id="blur" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+<clipPath id="tubeclip"><rect x="762" y="88" width="232" height="48" rx="24"/></clipPath><linearGradient id="tubeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="tg1"/><stop offset="1" class="tg2"/></linearGradient>
+  </defs>
+  <rect x="1" y="1" width="1278" height="198" rx="16" fill="url(#bg)" stroke="var(--edge)" stroke-width="2"/>
+  <ellipse cx="1070" cy="100" rx="250" ry="110" fill="url(#glow)"/>
+
+  <g transform="translate(0 -6)">
+    <path class="ms" d="M48 101v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="101" rx="22" ry="6.5"/><path class="ms" d="M48 88v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="88" rx="22" ry="6.5"/><path class="ms" d="M48 75v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="75" rx="22" ry="6.5"/><path class="letters" d="M120 74.5a13.5 16.5 0 1 0 0.01 0ZM147.5 74.5V107.5H154.5A15 16.5 0 0 0 154.5 74.5ZM182.5 74.5L206.5 107.5M206.5 74.5L182.5 107.5"/>
+    <text class="pk" x="125" y="143" text-anchor="middle">Channel</text>
+    <path class="rule" d="M248 52V150"/>
+  </g>
+  <text class="tag1" x="274" y="88">You write the <tspan class="acc">SQL.</tspan></text>
+  <text class="tag2" x="275" y="142">The library writes the other twenty lines.</text>
+  <g transform="translate(332.7 2.1) scale(0.727)"><rect class="sh" x="770" y="150" width="230" height="12" rx="6" filter="url(#blur)"/><rect class="sh" x="1010" y="176" width="230" height="12" rx="6" filter="url(#blur)"/><rect class="tube" x="760" y="86" width="236" height="52" rx="26"/><g clip-path="url(#tubeclip)"><g class="mv drift"><g class="row"><rect x="708" y="101" width="40" height="22" rx="4"/><path d="M721.3 105v14M734.7 105v14"/></g><g class="row"><rect x="766" y="101" width="40" height="22" rx="4"/><path d="M779.3 105v14M792.7 105v14"/></g><g class="row"><rect x="824" y="101" width="40" height="22" rx="4"/><path d="M837.3 105v14M850.7 105v14"/></g><g class="row"><rect x="882" y="101" width="40" height="22" rx="4"/><path d="M895.3 105v14M908.7 105v14"/></g><g class="row"><rect x="940" y="101" width="40" height="22" rx="4"/><path d="M953.3 105v14M966.7 105v14"/></g><g class="row"><rect x="998" y="101" width="40" height="22" rx="4"/><path d="M1011.3 105v14M1024.7 105v14"/></g></g></g><rect class="tubehi" x="772" y="92" width="212" height="12" rx="6"/><ellipse class="gt" cx="996" cy="112" rx="9" ry="26"/><rect class="gs" x="1036.8" y="112.7" width="224" height="34"/><polygon class="gt" points="1006,168 1230,168 1260.8,146.7 1036.8,146.7"/><rect class="af" x="1030" y="146" width="36" height="14"/><polygon class="at" points="1030,146 1066,146 1078.1,137.6 1042.1,137.6"/><polygon class="as" points="1066,146 1078.1,137.6 1078.1,151.6 1066,160"/><rect class="af" x="1078" y="146" width="36" height="14"/><polygon class="at" points="1078,146 1114,146 1126.1,137.6 1090.1,137.6"/><polygon class="as" points="1114,146 1126.1,137.6 1126.1,151.6 1114,160"/><rect class="af" x="1126" y="146" width="36" height="14"/><polygon class="at" points="1126,146 1162,146 1174.1,137.6 1138.1,137.6"/><polygon class="as" points="1162,146 1174.1,137.6 1174.1,151.6 1162,160"/><rect class="af" x="1174" y="146" width="36" height="14"/><polygon class="at" points="1174,146 1210,146 1222.1,137.6 1186.1,137.6"/><polygon class="as" points="1210,146 1222.1,137.6 1222.1,151.6 1210,160"/><rect class="gf" x="1006" y="144" width="224" height="24"/><polygon class="gs" points="1230,144 1260.8,112.7 1260.8,146.7 1230,168"/></g>
+</svg>
