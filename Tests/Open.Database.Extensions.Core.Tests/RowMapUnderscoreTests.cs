@@ -226,6 +226,10 @@ public static class RowMapUnderscoreTests
 
 	static readonly MethodInfo MatchMethod = typeof(RowMap<Wide>).GetMethod("Match", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
+	// Match returns a Slot?[]; Slot is internal to Core, so the name of a slot is read by reflection.
+	static string? FeedName(Array feeds, int index)
+		=> feeds.GetValue(index) is { } slot ? (string?)slot.GetType().GetField("Name")!.GetValue(slot) : null;
+
 	// The definition, written the slow way: for each column in order, the first property that qualifies (tier 3: among the properties no pair named and unfilled when it began).
 	static int?[] Reference(string?[] columnOf, bool[] named, string[] names)
 	{
@@ -322,15 +326,15 @@ public static class RowMapUnderscoreTests
 			{
 				string[] names = [.. Enumerable.Range(0, random.Next(0, 15)).Select(_ => RandomName(random, columnOf))];
 
-				var feeds = (PropertyInfo?[])MatchMethod.Invoke(map, [names])!;
+				Array feeds = (Array)MatchMethod.Invoke(map, [names])!;
 				int?[] expected = Reference(columnOf, named, names);
 
 				Assert.Equal(names.Length, feeds.Length);
 				for (int i = 0; i < names.Length; i++)
 				{
-					Assert.True(expected[i] is { } p ? feeds[i]?.Name == WideProperties[p].Name : feeds[i] is null,
-						$"[{string.Join(", ", names)}] column {i} '{names[i]}': expected {(expected[i] is { } e ? WideProperties[e].Name : "nothing")}, was {feeds[i]?.Name ?? "nothing"}");
-					if (feeds[i] is not null) matched++;
+					Assert.True(expected[i] is { } p ? FeedName(feeds, i) == WideProperties[p].Name : feeds.GetValue(i) is null,
+						$"[{string.Join(", ", names)}] column {i} '{names[i]}': expected {(expected[i] is { } e ? WideProperties[e].Name : "nothing")}, was {FeedName(feeds, i) ?? "nothing"}");
+					if (feeds.GetValue(i) is not null) matched++;
 				}
 			}
 		}
