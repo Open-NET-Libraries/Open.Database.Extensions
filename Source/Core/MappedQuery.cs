@@ -118,12 +118,12 @@ readonly struct MappedQueryCore<T>
 		=> CancellationTokens.Combine(_command.CancellationToken, cancellationToken, out linked);
 
 	// `token` is the combined token; it is also in `state`, which the terminal's static lambda reads it from.
-	ValueTask<TResult> ExecuteAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken token, CancellationTokenSource? linked)
+	ValueTask<TResult> ExecuteAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource? linked, CancellationToken token)
 		=> linked is null
 			? _command.ExecuteReaderAsync(state, transform, behavior, token)
-			: ExecuteLinkedAsync(_command, state, transform, behavior, token, linked);
+			: ExecuteLinkedAsync(_command, state, transform, behavior, linked, token);
 
-	static async ValueTask<TResult> ExecuteLinkedAsync<TState, TResult>(IExecuteReader command, TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken token, CancellationTokenSource linked)
+	static async ValueTask<TResult> ExecuteLinkedAsync<TState, TResult>(IExecuteReader command, TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource linked, CancellationToken token)
 	{
 		using (linked)
 			return await command.ExecuteReaderAsync(state, transform, behavior, token).ConfigureAwait(false);
@@ -152,14 +152,14 @@ readonly struct MappedQueryCore<T>
 		{
 			await s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token).ConfigureAwait(false);
 			return false;
-		}, Behavior, token, linked));
+		}, Behavior, linked, token));
 	}
 
 	internal ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
 		return ExecuteAsync((handler, _source, _skip, _take, UseAsyncRead, token), static (reader, s)
-			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token), Behavior, token, linked);
+			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token), Behavior, linked, token);
 	}
 
 	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
@@ -196,7 +196,7 @@ readonly struct MappedQueryCore<T>
 		return ExecuteAsync((_source, _skip, _take, UseAsyncRead, token), static (reader, s)
 			=> reader is DbDataReader db
 				? RowReader.ToListAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token)
-				: new ValueTask<List<T>>(RowReader.ToList(s._source, reader, s._skip, s._take)), Behavior, token, linked);
+				: new ValueTask<List<T>>(RowReader.ToList(s._source, reader, s._skip, s._take)), Behavior, linked, token);
 	}
 
 	internal ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
@@ -205,7 +205,7 @@ readonly struct MappedQueryCore<T>
 		return ExecuteAsync((_source, _skip, _take, UseAsyncRead, token), static (reader, s)
 			=> reader is DbDataReader db
 				? RowReader.ToArrayAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token)
-				: new ValueTask<T[]>(RowReader.ToArray(s._source, reader, s._skip, s._take)), Behavior, token, linked);
+				: new ValueTask<T[]>(RowReader.ToArray(s._source, reader, s._skip, s._take)), Behavior, linked, token);
 	}
 
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
@@ -220,7 +220,7 @@ readonly struct MappedQueryCore<T>
 			}
 
 			return RowReader.TryFirst(s._source, reader, s._skip, s._take, out T? i) ? i : default;
-		}, FirstBehavior, token, linked);
+		}, FirstBehavior, linked, token);
 	}
 
 	internal ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken)
@@ -235,7 +235,7 @@ readonly struct MappedQueryCore<T>
 			}
 
 			return RowReader.TrySingle(s._source, reader, s._skip, s._take, out T? i) ? i : default;
-		}, Behavior, token, linked);
+		}, Behavior, linked, token);
 	}
 
 	internal ImmutableArray<T> ToImmutableArray()
@@ -287,7 +287,7 @@ readonly struct MappedQueryCore<T>
 
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
 			return sink.Dictionary;
-		}, Behavior, token, linked);
+		}, Behavior, linked, token);
 	}
 
 	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
@@ -309,7 +309,7 @@ readonly struct MappedQueryCore<T>
 
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
 			return sink.Set;
-		}, Behavior, token, linked);
+		}, Behavior, linked, token);
 	}
 
 	#endregion
