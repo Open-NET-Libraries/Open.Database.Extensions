@@ -258,14 +258,22 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>A task containing the list of results.</returns>
 	/// <seealso cref="RowMap{T}"/>
-		public ValueTask<IEnumerable<T>> ResultsAsync<T>(RowMap<T>? map = null)
-		where T : new()
-		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
+	public ValueTask<IEnumerable<T>> ResultsAsync<T>(RowMap<T>? map = null)
+	{
+		// An unmappable T fails here, before the command runs.
+		RowMap<T>.ThrowIfUnmappable();
+
+		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
+	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>()
-		where T : new()
-		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
+	{
+		// An unmappable T fails here, before the command runs.
+		RowMap<T>.ThrowIfUnmappable();
+
+		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
+	}
 
 	/// <summary>
 	/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.

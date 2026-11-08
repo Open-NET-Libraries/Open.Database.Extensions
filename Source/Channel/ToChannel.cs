@@ -114,7 +114,6 @@ public static partial class ChannelDbExtensions
 	public static ChannelReader<T> ToChannel<T>(this IDataReader reader,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -150,7 +149,6 @@ public static partial class ChannelDbExtensions
 		bool singleReader,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -271,7 +269,6 @@ public static partial class ChannelDbExtensions
 	public static ChannelReader<T> ToChannel<T>(this IDbCommand command,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -307,7 +304,6 @@ public static partial class ChannelDbExtensions
 		bool singleReader,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -420,7 +416,6 @@ public static partial class ChannelDbExtensions
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -454,7 +449,6 @@ public static partial class ChannelDbExtensions
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
 		RowMap<T>? map)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -536,7 +530,6 @@ public static partial class ChannelDbExtensions
 	public static ChannelReader<T> ToChannelAsync<T>(this DbDataReader reader,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -554,7 +547,6 @@ public static partial class ChannelDbExtensions
 		bool singleReader,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -623,7 +615,6 @@ public static partial class ChannelDbExtensions
 	public static ChannelReader<T> ToChannelAsync<T>(this DbCommand command,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -641,7 +632,6 @@ public static partial class ChannelDbExtensions
 		bool singleReader,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -717,7 +707,6 @@ public static partial class ChannelDbExtensions
 	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, bool)"/>
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -734,7 +723,6 @@ public static partial class ChannelDbExtensions
 	public static ChannelReader<T> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		bool singleReader,
 		RowMap<T>? map)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();

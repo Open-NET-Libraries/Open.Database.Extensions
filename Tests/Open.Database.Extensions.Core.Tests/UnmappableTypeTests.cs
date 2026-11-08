@@ -1,0 +1,590 @@
+using Open.Database.Extensions.Core;
+using System.Data.Common;
+using System.Threading.Tasks.Dataflow;
+
+#nullable enable
+
+namespace Open.Database.Extensions.Tests;
+
+// The `where T : new()` constraint is gone from every method that maps rows to a model, so a type that cannot be mapped is found out at run time.
+// These tests pin where: AT THE CALL (the RowMap<T> constructor and RowMap<T>.Default, which every entry point passes), with an EMPTY result,
+// so it never depends on there being a first row, and with an InvalidOperationException, never a TypeInitializationException.
+// The "cannot be mapped yet" message for `required` members is interim (a later phase replaces it); the constructor rules are final (constructor binding, phase C).
+[ExcludeFromCodeCoverage]
+public static class UnmappableTypeTests
+{
+	// ---- the type shapes ----
+
+	public interface IShapeless { int Id { get; set; } }
+
+	public abstract class AbstractShape { public int Id { get; set; } }
+
+	public delegate int ShapeCallback();
+
+	public enum ShapeKind { None, Some }
+
+	public sealed class PrivateConstructorShape
+	{
+		PrivateConstructorShape() { }
+		public int Id { get; set; }
+		public static PrivateConstructorShape Make() => new();
+	}
+
+	public sealed class TwoConstructorShape
+	{
+		public TwoConstructorShape(int id) => Id = id;
+		public TwoConstructorShape(int id, string title) { Id = id; Title = title; }
+		public int Id { get; set; }
+		public string? Title { get; set; }
+	}
+
+	public sealed record PositionalShape(int Id, string Title);
+
+	// A struct with no public constructor of its own, or with a public parameterless one, maps as it always did: its default value, then the settable members.
+	// A struct that declares exactly one public constructor with parameters (a record struct) is built through it: the results are equal for a record struct, whose constructor only assigns.
+	public record struct PositionalStructShape(int Id, string Title);
+
+	public readonly record struct ReadonlyPositionalStructShape(int Id, string Title);
+
+	public struct StructWithConstructorOnly
+	{
+		public StructWithConstructorOnly(int id, string title) { Id = id + 1000; Title = title + "!"; }
+		public int Id { get; set; }
+		public string? Title { get; set; }
+	}
+
+	public sealed class ThreeConstructorShape
+	{
+		public ThreeConstructorShape(int a) { }
+		public ThreeConstructorShape(string b, int a, int c) { }
+		public ThreeConstructorShape(int a, string b) { }
+	}
+
+	public struct TwoConstructorStructShape
+	{
+		public TwoConstructorStructShape(int id, string title) { Id = id; Title = title; }
+		public TwoConstructorStructShape(int id) { Id = id; Title = null; }
+		public int Id { get; set; }
+		public string? Title { get; set; }
+	}
+
+	public sealed class ByReferenceShape
+	{
+		public ByReferenceShape(in int id) => Id = id;
+		public int Id { get; }
+	}
+
+	public class OneOfSeveralShape
+	{
+		public OneOfSeveralShape(int id) { Id = id; Built = "public"; }
+		internal OneOfSeveralShape(int id, string other) { Id = id; Built = other; }
+		protected OneOfSeveralShape(string text) { Built = text; }
+		public int Id { get; }
+		public string? Built { get; }
+	}
+
+	// A struct with its own public parameterless constructor is built as ever, whatever else it declares: that constructor is not called, as it never was.
+	public struct StructWithPublicParameterlessConstructor
+	{
+		public StructWithPublicParameterlessConstructor() { Id = -1; }
+		public StructWithPublicParameterlessConstructor(int id) { Id = id + 1000; }
+		public int Id { get; set; }
+	}
+
+	public sealed class RequiredShape { public required int Id { get; set; } }
+
+	public class RequiredBase { public required int Id { get; set; } }
+
+	public sealed class RequiredDerived : RequiredBase { public string? Title { get; set; } }
+
+	// What maps today and must keep mapping: a parameterless constructor next to another one, a struct with none of its own, a struct whose only constructor is not public.
+	public sealed class ParameterlessAndOther
+	{
+		public ParameterlessAndOther() { }
+		public ParameterlessAndOther(int id) => Id = id + 1000;
+		public int Id { get; set; }
+	}
+
+	public struct StructWithNoConstructor { public int Id { get; set; } }
+
+	public struct StructWithPrivateConstructor
+	{
+		StructWithPrivateConstructor(int id) => Id = id;
+		public int Id { get; set; }
+		public static StructWithPrivateConstructor Make() => new(0);
+	}
+
+	static string Single(string name) => $"'{name}' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().";
+	static string NotConcrete(string name, string kind) => $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
+	static string NoConstructor(string name) => $"'{name}' cannot be mapped: it has no public constructor.";
+	static string Ambiguous(string name, int count, string signatures) => $"'{name}' cannot be mapped: it has {count} public constructors, {signatures}, and none without parameters. Make one of them non-public, or use Map(selector).";
+	static string ByReference(string name, string parameter) => $"'{name}' cannot be mapped: its constructor parameter '{parameter}' is passed by reference or is a pointer. Use Map(selector).";
+	static string Required(string name) => $"'{name}' cannot be mapped yet: it has required members (required-member support arrives in a later phase).";
+
+	// Every way to meet a type: the default map, a map constructed for it, and a query over it with no rows. Each one throws the same exception.
+	static void AssertUnmappable<T>(string message)
+	{
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => RowMap<T>.Default).Message);
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => RowMap<T>.Default).Message); // Reading it again throws again: it is not a failed type initializer.
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => new RowMap<T>()).Message);
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => new RowMap<T>([])).Message);
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => RowMap<T>.From([])).Message);
+
+		var command = new FakeExecuteReader(["Id"]);
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => command.Map<T>()).Message);
+		Assert.Equal(0, command.ExecuteCount); // Nothing ran: the call failed before the query was executed.
+
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).Results<T>()).Message);
+		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).ResultsBuffered<T>()).Message);
+	}
+
+	// ---- the type-shape rules ----
+
+	[Fact]
+	public static void Interface_IsRejected() => AssertUnmappable<IShapeless>(NotConcrete("IShapeless", "an interface"));
+
+	[Fact]
+	public static void AbstractClass_IsRejected() => AssertUnmappable<AbstractShape>(NotConcrete("AbstractShape", "an abstract class"));
+
+	[Fact]
+	public static void Delegate_IsRejected() => AssertUnmappable<ShapeCallback>(NotConcrete("ShapeCallback", "a delegate"));
+
+	[Fact]
+	public static void Scalars_AreRejected_WithAPointerToTheScalarMethods()
+	{
+		AssertUnmappable<int>(Single("Int32"));
+		AssertUnmappable<string>(Single("String"));
+		AssertUnmappable<int?>(Single("Int32?"));
+		AssertUnmappable<Guid>(Single("Guid"));
+		AssertUnmappable<decimal>(Single("Decimal"));
+		AssertUnmappable<DateTime>(Single("DateTime"));
+		AssertUnmappable<DateTimeOffset?>(Single("DateTimeOffset?"));
+		AssertUnmappable<TimeSpan>(Single("TimeSpan"));
+		AssertUnmappable<bool>(Single("Boolean"));
+		AssertUnmappable<ShapeKind>(Single("ShapeKind"));
+		AssertUnmappable<ShapeKind?>(Single("ShapeKind?"));
+		AssertUnmappable<byte[]>(Single("Byte[]"));
+	}
+
+	[Fact]
+	public static void ClassWithOnlyAPrivateConstructor_IsRejected()
+	{
+		AssertUnmappable<PrivateConstructorShape>(NoConstructor("PrivateConstructorShape"));
+		Assert.NotNull(PrivateConstructorShape.Make()); // The type itself is fine: it is the mapper that cannot reach the constructor.
+	}
+
+	[Fact]
+	public static void ClassWithTwoPublicConstructorsAndNoParameterlessOne_IsRejected_NamingBothSignatures()
+		=> AssertUnmappable<TwoConstructorShape>(Ambiguous("TwoConstructorShape", 2, "TwoConstructorShape(Int32 id) and TwoConstructorShape(Int32 id, String title)"));
+
+	[Fact]
+	public static void ThreeOrMorePublicConstructors_AreAllNamed_FewestParametersFirst_ForAClassAndAStruct()
+	{
+		AssertUnmappable<ThreeConstructorShape>(Ambiguous("ThreeConstructorShape", 3, "ThreeConstructorShape(Int32 a), ThreeConstructorShape(Int32 a, String b) and ThreeConstructorShape(String b, Int32 a, Int32 c)"));
+		AssertUnmappable<TwoConstructorStructShape>(Ambiguous("TwoConstructorStructShape", 2, "TwoConstructorStructShape(Int32 id) and TwoConstructorStructShape(Int32 id, String title)"));
+	}
+
+	[Fact]
+	public static void AConstructorParameterPassedByReference_IsRejected_AtTheCall()
+		=> AssertUnmappable<ByReferenceShape>(ByReference("ByReferenceShape", "id"));
+
+	// One public constructor binds, whatever else the type declares that is not public.
+	[Fact]
+	public static void AClassWithOnePublicConstructor_AndOthersThatAreNot_IsBuiltThroughThePublicOne()
+	{
+		OneOfSeveralShape item = new FakeExecuteReader(["Id"], [5]).Map<OneOfSeveralShape>().ToList().Single();
+		Assert.Equal((5, "public"), (item.Id, item.Built));
+	}
+
+	[Fact]
+	public static void APositionalRecord_IsMapped_ThroughItsConstructor()
+	{
+		Assert.Equal(new PositionalShape(1, "one"), new FakeExecuteReader(["Id", "Title"], [1, "one"]).Map<PositionalShape>().ToList().Single());
+		Assert.Same(RowMap<PositionalShape>.Default, RowMap<PositionalShape>.Default);
+	}
+
+	// A record struct, whose constructor only assigns, maps to equal results through its constructor: T5 proves it in ConstructorBindingTests.
+	[Fact]
+	public static void RecordStructs_MapToTheSameResults_ThroughTheirConstructor()
+	{
+		Assert.Equal(new(1, "one"), new FakeExecuteReader(["Id", "Title"], [1, "one"]).Map<PositionalStructShape>().ToList().Single());
+		Assert.Equal(new(2, "two"), new FakeExecuteReader(["Id", "Title"], [2, "two"]).Map<ReadonlyPositionalStructShape>().ToList().Single());
+		Assert.Equal(4, FakeReader.Create(["Id", "Title"], [4, "four"]).Results<PositionalStructShape>().Single().Id);
+		Assert.Same(RowMap<PositionalStructShape>.Default, RowMap<PositionalStructShape>.Default);
+	}
+
+	// A struct that declares exactly one public constructor with parameters is built through it, so what the constructor does is done: phase B kept such a struct as its default value
+	// with its settable members set (3 and "three"), and the constructor was not called.
+	[Fact]
+	public static void AStructWithOneDeclaredConstructor_IsBuiltThroughIt()
+	{
+		StructWithConstructorOnly declared = new FakeExecuteReader(["Id", "Title"], [3, "three"]).Map<StructWithConstructorOnly>().ToList().Single();
+		Assert.Equal((1003, "three!"), (declared.Id, declared.Title));
+
+		StructWithConstructorOnly missing = new FakeExecuteReader(["Title"], ["x"]).Map<StructWithConstructorOnly>().ToList().Single();
+		Assert.Equal((1000, "x!"), (missing.Id, missing.Title)); // A parameter with no column is its default, and then the constructor runs.
+	}
+
+	[Fact]
+	public static void AStructWithAPublicParameterlessConstructor_IsBuiltAsEver_WithoutCallingIt()
+		=> Assert.Equal(7, new FakeExecuteReader(["Id"], [7]).Map<StructWithPublicParameterlessConstructor>().ToList().Single().Id);
+
+	[Fact]
+	public static void TypeWithRequiredMembers_IsRejected_SoNoRequiredTypeIsEverMappedWithoutEnforcement()
+	{
+		AssertUnmappable<RequiredShape>(Required("RequiredShape"));
+		AssertUnmappable<RequiredDerived>(Required("RequiredDerived")); // A required member of a base type counts.
+	}
+
+	[Fact]
+	public static void WhatMapsToday_StillMaps()
+	{
+		Assert.Equal(1, new FakeExecuteReader(["Id"], [1]).Map<ParameterlessAndOther>().ToList().Single().Id);
+		Assert.Equal(2, new FakeExecuteReader(["Id"], [2]).Map<StructWithNoConstructor>().ToList().Single().Id);
+		Assert.Equal(3, new FakeExecuteReader(["Id"], [3]).Map<StructWithPrivateConstructor>().ToList().Single().Id);
+		Assert.Equal(4, FakeReader.Create(["Id"], [4]).Results<ParameterlessAndOther>().Single().Id);
+
+		Assert.Same(RowMap<ParameterlessAndOther>.Default, RowMap<ParameterlessAndOther>.Default); // The default map is one instance, as it was when it was a field.
+		Assert.NotNull(new RowMap<StructWithNoConstructor>(new("Id", "Id")));
+		Assert.Equal(0, StructWithPrivateConstructor.Make().Id); // Its constructor is not public, so it is built as it always was.
+	}
+
+	// ---- T14: an unmappable T throws at the call, with an EMPTY result, on each family of entry points ----
+
+	static IDataReader Reader() => FakeReader.Create(["Id"]);
+	static DbDataReader DbReader() => FakeReader.CreateDb(["Id"]);
+	static FakeExecuteReader Exec() => new(["Id"]);
+
+	static IDbCommand Command()
+	{
+		var command = Substitute.For<IDbCommand>();
+		var connection = Substitute.For<IDbConnection>();
+		command.Connection.Returns(connection);
+		connection.State.Returns(ConnectionState.Open);
+		command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(["Id"]));
+		return command;
+	}
+
+	static FakeDbCommand DbCmd()
+	{
+		var connection = new FakeDbConnection();
+		connection.SetState(ConnectionState.Open);
+		return new FakeDbCommand(connection, () => FakeReader.CreateDb(["Id"]));
+	}
+
+	static DataTable Table()
+	{
+		var table = new DataTable();
+		table.Columns.Add("Id", typeof(int));
+		return table;
+	}
+
+	static QueryResult<Queue<object?[]>> Queued() => new([0], ["Id"], new Queue<object?[]>());
+
+	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
+	{
+		public bool UseAsyncRead => false;
+		public CancellationToken CancellationToken => inner.CancellationToken;
+		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReader(handler, behavior);
+		public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReader(transform, behavior);
+		public ValueTask ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReaderAsync(handler, behavior);
+		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> ExecuteReader(reader => transform(reader, state), behavior);
+
+		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
+			=> inner.ExecuteReaderAsync(state, transform, behavior, cancellationToken);
+
+		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
+			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
+
+		public ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReaderAsync(transform, behavior);
+	}
+
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
+	static AsyncCommand Async() => new(Exec());
+
+	static Channel<IShapeless> Writer() => System.Threading.Channels.Channel.CreateUnbounded<IShapeless>();
+
+	// A call that returns a reader reports a failure through its Completion, as documented; a call that returns a task reports it on the task.
+	// The call itself, when it fails before it returns anything.
+	static Task Run(Action call)
+	{
+		call();
+		return Task.CompletedTask;
+	}
+
+	static async Task Done(ChannelReader<IShapeless> reader) => await reader.Completion;
+	static async Task Done(IReceivableSourceBlock<IShapeless> block) => await block.Completion;
+	static async Task Done<T>(ValueTask<T> task) => await task;
+	static async Task Done(IAsyncEnumerable<IShapeless> source) { await foreach (IShapeless _ in source) { } }
+
+	// name -> the call, for the interface IShapeless, over an empty result
+	static readonly Dictionary<string, Func<Task>> Calls = new()
+	{
+		// Core: Map<T>() and its terminals (the call that fails is Map<T>() itself, so no terminal is ever reached)
+		["Map<T>()"] = () => Run(() => Exec().Map<IShapeless>()),
+		["Map<T>().ToList()"] = () => Run(() => Exec().Map<IShapeless>().ToList()),
+		["Map<T>().FirstOrDefault()"] = () => Run(() => Exec().Map<IShapeless>().FirstOrDefault()),
+		["Map<T>().Skip().Take().ToArray()"] = () => Run(() => Exec().Map<IShapeless>().Skip(1).Take(2).ToArray()),
+		["Map<T>().ToListAsync()"] = async () => await Exec().Map<IShapeless>().ToListAsync(),
+		["Map<T>().FirstOrDefaultAsync()"] = async () => await Exec().Map<IShapeless>().FirstOrDefaultAsync(),
+		["Map<T>().ToDictionaryAsync()"] = async () => await Exec().Map<IShapeless>().ToDictionaryAsync(i => i.Id),
+		["Map<T>(pair)"] = () => Run(() => Exec().Map<IShapeless>(new KeyValuePair<string, string?>("Id", "Id")).ToList()),
+		["Map<T>(pairs)"] = () => Run(() => Exec().Map<IShapeless>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name")).ToList()),
+
+		// Core: Results
+		["Results<T>(IDataReader)"] = () => Run(() => Reader().Results<IShapeless>()),
+		["Results<T>(IDataReader, null)"] = () => Run(() => Reader().Results<IShapeless>(null)),
+		["ResultsBuffered<T>(IDataReader)"] = () => Run(() => Reader().ResultsBuffered<IShapeless>()),
+		["Results<T>(IDbCommand)"] = () => Run(() => Command().Results<IShapeless>()),
+		["Results<T>(IExecuteReader)"] = () => Run(() => Exec().Results<IShapeless>()),
+		["ResultsAsync<T>(DbDataReader)"] = () => Done(DbReader().ResultsAsync<IShapeless>()),
+		["ResultsBufferedAsync<T>(DbDataReader)"] = async () => await DbReader().ResultsBufferedAsync<IShapeless>(),
+		["ResultsAsync<T>(DbCommand)"] = async () => await DbCmd().ResultsAsync<IShapeless>(),
+
+		// Core: DataTable and Retrieve
+		["To<T>(DataTable)"] = () => Run(() => Table().To<IShapeless>()),
+		["DequeueAs<T>(QueryResult)"] = () => Run(() => Queued().DequeueAs<IShapeless>()),
+		["DequeueAs<T>(Task)"] = async () => await Task.FromResult(Queued()).DequeueAs<IShapeless>(),
+		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs<IShapeless>(),
+		["new Transformer<T>()"] = () => Run(() => Transformer<IShapeless>.Create()),
+
+		// Channel: a new channel
+		["ToChannel<T>(IDataReader)"] = () => Done(Reader().ToChannel<IShapeless>(true)),
+		["ToChannel<T>(IDataReader, null)"] = () => Done(Reader().ToChannel<IShapeless>(true, (RowMap<IShapeless>?)null)),
+		["ToChannel<T>(IDbCommand)"] = () => Done(Command().ToChannel<IShapeless>(true)),
+		["ToChannel<T>(IExecuteReader)"] = () => Done(Exec().ToChannel<IShapeless>(true)),
+		["ToChannelAsync<T>(DbDataReader)"] = () => Done(DbReader().ToChannelAsync<IShapeless>(true)),
+		["ToChannelAsync<T>(DbCommand)"] = () => Done(DbCmd().ToChannelAsync<IShapeless>(true)),
+		["ToChannelAsync<T>(IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync<IShapeless>(true)),
+
+		// Channel: the caller's writer
+		["ToChannel<T>(writer, IDataReader)"] = () => Done(Reader().ToChannel<IShapeless>(Writer().Writer, true)),
+		["ToChannel<T>(writer, IDataReader, null)"] = () => Done(Reader().ToChannel<IShapeless>(Writer().Writer, true, (RowMap<IShapeless>?)null)),
+		["ToChannel<T>(writer, IDbCommand)"] = () => Done(Command().ToChannel<IShapeless>(Writer().Writer, true)),
+		["ToChannel<T>(writer, IExecuteReader)"] = () => Done(Exec().ToChannel<IShapeless>(Writer().Writer, true)),
+		["ToChannelAsync<T>(writer, DbDataReader)"] = () => Done(DbReader().ToChannelAsync<IShapeless>(Writer().Writer, true)),
+		["ToChannelAsync<T>(writer, DbCommand)"] = () => Done(DbCmd().ToChannelAsync<IShapeless>(Writer().Writer, true)),
+		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync<IShapeless>(Writer().Writer, true)),
+
+		// Dataflow: into a block
+		["ToTargetBlock<T>(IDataReader)"] = () => Done(new ValueTask<long>(Reader().ToTargetBlock(new BufferBlock<IShapeless>(), true, (RowMap<IShapeless>?)null))),
+		["ToTargetBlock<T>(IDbCommand)"] = () => Done(new ValueTask<long>(Command().ToTargetBlock(new BufferBlock<IShapeless>(), true, (RowMap<IShapeless>?)null))),
+		["ToTargetBlock<T>(IExecuteReader)"] = () => Done(new ValueTask<long>(Exec().ToTargetBlock(new BufferBlock<IShapeless>(), true, (RowMap<IShapeless>?)null))),
+		["ToTargetBlockAsync<T>(IDataReader)"] = () => Done(Reader().ToTargetBlockAsync(new BufferBlock<IShapeless>(), true, (RowMap<IShapeless>?)null)),
+		["ToTargetBlockAsync<T>(IDbCommand)"] = () => Done(Command().ToTargetBlockAsync(new BufferBlock<IShapeless>(), true, (RowMap<IShapeless>?)null)),
+		["ToTargetBlockAsync<T>(IExecuteReader)"] = () => Done(Exec().ToTargetBlockAsync(new BufferBlock<IShapeless>(), true, (RowMap<IShapeless>?)null)),
+
+		// Dataflow: a new source block
+		["AsSourceBlock<T>(IDataReader)"] = () => Done(Reader().AsSourceBlock<IShapeless>()),
+		["AsSourceBlock<T>(IDbCommand)"] = () => Done(Command().AsSourceBlock<IShapeless>()),
+		["AsSourceBlock<T>(IExecuteReader)"] = () => Done(Exec().AsSourceBlock<IShapeless>()),
+		["AsSourceBlockAsync<T>(IDataReader)"] = () => Done(Reader().AsSourceBlockAsync<IShapeless>()),
+		["AsSourceBlockAsync<T>(IDbCommand)"] = () => Done(Command().AsSourceBlockAsync<IShapeless>()),
+		["AsSourceBlockAsync<T>(IExecuteReader)"] = () => Done(Exec().AsSourceBlockAsync<IShapeless>()),
+	};
+
+	public static TheoryData<string> Names => [.. Calls.Keys];
+
+	[Theory]
+	[MemberData(nameof(Names))]
+	public static async Task EveryEntryPoint_Throws_ForAnUnmappableType_WithAnEmptyResult(string name)
+	{
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Calls[name]().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+		Assert.Equal(NotConcrete("IShapeless", "an interface"), ex.Message);
+	}
+
+	// The failure is the type's, not the data's: with one row it is the same exception, and the query is not read.
+	[Fact]
+	public static void MapOfAnUnmappableType_FailsBeforeTheQueryRuns_WhateverTheResult()
+	{
+		var command = new FakeExecuteReader(["Id"], [1], [2]);
+		Assert.Throws<InvalidOperationException>(() => command.Map<IShapeless>());
+		Assert.Equal(0, command.ExecuteCount);
+	}
+
+	// A declared map exists only for a type that can be mapped, so a call that passes one never meets the failure.
+	[Fact]
+	public static void AMappableType_IsNotAffected_ByAnotherTypeBeingRejected()
+	{
+		_ = Assert.Throws<InvalidOperationException>(() => RowMap<IShapeless>.Default);
+		RowMap<ParameterlessAndOther> map = [new("Id", "id")];
+		Assert.Equal(7, new FakeExecuteReader(["id"], [7]).Map(map).ToList().Single().Id);
+	}
+
+	// ---- the check runs BEFORE anything is executed: an unmappable T fails at the call with no side effect ----
+
+	// What was done to a receiver: commands executed, connections opened, readers read. Zero is "nothing".
+	sealed class Touched { public Func<int> Count { get; set; } = static () => 0; }
+
+	static int CountCalls(object substitute, Func<string, bool> named) => substitute.ReceivedCalls().Count(c => named(c.GetMethodInfo().Name));
+
+	static IDbCommand Command(Touched touched)
+	{
+		var command = Substitute.For<IDbCommand>();
+		var connection = Substitute.For<IDbConnection>();
+		command.Connection.Returns(connection);
+		connection.State.Returns(ConnectionState.Closed); // An execution would have to open it.
+		command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(["Id"]));
+
+		int Total() => CountCalls(command, n => n.StartsWith("Execute", StringComparison.Ordinal)) + CountCalls(connection, n => n.StartsWith("Open", StringComparison.Ordinal));
+		int baseline = Total();
+		touched.Count = () => Total() - baseline;
+		return command;
+	}
+
+	static FakeExecuteReader Exec(Touched touched)
+	{
+		FakeExecuteReader command = Exec();
+		touched.Count = () => command.ExecuteCount;
+		return command;
+	}
+
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
+	static AsyncCommand Async(Touched touched) => new(Exec(touched));
+
+	static FakeDbCommand DbCmd(Touched touched)
+	{
+		var connection = new FakeDbConnection(); // Closed: an execution would open it.
+		var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(["Id"]));
+		touched.Count = () => command.Behaviors.Count + connection.OpenCalls;
+		return command;
+	}
+
+	static bool ReadsOrCloses(string name) => name is "Read" or "ReadAsync" or "NextResult" or "NextResultAsync" or "GetSchemaTable" or "GetSchemaTableAsync" or "Close" or "Dispose" or "DisposeAsync";
+
+	static IDataReader Reader(Touched touched)
+	{
+		IDataReader reader = Reader();
+		touched.Count = () => CountCalls(reader, ReadsOrCloses);
+		return reader;
+	}
+
+	static DbDataReader DbReader(Touched touched)
+	{
+		DbDataReader reader = DbReader();
+		touched.Count = () => CountCalls(reader, ReadsOrCloses);
+		return reader;
+	}
+
+	// A closed connection that hands out one fake command, for the ExpressiveDbCommand.
+	sealed class ClosedConnection : DbConnection
+	{
+		public int OpenCalls { get; private set; }
+		public FakeDbCommand? Created { get; private set; }
+
+		[AllowNull]
+		public override string ConnectionString { get; set; } = "";
+		public override string Database => "fake";
+		public override string DataSource => "fake";
+		public override string ServerVersion => "1.0";
+		public override ConnectionState State => ConnectionState.Closed;
+		public override void ChangeDatabase(string databaseName) { }
+		public override void Open() => OpenCalls++;
+		public override void Close() { }
+		protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
+		protected override DbCommand CreateDbCommand() => Created = new FakeDbCommand(this, () => FakeReader.CreateDb(["Id"]));
+	}
+
+	static ExpressiveDbCommand Expressive(Touched touched)
+	{
+		var connection = new ClosedConnection();
+		touched.Count = () => (connection.Created?.Behaviors.Count ?? 0) + connection.OpenCalls;
+		return connection.Command("SELECT 1");
+	}
+
+	static BufferBlock<IShapeless> Target() => new();
+
+	// name -> the call, for the interface IShapeless: over a command that must never be executed or a reader that must never be read.
+	static readonly Dictionary<string, Func<Touched, Task>> BeforeExecution = new()
+	{
+		// Core: a command
+		["Results<T>(IDbCommand)"] = t => Run(() => Command(t).Results<IShapeless>()),
+		["Results<T>(IDbCommand, null)"] = t => Run(() => Command(t).Results<IShapeless>(null)),
+		["Results<T>(IExecuteReader)"] = t => Run(() => Exec(t).Results<IShapeless>()),
+		["Results<T>(IExecuteReader, null)"] = t => Run(() => Exec(t).Results<IShapeless>(null)),
+		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<IShapeless>().ToList()),
+		["ResultsAsync<T>(DbCommand)"] = async t => await DbCmd(t).ResultsAsync<IShapeless>(),
+		["ResultsAsync<T>(DbCommand, null, token)"] = async t => await DbCmd(t).ResultsAsync<IShapeless>((RowMap<IShapeless>?)null, CancellationToken.None),
+		["ResultsAsync<T>(DbCommand, token)"] = async t => await DbCmd(t).ResultsAsync<IShapeless>(CancellationToken.None),
+		["ResultsFromDataTable<T>(IDbCommand)"] = t => Run(() => Command(t).ResultsFromDataTable<IShapeless>()),
+		["ExpressiveDbCommand.ResultsAsync<T>()"] = async t => await Expressive(t).ResultsAsync<IShapeless>(),
+		["ExpressiveDbCommand.ResultsAsync<T>(null)"] = async t => await Expressive(t).ResultsAsync<IShapeless>((RowMap<IShapeless>?)null),
+
+		// Core: a reader
+		["Results<T>(IDataReader)"] = t => Run(() => Reader(t).Results<IShapeless>()),
+		["ResultsBuffered<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsBuffered<IShapeless>()),
+		["ResultsAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ResultsAsync<IShapeless>()),
+		["ResultsBufferedAsync<T>(DbDataReader)"] = async t => await DbReader(t).ResultsBufferedAsync<IShapeless>(),
+		["ResultsFromDataTable<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsFromDataTable<IShapeless>()),
+
+		// Channel: a command, a new channel
+		["ToChannel<T>(IDbCommand)"] = t => Done(Command(t).ToChannel<IShapeless>(true)),
+		["ToChannel<T>(IDbCommand, null)"] = t => Done(Command(t).ToChannel<IShapeless>(true, (RowMap<IShapeless>?)null)),
+		["ToChannel<T>(IExecuteReader)"] = t => Done(Exec(t).ToChannel<IShapeless>(true)),
+		["ToChannelAsync<T>(DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync<IShapeless>(true)),
+		["ToChannelAsync<T>(IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync<IShapeless>(true)),
+
+		// Channel: a command, the caller's writer
+		["ToChannel<T>(writer, IDbCommand)"] = t => Done(Command(t).ToChannel<IShapeless>(Writer().Writer, true)),
+		["ToChannel<T>(writer, IDbCommand, null)"] = t => Done(Command(t).ToChannel<IShapeless>(Writer().Writer, true, (RowMap<IShapeless>?)null)),
+		["ToChannel<T>(writer, IExecuteReader)"] = t => Done(Exec(t).ToChannel<IShapeless>(Writer().Writer, true)),
+		["ToChannelAsync<T>(writer, DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync<IShapeless>(Writer().Writer, true)),
+		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync<IShapeless>(Writer().Writer, true)),
+
+		// Channel: a reader
+		["ToChannel<T>(IDataReader)"] = t => Done(Reader(t).ToChannel<IShapeless>(true)),
+		["ToChannel<T>(writer, IDataReader)"] = t => Done(Reader(t).ToChannel<IShapeless>(Writer().Writer, true)),
+		["ToChannelAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync<IShapeless>(true)),
+		["ToChannelAsync<T>(writer, DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync<IShapeless>(Writer().Writer, true)),
+
+		// Dataflow: a command
+		["ToTargetBlock<T>(IDbCommand)"] = t => Done(new ValueTask<long>(Command(t).ToTargetBlock(Target(), true, (RowMap<IShapeless>?)null))),
+		["ToTargetBlock<T>(IExecuteReader)"] = t => Done(new ValueTask<long>(Exec(t).ToTargetBlock(Target(), true, (RowMap<IShapeless>?)null))),
+		["ToTargetBlockAsync<T>(IDbCommand)"] = t => Done(Command(t).ToTargetBlockAsync(Target(), true, (RowMap<IShapeless>?)null)),
+		["ToTargetBlockAsync<T>(IExecuteReader)"] = t => Done(Exec(t).ToTargetBlockAsync(Target(), true, (RowMap<IShapeless>?)null)),
+		["AsSourceBlock<T>(IDbCommand)"] = t => Done(Command(t).AsSourceBlock<IShapeless>()),
+		["AsSourceBlock<T>(IExecuteReader)"] = t => Done(Exec(t).AsSourceBlock<IShapeless>()),
+		["AsSourceBlockAsync<T>(IDbCommand)"] = t => Done(Command(t).AsSourceBlockAsync<IShapeless>()),
+		["AsSourceBlockAsync<T>(IExecuteReader)"] = t => Done(Exec(t).AsSourceBlockAsync<IShapeless>()),
+
+		// Dataflow: a reader
+		["ToTargetBlock<T>(IDataReader)"] = t => Done(new ValueTask<long>(Reader(t).ToTargetBlock(Target(), true, (RowMap<IShapeless>?)null))),
+		["ToTargetBlockAsync<T>(IDataReader)"] = t => Done(Reader(t).ToTargetBlockAsync(Target(), true, (RowMap<IShapeless>?)null)),
+		["AsSourceBlock<T>(IDataReader)"] = t => Done(Reader(t).AsSourceBlock<IShapeless>()),
+		["AsSourceBlockAsync<T>(IDataReader)"] = t => Done(Reader(t).AsSourceBlockAsync<IShapeless>()),
+	};
+
+	public static TheoryData<string> BeforeExecutionNames => [.. BeforeExecution.Keys];
+
+	[Theory]
+	[MemberData(nameof(BeforeExecutionNames))]
+	public static async Task AnUnmappableType_Fails_BeforeAnythingIsExecutedOrRead(string name)
+	{
+		var touched = new Touched();
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => BeforeExecution[name](touched).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+		Assert.Equal(NotConcrete("IShapeless", "an interface"), ex.Message);
+		Assert.Equal(0, touched.Count()); // No command was executed, no connection opened, no reader read: the failure had no side effect.
+	}
+
+	// The probes themselves: a mappable type does execute the command, so a zero above means something.
+	[Fact]
+	public static async Task TheProbes_SeeAnExecution_OfAMappableType()
+	{
+		var touched = new Touched();
+		_ = Command(touched).Results<ParameterlessAndOther>().ToList();
+		Assert.True(touched.Count() > 0);
+
+		touched = new Touched();
+		_ = await DbCmd(touched).ResultsAsync<ParameterlessAndOther>(TestContext.Current.CancellationToken);
+		Assert.True(touched.Count() > 0);
+
+		touched = new Touched();
+		_ = await Expressive(touched).ResultsAsync<ParameterlessAndOther>();
+		Assert.True(touched.Count() > 0);
+
+		touched = new Touched();
+		_ = Exec(touched).Results<ParameterlessAndOther>().ToList();
+		Assert.True(touched.Count() > 0);
+	}
+}

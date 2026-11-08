@@ -10,7 +10,6 @@ namespace Open.Database.Extensions.Core;
 /// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
-	where T : new()
 {
 	/// <summary>
 	/// Maximum number of arrays to hold in the local array pool per bucket.
@@ -90,10 +89,14 @@ public class Transformer<T>
 		public Transformer<T> Transformer { get; } = transformer;
 
 		/// <summary>
-		/// The resultant transform function.
+		/// The resultant transform function. Until <see cref="SetNames"/> gives it columns, it builds <typeparamref name="T"/> from none, which is what <c>new T()</c> gave.
 		/// </summary>
-		public Func<object?[], T> Transform { get; private set; }
-			= static _ => new T(); // Using a Func<object?[],T> for better type inference.
+		public Func<object?[], T> Transform
+		{
+			// Built from the plan on first use, and only when no names were set; a static default could not reach the instance's plan, and `new T()` no longer compiles.
+			get => field ??= Transformer._plan.ArrayMapper([]);
+			private set;
+		}
 
 		/// <summary>
 		/// Allows for deferred initialization.
