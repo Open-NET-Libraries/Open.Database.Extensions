@@ -427,6 +427,7 @@ public static class MappingCharacterizationTests
 		public ThrowingConstructor() => throw Failure!;
 	}
 
+	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 	sealed class ProviderFailure : DbException
 	{
 		public ProviderFailure() : base("the provider failed") { }
