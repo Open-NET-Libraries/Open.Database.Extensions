@@ -13,7 +13,7 @@ public class LazyMapBenchmarks
 
 	static class Hot
 	{
-		public static readonly RowMap<RenamedPost> Map = new RowMap<RenamedPost>(RenamedColumns.Pairs);
+		public static readonly RowMap<RenamedPost> Map = new(RenamedColumns.Pairs);
 	}
 
 	static class Coalescing
@@ -75,7 +75,7 @@ public class LazyMapBenchmarks
 
 	/// <summary>Building one 12-field mapping: the cost of a first call, whichever way it is held.</summary>
 	[Benchmark]
-	public static RowMap<RenamedPost> BuildOneMapping() => new RowMap<RenamedPost>(RenamedColumns.Pairs);
+	public static RowMap<RenamedPost> BuildOneMapping() => new(RenamedColumns.Pairs);
 
 	/// <summary>The extra objects a <see cref="Lazy{T}"/> adds per mapping (the <c>Lazy</c> and its internal helper; the factory delegate is a cached static lambda); the other ways add none.</summary>
 	[Benchmark]

@@ -48,7 +48,7 @@ public static class Mapping
 		{
 			#region map_declared_unknown
 			// "Headline" is deliberately not a property of Post, so creating the map throws ArgumentException.
-			RowMap<Post> map = new RowMap<Post>([new("Headline", "title")]);
+			RowMap<Post> map = new([new("Headline", "title")]);
 			#endregion
 
 			return "no exception: " + map.GetType().Name;
