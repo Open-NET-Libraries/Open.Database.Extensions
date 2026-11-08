@@ -88,8 +88,17 @@ public static class DapperComparison
 	{
 		#region dapper_record
 		// Dapper binds constructor parameters, so a positional record works.
-		// Map<PostRecord>() does not compile: it requires new T() and settable properties.
 		List<PostRecord> posts = connection.Query<PostRecord>("select id, author, title, body from posts order by id").AsList();
+		#endregion
+
+		return posts;
+	}
+
+	public static List<PostRecord> OdeRecords(SqliteConnection connection)
+	{
+		#region ode_record
+		// Map<T>() binds the one public constructor, so the same record works.
+		List<PostRecord> posts = connection.Command("select id, author, title, body from posts order by id").Map<PostRecord>().ToList();
 		#endregion
 
 		return posts;

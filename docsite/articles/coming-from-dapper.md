@@ -43,7 +43,7 @@ What is different:
 
 - **The connection.** With Dapper you create it and dispose it, and Dapper opens it if it is closed and closes it when the call finishes. With a factory, the factory creates it for each execution, the command opens it only if it is closed and disposes it when the terminal returns, so it is open only for the duration of the call.
 - **Rows.** Dapper's `Query<T>` buffers by default (`buffered = true`) and returns an `IEnumerable<T>`, turned into a list in the sample by Dapper's `AsList()`. `ToList()` reads every row into a list during the call. `Read(handler)` offers a lazy sequence that is only valid inside the handler.
-- **Mapping.** Both match columns to members by name, ignoring case. Dapper can also bind constructor parameters and fields and, if you turn on `MatchNamesWithUnderscores`, match `first_name` to `FirstName`. The extensions set public settable properties only. They always ignore underscores when no exact or ignore-case match exists (`first_name` feeds `FirstName`; there is nothing to turn on). A column that differs by more than case and underscores needs a `RowMap<T>` (see [Renamed columns](#renamed-columns)).
+- **Mapping.** Both match columns to members by name, ignoring case. Dapper can also bind constructor parameters and fields and, if you turn on `MatchNamesWithUnderscores`, match `first_name` to `FirstName`. The extensions set public settable properties (`init` and `required` ones too) and bind the one public constructor of a record or class (see [Positional records](#positional-records)), but never set fields. They always ignore underscores when no exact or ignore-case match exists (`first_name` feeds `FirstName`; there is nothing to turn on). A column that differs by more than case and underscores needs a `RowMap<T>` (see [Renamed columns](#renamed-columns)).
 - **NULL.** A `NULL` in a nullable property (`int?`, `string?`), or in a reference-type property in code with nullable annotations off, gives `null`. In a property the type declares non-nullable (`int`, `bool`, `DateTime`, an enum, or a `string` with nullable annotations on) it leaves the initializer, else the default, and nothing throws: declare the property `int?` when you need to tell NULL from 0. See [Types and NULL](mapping.md#types-and-null).
 - **Null parameters.** Both convert a null parameter value to `DBNull`.
 - **Mapping errors.** Dapper wraps them in a `DataException` ("Error parsing column ..."). The extensions throw a `ValueMappingException` (also a `DataException`) that names the property and the column.
@@ -221,6 +221,35 @@ and pass it to `Map<T>`:
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_renamed_columns)]
 
+## Positional records
+
+A positional record works with both: Dapper binds its constructor, and so does `Map<T>()`. Both read this record:
+
+[!code-csharp[](../samples/Models.cs#record_post_model)]
+
+<div class="side-by-side">
+<div>
+
+**Dapper**
+
+[!code-csharp[](../samples/DapperComparison.cs#dapper_record)]
+
+</div>
+<div>
+
+**Open.Database.Extensions**
+
+[!code-csharp[](../samples/DapperComparison.cs#ode_record)]
+
+</div>
+</div>
+
+What is different:
+
+- **Choosing the constructor.** Dapper picks a constructor by the columns of the query. The extensions use the one public constructor, or the public parameterless one when the type has it, whatever the columns. A type with two or more public constructors and none without parameters throws `InvalidOperationException` at the call: make all but one non-public, or write a `Map(selector)`.
+- **A parameter with no column, and NULL.** A parameter no column feeds takes its declared default value, else `default`, and a `NULL` into a non-nullable parameter takes it too (see [A missing column and a NULL](mapping.md#a-missing-column-and-a-null)).
+- **`required` and `init`.** The extensions set `init` properties after the constructor and enforce `required` ones: a result with no column for a `required` property throws `ValueMappingException` at its first row (see [`required` and `init` members](mapping.md#required-and-init-members)).
+
 ## Async and cancellation
 
 Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call.
@@ -229,13 +258,11 @@ Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation to
 
 Dapper has features this library does not offer:
 
-- **Constructor binding.** Positional records work with Dapper. `Map<T>()` needs `new T()` and settable properties.
+- **Choosing a constructor by the columns.** Dapper picks the constructor that fits the columns of the query. The extensions use the one public constructor, whatever the columns (see [Positional records](#positional-records)).
 - **Multi-mapping and `QueryMultiple`.** Dapper maps several types from one row and reads several result sets from one call.
 - **Type handlers and custom type maps.** `SqlMapper.AddTypeHandler` and `SqlMapper.SetTypeMap`.
 - **Dynamic results.** `Query(sql)` without a type returns dynamic rows.
 - **Parameter bags and output parameters.** An anonymous object, `new { id = 1 }`, becomes `AddParams(new { id = 1 })` (see [Name a parameter from its argument](expressive-commands.md#name-a-parameter-from-its-argument)). `DynamicParameters` has no equivalent: add each value with `AddParam`. Output parameters can be sent, but their values cannot yet be read back, so a procedure that returns values through them stays on Dapper for now.
-
-[!code-csharp[](../samples/DapperComparison.cs#dapper_record)]
 
 With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for those jobs. For dynamic rows, the reader's `AsEnumerable()` (see [Reader and command helpers](foundation.md#reader-and-command-helpers)) gives each row as an `object[]`.
 
@@ -243,5 +270,5 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 
 1. Create the connection factory once and register or inject it.
 2. Replace `using var connection = ...` and `connection.Query<T>(sql, new { ... })` with `connectionFactory.Command(sql).AddParam(...).Map<T>().ToList()` (or `ToArray()`); an anonymous parameter object becomes `AddParams(new { ... })`.
-3. If a model uses constructor binding, give it a parameterless constructor and settable properties, or write a `Map(selector)`.
+3. A positional record or a class with one public constructor needs nothing. If a model has two or more public constructors and none without parameters, make all but one non-public, or write a `Map(selector)`.
 4. If a column name differs from its property name by more than case and underscores, declare a `RowMap<T>` (see [Columns named differently](mapping.md#columns-named-differently)). Names that differ only by case or underscores need nothing.

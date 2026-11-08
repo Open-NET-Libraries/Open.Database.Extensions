@@ -7,6 +7,8 @@ namespace Open.Database.Extensions.Core;
 /// <remarks>
 /// The mapping is a compiled, cached <see cref="RowMap{T}"/>: constructing a transformer and applying it to
 /// a result no longer rebuilds lookups or property setters per query.
+/// A model is built as <c>Map&lt;T&gt;()</c> builds it: a type with a public parameterless constructor with <c>new T()</c>, then its properties are set; any other type through its one public constructor, then the properties it does not cover.
+/// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the transformer is created (see <see cref="RowMap{T}"/>).
 /// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
@@ -89,7 +91,7 @@ public class Transformer<T>
 		public Transformer<T> Transformer { get; } = transformer;
 
 		/// <summary>
-		/// The resultant transform function. Until <see cref="SetNames"/> gives it columns, it builds <typeparamref name="T"/> from none, which is what <c>new T()</c> gave.
+		/// The resultant transform function. Until <see cref="SetNames"/> gives it columns, it builds <typeparamref name="T"/> from no columns: its properties keep their initializers and its constructor parameters take their declared defaults.
 		/// </summary>
 		public Func<object?[], T> Transform
 		{

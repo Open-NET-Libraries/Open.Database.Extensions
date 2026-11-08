@@ -10,6 +10,13 @@ public static partial class CoreExtensions
 	/// </summary>
 	/// <remarks>
 	/// <para>
+	/// A type with a public parameterless constructor is built with <c>new T()</c>, and its public settable properties (<c>init</c> and <c>required</c> ones too) are set from the columns.
+	/// Any other type is built through its one public constructor (a positional record, a record struct, a class with one constructor), and the properties the constructor does not cover are set afterwards.
+	/// A <c>required</c> property needs a column. A <typeparamref name="T"/> that cannot be mapped (an interface, an abstract class, a single value such as <see cref="int"/>, a type with two or more public constructors and none without parameters)
+	/// throws <see cref="InvalidOperationException"/> when the map is built or <see cref="RowMap{T}.Default"/> is read, which the overloads without a <see cref="RowMap{T}"/> do at the call.
+	/// See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#records-and-constructors">Records and constructors</see>.
+	/// </para>
+	/// <para>
 	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; the overload without a map reads by column name.
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call
 	/// (about 29 KB and a reader compile for a one-row read of a 12-property model, against 464 B through a declared map; see

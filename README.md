@@ -99,7 +99,7 @@ Stored procedures are `StoredProcedure(name)`. Terminals include `ExecuteNonQuer
 
 ## Row mapping without configuration
 
-`Map<T>()` matches columns to public settable properties by name, ignoring case and underscores (`first_name` feeds `FirstName`), and ignores the rest:
+`Map<T>()` matches columns to the public settable properties and constructor parameters of your type by name, ignoring case and underscores (`first_name` feeds `FirstName`), and ignores the rest:
 
 ```cs
 // Columns are matched to public settable properties by name, ignoring case and underscores.
@@ -110,7 +110,7 @@ Post[] posts = connection
     .ToArray();
 ```
 
-Models need `new T()` and settable properties: there is no constructor binding. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the `RowMap<T>` for columns with other names.
+Positional records and classes with one public constructor are built through it, so `Map<PostRecord>()` works; `init` properties are set, and `required` members are enforced. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits, including the `RowMap<T>` for columns with other names.
 
 ### Renamed columns
 
@@ -132,7 +132,7 @@ Person[] people = connection
     .ToArray();
 ```
 
-Declare a map once and reuse it: a map built at the call site is rebuilt, and its row reader recompiled, on every call. The constructor takes one pair or several (`new RowMap<T>(new("A", "b"))`), and an `ImmutableArray` or any `IEnumerable` of pairs also works. A `null` column in a pair means "do not map this property": it stops the by-name match too, so the property keeps the value `new T()` gave it. Older compilers have no `field` keyword; use an explicit backing field.
+Declare a map once and reuse it: a map built at the call site is rebuilt, and its row reader recompiled, on every call. The constructor takes one pair or several (`new RowMap<T>(new("A", "b"))`), and an `ImmutableArray` or any `IEnumerable` of pairs also works. A `null` column in a pair means "do not map this property": it stops the by-name match too, so the property keeps its initializer (a constructor parameter takes its declared default). A pair that names a positional property feeds its constructor parameter. Older compilers have no `field` keyword; use an explicit backing field.
 
 More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).
 

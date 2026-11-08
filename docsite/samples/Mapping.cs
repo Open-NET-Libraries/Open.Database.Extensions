@@ -127,6 +127,108 @@ public static class Mapping
 			.Map<OrderLine>()
 			.FirstOrDefault();
 
+	public static PostRecord[] MapRecord(SqliteConnection connection)
+	{
+		#region map_record
+		// PostRecord is a positional record: Map<T>() builds it through its constructor, each column feeding the parameter of the same name.
+		PostRecord[] posts = connection
+			.Command("select id, author, title, body from posts order by id")
+			.Map<PostRecord>()
+			.ToArray();
+		#endregion
+
+		return posts;
+	}
+
+	public static PostSummary[] MapRecordExtra(SqliteConnection connection)
+	{
+		#region map_record_extra
+		// Id and Title feed the constructor; views feeds the init property Views, set after the constructor ran.
+		// author and body match nothing and are ignored; no column is called section, so Section keeps "general".
+		PostSummary[] posts = connection
+			.Command("select * from posts order by id")
+			.Map<PostSummary>()
+			.ToArray();
+		#endregion
+
+		return posts;
+	}
+
+	public static PostRecord[] MapRecordDeclared(SqliteConnection connection)
+	{
+		#region map_record_declared_use
+		// The pair names the property Title; it feeds the constructor parameter Title, from the column post_title.
+		PostRecord[] posts = connection
+			.Command("select id, author, title as post_title, body from posts order by id")
+			.Map<PostRecord>(RecordMaps.PostRecordMap)
+			.ToArray();
+		#endregion
+
+		return posts;
+	}
+
+	public static (PostInput[] Posts, ValueMappingException? Missing) MapRequired(SqliteConnection connection)
+	{
+		#region map_required
+		// Title is required: a column must feed it. Here the title column does.
+		PostInput[] posts = connection
+			.Command("select title, body from posts order by id")
+			.Map<PostInput>()
+			.ToArray();
+
+		ValueMappingException? missing = null;
+		try
+		{
+			// No column feeds Title, so the first row throws ValueMappingException.
+			// The message: No column feeds the required property 'Title' (String) of 'PostInput'; expected a column named 'Title'.
+			_ = connection.Command("select body from posts order by id").Map<PostInput>().ToArray();
+		}
+		catch (ValueMappingException ex)
+		{
+			missing = ex;
+		}
+		#endregion
+
+		return (posts, missing);
+	}
+
+	public static (Review? WithNulls, Review? WithoutColumns) MapCtorNullColumn(SqliteConnection connection)
+	{
+		#region map_ctor_null_column
+		// A NULL into the non-nullable title and stars takes their declared defaults ("untitled", 3); a NULL into the nullable rating is null.
+		Review? withNulls = connection
+			.Command("select 7 as id, null as title, null as stars, null as rating")
+			.Map<Review>()
+			.FirstOrDefault();
+
+		// No column feeds title, stars or rating: each takes its declared default, so rating is 4 here.
+		Review? withoutColumns = connection
+			.Command("select 7 as id")
+			.Map<Review>()
+			.FirstOrDefault();
+		#endregion
+
+		return (withNulls, withoutColumns);
+	}
+
+	public static string MapUnmappable(SqliteConnection connection)
+	{
+		try
+		{
+			#region map_unmappable
+			// PostCard has two public constructors and none without parameters. Map<PostCard>() throws InvalidOperationException right here,
+			// at the call and before the query runs, whatever the data: 'PostCard' cannot be mapped: it has 2 public constructors, ...
+			_ = connection.Command("select title from posts").Map<PostCard>();
+			#endregion
+
+			return "no exception";
+		}
+		catch (InvalidOperationException ex)
+		{
+			return ex.Message;
+		}
+	}
+
 	public static ValueMappingException? MapValueError(SqliteConnection connection)
 	{
 		#region map_value_error
@@ -231,6 +333,14 @@ public static class PersonMaps
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), null),
 	];
+	#endregion
+}
+
+public static class RecordMaps
+{
+	#region map_record_declared
+	// A positional record's property and its constructor parameter are one member: the pair names it by the property, and it feeds the parameter.
+	public static RowMap<PostRecord> PostRecordMap => field ??= [new(nameof(PostRecord.Title), "post_title")];
 	#endregion
 }
 
