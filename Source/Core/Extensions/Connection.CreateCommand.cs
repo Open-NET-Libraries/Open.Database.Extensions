@@ -26,9 +26,20 @@ public static partial class ConnectionExtensions
 		Contract.EndContractBlock();
 
 		IDbCommand command = connection.CreateCommand();
-		command.CommandType = type;
-		command.CommandText = commandText;
-		command.CommandTimeout = secondsTimeout;
+
+		// A command that cannot be set up is never returned, so nobody else can dispose it.
+		try
+		{
+			command.CommandType = type;
+			command.CommandText = commandText;
+			command.CommandTimeout = secondsTimeout;
+		}
+		catch
+		{
+			command.Dispose();
+			throw;
+		}
+
 		return command;
 	}
 
@@ -78,9 +89,19 @@ public static partial class ConnectionExtensions
 		Contract.EndContractBlock();
 
 		DbCommand command = connection.CreateCommand();
-		command.CommandType = type;
-		command.CommandText = commandText;
-		command.CommandTimeout = secondsTimeout;
+
+		// A command that cannot be set up is never returned, so nobody else can dispose it.
+		try
+		{
+			command.CommandType = type;
+			command.CommandText = commandText;
+			command.CommandTimeout = secondsTimeout;
+		}
+		catch
+		{
+			command.Dispose();
+			throw;
+		}
 
 		return command;
 	}

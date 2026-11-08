@@ -195,12 +195,22 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	protected TCommand PrepareCommand(TConnection connection)
 	{
 		IDbCommand cmd = connection.CreateCommand(Type, Command, Timeout);
-		if (cmd is not TCommand c)
-			throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
-		if (Transaction != null)
-			c.Transaction = Transaction;
-		if (_params is { Count: > 0 }) AddParams(c);
-		return c;
+
+		// A command that cannot be set up is never returned, so nobody else can dispose it.
+		try
+		{
+			if (cmd is not TCommand c)
+				throw new InvalidCastException($"Actual command type ({cmd.GetType()}) is not compatible with expected command type ({typeof(TCommand)}).");
+			if (Transaction != null)
+				c.Transaction = Transaction;
+			if (_params is { Count: > 0 }) AddParams(c);
+			return c;
+		}
+		catch
+		{
+			cmd.Dispose();
+			throw;
+		}
 	}
 
 	/// <summary>
