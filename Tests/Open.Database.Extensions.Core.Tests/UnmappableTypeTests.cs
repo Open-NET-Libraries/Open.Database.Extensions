@@ -9,7 +9,7 @@ namespace Open.Database.Extensions.Tests;
 // The `where T : new()` constraint is gone from every method that maps rows to a model, so a type that cannot be mapped is found out at run time.
 // These tests pin where: AT THE CALL (the RowMap<T> constructor and RowMap<T>.Default, which every entry point passes), with an EMPTY result,
 // so it never depends on there being a first row, and with an InvalidOperationException, never a TypeInitializationException.
-// The two "cannot be mapped yet" messages are interim: constructor binding and `required` members arrive in later phases, which replace them.
+// The "cannot be mapped yet" message for `required` members is interim (a later phase replaces it); the constructor rules are final (constructor binding, phase C).
 [ExcludeFromCodeCoverage]
 public static class UnmappableTypeTests
 {
@@ -40,7 +40,8 @@ public static class UnmappableTypeTests
 
 	public sealed record PositionalShape(int Id, string Title);
 
-	// Structs keep mapping as they always did, whatever constructors they declare: the default value, then the settable members (constructor binding for structs is a later phase).
+	// A struct with no public constructor of its own, or with a public parameterless one, maps as it always did: its default value, then the settable members.
+	// A struct that declares exactly one public constructor with parameters (a record struct) is built through it: the results are equal for a record struct, whose constructor only assigns.
 	public record struct PositionalStructShape(int Id, string Title);
 
 	public readonly record struct ReadonlyPositionalStructShape(int Id, string Title);
@@ -50,6 +51,44 @@ public static class UnmappableTypeTests
 		public StructWithConstructorOnly(int id, string title) { Id = id + 1000; Title = title + "!"; }
 		public int Id { get; set; }
 		public string? Title { get; set; }
+	}
+
+	public sealed class ThreeConstructorShape
+	{
+		public ThreeConstructorShape(int a) { }
+		public ThreeConstructorShape(string b, int a, int c) { }
+		public ThreeConstructorShape(int a, string b) { }
+	}
+
+	public struct TwoConstructorStructShape
+	{
+		public TwoConstructorStructShape(int id, string title) { Id = id; Title = title; }
+		public TwoConstructorStructShape(int id) { Id = id; Title = null; }
+		public int Id { get; set; }
+		public string? Title { get; set; }
+	}
+
+	public sealed class ByReferenceShape
+	{
+		public ByReferenceShape(in int id) => Id = id;
+		public int Id { get; }
+	}
+
+	public class OneOfSeveralShape
+	{
+		public OneOfSeveralShape(int id) { Id = id; Built = "public"; }
+		internal OneOfSeveralShape(int id, string other) { Id = id; Built = other; }
+		protected OneOfSeveralShape(string text) { Built = text; }
+		public int Id { get; }
+		public string? Built { get; }
+	}
+
+	// A struct with its own public parameterless constructor is built as ever, whatever else it declares: that constructor is not called, as it never was.
+	public struct StructWithPublicParameterlessConstructor
+	{
+		public StructWithPublicParameterlessConstructor() { Id = -1; }
+		public StructWithPublicParameterlessConstructor(int id) { Id = id + 1000; }
+		public int Id { get; set; }
 	}
 
 	public sealed class RequiredShape { public required int Id { get; set; } }
@@ -75,11 +114,11 @@ public static class UnmappableTypeTests
 		public static StructWithPrivateConstructor Make() => new(0);
 	}
 
-	const string Interim = "(constructor binding arrives in a later phase)";
-
 	static string Single(string name) => $"'{name}' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().";
 	static string NotConcrete(string name, string kind) => $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
-	static string NoParameterless(string name) => $"'{name}' cannot be mapped yet: it has no public parameterless constructor {Interim}.";
+	static string NoConstructor(string name) => $"'{name}' cannot be mapped: it has no public constructor.";
+	static string Ambiguous(string name, int count, string signatures) => $"'{name}' cannot be mapped: it has {count} public constructors, {signatures}, and none without parameters. Make one of them non-public, or use Map(selector).";
+	static string ByReference(string name, string parameter) => $"'{name}' cannot be mapped: its constructor parameter '{parameter}' is passed by reference or is a pointer. Use Map(selector).";
 	static string Required(string name) => $"'{name}' cannot be mapped yet: it has required members (required-member support arrives in a later phase).";
 
 	// Every way to meet a type: the default map, a map constructed for it, and a query over it with no rows. Each one throws the same exception.
@@ -128,35 +167,67 @@ public static class UnmappableTypeTests
 	}
 
 	[Fact]
-	public static void ClassWithOnlyAPrivateConstructor_IsRejected_UntilConstructorBinding()
+	public static void ClassWithOnlyAPrivateConstructor_IsRejected()
 	{
-		AssertUnmappable<PrivateConstructorShape>(NoParameterless("PrivateConstructorShape"));
+		AssertUnmappable<PrivateConstructorShape>(NoConstructor("PrivateConstructorShape"));
 		Assert.NotNull(PrivateConstructorShape.Make()); // The type itself is fine: it is the mapper that cannot reach the constructor.
 	}
 
 	[Fact]
-	public static void ClassWithTwoPublicConstructorsAndNoParameterlessOne_IsRejected_UntilConstructorBinding()
-		=> AssertUnmappable<TwoConstructorShape>(NoParameterless("TwoConstructorShape"));
+	public static void ClassWithTwoPublicConstructorsAndNoParameterlessOne_IsRejected_NamingBothSignatures()
+		=> AssertUnmappable<TwoConstructorShape>(Ambiguous("TwoConstructorShape", 2, "TwoConstructorShape(Int32 id) and TwoConstructorShape(Int32 id, String title)"));
 
 	[Fact]
-	public static void PositionalRecord_IsRejected_UntilConstructorBinding()
-		=> AssertUnmappable<PositionalShape>(NoParameterless("PositionalShape"));
+	public static void ThreeOrMorePublicConstructors_AreAllNamed_FewestParametersFirst_ForAClassAndAStruct()
+	{
+		AssertUnmappable<ThreeConstructorShape>(Ambiguous("ThreeConstructorShape", 3, "ThreeConstructorShape(Int32 a), ThreeConstructorShape(Int32 a, String b) and ThreeConstructorShape(String b, Int32 a, Int32 c)"));
+		AssertUnmappable<TwoConstructorStructShape>(Ambiguous("TwoConstructorStructShape", 2, "TwoConstructorStructShape(Int32 id) and TwoConstructorStructShape(Int32 id, String title)"));
+	}
 
-	// A struct is not judged by its constructors: it maps as it always did, as its default value with its settable members set, and its constructors are not called.
 	[Fact]
-	public static void StructsWithConstructors_KeepMapping_AsTheyAlwaysDid()
+	public static void AConstructorParameterPassedByReference_IsRejected_AtTheCall()
+		=> AssertUnmappable<ByReferenceShape>(ByReference("ByReferenceShape", "id"));
+
+	// One public constructor binds, whatever else the type declares that is not public.
+	[Fact]
+	public static void AClassWithOnePublicConstructor_AndOthersThatAreNot_IsBuiltThroughThePublicOne()
+	{
+		OneOfSeveralShape item = new FakeExecuteReader(["Id"], [5]).Map<OneOfSeveralShape>().ToList().Single();
+		Assert.Equal((5, "public"), (item.Id, item.Built));
+	}
+
+	[Fact]
+	public static void APositionalRecord_IsMapped_ThroughItsConstructor()
+	{
+		Assert.Equal(new PositionalShape(1, "one"), new FakeExecuteReader(["Id", "Title"], [1, "one"]).Map<PositionalShape>().ToList().Single());
+		Assert.Same(RowMap<PositionalShape>.Default, RowMap<PositionalShape>.Default);
+	}
+
+	// A record struct, whose constructor only assigns, maps to equal results through its constructor: T5 proves it in ConstructorBindingTests.
+	[Fact]
+	public static void RecordStructs_MapToTheSameResults_ThroughTheirConstructor()
 	{
 		Assert.Equal(new(1, "one"), new FakeExecuteReader(["Id", "Title"], [1, "one"]).Map<PositionalStructShape>().ToList().Single());
 		Assert.Equal(new(2, "two"), new FakeExecuteReader(["Id", "Title"], [2, "two"]).Map<ReadonlyPositionalStructShape>().ToList().Single());
 		Assert.Equal(4, FakeReader.Create(["Id", "Title"], [4, "four"]).Results<PositionalStructShape>().Single().Id);
 		Assert.Same(RowMap<PositionalStructShape>.Default, RowMap<PositionalStructShape>.Default);
+	}
 
+	// A struct that declares exactly one public constructor with parameters is built through it, so what the constructor does is done: phase B kept such a struct as its default value
+	// with its settable members set (3 and "three"), and the constructor was not called.
+	[Fact]
+	public static void AStructWithOneDeclaredConstructor_IsBuiltThroughIt()
+	{
 		StructWithConstructorOnly declared = new FakeExecuteReader(["Id", "Title"], [3, "three"]).Map<StructWithConstructorOnly>().ToList().Single();
-		Assert.Equal((3, "three"), (declared.Id, declared.Title)); // The constructor would have made it 1003 and "three!".
+		Assert.Equal((1003, "three!"), (declared.Id, declared.Title));
 
 		StructWithConstructorOnly missing = new FakeExecuteReader(["Title"], ["x"]).Map<StructWithConstructorOnly>().ToList().Single();
-		Assert.Equal((0, "x"), (missing.Id, missing.Title)); // A property with no column is its default.
+		Assert.Equal((1000, "x!"), (missing.Id, missing.Title)); // A parameter with no column is its default, and then the constructor runs.
 	}
+
+	[Fact]
+	public static void AStructWithAPublicParameterlessConstructor_IsBuiltAsEver_WithoutCallingIt()
+		=> Assert.Equal(7, new FakeExecuteReader(["Id"], [7]).Map<StructWithPublicParameterlessConstructor>().ToList().Single().Id);
 
 	[Fact]
 	public static void TypeWithRequiredMembers_IsRejected_SoNoRequiredTypeIsEverMappedWithoutEnforcement()
