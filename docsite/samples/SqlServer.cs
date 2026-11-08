@@ -1,3 +1,4 @@
+using System.Data;
 using Open.Database.Extensions;
 
 namespace Samples;
@@ -75,5 +76,21 @@ public static class SqlServer
 		#endregion
 
 		return returned + returnedAsync;
+	}
+
+	public static async Task<Post[]> NullByName(string? titleContains)
+	{
+		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
+
+		#region sql_server_null_by_name
+		// By name a NULL has no type to use, so pass one.
+		Post[] posts = await connectionFactory
+			.StoredProcedure("[dbo].[SearchPosts]")
+			.AddParam("title_contains", titleContains ?? (object)DBNull.Value, SqlDbType.NVarChar)
+			.Map<Post>()
+			.ToArrayAsync();
+		#endregion
+
+		return posts;
 	}
 }

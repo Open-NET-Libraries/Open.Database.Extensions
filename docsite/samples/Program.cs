@@ -170,6 +170,9 @@ using (var closedConnection = new SqliteConnection(connectionString))
 
 connection.ExecuteTransaction(tx => tx.Command("select 1").ExecuteScalar());
 Check(connection.State == ConnectionState.Open, "ExecuteTransaction leaves an open connection open");
+long newId = ExpressiveCommands.InsertAndReadId(factory);
+Check(newId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "New", "an insert and select last_insert_rowid() in one command return the generated id to ExecuteScalar<long>()");
+factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 

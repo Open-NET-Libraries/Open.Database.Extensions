@@ -70,6 +70,21 @@ public static class ExpressiveCommands
 		return (count, updated);
 	}
 
+	public static long InsertAndReadId(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	{
+		int author = 42;
+
+		#region generated_id
+		// The insert and a select of the new id in one command; ExecuteScalar<T>() reads the id (SQLite: last_insert_rowid()).
+		long newId = connectionFactory
+			.Command("insert into posts (author, title, body, views) values (@author, 'New', null, 0); select last_insert_rowid()")
+			.AddParam(author)
+			.ExecuteScalar<long>();
+		#endregion
+
+		return newId;
+	}
+
 	public static int ConvertedScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
 		#region scalar_convert
