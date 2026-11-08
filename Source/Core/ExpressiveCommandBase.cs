@@ -990,7 +990,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Calls ExecuteScalar on the underlying command.
 	/// </summary>
-	/// <returns>The value returned from the method.</returns>
+	/// <returns>The raw value the provider returns: <see cref="DBNull.Value"/> when the column is NULL and <see langword="null"/> when there is no row, which is how to tell the two apart. Use <see cref="ExecuteScalar{T}()"/> for <c>default</c> in both cases, or a transform overload to receive <see langword="null"/> in both.</returns>
 	public object? ExecuteScalar()
 		=> Execute(command => command.ExecuteScalar());
 
@@ -1007,16 +1007,21 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	private protected static T CastScalar<T>(object? value)
 		=> value is null or DBNull ? default! : (T)value;
 
+	// What the transform overloads hand to the user's function: NULL (DBNull) becomes null, like no row; any other value is passed unchanged.
+	private protected static object? ScalarValue(object? value)
+		=> value is DBNull ? null : value;
+
 	/// <summary>
 	/// Calls ExecuteScalar on the underlying command.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value returned from the method.</returns>
+	/// <param name="transform">The function that converts the value. It receives <see langword="null"/> when the column is NULL or there is no row, never <see cref="DBNull"/>; any other value is passed as the provider returned it.</param>
+	/// <returns>The value returned from the transform.</returns>
 	public T ExecuteScalar<T>(Func<object?, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return transform(ExecuteScalar());
+		return transform(ScalarValue(ExecuteScalar()));
 	}
 }

@@ -10,6 +10,7 @@ Version 11 is a performance release. Result mapping is rewritten around a cached
 New since `11.0.0-preview05`:
 
 - **A token passed to an async terminal covers the whole call.** `ToListAsync(token)` and the other async terminals of `Map<T>()` (including both `ReadAsync` overloads) use `token` together with the command's `UseCancellationToken` token, and either one cancels the call. Before, `token` reached only the row reading, so it could not cancel opening the connection, looking up stored-procedure parameter names or executing the command. `IExecuteReader` has a new `ExecuteReaderAsync` overload that takes the token for the call; if you implement `IExecuteReader` yourself, add it. See [Terminals](expressive-commands.md#terminals).
+- **Breaking change: the scalar transform overloads receive `null`, not `DBNull`, for a `NULL`.** `ExecuteScalar<T>(Func<object?, T>)`, `ExecuteScalarAsync<T>(Func<object?, T>)` and `ExecuteScalarAsync<T>(Func<object?, ValueTask<T>>)` pass `null` to your function when the column is `NULL` (and for no rows, as before), so `ExecuteScalar<int?>(o => (int?)o)` returns `null` instead of throwing `InvalidCastException`. A function that tested `o is DBNull` should test `o is null`. The raw `ExecuteScalar()` and `ExecuteScalarAsync()` are unchanged and still return `DBNull.Value` for a `NULL`.
 
 ## Preview 05
 

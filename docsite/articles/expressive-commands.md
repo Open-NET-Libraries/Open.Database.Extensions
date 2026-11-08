@@ -76,7 +76,7 @@ An argument that is not a plain member chain (a call, an index, an operator, a l
 
 `UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is used together with it, and either one cancels the call. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
 
-`ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type (any other type throws `InvalidCastException`); a `NULL` or no rows returns `default(T)`, so use `long?` when you need to tell that from 0. SQLite returns a `long` for `count(*)` and SQL Server returns an `int`. To convert, pass a function instead:
+`ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type (any other type throws `InvalidCastException`); a `NULL` or no rows returns `default(T)`, so use `long?` when you need to tell that from 0. The forms that take a function receive `null`, not `DBNull`, for a `NULL` or no rows; the raw `ExecuteScalar()` returns what the provider returns (`DBNull.Value` for a `NULL`, `null` for no rows). SQLite returns a `long` for `count(*)` and SQL Server returns an `int`. To convert, pass a function instead:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#scalar_and_nonquery)]
 
