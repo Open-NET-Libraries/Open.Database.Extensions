@@ -89,4 +89,53 @@ public static class ExpressiveCommandParamTests
 		ExpressiveCommand cmd = NewCommand().SetTimeout(45);
 		Assert.Equal(45, cmd.Timeout);
 	}
+
+	// AddParam("name", someString) uses the name written. Compilers older than C# 13 ignore [OverloadResolutionPriority], so they bound the deriving overload
+	// AddParam<T>(T value, string? expression) with value = "name" and expression = the string, and sent the pair swapped (ann = author). These tests run at the
+	// latest language version and guard the overloads themselves; Tests/Open.Database.Extensions.LegacyCompiler.Tests compiles the same calls with older language versions.
+	static string Sent(ExpressiveCommand cmd)
+		=> string.Join(", ", cmd.Params.Select(p => p.Name + "=" + (p.Value is DBNull ? "<null>" : p.Value)));
+
+	[Fact]
+	public static void AddParam_StringValue_UsesTheNameGiven_NeverTheValue()
+	{
+		string s = "ann";
+		string? maybe = null;
+		string name = "author";
+
+		Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", "ann")));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", s)));
+		Assert.Equal("author=<null>", Sent(NewCommand().AddParam("author", maybe)));
+		Assert.Equal("author=<null>", Sent(NewCommand().AddParam("author", (string?)null)));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParam(name, s)));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParam(name: "author", value: s)));
+	}
+
+	[Fact]
+	public static void AddParamIf_StringValue_UsesTheNameGiven_NeverTheValue()
+	{
+		string s = "ann";
+		string? maybe = null;
+
+		Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", "ann")));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", s)));
+		Assert.Equal("author=<null>", Sent(NewCommand().AddParamIf(true, "author", maybe)));
+		Assert.Equal("author=<null>", Sent(NewCommand().AddParamIf(true, "author", (string?)null)));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(condition: true, name: "author", value: s)));
+		Assert.Equal("", Sent(NewCommand().AddParamIf(false, "author", "ann")));
+		Assert.Equal("", Sent(NewCommand().AddParamIf(false, "author", s)));
+	}
+
+	[Fact]
+	public static void AddParam_OtherValues_UseTheNameGiven()
+	{
+		object o = "ann";
+
+		Assert.Equal("author=5", Sent(NewCommand().AddParam("author", 5)));
+		Assert.Equal("author=5", Sent(NewCommand().AddParam("author", 5L)));
+		Assert.Equal("author=5", Sent(NewCommand().AddParam("author", (int?)5)));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", o)));
+		Assert.Equal("author=5", Sent(NewCommand().AddParamIf(true, "author", 5)));
+		Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", o)));
+	}
 }
