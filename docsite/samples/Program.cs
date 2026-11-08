@@ -74,7 +74,7 @@ RowMap<Person> nullPair = new([new(nameof(Person.FirstName), null)]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).FirstOrDefault()?.FirstName == "", "a null pair stops the underscore match");
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName == "", "a property named by a pair is not matched by an underscore column");
-Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: null }, "NULL keeps a non-nullable value-type initializer and gives null to nullable and reference-type properties");
+Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
 ValueMappingException? bad = Mapping.MapValueError(connection);
 Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
 Check(bad?.Message == "Unable to set value of property 'Id' (Int32) from column 'id'.", "the ValueMappingException message names the property, its type and the column");

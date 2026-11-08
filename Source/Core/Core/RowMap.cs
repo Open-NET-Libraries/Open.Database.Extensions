@@ -15,14 +15,17 @@ namespace Open.Database.Extensions;
 /// A property with a pair is only matched by its column, exactly or ignoring case; a <see langword="null"/> column means "do not map this property".
 /// A type with no public parameterless constructor is built through its one public constructor (a positional record, a record struct, a class with one constructor), and each parameter is fed like a property.
 /// A parameter and a public property whose names differ only in case are one member, fed once, through the constructor, and a pair names it by the property's name or by the parameter's, ignoring case.
-/// A parameter no column feeds, or a <see langword="null"/> column ignores, receives its declared default value, else <see langword="default"/>; so does a parameter of a non-nullable value type when the cell is NULL.
+/// A parameter no column feeds, or a <see langword="null"/> column ignores, receives its declared default value, else <see langword="default"/>; so does a parameter the type declares non-nullable when the cell is NULL.
 /// A <c>required</c> property must be fed by a column in every result shape, and a constructor parameter's default never feeds it: when none does, building the row reader throws <see cref="ValueMappingException"/> (<see cref="ValueMappingException.ColumnName"/> is the column looked for),
 /// which happens when the first row of that shape is mapped, so a query with no rows never reports it (the buffered routes and the Channel and Dataflow methods know the columns before any row, and report it as soon as they have them). A constructor marked <c>SetsRequiredMembers</c> promises to set them: nothing is enforced then, and they map like any other property.
 /// The pairs are validated when the map is constructed: an unknown or unsettable property or constructor parameter, a member named twice, an empty column name, a <see langword="null"/> column for a required property,
 /// or two members reading one column throw <see cref="ArgumentException"/>.
 /// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the map is constructed or <see cref="Default"/> is read, which every query method does at the call, even when the result is empty:
 /// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
-/// A NULL follows the member's declared type: a nullable property or parameter (<see cref="Nullable{T}"/> or a reference type) receives <see langword="null"/>; a non-nullable value-type property (an enum counts) keeps the value <c>new T()</c> gave it, its initializer else its default.
+/// A NULL never overwrites a member the C# type declares non-nullable: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
+/// A property of such a type keeps the value <c>new T()</c> gave it, its initializer else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
+/// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
+/// The annotations are read from the assembly the model is declared in, once per model type.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
 /// </remarks>
@@ -104,9 +107,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
 	// so after the first query of a given shape no reflection, expression building or compilation happens again.
 	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
-	// The member's declared type decides what a NULL does: a reference type or Nullable<T> receives null; a non-nullable value type (an enum counts) is skipped,
+	// The member's declared type decides what a NULL does: Nullable<T>, a reference type declared nullable and a reference type in a context without nullable annotations receive null;
+	// a member the C# type declares non-nullable (a value type, an enum included, or a reference type with nullable annotations on) is skipped,
 	// so a property keeps what new T() gave it (its initializer, else its default) and a constructor parameter gets its fallback: one IsDBNull per such cell on the typed path,
-	// a single read of the cell on the general path.
+	// a single read of the cell on the general path. Which reference types are declared non-nullable is read once per model type, when the slots are built (NullAnnotations).
 
 	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
@@ -133,7 +137,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
 			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is { } setter && seen.Add(p.Name))
-				list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p)));
+				list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), NullAnnotations.IsNonNullableReference(p)));
 		}
 
 		return [.. list];
@@ -171,7 +175,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			string name = matches[i]?.Name ?? parameter.Name ?? "arg" + i;
 			bool added = seen.Add(name);
 			Debug.Assert(added, "A slot name is unique: a parameter takes the name of a property or its own, and the exact name was matched first.");
-			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } property && MustHaveColumn(property)));
+			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } property && MustHaveColumn(property), NullAnnotations.IsNonNullableReference(parameter)));
 		}
 	}
 
@@ -579,10 +583,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 		MethodInfo isNullCell = typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!;
 
-		// A non-nullable value-type property is skipped when its cell is NULL; a non-nullable value-type constructor parameter gets its fallback.
+		// A property the type declares non-nullable (a value type, or a reference with nullable annotations on) is skipped when its cell is NULL; a constructor parameter of one gets its fallback.
 		return Compile<object?[]>(row, layout.Names, (i, slot)
 			=> Expression.Call(convert.MakeGenericMethod(slot.Type), Expression.ArrayIndex(row, Expression.Constant(i))),
-			(i, slot) => KeepsValueOnNull(slot.Type) ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null);
+			(i, slot) => slot.KeepsValueOnNull ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null);
 	}
 
 	#endregion
@@ -612,8 +616,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
 
 		return Compile<TReader>(r, layout.Names, (i, slot)
-			=> ReadValue(r, Expression.Constant(i), layout.Types[i], slot.Type, readerType, isDbNull, getValue, cell),
-			(i, slot) => NullTest(r, Expression.Constant(i), layout.Types[i], slot.Type, readerType, isDbNull, getValue, cell),
+			=> ReadValue(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell),
+			(i, slot) => NullTest(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell),
 			cell);
 	}
 
@@ -681,7 +685,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	// The constructor path. A constructor needs its arguments before anything can be set, and a SequentialAccess reader allows each cell to be read once, in ascending order:
 	// so every fed cell is read, in column order, into a typed local (nothing is boxed on the typed path), the constructor is called with the locals (the fallback for a parameter no column
-	// feeds, and for a NULL into a non-nullable value type), and then the properties the constructor does not cover are set from their locals, a NULL skipping a non-nullable value type as ever.
+	// feeds, and for a NULL into a member the type declares non-nullable), and then the properties the constructor does not cover are set from their locals, a NULL skipping one the type declares non-nullable.
 	static List<Expression> BindConstructor(ConstructorInfo constructor, ParameterExpression item, ParameterExpression index, Binding?[] bindings, string[] names, Slot?[] feeds,
 		Func<int, Slot, Expression> readCell, Func<int, Slot, Expression?> isNull, List<ParameterExpression> locals)
 	{
@@ -703,7 +707,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 			if (slot.Setter is null)
 			{
-				// A NULL into a non-nullable value type is not a value: the parameter gets its fallback. Any other NULL is null, as it is for a property.
+				// A NULL into a parameter the type declares non-nullable (a value type, or a reference with nullable annotations on) is not a value: the parameter gets its fallback. Any other NULL is null, as it is for a property.
 				Debug.Assert(slot.Fallback is not null && arguments[slot.Position] is null);
 				statements.Add(Expression.Assign(local, skip is null ? value : Expression.Condition(skip, slot.Fallback!, value)));
 				arguments[slot.Position] = local;
@@ -776,20 +780,16 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		return TryConvert(Expression.Call(r, getter, ordinal), target);
 	}
 
-	// A NULL leaves the current value for a non-nullable value type (an enum counts): Nullable<T> and reference types receive null.
-	static bool KeepsValueOnNull(Type propertyType)
-		=> propertyType.IsValueType && Nullable.GetUnderlyingType(propertyType) is null;
-
-	// The expression that is true when the cell of a property that keeps its value is NULL, or null for any other property.
+	// The expression that is true when the cell of a slot that keeps its value on NULL (Slot.KeepsValueOnNull) is NULL, or null for any other slot.
 	// On the typed path the reader answers; on the general path the cell is read once into `cell` and ReadValue converts that same value.
 	static MethodCallExpression? NullTest(
 		ParameterExpression r, Expression ordinal,
-		Type columnType, Type propertyType,
+		Type columnType, Slot slot,
 		Type readerType, MethodInfo isDbNull, MethodInfo getValue, ParameterExpression cell)
 	{
-		if (!KeepsValueOnNull(propertyType)) return null;
+		if (!slot.KeepsValueOnNull) return null;
 
-		if (TypedRead(r, ordinal, columnType, propertyType, readerType) is not null)
+		if (TypedRead(r, ordinal, columnType, slot.Type, readerType) is not null)
 			return Expression.Call(r, isDbNull, ordinal);
 
 		return Expression.Call(
@@ -799,13 +799,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	static Expression ReadValue(
 		ParameterExpression r, Expression ordinal,
-		Type columnType, Type propertyType,
+		Type columnType, Slot slot,
 		Type readerType, MethodInfo isDbNull, MethodInfo getValue,
 		ParameterExpression? cell = null)
 	{
+		Type propertyType = slot.Type;
 		Type? underlying = Nullable.GetUnderlyingType(propertyType);
 		Type target = underlying ?? propertyType;
-		bool nullable = underlying is not null || !propertyType.IsValueType;
+		bool nullable = !slot.KeepsValueOnNull; // Nullable<T>, or a reference the C# type does not declare non-nullable: a NULL is null.
 
 		if (TypedRead(r, ordinal, columnType, target, readerType) is { } typed)
 		{
@@ -823,7 +824,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		// NullTest has already read the cell of a member that keeps its value on NULL into `cell` to test it: the cell is read once, so it is converted from there.
 		return Expression.Call(
 			typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
-			cell is not null && KeepsValueOnNull(propertyType) ? cell : Expression.Call(r, getValue, ordinal));
+			cell is not null && slot.KeepsValueOnNull ? cell : Expression.Call(r, getValue, ordinal));
 	}
 
 	// Returns the expression converted to the target type, or null when the types have no direct conversion.
@@ -863,7 +864,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	static TTarget ConvertValue<TTarget>(object? value)
 	{
-		// A NULL never reaches here for a non-nullable value type: the compiled readers skip that assignment.
+		// A NULL never reaches here for a member the type declares non-nullable: the compiled readers skip that assignment.
 		if (value is null or DBNull) return default!;
 
 		if (value is TTarget exact) return exact;
@@ -948,7 +949,7 @@ static class TypedGetters
 sealed class Slot
 {
 	// A settable property.
-	public Slot(string name, Type type, MethodInfo setter, bool required)
+	public Slot(string name, Type type, MethodInfo setter, bool required, bool nonNullableReference)
 	{
 		Name = name;
 		Required = required;
@@ -956,10 +957,11 @@ sealed class Slot
 		Setter = setter;
 		Position = -1;
 		IsProperty = true;
+		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
 	}
 
 	// A constructor parameter, named after the property of that name when there is one.
-	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required)
+	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required, bool nonNullableReference)
 	{
 		Name = name;
 		Required = required;
@@ -968,7 +970,16 @@ sealed class Slot
 		Parameter = parameter;
 		IsProperty = isProperty;
 		Fallback = fallback;
+		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
 	}
+
+	// A NULL is not a value for a member the C# type declares non-nullable: a value type other than Nullable<T> (an enum counts), or a reference type declared non-nullable (NullAnnotations).
+	// A property then keeps what the constructor or its initializer gave it, and a constructor parameter gets its fallback. Decided once per model type, here, never per row.
+	static bool KeepsOnNull(Type type, bool nonNullableReference)
+		=> type.IsValueType ? Nullable.GetUnderlyingType(type) is null : nonNullableReference;
+
+	// Whether a NULL cell leaves the member alone (see KeepsOnNull) rather than assigning null; the compiled readers test the cell only for such a slot.
+	public readonly bool KeepsValueOnNull;
 
 	public readonly string Name;
 	public readonly Type Type;
@@ -1009,6 +1020,100 @@ sealed class Slot
 		Type underlying = Nullable.GetUnderlyingType(type) ?? type;
 		if (underlying.IsEnum && value.GetType() != underlying) value = Enum.ToObject(underlying, value);
 		return Expression.Constant(value, type);
+	}
+}
+
+// Whether a property or a constructor parameter is a reference type the C# source declares non-nullable, which is when a NULL must not overwrite it (Slot.KeepsValueOnNull).
+// The compiler records nullable annotations in metadata: NullableAttribute on a member (or a parameter) whose annotation differs from its context, else NullableContextAttribute on the nearest
+// enclosing method or type that has one. Flag 1 is not-null, 2 is nullable, 0 or none is oblivious (nullable annotations off): only 1 counts.
+// It reads those attributes as data, by full name, so it works on every target (NullabilityInfoContext does not exist on netstandard) and no attribute type is referenced.
+// A property marked [AllowNull] (on the property or on its setter's value parameter) says null may be written to it, so it is nullable. A member whose declared type is a type parameter (T Value in Box<T>) is not judged: it is as oblivious as it was.
+// This runs once per model type, when the slots are built, never per row.
+static class NullAnnotations
+{
+	const string NullableAttributeName = "System.Runtime.CompilerServices.NullableAttribute";
+	const string NullableContextAttributeName = "System.Runtime.CompilerServices.NullableContextAttribute";
+	const string AllowNullAttributeName = "System.Diagnostics.CodeAnalysis.AllowNullAttribute";
+	const BindingFlags AnyDeclared = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+
+	public static bool IsNonNullableReference(PropertyInfo property)
+	{
+		if (!IsReference(property.PropertyType) || DeclaredAsTypeParameter(property)) return false;
+
+		IList<CustomAttributeData> own = CustomAttributeData.GetCustomAttributes(property);
+		return !Has(own, AllowNullAttributeName) && !AllowsNullOnSetter(property) && (Flag(own, NullableAttributeName) ?? ContextFlag(property)) == 1;
+	}
+
+	// The compiler puts [AllowNull] written on a property on the value parameter of its setter (an auto-property has it nowhere else), which is also where the runtime reads it.
+	static bool AllowsNullOnSetter(PropertyInfo property)
+		=> property.SetMethod?.GetParameters() is { Length: > 0 } parameters && Has(CustomAttributeData.GetCustomAttributes(parameters[^1]), AllowNullAttributeName);
+
+	public static bool IsNonNullableReference(ParameterInfo parameter)
+	{
+		if (!IsReference(parameter.ParameterType) || DeclaredAsTypeParameter(parameter)) return false;
+
+		return (Flag(CustomAttributeData.GetCustomAttributes(parameter), NullableAttributeName) ?? ContextFlag(parameter.Member)) == 1;
+	}
+
+	static bool IsReference(Type type) => !type.IsValueType && !type.IsGenericParameter && !type.IsByRef && !type.IsPointer;
+
+	// The members of a closed generic type report the closed type (Box<string>.Value is a string); the declaration says T. The declaration is found by its metadata token.
+	static bool DeclaredAsTypeParameter(PropertyInfo property)
+	{
+		if (property.DeclaringType is not { IsGenericType: true, IsGenericTypeDefinition: false } closed) return false;
+
+		foreach (PropertyInfo candidate in closed.GetGenericTypeDefinition().GetProperties(AnyDeclared))
+			if (candidate.MetadataToken == property.MetadataToken) return candidate.PropertyType.IsGenericParameter;
+
+		return false;
+	}
+
+	static bool DeclaredAsTypeParameter(ParameterInfo parameter)
+	{
+		if (parameter.Member is not { DeclaringType: { IsGenericType: true, IsGenericTypeDefinition: false } closed } constructor) return false;
+
+		foreach (ConstructorInfo candidate in closed.GetGenericTypeDefinition().GetConstructors(AnyDeclared))
+			if (candidate.MetadataToken == constructor.MetadataToken) return candidate.GetParameters()[parameter.Position].ParameterType.IsGenericParameter;
+
+		return false;
+	}
+
+	// The nearest NullableContextAttribute from the member outward through its declaring types (a nested type's context applies to what it contains), or null when there is none: oblivious.
+	static byte? ContextFlag(MemberInfo? member)
+	{
+		for (; member is not null; member = member.DeclaringType)
+		{
+			if (Flag(CustomAttributeData.GetCustomAttributes(member), NullableContextAttributeName) is { } flag) return flag;
+		}
+
+		return null;
+	}
+
+	// The flag of the attribute by that name: its one argument is a byte, or a byte[] with one flag per type in a generic or array type, whose first is the type itself.
+	static byte? Flag(IList<CustomAttributeData> attributes, string attributeName)
+	{
+		foreach (CustomAttributeData attribute in attributes)
+		{
+			if (attribute.AttributeType.FullName != attributeName || attribute.ConstructorArguments.Count != 1) continue;
+
+			switch (attribute.ConstructorArguments[0].Value)
+			{
+				case byte flag:
+					return flag;
+				case IList<CustomAttributeTypedArgument> { Count: > 0 } flags when flags[0].Value is byte first:
+					return first;
+			}
+		}
+
+		return null;
+	}
+
+	static bool Has(IList<CustomAttributeData> attributes, string attributeName)
+	{
+		foreach (CustomAttributeData attribute in attributes)
+			if (attribute.AttributeType.FullName == attributeName) return true;
+
+		return false;
 	}
 }
 

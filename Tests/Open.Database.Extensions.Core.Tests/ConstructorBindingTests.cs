@@ -143,7 +143,7 @@ public static class ConstructorBindingTests
 		table.Rows.Add(1, "one");
 		table.Rows.Add(2, DBNull.Value);
 
-		Assert.Equal<Post>([new(1, "one"), new(2, null!)], table.To<Post>()); // a NULL into a non-nullable reference parameter is null (phase E changes that)
+		Assert.Equal<Post>([new(1, "one"), new(2, null!)], table.To<Post>()); // a NULL into a non-nullable reference parameter gets its fallback: no declared default, so null (NullRuleMatrixTests covers one with a default)
 	}
 
 	[Fact]

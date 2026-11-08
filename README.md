@@ -174,7 +174,7 @@ bool committed = connectionFactory.Using(connection =>
 dotnet add package Open.Database.Extensions.Core --prerelease
 ```
 
-Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview (`11.0.0-preview05`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
+Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net472` and `net10.0`). Version 11 is a preview (`11.0.0-preview06`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
 
 ## How it fits together
 

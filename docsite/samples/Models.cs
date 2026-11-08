@@ -26,7 +26,7 @@ public class OrderLine
 	public int Quantity { get; set; } = 1;   // NULL leaves 1: a non-nullable value type keeps its initializer, else its default
 	public int? Discount { get; set; }       // NULL gives null
 	public string? Note { get; set; }        // NULL gives null
-	public string Title { get; set; } = "";  // NULL gives null too: a reference type always does
+	public string Title { get; set; } = "";  // NULL leaves "": a non-nullable reference (nullable annotations on) keeps its initializer too
 }
 #endregion
 

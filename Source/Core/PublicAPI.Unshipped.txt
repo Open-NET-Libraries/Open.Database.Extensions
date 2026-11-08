@@ -141,3 +141,5 @@ Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, T
 virtual Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.GetProcedureParameterNames(TConnection! connection, string! procedure) -> System.Collections.Immutable.ImmutableArray<string!>
 virtual Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.GetProcedureParameterNamesAsync(TConnection! connection, string! procedure, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableArray<string!>>
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParams<T>(T source) -> TThis!
+Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParam(string! name, string? value) -> TThis!
+Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AddParamIf(bool condition, string! name, string? value) -> TThis!

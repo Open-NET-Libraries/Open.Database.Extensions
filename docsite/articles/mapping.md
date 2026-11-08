@@ -9,14 +9,14 @@
 | Named like the properties, or the same with underscores (`first_name` for `FirstName`) | `Map<T>()` |
 | Named differently | Declare a `RowMap<T>` once and pass it: `Map<T>(map)` |
 | One property must not be read | A `null` column for it in the `RowMap<T>` |
-| A column can hold NULL | Declare the property nullable (`int?`, `string?`); a non-nullable value-type property keeps its initializer, else its default |
+| A column can hold NULL | Declare the property nullable (`int?`, `string?`); a property the type declares non-nullable (`int`, or a `string` with nullable annotations on) keeps its initializer, else its default |
 | Your own conversion | `Map(selector)` |
 
 ## The rules
 
 - **Construction.** A class with a public parameterless constructor, or a struct with no public constructor, is built with `new T()` for each row, and then its properties are set. Any other type is built through its one public constructor: a positional record, a record struct, or a class with a single public constructor. Two or more public constructors and none without parameters, an interface, an abstract class, a single value like `int` or `string`, and a type with a `required` public field (a field cannot be set) throw `InvalidOperationException` at the call, even when the result is empty.
 - **What is set.** The parameters of the constructor, when the type is built through one, and the public instance properties that have a public setter (a record's `init` property included). A parameter and a property of the same name, ignoring case, are one member: it is fed once, through the constructor. Public fields and static properties are not mapped.
-- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`); so does a parameter of a non-nullable value type when the cell is `NULL`.
+- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`); so does a parameter the type declares non-nullable (a value type, or a reference type with nullable annotations on) when the cell is `NULL`.
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).
 - **No other conventions.** There are no attributes. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
 
@@ -84,9 +84,11 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 - integers and floating-point values widen to `float`, `double` and `decimal`;
 - anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string` except a `byte[]`, which throws, and otherwise `Convert.ChangeType`.
 
-## NULL in a non-nullable value-type column
+## NULL in a non-nullable column
 
-A nullable property (`Nullable<T>`) or a reference type gets `null`, even a `string` that has a non-null initializer. A non-nullable value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default; nothing throws. If NULL means something, declare the property nullable (`int?`): that is the only way to tell NULL from 0.
+A NULL never overwrites a member the C# type declares non-nullable. A value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default, and so does a reference-type property when nullable annotations are on: `string Name { get; set; } = "";` keeps `""`, and one with no initializer stays `null`. A constructor parameter of such a type gets its declared default value, else its default. `Nullable<T>` (`int?`), a reference declared nullable (`string?`, or `[AllowNull]` on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter (`T Value`) get `null`; nothing throws. If NULL means something, declare the member nullable (`int?`, `string?`): that is the only way to tell NULL from 0 or "".
+
+The rule reads the nullable annotations the compiler stores in the assembly, so it needs `<Nullable>enable</Nullable>` (or `#nullable enable`) in the code that declares the model.
 
 [!code-csharp[](../samples/Models.cs#order_line_model)]
 
