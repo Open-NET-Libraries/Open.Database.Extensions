@@ -291,6 +291,9 @@ public static class UnmappableTypeTests
 		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteReader(reader => transform(reader, state), behavior);
 
+		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
+			=> inner.ExecuteReaderAsync(state, transform, behavior, cancellationToken);
+
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
 
