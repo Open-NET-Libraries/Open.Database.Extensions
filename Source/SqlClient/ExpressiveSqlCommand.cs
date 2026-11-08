@@ -143,7 +143,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// Reads the parameter names a stored procedure declares from <c>sys.all_parameters</c>, so parameters added with <c>AddParam(value)</c> find their real names.
 	/// </summary>
 	/// <remarks>The procedure is looked up in the connection's current database; a name that does not resolve there (a missing procedure, no permission to see it) gives no names, and a name with a database part (<c>otherdb.dbo.proc</c>) is not looked up at all, because the lookup runs in the current database: in both cases the last member of each argument is used as written.
-	/// The lookup runs with the command's timeout (<c>SetTimeout</c>). A failure of the lookup is thrown as an <see cref="InvalidOperationException"/> that names the procedure, with the original exception (for example a <see cref="SqlException"/>) as its <see cref="Exception.InnerException"/>; a cancellation is not wrapped.</remarks>
+	/// The lookup runs with the command's timeout (<c>SetTimeout</c>). A failure of the lookup is thrown as it is (a <see cref="SqlException"/> stays a <see cref="SqlException"/>, so a retry policy still sees it), with the procedure's name added to <see cref="Exception.Data"/> under the key <c>Procedure</c>.</remarks>
 	/// <inheritdoc />
 	protected override ImmutableArray<string> GetProcedureParameterNames(SqlConnection connection, string procedure)
 	{
@@ -155,7 +155,8 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
-			throw LookupFailed(procedure, ex);
+			ex.Data["Procedure"] = procedure;
+			throw;
 		}
 	}
 
@@ -175,13 +176,10 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException && !cancellationToken.IsCancellationRequested)
 		{
-			throw LookupFailed(procedure, ex);
+			ex.Data["Procedure"] = procedure;
+			throw;
 		}
 	}
-
-	// A SqlException cannot be created outside the provider, so a failed lookup is wrapped: the message says which procedure it was reading names for, the original exception stays as the inner exception.
-	static InvalidOperationException LookupFailed(string procedure, Exception inner)
-		=> new($"Failed while reading the parameter names of '{procedure}' for AddParam(value): {inner.Message}", inner);
 
 	SqlCommand ProcedureNamesCommand(SqlConnection connection, string procedure)
 	{
