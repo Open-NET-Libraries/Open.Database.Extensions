@@ -6,6 +6,7 @@ namespace Open.Database.Extensions.Tests;
 
 // ExecuteScalar<T>() / ExecuteScalarAsync<T>() with a NULL scalar or a query that returned no row (the provider hands back null or DBNull):
 // default(T) for every T (0 for int, null for int? and reference types). A value is still the exact cast.
+// The transform overloads get null for both (never DBNull); the raw ExecuteScalar()/ExecuteScalarAsync() stay raw.
 [ExcludeFromCodeCoverage]
 public static class ExecuteScalarNullTests
 {
@@ -70,13 +71,6 @@ public static class ExecuteScalarNullTests
 		Assert.Throws<InvalidCastException>(() => Sync(42).ExecuteScalar<long>()); // a cast, not a conversion
 	}
 
-	[Fact]
-	public static void ExecuteScalar_WithATransform_IsUntouched()
-	{
-		foreach (object? none in NoValue)
-			Assert.Equal(-1, Sync(none).ExecuteScalar(o => o is null or DBNull ? -1 : 0));
-	}
-
 	// ---- async ----
 
 	[Fact]
@@ -103,10 +97,137 @@ public static class ExecuteScalarNullTests
 		await Assert.ThrowsAsync<InvalidCastException>(async () => await Async(42).ExecuteScalarAsync<long>());
 	}
 
+	// ---- the raw scalar: the ADO.NET primitive, not normalized (the only way to tell NULL from no row) ----
+
 	[Fact]
-	public static async Task ExecuteScalarAsync_WithATransform_IsUntouched()
+	public static void ExecuteScalar_Raw_ReturnsDBNullForNullAndNullForNoRow()
+	{
+		Assert.Same(DBNull.Value, Sync(DBNull.Value).ExecuteScalar());
+		Assert.Null(Sync(null).ExecuteScalar());
+		Assert.Equal(42, Sync(42).ExecuteScalar());
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_Raw_ReturnsDBNullForNullAndNullForNoRow()
+	{
+		Assert.Same(DBNull.Value, await Async(DBNull.Value).ExecuteScalarAsync());
+		Assert.Null(await Async(null).ExecuteScalarAsync());
+		Assert.Equal(42, await Async(42).ExecuteScalarAsync());
+	}
+
+	// ---- the transform overloads: NULL and no row both reach the function as null, never DBNull ----
+
+	[Fact]
+	public static void ExecuteScalar_Transform_ReceivesNullForNullAndNoRow()
 	{
 		foreach (object? none in NoValue)
-			Assert.Equal(-1, await Async(none).ExecuteScalarAsync(o => o is null or DBNull ? -1 : 0));
+		{
+			int calls = 0;
+			object? received = DBNull.Value; // anything but null, so an uncalled transform fails the assertion
+			int result = Sync(none).ExecuteScalar(o =>
+			{
+				calls++;
+				received = o;
+				return -1;
+			});
+
+			Assert.Equal(-1, result);
+			Assert.Equal(1, calls);
+			Assert.Null(received);
+		}
+	}
+
+	[Fact]
+	public static void ExecuteScalar_Transform_PassesAValueThroughUnchanged()
+	{
+		Assert.Equal(42, Sync(42).ExecuteScalar(o => o));
+		Assert.Equal("v", Sync("v").ExecuteScalar(o => o));
+		object boxed = 42;
+		Assert.Same(boxed, Sync(boxed).ExecuteScalar(o => o));
+	}
+
+	[Fact]
+	public static void ExecuteScalar_Transform_NullableCast_GivesNullForNullAndTheValueForAValue()
+	{
+		foreach (object? none in NoValue)
+			Assert.Null(Sync(none).ExecuteScalar<int?>(o => (int?)o));
+
+		Assert.Equal(42, Sync(42).ExecuteScalar<int?>(o => (int?)o));
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_Transform_ReceivesNullForNullAndNoRow()
+	{
+		foreach (object? none in NoValue)
+		{
+			int calls = 0;
+			object? received = DBNull.Value; // anything but null, so an uncalled transform fails the assertion
+			int result = await Async(none).ExecuteScalarAsync(o =>
+			{
+				calls++;
+				received = o;
+				return -1;
+			});
+
+			Assert.Equal(-1, result);
+			Assert.Equal(1, calls);
+			Assert.Null(received);
+		}
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_Transform_PassesAValueThroughUnchanged()
+	{
+		Assert.Equal(42, await Async(42).ExecuteScalarAsync(o => o));
+		Assert.Equal("v", await Async("v").ExecuteScalarAsync(o => o));
+		object boxed = 42;
+		Assert.Same(boxed, await Async(boxed).ExecuteScalarAsync(o => o));
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_Transform_NullableCast_GivesNullForNullAndTheValueForAValue()
+	{
+		foreach (object? none in NoValue)
+			Assert.Null(await Async(none).ExecuteScalarAsync<int?>(o => (int?)o));
+
+		Assert.Equal(42, await Async(42).ExecuteScalarAsync<int?>(o => (int?)o));
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_TaskTransform_ReceivesNullForNullAndNoRow()
+	{
+		foreach (object? none in NoValue)
+		{
+			int calls = 0;
+			object? received = DBNull.Value; // anything but null, so an uncalled transform fails the assertion
+			int result = await Async(none).ExecuteScalarAsync(o =>
+			{
+				calls++;
+				received = o;
+				return new ValueTask<int>(-1);
+			});
+
+			Assert.Equal(-1, result);
+			Assert.Equal(1, calls);
+			Assert.Null(received);
+		}
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_TaskTransform_PassesAValueThroughUnchanged()
+	{
+		Assert.Equal(42, await Async(42).ExecuteScalarAsync(o => new ValueTask<object?>(o)));
+		Assert.Equal("v", await Async("v").ExecuteScalarAsync(o => new ValueTask<object?>(o)));
+		object boxed = 42;
+		Assert.Same(boxed, await Async(boxed).ExecuteScalarAsync(o => new ValueTask<object?>(o)));
+	}
+
+	[Fact]
+	public static async Task ExecuteScalarAsync_TaskTransform_NullableCast_GivesNullForNullAndTheValueForAValue()
+	{
+		foreach (object? none in NoValue)
+			Assert.Null(await Async(none).ExecuteScalarAsync<int?>(o => new ValueTask<int?>((int?)o)));
+
+		Assert.Equal(42, await Async(42).ExecuteScalarAsync<int?>(o => new ValueTask<int?>((int?)o)));
 	}
 }

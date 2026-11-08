@@ -141,14 +141,14 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Asynchronously executes scalar on the underlying command.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
-	/// <param name="transform">The transform function for the result.</param>
-	/// <returns>The value returned from the method.</returns>
+	/// <param name="transform">The function that converts the value. It receives <see langword="null"/> when the column is NULL or there is no row, never <see cref="DBNull"/>; any other value is passed as the provider returned it.</param>
+	/// <returns>The value returned from the transform.</returns>
 	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object?, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return transform(await ExecuteScalarAsync().ConfigureAwait(false));
+		return transform(ScalarValue(await ExecuteScalarAsync().ConfigureAwait(false)));
 	}
 
 	/// <summary>
@@ -163,14 +163,14 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Asynchronously executes scalar on the underlying command.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
-	/// <param name="transform">The transform function (task) for the result.</param>
-	/// <returns>The value returned from the method.</returns>
+	/// <param name="transform">The function (task) that converts the value. It receives <see langword="null"/> when the column is NULL or there is no row, never <see cref="DBNull"/>; any other value is passed as the provider returned it.</param>
+	/// <returns>The value returned from the transform.</returns>
 	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object?, ValueTask<T>> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return await transform(await ExecuteScalarAsync().ConfigureAwait(false)).ConfigureAwait(false);
+		return await transform(ScalarValue(await ExecuteScalarAsync().ConfigureAwait(false))).ConfigureAwait(false);
 	}
 
 	/// <summary>
