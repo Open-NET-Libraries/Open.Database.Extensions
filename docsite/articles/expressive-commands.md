@@ -45,7 +45,7 @@ Pass a `CommandType` as the second argument of `Command` if you need `TableDirec
 
 ### Name a parameter from its argument
 
-`AddParam(value)` takes the name from the argument itself, so you do not spell it twice. The argument must be a variable or a chain of members (properties and fields, members of members): `search.Author`, `order.Customer.Id`.
+`AddParam(value)` takes the name from the argument itself, so you do not spell it twice. The argument must be a variable or a chain of members (properties and fields, members of members): `search.Author`, `order.Customer.Id`. Deriving needs C# 10 or newer (a compiler older than C# 10 gets an `ArgumentException` and must pass the name), while `AddParam("name", value)` always uses the name you wrote, on every compiler.
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_from_argument)]
 

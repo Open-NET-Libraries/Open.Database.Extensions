@@ -274,6 +274,18 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	public TThis AddParam(string name, string? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
 
+	/// <summary>
+	/// Adds an input parameter with a string value, named as you write it.
+	/// </summary>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <remarks>
+	/// Compilers older than C# 13 ignore <c>OverloadResolutionPriority</c>, so without this overload they would bind <c>AddParam("name", someString)</c> to <see cref="AddParam{T}(T, string?)"/>, which would read the name as the value and send the parameter under the text of the second argument.
+	/// </remarks>
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)" path="/*[not(self::param) and not(self::summary)]"/>
+	public TThis AddParam(string name, string? value)
+		=> AddParam(name, value, null, ParameterDirection.Input);
+
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam(string name, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, null, type, direction));
@@ -367,7 +379,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	[SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly")]
 	static ArgumentException NotDerivable(string? expression)
-		=> new($"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.CompanySerialNum, or name the parameter: AddParam(\"name\", value).", "value");
+		=> expression is null
+			? new("The compiler did not supply the argument's text (deriving a name needs C# 10 or newer). Pass the name explicitly: AddParam(\"name\", value).", "value")
+			: new($"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.CompanySerialNum, or name the parameter: AddParam(\"name\", value).", "value");
 
 	/// <summary>
 	/// Adds a return parameter to the params list.
@@ -400,6 +414,19 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParamIf(bool condition, string name, object? value, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, value, direction) : (TThis)this;
+
+	/// <summary>
+	/// Conditionally adds an input parameter with a string value, named as you write it.
+	/// </summary>
+	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <remarks>
+	/// Compilers older than C# 13 ignore <c>OverloadResolutionPriority</c>, so without this overload they would bind <c>AddParamIf(condition, "name", someString)</c> to <see cref="AddParamIf{T}(bool, T, string?)"/>, which would read the name as the value and send the parameter under the text of the third argument.
+	/// </remarks>
+	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)" path="/*[not(self::param) and not(self::summary)]"/>
+	public TThis AddParamIf(bool condition, string name, string? value)
+		=> condition ? AddParam(name, value, null, ParameterDirection.Input) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParamIf<T>(bool condition, string name, T? value, TDbType? type, ParameterDirection direction = ParameterDirection.Input)

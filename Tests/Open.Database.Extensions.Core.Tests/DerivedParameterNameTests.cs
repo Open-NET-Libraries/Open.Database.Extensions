@@ -529,6 +529,33 @@ public static class DerivedParameterNameTests
 		Assert.Empty(cmd.Params);
 	}
 
+	// A compiler older than C# 10 does not fill [CallerArgumentExpression], so the text arrives as null (as it does when a caller passes null on purpose): say so, and name the way out.
+	[Fact]
+	public static void ExpressionNull_SaysTheCompilerDidNotSupplyTheText_AndShowsTheExplicitForm()
+	{
+		var cmd = new ConnectionProbe(ConnectionState.Open).Connection.Command("select 1");
+
+		foreach (Action call in new Action[]
+		{
+			() => cmd.AddParam(value: 1, expression: null),
+			() => cmd.AddParamIf(true, value: 1, expression: null),
+			() => cmd.AddParamIf(false, value: 1, expression: null),
+		})
+		{
+			var ex = Assert.Throws<ArgumentException>(call);
+			Assert.Equal("value", ex.ParamName);
+			Assert.Contains("C# 10", ex.Message);
+			Assert.Contains("AddParam(\"name\", value)", ex.Message);
+			Assert.DoesNotContain("Cannot derive", ex.Message);
+		}
+
+		// Text that is present but not derivable keeps its own message.
+		var other = Assert.Throws<ArgumentException>(() => cmd.AddParam(value: 1, expression: ""));
+		Assert.Contains("Cannot derive a parameter name from the argument ''", other.Message);
+		Assert.DoesNotContain("C# 10", other.Message);
+		Assert.Empty(cmd.Params);
+	}
+
 	[Theory]
 	[InlineData("startDate", "startDate")]
 	[InlineData("filter.CompanySerialNum", "CompanySerialNum")]
