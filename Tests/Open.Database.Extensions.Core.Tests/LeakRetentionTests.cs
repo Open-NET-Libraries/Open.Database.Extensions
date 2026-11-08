@@ -14,6 +14,11 @@ namespace Open.Database.Extensions.Tests;
 //   - the caches that have a bound (the row-map layouts, the remembered procedure names) are driven past it, and stay at it;
 //   - a few thousand calls of every terminal must not grow the heap: the live memory after the calls, measured with a full collection, is compared with
 //     the live memory after a warm-up. The bound is a small constant, far below what a leak of even a hundred bytes per call would add.
+// The heap is measured for the whole process, so the tests that measure it run alone: no other test class runs while they do.
+[CollectionDefinition("Heap measurements", DisableParallelization = true)]
+public sealed class HeapMeasurementsCollection;
+
+[Collection("Heap measurements")]
 [ExcludeFromCodeCoverage]
 public static class LeakRetentionTests
 {
