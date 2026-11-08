@@ -263,7 +263,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync(reader => CoreExtensions.ResultsBufferedAsyncCore(reader, map, UseAsyncRead, default(OwnedReader), CancellationToken));
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
@@ -272,7 +272,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync(reader => CoreExtensions.ResultsBufferedAsyncCore<T, OwnedReader>(reader, null, UseAsyncRead, default, CancellationToken));
 	}
 
 	/// <summary>
@@ -280,7 +280,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync()
-		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(useReadAsync: UseAsyncRead), CommandBehavior.SingleResult);
+		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(useReadAsync: UseAsyncRead).AfterRowsAsync(reader, UseAsyncRead, CancellationToken));
 
 	/// <summary>
 	/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -288,7 +288,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<int> ordinals)
-		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals, useReadAsync: UseAsyncRead), CommandBehavior.SingleResult);
+		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals, useReadAsync: UseAsyncRead).AfterRowsAsync(reader, UseAsyncRead, CancellationToken));
 
 	/// <summary>
 	/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
@@ -297,5 +297,5 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
-		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
+		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead).AfterRowsAsync(reader, UseAsyncRead, CancellationToken));
 }

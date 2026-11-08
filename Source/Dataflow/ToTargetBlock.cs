@@ -30,7 +30,9 @@ public static partial class DataflowExtensions
 		{
 			int fieldCount = reader.FieldCount;
 			int total = 0;
-			while (reader.Read() && target.Post(reader.GetValues(fieldCount))) total++;
+			bool more;
+			while ((more = reader.Read()) && target.Post(reader.GetValues(fieldCount))) total++;
+			if (!more) reader.NextResult();
 			if (complete) target.Complete();
 			return total;
 		}
@@ -69,7 +71,9 @@ public static partial class DataflowExtensions
 		{
 			int fieldCount = reader.FieldCount;
 			int total = 0;
-			while (reader.Read() && target.Post(reader.GetValues(fieldCount, arrayPool))) total++;
+			bool more;
+			while ((more = reader.Read()) && target.Post(reader.GetValues(fieldCount, arrayPool))) total++;
+			if (!more) reader.NextResult();
 			if (complete) target.Complete();
 			return total;
 		}
@@ -108,7 +112,9 @@ public static partial class DataflowExtensions
 		try
 		{
 			int total = 0;
-			while (reader.Read() && target.Post(transform(reader))) total++;
+			bool more;
+			while ((more = reader.Read()) && target.Post(transform(reader))) total++;
+			if (!more) reader.NextResult();
 			if (complete) target.Complete();
 			return total;
 		}
@@ -611,21 +617,27 @@ public static partial class DataflowExtensions
 			int total = 0;
 			if (reader is DbDataReader r)
 			{
+				bool more;
 				while (
-					await r.ReadAsync(cancellationToken).ConfigureAwait(false)
+					(more = await r.ReadAsync(cancellationToken).ConfigureAwait(false))
 					&& await target.SendAsync(r.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
+
+				if (!more) await r.NextResultAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
+				bool more;
 				while (
-					reader.Read()
+					(more = reader.Read())
 					&& await target.SendAsync(reader.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
+
+				if (!more) reader.NextResult();
 			}
 
 			if (complete) target.Complete();
@@ -671,21 +683,27 @@ public static partial class DataflowExtensions
 			int total = 0;
 			if (reader is DbDataReader r)
 			{
+				bool more;
 				while (
-					await r.ReadAsync(cancellationToken).ConfigureAwait(false)
+					(more = await r.ReadAsync(cancellationToken).ConfigureAwait(false))
 					&& await target.SendAsync(r.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
+
+				if (!more) await r.NextResultAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
+				bool more;
 				while (
-					reader.Read()
+					(more = reader.Read())
 					&& await target.SendAsync(reader.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
+
+				if (!more) reader.NextResult();
 			}
 
 			if (complete) target.Complete();
@@ -731,21 +749,27 @@ public static partial class DataflowExtensions
 			int total = 0;
 			if (reader is DbDataReader r)
 			{
+				bool more;
 				while (
-					await r.ReadAsync(cancellationToken).ConfigureAwait(false)
+					(more = await r.ReadAsync(cancellationToken).ConfigureAwait(false))
 					&& await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
+
+				if (!more) await r.NextResultAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
+				bool more;
 				while (
-					reader.Read()
+					(more = reader.Read())
 					&& await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
+
+				if (!more) reader.NextResult();
 			}
 
 			if (complete) target.Complete();
@@ -1010,7 +1034,7 @@ public static partial class DataflowExtensions
 			await Task.Yield();
 
 		return await ToTargetBlockMappedAsync(
-			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
+			read => command.ExecuteReaderAsync(read, CommandBehavior.Default, cancellationToken),
 			target, complete, null, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -1053,7 +1077,7 @@ public static partial class DataflowExtensions
 			await Task.Yield();
 
 		return await ToTargetBlockMappedAsync(
-			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
+			read => command.ExecuteReaderAsync(read, CommandBehavior.Default, cancellationToken),
 			target, complete, map, cancellationToken).ConfigureAwait(false);
 	}
 
