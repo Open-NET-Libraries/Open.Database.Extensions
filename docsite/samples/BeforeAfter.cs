@@ -9,7 +9,7 @@ public static class BeforeAfter
 {
 	public static List<Post> PlainList(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region plain_list
 		var posts = new List<Post>();
 
@@ -41,7 +41,7 @@ public static class BeforeAfter
 
 	public static async Task<Post[]> OdeList(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_list_factory
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author order by id")
@@ -55,7 +55,7 @@ public static class BeforeAfter
 
 	public static Post? PlainFirst(string connectionString)
 	{
-		int id = 3;
+		const int id = 3;
 		#region plain_first
 		Post? post = null;
 
@@ -87,7 +87,7 @@ public static class BeforeAfter
 
 	public static Post? OdeFirst(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int id = 3;
+		const int id = 3;
 		#region ode_first_factory
 		Post? post = connectionFactory
 			.Command("select * from posts where id = @id")
@@ -101,7 +101,7 @@ public static class BeforeAfter
 
 	public static long PlainScalar(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region plain_scalar
 		using var connection = new SqliteConnection(connectionString);
 		connection.Open();
@@ -121,7 +121,7 @@ public static class BeforeAfter
 
 	public static long OdeScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_scalar_factory
 		long count = connectionFactory
 			.Command("select count(*) from posts where author = @author")
@@ -134,7 +134,7 @@ public static class BeforeAfter
 
 	public static int PlainNonQuery(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region plain_nonquery
 		using var connection = new SqliteConnection(connectionString);
 		connection.Open();
@@ -154,7 +154,7 @@ public static class BeforeAfter
 
 	public static int OdeNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_nonquery
 		int updated = connectionFactory
 			.Command("update posts set views = views + 1 where author = @author")

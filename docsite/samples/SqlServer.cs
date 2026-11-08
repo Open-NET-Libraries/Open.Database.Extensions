@@ -8,7 +8,7 @@ public static class SqlServer
 {
 	public static async Task<Post[]> Example()
 	{
-		int author = 42;
+		const int author = 42;
 		#region sql_server_factory
 		// Open.Database.Extensions.MSSqlClient wraps Microsoft.Data.SqlClient.
 		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
@@ -58,7 +58,7 @@ public static class SqlServer
 	public static async Task<int> ReturnValue()
 	{
 		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
-		int author = 42;
+		const int author = 42;
 
 		#region sql_server_return
 		// ExecuteReturn<T>() adds the return-value parameter itself, runs the procedure and returns its value:

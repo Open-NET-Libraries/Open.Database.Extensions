@@ -33,7 +33,7 @@ public static class ConnectionPattern
 
 	public static List<Post> DapperList(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region dapper_list_call
 		using var connection = new SqliteConnection(connectionString);
 		List<Post> posts = connection.Query<Post>(ListSql,
@@ -46,7 +46,7 @@ public static class ConnectionPattern
 
 	public static List<Post> OdeList(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_list_call
 		// nothing: the factory creates, opens and disposes the connection
 		List<Post> posts = connectionFactory.Command(ListSql)
@@ -59,7 +59,7 @@ public static class ConnectionPattern
 
 	public static List<Post> OdeListOwn(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_list_own
 		using var connection = new SqliteConnection(connectionString);
 		List<Post> posts = connection.Command(ListSql)
@@ -72,7 +72,7 @@ public static class ConnectionPattern
 
 	public static Post? DapperFirst(string connectionString)
 	{
-		int id = 3;
+		const int id = 3;
 		#region dapper_first_call
 		using var connection = new SqliteConnection(connectionString);
 		Post? post = connection.QueryFirstOrDefault<Post>(OneSql,
@@ -85,7 +85,7 @@ public static class ConnectionPattern
 
 	public static Post? OdeFirst(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int id = 3;
+		const int id = 3;
 		#region ode_first_call
 		// nothing: the factory creates, opens and disposes the connection
 		Post? post = connectionFactory.Command(OneSql)
@@ -98,7 +98,7 @@ public static class ConnectionPattern
 
 	public static long DapperScalar(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region dapper_scalar_call
 		using var connection = new SqliteConnection(connectionString);
 		long count = connection.ExecuteScalar<long>(CountSql,
@@ -111,7 +111,7 @@ public static class ConnectionPattern
 
 	public static long OdeScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_scalar_call
 		// nothing: the factory creates, opens and disposes the connection
 		long count = connectionFactory.Command(CountSql)
@@ -124,7 +124,7 @@ public static class ConnectionPattern
 
 	public static int DapperNonQuery(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region dapper_nonquery_call
 		using var connection = new SqliteConnection(connectionString);
 		int updated = connection.Execute(TouchSql,
@@ -137,7 +137,7 @@ public static class ConnectionPattern
 
 	public static int OdeNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_nonquery_call
 		// nothing: the factory creates, opens and disposes the connection
 		int updated = connectionFactory.Command(TouchSql)
@@ -184,7 +184,7 @@ public static class ConnectionPattern
 		#endregion
 	public static List<Post> PlainListAligned(string connectionString)
 	{
-		int author = 42;
+		const int author = 42;
 		#region plain_list_aligned
 		using var connection = new SqliteConnection(connectionString);
 		connection.Open();
@@ -213,7 +213,7 @@ public static class ConnectionPattern
 
 	public static List<Post> OdeListAligned(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region ode_list_aligned
 		// nothing: the factory creates, opens and disposes the connection
 

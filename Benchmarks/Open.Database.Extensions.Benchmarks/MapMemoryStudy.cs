@@ -53,7 +53,7 @@ public static class MapMemoryStudy
 		Console.WriteLine($"  allocated to build one from a literal:   {allocatedPerLiteral,6} B (the pairs written at the call site)");
 		Console.WriteLine($"  retained while unused:                  {retainedUnused,6} B");
 		Console.WriteLine($"  retained added by its first read:       {retainedAfterFirstRead,6} B (one result-set layout, typed DbDataReader reader)");
-		Console.WriteLine($"Allocated per call, one-row List read of the same model, in-memory provider:");
+		Console.WriteLine("Allocated per call, one-row List read of the same model, in-memory provider:");
 		Console.WriteLine($"  declared RowMap<T>:                                  {callDeclared,6} B");
 		Console.WriteLine($"  pairs overload of Map<T> (prebuilt pairs):           {callPairs,6} B  (+{callPairs - callDeclared} B: builds a map and compiles the reader every call)");
 		Console.WriteLine($"  ImmutableArray of pairs passed to the constructor at the call site:  {callArray,6} B  (+{callArray - callDeclared} B)");
