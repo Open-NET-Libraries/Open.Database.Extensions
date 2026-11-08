@@ -33,3 +33,10 @@ public class OrderLine
 // Dapper can bind constructors (including positional records). Map<T>() cannot: it needs new T() and settable properties.
 // (SQLite reports INTEGER columns as long, and Dapper matches constructor parameters by type, so the record uses long.)
 public record PostRecord(long Id, long Author, string Title, string? Body);
+
+// A search model: parameters can be named from its properties and fields.
+public sealed class PostSearch
+{
+	public int Author { get; set; } = 7;
+	public string? TitleContains; // a field works the same as a property
+}

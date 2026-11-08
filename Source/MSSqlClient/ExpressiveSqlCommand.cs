@@ -1,4 +1,6 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Collections.Immutable;
+
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// A deferred, fluent command for running SQL through a <see cref="SqlConnection"/>, <see cref="SqlTransaction"/>, connection factory, or connection pool, with parameters typed by <see cref="SqlDbType"/>. Nothing touches the database until an execute method is called.
@@ -122,6 +124,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 			{
 				np = command.CreateParameter();
 				np.ParameterName = p.Name;
+				command.Parameters.Add(np); // a parameter with no value (output, return value) must still reach the command
 			}
 			else
 			{
@@ -131,6 +134,51 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 			np.Direction = p.Direction;
 			if (p.Type.HasValue)
 				np.SqlDbType = p.Type.Value;
+			else if (p.NullDbType is { } nullType)
+				np.DbType = nullType; // a NULL carries no type, so give it the argument's
 		}
+	}
+
+	/// <summary>
+	/// Reads the parameter names a stored procedure declares from <c>sys.all_parameters</c>, so parameters added with <c>AddParam(value)</c> find their real names.
+	/// </summary>
+	/// <remarks>The procedure is looked up in the connection's current database; a name that does not resolve there (a missing procedure, no permission to see it) gives no names, and a name with a database part (<c>otherdb.dbo.proc</c>) is not looked up at all, because the lookup runs in the current database: in both cases the last member of each argument is used as written.</remarks>
+	/// <inheritdoc />
+	protected override ImmutableArray<string> GetProcedureParameterNames(SqlConnection connection, string procedure)
+	{
+		using SqlCommand command = ProcedureNamesCommand(connection, procedure);
+		using SqlDataReader reader = command.ExecuteReader();
+		return ReadNames(reader);
+	}
+
+	/// <inheritdoc cref="GetProcedureParameterNames(SqlConnection, string)"/>
+	protected override async ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(SqlConnection connection, string procedure, CancellationToken cancellationToken)
+	{
+		using SqlCommand command = ProcedureNamesCommand(connection, procedure);
+		using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+		return await ReadNamesAsync(reader, cancellationToken).ConfigureAwait(false);
+	}
+
+	SqlCommand ProcedureNamesCommand(SqlConnection connection, string procedure)
+	{
+		SqlCommand command = connection.CreateCommand();
+		command.CommandText = "select name from sys.all_parameters where object_id = object_id(@procedure) and parsename(@procedure, 3) is null and parameter_id > 0 order by parameter_id";
+		command.Parameters.Add("@procedure", SqlDbType.NVarChar, 776).Value = procedure;
+		if (Transaction is SqlTransaction transaction) command.Transaction = transaction;
+		return command;
+	}
+
+	static ImmutableArray<string> ReadNames(SqlDataReader reader)
+	{
+		ImmutableArray<string>.Builder names = ImmutableArray.CreateBuilder<string>();
+		while (reader.Read()) names.Add(reader.GetString(0));
+		return names.ToImmutable();
+	}
+
+	static async Task<ImmutableArray<string>> ReadNamesAsync(SqlDataReader reader, CancellationToken cancellationToken)
+	{
+		ImmutableArray<string>.Builder names = ImmutableArray.CreateBuilder<string>();
+		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) names.Add(reader.GetString(0));
+		return names.ToImmutable();
 	}
 }

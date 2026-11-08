@@ -95,6 +95,22 @@ public static class ExpressiveCommands
 		return posts;
 	}
 
+	public static Post[] ParamNamedFromTheArgument(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	{
+		var search = new PostSearch { Author = 7 };
+
+		#region param_from_argument
+		// The parameter is named from the argument: search.Author adds a parameter named Author. A text command has no procedure to ask, so the name is used as written.
+		Post[] posts = connectionFactory
+			.Command("select * from posts where author = @Author order by id")
+			.AddParam(search.Author)
+			.Map<Post>()
+			.ToArray();
+		#endregion
+
+		return posts;
+	}
+
 	public static (ConnectionState ClosedBefore, ConnectionState ClosedAfter, ConnectionState OpenBefore, ConnectionState OpenAfter) Ownership(SqliteConnection connection)
 	{
 		#region ownership

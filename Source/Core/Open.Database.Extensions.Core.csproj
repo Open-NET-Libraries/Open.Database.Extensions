@@ -26,6 +26,8 @@
 	<ItemGroup>
 	  <InternalsVisibleTo Include="Open.Database.Extensions.Channel" />
 	  <InternalsVisibleTo Include="Open.Database.Extensions.Dataflow" />
+	  <InternalsVisibleTo Include="Open.Database.Extensions.SqlClient" />
+	  <InternalsVisibleTo Include="Open.Database.Extensions.MSSqlClient" />
 	</ItemGroup>
 
 	<!-- In-box on net10; only needed as a package on the netstandard shims (avoids NU1510 on net10). -->
