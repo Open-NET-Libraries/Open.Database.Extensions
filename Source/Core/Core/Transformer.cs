@@ -130,7 +130,7 @@ public class Transformer<T>
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays);
+		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays, results.ColumnCount);
 	}
 
 	// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
@@ -140,7 +140,7 @@ public class Transformer<T>
 			yield return map(queue.Dequeue());
 	}
 
-	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map, ArrayPool<object> pool, bool clear)
+	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map, ArrayPool<object> pool, bool clear, int columnCount)
 	{
 		while (queue.Count > 0)
 		{
@@ -152,7 +152,9 @@ public class Transformer<T>
 			}
 			finally
 			{
-				pool.Return(row, clear);
+				// Only the columns were written, so only they are cleared: the rest of a rented array was never used.
+				if (clear) Array.Clear(row, 0, Math.Min(columnCount, row.Length));
+				pool.Return(row, false);
 			}
 
 			yield return item;

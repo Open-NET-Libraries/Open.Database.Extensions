@@ -11,10 +11,10 @@ public static partial class ConnectionExtensions
 
 		ConnectionState state = connection.State;
 
-		if (state.HasFlag(ConnectionState.Broken))
+		if ((state & ConnectionState.Broken) != 0)
 			connection.Close();
 
-		if (!connection.State.HasFlag(ConnectionState.Open))
+		if ((connection.State & ConnectionState.Open) == 0)
 			connection.Open();
 
 		return state;
@@ -39,10 +39,10 @@ public static partial class ConnectionExtensions
 		cancellationToken.ThrowIfCancellationRequested();
 
 		ConnectionState state = connection.State;
-		if (state.HasFlag(ConnectionState.Broken))
+		if ((state & ConnectionState.Broken) != 0)
 			connection.Close();
 
-		if (connection.State.HasFlag(ConnectionState.Open))
+		if ((connection.State & ConnectionState.Open) != 0)
 			return state;
 
 		await connection.OpenAsync(cancellationToken).ConfigureAwait(configureAwait);

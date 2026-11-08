@@ -19,7 +19,7 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 		{
 			await writer
 				.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken)
@@ -268,7 +268,7 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 		Exception? exception = null;
@@ -471,7 +471,7 @@ public static partial class ChannelDbExtensions
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 		{
 			await writer
 				.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken)
@@ -784,7 +784,7 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
@@ -829,7 +829,7 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);

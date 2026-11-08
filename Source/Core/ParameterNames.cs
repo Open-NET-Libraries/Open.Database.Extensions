@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -188,23 +190,26 @@ static class ParameterNames
 	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier.</exception>
 	internal static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames)
 	{
+		// Every candidate in every tier compares against the same bare names: remove the @ once, here.
+		ImmutableArray<string> bareNames = BareNames(parameterNames);
 		foreach (string candidate in candidates)
 		{
-			if (Find(candidate, parameterNames) is { } found) return found;
+			if (Find(candidate, parameterNames, bareNames) is { } found) return found;
 		}
 
 		return null;
 	}
 
-	static string? Find(string candidate, ImmutableArray<string> parameterNames)
+	static string? Find(string candidate, ImmutableArray<string> parameterNames, ImmutableArray<string> bareNames)
 	{
 		// Tier 1: exact. Tier 2: ignoring case. Tier 3: ignoring case and underscores. Tier 4: the same without one common parameter prefix.
 		for (int tier = 1; tier <= 4; tier++)
 		{
 			string? found = null;
-			foreach (string real in parameterNames)
+			for (int i = 0; i < parameterNames.Length; i++)
 			{
-				if (!Same(candidate, Bare(real), tier)) continue;
+				if (!Same(candidate, bareNames[i], tier)) continue;
+				string real = parameterNames[i];
 				if (found is not null)
 					throw new InvalidOperationException($"The argument name '{candidate}' matches both '{found}' and '{real}'. Name the parameter explicitly: AddParam(\"name\", value).");
 				found = real;
@@ -216,7 +221,20 @@ static class ParameterNames
 		return null;
 	}
 
-	static string Bare(string name) => name.Length > 0 && name[0] == '@' ? name[1..] : name;
+	// The real names without a leading @. A set with none is returned as it is; otherwise one copy holds the bare names, and a name without an @ is the same string in it.
+	static ImmutableArray<string> BareNames(ImmutableArray<string> names)
+	{
+		string[]? bare = null;
+		for (int i = 0; i < names.Length; i++)
+		{
+			string name = names[i];
+			if (name.Length == 0 || name[0] != '@') continue;
+			bare ??= [.. names];
+			bare[i] = name[1..];
+		}
+
+		return bare is null ? names : ImmutableCollectionsMarshal.AsImmutableArray(bare);
+	}
 
 	static bool Same(string a, string b, int tier) => tier switch
 	{

@@ -369,7 +369,8 @@ internal struct ArraySink<T> : IRowSink<T>
 	{
 		T[] bigger = ArrayPool<T>.Shared.Rent(items.Length * 2);
 		Array.Copy(items, bigger, _count);
-		ArrayPool<T>.Shared.Return(items, clearArray: true);
+		Array.Clear(items, 0, _count);
+		ArrayPool<T>.Shared.Return(items, clearArray: false);
 		return bigger;
 	}
 
@@ -386,6 +387,7 @@ internal struct ArraySink<T> : IRowSink<T>
 		T[]? items = _items;
 		if (items is null) return;
 		_items = null;
-		ArrayPool<T>.Shared.Return(items, clearArray: true);
+		Array.Clear(items, 0, _count);
+		ArrayPool<T>.Shared.Return(items, clearArray: false);
 	}
 }

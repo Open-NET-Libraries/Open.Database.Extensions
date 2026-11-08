@@ -840,7 +840,7 @@ public static partial class DataflowExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await Task.Yield();
 
 		try
@@ -896,7 +896,7 @@ public static partial class DataflowExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await Task.Yield();
 
 		try
@@ -952,7 +952,7 @@ public static partial class DataflowExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await Task.Yield();
 
 		try
@@ -1006,7 +1006,7 @@ public static partial class DataflowExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await Task.Yield();
 
 		return await ToTargetBlockMappedAsync(
@@ -1049,7 +1049,7 @@ public static partial class DataflowExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if (!command.Connection.State.HasFlag(ConnectionState.Open))
+		if ((command.Connection.State & ConnectionState.Open) == 0)
 			await Task.Yield();
 
 		return await ToTargetBlockMappedAsync(
