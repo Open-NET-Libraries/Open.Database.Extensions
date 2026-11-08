@@ -26,13 +26,15 @@ public static class ParameterNameAddParamsTests
 		public int Inherited = 5;
 	}
 
+	[SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Public instance members on purpose: AddParams reads the instance members of a type through reflection.")]
 	sealed class Hiding : Base
 	{
 		public new string Id { get; set; } = "derived";
-		public int WriteOnly { set { _ = value; } }
+		public int WriteOnly { set => _ = value; }
 		public int this[int index] => index;
 	}
 
+	[SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Public instance members on purpose: AddParams reads the instance members of a type through reflection.")]
 	sealed class LazyMember
 	{
 		public int Id => 1;
@@ -182,12 +184,13 @@ public static class ParameterNameAddParamsTests
 		Assert.All(run.Probe.Parameters, p =>
 		{
 			Assert.Equal(DBNull.Value, p.Value);
-			Assert.Equal(default(DbType), p.DbType); // left to the provider to infer, as it always was
+			Assert.Equal(default, p.DbType); // left to the provider to infer, as it always was
 		});
 	}
 
 	// ---- a member the expression tree cannot box ----
 
+	[SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Public instance members on purpose: AddParams reads the instance members of a type through reflection.")]
 	sealed class WithSpan
 	{
 		public int Id => 1;
