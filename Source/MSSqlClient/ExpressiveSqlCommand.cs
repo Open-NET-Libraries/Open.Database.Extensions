@@ -142,32 +142,52 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <summary>
 	/// Reads the parameter names a stored procedure declares from <c>sys.all_parameters</c>, so parameters added with <c>AddParam(value)</c> find their real names.
 	/// </summary>
-	/// <remarks>The procedure is looked up in the connection's current database; a name that does not resolve there (a missing procedure, no permission to see it) gives no names, and a name with a database part (<c>otherdb.dbo.proc</c>) is not looked up at all, because the lookup runs in the current database: in both cases the last member of each argument is used as written.</remarks>
+	/// <remarks>The procedure is looked up in the connection's current database; a name that does not resolve there (a missing procedure, no permission to see it) gives no names, and a name with a database part (<c>otherdb.dbo.proc</c>) is not looked up at all, because the lookup runs in the current database: in both cases the last member of each argument is used as written.
+	/// The lookup runs with the command's timeout (<c>SetTimeout</c>). A failure of the lookup is thrown as an <see cref="InvalidOperationException"/> that names the procedure, with the original exception (for example a <see cref="SqlException"/>) as its <see cref="Exception.InnerException"/>; a cancellation is not wrapped.</remarks>
 	/// <inheritdoc />
 	protected override ImmutableArray<string> GetProcedureParameterNames(SqlConnection connection, string procedure)
 	{
-		using SqlCommand command = ProcedureNamesCommand(connection, procedure);
-		using SqlDataReader reader = command.ExecuteReader();
-		return ReadNames(reader);
+		try
+		{
+			using SqlCommand command = ProcedureNamesCommand(connection, procedure);
+			using SqlDataReader reader = command.ExecuteReader();
+			return ReadNames(reader);
+		}
+		catch (Exception ex) when (ex is not OperationCanceledException)
+		{
+			throw LookupFailed(procedure, ex);
+		}
 	}
 
 	/// <inheritdoc cref="GetProcedureParameterNames(SqlConnection, string)"/>
 	protected override async ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(SqlConnection connection, string procedure, CancellationToken cancellationToken)
 	{
+		try
+		{
 #if NET10_0_OR_GREATER
-		await using SqlCommand command = ProcedureNamesCommand(connection, procedure);
-		await using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+			await using SqlCommand command = ProcedureNamesCommand(connection, procedure);
+			await using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 #else
-		using SqlCommand command = ProcedureNamesCommand(connection, procedure);
-		using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+			using SqlCommand command = ProcedureNamesCommand(connection, procedure);
+			using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 #endif
-		return await ReadNamesAsync(reader, cancellationToken).ConfigureAwait(false);
+			return await ReadNamesAsync(reader, cancellationToken).ConfigureAwait(false);
+		}
+		catch (Exception ex) when (ex is not OperationCanceledException && !cancellationToken.IsCancellationRequested)
+		{
+			throw LookupFailed(procedure, ex);
+		}
 	}
+
+	// A SqlException cannot be created outside the provider, so a failed lookup is wrapped: the message says which procedure it was reading names for, the original exception stays as the inner exception.
+	static InvalidOperationException LookupFailed(string procedure, Exception inner)
+		=> new($"Failed while reading the parameter names of '{procedure}' for AddParam(value): {inner.Message}", inner);
 
 	SqlCommand ProcedureNamesCommand(SqlConnection connection, string procedure)
 	{
 		SqlCommand command = connection.CreateCommand();
 		command.CommandText = "select name from sys.all_parameters where object_id = object_id(@procedure) and parsename(@procedure, 3) is null and parameter_id > 0 order by parameter_id";
+		command.CommandTimeout = Timeout; // the command's own timeout (SetTimeout), not the provider's default
 		command.Parameters.Add("@procedure", SqlDbType.NVarChar, 776).Value = procedure;
 		if (Transaction is SqlTransaction transaction) command.Transaction = transaction;
 		return command;

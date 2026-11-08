@@ -250,10 +250,13 @@ public static class AllocationQuickWinTests
 
 	// ---- ParameterNames.Match: the @ of the real names is removed once per call, not once per name, candidate and tier ----
 
-	static readonly Func<ImmutableArray<string>, ImmutableArray<string>, string?> Match = typeof(DataRecordExtensions).Assembly
+	static readonly Func<ImmutableArray<string>, ImmutableArray<string>, string, string, string?> MatchWithContext = typeof(DataRecordExtensions).Assembly
 		.GetType("Open.Database.Extensions.ParameterNames", throwOnError: true)!
 		.GetMethod("Match", BindingFlags.Static | BindingFlags.NonPublic)!
-		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>, string?>>();
+		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>, string, string, string?>>();
+
+	// The expression and the procedure only feed the message of an ambiguity; they cost nothing when there is none.
+	static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames) => MatchWithContext(candidates, parameterNames, "argument", "dbo.procedure");
 
 	static readonly ImmutableArray<string> RealNames =
 	[

@@ -47,7 +47,7 @@ posts = await connectionFactory
     .ToArrayAsync();
 ```
 
-Parameter names are looked up once per connection factory and remembered for five minutes. The return value of a procedure is readable with `ExecuteReturn<int>()`; output parameters can be sent, but their values cannot yet be read back. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html) for the rules and limits.
+Parameter names are looked up once per connection factory and remembered for five minutes (a connection or factory you create for each call looks them up for every command). The return value of a procedure is readable with `ExecuteReturn<int>()`; output parameters can be sent, but their values cannot yet be read back. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html) for the rules and limits.
 
 ## The packages
 

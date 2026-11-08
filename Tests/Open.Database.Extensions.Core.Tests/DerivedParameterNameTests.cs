@@ -574,6 +574,10 @@ public static class DerivedParameterNameTests
 	[InlineData("order.Customer.Id", "Id")]
 	[InlineData("a.b.c.d.e", "e")]
 	[InlineData("_private", "_private")]
+	[InlineData("DateTime.UtcNow", "UtcNow")]
+	[InlineData("string.Empty", "Empty")]
+	[InlineData("int.MaxValue", "MaxValue")]
+	[InlineData("Status.Active", "Active")]
 	[InlineData("Pedido.Cliente.Código", "Código")]
 	public static void DerivableExpressions_GiveTheLastMember(string expression, string last)
 	{
