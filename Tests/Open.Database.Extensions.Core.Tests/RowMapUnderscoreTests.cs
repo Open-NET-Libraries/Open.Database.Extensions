@@ -326,7 +326,7 @@ public static class RowMapUnderscoreTests
 			{
 				string[] names = [.. Enumerable.Range(0, random.Next(0, 15)).Select(_ => RandomName(random, columnOf))];
 
-				Array feeds = (Array)MatchMethod.Invoke(map, [names])!;
+				var feeds = (Array)MatchMethod.Invoke(map, [names])!;
 				int?[] expected = Reference(columnOf, named, names);
 
 				Assert.Equal(names.Length, feeds.Length);

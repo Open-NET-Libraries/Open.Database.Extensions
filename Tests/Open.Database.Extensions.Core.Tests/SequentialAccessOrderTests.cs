@@ -92,7 +92,7 @@ public static class SequentialAccessOrderTests
 		SequentialReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = NewReader(3));
 
-		List<Declared> items = command.Map<Declared>().ToList();
+		var items = command.Map<Declared>().ToList();
 
 		Assert.Equal(3, items.Count);
 		for (int n = 1; n <= 3; n++)
@@ -110,7 +110,7 @@ public static class SequentialAccessOrderTests
 		SequentialReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = NewReader(2, withNulls: true));
 
-		List<Declared> items = command.Map<Declared>().ToList();
+		var items = command.Map<Declared>().ToList();
 
 		Assert.All(items, item =>
 		{
@@ -201,7 +201,7 @@ public static class SequentialAccessOrderTests
 		SequentialReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = NewReader(3));
 
-		List<DeclaredRecord> items = command.Map<DeclaredRecord>().ToList();
+		var items = command.Map<DeclaredRecord>().ToList();
 
 		Assert.Equal(3, items.Count);
 		for (int n = 1; n <= 3; n++)
@@ -219,7 +219,7 @@ public static class SequentialAccessOrderTests
 		SequentialReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = NewReader(2));
 
-		List<LeadingParameters> items = command.Map<LeadingParameters>().ToList();
+		var items = command.Map<LeadingParameters>().ToList();
 
 		Assert.Equal(2, items.Count);
 		for (int n = 1; n <= 2; n++)
@@ -235,7 +235,7 @@ public static class SequentialAccessOrderTests
 	public static void AGeneralPathProperty_OfAConstructorModel_IsReadOnce_AndSetAfterTheConstructor()
 	{
 		SequentialReader? reader = null;
-		List<GeneralPathProperty> items = new FakeExecuteReader(() => reader = NewReader(2)).Map<GeneralPathProperty>().ToList();
+		var items = new FakeExecuteReader(() => reader = NewReader(2)).Map<GeneralPathProperty>().ToList();
 
 		Assert.Equal(2, items.Count);
 		Assert.All(items, item => Assert.Equal(Shade.Green, item.Epsilon));
@@ -255,7 +255,7 @@ public static class SequentialAccessOrderTests
 		SequentialReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = NewReader(2, withNulls: true));
 
-		List<DeclaredRecord> records = command.Map<DeclaredRecord>().ToList();
+		var records = command.Map<DeclaredRecord>().ToList();
 		Assert.All(records, item =>
 		{
 			Assert.Equal(0, item.Alpha); // NULL into a non-nullable value-type parameter: its fallback, default(int)
@@ -264,7 +264,7 @@ public static class SequentialAccessOrderTests
 		});
 		AssertEachCellOnceInOrder(reader!, 2);
 
-		List<LeadingParameters> leading = new FakeExecuteReader(() => reader = NewReader(2, withNulls: true)).Map<LeadingParameters>().ToList();
+		var leading = new FakeExecuteReader(() => reader = NewReader(2, withNulls: true)).Map<LeadingParameters>().ToList();
 		Assert.All(leading, item =>
 		{
 			Assert.Equal(100, item.Alpha); // NULL into a non-nullable value-type property after the constructor: skipped, so the initializer stays

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Xunit;
@@ -12,7 +11,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 	{
 		sealed class NoConnections : IDbConnectionFactory
 		{
-			public IDbConnection Create() { throw new NotSupportedException(); }
+			public IDbConnection Create() => throw new NotSupportedException();
 		}
 
 		sealed class Search
@@ -22,24 +21,20 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		}
 
 		static ExpressiveCommand NewCommand()
-		{
-			return new ExpressiveCommand(new NoConnections(), CommandType.Text, "select 1");
-		}
+			=> new ExpressiveCommand(new NoConnections(), CommandType.Text, "select 1");
 
 		// What the command will send, as name=value pairs.
 		static string Sent(ExpressiveCommand command)
-		{
-			return string.Join(", ", command.Params.Select(p => p.Name + "=" + (p.Value is DBNull ? "<null>" : p.Value)));
-		}
+			=> string.Join(", ", command.Params.Select(p => p.Name + "=" + (p.Value is DBNull ? "<null>" : p.Value)));
 
 		// ---- the name you write is the name that is sent ----
 
 		[Fact]
 		public static void AddParam_StringValue_UsesTheNameGiven()
 		{
-			string s = "ann";
-			string maybe = null;
-			string name = "author";
+			const string s = "ann";
+			const string maybe = null;
+			const string name = "author";
 
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", "ann")));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", s)));
@@ -52,8 +47,8 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void AddParamIf_StringValue_UsesTheNameGiven()
 		{
-			string s = "ann";
-			string maybe = null;
+			const string s = "ann";
+			const string maybe = null;
 
 			Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", "ann")));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", s)));
@@ -83,7 +78,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void AddParam_FromTheArgument_UsesTheArgumentsName()
 		{
-			string author = "ann";
+			const string author = "ann";
 			var search = new Search();
 
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam(author)));

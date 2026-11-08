@@ -150,7 +150,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		ParameterInfo[] parameters = constructor.GetParameters();
 		PropertyInfo[] properties = [.. typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.GetIndexParameters().Length == 0)];
 		var matches = new PropertyInfo?[parameters.Length];
-		var taken = new bool[properties.Length];
+		bool[] taken = new bool[properties.Length];
 
 		foreach (StringComparison comparison in (StringComparison[])[StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase])
 		{

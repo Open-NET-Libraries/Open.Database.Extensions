@@ -99,9 +99,9 @@ public static class ExpressiveCommandParamTests
 	[Fact]
 	public static void AddParam_StringValue_UsesTheNameGiven_NeverTheValue()
 	{
-		string s = "ann";
-		string? maybe = null;
-		string name = "author";
+		const string s = "ann";
+		const string? maybe = null;
+		const string name = "author";
 
 		Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", "ann")));
 		Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", s)));
@@ -114,8 +114,8 @@ public static class ExpressiveCommandParamTests
 	[Fact]
 	public static void AddParamIf_StringValue_UsesTheNameGiven_NeverTheValue()
 	{
-		string s = "ann";
-		string? maybe = null;
+		const string s = "ann";
+		const string? maybe = null;
 
 		Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", "ann")));
 		Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", s)));
