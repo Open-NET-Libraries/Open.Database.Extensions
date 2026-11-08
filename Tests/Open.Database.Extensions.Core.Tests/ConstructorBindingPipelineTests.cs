@@ -34,7 +34,7 @@ public static class ConstructorBindingPipelineTests
 
 	static TypedReader Reader(ImmutableArray<ColumnDef> columns) => TypedReader.Create(columns, Rows(columns));
 
-	static void AssertEntries(IReadOnlyList<Entry> items)
+	static void AssertEntries(List<Entry> items)
 	{
 		Assert.Equal(Count, items.Count);
 		for (int i = 0; i < Count; i++)

@@ -47,7 +47,7 @@ public static class MappingCostAndRaceCharacterizationTests
 		return new FakeExecuteReader(() => TypedReader.Create(columns, data));
 	}
 
-	static void AssertGadgets(IReadOnlyList<Gadget> items, int rows, bool hasNote = true)
+	static void AssertGadgets(List<Gadget> items, int rows, bool hasNote = true)
 	{
 		Assert.Equal(rows, items.Count);
 		for (int n = 0; n < rows; n++)
@@ -303,7 +303,7 @@ public static class MappingCostAndRaceCharacterizationTests
 	static readonly RowMap<GadgetRecord> DeclaredRecordOwnNames = new(
 		new(nameof(GadgetRecord.Id), "Id"), new(nameof(GadgetRecord.Name), "Name"), new(nameof(GadgetRecord.Total), "Total"), new(nameof(GadgetRecord.Note), "Note"));
 
-	static void AssertGadgetRecords(IReadOnlyList<GadgetRecord> items, int rows, bool hasNote = true)
+	static void AssertGadgetRecords(List<GadgetRecord> items, int rows, bool hasNote = true)
 	{
 		Assert.Equal(rows, items.Count);
 		for (int n = 0; n < rows; n++)

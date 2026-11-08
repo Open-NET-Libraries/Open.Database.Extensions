@@ -58,7 +58,7 @@ public static class ParameterNameCatalog
 
 	static string Pascal => string.Concat(LongWords);
 
-	static string Camel => char.ToLowerInvariant(Pascal[0]) + Pascal.Substring(1);
+	static string Camel => char.ToLowerInvariant(Pascal[0]) + Pascal[1..];
 
 	static string Snake => string.Join("_", LongWords).ToLowerInvariant();
 
@@ -138,7 +138,7 @@ public static class ParameterNameCatalog
 	{
 		string e = expression.Trim('(', ')');
 		int dot = e.LastIndexOf('.');
-		if (dot >= 0) e = e.Substring(dot + 1);
+		if (dot >= 0) e = e[(dot + 1)..];
 		return e.TrimStart('@').TrimEnd('!');
 	}
 

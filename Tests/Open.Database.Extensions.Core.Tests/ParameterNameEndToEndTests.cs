@@ -35,9 +35,9 @@ public static class ParameterNameEndToEndTests
 	sealed class Styles
 	{
 		public int author = 1, Author = 1, AUTHOR = 1, _author = 1, m_author = 1;
-		public static int s_author = 1;
+		public static readonly int s_author = 1;
 		public int authorId = 1, AuthorId = 1, AuthorID = 1, author_id = 1, AUTHOR_ID = 1, Author_Id = 1, _authorId = 1, m_authorId = 1;
-		public static int s_author_id = 1;
+		public static readonly int s_author_id = 1;
 		public int address2 = 1, Address2 = 1, m_address2 = 1, line1 = 1, x1 = 1, a = 1, A = 1, d = 1, D = 1;
 		public int HTTPRequestId = 1, XMLData = 1, UserID = 1, OrderIDs = 1, Código = 1, código = 1, _código = 1;
 		public int @class = 1, @event = 1;

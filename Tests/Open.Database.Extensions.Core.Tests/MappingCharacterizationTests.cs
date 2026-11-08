@@ -73,9 +73,13 @@ public static class MappingCharacterizationTests
 		{
 			var data = new TheoryData<bool, bool, int>();
 			foreach (bool boxed in (bool[])[false, true])
+			{
 				foreach (bool buffered in (bool[])[false, true])
+				{
 					for (int map = 0; map < 3; map++)
 						data.Add(boxed, buffered, map);
+				}
+			}
 
 			return data;
 		}
@@ -422,7 +426,7 @@ public static class MappingCharacterizationTests
 	// A model whose parameterless constructor throws.
 	public sealed class ThrowingConstructor
 	{
-		public static Exception? Failure;
+		public static Exception? Failure { get; set; }
 		public int Id { get; set; }
 		public ThrowingConstructor() => throw Failure!;
 	}
