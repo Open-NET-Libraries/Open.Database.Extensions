@@ -57,7 +57,7 @@ Check(all.Length == 5 && all[0].Title == "Post 1" && all[0].Author == 42 && all[
 Person[] declared = Mapping.MapDeclared(connection);
 Check(declared.Length == 2 && declared[0].Id == 1 && declared[0].FirstName == "Ada" && declared[1].LastName == "Turing", "a declared RowMap maps the renamed columns");
 Person[] namesOnly = Mapping.MapNamesOnly(connection);
-Check(namesOnly[0].FirstName == "Ada" && namesOnly[0].LastName == "", "a null column in a RowMap means do not map the property, even by name");
+Check(namesOnly[0].FirstName == "Ada" && namesOnly[0].LastName is "", "a null column in a RowMap means do not map the property, even by name");
 Person[] callSite = Mapping.MapCallSite(connection);
 Check(callSite.Length == 2 && callSite[1].FirstName == "Alan" && callSite[1].LastName == "Turing", "a new RowMap at the call site maps the renamed columns");
 Person[] pairs = Mapping.MapPairs(connection);
@@ -72,9 +72,9 @@ Person? exactFirst = connection.Command("select 'Alan' as first_name, 'Ada' as F
 Person? exactSecond = connection.Command("select 'Ada' as FirstName, 'Alan' as first_name").Map<Person>().FirstOrDefault();
 Check(exactFirst?.FirstName == "Ada" && exactSecond?.FirstName == "Ada", "an exact column beats an underscore match, in either column order");
 RowMap<Person> nullPair = new([new(nameof(Person.FirstName), null)]);
-Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).FirstOrDefault()?.FirstName == "", "a null pair stops the underscore match");
+Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).FirstOrDefault()?.FirstName is "", "a null pair stops the underscore match");
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
-Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName == "", "a property named by a pair is not matched by an underscore column");
+Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName is "", "a property named by a pair is not matched by an underscore column");
 Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
 PostRecord[] records = Mapping.MapRecord(connection);
 Check(records.Length == 5 && records[0] == new PostRecord(1, 42, "Post 1", "Body 1") && records[1] == new PostRecord(2, 42, "Post 2", null), "a positional record is built through its constructor, NULL included");

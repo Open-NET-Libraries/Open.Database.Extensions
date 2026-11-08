@@ -61,7 +61,9 @@ public static class ParameterNameEndToEndTests
 			["this._author"] = new(cmd => cmd.AddParam(this._author), cmd => cmd.AddParam(this._author)),
 			["search.Author"] = new(cmd => cmd.AddParam(search.Author), cmd => cmd.AddParam(search.Author)),
 			["search?.Author"] = new(cmd => cmd.AddParam(search?.Author), cmd => cmd.AddParam(search?.Author)),
+#pragma warning disable IDE0370 // The row is the pattern `search!.Author`: the `!` is what the test passes to AddParam.
 			["search!.Author"] = new(cmd => cmd.AddParam(search!.Author), cmd => cmd.AddParam(search!.Author)),
+#pragma warning restore IDE0370
 			["(search.Author)"] = new(cmd => cmd.AddParam(search.Author), cmd => cmd.AddParam(search.Author)),
 			["a.b.c.Author"] = new(cmd => { var a = new Link(); return cmd.AddParam(a.b.c.Author); }, cmd => { var a = new Link(); return cmd.AddParam(a.b.c.Author); }),
 

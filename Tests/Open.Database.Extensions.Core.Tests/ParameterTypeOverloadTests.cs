@@ -8,6 +8,7 @@ namespace Open.Database.Extensions.Tests;
 // a call that becomes ambiguous (CS0121) or stops binding fails the build. The asserts say what the command holds, and what reaches the provider's parameter, afterwards.
 // SQL Server commands use SqlDbType as the database type; ExpressiveCommand uses DbType. The overloads are the same.
 [ExcludeFromCodeCoverage]
+[SuppressMessage("Roslynator", "RCS1118:Mark local variable as const", Justification = "The locals are variables on purpose: the tests prove which overload binds for a typed variable, next to the literal forms. A const would turn each into a constant expression.")]
 public static class ParameterTypeOverloadTests
 {
 	// A command typed by SqlDbType, as the SQL Server packages are, without needing a connection.

@@ -9,6 +9,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 	// AddParam("@id", id, SqlDbType.Int): a value and a database type. Every call in this file must COMPILE at the language version of its target (7.3, 9, 12),
 	// so the build of this project is the guard: a call that becomes ambiguous (CS0121) or stops binding fails the build. The asserts say what the command holds afterwards.
 	// SQL Server commands use SqlDbType as the database type; ExpressiveCommand uses DbType. The overloads are the same, so both are written out.
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1118:Mark local variable as const", Justification = "The locals are variables on purpose: the tests prove which overload binds for a typed variable, next to the literal forms. A const would turn each into a constant expression.")]
 	public static class ParameterTypeTests
 	{
 		// A command typed by SqlDbType, as the SQL Server packages are, without needing a connection.

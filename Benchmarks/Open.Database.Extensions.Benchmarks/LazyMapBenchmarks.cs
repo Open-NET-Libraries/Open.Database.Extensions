@@ -7,6 +7,7 @@ namespace Open.Database.Extensions.Benchmarks;
 // and what building one costs (the dominant part of the first call, and what a program that built all of its
 // mappings up front would pay for each one).
 [MemoryDiagnoser]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1102:Make class static", Justification = "BenchmarkDotNet generates a class that derives from the benchmark class, so it cannot be static.")]
 public class LazyMapBenchmarks
 {
 	const int Reads = 1000;

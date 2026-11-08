@@ -8,7 +8,7 @@ public static class ExpressiveCommands
 {
 	public static async Task<Post[]> FactoryForm(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region factory_form
 		// The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
 		Post[] posts = await connectionFactory
@@ -23,7 +23,7 @@ public static class ExpressiveCommands
 
 	public static Post[] ConnectionForm(SqliteConnection connection)
 	{
-		int author = 42;
+		const int author = 42;
 		#region connection_form
 		// You own the connection. The command opens it only if it is closed, and closes only what it opened.
 		Post[] posts = connection
@@ -38,7 +38,7 @@ public static class ExpressiveCommands
 
 	public static Post? FirstPost(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int id = 3;
+		const int id = 3;
 		#region first_post
 		Post? post = connectionFactory
 			.Command("select * from posts where id = @id")
@@ -52,7 +52,7 @@ public static class ExpressiveCommands
 
 	public static (long Count, int Updated) ScalarAndNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 		#region scalar_and_nonquery
 		// ExecuteScalar<T> casts the value the provider returns, so T must be that exact type
 		// (SQLite counts as long; SQL Server counts as int). Use the Func overload to convert instead.
@@ -72,7 +72,7 @@ public static class ExpressiveCommands
 
 	public static long InsertAndReadId(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
-		int author = 42;
+		const int author = 42;
 
 		#region generated_id
 		// The insert and a select of the new id in one command; ExecuteScalar<T>() reads the id (SQLite: last_insert_rowid()).
