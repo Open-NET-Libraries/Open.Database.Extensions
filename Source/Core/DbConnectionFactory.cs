@@ -70,8 +70,7 @@ public class DbConnectionFactory<TConnection>
 	/// <summary>
 	/// Constructs a <see cref="DbConnectionFactory{TConnection}"/> from a factory function.
 	/// </summary>
-	/// <param name="factory">The function that creates a new connection each time it is called.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
+	/// <inheritdoc cref="DbConnectionFactory.DbConnectionFactory(Func{IDbConnection})"/>
 	public DbConnectionFactory(Func<TConnection> factory)
 		: base(() => factory())
 	{
@@ -81,13 +80,8 @@ public class DbConnectionFactory<TConnection>
 
 	IDbConnection IDbConnectionFactory.Create() => Create();
 
-	/// <summary>
-	/// Creates a new connection by invoking the factory function.
-	/// </summary>
 	/// <returns>The <typeparamref name="TConnection"/> returned by the factory function. The caller owns it and is responsible for disposing it.</returns>
-	/// <remarks>
-	/// Exceptions thrown by the factory function propagate unchanged.
-	/// </remarks>
+	/// <inheritdoc cref="DbConnectionFactory.Create()"/>
 	public new TConnection Create() => _factory();
 
 	/// <summary>

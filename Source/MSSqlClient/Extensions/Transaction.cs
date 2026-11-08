@@ -221,11 +221,8 @@ public static partial class SqlTransactionExtensions
 	/// Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.
 	/// Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransactionConditional(SqlConnection, Func{SqlTransaction, bool}, IsolationLevel, CancellationToken)"/>
 	public static async ValueTask<bool> ExecuteTransactionConditionalAsync(
 		this SqlConnection connection,
 		Func<SqlTransaction, ValueTask<bool>> conditionalAction,
@@ -245,12 +242,8 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransaction{T}(SqlConnection, Func{SqlTransaction, T}, IsolationLevel, CancellationToken)"/>
 	public static async ValueTask<T> ExecuteTransactionAsync<T>(
 		this SqlConnection connection,
 		Func<SqlTransaction, ValueTask<T>> action,
@@ -270,10 +263,7 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+	/// <inheritdoc cref="ExecuteTransaction(SqlConnection, Action{SqlTransaction}, IsolationLevel, CancellationToken)"/>
 	public static async ValueTask ExecuteTransactionAsync(
 		this SqlConnection connection,
 		Func<SqlTransaction, ValueTask> action,
@@ -443,11 +433,7 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-	/// <returns>True if committed.</returns>
+	/// <inheritdoc cref="ExecuteTransactionConditional(SqlConnection, Func{SqlTransaction, bool}, IsolationLevel, CancellationToken)"/>
 	public static bool ExecuteTransactionConditional(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -458,12 +444,7 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <returns>The value of the action.</returns>
+	/// <inheritdoc cref="ExecuteTransaction{T}(SqlConnection, Func{SqlTransaction, T}, IsolationLevel, CancellationToken)"/>
 	public static T ExecuteTransaction<T>(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -474,10 +455,7 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
+	/// <inheritdoc cref="ExecuteTransaction(SqlConnection, Action{SqlTransaction}, IsolationLevel, CancellationToken)"/>
 	public static void ExecuteTransaction(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -504,11 +482,8 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransactionConditional(SqlConnection, Func{SqlTransaction, bool}, IsolationLevel, CancellationToken)"/>
 	public static ValueTask<bool> ExecuteTransactionConditionalAsync(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -519,12 +494,8 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransaction{T}(SqlConnection, Func{SqlTransaction, T}, IsolationLevel, CancellationToken)"/>
 	public static ValueTask<T> ExecuteTransactionAsync<T>(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -535,10 +506,7 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
+	/// <inheritdoc cref="ExecuteTransaction(SqlConnection, Action{SqlTransaction}, IsolationLevel, CancellationToken)"/>
 	public static ValueTask ExecuteTransactionAsync(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -629,11 +597,8 @@ public static partial class SqlTransactionExtensions
 	/// <summary>
 	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
-	/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransactionConditional(SqlConnection, IsolationLevel, Func{SqlTransaction, bool}, CancellationToken)"/>
 	public static ValueTask<bool> ExecuteTransactionConditionalAsync(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -641,15 +606,8 @@ public static partial class SqlTransactionExtensions
 		CancellationToken cancellationToken = default)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
-	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransaction{T}(SqlConnection, IsolationLevel, Func{SqlTransaction, T}, CancellationToken)"/>
 	public static ValueTask<T> ExecuteTransactionAsync<T>(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -657,13 +615,7 @@ public static partial class SqlTransactionExtensions
 		CancellationToken cancellationToken = default)
 		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
 
-	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="isolationLevel">The isolation level for the transaction.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
-	/// <param name="cancellationToken">An optional token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
+	/// <inheritdoc cref="ExecuteTransaction(SqlConnection, IsolationLevel, Action{SqlTransaction}, CancellationToken)"/>
 	public static ValueTask ExecuteTransactionAsync(
 		this SqlConnection connection,
 		IsolationLevel isolationLevel,
@@ -753,26 +705,15 @@ public static partial class SqlTransactionExtensions
 		Func<SqlTransaction, ValueTask<bool>> conditionalAction)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
-	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <typeparam name="T">The value returned from the action.</typeparam>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
 	/// <returns>The value of the awaited action.</returns>
+	/// <inheritdoc cref="ExecuteTransaction{T}(SqlConnection, CancellationToken, Func{SqlTransaction, T})"/>
 	public static ValueTask<T> ExecuteTransactionAsync<T>(
 		this SqlConnection connection,
 		CancellationToken cancellationToken,
 		Func<SqlTransaction, ValueTask<T>> action)
 		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
 
-	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
-	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="cancellationToken">A token that if cancelled will cause this transaction to be aborted or rolled-back.</param>
-	/// <param name="action">The handler to execute while a transaction is pending.</param>
+	/// <inheritdoc cref="ExecuteTransaction(SqlConnection, CancellationToken, Action{SqlTransaction})"/>
 	public static ValueTask ExecuteTransactionAsync(
 		this SqlConnection connection,
 		CancellationToken cancellationToken,
