@@ -853,6 +853,21 @@ public static class DerivedParameterNameTests
 	}
 
 	[Fact]
+	public static void AddParams_AnAnonymousObject_Works_LikeAnyOtherObject()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		Proc(probe, "@company_serial_num", "@region").AddParams(new { CompanySerialNum = 42, Region = "west", Unrelated = true }).ExecuteNonQuery();
+
+		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 42, ["@region"] = "west" }, Sent(probe));
+
+		// The same without the procedure's names (a text command): every member, as written.
+		var textProbe = new ConnectionProbe(ConnectionState.Open);
+		new ProcCommand(textProbe.Connection, CommandType.Text, "select @Id", "@never").AddParams(new { Id = 7 }).ExecuteNonQuery();
+		Assert.Equal(new Dictionary<string, object?> { ["Id"] = 7 }, Sent(textProbe));
+	}
+
+	[Fact]
 	public static void AddParams_Null_Throws_AndAnObjectWithNoMembersAddsNothing()
 	{
 		var cmd = new ConnectionProbe(ConnectionState.Open).Connection.Command("select 1");
