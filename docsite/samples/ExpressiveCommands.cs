@@ -8,11 +8,12 @@ public static class ExpressiveCommands
 {
 	public static async Task<Post[]> FactoryForm(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int author = 42;
 		#region factory_form
 		// The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author order by id")
-			.AddParam("author", 42)
+			.AddParam(author)
 			.Map<Post>()
 			.ToArrayAsync();
 		#endregion
@@ -22,11 +23,12 @@ public static class ExpressiveCommands
 
 	public static Post[] ConnectionForm(SqliteConnection connection)
 	{
+		int author = 42;
 		#region connection_form
 		// You own the connection. The command opens it only if it is closed, and closes only what it opened.
 		Post[] posts = connection
 			.Command("select * from posts where author = @author order by id")
-			.AddParam("author", 42)
+			.AddParam(author)
 			.Map<Post>()
 			.ToArray();
 		#endregion
@@ -36,10 +38,11 @@ public static class ExpressiveCommands
 
 	public static Post? FirstPost(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int id = 3;
 		#region first_post
 		Post? post = connectionFactory
 			.Command("select * from posts where id = @id")
-			.AddParam("id", 3)
+			.AddParam(id)
 			.Map<Post>()
 			.FirstOrDefault();
 		#endregion
@@ -49,21 +52,37 @@ public static class ExpressiveCommands
 
 	public static (long Count, int Updated) ScalarAndNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int author = 42;
 		#region scalar_and_nonquery
 		// ExecuteScalar<T> casts the value the provider returns, so T must be that exact type
 		// (SQLite counts as long; SQL Server counts as int). Use the Func overload to convert instead.
 		long count = connectionFactory
 			.Command("select count(*) from posts where author = @author")
-			.AddParam("author", 42)
+			.AddParam(author)
 			.ExecuteScalar<long>();
 
 		int updated = connectionFactory
 			.Command("update posts set views = views + 1 where author = @author")
-			.AddParam("author", 42)
+			.AddParam(author)
 			.ExecuteNonQuery();
 		#endregion
 
 		return (count, updated);
+	}
+
+	public static long InsertAndReadId(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	{
+		int author = 42;
+
+		#region generated_id
+		// The insert and a select of the new id in one command; ExecuteScalar<T>() reads the id (SQLite: last_insert_rowid()).
+		long newId = connectionFactory
+			.Command("insert into posts (author, title, body, views) values (@author, 'New', null, 0); select last_insert_rowid()")
+			.AddParam(author)
+			.ExecuteScalar<long>();
+		#endregion
+
+		return newId;
 	}
 
 	public static int ConvertedScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
@@ -87,7 +106,7 @@ public static class ExpressiveCommands
 
 		Post[] posts = connectionFactory
 			.Command(sql)
-			.AddParamIf(author.HasValue, "author", author)
+			.AddParamIf(author.HasValue, author)
 			.Map<Post>()
 			.ToArray();
 		#endregion
