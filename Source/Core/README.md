@@ -4,22 +4,30 @@
 
 **You write the SQL. This library writes the other twenty lines.**
 
-Core is the foundation of Open.Database.Extensions: best-practice ADO.NET extension methods, expressive commands that open, run and dispose their own connection, and `Map<T>()` to turn rows into objects. It works with any ADO.NET provider and has no database dependency of its own.
+Core is the foundation of Open.Database.Extensions: ADO.NET extension methods with best-practice defaults, expressive commands that open, run and dispose their own connection, and `Map<T>()` to turn rows into objects. It works with any ADO.NET provider and has no database dependency of its own. **Use it when** you want any of that; most applications need only this package.
 
 ```sh
 dotnet add package Open.Database.Extensions.Core --prerelease
 ```
 
 ```cs
-// The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
+using Open.Database.Extensions;
+
+public record Post(int Id, string Title);
+
+// Create the factory once per application. Use your provider's connection type (Microsoft.Data.Sqlite here).
+var connectionFactory = new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString));
+int author = 42;
+
+// The command opens a connection when the terminal runs and disposes it afterwards.
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author order by id")
-    .AddParam("author", 42)
+    .AddParam(author)
     .Map<Post>()
     .ToArrayAsync();
 ```
 
-`connectionFactory` is created once per application, for example `new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString))`. Already have a connection? Start from it instead: `connection.Command("...")`. You own the connection; the command opens it only if it is closed and closes only what it opened.
+`AddParam(author)` names the parameter `author` after the variable; `AddParam("author", 42)` names it yourself. Already have a connection? Start from it instead: `connection.Command("...")`. You own the connection; the command opens it only if it is closed and closes only what it opened.
 
 ## Where to go next
 

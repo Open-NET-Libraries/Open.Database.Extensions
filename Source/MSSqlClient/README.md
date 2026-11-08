@@ -2,18 +2,24 @@
 
 ![Open.Database.Extensions.MSSqlClient: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-mssqlclient.svg)
 
-SQL Server for Open.Database.Extensions: `SqlConnectionFactory`, SQL-specific commands, and stored procedures on `Microsoft.Data.SqlClient`. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), so the whole Core API is available too.
+SQL Server for Open.Database.Extensions: `SqlConnectionFactory`, SQL-specific commands, and stored procedures on `Microsoft.Data.SqlClient`. **Use it when** your database is SQL Server. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), so the whole Core API is available too.
 
 ```sh
 dotnet add package Open.Database.Extensions.MSSqlClient --prerelease
 ```
 
 ```cs
+using Open.Database.Extensions;
+
+public record Post(int Id, string Title);
+
+// Create the factory once per application.
 var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
+int author = 42;
 
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author")
-    .AddParam("author", 42)
+    .AddParam(author)
     .Map<Post>()
     .ToArrayAsync();
 ```
@@ -38,7 +44,7 @@ posts = await connectionFactory
     .ToArrayAsync();
 ```
 
-Parameter names are looked up once per connection factory and remembered for five minutes. Output parameters can be sent, but their values cannot yet be read back. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html) for the rules and limits.
+Parameter names are looked up once per connection factory and remembered for five minutes. The return value of a procedure is readable with `ExecuteReturn<int>()`; output parameters can be sent, but their values cannot yet be read back. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html) for the rules and limits.
 
 ## The packages
 

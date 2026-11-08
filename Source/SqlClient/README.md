@@ -2,13 +2,29 @@
 
 ![Open.Database.Extensions.SqlClient: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-sqlclient.svg)
 
-The Open.Database.Extensions SQL Server API on the older `System.Data.SqlClient` provider. **This package is deprecated in favor of [Open.Database.Extensions.MSSqlClient](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/)**, which uses the actively maintained `Microsoft.Data.SqlClient` and has the same API. It stays available for projects that still need `System.Data.SqlClient`. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/).
+**This package is deprecated in favor of [Open.Database.Extensions.MSSqlClient](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/)**, which uses the actively maintained `Microsoft.Data.SqlClient` and has the same API. Use this package only if your project still needs the older `System.Data.SqlClient`; otherwise install MSSqlClient. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/).
 
 ```sh
 dotnet add package Open.Database.Extensions.SqlClient --prerelease
 ```
 
-Use it the same way as MSSqlClient: `new SqlConnectionFactory(connectionString)`, then `Command(...)`, `StoredProcedure(...)`, `AddParam(...)` and `Map<T>()`. The [MSSqlClient README](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/) has the examples, including stored-procedure parameter names taken from the argument.
+```cs
+using Open.Database.Extensions;
+
+public record Post(int Id, string Title);
+
+// Create the factory once per application.
+var connectionFactory = new SqlConnectionFactory(connectionString);
+int author = 42;
+
+Post[] posts = await connectionFactory
+    .Command("select * from posts where author = @author")
+    .AddParam(author)
+    .Map<Post>()
+    .ToArrayAsync();
+```
+
+It is used the same way as MSSqlClient: `Command(...)`, `StoredProcedure(...)`, `AddParam(...)` and `Map<T>()`. The [MSSqlClient README](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/) has the stored-procedure examples, including parameter names taken from the argument.
 
 ## The packages
 
