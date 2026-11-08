@@ -193,7 +193,9 @@ public class Transformer<T>
 
 		var results = new QueryResult<Queue<object[]>>(ordinals, names, buffer);
 
+		// The plan for these columns is built here, and a required property with no column makes that throw: the table is cleared only once it has not.
+		IEnumerable<T> mapped = AsDequeueingEnumerable(results, LocalPool);
 		if (clearTable) table.Rows.Clear();
-		return AsDequeueingEnumerable(results, LocalPool);
+		return mapped;
 	}
 }

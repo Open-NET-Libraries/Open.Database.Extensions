@@ -18,10 +18,10 @@ public static class ConstructorBindingTests
 
 	public static TheoryData<Route> Routes => [Route.Typed, Route.Boxed, Route.Buffered];
 
-	static List<T> Read<T>(Route route, ImmutableArray<ColumnDef> columns, object?[] row, RowMap<T>? map = null)
+	internal static List<T> Read<T>(Route route, ImmutableArray<ColumnDef> columns, object?[] row, RowMap<T>? map = null)
 		=> ReadRows(route, columns, [row], map);
 
-	static List<T> ReadRows<T>(Route route, ImmutableArray<ColumnDef> columns, object?[][] rows, RowMap<T>? map = null)
+	internal static List<T> ReadRows<T>(Route route, ImmutableArray<ColumnDef> columns, object?[][] rows, RowMap<T>? map = null)
 	{
 		if (route == Route.Buffered)
 		{

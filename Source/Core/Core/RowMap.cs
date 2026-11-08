@@ -16,10 +16,12 @@ namespace Open.Database.Extensions;
 /// A type with no public parameterless constructor is built through its one public constructor (a positional record, a record struct, a class with one constructor), and each parameter is fed like a property.
 /// A parameter and a public property whose names differ only in case are one member, fed once, through the constructor, and a pair names it by the property's name or by the parameter's, ignoring case.
 /// A parameter no column feeds, or a <see langword="null"/> column ignores, receives its declared default value, else <see langword="default"/>; so does a parameter of a non-nullable value type when the cell is NULL.
-/// The pairs are validated when the map is constructed: an unknown or unsettable property or constructor parameter, a member named twice, an empty column name,
+/// A <c>required</c> property must be fed by a column in every result shape, and a constructor parameter's default never feeds it: when none does, building the row reader throws <see cref="ValueMappingException"/> (<see cref="ValueMappingException.ColumnName"/> is the column looked for),
+/// which happens when the first row of that shape is mapped, so a query with no rows never reports it (the buffered routes and the Channel and Dataflow methods know the columns before any row, and report it as soon as they have them). A constructor marked <c>SetsRequiredMembers</c> promises to set them: nothing is enforced then, and they map like any other property.
+/// The pairs are validated when the map is constructed: an unknown or unsettable property or constructor parameter, a member named twice, an empty column name, a <see langword="null"/> column for a required property,
 /// or two members reading one column throw <see cref="ArgumentException"/>.
 /// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the map is constructed or <see cref="Default"/> is read, which every query method does at the call, even when the result is empty:
-/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor and, for now, a type with <c>required</c> members.
+/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
 /// A NULL follows the member's declared type: a nullable property or parameter (<see cref="Nullable{T}"/> or a reference type) receives <see langword="null"/>; a non-nullable value-type property (an enum counts) keeps the value <c>new T()</c> gave it, its initializer else its default.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
@@ -131,7 +133,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
 			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is { } setter && seen.Add(p.Name))
-				list.Add(new Slot(p.Name, p.PropertyType, setter));
+				list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p)));
 		}
 
 		return [.. list];
@@ -169,9 +171,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			string name = matches[i]?.Name ?? parameter.Name ?? "arg" + i;
 			bool added = seen.Add(name);
 			Debug.Assert(added, "A slot name is unique: a parameter takes the name of a property or its own, and the exact name was matched first.");
-			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter)));
+			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } property && MustHaveColumn(property)));
 		}
 	}
+
+	// A required property must be fed by a column in every result shape, and a constructor parameter's default does not feed it: the property of a parameter is required all the same.
+	// A constructor that sets the required members itself ([SetsRequiredMembers]) lifts that: they are ordinary properties then.
+	static bool MustHaveColumn(PropertyInfo property) => !TypeShape.SetsRequiredMembers && Shape.IsRequired(property);
 
 	// NOTE: static initializers run in textual order; each must follow what it uses.
 	static readonly FrozenDictionary<string, int> SlotIndex = BuildSlotIndex().ToFrozenDictionary();
@@ -184,7 +190,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
-	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped: it is an interface, an abstract class, a delegate or a single value such as <see cref="int"/> or <see cref="string"/>, or it is a type that cannot be mapped yet (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped: it is an interface, an abstract class, a delegate or a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor or a type with a <c>required</c> public field (see <see cref="RowMap{T}"/>).</exception>
 	public static RowMap<T> Default
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
@@ -361,6 +367,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
 			if (!known) throw new ArgumentException($"'{typeof(T)}' has no settable public property{(TypeShape.Constructor is null ? null : " or constructor parameter")} named '{pair.Key}'.", paramName);
+
+			if (pair.Value is null && Slots[index].Required) throw new ArgumentException($"The property '{Slots[index].Name}' is required, so it cannot be mapped to null. Map it to a column.", paramName);
 
 			columns[index] = pair.Value; // A null column means 'do not map this slot'.
 		}
@@ -623,12 +631,29 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		var bindings = new Binding?[names.Length];
 		var locals = new List<ParameterExpression>();
 		Slot?[] feeds = Match(names);
+		RequireColumns(feeds);
 
 		List<Expression> statements = TypeShape.Constructor is { } constructor
 			? BindConstructor(constructor, item, index, bindings, names, feeds, readCell, isNull, locals)
 			: CreateThenSet(item, index, bindings, names, feeds, readCell, isNull);
 
 		return Expression.Lambda<Func<TArg, T>>(Guard(statements, item, index, cell, locals, bindings), arg).Compile();
+	}
+
+	// Every required property needs a column in this result shape, whatever else the constructor could pass (the default of a parameter never satisfies it).
+	// It is raised when the plan is built: when the first row of a shape is mapped for a reader (so a query with no rows never reports it), and as soon as the columns are known for the buffered, Channel and Dataflow routes. The column named is the one looked for: a pair's, else the property's own name.
+	void RequireColumns(Slot?[] feeds)
+	{
+		for (int s = 0; s < Slots.Length; s++)
+		{
+			Slot slot = Slots[s];
+			if (!slot.Required || Array.IndexOf(feeds, slot) >= 0) continue;
+
+			string column = _columns[s]!; // A required slot is never mapped to null: the pairs are validated.
+			throw new ValueMappingException(
+				$"No column feeds the required property '{slot.Name}' ({Shape.TypeName(slot.Type)}) of '{Shape.TypeName(typeof(T))}'; expected a column named '{column}'.",
+				slot.Name, column, slot.Type);
+		}
 	}
 
 	// Today's path, unchanged: `new T()`, then each cell is read and assigned in column order, with no locals.
@@ -923,9 +948,10 @@ static class TypedGetters
 sealed class Slot
 {
 	// A settable property.
-	public Slot(string name, Type type, MethodInfo setter)
+	public Slot(string name, Type type, MethodInfo setter, bool required)
 	{
 		Name = name;
+		Required = required;
 		Type = type;
 		Setter = setter;
 		Position = -1;
@@ -933,9 +959,10 @@ sealed class Slot
 	}
 
 	// A constructor parameter, named after the property of that name when there is one.
-	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback)
+	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required)
 	{
 		Name = name;
+		Required = required;
 		Type = type;
 		Position = position;
 		Parameter = parameter;
@@ -958,6 +985,9 @@ sealed class Slot
 
 	// What the constructor receives when no column feeds the parameter: its declared default, else default(TParam).
 	public readonly Expression? Fallback;
+
+	// Whether a column must feed it in every result shape: a required property, unless the constructor sets the required members. A constructor parameter's default does not count as a feed.
+	public readonly bool Required;
 
 	// ParameterInfo reports a null default for `DateTime d = default` (and .NET Framework throws FormatException reading it), and the underlying integer for a nullable enum,
 	// so a null stands for default(TParam), and an enum is converted back.
@@ -988,15 +1018,19 @@ sealed class Slot
 // The constructor is chosen from the type alone, never from the columns, so a type is built the same way whatever the query:
 // a class with a public parameterless constructor, or a struct with no public constructor, is built as it always was (new T(), then its settable properties);
 // any other type is built through its one public constructor. Two or more public constructors and none without parameters is an error, and so is a class with none.
-// A type with `required` members is rejected as not mappable yet, never mapped half-way.
+// A `required` property is mapped, and must be fed by a column in every result shape (RowMap<T>.RequireColumns), unless the constructor the model is built through is marked [SetsRequiredMembers]:
+// it promises to set them, so nothing is enforced. A `required` public field cannot be set (fields are not mapped), so it is a type-shape error here.
+// Both attributes are matched by full name, so a consumer's own copy counts and the library names no type that netstandard lacks.
 sealed class Shape
 {
 	const string RequiredMemberAttributeName = "System.Runtime.CompilerServices.RequiredMemberAttribute";
+	const string SetsRequiredMembersAttributeName = "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute";
 
-	Shape(string? error, ConstructorInfo? constructor)
+	Shape(string? error, ConstructorInfo? constructor, bool setsRequiredMembers)
 	{
 		Error = error;
 		Constructor = constructor;
+		SetsRequiredMembers = setsRequiredMembers;
 	}
 
 	// Why the type cannot be mapped (the message), or null when it can.
@@ -1005,10 +1039,13 @@ sealed class Shape
 	// The constructor the model is built through, or null when it is built as it always was.
 	public readonly ConstructorInfo? Constructor;
 
+	// Whether the constructor the model is built through (the parameterless one too) is marked [SetsRequiredMembers]: the required members are then ordinary properties.
+	public readonly bool SetsRequiredMembers;
+
 	public static Shape Of(Type type)
 	{
-		string? error = Judge(type, out ConstructorInfo? constructor);
-		return new(error, constructor);
+		string? error = Judge(type, out ConstructorInfo? constructor, out bool setsRequiredMembers);
+		return new(error, constructor, setsRequiredMembers);
 	}
 
 	public void ThrowIfUnmappable()
@@ -1019,16 +1056,16 @@ sealed class Shape
 	// The type as the messages name it: the underlying name and a ? for a Nullable<T> (Int32?), else the short name (Int32, String).
 	public static string TypeName(Type type) => Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
 
-	static string? Judge(Type type, out ConstructorInfo? constructor)
+	static string? Judge(Type type, out ConstructorInfo? constructor, out bool setsRequiredMembers)
 	{
 		constructor = null;
+		setsRequiredMembers = false;
 		string name = TypeName(type);
 
 		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
-		if (HasRequiredMembers(type)) return $"'{name}' cannot be mapped yet: it has required members (required-member support arrives in a later phase).";
 
-		return Choose(type, name, out constructor);
+		return Choose(type, name, out constructor, out setsRequiredMembers) ?? (setsRequiredMembers ? null : RequiredField(type, name));
 	}
 
 	// A single value, not a row: a column of it, not a model with properties. Nullable<T> of these is one too.
@@ -1051,11 +1088,18 @@ sealed class Shape
 	// The constructor a model is built through: none (null) when a public parameterless constructor exists or when a struct has no public constructor (a struct always can be created,
 	// as its default value, whatever non-public constructors it declares), else the one public constructor. GetConstructors lists the public instance constructors only, and never the
 	// implicit parameterless one of a struct.
-	static string? Choose(Type type, string name, out ConstructorInfo? constructor)
+	static string? Choose(Type type, string name, out ConstructorInfo? constructor, out bool setsRequiredMembers)
 	{
 		constructor = null;
+		setsRequiredMembers = false;
 		ConstructorInfo[] constructors = type.GetConstructors();
-		if (Array.Exists(constructors, c => c.GetParameters().Length == 0) || (type.IsValueType && constructors.Length == 0)) return null;
+		if (Array.Find(constructors, c => c.GetParameters().Length == 0) is { } parameterless)
+		{
+			setsRequiredMembers = Has(parameterless, SetsRequiredMembersAttributeName);
+			return null;
+		}
+
+		if (type.IsValueType && constructors.Length == 0) return null;
 		if (constructors.Length == 0) return $"'{name}' cannot be mapped: it has no public constructor.";
 
 		if (constructors.Length > 1)
@@ -1071,20 +1115,31 @@ sealed class Shape
 		}
 
 		constructor = constructors[0];
+		setsRequiredMembers = Has(constructor, SetsRequiredMembersAttributeName);
 		return null;
 	}
 
 	static string Signature(string name, ConstructorInfo constructor)
 		=> name + "(" + string.Join(", ", constructor.GetParameters().Select(p => TypeName(p.ParameterType) + " " + p.Name)) + ")";
 
-	// The compiler marks each type that declares a required member, so a base type's marker finds the members a derived type inherits. Matched by name: a consumer's own polyfill counts.
-	static bool HasRequiredMembers(Type type)
+	// A public instance field marked required (an inherited one too), which a map cannot set. The first one is named.
+	static string? RequiredField(Type type, string name)
 	{
-		for (Type? t = type; t is not null && t != typeof(object); t = t.BaseType)
+		foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
 		{
-			foreach (CustomAttributeData attribute in CustomAttributeData.GetCustomAttributes(t))
-				if (attribute.AttributeType.FullName == RequiredMemberAttributeName) return true;
+			if (IsRequired(field)) return $"'{name}' cannot be mapped: its required field '{field.Name}' cannot be set. Make it a property.";
 		}
+
+		return null;
+	}
+
+	public static bool IsRequired(MemberInfo member) => Has(member, RequiredMemberAttributeName);
+
+	// Matched by the full name of the attribute: a consumer's own copy of it counts. Read as data, so no attribute is instantiated.
+	static bool Has(MemberInfo member, string attributeName)
+	{
+		foreach (CustomAttributeData attribute in CustomAttributeData.GetCustomAttributes(member))
+			if (attribute.AttributeType.FullName == attributeName) return true;
 
 		return false;
 	}
