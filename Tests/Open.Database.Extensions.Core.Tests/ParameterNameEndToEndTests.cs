@@ -34,7 +34,6 @@ public static class ParameterNameEndToEndTests
 	// Every member a call site reads, spelled in the style under test.
 	sealed class Styles
 	{
-#pragma warning disable CA2211 // Non-constant fields should not be visible: a static field is a style under test
 		public int author = 1, Author = 1, AUTHOR = 1, _author = 1, m_author = 1;
 		public static int s_author = 1;
 		public int authorId = 1, AuthorId = 1, AuthorID = 1, author_id = 1, AUTHOR_ID = 1, Author_Id = 1, _authorId = 1, m_authorId = 1;
@@ -44,7 +43,6 @@ public static class ParameterNameEndToEndTests
 		public int @class = 1, @event = 1;
 		public int CustomerBillingAddressLineSecondPostalCodeRegionCountryPhoneNumberFaxEmailNotes = 1;
 		public int customerBillingAddressLineSecondPostalCodeRegionCountryPhoneNumberFaxEmailNotes = 1;
-#pragma warning restore CA2211
 
 		public Styles search;
 		public Filter filter = new();
@@ -64,7 +62,7 @@ public static class ParameterNameEndToEndTests
 			["search.Author"] = new(cmd => cmd.AddParam(search.Author), cmd => cmd.AddParam(search.Author)),
 			["search?.Author"] = new(cmd => cmd.AddParam(search?.Author), cmd => cmd.AddParam(search?.Author)),
 			["search!.Author"] = new(cmd => cmd.AddParam(search!.Author), cmd => cmd.AddParam(search!.Author)),
-			["(search.Author)"] = new(cmd => cmd.AddParam((search.Author)), cmd => cmd.AddParam((search.Author))),
+			["(search.Author)"] = new(cmd => cmd.AddParam(search.Author), cmd => cmd.AddParam(search.Author)),
 			["a.b.c.Author"] = new(cmd => { var a = new Link(); return cmd.AddParam(a.b.c.Author); }, cmd => { var a = new Link(); return cmd.AddParam(a.b.c.Author); }),
 
 			["authorId"] = new(cmd => cmd.AddParam(authorId), cmd => cmd.AddParam(authorId)),

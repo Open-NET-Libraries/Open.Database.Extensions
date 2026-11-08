@@ -52,7 +52,7 @@ public static class ConstructorBindingTests
 
 		public string Title
 		{
-			get => field;
+			get;
 			init
 			{
 				TitleSets++;
@@ -648,6 +648,7 @@ public static class ConstructorBindingTests
 		Assert.IsType<NotSupportedException>(ex.InnerException);
 	}
 
+	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 	sealed class ProviderFailure : DbException
 	{
 		public ProviderFailure() : base("the provider failed") { }

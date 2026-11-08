@@ -15,6 +15,7 @@ internal static class CancellationTokens
 	/// <see langword="default"/> when neither token can be canceled, the one that can when only one can (or when both are the same), and the linked source's token otherwise.
 	/// Only the last case allocates.
 	/// </returns>
+	[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last")]
 	public static CancellationToken Combine(CancellationToken commandToken, CancellationToken callToken, out CancellationTokenSource? linked)
 	{
 		linked = null;

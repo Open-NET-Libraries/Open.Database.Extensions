@@ -126,7 +126,7 @@ public static class PerCallCancellationTests
 	// A closed connection, a stored procedure with a derived parameter, and async reads: one call goes through every step that takes a token.
 	static ExpressiveDbCommand Procedure(TokenRig rig)
 	{
-		int id = 5;
+		const int id = 5;
 		return new TokenProcCommand(rig, new TokenConnection(rig), "dbo.proc" + Interlocked.Increment(ref _procedures))
 			.AddParam(id)
 			.EnableAsyncRead();
@@ -400,7 +400,7 @@ public static class PerCallCancellationTests
 	{
 		var rig = new TokenRig();
 		IDbConnectionFactory<DbConnection> factory = DbConnectionFactory.Create<DbConnection>(() => new TokenConnection(rig));
-		int id = 5;
+		const int id = 5;
 		ExpressiveDbCommand command = new TokenProcCommand(rig, factory, "dbo.proc" + Interlocked.Increment(ref _procedures)).AddParam(id).EnableAsyncRead();
 		using var callSource = new CancellationTokenSource();
 		using var commandSource = new CancellationTokenSource();
@@ -424,8 +424,8 @@ public static class PerCallCancellationTests
 		var rig = new TokenRig();
 		var connection = new TokenConnection(rig, ConnectionState.Open);
 		string procedure = "dbo.proc" + Interlocked.Increment(ref _procedures);
-		int id = 5;
-		int other = 6;
+		const int id = 5;
+		const int other = 6;
 		using var callSource = new CancellationTokenSource();
 		using var commandSource = new CancellationTokenSource();
 
