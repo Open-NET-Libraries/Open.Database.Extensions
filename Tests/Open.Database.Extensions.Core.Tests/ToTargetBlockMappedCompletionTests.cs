@@ -299,6 +299,9 @@ public static class ToTargetBlockMappedCompletionTests
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
 			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
 
+		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
+			=> ExecuteReaderAsync(state, transform, behavior);
+
 		public async ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default)
 		{
 			IDataReader reader = open();

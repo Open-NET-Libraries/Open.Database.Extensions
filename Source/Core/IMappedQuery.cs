@@ -11,6 +11,9 @@ namespace Open.Database.Extensions;
 /// <para>
 /// Rows are read as the handler enumerates, so enumerate inside the handler and do not let the sequence escape it: the reader is disposed as soon as the handler returns. Each terminal call executes the command again.
 /// </para>
+/// <para>
+/// The asynchronous terminals take a <see cref="CancellationToken"/>. A call is canceled when either that token or the cancellation token of the underlying command is canceled, and one combined token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows. Cancellation surfaces as <see cref="OperationCanceledException"/>.
+/// </para>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedQueryExtensions"/>
@@ -39,8 +42,8 @@ public interface IMappedQuery<T>
 	/// <summary>
 	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> as they are read.
 	/// </summary>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; it is not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the operation. The implementations in this library use the command's own cancellation token when this one cannot be canceled.</param>
+	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -52,8 +55,8 @@ public interface IMappedQuery<T>
 	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/> as they are read, and returns the handler's result.
 	/// </summary>
 	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; it is not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the operation. The implementations in this library use the command's own cancellation token when this one cannot be canceled.</param>
+	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>

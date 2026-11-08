@@ -453,7 +453,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>The asynchronous twin of <see cref="GetProcedureParameterNames"/>.</summary>
 	/// <param name="connection">An open connection to run the lookup on.</param>
 	/// <param name="procedure">The procedure name as given to the command.</param>
-	/// <param name="cancellationToken">The command's cancellation token.</param>
+	/// <param name="cancellationToken">The cancellation token of the call: the command's cancellation token, together with the one passed to the terminal (for example <c>ToListAsync(token)</c>) when there is one.</param>
 	/// <returns>The names as the provider reports them, or an empty or default array when they are not known.</returns>
 	protected virtual ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(TConnection connection, string procedure, CancellationToken cancellationToken)
 		=> new(GetProcedureParameterNames(connection, procedure));
@@ -484,7 +484,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		ApplyDerivedNames(names, final: true);
 	}
 
-	async ValueTask ResolveDerivedParamsAsync(TConnection connection)
+	async ValueTask ResolveDerivedParamsAsync(TConnection connection, CancellationToken cancellationToken)
 	{
 		ImmutableArray<string> names = default;
 		bool remembered = false;
@@ -494,7 +494,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
 			if (!remembered)
 			{
-				names = await GetProcedureParameterNamesAsync(connection, Command, CancellationToken).ConfigureAwait(false);
+				names = await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false);
 				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
 			}
 		}
@@ -502,7 +502,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (ApplyDerivedNames(names, final: !remembered)) return;
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
-		names = await GetProcedureParameterNamesAsync(connection, Command, CancellationToken).ConfigureAwait(false);
+		names = await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false);
 		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
 		ApplyDerivedNames(names, final: true);
 	}
@@ -616,9 +616,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 	}
 
-	private protected async ValueTask<TResult> ExecuteCoreAsync<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, ValueTask<TResult>> func)
+	private protected ValueTask<TResult> ExecuteCoreAsync<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, ValueTask<TResult>> func)
+		=> ExecuteCoreAsync(state, func, CancellationToken);
+
+	// The token governs the whole call: the first check, the connection open, the name lookup, and (through the state, which the caller builds) the execute and the reads.
+	private protected async ValueTask<TResult> ExecuteCoreAsync<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, ValueTask<TResult>> func, CancellationToken cancellationToken)
 	{
-		CancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
+		cancellationToken.ThrowIfCancellationRequested(); // Since cancelled awaited tasks throw, we will follow the same pattern here.
 
 		if (_poolOrConnection is TConnection single)
 		{
@@ -626,8 +630,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			ConnectionState before = single.State;
 			try
 			{
-				ConnectionState prior = await OpenIfNeededAsync(single, CancellationToken).ConfigureAwait(false);
-				if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(single).ConfigureAwait(false);
+				ConnectionState prior = await OpenIfNeededAsync(single, cancellationToken).ConfigureAwait(false);
+				if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(single, cancellationToken).ConfigureAwait(false);
 				using TCommand cmd = PrepareCommand(single);
 				return await func(cmd, prior, state).ConfigureAwait(false);
 			}
@@ -641,8 +645,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		TConnection conn = pool.Take();
 		try
 		{
-			ConnectionState prior = await OpenIfNeededAsync(conn, CancellationToken).ConfigureAwait(false);
-			if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(conn).ConfigureAwait(false);
+			ConnectionState prior = await OpenIfNeededAsync(conn, cancellationToken).ConfigureAwait(false);
+			if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(conn, cancellationToken).ConfigureAwait(false);
 			using TCommand cmd = PrepareCommand(conn);
 			return await func(cmd, prior, state).ConfigureAwait(false);
 		}
@@ -790,7 +794,20 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return ExecuteCoreAsync((state, transform, behavior, CancellationToken), static async (cmd, prior, s) =>
+		return ExecuteReaderCoreAsync(state, transform, behavior, CancellationToken);
+	}
+
+	// The token passed in replaces the command's own for the whole call; the caller has already combined the two.
+	ValueTask<TResult> IExecuteReader.ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
+	{
+		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		Contract.EndContractBlock();
+
+		return ExecuteReaderCoreAsync(state, transform, behavior, cancellationToken);
+	}
+
+	ValueTask<TResult> ExecuteReaderCoreAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
+		=> ExecuteCoreAsync((state, transform, behavior, cancellationToken), static async (cmd, prior, s) =>
 		{
 			CommandBehavior b = prior == ConnectionState.Closed ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
 			if (cmd is DbCommand dbCommand)
@@ -799,14 +816,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 #else
 				await
 #endif
-				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.CancellationToken).ConfigureAwait(false);
+				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.cancellationToken).ConfigureAwait(false);
 				return await s.transform(dbReader, s.state).ConfigureAwait(false);
 			}
 
 			using IDataReader reader = cmd.ExecuteReader(b);
 			return await s.transform(reader, s.state).ConfigureAwait(false);
-		});
-	}
+		}, cancellationToken);
 
 	/// <inheritdoc />
 	public void ExecuteReader(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)

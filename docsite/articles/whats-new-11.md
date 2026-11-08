@@ -5,6 +5,12 @@
 
 Version 11 is a performance release. Result mapping is rewritten around a cached, typed row reader. See [Performance](performance.md) for what that does and does not buy you.
 
+## Preview 06
+
+New since `11.0.0-preview05`:
+
+- **A token passed to an async terminal covers the whole call.** `ToListAsync(token)` and the other async terminals of `Map<T>()` (including both `ReadAsync` overloads) use `token` together with the command's `UseCancellationToken` token, and either one cancels the call. Before, `token` reached only the row reading, so it could not cancel opening the connection, looking up stored-procedure parameter names or executing the command. `IExecuteReader` has a new `ExecuteReaderAsync` overload that takes the token for the call; if you implement `IExecuteReader` yourself, add it. See [Terminals](expressive-commands.md#terminals).
+
 ## Preview 05
 
 New since `11.0.0-preview04`:

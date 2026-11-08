@@ -5,7 +5,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Every terminal executes the command, reads the rows while the connection is open, and releases the connection before the call returns (or, for the asynchronous forms, before the returned task completes). The asynchronous forms accept a <see cref="CancellationToken"/>; when it cannot be canceled, the cancellation token set on the underlying command applies.
+/// Every terminal executes the command, reads the rows while the connection is open, and releases the connection before the call returns (or, for the asynchronous forms, before the returned task completes). The asynchronous forms accept a <see cref="CancellationToken"/>, which is used together with the cancellation token set on the underlying command: either one cancels the call, and the call covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
 /// </para>
 /// <para>
 /// Exceptions from the provider (for example <see cref="DbException"/>) propagate unchanged and the connection is still released.
@@ -35,7 +35,7 @@ public static class MappedQueryExtensions
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
@@ -54,7 +54,7 @@ public static class MappedQueryExtensions
 	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
@@ -86,8 +86,8 @@ public static class MappedQueryExtensions
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; it is not valid after the handler returns.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
 	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
@@ -100,8 +100,8 @@ public static class MappedQueryExtensions
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; it is not valid after the handler returns.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
 	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync{TResult}(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask{TResult}}, CancellationToken)"/>
@@ -127,7 +127,7 @@ public static class MappedQueryExtensions
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces a list of all the rows, in the order the database returned them.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -158,7 +158,7 @@ public static class MappedQueryExtensions
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces an array of all the rows, in the order the database returned them.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -204,7 +204,7 @@ public static class MappedQueryExtensions
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces an immutable array of all the rows, in the order the database returned them.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -244,7 +244,7 @@ public static class MappedQueryExtensions
 	/// <param name="query">The query to execute.</param>
 	/// <param name="keySelector">Produces the key for each mapped row.</param>
 	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces a dictionary of all the rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -304,7 +304,7 @@ public static class MappedQueryExtensions
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <param name="comparer">The comparer for the rows, or <see langword="null"/> to use the default comparer.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces a set of the distinct rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -353,7 +353,7 @@ public static class MappedQueryExtensions
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces the first row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
@@ -380,7 +380,7 @@ public static class MappedQueryExtensions
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the operation. When it cannot be canceled, the cancellation token set on the underlying command applies.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
 	/// <returns>A task that produces the single row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
