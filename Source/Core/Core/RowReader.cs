@@ -240,10 +240,26 @@ internal static class RowReader
 	public static async ValueTask<T[]> ToArrayAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 	{
+		// The sink is a struct that owns a rented buffer: it stays in this method (FillAsync would work on a copy, which is lost
+		// when the read fails) so that the buffer goes back to the pool however the call ends.
 		var sink = new ArraySink<T>();
 		try
 		{
-			sink = await FillAsync(source, reader, skip, take, useReadAsync, sink, cancellationToken).ConfigureAwait(false);
+			if (take == 0
+				|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
+				|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+			{
+				return sink.ToArray();
+			}
+
+			Func<DbDataReader, T> map = source.Mapper(reader);
+			int n = 0;
+			do
+			{
+				sink.Add(map(reader));
+				if (++n == take) break;
+			}
+			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 			return sink.ToArray();
 		}
 		finally
