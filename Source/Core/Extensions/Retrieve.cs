@@ -152,7 +152,7 @@ public static partial class CoreExtensions
 		=> RetrieveAsync(reader, true, cancellationToken);
 
 	static ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
-		=> RetrieveAsyncInternal(null, reader, cancellationToken, ordinals, columnNames, readStarted, useReadAsync)!;
+		=> RetrieveAsyncInternal(null, reader, cancellationToken, ordinals, columnNames, readStarted, useReadAsync);
 
 	static async ValueTask<QueryResultQueue<object[]>> RetrieveAsyncInternal(ArrayPool<object>? arrayPool, DbDataReader reader, CancellationToken cancellationToken, IEnumerable<int> ordinals, IEnumerable<string>? columnNames = null, bool readStarted = false, bool useReadAsync = true)
 	{

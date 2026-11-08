@@ -98,7 +98,7 @@ public static class SequentialAccessOrderTests
 		for (int n = 1; n <= 3; n++)
 		{
 			Declared item = items[n - 1];
-			Assert.Equal((n + 2, "beta" + n, n * 1.5m, n + 1, Shade.Green, Stamp, (long)n), (item.Alpha, item.Beta, item.Gamma, item.Delta, item.Epsilon, item.Zeta, item.Eta));
+			Assert.Equal((n + 2, "beta" + n, n * 1.5m, n + 1, Shade.Green, Stamp, n), (item.Alpha, item.Beta, item.Gamma, item.Delta, item.Epsilon, item.Zeta, item.Eta));
 		}
 
 		AssertAscendingAndComplete(reader!, 3);
@@ -207,7 +207,7 @@ public static class SequentialAccessOrderTests
 		for (int n = 1; n <= 3; n++)
 		{
 			DeclaredRecord item = items[n - 1];
-			Assert.Equal((n + 2, "beta" + n, n * 1.5m, n + 1, Shade.Green, Stamp, (long)n), (item.Alpha, item.Beta, item.Gamma, item.Delta, item.Epsilon, item.Zeta, item.Eta));
+			Assert.Equal((n + 2, "beta" + n, n * 1.5m, n + 1, Shade.Green, Stamp, n), (item.Alpha, item.Beta, item.Gamma, item.Delta, item.Epsilon, item.Zeta, item.Eta));
 		}
 
 		AssertEachCellOnceInOrder(reader!, 3);
@@ -225,7 +225,7 @@ public static class SequentialAccessOrderTests
 		for (int n = 1; n <= 2; n++)
 		{
 			LeadingParameters item = items[n - 1];
-			Assert.Equal(((long)n, Shade.Green, Stamp, n + 1, n * 1.5m, "beta" + n, n + 2), (item.Eta, item.Epsilon, item.Zeta, item.Delta, item.Gamma, item.Beta, item.Alpha));
+			Assert.Equal((n, Shade.Green, Stamp, n + 1, n * 1.5m, "beta" + n, n + 2), (item.Eta, item.Epsilon, item.Zeta, item.Delta, item.Gamma, item.Beta, item.Alpha));
 		}
 
 		AssertEachCellOnceInOrder(reader!, 2);
@@ -245,7 +245,7 @@ public static class SequentialAccessOrderTests
 		ImmutableArray<ColumnDef> columns = [("Eta", typeof(int)), ("Epsilon", typeof(string)), ("Delta", typeof(int))];
 		var nulls = new SequentialReader(columns, [[1, null, null]]);
 		GeneralPathProperty item = new FakeExecuteReader(() => nulls).Map<GeneralPathProperty>().ToList().Single();
-		Assert.Equal((1L, Shade.Red, (int?)null), (item.Eta, item.Epsilon, item.Delta));
+		Assert.Equal((1L, Shade.Red, null), (item.Eta, item.Epsilon, item.Delta));
 		Assert.Equal(1, nulls.TouchedPerRow.Single().Count(o => o == 1));
 	}
 

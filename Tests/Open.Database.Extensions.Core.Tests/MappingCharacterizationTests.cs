@@ -279,7 +279,7 @@ public static class MappingCharacterizationTests
 	{
 		IEnumerable<KeyValuePair<string, string?>> pairs = new RowMap<Post>([new(nameof(Post.Body), null), new(nameof(Post.Title), "post_title")]);
 		Assert.Equal<KeyValuePair<string, string?>>([new(nameof(Post.Title), "post_title"), new(nameof(Post.Body), null)], pairs); // declaration order of the properties, not of the pairs
-		Assert.Empty((IEnumerable<KeyValuePair<string, string?>>)RowMap<Post>.Default);
+		Assert.Empty(RowMap<Post>.Default);
 	}
 
 	// ---- T9: case and underscore tiers; an exact match wins in either column order ----

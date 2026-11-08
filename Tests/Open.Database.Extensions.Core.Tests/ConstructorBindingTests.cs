@@ -489,7 +489,7 @@ public static class ConstructorBindingTests
 	{
 		IEnumerable<KeyValuePair<string, string?>> pairs = new RowMap<PostExtra>([new(nameof(PostExtra.Views), null), new("title", "post_title")]);
 		Assert.Equal<KeyValuePair<string, string?>>([new(nameof(PostExtra.Title), "post_title"), new(nameof(PostExtra.Views), null)], pairs); // the parameters first, then the other properties
-		Assert.Empty((IEnumerable<KeyValuePair<string, string?>>)RowMap<Post>.Default);
+		Assert.Empty(RowMap<Post>.Default);
 	}
 
 	// The by-name behavior of a type with no parameter is untouched: the message for a class built as ever still says "settable public property".
