@@ -11,8 +11,10 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class SqlServerParameterTypeTests
 {
+#pragma warning disable CS0618 // System.Data.SqlClient is obsolete; it is one of the two packages under test
 	static global::Open.Database.Extensions.ExpressiveSqlCommand Legacy()
 		=> new(new System.Data.SqlClient.SqlConnection(), CommandType.StoredProcedure, "dbo.p");
+#pragma warning restore CS0618
 
 	static mssql::Open.Database.Extensions.ExpressiveSqlCommand Microsoft()
 		=> new(new Microsoft.Data.SqlClient.SqlConnection(), CommandType.StoredProcedure, "dbo.p");
