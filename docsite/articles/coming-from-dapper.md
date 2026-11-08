@@ -233,6 +233,7 @@ Dapper has features this library does not offer:
 - **Multi-mapping and `QueryMultiple`.** Dapper maps several types from one row and reads several result sets from one call.
 - **Type handlers and custom type maps.** `SqlMapper.AddTypeHandler` and `SqlMapper.SetTypeMap`.
 - **Dynamic results.** `Query(sql)` without a type returns dynamic rows.
+- **Parameter bags and output parameters.** An anonymous object, `new { id = 1 }`, becomes `AddParams(new { id = 1 })` (see [Name a parameter from its argument](expressive-commands.md#name-a-parameter-from-its-argument)). `DynamicParameters` has no equivalent: add each value with `AddParam`. Output parameters can be sent, but their values cannot yet be read back, so a procedure that returns values through them stays on Dapper for now.
 
 [!code-csharp[](../samples/DapperComparison.cs#dapper_record)]
 
@@ -241,6 +242,6 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 ## Migrating a call site
 
 1. Create the connection factory once and register or inject it.
-2. Replace `using var connection = ...` and `connection.Query<T>(sql, new { ... })` with `connectionFactory.Command(sql).AddParam(...).Map<T>().ToList()` (or `ToArray()`).
+2. Replace `using var connection = ...` and `connection.Query<T>(sql, new { ... })` with `connectionFactory.Command(sql).AddParam(...).Map<T>().ToList()` (or `ToArray()`); an anonymous parameter object becomes `AddParams(new { ... })`.
 3. If a model uses constructor binding, give it a parameterless constructor and settable properties, or write a `Map(selector)`.
 4. If a column name differs from its property name by more than case and underscores, declare a `RowMap<T>` (see [Columns named differently](mapping.md#columns-named-differently)). Names that differ only by case or underscores need nothing.

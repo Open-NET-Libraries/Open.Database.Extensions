@@ -71,6 +71,8 @@ Items marked (preview03) are new since `11.0.0-preview02`.
 
 - `Retrieve()` followed by `DequeueAs<T>()` is a two-pass route: rows are copied into `object[]` and mapped as they are drained. It is slower and allocates more than a direct `Map<T>()` at larger sizes. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()`.
 - The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. The cause is in the underlying channel library.
+- Output parameters can be sent, but their values cannot yet be read back after the call. Providers other than SQL Server supply no real parameter names yet, so `AddParam(search.Author)` uses the last member as written there (a SQL Server procedure is matched to its real names).
+- `MappedQuery<T>` has `FirstOrDefault` and `SingleOrDefault` but no throwing `First` or `Single`: check the result for `null`.
 - Benchmarks and tests cover the in-memory provider, SQLite and SQL Server LocalDB. Feedback from other providers and workloads is welcome.
 
 Earlier versions are in [Earlier release notes](release-notes.md).
