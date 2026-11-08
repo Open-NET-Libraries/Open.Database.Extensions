@@ -94,7 +94,7 @@ public static class AllocationQuickWinTests
 	static DataTableReader PositionedRow(int columns)
 	{
 		var table = new DataTable();
-		var row = new object[columns];
+		object[] row = new object[columns];
 		for (int i = 0; i < columns; i++)
 		{
 			(Type type, object value) = (i % 3) switch
@@ -284,7 +284,7 @@ public static class AllocationQuickWinTests
 		string[] real = [.. RealNames];
 		long ideal = BytesPerCall(() =>
 		{
-			var bare = new string[real.Length];
+			string[] bare = new string[real.Length];
 			for (int i = 0; i < real.Length; i++)
 				bare[i] = real[i][1..];
 		});
