@@ -9,5 +9,6 @@ Every push to `master` rebuilds and publishes the site (`.github/workflows/docs.
 - **Diagrams:** a standalone `.svg` in `docsite/images/`, colors as CSS variables, no external references.
 - **Side-by-side comparisons:** wrap two markdown code blocks in `<div class="side-by-side">` (one `<div>` per column, blank lines around the content, styled by `templates/custom/public/main.css`). Both regions need the same number of lines so the rows align.
 - **README.md:** a pitch with absolute links; its code blocks are copied from sample regions.
+- **Package READMEs:** each `Source/<Project>/README.md` is the page nuget.org shows for that package (`Source/Directory.Build.props` packs the one beside the `.csproj`). Absolute links only, code blocks copied from sample regions. The "The packages" table is the same in every one of them: change it in all of them together.
 - **Build locally:** `dotnet tool restore`, then `dotnet docfx docsite/docfx.json --serve`.
 - **Failures:** warnings are listed in the workflow summary and never block a deploy. A DocFX error or a sample that does not compile does, and the live site stays as it was.
