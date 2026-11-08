@@ -42,8 +42,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 	{
 		// property → column, in declaration order; a property reads the column of its own name unless a pair says otherwise.
-		string?[] columns = new string?[Properties.Length];
-		for (int i = 0; i < columns.Length; i++) columns[i] = Properties[i].Name;
+		string?[] columns = new string?[Slots.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = Slots[i].Name;
 
 		bool[] named = Declare(mappings, columns, nameof(mappings));
 		RejectSharedColumns(columns, named, nameof(mappings));
@@ -82,7 +82,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator()
 	{
 		for (int i = 0; i < _columns.Length; i++)
-			if (_named[i]) yield return new(Properties[i].Name, _columns[i]);
+			if (_named[i]) yield return new(Slots[i].Name, _columns[i]);
 	}
 
 	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<KeyValuePair<string, string?>>)this).GetEnumerator();
@@ -97,44 +97,44 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
 
-	// The per-model-type statics below (Properties, PropertyIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
+	// The per-model-type statics below (Slots, SlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
 	// lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it. Nothing that does not depend on T belongs here.
 
-	// Settable public instance properties, in declaration order (a property hidden by name keeps the first): reflection runs once per T.
-	static readonly ImmutableArray<PropertyInfo> Properties = BuildProperties();
+	// What a column can feed: one slot per settable public instance property, in declaration order (a property hidden by name keeps the first). Reflection runs once per T.
+	static readonly ImmutableArray<Slot> Slots = BuildSlots();
 
-	static ImmutableArray<PropertyInfo> BuildProperties()
+	static ImmutableArray<Slot> BuildSlots()
 	{
 		var seen = new HashSet<string>(StringComparer.Ordinal);
-		var list = new List<PropertyInfo>();
+		var list = new List<Slot>();
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
-			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is not null && seen.Add(p.Name))
-				list.Add(p);
+			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is { } setter && seen.Add(p.Name))
+				list.Add(new Slot(p.Name, p.PropertyType, setter));
 		}
 
 		return [.. list];
 	}
 
 	// NOTE: static initializers run in textual order; each must follow what it uses.
-	static readonly FrozenDictionary<string, int> PropertyIndex = BuildPropertyIndex().ToFrozenDictionary();
+	static readonly FrozenDictionary<string, int> SlotIndex = BuildSlotIndex().ToFrozenDictionary();
 
-	static Dictionary<string, int> BuildPropertyIndex()
+	static Dictionary<string, int> BuildSlotIndex()
 	{
-		var index = new Dictionary<string, int>(Properties.Length, StringComparer.Ordinal);
-		for (int i = 0; i < Properties.Length; i++) index.Add(Properties[i].Name, i);
+		var index = new Dictionary<string, int>(Slots.Length, StringComparer.Ordinal);
+		for (int i = 0; i < Slots.Length; i++) index.Add(Slots[i].Name, i);
 		return index;
 	}
 
 	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
-	// Declared after Properties and PropertyIndex: its constructor reads them.
+	// Declared after Slots and SlotIndex: its constructor reads them.
 	public static readonly RowMap<T> Default = new();
 
-	// The column each property reads, aligned with Properties; null means the property is not mapped (ignored).
+	// The column each property reads, aligned with Slots; null means the property is not mapped (ignored).
 	// With _named, all the map keeps of the pairs.
 	readonly string?[] _columns;
 
-	// Aligned with Properties: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
+	// Aligned with Slots: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
 	// only a property no pair named is eligible for the underscore tier.
 	readonly bool[] _named;
 
@@ -144,7 +144,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		get
 		{
 			for (int i = 0; i < _columns.Length; i++)
-				if (_columns[i] is not null) yield return Properties[i].Name;
+				if (_columns[i] is not null) yield return Slots[i].Name;
 		}
 	}
 
@@ -167,9 +167,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		string[] all = new string[record.FieldCount];
 		for (int i = 0; i < all.Length; i++) all[i] = record.GetName(i);
 
-		PropertyInfo?[] feeds = Match(all);
+		Slot?[] feeds = Match(all);
 		int count = 0;
-		foreach (PropertyInfo? feed in feeds)
+		foreach (Slot? feed in feeds)
 			if (feed is not null) count++;
 
 		ordinals = new int[count];
@@ -188,9 +188,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// The property each result column feeds (null: the column is ignored). Never runs per row; linear in the columns plus the properties.
 	// Three tiers run over the whole result set, in order, so a lower tier never takes a property a higher one has filled: the column a property reads exactly, the same ignoring case,
 	// then, only for a property no pair named, a column equal to the property's name ignoring case and underscores. Within a tier the first matching column wins, and a column feeds one property.
-	PropertyInfo?[] Match(string[] names)
+	Slot?[] Match(string[] names)
 	{
-		var feeds = new PropertyInfo?[names.Length];
+		var feeds = new Slot?[names.Length];
 		bool[] filled = new bool[_columns.Length];
 
 		int unmatched = names.Length - Feed(ColumnIndex(StringComparer.Ordinal), names, feeds, filled);
@@ -201,7 +201,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	// One pass over the columns that no earlier tier matched: each looks up its property, which it takes unless an earlier column already did. Returns how many it fed.
-	static int Feed(Dictionary<string, int> index, string[] names, PropertyInfo?[] feeds, bool[] filled)
+	static int Feed(Dictionary<string, int> index, string[] names, Slot?[] feeds, bool[] filled)
 	{
 		int fed = 0;
 		for (int i = 0; i < names.Length; i++)
@@ -209,7 +209,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			if (feeds[i] is not null || names[i] is null || !index.TryGetValue(names[i], out int p) || filled[p]) continue;
 
 			filled[p] = true;
-			feeds[i] = Properties[p];
+			feeds[i] = Slots[p];
 			fed++;
 		}
 
@@ -233,7 +233,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		Dictionary<string, int>? index = null;
 		for (int p = 0; p < _columns.Length; p++)
 		{
-			string name = Properties[p].Name;
+			string name = Slots[p].Name;
 			if (filled[p] || _named[p]) continue;
 
 			index ??= new(_columns.Length, new IgnoreCaseAndUnderscores());
@@ -288,7 +288,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		{
 			if (pair.Key is null) throw new ArgumentException("A mapping has no property name.", paramName);
 
-			bool known = PropertyIndex.TryGetValue(pair.Key, out int index);
+			bool known = SlotIndex.TryGetValue(pair.Key, out int index);
 			if (known)
 			{
 				if (named[index]) throw new ArgumentException($"The property '{pair.Key}' is mapped more than once.", paramName);
@@ -318,7 +318,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 				if (!string.Equals(columns[j], column, StringComparison.OrdinalIgnoreCase)) continue;
 
 				if (named[i] || named[j])
-					throw new ArgumentException($"The properties '{Properties[j].Name}' and '{Properties[i].Name}' both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
+					throw new ArgumentException($"The properties '{Slots[j].Name}' and '{Slots[i].Name}' both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
 
 				break;
 			}
@@ -484,9 +484,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		MethodInfo isNullCell = typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!;
 
 		// A non-nullable value-type property is skipped when its cell is NULL.
-		return Compile<object?[]>(row, layout.Names, (i, property)
-			=> Expression.Call(convert.MakeGenericMethod(property.PropertyType), Expression.ArrayIndex(row, Expression.Constant(i))),
-			(i, property) => KeepsValueOnNull(property.PropertyType) ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null);
+		return Compile<object?[]>(row, layout.Names, (i, slot)
+			=> Expression.Call(convert.MakeGenericMethod(slot.Type), Expression.ArrayIndex(row, Expression.Constant(i))),
+			(i, slot) => KeepsValueOnNull(slot.Type) ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null);
 	}
 
 	#endregion
@@ -512,9 +512,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		// The general path reads a cell once into `cell`, tests it for NULL, and converts that same value.
 		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
 
-		return Compile<TReader>(r, layout.Names, (i, property)
-			=> ReadValue(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell),
-			(i, property) => NullTest(r, Expression.Constant(i), layout.Types[i], property.PropertyType, readerType, isDbNull, getValue, cell),
+		return Compile<TReader>(r, layout.Names, (i, slot)
+			=> ReadValue(r, Expression.Constant(i), layout.Types[i], slot.Type, readerType, isDbNull, getValue, cell),
+			(i, slot) => NullTest(r, Expression.Constant(i), layout.Types[i], slot.Type, readerType, isDbNull, getValue, cell),
 			cell);
 	}
 
@@ -522,8 +522,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// `item.Property = <cell>`. Only how a cell is read differs (a live reader vs buffered object[] rows).
 	// `isNull` gives, for a property that must keep its value on NULL, the test that the cell is NULL, which wraps the assignment as
 	// `if (!isNull) item.Property = <cell>`; it may leave the raw cell in `cell`, which readCell then converts.
-	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, PropertyInfo, Expression> readCell,
-		Func<int, PropertyInfo, Expression?> isNull, ParameterExpression? cell = null)
+	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, Slot, Expression> readCell,
+		Func<int, Slot, Expression?> isNull, ParameterExpression? cell = null)
 	{
 		ParameterExpression item = Expression.Variable(typeof(T), "item");
 		ParameterExpression index = Expression.Variable(typeof(int), "index");
@@ -534,15 +534,15 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			Expression.Assign(item, Expression.New(typeof(T))),
 		};
 
-		PropertyInfo?[] feeds = Match(names);
+		Slot?[] feeds = Match(names);
 		for (int i = 0; i < names.Length; i++)
 		{
-			if (feeds[i] is not { } property) continue; // Not mapped: ignore the column.
+			if (feeds[i] is not { } slot) continue; // Not mapped: ignore the column.
 
-			bindings[i] = new Binding(property.Name, names[i], property.PropertyType);
+			bindings[i] = new Binding(slot.Name, names[i], slot.Type);
 			statements.Add(Expression.Assign(index, Expression.Constant(i)));
-			Expression assign = Expression.Call(item, property.GetSetMethod()!, readCell(i, property));
-			statements.Add(isNull(i, property) is { } skip ? Expression.IfThen(Expression.Not(skip), assign) : assign);
+			Expression assign = Expression.Call(item, slot.Setter, readCell(i, slot));
+			statements.Add(isNull(i, slot) is { } skip ? Expression.IfThen(Expression.Not(skip), assign) : assign);
 		}
 
 		statements.Add(item);
@@ -746,6 +746,15 @@ static class TypedGetters
 		[typeof(Guid)] = nameof(IDataRecord.GetGuid),
 		[typeof(string)] = nameof(IDataRecord.GetString),
 	}.ToFrozenDictionary();
+}
+
+// What one column can feed: today, a settable public instance property of the model, held once per model type in an ImmutableArray<Slot> in place of PropertyInfo,
+// so the matcher and the compiled readers see only a name, the type a value must become and the method that stores it. It does not depend on the model type either.
+sealed class Slot(string name, Type type, MethodInfo setter)
+{
+	public readonly string Name = name;
+	public readonly Type Type = type;
+	public readonly MethodInfo Setter = setter;
 }
 
 /// <summary>The builder behind the collection syntax of <see cref="RowMap{T}"/>: <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>.</summary>
