@@ -33,10 +33,11 @@ public static class ConnectionPattern
 
 	public static List<Post> DapperList(string connectionString)
 	{
+		int author = 42;
 		#region dapper_list_call
 		using var connection = new SqliteConnection(connectionString);
 		List<Post> posts = connection.Query<Post>(ListSql,
-			new { author = 42 })
+			new { author })
 			.AsList();
 		#endregion
 
@@ -45,10 +46,11 @@ public static class ConnectionPattern
 
 	public static List<Post> OdeList(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int author = 42;
 		#region ode_list_call
 		// nothing: the factory creates, opens and disposes the connection
 		List<Post> posts = connectionFactory.Command(ListSql)
-			.AddParam("author", 42)
+			.AddParam(author)
 			.Map<Post>().ToList();
 		#endregion
 
@@ -57,10 +59,11 @@ public static class ConnectionPattern
 
 	public static List<Post> OdeListOwn(string connectionString)
 	{
+		int author = 42;
 		#region ode_list_own
 		using var connection = new SqliteConnection(connectionString);
 		List<Post> posts = connection.Command(ListSql)
-			.AddParam("author", 42)
+			.AddParam(author)
 			.Map<Post>().ToList();
 		#endregion
 
@@ -69,10 +72,11 @@ public static class ConnectionPattern
 
 	public static Post? DapperFirst(string connectionString)
 	{
+		int id = 3;
 		#region dapper_first_call
 		using var connection = new SqliteConnection(connectionString);
 		Post? post = connection.QueryFirstOrDefault<Post>(OneSql,
-			new { id = 3 });
+			new { id });
 		// nothing: "first or default" and Post are in the method name above
 		#endregion
 
@@ -81,10 +85,11 @@ public static class ConnectionPattern
 
 	public static Post? OdeFirst(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int id = 3;
 		#region ode_first_call
 		// nothing: the factory creates, opens and disposes the connection
 		Post? post = connectionFactory.Command(OneSql)
-			.AddParam("id", 3)
+			.AddParam(id)
 			.Map<Post>().FirstOrDefault();
 		#endregion
 
@@ -93,10 +98,11 @@ public static class ConnectionPattern
 
 	public static long DapperScalar(string connectionString)
 	{
+		int author = 42;
 		#region dapper_scalar_call
 		using var connection = new SqliteConnection(connectionString);
 		long count = connection.ExecuteScalar<long>(CountSql,
-			new { author = 42 });
+			new { author });
 		// nothing: the terminal is the method name above
 		#endregion
 
@@ -105,10 +111,11 @@ public static class ConnectionPattern
 
 	public static long OdeScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int author = 42;
 		#region ode_scalar_call
 		// nothing: the factory creates, opens and disposes the connection
 		long count = connectionFactory.Command(CountSql)
-			.AddParam("author", 42)
+			.AddParam(author)
 			.ExecuteScalar<long>();
 		#endregion
 
@@ -117,10 +124,11 @@ public static class ConnectionPattern
 
 	public static int DapperNonQuery(string connectionString)
 	{
+		int author = 42;
 		#region dapper_nonquery_call
 		using var connection = new SqliteConnection(connectionString);
 		int updated = connection.Execute(TouchSql,
-			new { author = 42 });
+			new { author });
 		// nothing: the terminal is the method name above
 		#endregion
 
@@ -129,10 +137,11 @@ public static class ConnectionPattern
 
 	public static int OdeNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int author = 42;
 		#region ode_nonquery_call
 		// nothing: the factory creates, opens and disposes the connection
 		int updated = connectionFactory.Command(TouchSql)
-			.AddParam("author", 42)
+			.AddParam(author)
 			.ExecuteNonQuery();
 		#endregion
 
@@ -175,6 +184,7 @@ public static class ConnectionPattern
 		#endregion
 	public static List<Post> PlainListAligned(string connectionString)
 	{
+		int author = 42;
 		#region plain_list_aligned
 		using var connection = new SqliteConnection(connectionString);
 		connection.Open();
@@ -182,7 +192,7 @@ public static class ConnectionPattern
 		command.CommandText = ListSql;
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
-		parameter.Value = 42;
+		parameter.Value = author;
 		command.Parameters.Add(parameter);
 		var posts = new List<Post>();
 		using var reader = command.ExecuteReader();
@@ -203,16 +213,18 @@ public static class ConnectionPattern
 
 	public static List<Post> OdeListAligned(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
+		int author = 42;
 		#region ode_list_aligned
 		// nothing: the factory creates, opens and disposes the connection
 
 		List<Post> posts = connectionFactory
 			.Command(ListSql)
-			.AddParam("author", 42)
+			.AddParam(author)
 
 
 
-			.Map<Post>().ToList();
+			.Map<Post>()
+			.ToList();
 		#endregion
 
 		return posts;
@@ -246,7 +258,7 @@ public static class ConnectionPattern
 public class PostService(IDbConnectionFactory<SqliteConnection> connectionFactory)
 {
 	public List<Post> ByAuthor(int author) => connectionFactory.Command(ListSql)
-		.AddParam("author", author)
+		.AddParam(author)
 		.Map<Post>().ToList();
 }
 #endregion

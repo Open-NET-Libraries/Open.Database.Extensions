@@ -2,23 +2,29 @@
 
 ![Open.Database.Extensions.Channel: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-channel.svg)
 
-Read query results straight into a `System.Threading.Channels` channel instead of a collection. `ToChannel<T>()` returns a `ChannelReader<T>` immediately; rows are produced in the background, and the channel completes when every row has been written (or completes with the exception if reading fails). It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), and rows are mapped the same way as `Map<T>()`.
+Read query results straight into a `System.Threading.Channels` channel instead of a collection. `ToChannel<T>()` returns a `ChannelReader<T>` immediately; rows are produced in the background, and the channel completes when every row has been written (or completes with the exception if reading fails). **Use it when** another task consumes the rows while they are still being read. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), and rows are mapped the same way as `Map<T>()`.
 
 ```sh
 dotnet add package Open.Database.Extensions.Channel --prerelease
 ```
 
 ```cs
+using Open.Database.Extensions;
+
+public record Post(int Id, string Title);
+
+// connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package page, which also names the provider to install).
 // Returns right away; rows are produced in the background and the channel completes when they are all written.
 ChannelReader<Post> reader = connectionFactory
     .Command("select * from posts order by id")
     .ToChannel<Post>(singleReader: true);
 
+var received = new List<Post>();
 await foreach (Post post in reader.ReadAllAsync())
     received.Add(post);
 ```
 
-It works on expressive commands, on `IDbCommand` and on readers; `ToChannelAsync<T>()` is the asynchronous twin. See [Channels and Dataflow](https://open-net-libraries.github.io/Open.Database.Extensions/articles/channels-and-dataflow.html).
+It works on expressive commands, on `IDbCommand` and on readers; `ToChannelAsync<T>()` is the asynchronous twin. Reading into a channel is a convenience for pipelines, not a speed-up. See [Channels and Dataflow](https://open-net-libraries.github.io/Open.Database.Extensions/articles/channels-and-dataflow.html).
 
 ## The packages
 

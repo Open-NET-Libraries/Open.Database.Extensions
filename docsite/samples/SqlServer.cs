@@ -1,3 +1,4 @@
+using System.Data;
 using Open.Database.Extensions;
 
 namespace Samples;
@@ -7,19 +8,20 @@ public static class SqlServer
 {
 	public static async Task<Post[]> Example()
 	{
+		int author = 42;
 		#region sql_server_factory
 		// Open.Database.Extensions.MSSqlClient wraps Microsoft.Data.SqlClient.
 		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
 
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author")
-			.AddParam("author", 42)
+			.AddParam(author)
 			.Map<Post>()
 			.ToArrayAsync();
 
 		int touched = await connectionFactory
 			.StoredProcedure("[dbo].[TouchPosts]")
-			.AddParam("author", 42)
+			.AddParam(author)
 			.ExecuteNonQueryAsync();
 		#endregion
 
@@ -50,6 +52,45 @@ public static class SqlServer
 		#endregion
 
 		_ = byArguments;
+		return posts;
+	}
+
+	public static async Task<int> ReturnValue()
+	{
+		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
+		int author = 42;
+
+		#region sql_server_return
+		// ExecuteReturn<T>() adds the return-value parameter itself, runs the procedure and returns its value:
+		// T must be the type the provider returns (a SQL Server procedure returns an int, its RETURN code).
+		int returned = connectionFactory
+			.StoredProcedure("[dbo].[TouchPosts]")
+			.AddParam(author)
+			.ExecuteReturn<int>();
+
+		// The Async twin.
+		int returnedAsync = await connectionFactory
+			.StoredProcedure("[dbo].[TouchPosts]")
+			.AddParam(author)
+			.ExecuteReturnAsync<int>();
+		#endregion
+
+		return returned + returnedAsync;
+	}
+
+	public static async Task<Post[]> NullByName(string? titleContains)
+	{
+		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
+
+		#region sql_server_null_by_name
+		// By name a NULL has no type to use, so pass one.
+		Post[] posts = await connectionFactory
+			.StoredProcedure("[dbo].[SearchPosts]")
+			.AddParam("title_contains", titleContains ?? (object)DBNull.Value, SqlDbType.NVarChar)
+			.Map<Post>()
+			.ToArrayAsync();
+		#endregion
+
 		return posts;
 	}
 }

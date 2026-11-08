@@ -10,6 +10,8 @@ Extensions on the standard ADO.NET types that make everyday database work short 
 
 [!code-csharp[](samples/BeforeAfter.cs#ode_list_factory)]
 
+Here `author` is an `int` variable: the parameter name `author` comes from the argument.
+
 ## The idea
 
 1. **A foundation of best-practice extensions.** Most of the library is a provider-agnostic collection of extensions on `IDbConnection`, `IDbCommand`, `IDataReader` and friends. They apply the usual best practices (open late, close early, dispose what you create, honor cancellation) so common database work is almost effortless. See [The foundation](articles/foundation.md).
