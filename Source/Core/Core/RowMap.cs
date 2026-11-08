@@ -199,7 +199,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
 		get => field ?? throw new InvalidOperationException(TypeShape.Error);
-	} = TypeShape.Error is null ? new() : null!; // Declared after TypeShape, Slots and SlotIndex: its constructor reads them.
+	} = TypeShape.Error is null ? new() : null; // Declared after TypeShape, Slots and SlotIndex: its constructor reads them.
 
 	// For an entry point that runs a command before it maps a row: checking the type first makes an unmappable T fail at the call, with nothing executed.
 	internal static void ThrowIfUnmappable() => TypeShape.ThrowIfUnmappable();
@@ -450,7 +450,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Shared by both layout caches: the dictionary is created on first use (a lost race just drops an empty one).
 	static ConcurrentDictionary<int, TLayout[]> Cache<TLayout>(ref ConcurrentDictionary<int, TLayout[]>? field)
 		where TLayout : class
-		=> Volatile.Read(ref field) ?? Interlocked.CompareExchange(ref field, new(), null) ?? field!;
+		=> Volatile.Read(ref field) ?? Interlocked.CompareExchange(ref field, new(), null) ?? field;
 
 	// Shared by both layout caches: find a layout by hash and match, or remember a new one.
 	static TLayout? Find<TLayout>(ConcurrentDictionary<int, TLayout[]> cache, int hash, Func<TLayout, bool> matches)

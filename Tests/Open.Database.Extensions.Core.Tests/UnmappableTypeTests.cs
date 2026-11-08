@@ -517,11 +517,11 @@ public static class UnmappableTypeTests
 		["Results<T>(IExecuteReader, null)"] = t => Run(() => Exec(t).Results<T>(null)),
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
 		["ResultsAsync<T>(DbCommand)"] = async t => await DbCmd(t).ResultsAsync<T>(),
-		["ResultsAsync<T>(DbCommand, null, token)"] = async t => await DbCmd(t).ResultsAsync<T>((RowMap<T>?)null, CancellationToken.None),
+		["ResultsAsync<T>(DbCommand, null, token)"] = async t => await DbCmd(t).ResultsAsync<T>(null, CancellationToken.None),
 		["ResultsAsync<T>(DbCommand, token)"] = async t => await DbCmd(t).ResultsAsync<T>(CancellationToken.None),
 		["ResultsFromDataTable<T>(IDbCommand)"] = t => Run(() => Command(t).ResultsFromDataTable<T>()),
 		["ExpressiveDbCommand.ResultsAsync<T>()"] = async t => await Expressive(t).ResultsAsync<T>(),
-		["ExpressiveDbCommand.ResultsAsync<T>(null)"] = async t => await Expressive(t).ResultsAsync<T>((RowMap<T>?)null),
+		["ExpressiveDbCommand.ResultsAsync<T>(null)"] = async t => await Expressive(t).ResultsAsync<T>(null),
 
 		// Core: a reader
 		["Results<T>(IDataReader)"] = t => Run(() => Reader(t).Results<T>()),

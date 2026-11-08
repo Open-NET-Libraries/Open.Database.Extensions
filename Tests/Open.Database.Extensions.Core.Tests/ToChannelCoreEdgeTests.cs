@@ -77,7 +77,7 @@ public static class ToChannelCoreEdgeTests
 			case Kind.ExecuteReader:
 				{
 					var command = new ScriptedCommand(failure);
-					return new Subject((w, c) => ((IExecuteReader)command).ToChannel(w, c), () => command.Executions);
+					return new Subject((w, c) => command.ToChannel(w, c), () => command.Executions);
 				}
 
 			case Kind.ExecuteReaderAsync:
