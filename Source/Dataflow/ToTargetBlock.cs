@@ -1291,7 +1291,9 @@ public static partial class DataflowExtensions
 		long total;
 		try
 		{
-			total = executeReader(reader => pipeline.Write(reader, Dataflow.Transformer<T>.Create(map)));
+			// An unmappable T fails here, before the command runs (and faults the target, as a failure during the read does).
+			var transformer = Dataflow.Transformer<T>.Create(map);
+			total = executeReader(reader => pipeline.Write(reader, transformer));
 		}
 		catch (Exception ex)
 		{
@@ -1319,7 +1321,9 @@ public static partial class DataflowExtensions
 		long total;
 		try
 		{
-			total = await executeReader(reader => pipeline.WriteAsync(reader, Dataflow.Transformer<T>.Create(map), cancellationToken)).ConfigureAwait(false);
+			// An unmappable T fails here, before the command runs (and faults the target, as a failure during the read does).
+			var transformer = Dataflow.Transformer<T>.Create(map);
+			total = await executeReader(reader => pipeline.WriteAsync(reader, transformer, cancellationToken)).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
