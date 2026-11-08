@@ -17,6 +17,8 @@ They work on expressive commands, on `IDbCommand` and on readers, and map rows t
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel)]
 
+The overloads that take a `ChannelWriter` as the target return the number of rows read and handed to the internal buffer, not the number delivered. With `complete: true` the writer is completed after the last row has been delivered and the reader released, which can be after the call has returned.
+
 ## Dataflow
 
 ![Open.Database.Extensions.Dataflow: You write the SQL. The library writes the other twenty lines.](../images/hero-dataflow.svg)

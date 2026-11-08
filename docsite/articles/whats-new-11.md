@@ -74,5 +74,6 @@ These can change behavior without a compile error, most likely first:
 - The synchronous `ToTargetBlock` overloads post each row without waiting: when the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error, and only the number the call returns (the rows read and handed over) shows the shortfall. Use the `Async` overload to feed a bounded target.
 - `AddParams(source)` sends every public member of `source` that the procedure declares, so pass an object you trust, and add a value that only the server may decide (a tenant, a deleted-rows flag) with `AddParam("name", value)`: a name you pass yourself always wins.
 - The unit tests run on in-memory providers. The documentation samples run on SQLite, and the benchmarks on the in-memory provider, SQLite and SQL Server LocalDB. Feedback from other providers and workloads is welcome.
+- The tests of the mapper, the pipelines and the commands run on net10.0. The netstandard2.0, netstandard2.1 and net472 builds share the code through `#if` switches; a small test project runs the `AddParam` overloads on net472, net8.0 and net10.0 under older language versions.
 
 Earlier versions are in [Earlier release notes](release-notes.md).
