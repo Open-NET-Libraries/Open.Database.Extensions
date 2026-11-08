@@ -4,7 +4,9 @@ title: Open.Database.Extensions
 
 # Open.Database.Extensions
 
-Extensions on the standard ADO.NET types that make everyday database work short to write and robust by default. Version 11 is in preview.
+![Open.Database.Extensions: You write the SQL. The library writes the other twenty lines.](images/hero-core.svg)
+
+Extensions on the standard ADO.NET types that make everyday database work short to write and robust by default. Version 11 is a release candidate.
 
 **You write the SQL. This library writes the other twenty lines.**
 

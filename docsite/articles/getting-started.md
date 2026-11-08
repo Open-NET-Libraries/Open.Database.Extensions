@@ -11,7 +11,7 @@ Most applications need one package. The others add integrations.
 | `Open.Database.Extensions.Dataflow` | [Reading into dataflow blocks](channels-and-dataflow.md) | same |
 | `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient` | `net472`, `net10.0` |
 
-.NET 8 and .NET 9 applications use the `netstandard2.1` build; .NET Framework applications use `netstandard2.0` (or `net472` for the SQL Server package). Version 11 is a preview, so ask for prereleases:
+.NET 8 and .NET 9 applications use the `netstandard2.1` build; .NET Framework applications use `netstandard2.0` (or `net472` for the SQL Server package). Version 11 is a release candidate, so ask for prereleases:
 
 ```sh
 dotnet add package Open.Database.Extensions.Core --prerelease
