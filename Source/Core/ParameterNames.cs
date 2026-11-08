@@ -9,6 +9,9 @@ namespace Open.Database.Extensions;
 /// <c>this.Name</c>, <c>maybe?.X</c>, <c>maybe!.X</c>, <c>@class</c> (properties and fields look the same), with optional outer parentheses.
 /// Calls, indexers, operators, casts, literals and <c>nameof</c> are not derivable: a wrong name that silently binds is worse than an error that says to pass the name.
 /// A chain gives candidates, most specific first: <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>.
+/// A last member that carries a field prefix (<c>m_author</c>, <c>s_author</c>, <c>_author</c>) also offers its name without the prefix, right after the name as written.
+/// A candidate is matched to the real parameter names in four tiers, each candidate in its turn: exact, ignoring case, ignoring case and underscores, and,
+/// failing those, ignoring case and underscores after removing one common parameter prefix from the real name (<c>p_author</c>, <c>pAuthor</c>, <c>in_author</c>, <c>i_author</c>, <c>prm_author</c>, <c>par_author</c>, <c>v_author</c>).
 /// </remarks>
 static class ParameterNames
 {
@@ -32,23 +35,38 @@ static class ParameterNames
 			? expression.Substring(start, length)
 			: throw new ArgumentException($"Cannot derive a parameter name from the expression '{expression}'.", nameof(expression));
 
-	/// <summary>The candidate names of a derivable expression, most specific (longest) first; the last is the final member name as written.</summary>
+	/// <summary>
+	/// The candidate names of a derivable expression, most specific (longest) first, then the final member name as written.
+	/// When that member starts with a field prefix (<c>m_</c>, <c>s_</c> or <c>_</c>, in lower case, followed by a letter or a digit) its name without the prefix follows as the last candidate.
+	/// </summary>
 	/// <exception cref="ArgumentException">The expression is not derivable (callers check with <see cref="IsDerivable"/> first).</exception>
 	internal static ImmutableArray<string> Candidates(string expression)
 	{
 		var segments = new List<Segment>(4);
-		if (!TryScan(expression, segments, out _, out _))
+		if (!TryScan(expression, segments, out int lastStart, out int lastLength))
 			throw new ArgumentException($"Cannot derive a parameter name from the expression '{expression}'.", nameof(expression));
 
 		string[] names = new string[segments.Count];
 		for (int i = 0; i < names.Length; i++)
 			names[i] = expression.Substring(segments[i].Start, segments[i].Length);
 
-		var candidates = ImmutableArray.CreateBuilder<string>(names.Length);
+		int fieldPrefix = FieldPrefixLength(expression, lastStart, lastLength);
+
+		var candidates = ImmutableArray.CreateBuilder<string>(names.Length + (fieldPrefix > 0 ? 1 : 0));
 		for (int from = 0; from < names.Length; from++)
 			candidates.Add(from == names.Length - 1 ? names[from] : string.Join(string.Empty, names, from, names.Length - from));
 
+		if (fieldPrefix > 0) candidates.Add(expression.Substring(lastStart + fieldPrefix, lastLength - fieldPrefix));
+
 		return candidates.MoveToImmutable();
+	}
+
+	// The length of a field prefix at the start of the member name s[start..start + length] (`_`, `m_` or `s_`, followed by a letter or a digit), or 0:
+	// m_author and _author have one; M_author, m__author and mauthor do not.
+	static int FieldPrefixLength(string s, int start, int length)
+	{
+		int prefix = s[start] == '_' ? 1 : length > 1 && (s[start] == 'm' || s[start] == 's') && s[start + 1] == '_' ? 2 : 0;
+		return prefix > 0 && prefix < length && char.IsLetterOrDigit(s[start + prefix]) ? prefix : 0;
 	}
 
 	// Scans the expression as `a.b.c` with optional `?.`, `!` and outer parentheses. Fills `segments` (when given) with the member names.
@@ -160,6 +178,9 @@ static class ParameterNames
 	/// <summary>
 	/// Finds the real parameter that a derived name stands for. Candidates are tried most specific first, so <c>order.Customer.Id</c> finds <c>@customer_id</c> before a bare <c>@id</c>;
 	/// within a candidate the match is exact, else ignoring case, else ignoring case and underscores, the same tiers columns use.
+	/// When a candidate matches in none of those three tiers, a fourth tier compares it with the real name after one common parameter prefix is removed
+	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c> or <c>v_</c> in any case, or a lone lower-case <c>p</c> before an upper-case letter), ignoring case and underscores:
+	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>. The four tiers run inside each candidate's turn, so <c>order.Customer.Id</c> finds <c>@p_customer_id</c> before a bare <c>@id</c>.
 	/// </summary>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="parameterNames">The procedure's real parameter names, as the provider reports them (a leading <c>@</c> is allowed).</param>
@@ -177,8 +198,8 @@ static class ParameterNames
 
 	static string? Find(string candidate, ImmutableArray<string> parameterNames)
 	{
-		// Tier 1: exact. Tier 2: ignoring case. Tier 3: ignoring case and underscores.
-		for (int tier = 1; tier <= 3; tier++)
+		// Tier 1: exact. Tier 2: ignoring case. Tier 3: ignoring case and underscores. Tier 4: the same without one common parameter prefix.
+		for (int tier = 1; tier <= 4; tier++)
 		{
 			string? found = null;
 			foreach (string real in parameterNames)
@@ -201,12 +222,36 @@ static class ParameterNames
 	{
 		1 => string.Equals(a, b, StringComparison.Ordinal),
 		2 => string.Equals(a, b, StringComparison.OrdinalIgnoreCase),
-		_ => EqualIgnoringCaseAndUnderscores(a, b),
+		3 => EqualIgnoringCaseAndUnderscores(a, b, 0),
+		_ => EqualWithoutParameterPrefix(a, b),
 	};
 
-	static bool EqualIgnoringCaseAndUnderscores(string a, string b)
+	// The prefixes real procedures put in front of a parameter name, compared ignoring case and followed by at least one more character.
+	static readonly string[] ParameterPrefixes = ["p_", "in_", "i_", "prm_", "par_", "v_"];
+
+	// The length of the parameter prefix at the start of a real name (a leading @ already removed), or 0. A lone lower-case p counts only before an upper-case letter: pAuthor, never pages.
+	static int ParameterPrefixLength(string name)
 	{
-		int i = 0, j = 0;
+		foreach (string prefix in ParameterPrefixes)
+		{
+			if (name.Length > prefix.Length && string.Compare(name, 0, prefix, 0, prefix.Length, StringComparison.OrdinalIgnoreCase) == 0)
+				return prefix.Length;
+		}
+
+		return name.Length > 1 && name[0] == 'p' && char.IsUpper(name[1]) ? 1 : 0;
+	}
+
+	// Tier 4: the candidate against the real name once one parameter prefix is removed, ignoring case and underscores.
+	static bool EqualWithoutParameterPrefix(string candidate, string real)
+	{
+		int prefix = ParameterPrefixLength(real);
+		return prefix > 0 && EqualIgnoringCaseAndUnderscores(candidate, real, prefix);
+	}
+
+	// Compares a with b from index bStart, ignoring case and underscores.
+	static bool EqualIgnoringCaseAndUnderscores(string a, string b, int bStart)
+	{
+		int i = 0, j = bStart;
 		while (true)
 		{
 			while (i < a.Length && a[i] == '_') i++;
