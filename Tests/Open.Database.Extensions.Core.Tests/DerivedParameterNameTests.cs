@@ -33,7 +33,7 @@ public static class DerivedParameterNameTests
 	}
 
 	// A command whose provider "knows" the real parameter names of the procedure.
-	sealed class ProcCommand : ExpressiveCommand
+	internal sealed class ProcCommand : ExpressiveCommand
 	{
 		readonly ImmutableArray<string> _names;
 
@@ -396,7 +396,7 @@ public static class DerivedParameterNameTests
 
 	// ---- async ----
 
-	sealed class OpenDbConnection(DbCommand command) : DbConnection
+	internal sealed class OpenDbConnection(DbCommand command) : DbConnection
 	{
 		[AllowNull]
 		public override string ConnectionString { get; set; } = "";
@@ -431,7 +431,7 @@ public static class DerivedParameterNameTests
 	}
 
 	// A concrete command that records the parameters it is given (a substitute cannot create parameters).
-	sealed class RecordingDbCommand : DbCommand
+	internal sealed class RecordingDbCommand : DbCommand
 	{
 		public List<DbParameter> Sent { get; } = [];
 
