@@ -68,12 +68,12 @@ public static class SqlServer
 			.ExecuteReturn<int>();
 
 		// The Async twin.
-		returned = await connectionFactory
+		int returnedAsync = await connectionFactory
 			.StoredProcedure("[dbo].[TouchPosts]")
 			.AddParam(author)
 			.ExecuteReturnAsync<int>();
 		#endregion
 
-		return returned;
+		return returned + returnedAsync;
 	}
 }
