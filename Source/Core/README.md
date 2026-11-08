@@ -4,18 +4,21 @@
 
 **You write the SQL. This library writes the other twenty lines.**
 
-Core is the foundation of Open.Database.Extensions: ADO.NET extension methods with best-practice defaults, expressive commands that open, run and dispose their own connection, and `Map<T>()` to turn rows into objects. It works with any ADO.NET provider and has no database dependency of its own. **Use it when** you want any of that; most applications need only this package.
+Core is the foundation of Open.Database.Extensions: ADO.NET extension methods with best-practice defaults, expressive commands that open, run and dispose their own connection, and `Map<T>()` to turn rows into objects. It has no database dependency of its own. **Use it for any ADO.NET database;** most applications need only this package.
 
 ```sh
 dotnet add package Open.Database.Extensions.Core --prerelease
+dotnet add package Microsoft.Data.Sqlite   # your provider; SQLite is used below
 ```
 
 ```cs
+using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
 
 public record Post(int Id, string Title);
 
-// Create the factory once per application. Use your provider's connection type (Microsoft.Data.Sqlite here).
+// connectionString is yours, for example "Data Source=blog.db"; the query assumes a posts table (id, author, title, ...).
+// Create the factory once per application. Use your provider's connection type.
 var connectionFactory = new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString));
 int author = 42;
 

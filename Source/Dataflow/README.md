@@ -13,7 +13,7 @@ using Open.Database.Extensions;
 
 public record Post(int Id, string Title);
 
-// connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package).
+// connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package page, which also names the provider to install).
 var block = new BufferBlock<Post>();
 
 // complete: true completes the block after every row has been delivered (or faults it if reading fails).

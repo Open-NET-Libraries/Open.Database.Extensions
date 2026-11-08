@@ -2,7 +2,7 @@
 
 ![Open.Database.Extensions.MSSqlClient: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-mssqlclient.svg)
 
-SQL Server for Open.Database.Extensions: `SqlConnectionFactory`, SQL-specific commands, and stored procedures on `Microsoft.Data.SqlClient`. **Use it when** your database is SQL Server. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), so the whole Core API is available too.
+SQL Server for Open.Database.Extensions: `SqlConnectionFactory`, SQL-specific commands, and stored procedures on `Microsoft.Data.SqlClient`. **Use it when** your database is SQL Server. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/) and the `Microsoft.Data.SqlClient` provider, so there is nothing else to install.
 
 ```sh
 dotnet add package Open.Database.Extensions.MSSqlClient --prerelease
@@ -29,6 +29,9 @@ Post[] posts = await connectionFactory
 `AddParam(value)` takes the parameter name from the argument expression and matches it to the procedure's real parameters (exactly, then ignoring case, then ignoring case and underscores), so `search.TitleContains` finds `@title_contains`. `AddParams(search)` sends every member of the object that the procedure declares.
 
 ```cs
+// search holds the arguments: any object with the members you want to send, here an anonymous one.
+var search = new { Author = 42, TitleContains = "ode" };
+
 Post[] posts = await connectionFactory
     .StoredProcedure("[dbo].[SearchPosts]")
     .AddParam(search.Author)

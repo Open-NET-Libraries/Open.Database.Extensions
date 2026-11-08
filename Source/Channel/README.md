@@ -13,7 +13,7 @@ using Open.Database.Extensions;
 
 public record Post(int Id, string Title);
 
-// connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package).
+// connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package page, which also names the provider to install).
 // Returns right away; rows are produced in the background and the channel completes when they are all written.
 ChannelReader<Post> reader = connectionFactory
     .Command("select * from posts order by id")

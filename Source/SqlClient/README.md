@@ -14,6 +14,7 @@ using Open.Database.Extensions;
 public record Post(int Id, string Title);
 
 // Create the factory once per application.
+// connectionString is yours. System.Data.SqlClient comes with this package.
 var connectionFactory = new SqlConnectionFactory(connectionString);
 int author = 42;
 
