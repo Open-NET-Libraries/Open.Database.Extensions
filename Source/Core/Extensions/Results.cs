@@ -13,7 +13,6 @@ public static partial class CoreExtensions
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> Results<T>(
 	this IDataReader reader, RowMap<T>? map = null)
-	where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -24,7 +23,6 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="Results{T}(IDataReader, RowMap{T}?)"/>
 	public static IEnumerable<T> Results<T>(
 		this IDataReader reader)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -43,7 +41,6 @@ public static partial class CoreExtensions
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, RowMap<T>? map = null)
-	where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -53,7 +50,6 @@ public static partial class CoreExtensions
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, RowMap{T}?)" />
 	public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -72,7 +68,6 @@ public static partial class CoreExtensions
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> Results<T>(this IDbCommand command, RowMap<T>? map = null)
-	where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -82,7 +77,6 @@ public static partial class CoreExtensions
 
 	/// <inheritdoc cref="Results{T}(IDbCommand, RowMap{T}?)" />
 	public static IEnumerable<T> Results<T>(this IDbCommand command)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -104,7 +98,6 @@ public static partial class CoreExtensions
 		this DbDataReader reader,
 		RowMap<T>? map = null,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -116,7 +109,6 @@ public static partial class CoreExtensions
 	public static IAsyncEnumerable<T> ResultsAsync<T>(
 		this DbDataReader reader,
 		CancellationToken cancellationToken)
-		where T : new()
 		=> ResultsAsync<T>(reader, null, cancellationToken);
 
 	/// <summary>
@@ -135,7 +127,6 @@ public static partial class CoreExtensions
 		RowMap<T>? map = null,
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -150,14 +141,12 @@ public static partial class CoreExtensions
 	this DbDataReader reader,
 	RowMap<T>? map,
 	CancellationToken cancellationToken)
-	where T : new()
 	=> ResultsBufferedAsync<T>(reader, map, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader,
 		CancellationToken cancellationToken)
-		where T : new()
 		=> ResultsBufferedAsync<T>(reader, null, true, cancellationToken);
 
 	/// <summary>
@@ -175,7 +164,6 @@ public static partial class CoreExtensions
 		this DbCommand command,
 		RowMap<T>? map = null,
 		bool useReadAsync = true, CancellationToken cancellationToken = default)
-		where T : new()
 		=> command.ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
@@ -186,14 +174,12 @@ public static partial class CoreExtensions
 		this DbCommand command,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> ResultsAsync<T>(command, map, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
 		CancellationToken cancellationToken)
-		where T : new()
 		=> ResultsAsync<T>(command, null, true, cancellationToken);
 
 	// NOTE: The Results<T> methods should be faster than the ResultsFromDataTable<T> variations but are provided for validation of this assumption.
@@ -209,7 +195,6 @@ public static partial class CoreExtensions
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDataReader reader, RowMap<T>? map = null)
-		where T : new()
 	{
 		using var table = reader.ToDataTable();
 		return table.To<T>(map, true);
@@ -226,7 +211,6 @@ public static partial class CoreExtensions
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDbCommand command, RowMap<T>? map = null)
-		where T : new()
 	{
 		using var table = command.ToDataTable();
 		return table.To<T>(map, true);

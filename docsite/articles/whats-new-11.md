@@ -5,6 +5,14 @@
 
 Version 11 is a performance release. Result mapping is rewritten around a cached, typed row reader. See [Performance](performance.md) for what that does and does not buy you.
 
+## Preview 06
+
+New since `11.0.0-preview05`:
+
+- **Breaking: `where T : new()` is removed** from every method that maps rows to a model (`Map<T>`, `Results<T>`, `ResultsBuffered<T>`, `ResultsAsync<T>`, `DataTable.To<T>`, `DequeueAs<T>`, `ToChannel`, `ToTargetBlock`, `AsSourceBlock` and the rest), so a type that cannot be mapped throws `InvalidOperationException` at the call, even for an empty result, instead of failing to compile. Interfaces, abstract classes and delegates are rejected, and so, for now, are classes with no public parameterless constructor and types with `required` members.
+- **Breaking: `Map<int>()` and the like now throw** `InvalidOperationException`; they used to return default objects. A single value (`int`, `string`, `decimal`, `Guid`, an enum, `byte[]` and the rest) is not a row model: use `ExecuteScalar<T>()` or `FirstOrdinalResults<T>()`.
+- **Breaking: `RowMap<T>.Default` is a property,** not a field, so reading it throws `InvalidOperationException` for a type that cannot be mapped.
+
 ## Preview 05
 
 New since `11.0.0-preview04`:

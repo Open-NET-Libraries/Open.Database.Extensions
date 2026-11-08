@@ -136,7 +136,6 @@ public static partial class DataflowExtensions
 	public static long ToTargetBlock<T>(this IDataReader reader,
 		ITargetBlock<T> target,
 		bool complete)
-		where T : new()
 		=> Dataflow.Transformer<T>
 			.Create()
 			.PipeResultsTo(reader, target, complete);
@@ -164,7 +163,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 		=> Dataflow.Transformer<T>
 			.Create(map)
 			.PipeResultsTo(reader, target, complete);
@@ -334,7 +332,6 @@ public static partial class DataflowExtensions
 	public static long ToTargetBlock<T>(this IDbCommand command,
 		ITargetBlock<T> target,
 		bool complete)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -369,7 +366,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -543,7 +539,6 @@ public static partial class DataflowExtensions
 	public static long ToTargetBlock<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -578,7 +573,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -784,7 +778,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> Dataflow.Transformer<T>
 			.Create()
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
@@ -815,7 +808,6 @@ public static partial class DataflowExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 		=> Dataflow.Transformer<T>
 			.Create(map)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
@@ -1008,7 +1000,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -1052,7 +1043,6 @@ public static partial class DataflowExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -1234,7 +1224,6 @@ public static partial class DataflowExtensions
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -1272,7 +1261,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
@@ -1294,7 +1282,6 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete,
 		RowMap<T>? map)
-		where T : new()
 	{
 		// The public overloads that call this have already validated their arguments (once); nothing here guards again.
 		System.Diagnostics.Debug.Assert(executeReader is not null);
@@ -1323,7 +1310,6 @@ public static partial class DataflowExtensions
 		bool complete,
 		RowMap<T>? map,
 		CancellationToken cancellationToken)
-		where T : new()
 	{
 		// The public overloads that call this have already validated their arguments (once); nothing here guards again.
 		System.Diagnostics.Debug.Assert(executeReader is not null);

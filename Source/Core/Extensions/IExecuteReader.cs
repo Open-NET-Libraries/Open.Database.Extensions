@@ -411,7 +411,6 @@ public static class IExecuteReaderExtensions
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> Results<T>(this IExecuteReader command, RowMap<T>? map = null)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();

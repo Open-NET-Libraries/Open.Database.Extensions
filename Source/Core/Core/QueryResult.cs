@@ -230,7 +230,6 @@ public static class QueryResultExtensions
 	public static IEnumerable<T> DequeueAs<T>(
 		this QueryResult<Queue<object?[]>> source,
 		RowMap<T>? map = null)
-		where T : new()
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();
@@ -245,7 +244,6 @@ public static class QueryResultExtensions
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source,
 		RowMap<T>? map = null)
-		where T : new()
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();
@@ -260,7 +258,6 @@ public static class QueryResultExtensions
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source,
 		RowMap<T>? map = null)
-		where T : new()
 	{
 		var x = new Transformer<T>(map);
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
@@ -270,14 +267,12 @@ public static class QueryResultExtensions
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object?[]>>> source)
-		where T : new()
 		=> DequeueAs<T>(source, null);
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object?[]>>> source)
-		where T : new()
 		=> DequeueAs<T>(source, null);
 
 	/// <summary>

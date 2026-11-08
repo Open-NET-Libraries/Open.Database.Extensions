@@ -259,12 +259,10 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <returns>A task containing the list of results.</returns>
 	/// <seealso cref="RowMap{T}"/>
 		public ValueTask<IEnumerable<T>> ResultsAsync<T>(RowMap<T>? map = null)
-		where T : new()
 		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>()
-		where T : new()
 		=> ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
 
 	/// <summary>

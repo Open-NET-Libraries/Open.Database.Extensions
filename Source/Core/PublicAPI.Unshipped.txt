@@ -56,7 +56,7 @@ Open.Database.Extensions.RowMap<T>.RowMap(params System.ReadOnlySpan<System.Coll
 Open.Database.Extensions.RowMap<T>.RowMap(System.Collections.Immutable.ImmutableArray<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> void
 Open.Database.Extensions.RowMap<T>.RowMap(System.Collections.Generic.KeyValuePair<string!, string?> mapping) -> void
 static Open.Database.Extensions.RowMap<T>.From(System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowMap<T>!
-static readonly Open.Database.Extensions.RowMap<T>.Default -> Open.Database.Extensions.RowMap<T>!
+static Open.Database.Extensions.RowMap<T>.Default.get -> Open.Database.Extensions.RowMap<T>!
 static Open.Database.Extensions.RowMap.Create<T>(System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowMap<T>!
 Open.Database.Extensions.ValueMappingException
 Open.Database.Extensions.ValueMappingException.ColumnName.get -> string!

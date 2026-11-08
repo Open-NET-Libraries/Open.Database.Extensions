@@ -26,7 +26,6 @@ public static partial class CoreExtensions
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
 		RowMap<T> map)
-		where T : new()
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (map is null) throw new ArgumentNullException(nameof(map));
@@ -42,7 +41,6 @@ public static partial class CoreExtensions
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
 		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		where T : new()
 		=> Map(command, RowMap<T>.From(mappings));
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
@@ -52,14 +50,12 @@ public static partial class CoreExtensions
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
 		KeyValuePair<string, string?> mapping)
-		where T : new()
 		=> Map(command, new RowMap<T>(mapping));
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
 	[OverloadResolutionPriority(4)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command)
-		where T : new()
 		=> Map(command, RowMap<T>.Default);
 
 	/// <summary>
