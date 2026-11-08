@@ -128,7 +128,7 @@ A column named `first_name` feeds the property `FirstName` with no `RowMap<T>` d
 2. The column name equals the property name, ignoring case.
 3. The column name with its underscores removed equals the property name with its underscores removed, ignoring case.
 
-Within a tier the first matching column wins, one column feeds one property, and a column no tier matches is ignored. A property that tier 1 or 2 has filled is never taken by tier 3: with the columns `q_type` and `QType`, `QType` reads the `QType` column and `q_type` is ignored, in either column order.
+Within a tier the first matching column wins (two `id` columns from `select a.*, p.*` give the first), one column feeds one property, and a column no tier matches is ignored. A property that tier 1 or 2 has filled is never taken by tier 3: with the columns `q_type` and `QType`, `QType` reads the `QType` column and `q_type` is ignored, in either column order.
 
 Only a property that is matched by name is matched in tier 3. A property that a `RowMap<T>` pairs with a column keeps its exact meaning: it reads that column (exactly or ignoring case) and no other, and a `null` column still means "do not map this property", even if a `q_type` column exists. Underscores are the only difference tier 3 ignores, in either name, so `address_2` matches `Address2` and `http_request` matches `HTTPRequest`.
 
@@ -180,7 +180,8 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 
 - integers convert to other integer types and to enums, range-checked (an overflow throws `ValueMappingException`);
 - integers and floating-point values widen to `float`, `double` and `decimal`;
-- anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string` except a `byte[]`, which throws, and otherwise `Convert.ChangeType`.
+- a `DateTime`, a `DateTimeOffset`, a `TimeSpan` or text goes to a `DateOnly`, `TimeOnly`, `DateTimeOffset` or `TimeSpan` property (`DateOnly` and `TimeOnly` on .NET 10): a date column arrives as a `DateTime`, a time column as a `TimeSpan`, and SQLite returns text, which is read with the invariant culture;
+- anything else goes through a general conversion: a string to an enum (ignoring case) or a `Guid`, a `byte[]` to a `Guid`, any value to `string` except a `byte[]`, which throws, and otherwise `Convert.ChangeType`, so a fractional value rounds (halves to even) into an integer property.
 
 ## NULL in a non-nullable column
 
