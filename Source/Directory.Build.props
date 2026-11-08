@@ -41,7 +41,8 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="..\..\README.md">
+		<!-- Each package ships its own README.md (the file next to its .csproj), not the repository's. -->
+		<None Include="$(MSBuildProjectDirectory)\README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
