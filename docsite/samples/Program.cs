@@ -48,6 +48,7 @@ Check(factory.Command("select id from posts where id > 1000").ExecuteScalar<long
 Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long?>() is null, "ExecuteScalar<long?> over NULL is null");
 Check(factory.Command("select max(id) from posts where id <= 3").ExecuteScalar<long?>() == 3, "ExecuteScalar<long?> reads a value");
 Check(await factory.Command("select id from posts where id > 1000").ExecuteScalarAsync<long>() == 0, "ExecuteScalarAsync<long> over no rows is default");
+Check(factory.Command(Sql.CountSql).AddParam("author", 42).ExecuteScalar<long>() == 3 && factory.Command(Sql.CountSql).AddParam("@author", 42).ExecuteScalar<long>() == 3, "a parameter name is sent as written: SQLite accepts it with or without the @");
 
 // Mapping.
 Db.Seed();
@@ -84,6 +85,7 @@ Check(inputs is [{ Title: "Post 1", Body: "Body 1" }, { Title: "Post 2", Body: n
 Check(missingTitle is { PropertyName: "Title", ColumnName: "Title", InnerException: null }, "a result shape with no column for a required property throws ValueMappingException at its first row");
 Check(missingTitle?.Message == "No column feeds the required property 'Title' (String) of 'PostInput'; expected a column named 'Title'.", "the missing required column message names the property, its type, the model and the column looked for");
 Check(connection.Command("select body from posts where id = 999").Map<PostInput>().ToArray().Length == 0, "an empty result does not report a missing required column");
+Check(connection.Command("select null as Title, 'x' as Body").Map<PostInput>().FirstOrDefault() is { Title: null, Body: "x" }, "a NULL in the column that feeds a required property is not an error: the property keeps what it had");
 (Review? withNulls, Review? withoutColumns) = Mapping.MapCtorNullColumn(connection);
 Check(withNulls == new Review(7, "untitled", 3, null), "a NULL into a non-nullable parameter takes its declared default, and a NULL into a nullable one is null");
 Check(withoutColumns == new Review(7), "a parameter with no column takes its declared default, a nullable one included");
@@ -124,14 +126,14 @@ Check(DapperComparison.OdeRecords(connection).SequenceEqual(DapperComparison.Dap
 
 // Before and after: plain ADO.NET and the extensions return the same data.
 Db.Seed();
-List<Post> plainList = BeforeAfter.PlainList();
+List<Post> plainList = BeforeAfter.PlainList(Db.ConnectionString);
 Post[] odeList = await BeforeAfter.OdeList(factory);
 Check(plainList.Count == 3 && plainList.Select(p => (p.Id, p.Author, p.Title, p.Body)).SequenceEqual(odeList.Select(p => (p.Id, p.Author, p.Title, p.Body))), "plain ADO.NET list equals the extension list");
-Post? plainFirst = BeforeAfter.PlainFirst();
+Post? plainFirst = BeforeAfter.PlainFirst(Db.ConnectionString);
 Post? odeFirst = BeforeAfter.OdeFirst(factory);
 Check(plainFirst is not null && odeFirst is not null && (plainFirst.Id, plainFirst.Title, plainFirst.Body) == (odeFirst.Id, odeFirst.Title, odeFirst.Body), "plain ADO.NET first row equals the extension first row");
-Check(BeforeAfter.PlainScalar() == 3 && BeforeAfter.OdeScalar(factory) == 3, "plain and extension scalar agree");
-Check(BeforeAfter.PlainNonQuery() == 3 && BeforeAfter.OdeNonQuery(factory) == 3, "plain and extension non-query agree");
+Check(BeforeAfter.PlainScalar(Db.ConnectionString) == 3 && BeforeAfter.OdeScalar(factory) == 3, "plain and extension scalar agree");
+Check(BeforeAfter.PlainNonQuery(Db.ConnectionString) == 3 && BeforeAfter.OdeNonQuery(factory) == 3, "plain and extension non-query agree");
 // The comparisons in the docs: both sides return the same data.
 Db.Seed();
 string connectionString = Db.ConnectionString;
