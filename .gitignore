@@ -296,3 +296,6 @@ docsite/_site/
 docsite/api/*.yml
 docsite/api/.manifest
 /docfx-log.json
+
+# BenchmarkDotNet output (raw run logs and result tables; the published numbers live in Benchmarks/RESULTS.md)
+BenchmarkDotNet.Artifacts/
