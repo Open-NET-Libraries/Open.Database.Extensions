@@ -7,7 +7,8 @@ namespace Open.Database.Extensions.Tests;
 
 // Characterization tests: they pin what the mapping core (RowMap<T> and the row readers it compiles) does TODAY, so a refactor of its internals can be
 // proved to change nothing. Every expectation below was observed on the code as it stands; none of them is a design statement.
-// Where a rule is known to change in a later phase of the constructor-binding work, the test says so ("today's rule, changes in phase E").
+// The one rule that did change after they were written, phase E (a NULL never overwrites a member the C# type declares non-nullable), is pinned in the NULL tests below as it is now;
+// NullRuleMatrixTests holds the full matrix.
 [ExcludeFromCodeCoverage]
 public static class MappingCharacterizationTests
 {
@@ -27,7 +28,7 @@ public static class MappingCharacterizationTests
 
 	static ImmutableArray<ColumnDef> Columns(params string[] names) => [.. names.Select(n => new ColumnDef(n, typeof(object)))];
 
-	// ---- T6: what a NULL does to a property, as it is TODAY ----
+	// ---- T6: what a NULL does to a property ----
 
 	public enum Shade { None, Red, Green }
 
@@ -102,7 +103,7 @@ public static class MappingCharacterizationTests
 
 	[Theory]
 	[MemberData(nameof(ProbeCombos))]
-	public static void NullInEveryColumn_TodaysRule_ChangesInPhaseE(bool boxed, bool buffered, int map)
+	public static void NullInEveryColumn_KeepsWhatTheTypeDeclaresNonNullable(bool boxed, bool buffered, int map)
 	{
 		NullProbe item = ReadProbe(boxed, buffered, map, "*");
 
@@ -114,9 +115,9 @@ public static class MappingCharacterizationTests
 		Assert.Null(item.Maybe);
 		Assert.Null(item.Note);
 
-		// TODAY'S RULE, CHANGES IN PHASE E: a reference declared NON-nullable also receives null, and so loses its initializer ("init").
-		// Phase E keeps the initializer of a member the C# type declares non-nullable. Without an initializer the result stays null in both rules.
-		Assert.Null(item.Title);
+		// Phase E: a reference declared NON-nullable (nullable annotations on) keeps its initializer too, as a value type does ("init", where it was null before).
+		// Without an initializer nothing assigned it, so it stays null.
+		Assert.Equal("init", item.Title);
 		Assert.Null(item.Bare);
 	}
 
@@ -133,7 +134,7 @@ public static class MappingCharacterizationTests
 				case "Count": expected.Count = 7; break;
 				case "Level": expected.Level = Shade.Green; break;
 				case "Maybe": expected.Maybe = null; break;
-				case "Title": expected.Title = null!; break; // today's rule, changes in phase E (it would keep "init")
+				case "Title": expected.Title = "init"; break; // phase E: a NULL does not overwrite a non-nullable reference (it was null before)
 				case "Bare": expected.Bare = null!; break;
 				default: expected.Note = null; break;
 			}
