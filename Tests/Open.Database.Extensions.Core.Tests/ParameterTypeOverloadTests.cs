@@ -96,6 +96,50 @@ public static class ParameterTypeOverloadTests
 		Assert.IsType<char>(New().AddParam("x", c, SqlDbType.NChar).Params[0].Value);
 	}
 
+	// A char converts implicitly to int, but it is a character: AddParam("x", 'c') sends 'c', not 99, as it did before there was an int overload. An int is still an int.
+	[Fact]
+	public static void AddParam_CharWithoutType_SendsTheCharacter_AndAnIntStaysAnInt()
+	{
+		char c = 'c';
+		SqlDbType? type = SqlDbType.NChar;
+		int i = 5;
+		short sh = 7;
+
+		Assert.Equal('c', Assert.IsType<char>(New().AddParam("x", c).Params[0].Value));
+		Assert.Equal('c', Assert.IsType<char>(New().AddParam("x", 'c').Params[0].Value));
+		Assert.Equal('c', Assert.IsType<char>(New().AddParam("x", c, null).Params[0].Value));
+		Assert.Equal('c', Assert.IsType<char>(New().AddParam("x", c, type).Params[0].Value));
+		Assert.Equal('c', Assert.IsType<char>(New().AddParamIf(true, "x", c).Params[0].Value));
+		Assert.Equal('c', Assert.IsType<char>(New().AddParamIf(true, "x", 'c').Params[0].Value));
+		Assert.Equal('c', Assert.IsType<char>(New().AddParamIf(true, "x", c, null).Params[0].Value));
+		Assert.Equal("x=c - Input", Sent(New().AddParam("x", c)));
+		Assert.Equal("x=c NChar Input", Sent(New().AddParam("x", c, type)));
+		Assert.Equal("x=c NChar Input", Sent(New().AddParam("x", c, SqlDbType.NChar)));
+		Assert.Equal("", Sent(New().AddParamIf(false, "x", c)));
+
+		Assert.Equal(5, Assert.IsType<int>(New().AddParam("x", 5).Params[0].Value));
+		Assert.Equal(5, Assert.IsType<int>(New().AddParam("x", i).Params[0].Value));
+		Assert.Equal(7, Assert.IsType<int>(New().AddParam("x", sh).Params[0].Value));
+		Assert.Equal(5, Assert.IsType<int>(New().AddParamIf(true, "x", i).Params[0].Value));
+		Assert.Equal(6L, Assert.IsType<long>(New().AddParam("x", 6L).Params[0].Value));
+	}
+
+	[Fact]
+	public static void CharWithoutType_ReachesTheProviderParameterAsACharacter()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		new ExpressiveCommand(probe.Connection, CommandType.Text, "select 1")
+			.AddParam("c", 'c')
+			.AddParam("i", 5)
+			.AddParamIf(true, "ci", 'd')
+			.ExecuteNonQuery();
+
+		Assert.Equal('c', Assert.IsType<char>(probe.Parameters[0].Value));
+		Assert.Equal(5, Assert.IsType<int>(probe.Parameters[1].Value));
+		Assert.Equal('d', Assert.IsType<char>(probe.Parameters[2].Value));
+	}
+
 	[Fact]
 	public static void AddParam_NullableValueAndType()
 	{
