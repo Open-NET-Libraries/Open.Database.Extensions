@@ -95,7 +95,7 @@ public static class SqlTextParametersTests
 	[InlineData("update t set a = @a, b = 'x@y' /* @c */ where id = @id -- @d\n and [@e] = \"@f\" and g = @a", new[] { "@a", "@id" })]
 	public static void TheTokens(string text, string[] expected) => Assert.Equal(expected, Parse(text));
 
-	// ---- no token: "not known", the arguments keep the name they were given ----
+	// ---- no marker at all: "not known", the arguments keep the name they were given ----
 
 	[Theory]
 	[InlineData("select 1")]

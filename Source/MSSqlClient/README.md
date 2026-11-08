@@ -26,7 +26,7 @@ Post[] posts = await connectionFactory
 
 ## Stored procedures: name the argument, not the parameter
 
-`AddParam(value)` takes the parameter name from the argument expression and matches it to the procedure's real parameters (exactly, then ignoring case, then ignoring case and underscores), so `search.TitleContains` finds `@title_contains`. `AddParams(search)` sends every member of the object that the procedure declares.
+`AddParam(value)` takes the parameter name from the argument expression and matches it to the procedure's real parameters (exactly, then ignoring case, then ignoring case and underscores), or on a text command to the `@name` markers in the SQL, so `search.TitleContains` finds `@title_contains`. `AddParams(search)` sends every member of the object that the procedure declares.
 
 ```cs
 // search holds the arguments: any object with the members you want to send, here an anonymous one.

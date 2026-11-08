@@ -45,7 +45,7 @@ Name a parameter in the way that fits what you have:
 - **A literal, or any other expression, or a compiler older than C# 10:** name it yourself, `AddParam("author", 42)`.
 - **An object holds several values:** `AddParams(search)`.
 
-A name you write is sent exactly as written: the library never adds or removes an `@`. Write it without one (`"author"` for `@author`), as the samples do. A name derived from an argument has none either; for a stored procedure it is replaced by the provider's real name, which has one (`@title_contains`). SQLite accepts a name with or without the `@`, as the samples check.
+A name you write is sent exactly as written: the library never adds or removes an `@`. Write it without one (`"author"` for `@author`), as the samples do. A name derived from an argument has none either; for a stored procedure or a text command it is replaced by the real name, which has one (`@title_contains`). SQLite accepts a name with or without the `@`, as the samples check.
 
 ### Name a parameter from its argument
 
@@ -53,7 +53,7 @@ A name you write is sent exactly as written: the library never adds or removes a
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_from_argument)]
 
-For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does), and each argument is matched to one of them:
+For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does, through any `DbConnection`, so a command made from an `IDbConnectionFactory<DbConnection>` finds them too), and each argument is matched to one of them:
 
 1. Exactly, else ignoring case, else ignoring case and underscores: `TitleContains` finds `@title_contains`.
 2. Else with one common parameter prefix removed from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
@@ -61,7 +61,9 @@ For a stored procedure the name is settled when the command runs. The provider r
 
 For example `AddParam(search.Author)` sends `@p_author` when the procedure declares that, `@Author` or `@author` when it declares one of those, and throws when it declares none of them. The prefix step (rule 2) can bind a parameter whose name only starts like a prefix: `Stock` finds `@in_stock`, `Value` finds `@par_value` and `Progress` finds `@in_progress`. When that is not the parameter you mean, name it yourself: `AddParam("stock", stock)`.
 
-When the real names are not available, as with a text command or another provider, the last member is used as written, without an `@`: `Author`. The names are read once and then remembered: see [Remembered names](#remembered-names).
+For a text command the real names are the `@name` markers found in its SQL text, matched in the same way: `AddParam(regionId)` on `... WHERE region_id = @region_id` sends `@region_id`. A marker inside a string, a quoted or `[bracketed]` identifier or a comment does not count, and neither does a `@@system` variable. Only `@` is recognised; a text that uses `:name` or `?` has no markers. The markers of a text are found once and remembered.
+
+When the real names are not available, as with a text command that has no `@name` marker or a provider that does not implement the `ProcedureParameters` schema collection (the collection that ADO.NET's `DbConnection.GetSchema` answers), the last member is used as written, without an `@`: `Author`. The names are read once and then remembered: see [Remembered names](#remembered-names).
 
 A `null` value is sent as a database NULL. `AddParam(note)` also sends the database type of the argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`. A `null` given with a name, `AddParam("note", null)`, has no type to use, so pass one:
 
@@ -69,7 +71,7 @@ A `null` value is sent as a database NULL. `AddParam(note)` also sends the datab
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_derived_names)]
 
-`AddParams(source)` sends the public properties and fields of an object. When the procedure's names are known, only the members it declares are sent, under the procedure's real names; a parameter you add with `AddParam`, by name or from an argument, wins over a member. Without the procedure's names (a text command, another provider) every member is sent, named as written. A procedure parameter that no member fills is left alone: it takes its default, or you add it with `AddParam`; a misspelled member is simply not sent. Pass only an object you trust: every declared member is sent, so an object bound from a request can fill a parameter you meant to decide on the server (a tenant, a deleted-rows flag). Add such a value with `AddParam("name", value)`, which wins.
+`AddParams(source)` sends the public properties and fields of an object. When the procedure's names are known, only the members it declares are sent, under the procedure's real names; a parameter you add with `AddParam`, by name or from an argument, wins over a member. Without the procedure's names (a text command with no `@name` marker, a provider that does not implement the `ProcedureParameters` schema collection) every member is sent, named as written. A procedure parameter that no member fills is left alone: it takes its default, or you add it with `AddParam`; a misspelled member is simply not sent. Pass only an object you trust: every declared member is sent, so an object bound from a request can fill a parameter you meant to decide on the server (a tenant, a deleted-rows flag). Add such a value with `AddParam("name", value)`, which wins.
 
 The members are those of the static type of the argument, not of the object's runtime type: a variable typed `object` has no members and sends nothing, an interface sends only its own members, and a `Dictionary<,>` sends its own properties (`Count`, `Keys`) rather than its entries. Pass a variable of the type you mean. Every public readable property is read when you call `AddParams`, even one the procedure does not declare, so a getter that throws or loads lazily runs then. An anonymous object works: `AddParams(new { search.Author, TitleContains = "ode" })`.
 
@@ -90,7 +92,7 @@ A procedure that changes can show its old names for up to five minutes. Only one
 
 Before a terminal runs, `command.Params` lists what you added: a name you wrote as written, an argument-derived name as its last member (nothing has been matched yet), and the members of an `AddParams` object under their member names. After a terminal has run, `command.Params` holds the names that were sent. To see what reached the provider, give `Execute(command => ...)` a function that reads the provider's command: its `CommandText`, `CommandType` and `Parameters` (name and value of each) already have the real names. The library keeps no log of the statement and has no other hook.
 
-A derived name stays as written when no real names were read: a text command, another provider, a procedure name with a database part (`otherdb.dbo.proc`), a procedure the login cannot see or that does not exist, or one that declares no parameters. Name the parameters yourself when you call a procedure in another database.
+A derived name stays as written when no real names were read: a text command with no `@name` marker, a provider that does not implement the `ProcedureParameters` schema collection, a procedure name with a database part (`otherdb.dbo.proc`), a name without a schema that exists in more than one schema (write `dbo.proc`), a procedure the login cannot see or that does not exist, or one that declares no parameters. Name the parameters yourself when you call a procedure in another database.
 
 ### Name a parameter yourself
 
