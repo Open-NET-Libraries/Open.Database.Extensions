@@ -66,11 +66,13 @@ public static class LeakTransactionTests
 			}
 			else
 			{
-				Func<DbTransaction, ValueTask> action = tx =>
+				ValueTask ActAsync(DbTransaction tx)
 				{
 					Act(tx);
 					return ValueTask.CompletedTask;
-				};
+				}
+
+				Func<DbTransaction, ValueTask> action = ActAsync;
 				await connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cts.Token);
 			}
 		}
