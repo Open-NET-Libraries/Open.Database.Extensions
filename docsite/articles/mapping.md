@@ -168,7 +168,7 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
-A one-row read of a 12-property model takes about 0.43 to 0.45 ms and allocates about 29.5 KB in the library's in-memory benchmark (the [`RowMap<T>` scenario](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently)), against about 0.1 µs and a few hundred bytes through a declared map. The cost does not shrink with the result size. Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
+The cost is measured in the benchmarks (the [`RowMap<T>` scenario](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently)). Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
 
 `Map<T>` also takes the pairs themselves, with no `RowMap<T>` written; it is the same one-off and costs the same:
 
