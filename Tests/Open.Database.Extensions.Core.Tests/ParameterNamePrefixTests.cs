@@ -5,8 +5,8 @@ namespace Open.Database.Extensions.Tests;
 // The conventions that need more than tiers 1 to 3: the parameter prefixes of the procedure side (@p_author, @pAuthor, @in_author, @i_author, @prm_author, @par_author, @v_author)
 // and the field prefixes of the C# side (m_author, s_author). A real consumer has them on both sides and should not have to rename anything.
 // The rule, in the order it is applied:
-//   tiers 1 to 3 (exact, ignoring case, ignoring case and underscores) are tried for every candidate, most specific first, as before;
-//   only when NO candidate matched, tier 4 removes ONE common prefix from the real name (p_, in_, i_, prm_, par_, v_ in any case, or a lone lower-case p before an upper-case letter)
+//   candidates are tried most specific first, as before, and each candidate runs through the tiers in order: exact, ignoring case, ignoring case and underscores;
+//   only when those three fail for THAT candidate, tier 4 removes ONE common prefix from the real name (p_, in_, i_, prm_, par_, v_ in any case, or a lone lower-case p before an upper-case letter)
 //   and compares like tier 3. The real name that is sent is always the one the provider reported, prefix included.
 //   On the C# side a last member that starts with m_, s_ or _ followed by a letter or digit also offers its name without the prefix, right after the name as written.
 [ExcludeFromCodeCoverage]
@@ -239,7 +239,7 @@ public static class ParameterNamePrefixTests
 		Assert.Equal(expected, run.Values);
 	}
 
-	// ---- precedence: tiers 1 to 3 first, the prefix tier only when nothing else matched ----
+	// ---- precedence: the candidate decides first (most specific first), then the tier (the prefix tier is the last of the four) ----
 
 	static IEnumerable<string[]> Orders(string[] names)
 	{
@@ -286,18 +286,59 @@ public static class ParameterNamePrefixTests
 	}
 
 	[Fact]
-	public static void ThePrefixTier_IsOnlyUsedWhenTiersOneToThreeMatchedNothingForEveryCandidate()
+	public static void ThePrefixTier_RunsInsideEachCandidatesTurn_SpecificityDecidesFirst()
 	{
-		// order.Customer.Id tries OrderCustomerId, CustomerId, Id. A less specific candidate that matches at tiers 1 to 3 wins over a more specific one
-		// that would match only through a prefix: the prefix tier starts only when every candidate has failed.
-		Assert.Equal(["@id"], new SyncNameRun("@p_customer_id", "@id").Add("order.Customer.Id"));
-		Assert.Equal(["@Id"], new SyncNameRun("@p_order_customer_id", "@Id").Add("order.Customer.Id"));
+		// order.Customer.Id tries OrderCustomerId, CustomerId, then Id, each through all four tiers before the next one.
+		// A more specific candidate that matches only through a prefix beats a bare, less specific name: the customer's id, never the bare @id.
+		Assert.Equal(["@p_customer_id"], new SyncNameRun("@p_customer_id", "@id").Add("order.Customer.Id"));
+		Assert.Equal(["@p_customer_id"], new SyncNameRun("@id", "@p_customer_id").Add("order.Customer.Id"));
+		Assert.Equal(["@p_order_customer_id"], new SyncNameRun("@p_order_customer_id", "@Id").Add("order.Customer.Id"));
+		Assert.Equal(["@pCustomerId"], new SyncNameRun("@Id", "@pCustomerId").Add("order.Customer.Id"));
 
-		// Within the prefix tier the most specific candidate still goes first.
-		Assert.Equal(["@p_customer_id"], new SyncNameRun("@p_customer_id").Add("order.Customer.Id"));
-		Assert.Equal(["@p_customer_id"], new SyncNameRun("@p_customer_id", "@p_id").Add("order.Customer.Id"));
-		Assert.Equal(["@pOrderCustomerId"], new SyncNameRun("@p_customer_id", "@pOrderCustomerId", "@p_id").Add("order.Customer.Id"));
+		// The mirror: a bare name that matches the more specific candidate wins over a prefixed name of a less specific one.
+		Assert.Equal(["@customer_id"], new SyncNameRun("@customer_id", "@p_id").Add("order.Customer.Id"));
+		Assert.Equal(["@CustomerID"], new SyncNameRun("@pId", "@CustomerID").Add("order.Customer.Id"));
+
+		// Within one candidate the tiers still run in order: ignoring case beats the prefix.
+		Assert.Equal(["@Id"], new SyncNameRun("@p_id", "@Id").Add("order.Customer.Id"));
 		Assert.Equal(["@p_id"], new SyncNameRun("@p_id", "@x").Add("order.Customer.Id"));
+	}
+
+	[Fact]
+	public static void ThePrefixTier_WithThreeCandidates_ChoosesTheMostSpecificOneThatMatchesAtAnyTier_WhateverTheOrder()
+	{
+		// The real names and the one that wins, for order.Customer.Id: OrderCustomerId, CustomerId, Id.
+		KeyValuePair<string[], string>[] cases =
+		[
+			new(["@p_id", "@p_customer_id", "@p_order_customer_id"], "@p_order_customer_id"),  // all three through a prefix: the most specific
+			new(["@id", "@p_customer_id", "@pOrderCustomerId"], "@pOrderCustomerId"),          // a bare @id does not outrank a prefixed, more specific name
+			new(["@p_id", "@p_customer_id", "@order_customer_id"], "@order_customer_id"),      // matched without a prefix at the first candidate
+			new(["@Id", "@p_customer_id", "@x"], "@p_customer_id"),                           // the middle candidate beats the bare last one
+			new(["@p_id", "@customer_id", "@p_order_customer_id"], "@p_order_customer_id"),    // the first candidate beats a bare, less specific name
+			new(["@p_id", "@x", "@y"], "@p_id"),                                                // only the last candidate finds anything
+		];
+
+		foreach (KeyValuePair<string[], string> expected in cases)
+		{
+			foreach (string[] order in Orders(expected.Key))
+				Assert.Equal([expected.Value], new SyncNameRun(order).Add("order.Customer.Id"));
+		}
+	}
+
+	[Fact]
+	public static async Task ThePrefixTier_RunsInsideEachCandidatesTurn_Async()
+	{
+		Assert.Equal(["@p_customer_id"], await new AsyncNameRun("@id", "@p_customer_id").AddAsync("order.Customer.Id"));
+		Assert.Equal(["@customer_id"], await new AsyncNameRun("@p_id", "@customer_id").AddAsync("order.Customer.Id"));
+	}
+
+	[Fact]
+	public static void ThePrefixTier_AmbiguousForAMoreSpecificCandidate_ThrowsInsteadOfFallingBackToABareName()
+	{
+		var ex = Assert.Throws<InvalidOperationException>(() => new SyncNameRun("@p_customer_id", "@i_customer_id", "@id").Add("order.Customer.Id"));
+
+		Assert.Contains("'@p_customer_id'", ex.Message);
+		Assert.Contains("'@i_customer_id'", ex.Message);
 	}
 
 	public static TheoryData<string, string, string> AmbiguousThroughPrefixes { get; } = new()

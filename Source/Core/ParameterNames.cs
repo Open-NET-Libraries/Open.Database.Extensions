@@ -10,8 +10,8 @@ namespace Open.Database.Extensions;
 /// Calls, indexers, operators, casts, literals and <c>nameof</c> are not derivable: a wrong name that silently binds is worse than an error that says to pass the name.
 /// A chain gives candidates, most specific first: <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>.
 /// A last member that carries a field prefix (<c>m_author</c>, <c>s_author</c>, <c>_author</c>) also offers its name without the prefix, right after the name as written.
-/// A candidate is matched to the real parameter names in four tiers: exact, ignoring case, ignoring case and underscores, and, only when no candidate matched in those three,
-/// ignoring case and underscores after removing one common parameter prefix from the real name (<c>p_author</c>, <c>pAuthor</c>, <c>in_author</c>, <c>i_author</c>, <c>prm_author</c>, <c>par_author</c>, <c>v_author</c>).
+/// A candidate is matched to the real parameter names in four tiers, each candidate in its turn: exact, ignoring case, ignoring case and underscores, and,
+/// failing those, ignoring case and underscores after removing one common parameter prefix from the real name (<c>p_author</c>, <c>pAuthor</c>, <c>in_author</c>, <c>i_author</c>, <c>prm_author</c>, <c>par_author</c>, <c>v_author</c>).
 /// </remarks>
 static class ParameterNames
 {
@@ -178,9 +178,9 @@ static class ParameterNames
 	/// <summary>
 	/// Finds the real parameter that a derived name stands for. Candidates are tried most specific first, so <c>order.Customer.Id</c> finds <c>@customer_id</c> before a bare <c>@id</c>;
 	/// within a candidate the match is exact, else ignoring case, else ignoring case and underscores, the same tiers columns use.
-	/// Only when no candidate matched in those three tiers, a fourth tier compares each candidate with the real name after one common parameter prefix is removed
+	/// When a candidate matches in none of those three tiers, a fourth tier compares it with the real name after one common parameter prefix is removed
 	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c> or <c>v_</c> in any case, or a lone lower-case <c>p</c> before an upper-case letter), ignoring case and underscores:
-	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>.
+	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>. The four tiers run inside each candidate's turn, so <c>order.Customer.Id</c> finds <c>@p_customer_id</c> before a bare <c>@id</c>.
 	/// </summary>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="parameterNames">The procedure's real parameter names, as the provider reports them (a leading <c>@</c> is allowed).</param>
@@ -188,24 +188,18 @@ static class ParameterNames
 	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier.</exception>
 	internal static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames)
 	{
-		// Tiers 1 to 3 for every candidate, most specific first; the prefix tier only when none of them matched.
 		foreach (string candidate in candidates)
 		{
-			if (Find(candidate, parameterNames, firstTier: 1, lastTier: 3) is { } found) return found;
-		}
-
-		foreach (string candidate in candidates)
-		{
-			if (Find(candidate, parameterNames, firstTier: 4, lastTier: 4) is { } found) return found;
+			if (Find(candidate, parameterNames) is { } found) return found;
 		}
 
 		return null;
 	}
 
-	static string? Find(string candidate, ImmutableArray<string> parameterNames, int firstTier, int lastTier)
+	static string? Find(string candidate, ImmutableArray<string> parameterNames)
 	{
 		// Tier 1: exact. Tier 2: ignoring case. Tier 3: ignoring case and underscores. Tier 4: the same without one common parameter prefix.
-		for (int tier = firstTier; tier <= lastTier; tier++)
+		for (int tier = 1; tier <= 4; tier++)
 		{
 			string? found = null;
 			foreach (string real in parameterNames)

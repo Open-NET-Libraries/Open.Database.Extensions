@@ -15,7 +15,7 @@ namespace Open.Database.Extensions.Tests;
 /// tier 2  ignoring case                         Author        finds  @AUTHOR
 /// tier 3  ignoring case and underscores         AuthorID      finds  @author_id,   _author finds @author,   Address2 finds @address_2
 /// tier 4  after removing ONE parameter prefix   author        finds  @p_author, @pAuthor, @in_author, @i_author, @prm_author, @par_author, @v_author
-///         (only when tiers 1-3 matched nothing for every candidate)
+///         (inside each candidate's turn, after tiers 1-3 failed for that candidate)
 /// field prefix on the C# side: the last member m_author or s_author (or _author) also tries author, after the name as written
 /// </code>
 /// <code>
