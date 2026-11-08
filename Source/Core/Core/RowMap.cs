@@ -202,6 +202,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	} = TypeShape.Error is null ? new() : null; // Declared after TypeShape, Slots and SlotIndex: its constructor reads them.
 
 	// For an entry point that runs a command before it maps a row: checking the type first makes an unmappable T fail at the call, with nothing executed.
+	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter", Justification = "It checks this T's shape: the type parameter is how a caller names which T to check (RowMap<T>.ThrowIfUnmappable()).")]
 	internal static void ThrowIfUnmappable() => TypeShape.ThrowIfUnmappable();
 
 	// The column each property reads, aligned with Slots; null means the property is not mapped (ignored).
