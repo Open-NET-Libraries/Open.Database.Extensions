@@ -379,7 +379,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures; parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
 	/// A parameter you add with <c>AddParam</c>, by name or from an argument, wins over a member that resolves to the same name.</para>
 	/// <para>Every public readable property and field is read when this method is called, whether or not the procedure declares it, so a getter that throws or loads lazily runs then. Static members and indexers are ignored.
-	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: a variable typed <see cref="object"/> has no members and adds nothing, and an interface adds only its own. Nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
+	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: an interface adds only its own. The one exception is <see cref="object"/>: a variable typed <see cref="object"/>, or the result of a <c>Func&lt;T, object&gt;</c>, has no members of its own, so the members of its runtime type are used.
+	/// There, the members of each type are found once and remembered. Nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the object whose members are the parameters.</typeparam>
 	/// <param name="source">The object to read the values from.</param>
@@ -390,6 +391,21 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();
+
+		// A source typed object has no members of its own: its runtime type's are used (a Func<T, object> result, a boxed anonymous object).
+		if (typeof(T) == typeof(object))
+		{
+			RuntimeParamSource members = RuntimeParamSource.Of(source.GetType());
+			if (members.Names.Length == 0) return (TThis)this;
+
+			// A new list is made at the size of the members, not at the default of four slots of a large struct.
+			List<Param> own = _params ??= new(members.Names.Length);
+			for (int i = 0; i < members.Names.Length; i++)
+				own.Add(Param.OfObject(members.Names[i], members.Getters[i](source), members.Types[i]));
+
+			EnsureOptions().HasDerivedParams = true;
+			return (TThis)this;
+		}
 
 		string[] names = ParamSource<T>.Names;
 		Func<T, object?>[] getters = ParamSource<T>.Getters;
