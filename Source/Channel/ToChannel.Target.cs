@@ -7,24 +7,6 @@ namespace Open.Database.Extensions;
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Simplification and readability.")]
 public static partial class ChannelDbExtensions
 {
-	// Every call waits for room in the target before it executes anything. The target is completed (when complete is true) however a call ends,
-	// and the wait is part of the call: a wait that ends in an exception (a cancel while it waits) completes the target as well. The one exception
-	// is a token that is already cancelled when the call is made: that call never started, so it is refused and leaves the target alone.
-	private static async ValueTask WaitForRoom<T>(ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
-	{
-		cancellationToken.ThrowIfCancellationRequested();
-
-		try
-		{
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
-		}
-		catch (Exception ex)
-		{
-			if (complete) target.TryComplete(ex);
-			throw;
-		}
-	}
-
 	private static async ValueTask<long> ToChannelCore<T>(
 		IDbCommand command,
 		ChannelWriter<T> writer,
@@ -37,16 +19,17 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if ((command.Connection.State & ConnectionState.Open) == 0)
-		{
-			await WaitForRoom(writer, complete, cancellationToken).ConfigureAwait(false);
-		}
-
 		Exception? exception = null;
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
+				.ExecuteReaderAsync(async reader =>
+				{
+					long count = await transform(reader).ConfigureAwait(false);
+					// The reader is ours: moved past the rows, so that an error that follows them is raised.
+					if (!cancellationToken.IsCancellationRequested) reader.NextResult();
+					return count;
+				}, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -71,13 +54,16 @@ public static partial class ChannelDbExtensions
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		Contract.EndContractBlock();
 
-		await WaitForRoom(writer, complete, command.CancellationToken).ConfigureAwait(false);
-
 		Exception? exception = null;
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(transform)
+				.ExecuteReaderAsync(async reader =>
+				{
+					long count = await transform(reader).ConfigureAwait(false);
+					if (!command.CancellationToken.IsCancellationRequested) reader.NextResult();
+					return count;
+				})
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -95,19 +81,19 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records written to the target.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel(this IDataReader reader,
 		ChannelWriter<object[]> target,
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAll(
-			reader.AsEnumerable().ThenNextResult(reader, cancellationToken),
+			reader.AsEnumerable(),
 			complete,
 			false,
 			cancellationToken);
@@ -115,13 +101,13 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records written to the target.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel(this IDataReader reader,
 		ChannelWriter<object[]> target,
@@ -129,7 +115,7 @@ public static partial class ChannelDbExtensions
 		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAll(
-			reader.AsEnumerable(arrayPool).ThenNextResult(reader, cancellationToken),
+			reader.AsEnumerable(arrayPool),
 			complete,
 			false,
 			cancellationToken);
@@ -138,13 +124,13 @@ public static partial class ChannelDbExtensions
 	/// Iterates an <see cref="IDataReader"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records written to the target.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
@@ -152,7 +138,7 @@ public static partial class ChannelDbExtensions
 		Func<IDataRecord, T> transform,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAll(
-			reader.Select(transform, cancellationToken).ThenNextResult(reader, cancellationToken),
+			reader.Select(transform, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -161,12 +147,12 @@ public static partial class ChannelDbExtensions
 	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
@@ -181,13 +167,13 @@ public static partial class ChannelDbExtensions
 	/// </summary>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
@@ -209,7 +195,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -235,7 +221,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -263,7 +249,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -281,9 +267,6 @@ public static partial class ChannelDbExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
-
-		if ((command.Connection.State & ConnectionState.Open) == 0)
-			await WaitForRoom(target, complete, cancellationToken).ConfigureAwait(false);
 
 		Exception? exception = null;
 		try
@@ -304,7 +287,11 @@ public static partial class ChannelDbExtensions
 			}
 
 			using (reader)
-				return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
+			{
+				long count = await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
+				if (!cancellationToken.IsCancellationRequested) reader.NextResult();
+				return count;
+			}
 		}
 		catch (Exception ex)
 		{
@@ -329,7 +316,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -354,7 +341,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -381,7 +368,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -403,7 +390,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -427,7 +414,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -450,7 +437,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -471,7 +458,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -497,16 +484,16 @@ public static partial class ChannelDbExtensions
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 
-		if ((command.Connection.State & ConnectionState.Open) == 0)
-		{
-			await WaitForRoom(writer, complete, cancellationToken).ConfigureAwait(false);
-		}
-
 		Exception? exception = null;
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
+				.ExecuteReaderAsync(async reader =>
+				{
+					long count = await transform(reader).ConfigureAwait(false);
+					if (!cancellationToken.IsCancellationRequested) await reader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+					return count;
+				}, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -531,13 +518,21 @@ public static partial class ChannelDbExtensions
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		Contract.EndContractBlock();
 
-		await WaitForRoom(writer, complete, command.CancellationToken).ConfigureAwait(false);
-
 		Exception? exception = null;
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(transform)
+				.ExecuteReaderAsync(async reader =>
+				{
+					long count = await transform(reader).ConfigureAwait(false);
+					if (!command.CancellationToken.IsCancellationRequested)
+					{
+						if (command.UseAsyncRead && reader is DbDataReader r) await r.NextResultAsync(command.CancellationToken).ConfigureAwait(false);
+						else reader.NextResult();
+					}
+
+					return count;
+				})
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -561,7 +556,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAllAsync(
-			reader.AsAsyncEnumerable(cancellationToken).ThenNextResultAsync(reader, cancellationToken),
+			reader.AsAsyncEnumerable(cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -576,7 +571,7 @@ public static partial class ChannelDbExtensions
 		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAllAsync(
-			reader.AsAsyncEnumerable(arrayPool, cancellationToken).ThenNextResultAsync(reader, cancellationToken),
+			reader.AsAsyncEnumerable(arrayPool, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -597,7 +592,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		return target.WriteAllAsync(
-			reader.SelectAsync(transform, cancellationToken).ThenNextResultAsync(reader, cancellationToken),
+			reader.SelectAsync(transform, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -713,7 +708,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
+	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -764,8 +759,7 @@ public static partial class ChannelDbExtensions
 	// A map that the model can't honor is a failure of the operation, not a precondition: with `complete` the target is
 	// faulted with it (so that whoever awaits the target isn't left waiting), and the call throws. Nothing has been executed and there
 	// is no reader yet, so completing the target here is not completing it before a reader is released.
-	// (The preconditions - null arguments, no connection, a closed target, a cancelled token - have been checked before this, and
-	// leave the target alone.)
+	// (The preconditions - null arguments, no connection - have been checked before this, and leave the target alone.)
 	private static Channel.Transformer<T> CreateMapper<T>(
 		RowMap<T>? map,
 		ChannelWriter<T> target,
@@ -806,9 +800,6 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if ((command.Connection.State & ConnectionState.Open) == 0)
-			await WaitForRoom(target, complete, cancellationToken).ConfigureAwait(false);
-
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
@@ -827,8 +818,6 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
-
-		await WaitForRoom(target, complete, command.CancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
@@ -851,9 +840,6 @@ public static partial class ChannelDbExtensions
 		if (command.Connection is null) throw new InvalidOperationException("Command has no connection.");
 		Contract.EndContractBlock();
 
-		if ((command.Connection.State & ConnectionState.Open) == 0)
-			await WaitForRoom(target, complete, cancellationToken).ConfigureAwait(false);
-
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
@@ -872,8 +858,6 @@ public static partial class ChannelDbExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
-
-		await WaitForRoom(target, complete, command.CancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);

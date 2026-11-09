@@ -24,8 +24,11 @@ public static class ReaderOwnershipTests
 
 	static ChannelWriter<T> Unbounded<T>() => BoundedChannel.CreateUnbounded<T>().Writer;
 
-	// Waits for the background work that AsSourceBlockAsync starts.
-	static async Task Completed(IDataflowBlock block) => await block.Completion.WaitAsync(Timeout, Ct);
+	// Waits for the background work that AsSourceBlockAsync starts: a buffer block completes once everything it holds has been received.
+	static async Task Completed<T>(IReceivableSourceBlock<T> block)
+	{
+		await foreach (T _ in block.ReceiveAllAsync(Ct)) { }
+	}
 
 	static readonly Dictionary<string, Func<TypedReader, Task>> Calls = new()
 	{

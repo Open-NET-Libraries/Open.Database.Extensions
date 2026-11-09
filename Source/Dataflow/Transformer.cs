@@ -85,7 +85,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			// An async writer must not wait forever on a pipeline that can no longer deliver: it would hold the reader
 			// (and its connection) for good.  So the writer is stopped when the block faults or is cancelled (a row could not be
 			// mapped), and, for as long as it is writing, when the target closes under it (see WriteAsync).
-			// The writer then ends quietly, just as a declined Post() does.
+			// The writer then ends quietly, just as a declined row does.
 			_ = _block.Completion.ContinueWith(
 				t =>
 				{
@@ -176,8 +176,9 @@ internal class Transformer<T>(RowMap<T>? map = null)
 		}
 
 		/// <summary>
-		/// Writes the rows of the <paramref name="reader"/> into the source end.  Does not complete anything.
-		/// Stops (without error) if the source end declines a row.
+		/// Writes the rows of the <paramref name="reader"/> into the source end, waiting for room when it is full.  Does not complete anything
+		/// and leaves the reader where the rows ended.
+		/// Stops (without error) if the source end declines a row, or when the target closes under the pipeline.
 		/// </summary>
 		/// <returns>The number of rows written to the source end.</returns>
 		public long Write(IDataReader reader, Transformer<T> transformer)
@@ -187,23 +188,51 @@ internal class Transformer<T>(RowMap<T>? map = null)
 
 			Bind(transformer, reader);
 
+			TaskCompletionSource<bool> finished = StopWhenTargetCloses();
 			long total = 0;
-			bool more;
-			while (more = reader.Read())
+			try
 			{
-				object[] row = ReadRow(reader);
-				if (!_block.Post(row))
+				while (reader.Read())
 				{
-					LocalPool.Return(row);
-					break;
-				}
+					object[] row = ReadRow(reader);
+					if (!_block.SendAsync(row, _stop.Token).GetAwaiter().GetResult())
+					{
+						LocalPool.Return(row);
+						break;
+					}
 
-				total++;
+					total++;
+				}
+			}
+			catch (OperationCanceledException) when (_stop.IsCancellationRequested)
+			{
+				// The pipeline itself stopped the writer (the mapper failed, or the target closed): end quietly, as a declined row does.
+			}
+			finally
+			{
+				finished.TrySetResult(true); // Abandons the watch on the target.
 			}
 
-			if (!more) reader.NextResult();
-
 			return total;
+		}
+
+		// Stops the writer if the target closes under the pipeline (the source end could never drain again), but only while it is writing:
+		// this race is abandoned when the write ends (Task.WhenAny removes its registration from the target's Completion task), so a
+		// long-lived target is not left holding anything from a call that has finished.
+		TaskCompletionSource<bool> StopWhenTargetCloses()
+		{
+			Task closed = _target.Completion;
+			var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+			_ = Task.WhenAny(closed, finished.Task).ContinueWith(
+				t =>
+				{
+					if (ReferenceEquals(t.Result, closed)) _stop.Cancel();
+				},
+				CancellationToken.None,
+				TaskContinuationOptions.ExecuteSynchronously,
+				TaskScheduler.Default);
+
+			return finished;
 		}
 
 		/// <inheritdoc cref="Write"/>
@@ -217,26 +246,14 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
 			CancellationToken token = linked.Token;
 
-			// Stop writing if the target closes under the pipeline, but only while writing: this race is abandoned when the write
-			// ends (Task.WhenAny removes its registration from the target's Completion task), so a long-lived target is not left
-			// holding anything from a call that has finished.
-			Task closed = _target.Completion;
-			var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-			_ = Task.WhenAny(closed, finished.Task).ContinueWith(
-				t =>
-				{
-					if (ReferenceEquals(t.Result, closed)) _stop.Cancel();
-				},
-				CancellationToken.None,
-				TaskContinuationOptions.ExecuteSynchronously,
-				TaskScheduler.Default);
+			// Stop writing if the target closes under the pipeline, but only while writing.
+			TaskCompletionSource<bool> finished = StopWhenTargetCloses();
 
 			long total = 0;
 			try
 			{
-				bool more;
 				while (
-					more = reader is DbDataReader r
+					reader is DbDataReader r
 						? await r.ReadAsync(token).ConfigureAwait(false)
 						: reader.Read())
 				{
@@ -248,12 +265,6 @@ internal class Transformer<T>(RowMap<T>? map = null)
 					}
 
 					total++;
-				}
-
-				if (!more)
-				{
-					if (reader is DbDataReader db) await db.NextResultAsync(token).ConfigureAwait(false);
-					else reader.NextResult();
 				}
 			}
 			catch (Exception) when (_stop.IsCancellationRequested && !cancellationToken.IsCancellationRequested)

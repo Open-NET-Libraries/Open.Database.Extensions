@@ -7,7 +7,7 @@ namespace Open.Database.Extensions.Tests;
 
 // Edge cases of the Dataflow and Channel adapters that read a data reader into a target: what they do when the target declines or is full, when the reader or the transform throws, when the token is cancelled while a send waits,
 // and which connection behavior and completion the Channel transform overload gives. The mapped paths and the Channel object[] overload have their own tests (ToTargetBlockMappedCompletionTests, ToChannelCoreEdgeTests).
-// Dataflow: the synchronous overloads Post and so stop at the first declined record (documented: the declined record was read and is not delivered); the asynchronous ones SendAsync and wait for room.
+// Dataflow: the synchronous overloads and the asynchronous ones both SendAsync and wait for room; a record the target declines (it is complete) stops the reading, and was read and is not delivered.
 [ExcludeFromCodeCoverage]
 public static class AdapterReaderEdgeTests
 {
@@ -116,7 +116,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 	// A block that waits for ever is a hung test, not a failed one: bound the wait.
 	static Task Within(Task task) => task.WaitAsync(TimeSpan.FromSeconds(30));
 
-	// ---- DataflowExtensions.ToTargetBlock (IDataReader) and AsSourceBlock: Post, so a decline stops the reading ----
+	// ---- DataflowExtensions.ToTargetBlock (IDataReader) and AsSourceBlock: a decline stops the reading, a full target is waited for ----
 
 	[Theory]
 	[MemberData(nameof(Shapes))]
@@ -134,17 +134,20 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 
 	[Theory]
 	[MemberData(nameof(Shapes))]
-	public static async Task ToTargetBlock_ABoundedTargetThatFills_StopsTheReadingAndDropsTheDeclinedRecord(Shape shape)
+	public static async Task ToTargetBlock_ABoundedTargetThatFills_WaitsForRoom_AndDeliversEveryRecord(Shape shape)
 	{
 		var target = new BufferBlock<object[]>(new DataflowBlockOptions { BoundedCapacity = 2 });
 		TypedReader reader = TypedReader.Create(Columns, Rows(5));
 
-		Assert.Equal(2, ToTarget(shape, reader, target, complete: true));
+		Task<long> running = Task.Run(() => ToTarget(shape, reader, target, complete: true), TestContext.Current.CancellationToken);
+		var received = new List<object>();
+		for (int i = 0; i < 5; i++)
+			received.Add((await target.ReceiveAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken))[0]);
 
-		Assert.Equal(3, reader.RowsRead); // the third row was read and declined
-		Assert.True(target.TryReceiveAll(out IList<object[]>? items));
-		Assert.Equal([1, 2], items.Select(item => item[0]));
-		await Within(target.Completion); // complete: true also when the reading stopped early
+		Assert.Equal(5, await running.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken));
+		Assert.Equal(5, reader.RowsRead);
+		Assert.Equal([1, 2, 3, 4, 5], received);
+		await Within(target.Completion); // complete: true
 	}
 
 	[Theory]
@@ -201,19 +204,6 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 		}
 
 		Assert.True(target.Completed);
-	}
-
-	[Fact]
-	public static async Task AsSourceBlock_ABoundedBlock_StopsEarly_AndIsStillCompleted()
-	{
-		TypedReader reader = TypedReader.Create(Columns, Rows(5));
-
-		IReceivableSourceBlock<object[]> block = reader.AsSourceBlock(new DataflowBlockOptions { BoundedCapacity = 2 });
-
-		Assert.Equal(3, reader.RowsRead);
-		Assert.True(block.TryReceiveAll(out IList<object[]>? items));
-		Assert.Equal([1, 2], items.Select(item => item[0]));
-		await Within(block.Completion);
 	}
 
 	// ---- DataflowExtensions.ToTargetBlockAsync (IDataReader): SendAsync, with a reader of either kind ----
@@ -413,16 +403,12 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 	}
 
 	[Fact]
-	public static async Task ToChannelTransform_ACompletedTargetAndAClosedConnection_ThrowsChannelClosed_BeforeAnythingIsOpenedOrExecuted()
+	public static async Task ToChannelTransform_ACompletedTarget_ThrowsChannelClosed()
 	{
 		Rig rig = Build(ConnectionState.Closed);
 		Channel<int> channel = NewChannel();
 		channel.Writer.Complete();
 
 		await Assert.ThrowsAsync<ChannelClosedException>(async () => await rig.Command.ToChannel(channel.Writer, true, Tenfold, Token));
-
-		Assert.Equal(0, rig.Connection.OpenCalls);
-		Assert.Empty(rig.Command.Behaviors);
-		Assert.Equal(ConnectionState.Closed, rig.Connection.State);
 	}
 }

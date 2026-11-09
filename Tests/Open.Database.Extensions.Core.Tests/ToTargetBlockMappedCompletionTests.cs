@@ -20,10 +20,7 @@ public sealed class DataflowMappedCompletionCollection;
 // (stage 1) which is LinkTo'd to the caller's target (stage 2). The command-level overloads must not complete the
 // TARGET while the TransformBlock still holds rows.
 //
-// NOTE: Post() declining when a bounded block is full is intended behavior in the synchronous paths, so the
-// synchronous 5000-row cases can legitimately read fewer than 5000 rows. Those cases therefore assert against
-// what the call REPORTED as produced (not against 5000); the "all 5000" assertion applies only where a decline
-// cannot happen (async paths use SendAsync; sync paths with fewer rows than the 1024 transform buffer).
+// NOTE: the synchronous paths wait for room too (SendAsync), so every case, synchronous or not, must deliver every row.
 [ExcludeFromCodeCoverage]
 [Collection("Dataflow mapped completion")]
 public static class ToTargetBlockMappedCompletionTests
@@ -54,9 +51,6 @@ public static class ToTargetBlockMappedCompletionTests
 		ActionBlock,
 		BufferBlock,
 	}
-
-	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'", Justification = "Valid")]
-	static bool IsAsync(Kind kind) => kind is Kind.DbCommandAsync or Kind.ExecuteReaderAsync;
 
 	public static TheoryData<Kind, bool, TargetKind, int> MappedShapes { get; } = BuildMappedShapes();
 
@@ -519,8 +513,8 @@ public static class ToTargetBlockMappedCompletionTests
 	// Shared assertions.
 	// ordering:  nothing the call reported as read may be lost, and the target must be completed only after the last
 	//            of those rows was accepted by it.
-	// allRows:   where a decline cannot happen, the call must also have read every row.
-	static void AssertDelivered(Outcome o, int expectedRows, bool declineIsPossible)
+	// allRows:   the call must also have read every row.
+	static void AssertDelivered(Outcome o, int expectedRows)
 	{
 		string message = o.ToString();
 		var checks = new List<Action>
@@ -530,8 +524,7 @@ public static class ToTargetBlockMappedCompletionTests
 			() => Assert.True(o.AcceptedAtComplete == o.Produced, $"target was completed after {o.AcceptedAtComplete?.ToString() ?? "no"} rows were accepted, before the last of {o.Produced}. " + message),
 		};
 
-		if (!declineIsPossible)
-			checks.Add(() => Assert.True(o.Produced == expectedRows && o.Consumed == expectedRows, $"expected all {expectedRows} rows delivered. " + message));
+		checks.Add(() => Assert.True(o.Produced == expectedRows && o.Consumed == expectedRows, $"expected all {expectedRows} rows delivered. " + message));
 
 		Assert.Multiple([.. checks]);
 	}
@@ -545,9 +538,7 @@ public static class ToTargetBlockMappedCompletionTests
 		var call = Mapped<Row>(kind, overrides, Rows(count));
 		Outcome outcome = await RunAsync<Row>($"mapped {kind} overrides={overrides} target={target} rows={count}", target, t => call(t, true));
 
-		// Post() may legitimately decline once the 1024-row transform buffer fills (sync paths); fewer rows than that cannot.
-		bool declineIsPossible = !IsAsync(kind) && count >= TransformBuffer;
-		AssertDelivered(outcome, count, declineIsPossible);
+		AssertDelivered(outcome, count);
 	}
 
 	// ---- controls: the non-mapped (object[]) path, same target and consumer ----
@@ -560,8 +551,7 @@ public static class ToTargetBlockMappedCompletionTests
 		var call = Unmapped(kind, Rows(count));
 		Outcome outcome = await RunAsync<object[]>($"unmapped {kind} target={target} rows={count}", target, t => call(t, true));
 
-		// Sync Post() into a capacity-10 target declines almost at once (intended); async SendAsync waits for room.
-		AssertDelivered(outcome, count, declineIsPossible: !IsAsync(kind));
+		AssertDelivered(outcome, count);
 	}
 
 	// ---- controls: the reader-level call with complete: true (completion comes from the TransformBlock) ----
@@ -573,7 +563,7 @@ public static class ToTargetBlockMappedCompletionTests
 		const int count = 1000;
 		IDataReader reader = FakeReader.Create(Columns, Rows(count));
 		Outcome outcome = await RunAsync<Row>($"reader-level sync target={target} rows={count}", target, t => ValueTask.FromResult(reader.ToTargetBlock(t, true)));
-		AssertDelivered(outcome, count, declineIsPossible: false);
+		AssertDelivered(outcome, count);
 	}
 
 	[Theory]
@@ -583,7 +573,7 @@ public static class ToTargetBlockMappedCompletionTests
 		const int count = 5000;
 		var reader = FakeReader.CreateDb(Columns, Rows(count));
 		Outcome outcome = await RunAsync<Row>($"reader-level async target={target} rows={count}", target, t => reader.ToTargetBlockAsync(t, true));
-		AssertDelivered(outcome, count, declineIsPossible: false);
+		AssertDelivered(outcome, count);
 	}
 
 	// ---- how the completion signal behaves: failures, preconditions, complete: false, ordering against the reader ----

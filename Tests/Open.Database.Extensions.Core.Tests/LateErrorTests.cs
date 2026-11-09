@@ -352,7 +352,9 @@ public static class LateErrorTests
 		Assert.Equal(0, run.Reader.NextResultCalls);
 	}
 
-	// ---- the pipelines: the error faults the target when the call completes it ----
+	// ---- the pipelines ----
+	// A call on a command owns its reader and moves it on, so the error reaches the caller and faults the target when the call completes it: ToChannelFullTargetTests
+	// and ToTargetBlockFullTargetTests run every command level overload through it. A call on a reader the caller holds leaves it where the rows ended: ReaderOwnershipTests.
 
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
@@ -362,67 +364,6 @@ public static class LateErrorTests
 	static async Task Drain<T>(System.Threading.Channels.ChannelReader<T> reader)
 	{
 		await foreach (T _ in reader.ReadAllAsync(Ct)) { }
-	}
-
-	[Fact]
-	public static async Task Dataflow_ObjectRows_LateErrorFaultsTheTarget()
-	{
-		var run = Run.Late(2);
-		var target = new BufferBlock<object[]>();
-		Assert.Throws<LateException>(() => run.NewReader().ToTargetBlock(target, true));
-		await Assert.ThrowsAsync<LateException>(() => target.Completion.WaitAsync(Timeout, Ct));
-
-		target = new BufferBlock<object[]>();
-		await Assert.ThrowsAsync<LateException>(async () => await run.NewReader().ToTargetBlockAsync(target, true, Ct));
-		await Assert.ThrowsAsync<LateException>(() => target.Completion.WaitAsync(Timeout, Ct));
-
-		// Not completing: the caller's target is left alone.
-		target = new BufferBlock<object[]>();
-		Assert.Throws<LateException>(() => run.NewReader().ToTargetBlock(target, false));
-		Assert.False(target.Completion.IsCompleted);
-	}
-
-	[Fact]
-	public static async Task Dataflow_Mapped_LateErrorFaultsTheTarget()
-	{
-		var run = Run.Late(2);
-		var target = new BufferBlock<Item>();
-		Assert.Throws<LateException>(() => run.NewReader().ToTargetBlock<Item>(target, true));
-		await Assert.ThrowsAsync<LateException>(() => target.Completion.WaitAsync(Timeout, Ct));
-
-		target = new BufferBlock<Item>();
-		await Assert.ThrowsAsync<LateException>(async () => await run.NewReader().ToTargetBlockAsync<Item>(target, true, Ct));
-		await Assert.ThrowsAsync<LateException>(() => target.Completion.WaitAsync(Timeout, Ct));
-
-		target = new BufferBlock<Item>();
-		Assert.Throws<LateException>(() => run.Command.ToTargetBlock<Item>(target, true));
-		await Assert.ThrowsAsync<LateException>(() => target.Completion.WaitAsync(Timeout, Ct));
-	}
-
-	[Fact]
-	public static async Task Channel_ObjectRows_LateErrorFaultsTheTarget()
-	{
-		var run = Run.Late(2);
-		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
-		await Assert.ThrowsAsync<LateException>(async () => await run.NewReader().ToChannel(channel.Writer, true, Ct));
-		await Assert.ThrowsAsync<LateException>(() => Drain(channel.Reader).WaitAsync(Timeout, Ct));
-
-		channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
-		await Assert.ThrowsAsync<LateException>(async () => await run.NewReader().ToChannelAsync(channel.Writer, true, Ct));
-		await Assert.ThrowsAsync<LateException>(() => Drain(channel.Reader).WaitAsync(Timeout, Ct));
-	}
-
-	[Fact]
-	public static async Task Channel_Mapped_LateErrorFaultsTheTarget()
-	{
-		var run = Run.Late(2);
-		var channel = System.Threading.Channels.Channel.CreateUnbounded<Item>();
-		await Assert.ThrowsAsync<LateException>(async () => await run.NewReader().ToChannel<Item>(channel.Writer, true, Ct));
-		await Assert.ThrowsAsync<LateException>(() => Drain(channel.Reader).WaitAsync(Timeout, Ct));
-
-		channel = System.Threading.Channels.Channel.CreateUnbounded<Item>();
-		await Assert.ThrowsAsync<LateException>(async () => await run.NewReader().ToChannelAsync<Item>(channel.Writer, true, Ct));
-		await Assert.ThrowsAsync<LateException>(() => Drain(channel.Reader).WaitAsync(Timeout, Ct));
 	}
 
 	[Fact]

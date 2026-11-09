@@ -170,23 +170,21 @@ public static class ToChannelCoreEdgeTests
 	[Theory]
 	[InlineData(Kind.ExecuteReader, true)]
 	[InlineData(Kind.ExecuteReaderAsync, true)]
-	[InlineData(Kind.DbCommandInterface, false)] // These two only check the writer up front when the connection is not already open.
+	[InlineData(Kind.DbCommandInterface, false)]
 	[InlineData(Kind.DbCommand, false)]
-	public static async Task ClosedWriter_IsRejectedBeforeAnythingExecutes(Kind kind, bool connectionOpen)
+	public static async Task ClosedWriter_Throws_ChannelClosedException(Kind kind, bool connectionOpen)
 	{
 		Subject subject = Build(kind, connectionOpen: connectionOpen);
 		Channel<object[]> channel = NewChannel();
 		channel.Writer.Complete();
 
 		await Assert.ThrowsAsync<ChannelClosedException>(async () => await subject.Run(channel.Writer, true));
-
-		Assert.Equal(0, subject.Executions);
 	}
 
 	[Theory]
 	[InlineData(Kind.DbCommandInterface)]
 	[InlineData(Kind.DbCommand)]
-	public static async Task ClosedConnection_WaitsForTheWriter_ThenExecutesOnce(Kind kind)
+	public static async Task ClosedConnection_ExecutesOnce(Kind kind)
 	{
 		Subject subject = Build(kind, connectionOpen: false);
 		Channel<object[]> channel = NewChannel();

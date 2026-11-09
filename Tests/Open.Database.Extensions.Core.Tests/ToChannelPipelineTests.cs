@@ -658,26 +658,25 @@ public static partial class ToChannelPipelineTests
 		Assert.True(channel.Writer.TryWrite(new Row()), "complete: false must leave the target open");
 	}
 
-	// ---- preconditions: nothing is completed, nothing is started ----
+	// ---- a closed target, a cancelled token, and invalid arguments ----
 
 	[Theory]
 	[MemberData(nameof(Kinds))]
-	public static async Task Mapped_WhenTheTargetIsAlreadyClosed_Throws_WithoutExecutingTheCommand(Kind kind)
+	public static async Task Mapped_WhenTheTargetIsAlreadyClosed_Throws(Kind kind)
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
 		channel.Writer.TryComplete();
-		var call = Mapped<Row>(kind, false, probe.Factory(Rows(3)), ct, ConnectionState.Closed);
+		var call = Mapped<Row>(kind, false, probe.Factory(Rows(5000)), ct, ConnectionState.Closed); // More rows than the buffer holds: the second stage fails before the reading ends.
 
+		// The command may run first; the call ends with ChannelClosedException.
 		await Assert.ThrowsAsync<ChannelClosedException>(async () => await call(channel.Writer, true));
-
-		Assert.Equal(0, probe.Executions);
 	}
 
 	[Theory]
 	[MemberData(nameof(Kinds))]
-	public static async Task Mapped_WhenAlreadyCancelled_Throws_LeavesTheTargetAlone_AndDoesNotExecute(Kind kind)
+	public static async Task Mapped_WhenAlreadyCancelled_Throws_AndCompletesTheTarget(Kind kind)
 	{
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Row>(TargetCapacity);
@@ -685,8 +684,8 @@ public static partial class ToChannelPipelineTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await call(channel.Writer, true));
 
-		Assert.Equal(0, probe.Executions);
-		Assert.False(channel.Reader.Completion.IsCompleted, "a call that never started must not complete the target");
+		// Like any other cancel: the call ends with the cancellation and, with complete true, the target is completed.
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => { while (await channel.Reader.WaitToReadAsync(TestContext.Current.CancellationToken)) { } }).WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 	}
 
 	[Fact]

@@ -6,15 +6,15 @@
 public static partial class DataflowExtensions
 {
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/>, posting each record as an array of values to the target block, and stops when the target declines a record.
+	/// Reads an <see cref="IDataReader"/>, sending each record as an array of values to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -30,9 +30,7 @@ public static partial class DataflowExtensions
 		{
 			int fieldCount = reader.FieldCount;
 			int total = 0;
-			bool more;
-			while ((more = reader.Read()) && target.Post(reader.GetValues(fieldCount))) total++;
-			if (!more) reader.NextResult();
+			while (reader.Read() && target.SendAsync(reader.GetValues(fieldCount)).GetAwaiter().GetResult()) total++;
 			if (complete) target.Complete();
 			return total;
 		}
@@ -44,16 +42,16 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/>, posting each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
+	/// Reads an <see cref="IDataReader"/>, sending each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the records is responsible for returning each array to the pool.</param>
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -71,9 +69,7 @@ public static partial class DataflowExtensions
 		{
 			int fieldCount = reader.FieldCount;
 			int total = 0;
-			bool more;
-			while ((more = reader.Read()) && target.Post(reader.GetValues(fieldCount, arrayPool))) total++;
-			if (!more) reader.NextResult();
+			while (reader.Read() && target.SendAsync(reader.GetValues(fieldCount, arrayPool)).GetAwaiter().GetResult()) total++;
 			if (complete) target.Complete();
 			return total;
 		}
@@ -85,17 +81,17 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/>, posting each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
+	/// Reads an <see cref="IDataReader"/>, sending each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item delivered to the block.</param>
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -112,9 +108,7 @@ public static partial class DataflowExtensions
 		try
 		{
 			int total = 0;
-			bool more;
-			while ((more = reader.Read()) && target.Post(transform(reader))) total++;
-			if (!more) reader.NextResult();
+			while (reader.Read() && target.SendAsync(transform(reader)).GetAwaiter().GetResult()) total++;
 			if (complete) target.Complete();
 			return total;
 		}
@@ -126,16 +120,16 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
+	/// Reads an <see cref="IDataReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	/// <remarks>
 	/// <para>
-	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
+	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -147,17 +141,17 @@ public static partial class DataflowExtensions
 			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
-	/// Reads an <see cref="IDataReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
+	/// Reads an <see cref="IDataReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	/// <remarks>
 	/// <para>
-	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
+	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -174,7 +168,7 @@ public static partial class DataflowExtensions
 			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/>, posting each record as an array of values to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IDbCommand"/>, sending each record as an array of values to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
 	/// <param name="target">The block that receives the records.</param>
@@ -182,10 +176,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -220,7 +214,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/>, posting each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IDbCommand"/>, sending each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
 	/// <param name="target">The block that receives the records.</param>
@@ -229,10 +223,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -269,7 +263,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/>, posting each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IDbCommand"/>, sending each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -279,10 +273,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -319,7 +313,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/>, posting each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IDbCommand"/>, sending each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -328,10 +322,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	/// <remarks>
 	/// <para>
-	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
+	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -347,7 +341,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IDbCommand"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IDbCommand"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
@@ -357,10 +351,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	/// <remarks>
 	/// <para>
-	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
+	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -381,7 +375,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record as an array of values to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IExecuteReader"/>, sending each record as an array of values to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
 	/// <param name="target">The block that receives the records.</param>
@@ -389,10 +383,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -427,7 +421,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IExecuteReader"/>, sending each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
 	/// <param name="target">The block that receives the records.</param>
@@ -436,10 +430,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -476,7 +470,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IExecuteReader"/>, sending each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -486,10 +480,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records accepted by the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// Records are posted with <see cref="DataflowBlock.Post{TInput}(ITargetBlock{TInput}, TInput)"/>, which does not wait: a target that declines a record, because it is complete or because it is bounded and currently full, stops the reading. The declined record has already been read and is not delivered. Use the <c>Async</c> overload to feed a bounded target, as it waits for room.
+	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -526,7 +520,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IExecuteReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -535,10 +529,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	/// <remarks>
 	/// <para>
-	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
+	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -554,7 +548,7 @@ public static partial class DataflowExtensions
 	}
 
 	/// <summary>
-	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
+	/// Reads the results of an <see cref="IExecuteReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
 	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
@@ -564,10 +558,10 @@ public static partial class DataflowExtensions
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
 	/// <remarks>
 	/// <para>
-	/// Reading blocks the calling thread. Reading stops, without an error, as soon as the internal pipeline declines a record.
+	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -590,7 +584,7 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record as an array of values to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
@@ -617,27 +611,21 @@ public static partial class DataflowExtensions
 			int total = 0;
 			if (reader is DbDataReader r)
 			{
-				bool more;
 				while (
-					(more = await r.ReadAsync(cancellationToken).ConfigureAwait(false))
+					await r.ReadAsync(cancellationToken).ConfigureAwait(false)
 					&& await target.SendAsync(r.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
-
-				if (!more) await r.NextResultAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
-				bool more;
 				while (
-					(more = reader.Read())
+					reader.Read()
 					&& await target.SendAsync(reader.GetValues(fieldCount), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
-
-				if (!more) reader.NextResult();
 			}
 
 			if (complete) target.Complete();
@@ -653,7 +641,7 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the records is responsible for returning each array to the pool.</param>
@@ -683,27 +671,21 @@ public static partial class DataflowExtensions
 			int total = 0;
 			if (reader is DbDataReader r)
 			{
-				bool more;
 				while (
-					(more = await r.ReadAsync(cancellationToken).ConfigureAwait(false))
+					await r.ReadAsync(cancellationToken).ConfigureAwait(false)
 					&& await target.SendAsync(r.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
-
-				if (!more) await r.NextResultAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
-				bool more;
 				while (
-					(more = reader.Read())
+					reader.Read()
 					&& await target.SendAsync(reader.GetValues(fieldCount, arrayPool), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
-
-				if (!more) reader.NextResult();
 			}
 
 			if (complete) target.Complete();
@@ -720,7 +702,7 @@ public static partial class DataflowExtensions
 	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item delivered to the block.</param>
@@ -749,27 +731,21 @@ public static partial class DataflowExtensions
 			int total = 0;
 			if (reader is DbDataReader r)
 			{
-				bool more;
 				while (
-					(more = await r.ReadAsync(cancellationToken).ConfigureAwait(false))
+					await r.ReadAsync(cancellationToken).ConfigureAwait(false)
 					&& await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
-
-				if (!more) await r.NextResultAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
-				bool more;
 				while (
-					(more = reader.Read())
+					reader.Read()
 					&& await target.SendAsync(transform(reader), cancellationToken).ConfigureAwait(false))
 				{
 					total++;
 				}
-
-				if (!more) reader.NextResult();
 			}
 
 			if (complete) target.Complete();
@@ -786,7 +762,7 @@ public static partial class DataflowExtensions
 	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
@@ -810,7 +786,7 @@ public static partial class DataflowExtensions
 	/// Asynchronously reads an <see cref="IDataReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is left where the rows ended, so you decide what its next result set is.</param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -849,7 +825,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -903,7 +879,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -960,7 +936,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1015,7 +991,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1053,7 +1029,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -1093,7 +1069,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1141,7 +1117,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1192,7 +1168,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1241,7 +1217,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1273,7 +1249,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -1358,5 +1334,4 @@ public static partial class DataflowExtensions
 		// The reader has been disposed by now.
 		pipeline.Complete();
 		return total;
-	}
-}
+	}}

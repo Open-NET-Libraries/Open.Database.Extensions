@@ -164,10 +164,11 @@ public static class ToChannelFullTargetTests
 	}
 
 	// A target that is already completed when the call is made: the call ends with ChannelClosedException (whether the command ran first does not matter),
-	// and the connection it opened is closed.
+	// and the connection it opened is closed. The mapped overloads read into a buffer and deliver on a second task: the failure of that task ends the call only
+	// if it happens before the reading ends, so the result is larger than the buffer (1024 rows).
 	static async Task ClosedTarget_Throws<T>(Call<T> call, bool complete)
 	{
-		var tally = Tally(3);
+		var tally = Tally(5000);
 		Channel<T> channel = BoundedChannel.CreateBounded<T>(1);
 		channel.Writer.Complete();
 

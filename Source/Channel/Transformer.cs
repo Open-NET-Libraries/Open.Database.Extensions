@@ -160,8 +160,8 @@ internal class Transformer<T>(RowMap<T>? map = null)
 
 			// When every column is mapped, the whole record is taken in one call.
 			IEnumerable<object[]> records = columns.Ordinals.Length == reader.FieldCount
-				? reader.AsEnumerable(LocalPool).ThenNextResult(reader, Token)
-				: reader.AsEnumerable(columns.Ordinals, LocalPool).ThenNextResult(reader, Token);
+				? reader.AsEnumerable(LocalPool)
+				: reader.AsEnumerable(columns.Ordinals, LocalPool);
 
 			long count = 0;
 			foreach (object[] record in records)
@@ -189,8 +189,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			// Like the synchronous read, this succeeds if, and only if, the reader reports that there is nothing left to read, and is
 			// cancelled if the cancellation is seen while there still is. Once the token is cancelled, one more read that can't itself
 			// be cancelled tells which of the two it is: if it finds a record, writing that record ends the call with the cancellation.
-			bool more;
-			while (more = await reader.ReadAsync(Token.IsCancellationRequested ? CancellationToken.None : Token).ConfigureAwait(false))
+			while (await reader.ReadAsync(Token.IsCancellationRequested ? CancellationToken.None : Token).ConfigureAwait(false))
 			{
 				object[] record = LocalPool.Rent(ordinals.Length);
 				if (whole)
@@ -207,7 +206,6 @@ internal class Transformer<T>(RowMap<T>? map = null)
 				count++;
 			}
 
-			if (!more && !Token.IsCancellationRequested) await reader.NextResultAsync(Token).ConfigureAwait(false);
 			return count;
 		}
 
