@@ -728,7 +728,8 @@ public static class DataReaderExtensions
 		=> reader.Select(transform).ToImmutableArray();
 
 	/// <summary>
-	/// Loads all remaining data from an <see cref="IDataReader"/> into a DataTable.
+	/// Loads the current result set of an <see cref="IDataReader"/> into a DataTable.
+	/// The reader stays open and is left on that result set, so <see cref="IDataReader.NextResult"/> moves to the next one.
 	/// </summary>
 	/// <param name="reader">The IDataReader to load data from.</param>
 	/// <returns>The resultant DataTable.</returns>
@@ -738,13 +739,15 @@ public static class DataReaderExtensions
 		Contract.EndContractBlock();
 
 		var table = new DataTable();
-		table.Load(reader);
+		// DataTable.Load asks the reader for the next result set and closes it after the last one.
+		// The forwarder makes both a no-op, so the caller's NextResult still decides where the reader goes.
+		table.Load(new SingleResultSetReader(reader));
 		return table;
 	}
 
 	/// <summary>
 	/// Loads all data from a command through an <see cref="IDataReader"/> into a DataTables.
-	/// Each result set is loaded into its own table.
+	/// Each result set is loaded into its own table. Calls .NextResult() to check for more results.
 	/// </summary>
 	/// <param name="reader">The IDataReader to load data from.</param>
 	/// <returns>The resultant list of DataTables.</returns>
@@ -754,14 +757,53 @@ public static class DataReaderExtensions
 		Contract.EndContractBlock();
 
 		var results = new List<DataTable>();
-		// DataTable.Load consumes one result set, moves the reader to the next one and closes it after the last,
-		// so the reader says when there is another result set; calling NextResult here as well skipped one.
 		do
 		{
 			results.Add(reader.ToDataTable());
 		}
-		while (!reader.IsClosed);
+		while (reader.NextResult());
 		return results;
+	}
+
+	// Hands DataTable.Load one result set of a reader without letting it move the real reader.
+	// Load calls NextResult after the set and Close after the last one; here NextResult says there is no more
+	// (a true would make Load loop forever on a result set without columns) and Close does nothing,
+	// so the caller's NextResult and Close still work. Everything else goes to the real reader.
+	private sealed class SingleResultSetReader(IDataReader reader) : IDataReader
+	{
+		public object this[int i] => reader[i];
+		public object this[string name] => reader[name];
+		public int Depth => reader.Depth;
+		public bool IsClosed => reader.IsClosed;
+		public int RecordsAffected => reader.RecordsAffected;
+		public int FieldCount => reader.FieldCount;
+		public void Close() { }
+		public void Dispose() { }
+		public bool NextResult() => false;
+		public bool Read() => reader.Read();
+		public DataTable? GetSchemaTable() => reader.GetSchemaTable();
+		public bool GetBoolean(int i) => reader.GetBoolean(i);
+		public byte GetByte(int i) => reader.GetByte(i);
+		public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferOffset, int length) => reader.GetBytes(i, fieldOffset, buffer, bufferOffset, length);
+		public char GetChar(int i) => reader.GetChar(i);
+		public long GetChars(int i, long fieldOffset, char[]? buffer, int bufferOffset, int length) => reader.GetChars(i, fieldOffset, buffer, bufferOffset, length);
+		public IDataReader GetData(int i) => reader.GetData(i);
+		public string GetDataTypeName(int i) => reader.GetDataTypeName(i);
+		public DateTime GetDateTime(int i) => reader.GetDateTime(i);
+		public decimal GetDecimal(int i) => reader.GetDecimal(i);
+		public double GetDouble(int i) => reader.GetDouble(i);
+		public Type GetFieldType(int i) => reader.GetFieldType(i);
+		public float GetFloat(int i) => reader.GetFloat(i);
+		public Guid GetGuid(int i) => reader.GetGuid(i);
+		public short GetInt16(int i) => reader.GetInt16(i);
+		public int GetInt32(int i) => reader.GetInt32(i);
+		public long GetInt64(int i) => reader.GetInt64(i);
+		public string GetName(int i) => reader.GetName(i);
+		public int GetOrdinal(string name) => reader.GetOrdinal(name);
+		public string GetString(int i) => reader.GetString(i);
+		public object GetValue(int i) => reader.GetValue(i);
+		public int GetValues(object[] values) => reader.GetValues(values);
+		public bool IsDBNull(int i) => reader.IsDBNull(i);
 	}
 
 	/// <summary>

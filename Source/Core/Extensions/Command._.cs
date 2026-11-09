@@ -191,7 +191,7 @@ public static partial class CommandExtensions
 
 	/// <summary>
 	/// Loads all data from a command through an <see cref="IDataReader"/> into a DataTables.
-	/// Each result set is loaded into its own table.
+	/// Each result set is loaded into its own table. Calls .NextResult() to check for more results.
 	/// </summary>
 	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>

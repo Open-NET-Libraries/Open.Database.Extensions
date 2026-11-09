@@ -472,7 +472,7 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Loads all data from a command through an IDataReader into a DataTables.
-	/// Each result set is loaded into its own table.
+	/// Each result set is loaded into its own table. Calls .NextResult() to check for more results.
 	/// </summary>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <returns>The resultant list of DataTables.</returns>
