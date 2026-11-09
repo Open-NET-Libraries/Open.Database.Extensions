@@ -22,7 +22,7 @@ public static partial class CommandExtensions
 #if DEBUG
 		if (command.Connection is null) throw new ArgumentException("Cannot execute a command with a null connection.");
 #endif
-		return command.Connection!.EnsureOpenAsync(cancellationToken);
+		return command.Connection!.EnsureOpenAsync(false, cancellationToken);
 	}
 
 	// These open a closed connection and execute the reader in one step. CommandBehavior.CloseConnection closes the connection when the

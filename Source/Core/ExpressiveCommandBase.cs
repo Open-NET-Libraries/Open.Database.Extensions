@@ -800,7 +800,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		ConnectionState state = connection.State;
 		return (state & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open
 			? new ValueTask<ConnectionState>(state)
-			: connection.EnsureOpenAsync(cancellationToken);
+			: connection.EnsureOpenAsync(false, cancellationToken);
 	}
 
 	TResult ExecuteDirect<TState, TResult>(TConnection single, TState state, Func<TCommand, ConnectionState, TState, TResult> func)

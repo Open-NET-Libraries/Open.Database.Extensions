@@ -73,6 +73,28 @@ public static class ConfigureAwaitTests
 		return (context.Posts, connection.Gated);
 	}
 
+	// A command that opens a closed connection must not resume on the caller's context after the open. The fake connection cannot
+	// create or run a command, so each call ends with NotSupportedException after the open: only the posts matter.
+	static async Task Swallow(Task call) { try { await call.ConfigureAwait(false); } catch (NotSupportedException) { } }
+
+	[Fact]
+	public static async Task CommandOpen_NeverPostsBackToTheCallersContext()
+	{
+		KeyValuePair<string, Func<GatedConnection, Task>>[] calls =
+		[
+			new("Core ExecuteReaderAsync", c => Swallow(new FakeDbCommand(c, () => throw new NotSupportedException()).ExecuteReaderAsync(_ => { }, CommandBehavior.Default, TestContext.Current.CancellationToken).AsTask())),
+			new("ExpressiveDbCommand", c => Swallow(new ExpressiveDbCommand(c, CommandType.Text, "select 1").ExecuteAsync(_ => ValueTask.CompletedTask).AsTask())),
+		];
+
+		foreach (var call in calls)
+		{
+			var (posts, gated) = await Run("open", call.Value);
+
+			Assert.True(gated == 1, $"{call.Key}: the open was never awaited, so nothing was tested.");
+			Assert.True(posts == 0, $"{call.Key}: resumed on the caller's context {posts} time(s) after an asynchronous open.");
+		}
+	}
+
 	static async ValueTask Act(GatedConnection c) => await c.Operation("action").ConfigureAwait(false);
 	static async ValueTask<bool> ActBool(GatedConnection c) { await Act(c).ConfigureAwait(false); return true; }
 	static async ValueTask<int> ActInt(GatedConnection c) { await Act(c).ConfigureAwait(false); return 1; }
