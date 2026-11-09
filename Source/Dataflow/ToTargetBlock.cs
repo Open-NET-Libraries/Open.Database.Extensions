@@ -179,7 +179,7 @@ public static partial class DataflowExtensions
 	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -226,7 +226,7 @@ public static partial class DataflowExtensions
 	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -276,7 +276,7 @@ public static partial class DataflowExtensions
 	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -325,7 +325,7 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -354,7 +354,7 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -386,7 +386,7 @@ public static partial class DataflowExtensions
 	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -433,7 +433,7 @@ public static partial class DataflowExtensions
 	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -483,7 +483,7 @@ public static partial class DataflowExtensions
 	/// Each record is sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded target, so a target that is merely full only makes the call wait. A target that declines a record because it is complete stops the reading; the declined record has already been read and is not delivered. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -532,7 +532,7 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -561,7 +561,7 @@ public static partial class DataflowExtensions
 	/// Reading blocks the calling thread, and waits for room when the internal pipeline (which waits for room in the target) is full. Reading stops, without an error, as soon as the internal pipeline declines a record, which it does when the target closes. This overload has no cancellation token, so a target that never takes the records blocks the call: to be able to stop a running call, use the <c>Async</c> overload, cancel its token, and then complete the target yourself.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -825,7 +825,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -880,7 +880,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -938,7 +938,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -994,7 +994,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1014,7 +1014,7 @@ public static partial class DataflowExtensions
 			await Task.Yield();
 
 		return await ToTargetBlockMappedAsync(
-			read => command.ExecuteReaderAsync(read, CommandBehavior.Default, cancellationToken),
+			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
 			target, complete, null, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -1033,7 +1033,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -1058,7 +1058,7 @@ public static partial class DataflowExtensions
 			await Task.Yield();
 
 		return await ToTargetBlockMappedAsync(
-			read => command.ExecuteReaderAsync(read, CommandBehavior.Default, cancellationToken),
+			read => command.ExecuteReaderAsync(read, CommandBehavior.SingleResult, cancellationToken),
 			target, complete, map, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -1074,7 +1074,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1122,7 +1122,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1173,7 +1173,7 @@ public static partial class DataflowExtensions
 	/// Records are sent with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput, CancellationToken)"/>, which waits for room in a bounded target. A target that declines a record, for example because it is complete, stops the reading; the declined record has already been read and is not delivered. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1222,7 +1222,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
@@ -1254,7 +1254,7 @@ public static partial class DataflowExtensions
 	/// Reading stops, without an error, as soon as the internal pipeline declines a record. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types.
 	/// </para>
 	/// <para>
-	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends. The reader is left where the rows ended: an error that the provider raises after the last row (a statement that fails after the rows) is not reported by the Dataflow overloads.
+	/// If a connection should stay open after the operation, open it before calling this method; a connection that this method opens is closed again when reading ends.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.

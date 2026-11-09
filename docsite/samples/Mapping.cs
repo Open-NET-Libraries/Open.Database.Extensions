@@ -287,6 +287,27 @@ public static class Mapping
 		return titles;
 	}
 
+	public static (int Posts, int People) SeveralResultSets(SqliteConnection connection)
+	{
+		int posts = 0, people = 0;
+
+		#region map_result_sets
+		connection
+			.Command("select * from posts order by id; select person_id, first_name, last_name from people order by person_id")
+			.ExecuteReader(reader =>
+			{
+				List<Post> postList = reader.Results<Post>().ToList(); // Results is lazy: read the set before moving on.
+				if (!reader.NextResult()) return; // False when there are no more result sets.
+
+				List<Person> personList = reader.Results<Person>().ToList();
+				posts = postList.Count;
+				people = personList.Count;
+			});
+		#endregion
+
+		return (posts, people);
+	}
+
 	public static int StreamRows(SqliteConnection connection)
 	{
 		#region map_stream

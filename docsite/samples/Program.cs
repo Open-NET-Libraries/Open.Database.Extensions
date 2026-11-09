@@ -66,6 +66,8 @@ RowMap<Person>[] declarationForms = Mapping.DeclarationForms();
 Check(declarationForms.All(form => connection.Command("select person_id, first_name, last_name from people order by person_id").Map<Person>(form).ToArray() is [{ Id: 1, FirstName: "Ada", LastName: "Lovelace" }, { Id: 2, FirstName: "Alan" }]), "a RowMap declared with the collection syntax (one pair or several), the constructor (one pair or several), an ImmutableArray or a copy maps that pair and matches the rest by name");
 Check(declarationForms[0].Select(pair => pair.Key).SequenceEqual([nameof(Person.Id), nameof(Person.FirstName)]) && declarationForms[0].SequenceEqual(declarationForms[^1]), "a map enumerates the pairs it was declared with, and a copy built from them declares the same pairs");
 Check(PersonMaps.PersonNamesOnlyMap.Count() == 3 && PersonMaps.PersonNamesOnlyMap.Single(pair => pair.Value is null).Key == nameof(Person.LastName), "an ignored property is enumerated with a null column");
+(int resultSetPosts, int resultSetPeople) = Mapping.SeveralResultSets(connection);
+Check(resultSetPosts == 5 && resultSetPeople == 2, "two result sets of different shapes are read by mapping one, calling NextResult, and mapping the next");
 Person[] snake = Mapping.MapSnakeCase(connection);
 Check(snake[0] is { Id: 0, FirstName: "Ada", LastName: "Lovelace" }, "snake_case columns feed PascalCase properties with no map");
 Person? exactFirst = connection.Command("select 'Alan' as first_name, 'Ada' as FirstName").Map<Person>().FirstOrDefault();

@@ -222,6 +222,17 @@ When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function fo
 
 [!code-csharp[](../samples/Mapping.cs#map_selector)]
 
+## Several result sets
+
+`Map<T>()`, `Results`, `Retrieve` and the Channel and Dataflow calls on a command read one result set. The library never moves to the next one, because only you know how many there are and what shape each has. Using several is rare. When you need it, take the reader, map a set, call `NextResult` yourself, and map again:
+
+[!code-csharp[](../samples/Mapping.cs#map_result_sets)]
+
+- Materialize a set (`ToList()`) before calling `NextResult`, because `Results` is lazy.
+- `NextResult` returns `false` when there are no more sets.
+- The columns can differ per set; the reader reports the columns of the current set.
+- On SQL Server an error raised after a set's rows is raised by the `NextResult` call that moves past that set, so one call after the last set you expect is also the check. An error after a later set needs a call past that set too.
+
 ## How it works
 
-The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`. A terminal that reads to the end of the rows then moves the reader on once more, so an error the server raises after the rows (a `RAISERROR` after the `SELECT`) is thrown to you instead of being missed. `FirstOrDefault`, `SingleOrDefault` and `Take` read one more row to find that end, and stop without reading the rest when there is one. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.
+The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.

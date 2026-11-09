@@ -45,7 +45,7 @@ public static class MappedQueryEdgeTests
 	[Theory]
 	[InlineData("take 2", 1)]
 	[InlineData("skip 1", 2)]
-	public static void FirstOrDefault_MapsOnlyTheFirstRowItNeeds_PeeksOneRowMore_AndNeverAsksForSingleRow(string stage, int expectedId)
+	public static void FirstOrDefault_MapsOnlyTheFirstRowItNeeds_AsksForSingleRowOnlyWhenNothingIsSkipped(string stage, int expectedId)
 	{
 		int calls = 0;
 		FakeExecuteReader command = Command(5, out Func<int> rowsRead);
@@ -64,8 +64,8 @@ public static class MappedQueryEdgeTests
 
 		Assert.Equal(expectedId, id);
 		Assert.Equal(1, calls);
-		Assert.Equal(expectedId + 1, rowsRead()); // the skipped row was read (it has to be), the one returned, and one more to find out whether the rows end there (a late error comes after the last row); nothing beyond that
-		Assert.False(Assert.Single(command.Behaviors).HasFlag(CommandBehavior.SingleRow)); // SingleRow would hide that late error from SqlClient
+		Assert.Equal(expectedId, rowsRead()); // the skipped row (it has to be read) and the one returned: nothing beyond that
+		Assert.Equal(stage == "take 2", Assert.Single(command.Behaviors).HasFlag(CommandBehavior.SingleRow)); // SingleRow only when no row is skipped first
 	}
 
 	[Fact]

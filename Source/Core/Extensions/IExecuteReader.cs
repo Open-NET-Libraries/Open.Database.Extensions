@@ -324,8 +324,8 @@ public static class IExecuteReaderExtensions
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
-			reader => reader.AfterRows(reader.Retrieve()),
-			CommandBehavior.SequentialAccess);
+			reader => reader.Retrieve(),
+			CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 	}
 
 	/// <summary>
@@ -341,8 +341,8 @@ public static class IExecuteReaderExtensions
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
-			reader => reader.AfterRows(reader.Retrieve(ordinals)),
-			CommandBehavior.Default);
+			reader => reader.Retrieve(ordinals),
+			CommandBehavior.SingleResult);
 	}
 
 	/// <summary>
@@ -359,8 +359,8 @@ public static class IExecuteReaderExtensions
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
-			reader => reader.AfterRows(reader.Retrieve(n, others)),
-			CommandBehavior.Default);
+			reader => reader.Retrieve(n, others),
+			CommandBehavior.SingleResult);
 	}
 
 	/// <summary>
@@ -377,8 +377,8 @@ public static class IExecuteReaderExtensions
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
-			reader => reader.AfterRows(reader.Retrieve(columnNames)),
-			CommandBehavior.Default);
+			reader => reader.Retrieve(columnNames),
+			CommandBehavior.SingleResult);
 	}
 
 	/// <summary>
@@ -397,8 +397,8 @@ public static class IExecuteReaderExtensions
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
-			reader => reader.AfterRows(reader.Retrieve(c, others)),
-			CommandBehavior.Default);
+			reader => reader.Retrieve(c, others),
+			CommandBehavior.SingleResult);
 	}
 
 	/// <summary>
@@ -420,8 +420,8 @@ public static class IExecuteReaderExtensions
 		RowMap<T>.ThrowIfUnmappable();
 
 		return command.ExecuteReader(
-			reader => RowReader.ToQueue(map ?? RowMap<T>.Default, reader, 0, -1, default(OwnedReader)).DequeueEach(),
-			CommandBehavior.Default);
+			reader => reader.ResultsBuffered(map),
+			CommandBehavior.SingleResult);
 	}
 
 	/// <summary>

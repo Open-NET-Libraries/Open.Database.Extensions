@@ -156,9 +156,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// Each record is sent and waits for room. With the default unbounded options every record is accepted at once, but nobody can receive from the block until this method has returned: if <paramref name="options"/> sets a bounded capacity smaller than the number of records, the call never returns. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IDbCommand command,
@@ -182,9 +179,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Each record is sent and waits for room. With the default unbounded options every record is accepted at once, but nobody can receive from the block until this method has returned: if <paramref name="options"/> sets a bounded capacity smaller than the number of records, the call never returns. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -211,9 +205,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Each record is sent and waits for room. With the default unbounded options every record is accepted at once, but nobody can receive from the block until this method has returned: if <paramref name="options"/> sets a bounded capacity smaller than the number of records, the call never returns. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -242,9 +233,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -277,9 +265,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
@@ -302,9 +287,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// Each record is sent and waits for room. With the default unbounded options every record is accepted at once, but nobody can receive from the block until this method has returned: if <paramref name="options"/> sets a bounded capacity smaller than the number of records, the call never returns. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, DataflowBlockOptions?)"/>
@@ -325,9 +307,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Each record is sent and waits for room. With the default unbounded options every record is accepted at once, but nobody can receive from the block until this method has returned: if <paramref name="options"/> sets a bounded capacity smaller than the number of records, the call never returns. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -350,9 +329,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Each record is sent and waits for room. With the default unbounded options every record is accepted at once, but nobody can receive from the block until this method has returned: if <paramref name="options"/> sets a bounded capacity smaller than the number of records, the call never returns. Use the <c>AsSourceBlockAsync</c> overloads for a bounded block, or when the caller should not be blocked.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -378,9 +354,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Mapping is done by an internal pipeline, so the last records and the completion of the block can arrive shortly after this method returns.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -408,9 +381,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
@@ -553,9 +523,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
 		DataflowBlockOptions? options = null,
@@ -577,9 +544,6 @@ public static partial class DataflowExtensions
 	/// <remarks>
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IDbCommand command,
@@ -605,9 +569,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
 		Func<IDataRecord, T> transform,
@@ -630,9 +591,6 @@ public static partial class DataflowExtensions
 	/// <remarks>
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
@@ -660,9 +618,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	/// <seealso cref="RowMap{T}"/>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IDbCommand command,
@@ -685,9 +640,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
@@ -707,9 +659,6 @@ public static partial class DataflowExtensions
 	/// <remarks>
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
@@ -733,9 +682,6 @@ public static partial class DataflowExtensions
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
-	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		Func<IDataRecord, T> transform,
@@ -756,9 +702,6 @@ public static partial class DataflowExtensions
 	/// <remarks>
 	/// <para>
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
@@ -783,9 +726,6 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
-	/// </para>
-	/// <para>
-	/// An error that the provider raises after the last row (a statement that fails after the rows) is not reported: the block is completed with the rows.
 	/// </para>
 	/// </remarks>
 	/// <seealso cref="RowMap{T}"/>

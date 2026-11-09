@@ -23,13 +23,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(async reader =>
-				{
-					long count = await transform(reader).ConfigureAwait(false);
-					// The reader is ours: moved past the rows, so that an error that follows them is raised.
-					if (!cancellationToken.IsCancellationRequested) reader.NextResult();
-					return count;
-				}, cancellationToken: cancellationToken)
+				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -58,12 +52,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(async reader =>
-				{
-					long count = await transform(reader).ConfigureAwait(false);
-					if (!command.CancellationToken.IsCancellationRequested) reader.NextResult();
-					return count;
-				})
+				.ExecuteReaderAsync(transform)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -272,7 +261,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			ConnectionState state = command.Connection.EnsureOpen();
-			CommandBehavior behavior = CommandBehavior.Default;
+			CommandBehavior behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			IDataReader reader;
 			try
@@ -288,9 +277,7 @@ public static partial class ChannelDbExtensions
 
 			using (reader)
 			{
-				long count = await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
-				if (!cancellationToken.IsCancellationRequested) reader.NextResult();
-				return count;
+				return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
 			}
 		}
 		catch (Exception ex)
@@ -488,12 +475,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(async reader =>
-				{
-					long count = await transform(reader).ConfigureAwait(false);
-					if (!cancellationToken.IsCancellationRequested) await reader.NextResultAsync(cancellationToken).ConfigureAwait(false);
-					return count;
-				}, cancellationToken: cancellationToken)
+				.ExecuteReaderAsync(transform, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -522,17 +504,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(async reader =>
-				{
-					long count = await transform(reader).ConfigureAwait(false);
-					if (!command.CancellationToken.IsCancellationRequested)
-					{
-						if (command.UseAsyncRead && reader is DbDataReader r) await r.NextResultAsync(command.CancellationToken).ConfigureAwait(false);
-						else reader.NextResult();
-					}
-
-					return count;
-				})
+				.ExecuteReaderAsync(transform)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)

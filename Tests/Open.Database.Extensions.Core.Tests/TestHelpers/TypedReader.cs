@@ -91,16 +91,12 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 	/// <summary>How many times <see cref="NextResultAsync(CancellationToken)"/> has been called.</summary>
 	public int NextResultAsyncCalls { get; private set; }
 
-	/// <summary>When set, <see cref="NextResult"/> throws it: the error a provider raises for a statement that follows the rows.</summary>
-	public Exception? NextResultError { get; set; }
-
 	/// <summary>How many more result sets follow the current one: <see cref="NextResult"/> returns true and uses one up while any are left.</summary>
 	public int MoreResultSets { get; set; }
 
 	public override bool NextResult()
 	{
 		NextResultCalls++;
-		if (NextResultError is { } error) throw error;
 		if (MoreResultSets <= 0) return false;
 		MoreResultSets--;
 		return true;

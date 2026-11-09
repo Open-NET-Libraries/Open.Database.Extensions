@@ -16,16 +16,14 @@ public static class ToChannelFullTargetTests
 		public int Id { get; set; }
 	}
 
-	sealed class LateException() : Exception("late");
-
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
 
 	delegate ValueTask<long> Call<T>(DbTally tally, ChannelWriter<T> target, bool complete, CancellationToken token);
 
-	static DbTally Tally(int rows, Exception? lateError = null)
-		=> new(new DbScript { Rows = [.. Enumerable.Range(1, rows).Select(i => (object?[])[i, "n" + i])], NextResultError = lateError });
+	static DbTally Tally(int rows)
+		=> new(new DbScript { Rows = [.. Enumerable.Range(1, rows).Select(i => (object?[])[i, "n" + i])] });
 
 	static ExpressiveDbCommand Expressive(DbTally tally, CancellationToken token)
 	{
@@ -139,22 +137,6 @@ public static class ToChannelFullTargetTests
 		Assert.All(tally.Connections, c => Assert.Equal(c.Opens, c.Closes));
 	}
 
-	// An error that follows the rows (a provider raises it when the reader moves on) reaches the caller of a command level call, and with complete true faults the target.
-	static async Task LateError_ReachesTheCaller<T>(Call<T> call, bool complete)
-	{
-		var tally = Tally(2, new LateException());
-		Channel<T> channel = BoundedChannel.CreateUnbounded<T>();
-
-		await Assert.ThrowsAnyAsync<LateException>(async () => await call(tally, channel.Writer, complete, Ct).AsTask().WaitAsync(Timeout, Ct));
-		TrackedConnection connection = Assert.Single(tally.Connections);
-		Assert.Equal(connection.Opens, connection.Closes);
-
-		if (complete)
-			await Assert.ThrowsAnyAsync<LateException>(async () => { await foreach (T _ in channel.Reader.ReadAllAsync(Ct)) { } });
-		else
-			Assert.False(channel.Reader.Completion.IsCompleted);
-	}
-
 	[Theory]
 	[MemberData(nameof(ArrayShapes))]
 	public static Task Array_FullTarget_RunsAtOnce_DeliversEveryRow_ClosesTheConnection(string call, bool complete)
@@ -184,14 +166,4 @@ public static class ToChannelFullTargetTests
 	[MemberData(nameof(RowShapes))]
 	public static Task Rows_ClosedTarget_ThrowsChannelClosedException(string call, bool complete)
 		=> ClosedTarget_Throws(RowCalls[call], complete);
-
-	[Theory]
-	[MemberData(nameof(ArrayShapes))]
-	public static Task Array_LateError_ReachesTheCaller(string call, bool complete)
-		=> LateError_ReachesTheCaller(ArrayCalls[call], complete);
-
-	[Theory]
-	[MemberData(nameof(RowShapes))]
-	public static Task Rows_LateError_ReachesTheCaller(string call, bool complete)
-		=> LateError_ReachesTheCaller(RowCalls[call], complete);
 }

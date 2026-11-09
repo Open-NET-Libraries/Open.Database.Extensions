@@ -351,7 +351,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 
 		Assert.Equal(3, await rig.Command.ToChannel(channel.Writer, true, Tenfold, Token));
 
-		Assert.Equal([CommandBehavior.CloseConnection], rig.Command.Behaviors); // the reader's disposal is what closes it
+		Assert.Equal([CommandBehavior.SingleResult | CommandBehavior.CloseConnection], rig.Command.Behaviors); // the reader's disposal is what closes it
 		Assert.Equal(1, rig.Connection.OpenCalls);
 		Assert.Equal(1, rig.Reader.Disposals);
 		Assert.Equal([10, 20, 30], Drain(channel.Reader));
@@ -366,7 +366,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 
 		Assert.Equal(3, await rig.Command.ToChannel(channel.Writer, true, Tenfold, Token));
 
-		Assert.Equal([CommandBehavior.Default], rig.Command.Behaviors);
+		Assert.Equal([CommandBehavior.SingleResult], rig.Command.Behaviors);
 		Assert.Equal(0, rig.Connection.OpenCalls);
 		Assert.Equal(ConnectionState.Open, rig.Connection.State);
 		Assert.Equal([10, 20, 30], Drain(channel.Reader));

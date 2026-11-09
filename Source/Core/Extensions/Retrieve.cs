@@ -4,21 +4,6 @@ namespace Open.Database.Extensions;
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Internal function that requires a cancellation token.")]
 public static partial class CoreExtensions
 {
-	// A command-level terminal owns its reader: once every row is buffered, NextResult lets a provider raise an error that follows the rows.
-	internal static T AfterRows<T>(this IDataReader reader, T buffered)
-	{
-		reader.NextResult();
-		return buffered;
-	}
-
-	/// <inheritdoc cref="AfterRows{T}(IDataReader, T)"/>
-	internal static async ValueTask<T> AfterRowsAsync<T>(this ValueTask<T> buffering, DbDataReader reader, bool useReadAsync, CancellationToken cancellationToken)
-	{
-		T buffered = await buffering.ConfigureAwait(false);
-		await default(OwnedReader).NaturalAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false);
-		return buffered;
-	}
-
 	internal static QueryResultQueue<object[]> RetrieveInternal(
 		IDataReader reader,
 		IEnumerable<int> ordinals,
@@ -112,7 +97,7 @@ public static partial class CoreExtensions
 	/// <param name="behavior">The <see cref="CommandBehavior"/> flags to use with the data reader.</param>
 	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
-		=> command.ExecuteReader(reader => reader.AfterRows(reader.Retrieve()), behavior | CommandBehavior.SequentialAccess);
+		=> command.ExecuteReader(reader => reader.Retrieve(), behavior | CommandBehavior.SequentialAccess);
 
 	/// <summary>
 	/// Executes a reader and iterates all records within the remaining result set using an <see cref="IDataReader"/> and returns the desired results.
@@ -124,27 +109,27 @@ public static partial class CoreExtensions
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, IEnumerable<int> ordinals)
-		=> command.ExecuteReader(reader => reader.AfterRows(reader.Retrieve(ordinals)));
+		=> command.ExecuteReader(reader => reader.Retrieve(ordinals));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, int n, params IEnumerable<int> others)
-		=> command.ExecuteReader(reader => reader.AfterRows(RetrieveInternal(reader, others.Prepend(n))));
+		=> command.ExecuteReader(reader => RetrieveInternal(reader, others.Prepend(n)));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="columnNames">The column names to select.</param>
 	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
-		=> command.ExecuteReader(reader => reader.AfterRows(reader.Retrieve(columnNames)));
+		=> command.ExecuteReader(reader => reader.Retrieve(columnNames));
 
 	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, string c, params IEnumerable<string> others)
-		=> command.ExecuteReader(reader => reader.AfterRows(Retrieve(reader, others.Prepend(c))));
+		=> command.ExecuteReader(reader => Retrieve(reader, others.Prepend(c)));
 
 	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)"/>
 	public static async ValueTask<QueryResultQueue<object[]>> RetrieveAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
@@ -348,7 +333,7 @@ public static partial class CoreExtensions
 		this DbCommand command,
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
-		=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, useReadAsync, cancellationToken).AfterRowsAsync(reader, useReadAsync, cancellationToken), CommandBehavior.SequentialAccess, cancellationToken);
+		=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, useReadAsync, cancellationToken), CommandBehavior.SequentialAccess, cancellationToken);
 
 	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{int}, bool, CancellationToken)"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
@@ -362,7 +347,7 @@ public static partial class CoreExtensions
 		IEnumerable<int> ordinals,
 		IEnumerable<string>? columnNames = null,
 		bool useReadAsync = true)
-		=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, cancellationToken, ordinals, columnNames, useReadAsync: useReadAsync).AfterRowsAsync(reader, useReadAsync, cancellationToken), cancellationToken: cancellationToken);
+		=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, cancellationToken, ordinals, columnNames, useReadAsync: useReadAsync), cancellationToken: cancellationToken);
 
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
@@ -414,7 +399,7 @@ public static partial class CoreExtensions
 		bool normalizeColumnOrder = false,
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
-		=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, columnNames, normalizeColumnOrder, useReadAsync, cancellationToken).AfterRowsAsync(reader, useReadAsync, cancellationToken), CommandBehavior.Default, cancellationToken);
+		=> command.ExecuteReaderAsync(reader => RetrieveAsync(reader, columnNames, normalizeColumnOrder, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
 
 	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)"/>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
