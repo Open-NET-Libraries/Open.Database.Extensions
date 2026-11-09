@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Base class for developing expressive commands.
@@ -340,13 +340,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <remarks>
 	/// <para>The argument must be a variable or a chain of member accesses (properties and fields alike): <c>startDate</c>, <c>filter.CompanySerialNum</c>, <c>order.Customer.Id</c>.
 	/// Anything else (a call, an index, an operator, a literal) throws <see cref="ArgumentException"/>: use <see cref="AddParam(string, object?, ParameterDirection)"/> and name the parameter.</para>
-	/// <para>The name is settled when the command executes. For a stored procedure the provider is asked for the procedure's real parameter names, and the argument is matched to one of them:
+	/// <para>The name is settled when the command executes. For a stored procedure the provider is asked for the procedure's real parameter names, for a text command they are the <c>@name</c> markers found in its SQL text (not those inside a string, a quoted identifier or a comment, and not <c>@@system</c> variables), and the argument is matched to one of them:
 	/// exactly, else ignoring case, else ignoring case and underscores, so <c>CompanySerialNum</c> finds <c>@company_serial_num</c>; failing those, for the same argument, after removing one common parameter prefix from the real name
 	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c>, <c>v_</c>, or a lone <c>p</c> before a capital letter), so <c>Author</c> finds <c>@p_author</c> and <c>@pAuthor</c>.
 	/// A field prefix on the last member (<c>m_</c>, <c>s_</c> or <c>_</c>) is also tried without. A chain tries its more specific endings first:
 	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing, matches two parameters at one tier, or is claimed by two arguments throws <see cref="InvalidOperationException"/> that says what you wrote and, when the names are known, what the procedure declares.
 	/// The names are remembered for five minutes per connection factory, pool or connection. When an argument matches none of the remembered names they are read again once before that throws; nothing else triggers a read, so an ambiguity, a collision and a less specific match are decided from the remembered names.
-	/// Where the real names are not available (a text command, or a provider that does not supply them) the last member is used as written.</para>
+	/// Where the real names are not available (a text command with no <c>@name</c> marker, or a provider that does not supply them) the last member is used as written.</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>
 	/// <param name="value">The value of the parameter. A <see langword="null"/> is sent as a database null.</param>
@@ -372,7 +372,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	/// <summary>
 	/// Adds the public properties and fields of <paramref name="source"/> as parameters. A member the stored procedure declares is sent under the procedure's real name (<c>CompanySerialNum</c> as <c>@company_serial_num</c>), a member it does not declare is skipped,
-	/// and where the procedure's names are not known (a text command, or a provider that does not supply them) every member is sent under its own name.
+	/// and where the procedure's names are not known (a text command with no <c>@name</c> marker, or a provider that does not supply them) every member is sent under its own name.
 	/// </summary>
 	/// <remarks>
 	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>.
@@ -580,9 +580,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		ImmutableArray<string> names = default;
 		bool remembered = false;
-		string key = ProcedureKey(connection);
 		if (Type == CommandType.StoredProcedure)
 		{
+			string key = ProcedureKey(connection);
 			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
 			if (!remembered)
 			{
@@ -590,12 +590,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
 			}
 		}
+		else if (Type == CommandType.Text)
+		{
+			names = SqlTextParameters.Parse(Command); // the @name markers found in the text
+		}
 
 		if (ApplyDerivedNames(names, final: !remembered)) return;
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
 		names = GetProcedureParameterNames(connection, Command);
-		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
+		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, ProcedureKey(connection), names);
 		ApplyDerivedNames(names, final: true);
 	}
 
@@ -603,9 +607,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		ImmutableArray<string> names = default;
 		bool remembered = false;
-		string key = ProcedureKey(connection);
 		if (Type == CommandType.StoredProcedure)
 		{
+			string key = ProcedureKey(connection);
 			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
 			if (!remembered)
 			{
@@ -613,12 +617,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
 			}
 		}
+		else if (Type == CommandType.Text)
+		{
+			names = SqlTextParameters.Parse(Command); // the @name markers found in the text
+		}
 
 		if (ApplyDerivedNames(names, final: !remembered)) return;
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
 		names = await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false);
-		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
+		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, ProcedureKey(connection), names);
 		ApplyDerivedNames(names, final: true);
 	}
 
