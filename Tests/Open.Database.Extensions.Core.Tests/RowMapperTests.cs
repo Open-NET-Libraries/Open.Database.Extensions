@@ -290,7 +290,8 @@ public static class RowMapperTests
 		var cmd = Cmd(out var reader, [("Id", typeof(int))], [1], [2], [3], [4]);
 
 		Assert.Equal([1, 2], cmd.Map<Simple>().Take(2).ToList().Select(s => s.Id));
-		Assert.Equal(2, reader()!.RowsRead);
+		// The two rows asked for, and one more to see whether the result ended there (so that an error after the rows is not missed): never the rest.
+		Assert.Equal(3, reader()!.RowsRead);
 	}
 
 	[Fact]
@@ -319,12 +320,13 @@ public static class RowMapperTests
 	}
 
 	[Fact]
-	public static void FirstOrDefault_ReadsOnlyOneRow()
+	public static void FirstOrDefault_ReadsOnlyOneRow_AndOneMoreToFindTheEnd()
 	{
 		var cmd = Cmd(out var reader, [("Id", typeof(int))], [1], [2], [3]);
 
 		Assert.Equal(1, cmd.Map<Simple>().FirstOrDefault()!.Id);
-		Assert.Equal(1, reader()!.RowsRead);
+		// The first row, and one more to see whether the result ended there (so that an error after the rows is not missed): never the rest.
+		Assert.Equal(2, reader()!.RowsRead);
 	}
 
 	[Fact]

@@ -93,7 +93,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAll(
-			reader.AsEnumerable(),
+			reader.AsEnumerable().ThenNextResult(reader, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -115,7 +115,7 @@ public static partial class ChannelDbExtensions
 		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAll(
-			reader.AsEnumerable(arrayPool),
+			reader.AsEnumerable(arrayPool).ThenNextResult(reader, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -138,7 +138,7 @@ public static partial class ChannelDbExtensions
 		Func<IDataRecord, T> transform,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAll(
-			reader.Select(transform, cancellationToken),
+			reader.Select(transform, cancellationToken).ThenNextResult(reader, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -275,7 +275,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			ConnectionState state = command.Connection.EnsureOpen();
-			CommandBehavior behavior = CommandBehavior.SingleResult;
+			CommandBehavior behavior = CommandBehavior.Default;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 			using IDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 			return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
@@ -539,7 +539,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAllAsync(
-			reader.AsAsyncEnumerable(cancellationToken),
+			reader.AsAsyncEnumerable(cancellationToken).ThenNextResultAsync(reader, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -554,7 +554,7 @@ public static partial class ChannelDbExtensions
 		ArrayPool<object>? arrayPool,
 		CancellationToken cancellationToken = default)
 		=> target.WriteAllAsync(
-			reader.AsAsyncEnumerable(arrayPool, cancellationToken),
+			reader.AsAsyncEnumerable(arrayPool, cancellationToken).ThenNextResultAsync(reader, cancellationToken),
 			complete,
 			false,
 			cancellationToken);
@@ -575,7 +575,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		return target.WriteAllAsync(
-			reader.SelectAsync(transform, cancellationToken),
+			reader.SelectAsync(transform, cancellationToken).ThenNextResultAsync(reader, cancellationToken),
 			complete,
 			false,
 			cancellationToken);

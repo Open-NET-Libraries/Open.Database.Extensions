@@ -203,7 +203,7 @@ A value that cannot be mapped (an unconvertible value, an overflow) throws `Valu
 
 [!code-csharp[](../samples/Mapping.cs#map_first_single)]
 
-`Skip` and `Take` are part of the query: skipped rows are advanced without being mapped, and reading stops once the take is satisfied. Call `Skip` before `Take`, as the types enforce:
+`Skip` and `Take` are part of the query: skipped rows are advanced without being mapped, and reading stops once the take is satisfied (after one more row, to see whether the result ended there). Call `Skip` before `Take`, as the types enforce:
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
@@ -223,4 +223,4 @@ When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function fo
 
 ## How it works
 
-The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess | SingleResult` (plus `SingleRow` for `FirstOrDefault` when nothing is skipped). `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.
+The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`. A terminal that reads to the end of the rows then moves the reader on once more, so an error the server raises after the rows (a `RAISERROR` after the `SELECT`) is thrown to you instead of being missed. `FirstOrDefault`, `SingleOrDefault` and `Take` read one more row to find that end, and stop without reading the rest when there is one. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.

@@ -188,7 +188,8 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			Bind(transformer, reader);
 
 			long total = 0;
-			while (reader.Read())
+			bool more;
+			while (more = reader.Read())
 			{
 				object[] row = ReadRow(reader);
 				if (!_block.Post(row))
@@ -199,6 +200,8 @@ internal class Transformer<T>(RowMap<T>? map = null)
 
 				total++;
 			}
+
+			if (!more) reader.NextResult();
 
 			return total;
 		}
@@ -231,8 +234,9 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			long total = 0;
 			try
 			{
+				bool more;
 				while (
-					reader is DbDataReader r
+					more = reader is DbDataReader r
 						? await r.ReadAsync(token).ConfigureAwait(false)
 						: reader.Read())
 				{
@@ -244,6 +248,12 @@ internal class Transformer<T>(RowMap<T>? map = null)
 					}
 
 					total++;
+				}
+
+				if (!more)
+				{
+					if (reader is DbDataReader db) await db.NextResultAsync(token).ConfigureAwait(false);
+					else reader.NextResult();
 				}
 			}
 			catch (Exception) when (_stop.IsCancellationRequested && !cancellationToken.IsCancellationRequested)

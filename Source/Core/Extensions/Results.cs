@@ -17,7 +17,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.Stream(map ?? RowMap<T>.Default, reader, 0, -1);
+		return RowReader.Stream(map ?? RowMap<T>.Default, reader, 0, -1, default(SharedReader));
 	}
 
 	/// <inheritdoc cref="Results{T}(IDataReader, RowMap{T}?)"/>
@@ -27,7 +27,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.Stream(RowMap<T>.Default, reader, 0, -1);
+		return RowReader.Stream(RowMap<T>.Default, reader, 0, -1, default(SharedReader));
 	}
 
 	/// <summary>
@@ -45,7 +45,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.ToQueue(map ?? RowMap<T>.Default, reader, 0, -1).DequeueEach();
+		return RowReader.ToQueue(map ?? RowMap<T>.Default, reader, 0, -1, default(SharedReader)).DequeueEach();
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, RowMap{T}?)" />
@@ -54,7 +54,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.ToQueue(RowMap<T>.Default, reader, 0, -1).DequeueEach();
+		return RowReader.ToQueue(RowMap<T>.Default, reader, 0, -1, default(SharedReader)).DequeueEach();
 	}
 
 	/// <summary>
@@ -75,7 +75,7 @@ public static partial class CoreExtensions
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return command.ExecuteReader(reader => reader.ResultsBuffered<T>(map));
+		return command.ExecuteReader(reader => RowReader.ToQueue(map ?? RowMap<T>.Default, reader, 0, -1, default(OwnedReader)).DequeueEach());
 	}
 
 	/// <inheritdoc cref="Results{T}(IDbCommand, RowMap{T}?)" />
@@ -87,7 +87,7 @@ public static partial class CoreExtensions
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return command.ExecuteReader(reader => reader.ResultsBuffered<T>());
+		return command.ExecuteReader(reader => RowReader.ToQueue(RowMap<T>.Default, reader, 0, -1, default(OwnedReader)).DequeueEach());
 	}
 
 	/// <summary>
@@ -108,7 +108,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.StreamAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync: true, cancellationToken);
+		return RowReader.StreamAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync: true, default(SharedReader), cancellationToken);
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbDataReader, RowMap{T}?, CancellationToken)" />
@@ -137,8 +137,13 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return (await RowReader.ToQueueAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync, cancellationToken).ConfigureAwait(false)).DequeueEach();
+		return await ResultsBufferedAsyncCore(reader, map, useReadAsync, default(SharedReader), cancellationToken).ConfigureAwait(false);
 	}
+
+	// Shared by the reader-level helper (the caller's reader: SharedReader) and the command-level terminals (their own reader: OwnedReader).
+	internal static async ValueTask<IEnumerable<T>> ResultsBufferedAsyncCore<T, TEnd>(DbDataReader reader, RowMap<T>? map, bool useReadAsync, TEnd end, CancellationToken cancellationToken)
+		where TEnd : struct, IRowsEnd
+		=> (await RowReader.ToQueueAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync, end, cancellationToken).ConfigureAwait(false)).DequeueEach();
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
@@ -174,7 +179,7 @@ public static partial class CoreExtensions
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return command.ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
+		return command.ExecuteReaderAsync(reader => ResultsBufferedAsyncCore(reader, map, useReadAsync, default(OwnedReader), cancellationToken), CommandBehavior.Default, cancellationToken);
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
