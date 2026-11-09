@@ -8,12 +8,13 @@ DateTime, Guid, strings, three of them nullable).
 - **Ratio** is ODE time / Dapper time (below 1 is faster). **Alloc** is ODE bytes / Dapper bytes (below 1 is less memory).
 - Reproduce: `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*"`
 - Not measured here: real network/database time (the provider is in-memory). Cross-check against a real provider before quoting these as end-to-end gains.
+- **Re-measured 2026-11-08** on the release candidate code (master 41af17c): the `Array`, `First` and `List` rows below and the new `Record` rows, as scoped runs with nothing else running on the machine. The other rows are earlier measurements and were not re-run. Against the earlier `Array` and `List` rows, ODE's time at 100 or more rows is 15 to 25% higher (a 100-row `List` took 3248 ns, now 4030 ns); it is the same as on the last commit before constructor binding (a 100-row `Array` took 4166 ns there, 4254 ns now), so the last changes did not move it. Allocations are the same or lower (`First` 312 B to 280 B, a 1-row `List` 400 B to 368 B). Ratios against Dapper moved from about 0.3 to about 0.4, which is still 2.4 to 2.8 times faster.
 
 | Scenario | Rows | Dapper | ODE | Ratio | Dapper alloc | ODE alloc | Alloc |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Array | 1 | 329 ns | 122 ns | 0.37 | 888 B | 344 B | 0.39 |
-| Array | 100 | 11594 ns | 3368 ns | 0.29 | 37264 B | 12224 B | 0.33 |
-| Array | 1000 | 106683 ns | 33787 ns | 0.32 | 363072 B | 120224 B | 0.33 |
+| Array | 1 | 301 ns | 131 ns | 0.44 | 888 B | 312 B | 0.35 |
+| Array | 100 | 10242 ns | 4254 ns | 0.42 | 37264 B | 12192 B | 0.33 |
+| Array | 1000 | 101615 ns | 39642 ns | 0.39 | 363073 B | 120192 B | 0.33 |
 | Column | 1 | 201 ns | 91 ns | 0.45 | 536 B | 368 B | 0.69 |
 | Column | 100 | 1203 ns | 823 ns | 0.68 | 4024 B | 2592 B | 0.64 |
 | Column | 1000 | 9772 ns | 6626 ns | 0.68 | 32864 B | 17072 B | 0.52 |
@@ -23,12 +24,12 @@ DateTime, Guid, strings, three of them nullable).
 | Execute | 1 | 66 ns | 37 ns | 0.56 | 136 B | 168 B | 1.24 |
 | Execute | 100 | 70 ns | 38 ns | 0.55 | 136 B | 168 B | 1.24 |
 | Execute | 1000 | 67 ns | 38 ns | 0.56 | 136 B | 168 B | 1.24 |
-| First | 1 | 281 ns | 105 ns | 0.37 | 576 B | 312 B | 0.54 |
-| First | 100 | 352 ns | 103 ns | 0.29 | 576 B | 312 B | 0.54 |
-| First | 1000 | 866 ns | 102 ns | 0.12 | 576 B | 312 B | 0.54 |
-| List | 1 | 314 ns | 117 ns | 0.37 | 856 B | 400 B | 0.47 |
-| List | 100 | 10571 ns | 3248 ns | 0.31 | 36440 B | 13592 B | 0.37 |
-| List | 1000 | 106826 ns | 31179 ns | 0.29 | 355048 B | 128800 B | 0.36 |
+| First | 1 | 279 ns | 106 ns | 0.38 | 576 B | 280 B | 0.49 |
+| First | 100 | 349 ns | 107 ns | 0.31 | 576 B | 280 B | 0.49 |
+| First | 1000 | 876 ns | 107 ns | 0.12 | 576 B | 280 B | 0.49 |
+| List | 1 | 292 ns | 123 ns | 0.42 | 856 B | 368 B | 0.43 |
+| List | 100 | 11339 ns | 4030 ns | 0.36 | 36440 B | 13560 B | 0.37 |
+| List | 1000 | 100275 ns | 38959 ns | 0.39 | 355048 B | 128768 B | 0.36 |
 | Params | 1 | 334 ns | 153 ns | 0.46 | 1016 B | 752 B | 0.74 |
 | Params | 100 | 10410 ns | 3731 ns | 0.36 | 36600 B | 13944 B | 0.38 |
 | Params | 1000 | 108841 ns | 31949 ns | 0.29 | 355208 B | 129152 B | 0.36 |
@@ -65,6 +66,21 @@ DateTime, Guid, strings, three of them nullable).
 | ScalarAsync | 1 | 81 ns | 74 ns | 0.91 | 296 B | 312 B | 1.05 |
 | ScalarAsync | 100 | 80 ns | 78 ns | 0.98 | 296 B | 312 B | 1.05 |
 | ScalarAsync | 1000 | 79 ns | 78 ns | 0.98 | 296 B | 312 B | 1.05 |
+
+## Records (constructor binding)
+
+The same 12-column `Post` as a positional record (`PostRecord`), read through its constructor by `Map<T>()`, against Dapper's constructor mapping (`RecordBenchmarks.cs`; re-measured 2026-11-08, master 41af17c).
+
+| Scenario | Rows | Dapper | ODE | Ratio | Dapper alloc | ODE alloc | Alloc |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| RecordFirst | 1 | 280 ns | 110 ns | 0.39 | 576 B | 280 B | 0.49 |
+| RecordFirst | 100 | 350 ns | 111 ns | 0.32 | 576 B | 280 B | 0.49 |
+| RecordFirst | 1000 | 889 ns | 112 ns | 0.13 | 576 B | 280 B | 0.49 |
+| RecordList | 1 | 322 ns | 124 ns | 0.39 | 856 B | 368 B | 0.43 |
+| RecordList | 100 | 10910 ns | 4339 ns | 0.40 | 36440 B | 13560 B | 0.37 |
+| RecordList | 1000 | 107866 ns | 40648 ns | 0.38 | 355048 B | 128768 B | 0.36 |
+
+A record allocates exactly what the same model as a class allocates (13,560 B for 100 rows), so constructor binding costs no memory.
 
 ## Reading the table
 
