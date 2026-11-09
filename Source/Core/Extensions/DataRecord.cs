@@ -282,12 +282,14 @@ public static partial class DataRecordExtensions
 	/// <param name="firstOrdinal">The first ordinal to read.</param>
 	/// <param name="remainingOrdinals">The remaining ordinals to read, in order.</param>
 	/// <returns>An enumerable of values matching the ordinals requested. The values are read from the record as the enumerable is enumerated.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="remainingOrdinals"/> is <see langword="null"/>.</exception>
 	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record. It is thrown while the result is enumerated.</exception>
 	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params IEnumerable<int> remainingOrdinals)
 	{
 		return record is null
 			? throw new ArgumentNullException(nameof(record))
+			: remainingOrdinals is null
+			? throw new ArgumentNullException(nameof(remainingOrdinals))
 			: EnumerateValuesFromOrdinalsCore(record, firstOrdinal, remainingOrdinals);
 
 		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, int firstOrdinal, IEnumerable<int> remainingOrdinals)

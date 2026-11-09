@@ -7,6 +7,24 @@ namespace Open.Database.Extensions;
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Simplification and readability.")]
 public static partial class ChannelDbExtensions
 {
+	// Every call waits for room in the target before it executes anything. The target is completed (when complete is true) however a call ends,
+	// and the wait is part of the call: a wait that ends in an exception (a cancel while it waits) completes the target as well. The one exception
+	// is a token that is already cancelled when the call is made: that call never started, so it is refused and leaves the target alone.
+	private static async ValueTask WaitForRoom<T>(ChannelWriter<T> target, bool complete, CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		try
+		{
+			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
+		}
+		catch (Exception ex)
+		{
+			if (complete) target.TryComplete(ex);
+			throw;
+		}
+	}
+
 	private static async ValueTask<long> ToChannelCore<T>(
 		IDbCommand command,
 		ChannelWriter<T> writer,
@@ -21,9 +39,7 @@ public static partial class ChannelDbExtensions
 
 		if ((command.Connection.State & ConnectionState.Open) == 0)
 		{
-			await writer
-				.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken)
-				.ConfigureAwait(false);
+			await WaitForRoom(writer, complete, cancellationToken).ConfigureAwait(false);
 		}
 
 		Exception? exception = null;
@@ -55,9 +71,7 @@ public static partial class ChannelDbExtensions
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		Contract.EndContractBlock();
 
-		await writer
-			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
-			.ConfigureAwait(false);
+		await WaitForRoom(writer, complete, command.CancellationToken).ConfigureAwait(false);
 
 		Exception? exception = null;
 		try
@@ -269,7 +283,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		if ((command.Connection.State & ConnectionState.Open) == 0)
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
+			await WaitForRoom(target, complete, cancellationToken).ConfigureAwait(false);
 
 		Exception? exception = null;
 		try
@@ -473,9 +487,7 @@ public static partial class ChannelDbExtensions
 
 		if ((command.Connection.State & ConnectionState.Open) == 0)
 		{
-			await writer
-				.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken)
-				.ConfigureAwait(false);
+			await WaitForRoom(writer, complete, cancellationToken).ConfigureAwait(false);
 		}
 
 		Exception? exception = null;
@@ -507,9 +519,7 @@ public static partial class ChannelDbExtensions
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		Contract.EndContractBlock();
 
-		await writer
-			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
-			.ConfigureAwait(false);
+		await WaitForRoom(writer, complete, command.CancellationToken).ConfigureAwait(false);
 
 		Exception? exception = null;
 		try
@@ -785,7 +795,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		if ((command.Connection.State & ConnectionState.Open) == 0)
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
+			await WaitForRoom(target, complete, cancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
@@ -806,7 +816,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
+		await WaitForRoom(target, complete, command.CancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
@@ -830,7 +840,7 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		if ((command.Connection.State & ConnectionState.Open) == 0)
-			await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
+			await WaitForRoom(target, complete, cancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
@@ -851,7 +861,7 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
+		await WaitForRoom(target, complete, command.CancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
