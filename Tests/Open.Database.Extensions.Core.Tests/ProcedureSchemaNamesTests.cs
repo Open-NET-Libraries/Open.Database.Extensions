@@ -10,6 +10,7 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class ProcedureSchemaNamesTests
 {
+	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 	sealed class ProviderFailure(string message) : DbException(message);
 
 	sealed class SchemaConnection(DataTable? table, Exception? failure) : DbConnection

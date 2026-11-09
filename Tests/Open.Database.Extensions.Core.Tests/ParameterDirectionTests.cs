@@ -1,5 +1,3 @@
-using System.Data.Common;
-
 namespace Open.Database.Extensions.Tests;
 
 #nullable enable
@@ -10,13 +8,13 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class ParameterDirectionTests
 {
-	public static TheoryData<ParameterDirection> Directions =>
-	[
-		ParameterDirection.Input,
-		ParameterDirection.Output,
-		ParameterDirection.InputOutput,
-		ParameterDirection.ReturnValue,
-	];
+	public static TheoryData<ParameterDirection> Directions
+		=> [
+			ParameterDirection.Input,
+			ParameterDirection.Output,
+			ParameterDirection.InputOutput,
+			ParameterDirection.ReturnValue,
+		];
 
 	static ExpressiveDbCommand DbCommand(DerivedParameterNameTests.RecordingDbCommand recorder)
 		=> new(new DerivedParameterNameTests.OpenDbConnection(recorder), CommandType.StoredProcedure, "dbo.p");

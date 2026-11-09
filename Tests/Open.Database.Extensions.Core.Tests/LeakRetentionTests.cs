@@ -267,7 +267,7 @@ public static class LeakRetentionTests
 
 		// Rounds of calls, each measured against the one before. What a warm-up leaves behind (lazy statics, the pool threads, a pooled buffer growing to its size)
 		// shows in the first rounds and then stops; a leak shows in every round.
-		var growth = new long[Rounds];
+		long[] growth = new long[Rounds];
 		for (int round = 0; round < Rounds; round++)
 		{
 			for (int i = 0; i < Calls; i++) await Once(terminal, longLived);

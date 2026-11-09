@@ -395,7 +395,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// A source typed object has no members of its own: its runtime type's are used (a Func<T, object> result, a boxed anonymous object).
 		if (typeof(T) == typeof(object))
 		{
-			RuntimeParamSource members = RuntimeParamSource.Of(source.GetType());
+			var members = RuntimeParamSource.Of(source.GetType());
 			if (members.Names.Length == 0) return (TThis)this;
 
 			// A new list is made at the size of the members, not at the default of four slots of a large struct.

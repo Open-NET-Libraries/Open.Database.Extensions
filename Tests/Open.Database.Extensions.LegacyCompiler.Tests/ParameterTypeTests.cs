@@ -216,7 +216,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			long? ln = 10;
 			decimal d = 1.5m;
 			decimal? dn = 2.5m;
-			DateTime dt = new DateTime(2020, 1, 2, 3, 4, 5);
+			var dt = new DateTime(2020, 1, 2, 3, 4, 5);
 
 			Assert.Equal("x=a NVarChar Input", Sent(New().AddParamIf(true, "x", s, SqlDbType.NVarChar)));
 			Assert.Equal("x=DBNull NVarChar Input", Sent(New().AddParamIf(true, "x", n, SqlDbType.NVarChar)));
