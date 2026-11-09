@@ -553,7 +553,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	/// <summary>
 	/// Gets the names of the parameters a stored procedure declares, so a parameter added with <c>AddParam(value)</c> can be matched to the real one.
-	/// A provider that can look this up overrides it; the default returns nothing, and the last member of each argument is used as written.
+	/// A provider that can look this up overrides it (<see cref="ExpressiveDbCommand"/> and <see cref="ExpressiveCommand"/> ask the ADO.NET schema collection <c>ProcedureParameters</c> of a <see cref="DbConnection"/>); the default returns nothing, and the last member of each argument is used as written.
 	/// </summary>
 	/// <remarks>
 	/// Return the names exactly as the provider spells them: a leading <c>@</c> is ignored when matching, nothing else is changed, and the name that is sent is the one returned.
