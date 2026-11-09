@@ -96,6 +96,7 @@ readonly struct MappedQueryCore<T>
 	// A caller-supplied selector may read in any order, so it runs with the default access mode.
 	// SingleResult is not requested: SqlClient, told there is one result set, completes without raising an error that follows the rows (measured: with SingleResult
 	// NextResult returns false, without it NextResult throws), and the terminals call NextResult after the rows precisely so that such an error is raised.
+	// SingleRow is not requested either, for the same reason: the first-row terminals read one more row so that such an error is raised (see RowReader.TryFirst).
 	const CommandBehavior GeneratedMapping = CommandBehavior.SequentialAccess;
 
 	readonly IExecuteReader _command;
@@ -190,11 +191,7 @@ readonly struct MappedQueryCore<T>
 
 	internal T? FirstOrDefault()
 		=> _command.ExecuteReader((_source, _skip, _take), static (reader, s)
-			=> RowReader.TryFirst(s._source, reader, s._skip, s._take, default(OwnedReader), out T? item) ? item : default, FirstBehavior);
-
-	// SingleRow is not requested: told that one row is all there is, SqlClient reports no more rows after it and does not raise an error that follows (measured with the consumer probe),
-	// and the terminal reads one more row for exactly that reason (see RowReader.TryFirst).
-	CommandBehavior FirstBehavior => Behavior;
+			=> RowReader.TryFirst(s._source, reader, s._skip, s._take, default(OwnedReader), out T? item) ? item : default, Behavior);
 
 	internal T? SingleOrDefault()
 		=> _command.ExecuteReader((_source, _skip, _take), static (reader, s)
@@ -230,7 +227,7 @@ readonly struct MappedQueryCore<T>
 			}
 
 			return RowReader.TryFirst(s._source, reader, s._skip, s._take, default(OwnedReader), out T? i) ? i : default;
-		}, FirstBehavior, linked, token);
+		}, Behavior, linked, token);
 	}
 
 	internal ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken)

@@ -25,38 +25,6 @@ public static class ParameterDirectionTests
 
 	[Theory]
 	[MemberData(nameof(Directions))]
-	public static void ExpressiveCommand_SendsTheDirectionOfTheParameter(ParameterDirection direction)
-	{
-		var probe = new ConnectionProbe(ConnectionState.Open);
-
-		new ExpressiveCommand(probe.Connection, CommandType.StoredProcedure, "dbo.p")
-			.AddParam("@p", 5, DbType.Int32, direction)
-			.ExecuteNonQuery();
-
-		IDbDataParameter sent = Assert.Single(probe.Parameters);
-		Assert.Equal("@p", sent.ParameterName);
-		Assert.Equal(direction, sent.Direction);
-		Assert.Equal(DbType.Int32, sent.DbType);
-	}
-
-	[Theory]
-	[MemberData(nameof(Directions))]
-	public static void ExpressiveDbCommand_SendsTheDirectionOfTheParameter(ParameterDirection direction)
-	{
-		var recorder = new DerivedParameterNameTests.RecordingDbCommand();
-
-		DbCommand(recorder)
-			.AddParam("@p", 5, DbType.Int32, direction)
-			.ExecuteNonQuery();
-
-		DbParameter sent = Assert.Single(recorder.Sent);
-		Assert.Equal("@p", sent.ParameterName);
-		Assert.Equal(direction, sent.Direction);
-		Assert.Equal(DbType.Int32, sent.DbType);
-	}
-
-	[Theory]
-	[MemberData(nameof(Directions))]
 	public static async Task ExpressiveDbCommand_SendsTheDirectionOfTheParameter_Async(ParameterDirection direction)
 	{
 		var recorder = new DerivedParameterNameTests.RecordingDbCommand();

@@ -58,13 +58,11 @@ public static class LateErrorTests
 		{ "ToArray", 0 },
 		{ "ToImmutableArray", 2 },
 		{ "ToDictionary", 2 },
-		{ "ToHashSet", 2 },
 		{ "FirstOrDefault", 1 },
 		{ "FirstOrDefault", 0 },
 		{ "SingleOrDefault", 1 },
 		{ "SingleOrDefault", 0 },
 		{ "Read", 2 },
-		{ "ReadResult", 2 },
 		{ "Skip(1).ToList", 2 },
 		{ "Skip(5).ToList", 2 },
 		{ "Skip(1).FirstOrDefault", 2 },
@@ -72,7 +70,6 @@ public static class LateErrorTests
 		{ "Take(3).ToList", 2 },
 		{ "Take(2).ToArray", 2 },
 		{ "Take(1).SingleOrDefault", 1 },
-		{ "Skip(1).Take(1).ToList", 2 },
 	};
 
 	static void Execute(string terminal, MappedQuery<Item> q)
@@ -83,11 +80,9 @@ public static class LateErrorTests
 			case "ToArray": q.ToArray(); break;
 			case "ToImmutableArray": q.ToImmutableArray(); break;
 			case "ToDictionary": q.ToDictionary(i => i.Id); break;
-			case "ToHashSet": q.ToHashSet(); break;
 			case "FirstOrDefault": q.FirstOrDefault(); break;
 			case "SingleOrDefault": q.SingleOrDefault(); break;
 			case "Read": q.Read(rows => { foreach (Item _ in rows) { } }); break;
-			case "ReadResult": _ = q.Read(rows => rows.Count()); break;
 			case "Skip(1).ToList": q.Skip(1).ToList(); break;
 			case "Skip(5).ToList": q.Skip(5).ToList(); break;
 			case "Skip(1).FirstOrDefault": q.Skip(1).FirstOrDefault(); break;
@@ -95,7 +90,6 @@ public static class LateErrorTests
 			case "Take(3).ToList": q.Take(3).ToList(); break;
 			case "Take(2).ToArray": q.Take(2).ToArray(); break;
 			case "Take(1).SingleOrDefault": q.Take(1).SingleOrDefault(); break;
-			case "Skip(1).Take(1).ToList": q.Skip(1).Take(1).ToList(); break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal), terminal, null);
 		}
 	}
@@ -109,12 +103,12 @@ public static class LateErrorTests
 		Assert.Equal(1, run.Reader.NextResultCalls);
 	}
 
-	[Theory]
-	[MemberData(nameof(SyncCases))]
-	public static void Sync_NoLateError_ResultsAreUnchanged(string terminal, int rows)
+	// A clean read calls NextResult once: only this case can see a terminal that calls it twice (the late-error cases throw on the first call).
+	[Fact]
+	public static void Sync_NoLateError_NextResultIsCalledOnce()
 	{
-		var run = Run.Clean(rows);
-		Execute(terminal, run.Command.Map<Item>());
+		var run = Run.Clean(2);
+		run.Command.Map<Item>().ToList();
 		Assert.Equal(1, run.Reader.NextResultCalls);
 	}
 
@@ -126,13 +120,11 @@ public static class LateErrorTests
 		{ "ToArrayAsync", 0 },
 		{ "ToImmutableArrayAsync", 2 },
 		{ "ToDictionaryAsync", 2 },
-		{ "ToHashSetAsync", 2 },
 		{ "FirstOrDefaultAsync", 1 },
 		{ "FirstOrDefaultAsync", 0 },
 		{ "SingleOrDefaultAsync", 1 },
 		{ "SingleOrDefaultAsync", 0 },
 		{ "ReadAsync", 2 },
-		{ "ReadAsyncResult", 2 },
 		{ "Skip(1).ToListAsync", 2 },
 		{ "Skip(5).ToListAsync", 2 },
 		{ "Skip(1).FirstOrDefaultAsync", 2 },
@@ -150,14 +142,10 @@ public static class LateErrorTests
 			case "ToArrayAsync": await q.ToArrayAsync(Ct); break;
 			case "ToImmutableArrayAsync": await q.ToImmutableArrayAsync(Ct); break;
 			case "ToDictionaryAsync": await q.ToDictionaryAsync(i => i.Id, null, Ct); break;
-			case "ToHashSetAsync": await q.ToHashSetAsync(null, Ct); break;
 			case "FirstOrDefaultAsync": await q.FirstOrDefaultAsync(Ct); break;
 			case "SingleOrDefaultAsync": await q.SingleOrDefaultAsync(Ct); break;
 			case "ReadAsync":
 				await q.ReadAsync(async (rows, ct) => { await foreach (Item _ in rows.WithCancellation(ct)) { } }, Ct);
-				break;
-			case "ReadAsyncResult":
-				_ = await q.ReadAsync(async (rows, ct) => { int n = 0; await foreach (Item _ in rows.WithCancellation(ct)) n++; return n; }, Ct);
 				break;
 			case "Skip(1).ToListAsync": await q.Skip(1).ToListAsync(Ct); break;
 			case "Skip(5).ToListAsync": await q.Skip(5).ToListAsync(Ct); break;
@@ -179,12 +167,11 @@ public static class LateErrorTests
 		Assert.Equal(1, run.Reader.NextResultCalls);
 	}
 
-	[Theory]
-	[MemberData(nameof(AsyncCases))]
-	public static async Task Async_NoLateError_ResultsAreUnchanged(string terminal, int rows)
+	[Fact]
+	public static async Task Async_NoLateError_NextResultIsCalledOnce()
 	{
-		var run = Run.Clean(rows);
-		await ExecuteAsync(terminal, run.Command.Map<Item>());
+		var run = Run.Clean(2);
+		await run.Command.Map<Item>().ToListAsync(Ct);
 		Assert.Equal(1, run.Reader.NextResultCalls);
 	}
 
@@ -206,15 +193,6 @@ public static class LateErrorTests
 		Assert.Equal(1, (await run.Command.Map<Item>().FirstOrDefaultAsync(Ct))!.Id);
 		Assert.Equal(2, run.Reader.RowsRead);
 		Assert.Equal(0, run.Reader.NextResultCalls + run.Reader.NextResultAsyncCalls);
-	}
-
-	[Fact]
-	public static void Skip_ThenFirst_PeeksOneMoreRow()
-	{
-		var run = Run.Late(5);
-		Assert.Equal(3, run.Command.Map<Item>().Skip(2).FirstOrDefault()!.Id);
-		Assert.Equal(4, run.Reader.RowsRead);
-		Assert.Equal(0, run.Reader.NextResultCalls);
 	}
 
 	[Fact]

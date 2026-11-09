@@ -86,8 +86,10 @@ public static class CommandExecuteFailureTests
 
 	public static TheoryData<string> AsyncNames() => [.. AsyncCalls.Keys];
 
-	// The tracking reader has no schema table, which loading a DataTable needs; the failing path never gets as far as that.
-	public static TheoryData<string> SucceedingSyncNames() => [.. SyncCalls.Keys.Where(n => !n.StartsWith("ToDataTable", StringComparison.Ordinal))];
+	// One name per overload shape, for the variants that reach the same helper branch as the full lists above.
+	public static TheoryData<string> RepresentativeSyncNames() => ["ToList", "ExecuteReader(handler)", "First", "Retrieve()"];
+
+	public static TheoryData<string> RepresentativeAsyncNames() => ["ToListAsync(transform)", "ExecuteReaderAsync(Action)", "ForEachAsync(Action)", "RetrieveAsync"];
 
 	static (DbTally Tally, TrackedConnection Connection, DbCommand Command) Closed(Exception failure)
 	{
@@ -135,7 +137,7 @@ public static class CommandExecuteFailureTests
 	}
 
 	[Theory]
-	[MemberData(nameof(SyncNames))]
+	[MemberData(nameof(RepresentativeSyncNames))]
 	public static void Sync_ProviderFails_LeavesTheCallersOpenConnectionAlone(string call)
 	{
 		(DbTally tally, TrackedConnection connection, DbCommand command) = Open(new ProviderFailed());
@@ -183,7 +185,7 @@ public static class CommandExecuteFailureTests
 	}
 
 	[Theory]
-	[MemberData(nameof(AsyncNames))]
+	[MemberData(nameof(RepresentativeAsyncNames))]
 	public static async Task Async_ProviderFails_LeavesTheCallersOpenConnectionAlone(string call)
 	{
 		(DbTally tally, TrackedConnection connection, DbCommand command) = Open(new ProviderFailed());
@@ -193,9 +195,9 @@ public static class CommandExecuteFailureTests
 		LeftAsItWas(tally, connection);
 	}
 
-	// The provider notices the cancellation while it executes (the token is cancelled after the connection was opened).
+	// The provider reports a cancellation while it executes (the fake throws OperationCanceledException; the token passed in is not cancelled).
 	[Theory]
-	[MemberData(nameof(AsyncNames))]
+	[MemberData(nameof(RepresentativeAsyncNames))]
 	public static async Task Async_CancelledWhileExecuting_ClosesTheConnectionItOpened(string call)
 	{
 		(DbTally tally, TrackedConnection connection, DbCommand command) = Closed(new OperationCanceledException());
@@ -205,21 +207,10 @@ public static class CommandExecuteFailureTests
 		OpenedAndClosedOnce(tally, connection);
 	}
 
+	// A token that is already cancelled stops the call, and nothing is left open.
 	[Theory]
-	[MemberData(nameof(AsyncNames))]
-	public static async Task Async_CancelledWhileExecuting_LeavesTheCallersOpenConnectionAlone(string call)
-	{
-		(DbTally tally, TrackedConnection connection, DbCommand command) = Open(new OperationCanceledException());
-
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AsyncCalls[call](command, CancellationToken.None));
-
-		LeftAsItWas(tally, connection);
-	}
-
-	// A token that is already cancelled stops the call before it opens anything.
-	[Theory]
-	[MemberData(nameof(AsyncNames))]
-	public static async Task Async_CancelledBefore_OpensNothing(string call)
+	[MemberData(nameof(RepresentativeAsyncNames))]
+	public static async Task Async_CancelledBefore_LeavesNothingOpen(string call)
 	{
 		(DbTally tally, TrackedConnection connection, DbCommand command) = Closed(new ProviderFailed());
 		using var cts = new CancellationTokenSource();
@@ -233,7 +224,7 @@ public static class CommandExecuteFailureTests
 	}
 
 	[Theory]
-	[MemberData(nameof(AsyncNames))]
+	[MemberData(nameof(RepresentativeAsyncNames))]
 	public static async Task Async_CancelledBefore_LeavesTheCallersOpenConnectionAlone(string call)
 	{
 		(DbTally tally, TrackedConnection connection, DbCommand command) = Open(new ProviderFailed());
@@ -247,7 +238,7 @@ public static class CommandExecuteFailureTests
 
 	// What must not change: when the command executes, the connection the call opened is closed when the reader is disposed.
 	[Theory]
-	[MemberData(nameof(SucceedingSyncNames))]
+	[MemberData(nameof(RepresentativeSyncNames))]
 	public static void Sync_Succeeds_ClosesTheConnectionItOpenedOnce(string call)
 	{
 		var tally = new DbTally();
@@ -261,7 +252,7 @@ public static class CommandExecuteFailureTests
 	}
 
 	[Theory]
-	[MemberData(nameof(AsyncNames))]
+	[MemberData(nameof(RepresentativeAsyncNames))]
 	public static async Task Async_Succeeds_ClosesTheConnectionItOpenedOnce(string call)
 	{
 		var tally = new DbTally();

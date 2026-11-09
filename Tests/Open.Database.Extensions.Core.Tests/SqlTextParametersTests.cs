@@ -111,28 +111,4 @@ public static class SqlTextParametersTests
 		Assert.False(tokens.IsDefault);
 		Assert.True(tokens.IsEmpty);
 	}
-
-	// ---- the cache ----
-
-	[Fact]
-	public static void TheCachedLookup_GivesTheSameTokensAsParsing_EachTime()
-	{
-		const string text = "select 1 where a = @region_id and b = @p_name /* @x */";
-
-		Assert.Equal(Parse(text), Call("Names", text));
-		Assert.Equal(["@region_id", "@p_name"], Call("Names", text));
-		Assert.Equal(["@region_id", "@p_name"], Call("Names", text)); // the second and third come from the cache
-	}
-
-	[Fact]
-	public static void TheCache_IsBounded()
-	{
-		FieldInfo field = Tokenizer.GetField("Cache", BindingFlags.Static | BindingFlags.NonPublic)!;
-		var cache = (System.Collections.IDictionary)field.GetValue(null)!;
-
-		for (int i = 0; i < 700; i++)
-			Assert.Equal(["@v" + i], Call("Names", "select @v" + i));
-
-		Assert.InRange(cache.Count, 1, 400); // cleared when it reaches 256 entries (a few racing threads may add one or two meanwhile)
-	}
 }

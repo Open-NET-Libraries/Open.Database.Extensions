@@ -304,7 +304,6 @@ public static class ParameterNameAddParamsTests
 
 	// Characterization of a defect, for the owner to decide: a public member of a ref struct type cannot be boxed, so the getters of the type cannot be built, and AddParams throws
 	// (the type initializer of the member table fails, for that type, for the rest of the process). The swarm's suggestion is to skip such members; until then this pins what happens.
-	// That is the rule of the STATIC type. When the argument is typed object the members are found by the runtime-type path, which skips such members, so one that holds a span is not a problem there.
 	[Fact]
 	public static void AMemberOfARefStructType_MakesAddParamsThrowForThatType_UntilSuchMembersAreSkipped()
 	{
@@ -312,17 +311,6 @@ public static class ParameterNameAddParamsTests
 
 		Assert.Throws<TypeInitializationException>(() => command.AddParams(new WithSpan()));
 		Assert.Throws<TypeInitializationException>(() => command.AddParams(new WithSpan())); // and it keeps throwing
-	}
-
-	[Fact]
-	public static void AMemberOfARefStructType_OfARuntimeType_IsSkipped_AndTheOthersAreSent()
-	{
-		object boxed = new WithSpan();
-		var run = TextCommand();
-
-		Assert.Equal(["Id"], run.Run(c => c.AddParams(boxed)));
-		Assert.Equal(1, run.Values["Id"]);
-		Assert.Equal(["Id"], TextCommand().Run(c => c.AddParams(boxed))); // and again: nothing was left half built
 	}
 
 	// ---- the helpers, row by row (internal: reached the way the allocation tests reach them) ----

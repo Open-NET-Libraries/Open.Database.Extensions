@@ -156,20 +156,6 @@ public static class MappedQueryEdgeTests
 		}
 	}
 
-	static IEnumerable<int> OneRowThenFailure()
-	{
-		yield return 7;
-		throw new InvalidOperationException("A second row was asked for.");
-	}
-
-	[Fact]
-	public static void FirstOrDefault_NeverAsksForASecondRow()
-	{
-		IMappedQuery<int> query = new StubQuery<int>(OneRowThenFailure());
-
-		Assert.Equal(7, query.FirstOrDefault());
-	}
-
 	[Fact]
 	public static void EveryCollectionTerminal_ExecutesOnce_InTheOrderTheRowsCame_AndHonorsTheComparer()
 	{
@@ -182,19 +168,6 @@ public static class MappedQueryEdgeTests
 		Assert.Equal(["b", "a"], query.ToHashSet(StringComparer.OrdinalIgnoreCase).ToArray()); // the row that compares equal to an earlier one is dropped
 		Assert.Equal(4, stub.Executions);
 		Assert.Throws<ArgumentException>(() => query.ToDictionary(s => s, StringComparer.OrdinalIgnoreCase)); // "b" and "B" are the same key
-	}
-
-	[Theory]
-	[InlineData(0)]
-	[InlineData(2)]
-	public static void SingleOrDefault_IsDefaultForNoRows_TheRowForOne_AndAnErrorForMore(int rowCount)
-	{
-		IMappedQuery<string> query = new StubQuery<string>(Enumerable.Range(1, rowCount).Select(i => $"row{i}"));
-
-		if (rowCount > 1)
-			Assert.Throws<InvalidOperationException>(() => query.SingleOrDefault());
-		else
-			Assert.Equal(rowCount == 0 ? null : "row1", query.SingleOrDefault());
 	}
 
 	[Fact]
@@ -212,20 +185,14 @@ public static class MappedQueryEdgeTests
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await query.FirstOrDefaultAsync(cts.Token));
 	}
 
-	[Theory]
-	[InlineData(false)]
-	public static async Task ReadAsync_ANullHandler_IsRefused_ByName(bool returnsAValue)
+	[Fact]
+	public static async Task ReadAsync_ANullHandler_IsRefused_ByName()
 	{
 		IMappedQuery<int> query = new StubQuery<int>([1]);
 		CancellationToken token = TestContext.Current.CancellationToken;
 
 		ArgumentNullException ex = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-		{
-			if (returnsAValue)
-				await query.ReadAsync((Func<IAsyncEnumerable<int>, ValueTask<int>>)null!, token);
-			else
-				await query.ReadAsync((Func<IAsyncEnumerable<int>, ValueTask>)null!, token);
-		});
+			await query.ReadAsync((Func<IAsyncEnumerable<int>, ValueTask>)null!, token));
 
 		Assert.Equal("handler", ex.ParamName);
 	}

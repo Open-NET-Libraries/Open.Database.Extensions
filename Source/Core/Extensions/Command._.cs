@@ -46,23 +46,6 @@ public static partial class CommandExtensions
 	}
 
 	/// <inheritdoc cref="OpenAndExecuteReader(IDbCommand, CommandBehavior)"/>
-	static DbDataReader OpenAndExecuteReader(this DbCommand command, CommandBehavior behavior)
-	{
-		if (command.EnsureOpen() != ConnectionState.Closed)
-			return command.ExecuteReader(behavior);
-
-		try
-		{
-			return command.ExecuteReader(behavior | CommandBehavior.CloseConnection);
-		}
-		catch
-		{
-			CloseOpened(command);
-			throw;
-		}
-	}
-
-	/// <inheritdoc cref="OpenAndExecuteReader(IDbCommand, CommandBehavior)"/>
 	static async ValueTask<DbDataReader> OpenAndExecuteReaderAsync(this DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
 	{
 		if (await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false) != ConnectionState.Closed)
@@ -92,13 +75,13 @@ public static partial class CommandExtensions
 	}
 
 #if NETSTANDARD2_0
-	static ValueTask CloseOpenedAsync(DbCommand command)
+	internal static ValueTask CloseOpenedAsync(DbCommand command)
 	{
 		CloseOpened(command);
 		return default;
 	}
 #else
-	static async ValueTask CloseOpenedAsync(DbCommand command)
+	internal static async ValueTask CloseOpenedAsync(DbCommand command)
 	{
 		try
 		{
@@ -791,7 +774,7 @@ public static partial class CommandExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		using DbDataReader reader = command.OpenAndExecuteReader(behavior | CommandBehavior.SingleResult);
+		using IDataReader reader = command.OpenAndExecuteReader(behavior | CommandBehavior.SingleResult);
 		return reader.FirstOrdinalResults<T0>();
 	}
 

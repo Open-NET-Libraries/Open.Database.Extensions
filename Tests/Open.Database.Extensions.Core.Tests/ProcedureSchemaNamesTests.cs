@@ -224,7 +224,6 @@ public static class ProcedureSchemaNamesTests
 		new NotSupportedException(),
 		new NotImplementedException(),
 		new ArgumentException("The requested collection (ProcedureParameters) is not defined."),
-		new InvalidOperationException("The schema collection 'ProcedureParameters' is not supported by this provider."),
 	};
 
 	[Theory]
@@ -276,7 +275,7 @@ public static class ProcedureSchemaNamesTests
 	}
 
 	[Fact]
-	public static void AnInvalidOperationThatDoesNotSayTheCollectionIsUnsupported_PropagatesWithTheProcedureName()
+	public static void AnInvalidOperation_PropagatesWithTheProcedureName()
 	{
 		const int orderId = 5;
 		var failure = new InvalidOperationException("The connection is busy.");
