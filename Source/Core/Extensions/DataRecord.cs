@@ -293,6 +293,7 @@ public static partial class DataRecordExtensions
 		static IEnumerable<object> EnumerateValuesFromOrdinalsCore(IDataRecord record, int firstOrdinal, IEnumerable<int> remainingOrdinals)
 		{
 			yield return record.GetValue(firstOrdinal);
+			if (remainingOrdinals is null) yield break; // Null means no more ordinals.
 			foreach (int i in remainingOrdinals)
 				yield return record.GetValue(i);
 		}

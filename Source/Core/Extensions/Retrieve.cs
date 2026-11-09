@@ -32,6 +32,7 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader)
 	{
+		// GetNames guards reader.
 		ImmutableArray<string> names = reader.GetNames();
 		return new QueryResultQueue<object[]>(
 			IdentityOrdinals(names.Length), names,
@@ -55,7 +56,7 @@ public static partial class CoreExtensions
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 	/// <returns>The query result that contains all the results and the column mappings.</returns>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
-		=> RetrieveInternal(reader, ordinals);
+		=> RetrieveInternal(reader, ordinals); // GetNames guards reader.
 
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -69,6 +70,10 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 	{
+		// GetOrdinalMapping returns early for an empty list without touching reader.
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
 		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames);
 		return RetrieveInternal(reader,
 			columns.Select(c => c.Ordinal),
@@ -267,6 +272,9 @@ public static partial class CoreExtensions
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
 	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
 		// Validate columns first.
 		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
 		return RetrieveAsyncInternal(reader, cancellationToken,
