@@ -592,7 +592,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 		else if (Type == CommandType.Text)
 		{
-			names = SqlTextParameters.Names(Command); // the @name markers found in the text
+			names = SqlTextParameters.Parse(Command); // the @name markers found in the text
 		}
 
 		if (ApplyDerivedNames(names, final: !remembered)) return;
@@ -619,7 +619,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 		else if (Type == CommandType.Text)
 		{
-			names = SqlTextParameters.Names(Command); // the @name markers found in the text
+			names = SqlTextParameters.Parse(Command); // the @name markers found in the text
 		}
 
 		if (ApplyDerivedNames(names, final: !remembered)) return;

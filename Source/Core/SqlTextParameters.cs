@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -9,25 +7,11 @@ namespace Open.Database.Extensions;
 /// Only <c>@</c> is recognised (another provider's <c>:name</c>, <c>$1</c> or <c>?</c> is not: no token means "not known"). A marker inside a single-quoted string, a double-quoted or
 /// <c>[bracketed]</c> identifier, a <c>--</c> line comment or a <c>/* */</c> block comment (not nested) is skipped, and so is a <c>@@system</c> variable. A local variable
 /// cannot be told from a parameter, so it is a token like any other. A name is a letter or an underscore, then letters, digits, <c>_</c>, <c>$</c> and <c>#</c>; the same
-/// name in another case is the same parameter, so it is returned once, as it first appeared. The result for a text is remembered (at most 256 texts, then the cache starts again).
+/// name in another case is the same parameter, so it is returned once, as it first appeared.
 /// </remarks>
 static class SqlTextParameters
 {
-	const int MaxTexts = 256;
-
-	static readonly ConcurrentDictionary<string, ImmutableArray<string>> Cache = new(StringComparer.Ordinal);
-
 	// The distinct tokens of the text in order of first appearance, each with its @; empty (never default) when there are none.
-	internal static ImmutableArray<string> Names(string text)
-	{
-		if (Cache.TryGetValue(text, out ImmutableArray<string> names)) return names;
-
-		names = Parse(text);
-		if (Cache.Count >= MaxTexts) Cache.Clear();
-		Cache[text] = names;
-		return names;
-	}
-
 	internal static ImmutableArray<string> Parse(string text)
 	{
 		ImmutableArray<string>.Builder? tokens = null;
