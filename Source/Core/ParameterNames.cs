@@ -27,6 +27,25 @@ static class ParameterNames
 		public readonly int Length = length;
 	}
 
+	/// <summary>The facts of a derivable expression, worked out once.</summary>
+	internal sealed class DerivedExpression(string lastMember, ImmutableArray<string> candidates)
+	{
+		internal string LastMember { get; } = lastMember;
+		internal ImmutableArray<string> Candidates { get; } = candidates;
+	}
+
+	// By the expression string itself: the text of an argument comes from [CallerArgumentExpression], a literal at the call site, so it is the same object on every call.
+	// An entry goes when its string is released. A text that is not derivable is not stored.
+	static readonly ConditionalWeakTable<string, DerivedExpression> Described = new();
+
+	/// <summary>The last member and the candidates of the expression, remembered on the string; <see langword="null"/> when it is <see langword="null"/> or not derivable.</summary>
+	internal static DerivedExpression? Describe(string? expression)
+	{
+		if (expression is null) return null;
+		if (Described.TryGetValue(expression, out DerivedExpression? known)) return known;
+		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(LastMember(e), Candidates(e))) : null;
+	}
+
 	/// <summary>True when the expression is a chain of plain member accesses a name can be derived from. Allocates nothing.</summary>
 	internal static bool IsDerivable(string? expression) => TryScan(expression, null, out _, out _);
 
@@ -191,9 +210,17 @@ static class ParameterNames
 	/// <returns>The real name as the provider reported it, or <see langword="null"/> when no candidate matches any parameter.</returns>
 	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier. The message says what the caller wrote, the candidate, the tier and what the procedure declares.</exception>
 	internal static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames, string expression, string procedure)
-	{
 		// Every candidate in every tier compares against the same bare names: remove the @ once, here.
-		ImmutableArray<string> bareNames = BareNames(parameterNames);
+		=> MatchBare(candidates, parameterNames, BareNames(parameterNames), expression, procedure);
+
+	/// <summary>The same as <see cref="Match"/>, with the names without their <c>@</c> already made (a <see cref="NameSet"/> makes them once).</summary>
+	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
+	/// <param name="parameterNames">The real names as the provider reports them.</param>
+	/// <param name="bareNames">The same names without a leading <c>@</c>.</param>
+	/// <param name="expression">The text of the argument, for the message of an ambiguity.</param>
+	/// <param name="procedure">The procedure's name, for the message of an ambiguity.</param>
+	internal static string? MatchBare(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames, ImmutableArray<string> bareNames, string expression, string procedure)
+	{
 		foreach (string candidate in candidates)
 		{
 			if (Find(expression, procedure, candidate, parameterNames, bareNames) is { } found) return found;
@@ -239,7 +266,7 @@ static class ParameterNames
 	}
 
 	// The real names without a leading @. A set with none is returned as it is; otherwise one copy holds the bare names, and a name without an @ is the same string in it.
-	static ImmutableArray<string> BareNames(ImmutableArray<string> names)
+	internal static ImmutableArray<string> BareNames(ImmutableArray<string> names)
 	{
 		string[]? bare = null;
 		for (int i = 0; i < names.Length; i++)

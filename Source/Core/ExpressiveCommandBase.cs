@@ -37,6 +37,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	readonly object _poolOrConnection;
 	int _busy;
 
+	// Set while a parameter added by AddParam(value) or AddParams(object) is still waiting for its name to be resolved.
+	bool _hasDerivedParams;
+
 	// The rarely-set members live in a block that is only allocated when one is set, so the usual
 	// conn.Command(sql) object stays small (it is allocated on every call).
 	private protected sealed class CommandOptions
@@ -46,9 +49,6 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		public CancellationToken CancellationToken;
 		public ushort Timeout = CommandTimeout.DEFAULT_SECONDS;
 		public bool UseAsyncRead;
-
-		// Set while a parameter added by AddParam(value) is still waiting for its name to be resolved.
-		public bool HasDerivedParams;
 	}
 
 	private protected CommandOptions? _options;
@@ -403,7 +403,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			for (int i = 0; i < members.Names.Length; i++)
 				own.Add(Param.OfObject(members.Names[i], members.Getters[i](source), members.Types[i]));
 
-			EnsureOptions().HasDerivedParams = true;
+			_hasDerivedParams = true;
 			return (TThis)this;
 		}
 
@@ -416,18 +416,19 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		for (int i = 0; i < names.Length; i++)
 			list.Add(Param.OfObject(names[i], getters[i](source), types[i]));
 
-		EnsureOptions().HasDerivedParams = true;
+		_hasDerivedParams = true;
 		return (TThis)this;
 	}
 
 	TThis AddDerivedParam(object? value, string? expression, Type clrType)
 	{
-		if (!ParameterNames.IsDerivable(expression))
+		// The facts of the expression are worked out once per expression string (see ParameterNames.Describe).
+		if (ParameterNames.Describe(expression) is not { } described)
 			throw NotDerivable(expression);
 
 		// Name is the last member as written; the real name replaces it at execution when the procedure's names are known.
-		Params.Add(Param.Derived(ParameterNames.LastMember(expression!), expression!, value, clrType));
-		EnsureOptions().HasDerivedParams = true;
+		Params.Add(Param.Derived(described.LastMember, expression!, value, clrType));
+		_hasDerivedParams = true;
 		return (TThis)this;
 	}
 
@@ -573,62 +574,66 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	protected virtual ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(TConnection connection, string procedure, CancellationToken cancellationToken)
 		=> new(GetProcedureParameterNames(connection, procedure));
 
+	// The names of a text command, by the command text itself (by reference): a literal or a kept string stays remembered, and the entry goes when the string is released.
+	// A text with no @name marker has a set with no names, which means "not known".
+	static readonly ConditionalWeakTable<string, NameSet> TextNames = new();
+
 	// Runs after the connection is open and before the command is built, once per command: it replaces the provisional names with the real ones.
+	// What is remembered is a NameSet (the names and the match found for each argument), so a repeat execution allocates nothing to resolve.
 	void ResolveDerivedParams(TConnection connection)
 	{
-		if (_options is not { HasDerivedParams: true }) return;
+		if (!_hasDerivedParams) return;
 
-		ImmutableArray<string> names = default;
+		NameSet? names = null;
 		bool remembered = false;
 		if (Type == CommandType.StoredProcedure)
 		{
-			string key = ProcedureKey(connection);
+			ProcedureKey key = ProcedureKey(connection);
 			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
-			if (!remembered)
-			{
-				names = GetProcedureParameterNames(connection, Command);
-				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
-			}
+			if (!remembered) names = Remember(key, GetProcedureParameterNames(connection, Command));
 		}
 		else if (Type == CommandType.Text)
 		{
-			names = SqlTextParameters.Parse(Command); // the @name markers found in the text
+			names = TextNames.GetValue(Command, static text => new NameSet(SqlTextParameters.Parse(text))); // the @name markers found in the text
 		}
 
 		if (ApplyDerivedNames(names, final: !remembered)) return;
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
-		names = GetProcedureParameterNames(connection, Command);
-		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, ProcedureKey(connection), names);
+		names = Remember(ProcedureKey(connection), GetProcedureParameterNames(connection, Command));
 		ApplyDerivedNames(names, final: true);
 	}
 
-	async ValueTask ResolveDerivedParamsAsync(TConnection connection, CancellationToken cancellationToken)
+	// Not an async method itself: when the names are remembered (the usual case) it finishes without a state machine or an await; only reading them is asynchronous.
+	ValueTask ResolveDerivedParamsAsync(TConnection connection, CancellationToken cancellationToken)
 	{
-		ImmutableArray<string> names = default;
+		NameSet? names = null;
 		bool remembered = false;
 		if (Type == CommandType.StoredProcedure)
 		{
-			string key = ProcedureKey(connection);
-			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
-			if (!remembered)
-			{
-				names = await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false);
-				if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
-			}
+			remembered = ProcedureNameCache.TryGet(NameCacheOwner, ProcedureKey(connection), out names);
+			if (!remembered) return ReadNamesAndApplyAsync(connection, cancellationToken);
 		}
 		else if (Type == CommandType.Text)
 		{
-			names = SqlTextParameters.Parse(Command); // the @name markers found in the text
+			names = TextNames.GetValue(Command, static text => new NameSet(SqlTextParameters.Parse(text))); // the @name markers found in the text
 		}
 
-		if (ApplyDerivedNames(names, final: !remembered)) return;
+		if (ApplyDerivedNames(names, final: !remembered)) return default;
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
-		names = await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false);
-		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, ProcedureKey(connection), names);
+		return ReadNamesAndApplyAsync(connection, cancellationToken);
+	}
+
+	async ValueTask ReadNamesAndApplyAsync(TConnection connection, CancellationToken cancellationToken)
+	{
+		NameSet? names = Remember(ProcedureKey(connection), await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false));
 		ApplyDerivedNames(names, final: true);
 	}
+
+	// Remembers the names a procedure reported and returns the set made from them; an empty answer is "not known" (null) and is not remembered.
+	NameSet? Remember(ProcedureKey key, ImmutableArray<string> names)
+		=> names.IsDefaultOrEmpty ? null : ProcedureNameCache.Set(NameCacheOwner, key, names);
 
 	// Remembered names belong to the object commands take connections from: a factory (not the wrapper made around it for each command), a pool, or the bare connection.
 	object NameCacheOwner => _poolOrConnection switch
@@ -640,72 +645,98 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	// The server and the database are part of the key: one connection can be switched to another database, and one factory can hand out connections to different servers,
 	// where the same procedure name may be a different procedure. IDbConnection has no server name, so a connection that is not a DbConnection contributes none.
-	string ProcedureKey(TConnection connection) => (connection as DbConnection)?.DataSource + "\n" + connection.Database + "\n" + Command;
+	// The key is a struct of the three parts, so no string is built.
+	ProcedureKey ProcedureKey(TConnection connection) => new((connection as DbConnection)?.DataSource, connection.Database, Command);
 
 	// Returns false, leaving the parameters untouched, when an argument named by the caller matches none of the real names and `final` is false (the names may be out of date).
-	bool ApplyDerivedNames(ImmutableArray<string> real, bool final)
+	// `real` is null when the names are not known (and has no names for a text without markers): each argument then keeps its last member as written.
+	bool ApplyDerivedNames(NameSet? real, bool final)
 	{
 		List<Param> list = Params;
-		var kept = new List<Param>(list.Count);
-		var original = new List<Param>(list.Count); // aligned with kept: the parameter as it was added, to say what the caller wrote and whether it is a member of an object given to AddParams
+		int count = list.Count;
 
-		foreach (Param p in list)
+		// The name each parameter ends up with (null: not sent), in a pooled array; only the used part is cleared when it goes back.
+		string?[] names = ArrayPool<string?>.Shared.Rent(count);
+		try
 		{
+			return Apply(list, count, names, real, final);
+		}
+		finally
+		{
+			Array.Clear(names, 0, count);
+			ArrayPool<string?>.Shared.Return(names);
+		}
+	}
+
+	bool Apply(List<Param> list, int count, string?[] names, NameSet? real, bool final)
+	{
+		bool known = real is { Names.Length: > 0 };
+
+		// Resolve each name. Without the real names the last member is used as written.
+		for (int i = 0; i < count; i++)
+		{
+			Param p = list[i];
 			if (p.Expression is not { } expression)
 			{
-				kept.Add(p);
-				original.Add(p);
+				names[i] = p.Name;
 				continue;
 			}
 
-			// Without the real names the last member is used as written.
-			string? name = real.IsDefaultOrEmpty ? p.Name : ParameterNames.Match(ParameterNames.Candidates(expression), real, expression, Command);
+			string? name = known ? real!.Match(expression, Command) : p.Name;
 			if (name is null)
 			{
 				// A member of an object that the procedure does not take is simply not sent; an argument named by the caller must match.
-				if (p.FromObject) continue;
+				if (p.FromObject) continue; // names[i] stays null
 				if (!final) return false;
-				throw NoMatch(expression, real);
+				throw NoMatch(expression, real!.Names);
 			}
 
-			kept.Add(p.Resolved(name));
-			original.Add(p);
+			names[i] = name;
 		}
 
 		// A parameter named by the caller wins over a member of an object that resolves to the same name.
-		for (int i = kept.Count - 1; i >= 0; i--)
+		// The ones compared against are never members of an object, so dropping a member does not change the answer for another.
+		for (int i = 0; i < count; i++)
 		{
-			if (!original[i].FromObject) continue;
-			for (int j = 0; j < kept.Count; j++)
+			if (names[i] is not { } member || !list[i].FromObject) continue;
+			for (int j = 0; j < count; j++)
 			{
-				if (j != i && !original[j].FromObject && SameName(kept[i].Name, kept[j].Name))
+				if (j != i && names[j] is { } other && !list[j].FromObject && SameName(member, other))
 				{
-					kept.RemoveAt(i);
-					original.RemoveAt(i);
+					names[i] = null;
 					break;
 				}
 			}
 		}
 
 		// Two arguments that resolve to one parameter would silently overwrite each other.
-		for (int i = 0; i < kept.Count; i++)
+		for (int i = 0; i < count; i++)
 		{
-			for (int j = i + 1; j < kept.Count; j++)
+			if (names[i] is not { } first) continue;
+			for (int j = i + 1; j < count; j++)
 			{
-				if (SameName(kept[i].Name, kept[j].Name))
-					throw Collision(kept[i].Name, original[i], original[j], real);
+				if (names[j] is { } second && SameName(first, second))
+					throw Collision(first, list[i], list[j], real?.Names ?? default);
 			}
 		}
 
-		list.Clear();
-		list.AddRange(kept);
-		_options!.HasDerivedParams = false;
+		// Keep what is sent, in order, under its resolved name.
+		int written = 0;
+		for (int i = 0; i < count; i++)
+		{
+			if (names[i] is not { } name) continue;
+			Param p = list[i];
+			list[written++] = p.Expression is null ? p : p.Resolved(name);
+		}
+
+		list.RemoveRange(written, count - written);
+		_hasDerivedParams = false;
 		return true;
 	}
 
-	static bool SameName(string a, string b) => string.Equals(BareName(a), BareName(b), StringComparison.OrdinalIgnoreCase);
+	static bool SameName(string a, string b) => MemoryExtensions.Equals(Bare(a), Bare(b), StringComparison.OrdinalIgnoreCase);
 
-	static string BareName(string name) => name.Length > 0 && name[0] == '@' ? name[1..] : name;
+	static ReadOnlySpan<char> Bare(string name) => name.Length > 0 && name[0] == '@' ? name.AsSpan(1) : name.AsSpan();
 
 	// What the caller wrote for a parameter, for the message of a collision.
 	static string Written(Param original)
@@ -768,7 +799,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			try
 			{
 				ConnectionState prior = await OpenIfNeededAsync(single, cancellationToken).ConfigureAwait(false);
-				if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(single, cancellationToken).ConfigureAwait(false);
+				if (_hasDerivedParams) await ResolveDerivedParamsAsync(single,cancellationToken).ConfigureAwait(false);
 				using TCommand cmd = PrepareCommand(single);
 				return await func(cmd, prior, state).ConfigureAwait(false);
 			}
@@ -783,7 +814,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		try
 		{
 			ConnectionState prior = await OpenIfNeededAsync(conn, cancellationToken).ConfigureAwait(false);
-			if (_options is { HasDerivedParams: true }) await ResolveDerivedParamsAsync(conn, cancellationToken).ConfigureAwait(false);
+			if (_hasDerivedParams) await ResolveDerivedParamsAsync(conn,cancellationToken).ConfigureAwait(false);
 			using TCommand cmd = PrepareCommand(conn);
 			return await func(cmd, prior, state).ConfigureAwait(false);
 		}
