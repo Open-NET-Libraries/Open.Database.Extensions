@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Threading.Tasks.Dataflow;
 
 #nullable enable
 
@@ -51,16 +52,18 @@ public static class NeverNextResultTests
 	[Fact]
 	public static void Map_FirstOrDefault()
 	{
-		var tally = Tally(1);
-		Assert.NotNull(Expressive(tally).Map<Row>().FirstOrDefault());
+		var tally = Tally(3);
+		Assert.Equal(1, Expressive(tally).Map<Row>().FirstOrDefault()?.Id);
+		Assert.Equal(1, Assert.Single(tally.Readers).Reads);
 		AssertNeverMoved(tally);
 	}
 
 	[Fact]
 	public static async Task Map_FirstOrDefault_Async()
 	{
-		var tally = Tally(1);
-		Assert.NotNull(await Expressive(tally).Map<Row>().FirstOrDefaultAsync(Ct));
+		var tally = Tally(3);
+		Assert.Equal(1, (await Expressive(tally).Map<Row>().FirstOrDefaultAsync(Ct))?.Id);
+		Assert.Equal(1, Assert.Single(tally.Readers).Reads);
 		AssertNeverMoved(tally);
 	}
 
@@ -194,6 +197,18 @@ public static class NeverNextResultTests
 		var tally = Tally(3);
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<Row>();
 		Assert.Equal(3, await Db(tally).ToChannelAsync<Row>(channel.Writer, true, Ct).AsTask());
+		AssertNeverMoved(tally);
+	}
+
+	// ---- ToTargetBlock on a command (Dataflow) ----
+
+	[Fact]
+	public static void ToTargetBlock_OnACommand()
+	{
+		var tally = Tally(3);
+		var target = new BufferBlock<object[]>();
+		Assert.Equal(3, Db(tally).ToTargetBlock(target, true));
+		Assert.Equal(3, target.Count);
 		AssertNeverMoved(tally);
 	}
 
