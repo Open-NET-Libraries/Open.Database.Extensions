@@ -1,9 +1,17 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.2`, a release candidate. The API is settled. Please try it and report what you find.
+> This is `11.0.0-rc.3`, a release candidate. The API is settled. Please try it and report what you find.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
+
+## Changes since rc.2
+
+- A `Map` terminal now reads through the later result sets after the first, so a failure in a later statement is thrown, where rc.2 returned the rows and lost it. This is a behavior change from rc.2. `Map` still returns only the first set's rows. `.SingleResult()` after `Map` stops after the first set and does not see a later failure. A later failure can follow a write that already committed, so a caller that retries can repeat it. The older command methods, Channel and Dataflow do not read through yet.
+- `ToDataTable` now reads one result set and leaves the reader on it, so `NextResult` works after it. A second `ToDataTable` call in a row returns no rows, because the reader is still on that set and its rows are already read. A loop on `while (!reader.IsClosed)` around `ToDataTable` no longer ends: use `NextResult`. `ToDataTables` returns one table per result set.
+- A connection the library opened is closed when the provider fails to start a reader, in Core and in the two SQL Server packages.
+- `EnsureOpenAsync` and `OpenAsync` always use `ConfigureAwait(false)`. The overloads with a `bool configureAwait` are obsolete and ignore it.
+- A null collection is treated as empty, and a null reader or selector is checked once.
 
 ## Changes since rc.1
 
@@ -13,8 +21,6 @@ Version 11 is a performance release and a tidy-up release. Result mapping is rew
 - `AddParam(value)` finds a stored procedure's parameter names through the `ProcedureParameters` schema on any `DbConnection`.
 - On a text command, `AddParam(value)` and `AddParams(object)` use the `@name` markers in the SQL.
 - `Map<T>()` on a dictionary or `ExpandoObject` throws, where it used to return empty rows.
-- A `Map` terminal now reads through the later result sets after the first, so a failure in a later statement is thrown, where rc.2 returned the rows and lost it. This is a behavior change from rc.2. `Map` still returns only the first set's rows. `.SingleResult()` after `Map` stops after the first set and does not see a later failure. A later failure can follow a write that already committed, so a caller that retries can repeat it.
-- `ToDataTable` now reads one result set and leaves the reader on it, so `NextResult` works after it. A second `ToDataTable` call in a row returns no rows, because the reader is still on that set and its rows are already read. A loop on `while (!reader.IsClosed)` around `ToDataTable` no longer ends: use `NextResult`. `ToDataTables` returns one table per result set.
 
 ## Highlights
 
