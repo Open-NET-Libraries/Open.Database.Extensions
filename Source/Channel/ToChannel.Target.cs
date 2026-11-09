@@ -274,12 +274,17 @@ public static partial class ChannelDbExtensions
 		Exception? exception = null;
 		try
 		{
-			const CommandBehavior behavior = CommandBehavior.SingleResult;
-			IDataReader reader = await CommandExtensions.OpenAndExecuteReaderAsync(command, behavior, static (c, b, ct) => c.ExecuteReaderAsync(b, ct).AsTask(), cancellationToken).ConfigureAwait(false);
+			IDataReader reader = await CommandExtensions
+				.OpenAndExecuteReaderAsync(
+					command, CommandBehavior.SingleResult,
+					static (c, b, ct) => c.ExecuteReaderAsync(b, ct).AsTask(), cancellationToken)
+				.ConfigureAwait(false);
 
 			using (reader)
 			{
-				return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
+				return await reader
+					.ToChannel(target, false, transform, cancellationToken)
+					.ConfigureAwait(false);
 			}
 		}
 		catch (Exception ex)

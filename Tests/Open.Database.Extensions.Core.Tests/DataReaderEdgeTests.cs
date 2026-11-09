@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Data.Common;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -288,7 +287,7 @@ public static class DataReaderEdgeTests
 		set.Tables.Add(Table("only", [1, "x"], [2, null]));
 		using DataTableReader reader = set.CreateDataReader();
 
-		DataTable table = reader.ToDataTable();
+		var table = reader.ToDataTable();
 
 		Assert.Equal(2, table.Rows.Count);
 		Assert.Equal(typeof(int), table.Columns["Id"]!.DataType);

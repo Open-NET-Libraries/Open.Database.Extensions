@@ -6,6 +6,7 @@ namespace Open.Database.Extensions.Tests;
 
 /// <summary>The provider's failure when a later statement of a batch fails.</summary>
 [ExcludeFromCodeCoverage]
+[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 internal sealed class LaterSetFailure(string message) : DbException(message);
 
 /// <summary>

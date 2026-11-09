@@ -138,7 +138,7 @@ public static class ToDataTablesResultSetTests
 
 		using var plain = new DataTable();
 		plain.Load(plainReader);
-		using DataTable table = reader.ToDataTable();
+		using var table = reader.ToDataTable();
 
 		Assert.Equal(plain.Columns.Cast<DataColumn>().Select(c => (c.ColumnName, c.DataType, c.AllowDBNull)), table.Columns.Cast<DataColumn>().Select(c => (c.ColumnName, c.DataType, c.AllowDBNull)));
 		Assert.Equal(plain.PrimaryKey.Select(c => c.ColumnName), table.PrimaryKey.Select(c => c.ColumnName));
@@ -154,7 +154,7 @@ public static class ToDataTablesResultSetTests
 		source.Rows.Add(1, DBNull.Value);
 		using var reader = new NotADbDataReader(source.CreateDataReader());
 
-		using DataTable table = reader.ToDataTable();
+		using var table = reader.ToDataTable();
 
 		Assert.Equal(DBNull.Value, table.Rows[0]["name"]);
 		Assert.False(reader.IsClosed);
@@ -175,7 +175,7 @@ public static class ToDataTablesResultSetTests
 		Assert.True(reader.NextResult());
 		Assert.Equal(1, reader.ToDataTable().Rows.Count);
 		Assert.True(reader.NextResult());
-		using (DataTable empty = reader.ToDataTable())
+		using (var empty = reader.ToDataTable())
 			Assert.Empty(empty.Columns);
 		Assert.True(reader.NextResult());
 		Assert.Equal(7, reader.ToDataTable().Rows[0]["id"]);
@@ -220,5 +220,4 @@ public static class ToDataTablesResultSetTests
 		public int GetValues(object[] values) => inner.GetValues(values);
 		public bool IsDBNull(int i) => inner.IsDBNull(i);
 	}
-
 }
