@@ -222,6 +222,23 @@ When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function fo
 
 [!code-csharp[](../samples/Mapping.cs#map_selector)]
 
+## Results, and a failure after the first one
+
+A *result* here is one whole result set: what `NextResult` moves between. It is never a row (this library's `Results<T>()` means rows).
+
+`Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
+
+Two cases do not read through, so a later failure goes unseen: `.SingleResult()`, and a read you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one.
+
+`.SingleResult()` goes after `Map` (and on the result of `Skip` and `Take`). It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
+
+```csharp
+var ids = await command.Map<int>(r => r.GetInt32(0)).SingleResult().ToListAsync();
+```
+
+> [!WARNING]
+> A later failure can follow a write that has already committed, so a caller that retries on it can repeat the write. The rows already read are lost when the failure is thrown.
+
 ## How it works
 
-The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess | SingleResult` (plus `SingleRow` for `FirstOrDefault` when nothing is skipped). `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.
+The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`, and with `SingleResult` (plus `SingleRow` for `FirstOrDefault` when nothing is skipped) only after `.SingleResult()`; without it the reader is asked for every result set, to read through them. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.

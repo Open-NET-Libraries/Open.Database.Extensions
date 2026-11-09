@@ -13,7 +13,8 @@ Version 11 is a performance release and a tidy-up release. Result mapping is rew
 - `AddParam(value)` finds a stored procedure's parameter names through the `ProcedureParameters` schema on any `DbConnection`.
 - On a text command, `AddParam(value)` and `AddParams(object)` use the `@name` markers in the SQL.
 - `Map<T>()` on a dictionary or `ExpandoObject` throws, where it used to return empty rows.
-- `ToDataTable` now reads one result set and leaves the reader on it, so `NextResult` works after it. A loop on `while (!reader.IsClosed)` around `ToDataTable` no longer ends: use `NextResult`. `ToDataTables` returns one table per result set.
+- A `Map` terminal now reads through the later result sets after the first, so a failure in a later statement is thrown, where rc.2 returned the rows and lost it. This is a behavior change from rc.2. `Map` still returns only the first set's rows. `.SingleResult()` after `Map` stops after the first set and does not see a later failure. A later failure can follow a write that already committed, so a caller that retries can repeat it.
+- `ToDataTable` now reads one result set and leaves the reader on it, so `NextResult` works after it. A second `ToDataTable` call in a row returns no rows, because the reader is still on that set and its rows are already read. A loop on `while (!reader.IsClosed)` around `ToDataTable` no longer ends: use `NextResult`. `ToDataTables` returns one table per result set.
 
 ## Highlights
 

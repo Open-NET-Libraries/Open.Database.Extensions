@@ -10,3 +10,6 @@ static Open.Database.Extensions.ConnectionExtensions.OpenAsync(this System.Data.
 static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
 static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
 static Open.Database.Extensions.ConnectionExtensions.OpenAsync(this System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Open.Database.Extensions.MappedQuery<T>.SingleResult() -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedQueryWithSkip<T>.SingleResult() -> Open.Database.Extensions.MappedQueryWithSkip<T>
+Open.Database.Extensions.MappedQueryWithTake<T>.SingleResult() -> Open.Database.Extensions.MappedQueryWithTake<T>
