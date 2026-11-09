@@ -92,13 +92,13 @@ public static partial class CommandExtensions
 	}
 
 #if NETSTANDARD2_0
-	static ValueTask CloseOpenedAsync(DbCommand command)
+	internal static ValueTask CloseOpenedAsync(DbCommand command)
 	{
 		CloseOpened(command);
 		return default;
 	}
 #else
-	static async ValueTask CloseOpenedAsync(DbCommand command)
+	internal static async ValueTask CloseOpenedAsync(DbCommand command)
 	{
 		try
 		{

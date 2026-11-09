@@ -39,7 +39,7 @@ public static partial class SqlCommandExtensions
 		}
 		catch
 		{
-			CloseOpened(command);
+			CommandExtensions.CloseOpened(command);
 			throw;
 		}
 	}
@@ -56,43 +56,10 @@ public static partial class SqlCommandExtensions
 		}
 		catch
 		{
-			await CloseOpenedAsync(command).ConfigureAwait(false);
+			await CommandExtensions.CloseOpenedAsync(command).ConfigureAwait(false);
 			throw;
 		}
 	}
-
-	static void CloseOpened(SqlCommand command)
-	{
-		try
-		{
-			command.Connection?.Close();
-		}
-		catch
-		{
-			// Intentionally ignored; see above.
-		}
-	}
-
-#if NET472
-	static ValueTask CloseOpenedAsync(SqlCommand command)
-	{
-		CloseOpened(command);
-		return default;
-	}
-#else
-	static async ValueTask CloseOpenedAsync(SqlCommand command)
-	{
-		try
-		{
-			if (command.Connection is { } connection)
-				await connection.CloseAsync().ConfigureAwait(false);
-		}
-		catch
-		{
-			// Intentionally ignored; see above.
-		}
-	}
-#endif
 	#endregion
 
 	/// <summary>
