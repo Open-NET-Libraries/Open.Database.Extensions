@@ -89,9 +89,9 @@ public static class DerivedNameCostTests
 			_connection = new DerivedParameterNameTests.OpenDbConnection(_db);
 		}
 
-		public NamedDbCommand Command() => new NamedDbCommand(_connection, _type, _procedure, Real);
+		public NamedDbCommand Command() => new(_connection, _type, _procedure, Real);
 
-		public NamedDbCommand Command(string text) => new NamedDbCommand(_connection, _type, text, Real);
+		public NamedDbCommand Command(string text) => new(_connection, _type, text, Real);
 
 		public string[] Sent => [.. _db.Sent.Select(p => p.ParameterName)];
 
