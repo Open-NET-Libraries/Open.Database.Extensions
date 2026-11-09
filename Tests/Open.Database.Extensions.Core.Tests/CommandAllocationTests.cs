@@ -120,9 +120,9 @@ public static class CommandAllocationTests
 		var connection = new MemConnection();
 		DbConnection? none = null;
 
-		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction((Action<DbTransaction>)null!, cancellationToken: Token)).ParamName);
+		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction(null!, cancellationToken: Token)).ParamName);
 		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction((Func<DbTransaction, int>)null!, cancellationToken: Token)).ParamName);
-		Assert.Equal("conditionalAction", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransactionConditional((Func<DbTransaction, bool>)null!, cancellationToken: Token)).ParamName);
+		Assert.Equal("conditionalAction", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransactionConditional(null!, cancellationToken: Token)).ParamName);
 		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransaction(DoNothing, cancellationToken: Token)).ParamName);
 		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransaction(Seven, cancellationToken: Token)).ParamName);
 		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransactionConditional(Yes, cancellationToken: Token)).ParamName);

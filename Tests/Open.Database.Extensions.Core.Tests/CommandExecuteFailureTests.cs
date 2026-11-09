@@ -17,7 +17,7 @@ public static class CommandExecuteFailureTests
 	sealed class OnlyDbCommand(IDbCommand inner) : IDbCommand
 	{
 		[AllowNull]
-		public string CommandText { get => inner.CommandText; set => inner.CommandText = value!; }
+		public string CommandText { get => inner.CommandText; set => inner.CommandText = value; }
 		public int CommandTimeout { get => inner.CommandTimeout; set => inner.CommandTimeout = value; }
 		public CommandType CommandType { get => inner.CommandType; set => inner.CommandType = value; }
 		public IDbConnection? Connection { get => inner.Connection; set => inner.Connection = value; }

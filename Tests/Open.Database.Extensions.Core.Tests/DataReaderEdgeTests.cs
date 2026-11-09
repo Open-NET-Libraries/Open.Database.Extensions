@@ -269,8 +269,8 @@ public static class DataReaderEdgeTests
 		{
 			case "sync": reader.IterateWhile(Continue, cts.Token); break;
 			case "async, Read": await reader.IterateWhileAsync(Continue, false, cts.Token); break;
-			case "async ValueTask, ReadAsync": await ((IDataReader)reader).IterateWhileAsync(ContinueAsync, true, cts.Token); break;
-			default: await ((IDataReader)reader).IterateWhileAsync(ContinueAsync, false, cts.Token); break;
+			case "async ValueTask, ReadAsync": await reader.IterateWhileAsync(ContinueAsync, true, cts.Token); break;
+			default: await reader.IterateWhileAsync(ContinueAsync, false, cts.Token); break;
 		}
 
 		Assert.Equal(3, seen);

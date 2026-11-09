@@ -71,7 +71,7 @@ internal static class LocalDbFixture
 		connection.Open();
 		using SqlCommand command = connection.CreateCommand();
 		command.CommandText = $"select count(*) from dbo.[{table}]";
-		return (int)command.ExecuteScalar()!;
+		return (int)command.ExecuteScalar();
 	}
 
 	/// <summary>A table with one <c>int</c> column named <c>id</c>.</summary>

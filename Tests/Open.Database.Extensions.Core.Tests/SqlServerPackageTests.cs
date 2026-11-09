@@ -195,7 +195,7 @@ public static class SqlServerPackageTests
 		IDbCommand command = Substitute.For<IDbCommand>();
 
 		Assert.Throws<InvalidCastException>(() => SqlCmd.AddParameterType(command, "@x", SqlDbType.Int));
-		Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType((SqlCommand)null!, "@x", SqlDbType.Int));
+		Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType(null!, "@x", SqlDbType.Int));
 	}
 
 	[Fact]
@@ -249,17 +249,17 @@ public static class SqlServerPackageTests
 				await SqlCmd.ExecuteReaderAsync(command, (Action<SqlDataReader>)(r => result = work(r)));
 				break;
 			case Overload.AsyncValueTask:
-				await SqlCmd.ExecuteReaderAsync(command, (Func<SqlDataReader, ValueTask>)(r =>
+				await SqlCmd.ExecuteReaderAsync(command, r =>
 				{
 					result = work(r);
 					return default;
-				}));
+				});
 				break;
 			case Overload.AsyncValue:
 				result = await SqlCmd.ExecuteReaderAsync(command, work);
 				break;
 			default:
-				result = await SqlCmd.ExecuteReaderAsync(command, (Func<SqlDataReader, ValueTask<int>>)(r => new ValueTask<int>(work(r))));
+				result = await SqlCmd.ExecuteReaderAsync(command, r => new ValueTask<int>(work(r)));
 				break;
 		}
 
@@ -279,8 +279,8 @@ public static class SqlServerPackageTests
 	public static async Task ExecuteReader_AClosedConnection_IsOpenedForTheReader_ClosedAfterIt_AndTheCommandRunsAgain(Overload overload)
 	{
 		LocalDbFixture.SkipUnlessAvailable();
-		using SqlConnection connection = LocalDbFixture.Create();
-		using var command = new SqlCommand(ThreeRows, connection);
+		await using SqlConnection connection = LocalDbFixture.Create();
+		await using var command = new SqlCommand(ThreeRows, connection);
 		var seen = new List<int>();
 
 		Assert.Equal(3, await Run(command, overload, r => ReadInto(r, seen)));
@@ -298,9 +298,9 @@ public static class SqlServerPackageTests
 	public static async Task ExecuteReader_AConnectionTheCallerOpened_StaysOpen(Overload overload)
 	{
 		LocalDbFixture.SkipUnlessAvailable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		connection.Open();
-		using var command = new SqlCommand(ThreeRows, connection);
+		await using var command = new SqlCommand(ThreeRows, connection);
 		var seen = new List<int>();
 
 		Assert.Equal(3, await Run(command, overload, r => ReadInto(r, seen)));
@@ -314,8 +314,8 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		var failure = new ProbeException();
-		using SqlConnection connection = LocalDbFixture.Create();
-		using var command = new SqlCommand(ThreeRows, connection);
+		await using SqlConnection connection = LocalDbFixture.Create();
+		await using var command = new SqlCommand(ThreeRows, connection);
 
 		// Opened by the call: closed again, although the handler threw.
 		Assert.Same(failure, await Assert.ThrowsAsync<ProbeException>(() => Run(command, overload, _ => throw failure)));
@@ -332,8 +332,8 @@ public static class SqlServerPackageTests
 	public static async Task ExecuteReader_AStatementThatFailsToStart_ThrowsTheSqlException_AndDoesNotLeaveTheConnectionItOpenedOpen(Overload overload)
 	{
 		LocalDbFixture.SkipUnlessAvailable();
-		using SqlConnection connection = LocalDbFixture.Create();
-		using var command = new SqlCommand($"select * from dbo.{LocalDbFixture.UniqueName("ode_missing")}", connection);
+		await using SqlConnection connection = LocalDbFixture.Create();
+		await using var command = new SqlCommand($"select * from dbo.{LocalDbFixture.UniqueName("ode_missing")}", connection);
 
 		// There is no reader to dispose when ExecuteReader itself throws, so nothing but the provider closes a connection that was opened for the call.
 		await Assert.ThrowsAsync<SqlException>(() => Run(command, overload, _ => 0));
@@ -362,11 +362,11 @@ public static class SqlServerPackageTests
 		bool called = false;
 
 		Assert.Throws(NoConnectionSync, () => SqlCmd.ExecuteReader(command, (Action<SqlDataReader>)(_ => called = true)));
-		Assert.Throws(NoConnectionSync, () => SqlCmd.ExecuteReader(command, (Func<SqlDataReader, int>)(_ =>
+		Assert.Throws(NoConnectionSync, () => SqlCmd.ExecuteReader(command, _ =>
 		{
 			called = true;
 			return 1;
-		})));
+		}));
 
 		Assert.False(called);
 	}
@@ -374,25 +374,25 @@ public static class SqlServerPackageTests
 	[Fact]
 	public static async Task ExecuteReaderAsync_ACommandWithNoConnection_Throws_AndNeverCallsTheHandler()
 	{
-		using var command = new SqlCommand("select 1");
+		await using var command = new SqlCommand("select 1");
 		bool called = false;
 
 		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, (Action<SqlDataReader>)(_ => called = true), cancellationToken: Token));
-		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, (Func<SqlDataReader, ValueTask>)(_ =>
+		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, _ =>
 		{
 			called = true;
 			return default;
-		}), cancellationToken: Token));
-		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, (Func<SqlDataReader, int>)(_ =>
+		}, cancellationToken: Token));
+		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, _ =>
 		{
 			called = true;
 			return 1;
-		}), cancellationToken: Token));
-		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, (Func<SqlDataReader, ValueTask<int>>)(_ =>
+		}, cancellationToken: Token));
+		await Assert.ThrowsAsync(NoConnectionAsync, async () => await SqlCmd.ExecuteReaderAsync(command, _ =>
 		{
 			called = true;
 			return new ValueTask<int>(1);
-		}), cancellationToken: Token));
+		}, cancellationToken: Token));
 
 		Assert.False(called);
 	}
@@ -414,7 +414,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch procedure = LocalDbFixture.CreateProcedure("@zeta int, @alpha varchar(10) = 'x', @mid int output");
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		connection.Open();
 
 		ImmutableArray<string> names = await NamesOf(new Probe(connection), connection, $"dbo.{procedure.Name}", flavor, Token);
@@ -427,7 +427,7 @@ public static class SqlServerPackageTests
 	public static async Task ProcedureParameterNames_AMissingProcedure_GivesNoNamesAndNoException(Flavor flavor)
 	{
 		LocalDbFixture.SkipUnlessAvailable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		connection.Open();
 
 		ImmutableArray<string> names = await NamesOf(new Probe(connection), connection, $"dbo.{LocalDbFixture.UniqueName("ode_missing")}", flavor, Token);
@@ -442,7 +442,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch procedure = LocalDbFixture.CreateProcedure("@a int, @b int");
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		connection.Open();
 		var probe = new Probe(connection);
 
@@ -457,9 +457,9 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch procedure = LocalDbFixture.CreateProcedure("@a int");
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		connection.Open();
-		using SqlTransaction transaction = connection.BeginTransaction();
+		await using SqlTransaction transaction = connection.BeginTransaction();
 
 		// SQL Server refuses a command with no transaction on a connection that has one pending; one that was given it runs.
 		Assert.Equal(["@a"], await NamesOf(new Probe(connection, transaction), connection, $"dbo.{procedure.Name}", flavor, Token));
@@ -479,7 +479,7 @@ public static class SqlServerPackageTests
 	[Fact]
 	public static async Task ProcedureParameterNames_AnAsyncFailureIsRethrownUnchanged_WithTheProcedureNameAdded()
 	{
-		using var connection = new SqlConnection(UnopenedConnectionString);
+		await using var connection = new SqlConnection(UnopenedConnectionString);
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await new Probe(connection).NamesAsync(connection, "dbo.some_procedure", CancellationToken.None));
@@ -490,7 +490,7 @@ public static class SqlServerPackageTests
 	[Fact]
 	public static async Task ProcedureParameterNames_ACancellation_IsNotAFailureOfTheLookup_SoItCarriesNoProcedureName()
 	{
-		using var connection = new SqlConnection(UnopenedConnectionString);
+		await using var connection = new SqlConnection(UnopenedConnectionString);
 		using var cancelled = new CancellationTokenSource();
 		await cancelled.CancelAsync();
 
@@ -504,7 +504,7 @@ public static class SqlServerPackageTests
 
 	static void Insert(SqlTransaction transaction, string table, int id)
 	{
-		using SqlCommand command = transaction.Connection!.CreateCommand();
+		using SqlCommand command = transaction.Connection.CreateCommand();
 		command.Transaction = transaction;
 		command.CommandText = $"insert into dbo.[{table}] (id) values ({id})";
 		command.ExecuteNonQuery();
@@ -524,7 +524,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch table = LocalDbFixture.CreateTable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 
 		(bool commit, int value) = await Transact(connection, flavor, t =>
 		{
@@ -544,7 +544,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch table = LocalDbFixture.CreateTable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 
 		(bool commit, int value) = await Transact(connection, flavor, t =>
 		{
@@ -564,7 +564,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch table = LocalDbFixture.CreateTable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		var failure = new ProbeException();
 
 		Assert.Same(failure, await Assert.ThrowsAsync<ProbeException>(() => Transact(connection, flavor, t =>
@@ -583,7 +583,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch table = LocalDbFixture.CreateTable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		using var cancellation = new CancellationTokenSource();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Transact(connection, flavor, t =>
@@ -601,7 +601,7 @@ public static class SqlServerPackageTests
 	[MemberData(nameof(Flavors))]
 	public static async Task ExecuteTransactionConditional_AnAlreadyCancelledToken_StopsBeforeOpeningTheConnection(Flavor flavor)
 	{
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		using var cancelled = new CancellationTokenSource();
 		await cancelled.CancelAsync();
 		bool called = false;
@@ -622,7 +622,7 @@ public static class SqlServerPackageTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch table = LocalDbFixture.CreateTable();
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		connection.Open();
 
 		await Transact(connection, flavor, t =>

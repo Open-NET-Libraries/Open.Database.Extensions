@@ -33,30 +33,30 @@ public static class ToChannelWaitCancelledTests
 
 	static readonly Dictionary<string, Call<object[]>> ArrayCalls = new()
 	{
-		["IDbCommand"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, ct),
-		["IDbCommand, pool"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, ArrayPool<object>.Shared, ct),
+		["IDbCommand"] = (t, w, complete, ct) => Db(t).ToChannel(w, complete, ct),
+		["IDbCommand, pool"] = (t, w, complete, ct) => Db(t).ToChannel(w, complete, ArrayPool<object>.Shared, ct),
 		["DbCommand"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, ct),
 		["DbCommand, pool"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, ArrayPool<object>.Shared, ct),
-		["IExecuteReader"] = (t, w, complete, ct) => ((IExecuteReader)Expressive(t, ct)).ToChannel(w, complete),
-		["IExecuteReader, pool"] = (t, w, complete, ct) => ((IExecuteReader)Expressive(t, ct)).ToChannel(w, complete, ArrayPool<object>.Shared),
-		["IExecuteReaderAsync"] = (t, w, complete, ct) => ((IExecuteReaderAsync)Expressive(t, ct)).ToChannelAsync(w, complete),
-		["IExecuteReaderAsync, pool"] = (t, w, complete, ct) => ((IExecuteReaderAsync)Expressive(t, ct)).ToChannelAsync(w, complete, ArrayPool<object>.Shared),
+		["IExecuteReader"] = (t, w, complete, ct) => Expressive(t, ct).ToChannel(w, complete),
+		["IExecuteReader, pool"] = (t, w, complete, ct) => Expressive(t, ct).ToChannel(w, complete, ArrayPool<object>.Shared),
+		["IExecuteReaderAsync"] = (t, w, complete, ct) => Expressive(t, ct).ToChannelAsync(w, complete),
+		["IExecuteReaderAsync, pool"] = (t, w, complete, ct) => Expressive(t, ct).ToChannelAsync(w, complete, ArrayPool<object>.Shared),
 	};
 
 	static readonly Dictionary<string, Call<Row>> RowCalls = new()
 	{
-		["IDbCommand, transform"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, _ => new Row(), ct),
-		["IDbCommand, mapped"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel<Row>(w, complete, ct),
-		["IDbCommand, mapped with map"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, Overrides, ct),
+		["IDbCommand, transform"] = (t, w, complete, ct) => Db(t).ToChannel(w, complete, _ => new Row(), ct),
+		["IDbCommand, mapped"] = (t, w, complete, ct) => Db(t).ToChannel<Row>(w, complete, ct),
+		["IDbCommand, mapped with map"] = (t, w, complete, ct) => Db(t).ToChannel(w, complete, Overrides, ct),
 		["DbCommand, transform"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, _ => new Row(), ct),
 		["DbCommand, mapped"] = (t, w, complete, ct) => Db(t).ToChannelAsync<Row>(w, complete, ct),
 		["DbCommand, mapped with map"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, Overrides, ct),
-		["IExecuteReader, transform"] = (t, w, complete, ct) => ((IExecuteReader)Expressive(t, ct)).ToChannel(w, complete, _ => new Row()),
-		["IExecuteReader, mapped"] = (t, w, complete, ct) => ((IExecuteReader)Expressive(t, ct)).ToChannel<Row>(w, complete),
-		["IExecuteReader, mapped with map"] = (t, w, complete, ct) => ((IExecuteReader)Expressive(t, ct)).ToChannel(w, complete, Overrides),
-		["IExecuteReaderAsync, transform"] = (t, w, complete, ct) => ((IExecuteReaderAsync)Expressive(t, ct)).ToChannelAsync(w, complete, _ => new Row()),
-		["IExecuteReaderAsync, mapped"] = (t, w, complete, ct) => ((IExecuteReaderAsync)Expressive(t, ct)).ToChannelAsync<Row>(w, complete),
-		["IExecuteReaderAsync, mapped with map"] = (t, w, complete, ct) => ((IExecuteReaderAsync)Expressive(t, ct)).ToChannelAsync(w, complete, Overrides),
+		["IExecuteReader, transform"] = (t, w, complete, ct) => Expressive(t, ct).ToChannel(w, complete, _ => new Row()),
+		["IExecuteReader, mapped"] = (t, w, complete, ct) => Expressive(t, ct).ToChannel<Row>(w, complete),
+		["IExecuteReader, mapped with map"] = (t, w, complete, ct) => Expressive(t, ct).ToChannel(w, complete, Overrides),
+		["IExecuteReaderAsync, transform"] = (t, w, complete, ct) => Expressive(t, ct).ToChannelAsync(w, complete, _ => new Row()),
+		["IExecuteReaderAsync, mapped"] = (t, w, complete, ct) => Expressive(t, ct).ToChannelAsync<Row>(w, complete),
+		["IExecuteReaderAsync, mapped with map"] = (t, w, complete, ct) => Expressive(t, ct).ToChannelAsync(w, complete, Overrides),
 	};
 
 	public static TheoryData<string, bool> ArrayShapes() => Shapes(ArrayCalls.Keys);

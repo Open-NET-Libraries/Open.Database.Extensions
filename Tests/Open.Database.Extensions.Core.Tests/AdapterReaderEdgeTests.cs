@@ -274,7 +274,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await call);
 		Exception fault = await Assert.ThrowsAnyAsync<Exception>(() => Within(target.Completion));
-		Assert.IsAssignableFrom<OperationCanceledException>(fault);
+		Assert.IsType<OperationCanceledException>(fault, exactMatch: false);
 	}
 
 	[Theory]
@@ -359,7 +359,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 		Rig rig = Build(ConnectionState.Closed);
 		Channel<int> channel = NewChannel();
 
-		Assert.Equal(3, await ((IDbCommand)rig.Command).ToChannel(channel.Writer, true, Tenfold, Token));
+		Assert.Equal(3, await rig.Command.ToChannel(channel.Writer, true, Tenfold, Token));
 
 		Assert.Equal([CommandBehavior.CloseConnection], rig.Command.Behaviors); // the reader's disposal is what closes it
 		Assert.Equal(1, rig.Connection.OpenCalls);
@@ -374,7 +374,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 		Rig rig = Build(ConnectionState.Open);
 		Channel<int> channel = NewChannel();
 
-		Assert.Equal(3, await ((IDbCommand)rig.Command).ToChannel(channel.Writer, true, Tenfold, Token));
+		Assert.Equal(3, await rig.Command.ToChannel(channel.Writer, true, Tenfold, Token));
 
 		Assert.Equal([CommandBehavior.Default], rig.Command.Behaviors);
 		Assert.Equal(0, rig.Connection.OpenCalls);
@@ -389,7 +389,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 		Rig rig = Build(ConnectionState.Open);
 		Channel<int> channel = NewChannel();
 
-		Assert.Same(failure, await Assert.ThrowsAsync<ProbeException>(async () => await ((IDbCommand)rig.Command).ToChannel(
+		Assert.Same(failure, await Assert.ThrowsAsync<ProbeException>(async () => await rig.Command.ToChannel(
 			channel.Writer, true, record => record.GetInt32(0) == 2 ? throw failure : record.GetInt32(0), Token)));
 
 		Assert.Equal(1, rig.Reader.Disposals);
@@ -404,7 +404,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 		Rig rig = Build(ConnectionState.Open);
 		Channel<int> channel = NewChannel();
 
-		Assert.Same(failure, await Assert.ThrowsAsync<ProbeException>(async () => await ((IDbCommand)rig.Command).ToChannel(
+		Assert.Same(failure, await Assert.ThrowsAsync<ProbeException>(async () => await rig.Command.ToChannel(
 			channel.Writer, false, record => record.GetInt32(0) == 2 ? throw failure : record.GetInt32(0), Token)));
 
 		Assert.Equal(1, rig.Reader.Disposals);
@@ -419,7 +419,7 @@ static long ToTarget(Shape shape, IDataReader reader, ITargetBlock<object[]> tar
 		Channel<int> channel = NewChannel();
 		channel.Writer.Complete();
 
-		await Assert.ThrowsAsync<ChannelClosedException>(async () => await ((IDbCommand)rig.Command).ToChannel(channel.Writer, true, Tenfold, Token));
+		await Assert.ThrowsAsync<ChannelClosedException>(async () => await rig.Command.ToChannel(channel.Writer, true, Tenfold, Token));
 
 		Assert.Equal(0, rig.Connection.OpenCalls);
 		Assert.Empty(rig.Command.Behaviors);

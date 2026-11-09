@@ -51,7 +51,7 @@ public static class ToDataTablesResultSetTests
 		using DataSet set = DataSetOf(rowCounts);
 		using DataTableReader reader = set.CreateDataReader();
 
-		List<DataTable> tables = ((IDataReader)reader).ToDataTables();
+		List<DataTable> tables = reader.ToDataTables();
 
 		AssertEveryResultSet(rowCounts, tables);
 	}
@@ -65,7 +65,7 @@ public static class ToDataTablesResultSetTests
 		using var connection = new FakeDbConnection();
 		using var command = new FakeDbCommand(connection, () => set.CreateDataReader());
 
-		List<DataTable> tables = ((IDbCommand)command).ToDataTables();
+		List<DataTable> tables = command.ToDataTables();
 
 		AssertEveryResultSet(rowCounts, tables);
 	}
@@ -76,7 +76,7 @@ public static class ToDataTablesResultSetTests
 		using DataSet set = DataSetOf([2]);
 		using DataTableReader reader = set.Tables[0].CreateDataReader();
 
-		List<DataTable> tables = ((IDataReader)reader).ToDataTables();
+		List<DataTable> tables = reader.ToDataTables();
 
 		AssertEveryResultSet([2], tables);
 	}
