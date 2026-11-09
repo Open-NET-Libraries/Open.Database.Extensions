@@ -63,7 +63,7 @@ For example `AddParam(search.Author)` sends `@p_author` when the procedure decla
 
 For a text command the real names are the `@name` markers found in its SQL text, matched in the same way: `AddParam(regionId)` on `... WHERE region_id = @region_id` sends `@region_id`. A marker inside a string, a quoted or `[bracketed]` identifier or a comment does not count, and neither does a `@@system` variable; a variable declared in the SQL (`DECLARE @x ...`) is a marker like any other. Only `@` is recognised; a text that uses `:name` or `?` has no markers.
 
-When the real names are not available, as with a text command that has no `@name` marker or a provider that does not implement the `ProcedureParameters` schema collection (the collection that ADO.NET's `DbConnection.GetSchema` answers), the last member is used as written, without an `@`: `Author`. The names are read once and then remembered: see [Remembered names](#remembered-names).
+When the real names are not available, as with a text command that has no `@name` marker or a provider that does not implement the `ProcedureParameters` schema collection (the collection that ADO.NET's `DbConnection.GetSchema` answers), the last member is used as written, without an `@`: `Author`. A stored procedure's names are read once and then remembered: see [Remembered names](#remembered-names).
 
 A `null` value is sent as a database NULL. `AddParam(note)` also sends the database type of the argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`. A `null` given with a name, `AddParam("note", null)`, has no type to use, so pass one:
 
