@@ -29,14 +29,18 @@ public static partial class CommandExtensions
 	// reader is disposed, but when the provider fails to execute there is no reader, so the connection that was opened here is closed here
 	// (never disposed). One the caller had opened is left as it was. A failure to close is ignored so that it cannot replace the exception
 	// being reported.
-	static IDataReader OpenAndExecuteReader(this IDbCommand command, CommandBehavior behavior)
+	//
+	// The two generic helpers are shared by the other packages (SqlClient passes SqlCommand and SqlDataReader and keeps its exact reader type).
+	// The execute delegate is passed in rather than a virtual call so that it can be a static lambda: no closure, no cast and no continuation.
+	internal static TReader OpenAndExecuteReader<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, TReader> execute)
+		where TCommand : IDbCommand
 	{
 		if (command.EnsureOpen() != ConnectionState.Closed)
-			return command.ExecuteReader(behavior);
+			return execute(command, behavior);
 
 		try
 		{
-			return command.ExecuteReader(behavior | CommandBehavior.CloseConnection);
+			return execute(command, behavior | CommandBehavior.CloseConnection);
 		}
 		catch
 		{
@@ -45,15 +49,16 @@ public static partial class CommandExtensions
 		}
 	}
 
-	/// <inheritdoc cref="OpenAndExecuteReader(IDbCommand, CommandBehavior)"/>
-	static async ValueTask<DbDataReader> OpenAndExecuteReaderAsync(this DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
+	/// <inheritdoc cref="OpenAndExecuteReader{TCommand, TReader}(TCommand, CommandBehavior, Func{TCommand, CommandBehavior, TReader})"/>
+	internal static async ValueTask<TReader> OpenAndExecuteReaderAsync<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, CancellationToken, Task<TReader>> execute, CancellationToken cancellationToken)
+		where TCommand : IDbCommand
 	{
 		if (await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false) != ConnectionState.Closed)
-			return await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+			return await execute(command, behavior, cancellationToken).ConfigureAwait(false);
 
 		try
 		{
-			return await command.ExecuteReaderAsync(behavior | CommandBehavior.CloseConnection, cancellationToken).ConfigureAwait(false);
+			return await execute(command, behavior | CommandBehavior.CloseConnection, cancellationToken).ConfigureAwait(false);
 		}
 		catch
 		{
@@ -61,6 +66,12 @@ public static partial class CommandExtensions
 			throw;
 		}
 	}
+
+	static IDataReader OpenAndExecuteReader(this IDbCommand command, CommandBehavior behavior)
+		=> OpenAndExecuteReader(command, behavior, static (c, b) => c.ExecuteReader(b));
+
+	static ValueTask<DbDataReader> OpenAndExecuteReaderAsync(this DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
+		=> OpenAndExecuteReaderAsync(command, behavior, static (c, b, ct) => c.ExecuteReaderAsync(b, ct), cancellationToken);
 
 	internal static void CloseOpened(IDbCommand command)
 	{
@@ -75,18 +86,20 @@ public static partial class CommandExtensions
 	}
 
 #if NETSTANDARD2_0
-	internal static ValueTask CloseOpenedAsync(DbCommand command)
+	internal static ValueTask CloseOpenedAsync(IDbCommand command)
 	{
 		CloseOpened(command);
 		return default;
 	}
 #else
-	internal static async ValueTask CloseOpenedAsync(DbCommand command)
+	internal static async ValueTask CloseOpenedAsync(IDbCommand command)
 	{
 		try
 		{
-			if (command.Connection is { } connection)
+			if (command.Connection is DbConnection connection)
 				await connection.CloseAsync().ConfigureAwait(false);
+			else
+				command.Connection?.Close();
 		}
 		catch
 		{
