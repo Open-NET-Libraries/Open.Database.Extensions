@@ -17,6 +17,8 @@ public static class CommandAllocationTests
 	// What the hand-written version may cost beyond the measured ideal, as in AllocationQuickWinTests.
 	const int Slack = 16;
 
+	static CancellationToken Token => TestContext.Current.CancellationToken;
+
 	// ---- a command made from a connection factory: no delegate to the factory's Create method for each command ----
 
 	[Fact]
@@ -59,7 +61,7 @@ public static class CommandAllocationTests
 	public static void ExecuteTransaction_Action_AllocatesNothingBeyondTheHandWrittenTransaction()
 	{
 		var connection = new MemConnection();
-		connection.ExecuteTransaction(DoNothing);
+		connection.ExecuteTransaction(DoNothing, cancellationToken: Token);
 
 		long actual = AllocationQuickWinTests.BytesPerCall(() => connection.ExecuteTransaction(DoNothing));
 		long byHand = BytesPerHandWrittenTransaction(connection, DoNothing);
@@ -71,7 +73,7 @@ public static class CommandAllocationTests
 	public static void ExecuteTransaction_Func_AllocatesNothingBeyondTheHandWrittenTransaction()
 	{
 		var connection = new MemConnection();
-		Assert.Equal(7, connection.ExecuteTransaction(Seven));
+		Assert.Equal(7, connection.ExecuteTransaction(Seven, cancellationToken: Token));
 
 		long actual = AllocationQuickWinTests.BytesPerCall(() => connection.ExecuteTransaction(Seven));
 		long byHand = BytesPerHandWrittenTransaction(connection, DoNothing);
@@ -83,7 +85,7 @@ public static class CommandAllocationTests
 	public static void ExecuteTransactionConditional_Func_AllocatesNothingBeyondTheHandWrittenTransaction()
 	{
 		var connection = new MemConnection();
-		Assert.True(connection.ExecuteTransactionConditional(Yes));
+		Assert.True(connection.ExecuteTransactionConditional(Yes, cancellationToken: Token));
 
 		long actual = AllocationQuickWinTests.BytesPerCall(() => connection.ExecuteTransactionConditional(Yes));
 		long byHand = BytesPerHandWrittenTransaction(connection, DoNothing);
@@ -96,19 +98,19 @@ public static class CommandAllocationTests
 	{
 		var connection = new MemConnection();
 
-		connection.ExecuteTransaction(DoNothing);
+		connection.ExecuteTransaction(DoNothing, cancellationToken: Token);
 		Assert.Equal((1, 0), (connection.Transaction.Commits, connection.Transaction.Rollbacks));
 
-		Assert.Equal(7, connection.ExecuteTransaction(Seven));
+		Assert.Equal(7, connection.ExecuteTransaction(Seven, cancellationToken: Token));
 		Assert.Equal((2, 0), (connection.Transaction.Commits, connection.Transaction.Rollbacks));
 
-		Assert.True(connection.ExecuteTransactionConditional(Yes));
+		Assert.True(connection.ExecuteTransactionConditional(Yes, cancellationToken: Token));
 		Assert.Equal((3, 0), (connection.Transaction.Commits, connection.Transaction.Rollbacks));
 
-		Assert.False(connection.ExecuteTransactionConditional(static _ => false));
+		Assert.False(connection.ExecuteTransactionConditional(static _ => false, cancellationToken: Token));
 		Assert.Equal((3, 1), (connection.Transaction.Commits, connection.Transaction.Rollbacks));
 
-		Assert.Throws<InvalidOperationException>(() => connection.ExecuteTransaction(static _ => throw new InvalidOperationException()));
+		Assert.Throws<InvalidOperationException>(() => connection.ExecuteTransaction(static _ => throw new InvalidOperationException(), cancellationToken: Token));
 		Assert.Equal((3, 2), (connection.Transaction.Commits, connection.Transaction.Rollbacks));
 	}
 
@@ -118,12 +120,12 @@ public static class CommandAllocationTests
 		var connection = new MemConnection();
 		DbConnection? none = null;
 
-		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction((Action<DbTransaction>)null!)).ParamName);
-		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction((Func<DbTransaction, int>)null!)).ParamName);
-		Assert.Equal("conditionalAction", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransactionConditional((Func<DbTransaction, bool>)null!)).ParamName);
-		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransaction(DoNothing)).ParamName);
-		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransaction(Seven)).ParamName);
-		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransactionConditional(Yes)).ParamName);
+		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction((Action<DbTransaction>)null!, cancellationToken: Token)).ParamName);
+		Assert.Equal("action", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransaction((Func<DbTransaction, int>)null!, cancellationToken: Token)).ParamName);
+		Assert.Equal("conditionalAction", Assert.Throws<ArgumentNullException>(() => connection.ExecuteTransactionConditional((Func<DbTransaction, bool>)null!, cancellationToken: Token)).ParamName);
+		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransaction(DoNothing, cancellationToken: Token)).ParamName);
+		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransaction(Seven, cancellationToken: Token)).ParamName);
+		Assert.Equal("connection", Assert.Throws<ArgumentNullException>(() => none!.ExecuteTransactionConditional(Yes, cancellationToken: Token)).ParamName);
 	}
 
 	// What a caller writes without the helper: open if needed, begin, run, commit, dispose, restore.
