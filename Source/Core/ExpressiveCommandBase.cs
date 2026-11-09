@@ -89,7 +89,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		CommandType type,
 		string command,
 		IEnumerable<Param>? @params)
-		: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command, @params)
+		: this(new ConnectionFactoryPool<TConnection>(connFactory ?? throw new ArgumentNullException(nameof(connFactory))), type, command, @params)
 	{
 	}
 
@@ -398,8 +398,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			RuntimeParamSource members = RuntimeParamSource.Of(source.GetType());
 			if (members.Names.Length == 0) return (TThis)this;
 
+			// A new list is made at the size of the members, not at the default of four slots of a large struct.
+			List<Param> own = _params ??= new(members.Names.Length);
 			for (int i = 0; i < members.Names.Length; i++)
-				Params.Add(Param.OfObject(members.Names[i], members.Getters[i](source), members.Types[i]));
+				own.Add(Param.OfObject(members.Names[i], members.Getters[i](source), members.Types[i]));
 
 			EnsureOptions().HasDerivedParams = true;
 			return (TThis)this;
@@ -410,7 +412,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		Type[] types = ParamSource<T>.Types;
 		if (names.Length == 0) return (TThis)this;
 
-		List<Param> list = Params;
+		List<Param> list = _params ??= new(names.Length);
 		for (int i = 0; i < names.Length; i++)
 			list.Add(Param.OfObject(names[i], getters[i](source), types[i]));
 
@@ -631,6 +633,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// Remembered names belong to the object commands take connections from: a factory (not the wrapper made around it for each command), a pool, or the bare connection.
 	object NameCacheOwner => _poolOrConnection switch
 	{
+		ConnectionFactoryPool<TConnection> factory => factory.Factory,
 		DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection> typed => typed.Identity,
 		DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter untyped => untyped.Identity,
 		_ => _poolOrConnection,

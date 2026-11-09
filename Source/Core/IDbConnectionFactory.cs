@@ -174,3 +174,21 @@ public static class DbConnectionFactoryExtensions
 			: new DbConnectionFactory<IDbConnection>(connectionFactory.Create);
 	}
 }
+
+// What a command made from a typed factory takes its connections from. It holds the factory itself: AsPool would make a delegate to the factory's Create method for every command.
+// Taking a connection creates one and giving it back disposes it, as with AsPool.
+internal sealed class ConnectionFactoryPool<TConnection>(IDbConnectionFactory<TConnection> factory) : IDbConnectionPool<TConnection>
+	where TConnection : IDbConnection
+{
+	// The factory object that commands made from it share, which is what remembered procedure names belong to.
+	internal IDbConnectionFactory<TConnection> Factory => factory;
+
+	public TConnection Take()
+		=> factory.Create();
+
+	IDbConnection IDbConnectionPool.Take()
+		=> Take();
+
+	public void Give(IDbConnection connection)
+		=> connection.Dispose();
+}

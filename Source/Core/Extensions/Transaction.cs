@@ -43,6 +43,18 @@ public static partial class TransactionExtensions
 		if (conditionalAction is null) throw new ArgumentNullException(nameof(conditionalAction));
 		Contract.EndContractBlock();
 
+		return ExecuteTransactionCore(connection, conditionalAction, static (t, f) => f(t), isolationLevel, cancellationToken);
+	}
+
+	// The synchronous wrappers pass the caller's function through the state to static lambdas, so a call allocates no closure and no delegate of its own.
+	// Callers guard their arguments.
+	static (bool Commit, T Value) ExecuteTransactionCore<TState, T>(
+		DbConnection connection,
+		TState state,
+		Func<DbTransaction, TState, (bool Commit, T Value)> conditionalAction,
+		IsolationLevel isolationLevel,
+		CancellationToken cancellationToken)
+	{
 		cancellationToken.ThrowIfCancellationRequested();
 
 		// Remember the prior state so a connection that is opened here is closed again here.
@@ -54,7 +66,7 @@ public static partial class TransactionExtensions
 			// Disposing the transaction (at the end of this block, before the connection is closed)
 			// is what rolls back anything that was not committed.
 			using DbTransaction transaction = connection.BeginTransaction(isolationLevel);
-			(bool Commit, T Value) result = conditionalAction(transaction);
+			(bool Commit, T Value) result = conditionalAction(transaction, state);
 			cancellationToken.ThrowIfCancellationRequested();
 
 			if (result.Commit) transaction.Commit();
@@ -130,11 +142,10 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (conditionalAction is null) throw new ArgumentNullException(nameof(conditionalAction));
+		if (connection is null) throw new ArgumentNullException(nameof(connection));
 		Contract.EndContractBlock();
 
-		return connection.ExecuteTransactionConditional(
-			isolationLevel, cancellationToken,
-			t => (conditionalAction(t), true)).Commit;
+		return ExecuteTransactionCore(connection, conditionalAction, static (t, f) => (f(t), true), isolationLevel, cancellationToken).Commit;
 	}
 
 	/// <summary>
@@ -155,11 +166,10 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (action is null) throw new ArgumentNullException(nameof(action));
+		if (connection is null) throw new ArgumentNullException(nameof(connection));
 		Contract.EndContractBlock();
 
-		return connection.ExecuteTransactionConditional(
-			isolationLevel, cancellationToken,
-			t => (true, action(t))).Value;
+		return ExecuteTransactionCore(connection, action, static (t, f) => (true, f(t)), isolationLevel, cancellationToken).Value;
 	}
 
 	/// <summary>
@@ -178,11 +188,10 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (action is null) throw new ArgumentNullException(nameof(action));
+		if (connection is null) throw new ArgumentNullException(nameof(connection));
 		Contract.EndContractBlock();
 
-		connection.ExecuteTransaction(
-			t => { action(t); return true; },
-			isolationLevel, cancellationToken);
+		ExecuteTransactionCore<Action<DbTransaction>, bool>(connection, action, static (t, a) => { a(t); return (true, true); }, isolationLevel, cancellationToken);
 	}
 
 	/// <summary>
