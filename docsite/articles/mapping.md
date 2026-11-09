@@ -222,16 +222,22 @@ When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function fo
 
 [!code-csharp[](../samples/Mapping.cs#map_selector)]
 
+## `Map<T>()` or `Results<T>()`
+
+On a command, prefer `Map<T>()`: it maps straight from the open reader as a terminal (`ToList`, `FirstOrDefault`, ...) runs, and it has `Skip`, `Take` and `Read`. `Results<T>()` also maps rows to `T`, and where you call it decides what happens:
+
+| You call | The rows are read | The connection is released | You get |
+|---|---|---|---|
+| `command.Map<T>()` and a terminal | when the terminal runs | when the terminal returns | what the terminal returns |
+| `reader.Results<T>()` | as you enumerate | never: the reader is yours | a lazy sequence on your open reader |
+| `reader.ResultsBuffered<T>()` | every row, during the call | never: the reader is yours | a queue you can enumerate once |
+| `command.Results<T>()` | every row, during the call | before it returns | a queue you can enumerate once |
+
+`Results<T>` exists for two jobs. It is the mapper for a reader you already hold, for example inside `ExecuteReader(reader => ...)` or when you read [several result sets](several-result-sets.md). It is also the typed route for a plain `IDbCommand` or `DbCommand`, which have no `Map<T>()`: `Map<T>()` extends only the fluent commands (`IExecuteReader`). There is no `Map<T>()` on a reader.
+
 ## Several result sets
 
-`Map<T>()`, `Results`, `Retrieve` and the Channel and Dataflow calls on a command read one result set. The library never moves to the next one, because only you know how many there are and what shape each has. Using several is rare. When you need it, take the reader, map a set, call `NextResult` yourself, and map again:
-
-[!code-csharp[](../samples/Mapping.cs#map_result_sets)]
-
-- Materialize a set (`ToList()`) before calling `NextResult`, because `Results` is lazy.
-- `NextResult` returns `false` when there are no more sets.
-- The columns can differ per set; the reader reports the columns of the current set.
-- On SQL Server an error raised after a set's rows is raised by the `NextResult` call that moves past that set, so one call after the last set you expect is also the check. An error after a later set needs a call past that set too.
+`Map<T>()`, `Results`, `Retrieve` and the Channel and Dataflow calls on a command read the first result set and stop. To read more, take the reader and call `NextResult` yourself: see [Several result sets](several-result-sets.md).
 
 ## How it works
 

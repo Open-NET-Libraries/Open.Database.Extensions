@@ -78,7 +78,7 @@ These can change behavior without a compile error, most likely first:
 
 ## Known limitations
 
-- **The library never moves a reader to the next result set.** A SQL error raised after the last row (for example `RAISERROR` after a `SELECT`) does not reach you from `Map<T>()`, `Results`, `Retrieve`, Channel or Dataflow. If a command can fail after its rows, run it with `ExecuteReader` or `ExecuteReaderAsync` with your own handler and call `NextResult` yourself; see [Several result sets](mapping.md#several-result-sets).
+- **The library never moves a reader to the next result set.** A SQL error raised after the last row (for example `RAISERROR` after a `SELECT`) does not reach you from `Map<T>()`, `Results`, `Retrieve`, Channel or Dataflow. If a command can fail after its rows, run it with `ExecuteReader` or `ExecuteReaderAsync` with your own handler and call `NextResult` yourself; see [Several result sets](several-result-sets.md).
 - `Retrieve()` followed by `DequeueAs<T>()` is a two-pass route: rows are copied into `object[]` and mapped as they are drained. It is slower and allocates more than a direct `Map<T>()` at larger sizes. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()`.
 - The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. The cause is in the underlying channel library.
 - Output parameters can be sent, but their values cannot be read back after the call. A provider that does not implement the `ProcedureParameters` schema collection supplies no real parameter names, so `AddParam(search.Author)` uses the last member as written there.

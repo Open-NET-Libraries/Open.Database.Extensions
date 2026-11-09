@@ -22,6 +22,10 @@ public static partial class CoreExtensions
 	/// (about 29 KB and a reader compile for a one-row read of a 12-property model, against 464 B through a declared map; see
 	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
 	/// </para>
+	/// <para>
+	/// The query reads the current result set of the reader and never moves to the next one: the library does not call <c>NextResult</c>. To read several result sets, take the reader with <c>ExecuteReader</c> and call <c>NextResult</c> yourself; see
+	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/several-result-sets.html">Several result sets</see>.
+	/// </para>
 	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>

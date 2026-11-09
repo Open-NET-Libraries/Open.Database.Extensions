@@ -35,7 +35,7 @@ A command built from a single connection refuses concurrent terminals: a second 
 Several helpers exist to keep the time a connection is open short:
 
 - `EnsureOpen()` and `EnsureOpenAsync()` open a closed (or broken) connection and return its prior state, so you can restore it.
-- Buffering helpers such as `Results<T>()` queue the rows first and apply the transformation as you enumerate them.
+- `Results<T>()` maps every row during the call and then releases the connection. Only the `DataTable` path (`ResultsFromDataTable<T>()`) queues the rows first and applies the transformation as you enumerate them.
 - `Map<T>()` streams rows straight out of the reader while the connection is open; the connection is released as soon as the terminal returns.
 
 ## Transactions

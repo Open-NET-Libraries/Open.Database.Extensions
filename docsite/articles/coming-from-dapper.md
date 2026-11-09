@@ -259,7 +259,7 @@ Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation to
 Dapper has features this library does not offer:
 
 - **Choosing a constructor by the columns.** The extensions use the one public constructor, whatever the columns (see [Positional records](#positional-records)).
-- **Multi-mapping and `QueryMultiple`.** Dapper maps several types from one row and reads several result sets from one call. Reading several result sets is done by mapping one, calling `NextResult` yourself and mapping the next: see [Several result sets](mapping.md#several-result-sets).
+- **Multi-mapping and `QueryMultiple`.** Dapper maps several types from one row and reads several result sets from one call. Reading several result sets is done by mapping one, calling `NextResult` yourself and mapping the next: see [Several result sets](several-result-sets.md).
 - **Type handlers and custom type maps.** `SqlMapper.AddTypeHandler` and `SqlMapper.SetTypeMap`.
 - **Dynamic results.** `Query(sql)` without a type returns dynamic rows.
 - **Batch execution.** `Execute(sql, IEnumerable<parameters>)` runs one command once for every item. The extensions have no equivalent: loop over the items and run the command for each, inside one `ExecuteTransaction` (see [A transaction](#a-transaction)).
