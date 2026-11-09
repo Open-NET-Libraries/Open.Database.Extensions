@@ -744,7 +744,7 @@ public static class DataReaderExtensions
 
 	/// <summary>
 	/// Loads all data from a command through an <see cref="IDataReader"/> into a DataTables.
-	/// Calls .NextResult() to check for more results.
+	/// Each result set is loaded into its own table.
 	/// </summary>
 	/// <param name="reader">The IDataReader to load data from.</param>
 	/// <returns>The resultant list of DataTables.</returns>
@@ -754,11 +754,13 @@ public static class DataReaderExtensions
 		Contract.EndContractBlock();
 
 		var results = new List<DataTable>();
+		// DataTable.Load consumes one result set, moves the reader to the next one and closes it after the last,
+		// so the reader says when there is another result set; calling NextResult here as well skipped one.
 		do
 		{
 			results.Add(reader.ToDataTable());
 		}
-		while (reader.NextResult());
+		while (!reader.IsClosed);
 		return results;
 	}
 
