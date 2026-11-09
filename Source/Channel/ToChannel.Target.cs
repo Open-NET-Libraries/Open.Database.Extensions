@@ -277,8 +277,22 @@ public static partial class ChannelDbExtensions
 			ConnectionState state = command.Connection.EnsureOpen();
 			CommandBehavior behavior = CommandBehavior.SingleResult;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using IDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-			return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
+			IDataReader reader;
+			try
+			{
+				reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+			}
+			catch
+			{
+				// No reader means CloseConnection has nothing to close: the connection this call opened is closed here (never disposed).
+				if (state == ConnectionState.Closed) CommandExtensions.CloseOpened(command);
+				throw;
+			}
+
+			using (reader)
+			{
+				return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
+			}
 		}
 		catch (Exception ex)
 		{
