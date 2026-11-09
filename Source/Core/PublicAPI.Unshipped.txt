@@ -1,4 +1,1 @@
 #nullable enable
-override Open.Database.Extensions.ExpressiveCommand.GetProcedureParameterNames(System.Data.IDbConnection! connection, string! procedure) -> System.Collections.Immutable.ImmutableArray<string!>
-override Open.Database.Extensions.ExpressiveDbCommand.GetProcedureParameterNames(System.Data.Common.DbConnection! connection, string! procedure) -> System.Collections.Immutable.ImmutableArray<string!>
-override Open.Database.Extensions.ExpressiveDbCommand.GetProcedureParameterNamesAsync(System.Data.Common.DbConnection! connection, string! procedure, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableArray<string!>>
