@@ -96,6 +96,7 @@ public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerab
 		TResult result)
 		: base(ordinals, names, result)
 	{
+		if (result == null) throw new ArgumentNullException(nameof(result));
 	}
 
 	/// <inheritdoc />

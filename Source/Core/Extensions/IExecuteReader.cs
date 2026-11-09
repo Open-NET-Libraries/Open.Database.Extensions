@@ -106,6 +106,7 @@ public static class IExecuteReaderExtensions
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
 		Contract.EndContractBlock();
 
 		return command.ExecuteReader(
