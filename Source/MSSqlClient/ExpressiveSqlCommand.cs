@@ -110,6 +110,34 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	}
 
 	/// <summary>
+	/// Adds a parameter of a <see cref="DbType"/> with no value, for example an output parameter: <c>AddParam("@id", DbType.Int32, ParameterDirection.Output)</c>.
+	/// </summary>
+	/// <remarks>
+	/// The database type of this command is <see cref="SqlDbType"/>, so without this overload a <see cref="DbType"/> argument would be taken as the VALUE of the parameter. It is converted to the <see cref="SqlDbType"/> that the provider maps it to.
+	/// The direction has no default on purpose: this overload is declared on the command, so it hides the inherited ones wherever it applies, and a literal 0 converts to any enum, which would turn <c>AddParam("@count", 0)</c> into a parameter with no value. A constant <c>0</c> with a direction (<c>AddParam("@n", 0, ParameterDirection.InputOutput)</c>) binds to this overload as a <see cref="DbType"/>: write <c>(object)0</c> or use a variable.
+	/// </remarks>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="type">The database type of the parameter.</param>
+	/// <param name="direction">The direction of the parameter. An input or input-output parameter with no value is sent as a NULL of that type.</param>
+	/// <returns>This instance for use in method chaining.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
+	/// <exception cref="ArgumentException"><paramref name="name"/> is blank, or SQL Server has no type for <paramref name="type"/>.</exception>
+	public ExpressiveSqlCommand AddParam(string name, DbType type, ParameterDirection direction)
+		=> AddParam(name, new SqlParameter { DbType = type }.SqlDbType, direction);
+
+	/// <summary>
+	/// Conditionally adds a parameter of a <see cref="DbType"/> with no value. See <see cref="AddParam(string, DbType, ParameterDirection)"/>.
+	/// </summary>
+	/// <param name="condition">The condition to add the param by.  Only adds if true.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="type">The database type of the parameter.</param>
+	/// <param name="direction">The direction of the parameter.</param>
+	/// <returns>This instance for use in method chaining.</returns>
+	/// <exception cref="ArgumentException">The parameter is added and <paramref name="name"/> is blank, or SQL Server has no type for <paramref name="type"/>.</exception>
+	public ExpressiveSqlCommand AddParamIf(bool condition, string name, DbType type, ParameterDirection direction)
+		=> condition ? AddParam(name, type, direction) : this;
+
+	/// <summary>
 	/// Handles adding the list of parameters to a new command.
 	/// </summary>
 	protected override void AddParams(SqlCommand command)
