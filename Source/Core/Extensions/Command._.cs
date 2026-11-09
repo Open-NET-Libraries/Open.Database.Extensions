@@ -22,7 +22,7 @@ public static partial class CommandExtensions
 #if DEBUG
 		if (command.Connection is null) throw new ArgumentException("Cannot execute a command with a null connection.");
 #endif
-		return command.Connection!.EnsureOpenAsync(false, cancellationToken);
+		return command.Connection!.EnsureOpenAsync(cancellationToken);
 	}
 	#endregion
 

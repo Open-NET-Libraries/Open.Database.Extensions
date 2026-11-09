@@ -60,7 +60,8 @@ These can change behavior without a compile error, most likely first:
 10. **A struct with one declared public constructor is built through it.** A `record struct` gets equal results; a struct whose constructor does more than assign now runs it. A constructor parameter no column feeds gets its declared default, replacing the plain default of before.
 11. **Channels and Dataflow.** On the mapped overloads a mapping failure faults the target when `complete` is `true`; the target is never completed or faulted before the reader is released; `ArgumentNullException.ParamName` for a null target is `"target"`; a cancelled mapped async channel call succeeds only if the reader had already reported the end of the results, else it throws `OperationCanceledException`.
 12. **Async calls pass the command's `CancellationToken` to the connection open.**
-13. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
+13. **`EnsureOpenAsync` and `OpenAsync` have an obsolete `bool configureAwait` overload.** The library always awaits with `ConfigureAwait(false)`; returning to your context is your call. The `bool` overloads still compile with a warning and ignore the argument.
+14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
 
 ## Fixes
 

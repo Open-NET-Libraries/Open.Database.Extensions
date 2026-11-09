@@ -73,6 +73,27 @@ public static class ConfigureAwaitTests
 		return (context.Posts, connection.Gated);
 	}
 
+	#pragma warning disable CS0618 // the obsolete bool overloads must still never post back, whatever the argument
+	[Fact]
+	public static async Task ObsoleteBoolOverloads_IgnoreTheArgument()
+	{
+		KeyValuePair<string, Func<GatedConnection, Task>>[] calls =
+		[
+			new("EnsureOpenAsync(DbConnection, true)", c => c.EnsureOpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
+			new("EnsureOpenAsync(IDbConnection, true)", c => ((IDbConnection)c).EnsureOpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
+			new("OpenAsync(IDbConnection, true)", c => ((IDbConnection)c).OpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
+		];
+
+		foreach (var call in calls)
+		{
+			var (posts, gated) = await Run("open", call.Value);
+
+			Assert.True(gated == 1, $"{call.Key}: the open was never awaited, so nothing was tested.");
+			Assert.True(posts == 0, $"{call.Key}: resumed on the caller's context {posts} time(s) after an asynchronous open.");
+		}
+	}
+	#pragma warning restore CS0618
+
 	// A command that opens a closed connection must not resume on the caller's context after the open. The fake connection cannot
 	// create or run a command, so each call ends with NotSupportedException after the open: only the posts matter.
 	static async Task Swallow(Task call) { try { await call.ConfigureAwait(false); } catch (NotSupportedException) { } }

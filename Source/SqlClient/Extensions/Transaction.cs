@@ -85,7 +85,7 @@ public static partial class SqlTransactionExtensions
 		Contract.EndContractBlock();
 
 		// Remember the prior state so a connection that is opened here is closed again here.
-		ConnectionState priorState = await connection.EnsureOpenAsync(false, cancellationToken).ConfigureAwait(false);
+		ConnectionState priorState = await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
 		try
 		{
 			// Disposing the transaction (at the end of this block, before the connection is closed)
