@@ -4,7 +4,7 @@ namespace Open.Database.Extensions;
 
 /// <summary>
 /// The public instance properties and fields of a RUNTIME type and a compiled getter for each, built once per type, for <c>AddParams(object)</c> when the argument is typed <see cref="object"/>
-/// and the static type has no members of its own. The members are found the way <see cref="ParamSource{T}"/> finds them, except that a member no getter can be built for (a ref struct or a pointer) is skipped.
+/// and the static type has no members of its own. The members are found the way <see cref="ParamSource{T}"/> finds them.
 /// </summary>
 /// <remarks>One immutable entry per type, kept for as long as the type is alive (so a type that is unloaded takes its entry with it); the getters take the object, so no reflection runs after the first time a type is seen.</remarks>
 sealed class RuntimeParamSource
@@ -36,7 +36,7 @@ sealed class RuntimeParamSource
 			if (!usable) continue;
 
 			Type memberType = member is PropertyInfo p ? p.PropertyType : ((FieldInfo)member).FieldType;
-			if (!CanBox(memberType) || !seen.Add(member.Name)) continue;
+			if (!seen.Add(member.Name)) continue;
 
 			Expression value = Expression.Convert(Expression.MakeMemberAccess(typed, member), typeof(object));
 			names.Add(member.Name);
@@ -47,16 +47,5 @@ sealed class RuntimeParamSource
 		Names = [.. names];
 		Getters = [.. getters];
 		Types = [.. types];
-	}
-
-	// A ref struct (a Span<T>, a ReadOnlySpan<T>) and a pointer cannot be boxed, so there is no getter that returns them as an object. Matched by the attribute's full name, as the library does for the other
-	// attributes it reads, because the attribute class is not part of every target framework.
-	static bool CanBox(Type type)
-	{
-		if (type.IsPointer || type.IsByRef) return false;
-		foreach (CustomAttributeData attribute in type.CustomAttributes)
-			if (attribute.AttributeType.FullName == "System.Runtime.CompilerServices.IsByRefLikeAttribute") return false;
-
-		return true;
 	}
 }

@@ -380,7 +380,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// A parameter you add with <c>AddParam</c>, by name or from an argument, wins over a member that resolves to the same name.</para>
 	/// <para>Every public readable property and field is read when this method is called, whether or not the procedure declares it, so a getter that throws or loads lazily runs then. Static members and indexers are ignored.
 	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: an interface adds only its own. The one exception is <see cref="object"/>: a variable typed <see cref="object"/>, or the result of a <c>Func&lt;T, object&gt;</c>, has no members of its own, so the members of its runtime type are used.
-	/// There, a member whose type cannot be boxed (a <c>ref struct</c> such as <c>ReadOnlySpan&lt;char&gt;</c>, or a pointer) is skipped. The members of each type are found once and remembered. Nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
+	/// There, the members of each type are found once and remembered. Nested objects are not flattened (pass <c>order.Customer</c> itself).</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the object whose members are the parameters.</typeparam>
 	/// <param name="source">The object to read the values from.</param>
