@@ -133,7 +133,7 @@ public static class ParameterDirectionTests
 	public static void AnArgumentNamedByItsExpression_IsSentAsAnInput()
 	{
 		var probe = new ConnectionProbe(ConnectionState.Open);
-		int orderId = 5;
+		const int orderId = 5;
 
 		new ExpressiveCommand(probe.Connection, CommandType.StoredProcedure, "dbo.p")
 			.AddParam(orderId)

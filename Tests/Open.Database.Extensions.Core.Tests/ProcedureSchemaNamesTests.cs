@@ -82,8 +82,8 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void TheNamesOfTheSchemaCollection_AreMatched_ReturnValueSkipped_InOrdinalOrder_AndSentAsTheProviderSpellsThem()
 	{
-		int orderId = 5;
-		string name = "ann";
+		const int orderId = 5;
+		const string name = "ann";
 		var connection = new SchemaConnection(Table(Row(2, "@p_name"), Row(0, ""), Row(3, null), Row(1, "@order_id"), Row(0, "@RETURN_VALUE")), null);
 
 		Assert.Equal(["@order_id", "@p_name"], Run(connection, Proc(), c => c.AddParam(orderId).AddParam(name)));
@@ -95,8 +95,8 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void ANameWithoutAnAt_IsSentWithoutOne()
 	{
-		int orderId = 5;
-		string name = "ann";
+		const int orderId = 5;
+		const string name = "ann";
 		var connection = new SchemaConnection(Table(Row(1, "order_id"), Row(2, "@p_name")), null);
 
 		Assert.Equal(["order_id", "@p_name"], Run(connection, Proc(), c => c.AddParam(orderId).AddParam(name)));
@@ -105,7 +105,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void ANameThatMatchesNothing_ThrowsLikeAStoredProcedureOfASqlCommand()
 	{
-		int unrelated = 1;
+		const int unrelated = 1;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id")), null);
 
 		var ex = Assert.Throws<InvalidOperationException>(() => Run(connection, Proc(), c => c.AddParam(unrelated)));
@@ -133,8 +133,8 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static async Task Async_FindsTheSameNames()
 	{
-		int orderId = 5;
-		string name = "ann";
+		const int orderId = 5;
+		const string name = "ann";
 		var connection = new SchemaConnection(Table(Row(1, "@order_id"), Row(2, "@p_name")), null);
 
 		Assert.Equal(["@order_id", "@p_name"], await RunAsync(connection, Proc(), c => c.AddParam(orderId).AddParam(name)));
@@ -154,7 +154,7 @@ public static class ProcedureSchemaNamesTests
 	[InlineData("names1;1", null, "names1;1")] // nothing is stripped that the provider could still resolve
 	public static void TheProcedureName_IsSplitIntoSchemaAndName_ForTheRestrictions(string procedure, string? schema, string name)
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id")), null);
 
 		Assert.Equal(["@order_id"], Run(connection, procedure, c => c.AddParam(orderId)));
@@ -170,7 +170,7 @@ public static class ProcedureSchemaNamesTests
 	[InlineData(".names1")]
 	public static void ADatabasePartOrAnEmptyPart_IsNotLookedUp_TheNameIsUsedAsWritten(string procedure)
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id")), null);
 
 		Assert.Equal(["orderId"], Run(connection, procedure, c => c.AddParam(orderId)));
@@ -182,7 +182,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void WithoutASchema_RowsFromMoreThanOneSchema_AreAmbiguous_TheNameIsUsedAsWritten()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id", "dbo"), Row(1, "@order_id", "sales")), null);
 
 		Assert.Equal(["orderId"], Run(connection, "names1", c => c.AddParam(orderId)));
@@ -192,7 +192,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void WithoutASchema_AProcedureOfTheSameNameWithoutParametersInAnotherSchema_IsAmbiguousToo()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(0, "", "sales"), Row(1, "@order_id", "dbo")), null);
 
 		Assert.Equal(["orderId"], Run(connection, "names1", c => c.AddParam(orderId)));
@@ -201,7 +201,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void WithoutASchema_RowsFromOneSchema_AreUsed()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id", "sales"), Row(2, "@p_name", "sales")), null);
 
 		Assert.Equal(["@order_id"], Run(connection, "names1", c => c.AddParam(orderId)));
@@ -210,7 +210,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void ATableWithoutParameters_IsNotKnown_AndNotRemembered()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(0, "")), null);
 		string procedure = Proc();
 
@@ -228,10 +228,10 @@ public static class ProcedureSchemaNamesTests
 	};
 
 	[Theory]
-	[MemberData(nameof(Unsupported))]
+	[MemberData(nameof(Unsupported), DisableDiscoveryEnumeration = true)]
 	public static void AProviderThatDoesNotSupportTheCollection_IsNotKnown_TheNameIsUsedAsWritten(Exception failure)
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(null, failure);
 
 		Assert.Equal(["orderId"], Run(connection, Proc(), c => c.AddParam(orderId)));
@@ -241,7 +241,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static async Task AProviderThatDoesNotSupportTheCollection_IsNotKnown_OnTheAsyncPathToo()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(null, new NotSupportedException());
 
 		Assert.Equal(["orderId"], await RunAsync(connection, Proc(), c => c.AddParam(orderId)));
@@ -250,7 +250,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void ADatabaseError_PropagatesUnchanged_WithTheProcedureNameInData()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var failure = new ProviderFailure("the server said no");
 		var connection = new SchemaConnection(null, failure);
 		string procedure = Proc();
@@ -264,7 +264,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static async Task ADatabaseError_PropagatesUnchanged_OnTheAsyncPathToo()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var failure = new ProviderFailure("the server said no");
 		var connection = new SchemaConnection(null, failure);
 		string procedure = Proc();
@@ -278,7 +278,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void AnInvalidOperationThatDoesNotSayTheCollectionIsUnsupported_PropagatesWithTheProcedureName()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var failure = new InvalidOperationException("The connection is busy.");
 		var connection = new SchemaConnection(null, failure);
 		string procedure = Proc();
@@ -294,7 +294,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void TheNames_AreRemembered_ForTheNextCommandOnTheSameConnection()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id")), null);
 		string procedure = Proc();
 
@@ -308,7 +308,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void ExpressiveCommand_OverADbConnection_LooksTheNamesUpToo()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(1, "@order_id")), null);
 		IDbConnection asInterface = connection;
 
@@ -321,7 +321,7 @@ public static class ProcedureSchemaNamesTests
 	[Fact]
 	public static void ExpressiveCommand_OverAConnectionThatIsNotADbConnection_UsesTheNameAsWritten()
 	{
-		int orderId = 5;
+		const int orderId = 5;
 		var probe = new ConnectionProbe(ConnectionState.Open);
 
 		new ExpressiveCommand(probe.Connection, CommandType.StoredProcedure, Proc()).AddParam(orderId).ExecuteNonQuery();

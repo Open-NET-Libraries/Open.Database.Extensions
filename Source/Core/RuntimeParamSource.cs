@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 
 namespace Open.Database.Extensions;
 
@@ -15,9 +14,9 @@ sealed class RuntimeParamSource
 
 	internal static RuntimeParamSource Of(Type type) => Cache.GetValue(type, Create);
 
-	internal readonly string[] Names;
-	internal readonly Func<object, object?>[] Getters;
-	internal readonly Type[] Types;
+	internal string[] Names { get; }
+	internal Func<object, object?>[] Getters { get; }
+	internal Type[] Types { get; }
 
 	RuntimeParamSource(Type type)
 	{

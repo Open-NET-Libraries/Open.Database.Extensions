@@ -76,6 +76,7 @@ public static class SqlServerParameterTypeTests
 	// A literal 0 converts implicitly to any enum, so a DbType parameter with a default direction would take AddParam("@count", 0) and add a typed NULL where an int 0 was meant.
 
 	[Fact]
+	[SuppressMessage("Roslynator", "RCS1118:Mark local variable as const", Justification = "The local is a variable on purpose: a literal 0 converts implicitly to any enum, a variable does not, and the test pins both.")]
 	public static void AValueIsStillAValue_AboveAllALiteralZero()
 	{
 		int zero = 0;

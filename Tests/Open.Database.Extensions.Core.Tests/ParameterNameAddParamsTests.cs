@@ -71,14 +71,14 @@ public static class ParameterNameAddParamsTests
 	[Fact]
 	public static void TheResultOfAFuncOfObject_SendsItsMembers_ReadAtEveryCall()
 	{
-		Func<int, object> make = id => new { Id = id, Name = "n" + id };
+		static object Make(int id) => new { Id = id, Name = "n" + id };
 		var run = TextCommand();
 
-		Assert.Equal(["Id", "Name"], run.Run(c => c.AddParams(make(3))));
+		Assert.Equal(["Id", "Name"], run.Run(c => c.AddParams(Make(3))));
 		Assert.Equal(3, run.Values["Id"]);
 		Assert.Equal("n3", run.Values["Name"]);
 
-		Assert.Equal(["Id", "Name"], run.Run(c => c.AddParams(make(4)))); // the members are found once per type, the values are read every time
+		Assert.Equal(["Id", "Name"], run.Run(c => c.AddParams(Make(4)))); // the members are found once per type, the values are read every time
 		Assert.Equal(4, run.Values["Id"]);
 		Assert.Equal("n4", run.Values["Name"]);
 	}
@@ -122,7 +122,7 @@ public static class ParameterNameAddParamsTests
 	[Fact]
 	public static void ATypeWithNoMembers_AddsNothing_AndNobodyIsAsked()
 	{
-		object nothing = new object();
+		object nothing = new();
 		object noPublic = new NoPublicMembers();
 
 		Assert.Empty(TextCommand().Run(c => c.AddParams(nothing)));

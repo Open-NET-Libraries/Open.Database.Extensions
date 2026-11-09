@@ -122,7 +122,7 @@ public static class UnmappableTypeTests
 	static string Bag(string name) => $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).";
 
 	// A dictionary or a dynamic object is not a row model: it has no properties to set, so a map of it used to build one empty row and say nothing. Each of these kinds is reached by a different interface.
-	public sealed class DictionaryOfMine : Dictionary<string, object?> { }
+	public sealed class DictionaryOfMine : Dictionary<string, object?>;
 
 	public sealed class OnlyReadOnlyDictionary : IReadOnlyDictionary<string, int>
 	{
@@ -141,7 +141,7 @@ public static class UnmappableTypeTests
 		public DynamicMetaObject GetMetaObject(System.Linq.Expressions.Expression parameter) => throw new NotSupportedException();
 	}
 
-	public sealed class DynamicBag : DynamicObject { }
+	public sealed class DynamicBag : DynamicObject;
 
 	// A model that merely holds a dictionary is a model like any other.
 	public sealed class HoldsADictionary
