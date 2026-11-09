@@ -274,7 +274,7 @@ public static partial class ChannelDbExtensions
 		Exception? exception = null;
 		try
 		{
-			CommandBehavior behavior = CommandBehavior.SingleResult;
+			const CommandBehavior behavior = CommandBehavior.SingleResult;
 			IDataReader reader = await CommandExtensions.OpenAndExecuteReaderAsync(command, behavior, static (c, b, ct) => c.ExecuteReaderAsync(b, ct).AsTask(), cancellationToken).ConfigureAwait(false);
 
 			using (reader)
