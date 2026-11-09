@@ -81,7 +81,7 @@ public static class ConfigureAwaitTests
 		[
 			new("EnsureOpenAsync(DbConnection, true)", c => c.EnsureOpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
 			new("EnsureOpenAsync(IDbConnection, true)", c => ((IDbConnection)c).EnsureOpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
-			new("OpenAsync(IDbConnection, true)", c => ((IDbConnection)c).OpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
+			new("OpenAsync(IDbConnection, true)", c => c.OpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
 		];
 
 		foreach (var call in calls)
