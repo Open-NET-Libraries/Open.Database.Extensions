@@ -32,6 +32,9 @@ public static partial class CoreExtensions
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader)
 	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
 		ImmutableArray<string> names = reader.GetNames();
 		return new QueryResultQueue<object[]>(
 			IdentityOrdinals(names.Length), names,
@@ -55,20 +58,28 @@ public static partial class CoreExtensions
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 	/// <returns>The query result that contains all the results and the column mappings.</returns>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
-		=> RetrieveInternal(reader, ordinals);
+	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
+		return RetrieveInternal(reader, ordinals);
+	}
 
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, int n, params IEnumerable<int> others)
-		=> RetrieveInternal(reader, others.Prepend(n));
+		=> Retrieve(reader, others.Prepend(n));
 
 	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
 	/// <param name="columnNames">The column names to select.</param>
 	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
 		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames);
 		return RetrieveInternal(reader,
 			columns.Select(c => c.Ordinal),
@@ -267,6 +278,9 @@ public static partial class CoreExtensions
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
 	{
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
 		// Validate columns first.
 		(string Name, int Ordinal)[] columns = reader.GetOrdinalMapping(columnNames, normalizeColumnOrder);
 		return RetrieveAsyncInternal(reader, cancellationToken,
