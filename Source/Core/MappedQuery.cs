@@ -22,6 +22,12 @@ public static partial class CoreExtensions
 	/// (about 29 KB and a reader compile for a one-row read of a 12-property model, against 464 B through a declared map; see
 	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
 	/// </para>
+	/// <para>
+	/// A terminal returns the rows of the first result set only (a <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between; never a row) and never maps a later set.
+	/// It then reads through the later sets without reading their rows, so a failure in a later statement is thrown as the provider raised it.
+	/// That is not done after <c>.SingleResult()</c>, when the caller stops reading early, or when the mapping, a selector or the caller's handler throws.
+	/// A later failure can follow a write that already committed, so a caller that retries can repeat it, and the rows read are lost when it throws.
+	/// </para>
 	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
@@ -38,7 +44,7 @@ public static partial class CoreExtensions
 		if (map is null) throw new ArgumentNullException(nameof(map));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, map, 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, map, 0, -1, false));
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
@@ -82,7 +88,7 @@ public static partial class CoreExtensions
 		if (selector is null) throw new ArgumentNullException(nameof(selector));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, new SelectorSource<T>(selector), 0, -1));
+		return new MappedQuery<T>(new MappedQueryCore<T>(command, new SelectorSource<T>(selector), 0, -1, false));
 	}
 }
 
@@ -100,20 +106,26 @@ readonly struct MappedQueryCore<T>
 	readonly IRowSource<T> _source;
 	readonly int _skip;
 	readonly int _take; // -1 == unbounded.
+	readonly bool _singleResult; // SingleResult() was called: stop after the first result set and do not read through the rest.
 
-	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take)
-	{ _command = command; _source = source; _skip = skip; _take = take; }
+	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take, bool singleResult)
+	{ _command = command; _source = source; _skip = skip; _take = take; _singleResult = singleResult; }
 
-	CommandBehavior Behavior => _source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping;
+	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.
+	CommandBehavior Behavior => _singleResult
+		? (_source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping)
+		: (_source is SelectorSource<T> ? CommandBehavior.Default : CommandBehavior.SequentialAccess);
+
+	internal MappedQueryCore<T> WithSingleResult() => new(_command, _source, _skip, _take, true);
 
 	internal MappedQueryCore<T> WithSkip(int count)
-		=> count >= 0 ? new(_command, _source, _skip + count, _take)
+		=> count >= 0 ? new(_command, _source, _skip + count, _take, _singleResult)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Take is set exactly once (the staging structs only expose it before any take exists), so this
 	// just records the limit; it applies after the skip, i.e. Enumerable.Skip(a).Take(b).
 	internal MappedQueryCore<T> WithTake(int count)
-		=> count >= 0 ? new(_command, _source, _skip, count)
+		=> count >= 0 ? new(_command, _source, _skip, count, _singleResult)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Honors the command's UseAsyncRead choice (default false: rows are pulled with Read() after an async execute).
@@ -136,28 +148,50 @@ readonly struct MappedQueryCore<T>
 			return await command.ExecuteReaderAsync(state, transform, behavior, token).ConfigureAwait(false);
 	}
 
+	// Runs a direct terminal: the transform reads the first result set, then (unless SingleResult() was called) the later sets are read through, so a failure in one is thrown.
+	// Nothing is read through when the transform throws, so the caller's own exception is never replaced.
+	TResult Run<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior)
+		=> _singleResult
+			? _command.ExecuteReader(state, transform, behavior)
+			: _command.ExecuteReader((state, transform), static (reader, s) =>
+			{
+				TResult result = s.transform(reader, s.state);
+				RowReader.ReadThrough(reader);
+				return result;
+			}, behavior);
+
+	ValueTask<TResult> RunAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource? linked, CancellationToken token)
+		=> _singleResult
+			? ExecuteAsync(state, transform, behavior, linked, token)
+			: ExecuteAsync((state, transform, token), static async (reader, s) =>
+			{
+				TResult result = await s.transform(reader, s.state).ConfigureAwait(false);
+				await RowReader.ReadThroughAsync(reader, s.token).ConfigureAwait(false);
+				return result;
+			}, behavior, linked, token);
+
 	// The terminals pass their inputs to the command as state and use static lambdas, so running a
 	// query allocates no closures or delegates of its own.
 
 	#region Handler (streaming) terminals
 
 	internal void Read(Action<IEnumerable<T>> handler)
-		=> _command.ExecuteReader((handler, _source, _skip, _take), static (reader, s) =>
+		=> _command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s) =>
 		{
-			s.handler(RowReader.Stream(s._source, reader, s._skip, s._take));
+			s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult));
 			return false;
 		}, Behavior);
 
 	internal TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler)
-		=> _command.ExecuteReader((handler, _source, _skip, _take), static (reader, s)
-			=> s.handler(RowReader.Stream(s._source, reader, s._skip, s._take)), Behavior);
+		=> _command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s)
+			=> s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult)), Behavior);
 
 	internal ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ValueTaskHelpers.Discard(ExecuteAsync((handler, _source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
+		return ValueTaskHelpers.Discard(ExecuteAsync((handler, _source, _skip, _take, _singleResult, UseAsyncRead, token), static async (reader, s) =>
 		{
-			await s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token).ConfigureAwait(false);
+			await s.handler(StreamAsync(s._source, reader, s._skip, s._take, s._singleResult, s.UseAsyncRead, s.token), s.token).ConfigureAwait(false);
 			return false;
 		}, Behavior, linked, token));
 	}
@@ -165,42 +199,44 @@ readonly struct MappedQueryCore<T>
 	internal ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((handler, _source, _skip, _take, UseAsyncRead, token), static (reader, s)
-			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s.UseAsyncRead, s.token), s.token), Behavior, linked, token);
+		return ExecuteAsync((handler, _source, _skip, _take, _singleResult, UseAsyncRead, token), static (reader, s)
+			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s._singleResult, s.UseAsyncRead, s.token), s.token), Behavior, linked, token);
 	}
 
-	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool useAsync, CancellationToken token)
+	// The streams read through the later result sets after the last row, so a caller who enumerates to the end (or to the take limit) sees a later failure.
+	// An enumeration the caller abandons, or whose handler throws, is disposed before that point and reads nothing more.
+	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool singleResult, bool useAsync, CancellationToken token)
 		=> reader is DbDataReader db
-			? RowReader.StreamAsync(source, db, skip, take, useAsync, token)
-			: RowReader.Stream(source, reader, skip, take).ToAsyncEnumerable();
+			? RowReader.StreamAsync(source, db, skip, take, useAsync, !singleResult, token)
+			: RowReader.Stream(source, reader, skip, take, !singleResult).ToAsyncEnumerable();
 
 	#endregion
 
 	#region Direct terminals
 
 	internal List<T> ToList()
-		=> _command.ExecuteReader((_source, _skip, _take), static (reader, s)
+		=> Run((_source, _skip, _take), static (reader, s)
 			=> RowReader.ToList(s._source, reader, s._skip, s._take), Behavior);
 
 	internal T[] ToArray()
-		=> _command.ExecuteReader((_source, _skip, _take), static (reader, s)
+		=> Run((_source, _skip, _take), static (reader, s)
 			=> RowReader.ToArray(s._source, reader, s._skip, s._take), Behavior);
 
 	internal T? FirstOrDefault()
-		=> _command.ExecuteReader((_source, _skip, _take), static (reader, s)
+		=> Run((_source, _skip, _take), static (reader, s)
 			=> RowReader.TryFirst(s._source, reader, s._skip, s._take, out T? item) ? item : default, FirstBehavior);
 
 	// SingleRow tells the provider only one row is needed; it can't be used when rows must be skipped first.
-	CommandBehavior FirstBehavior => _skip == 0 ? Behavior | CommandBehavior.SingleRow : Behavior;
+	CommandBehavior FirstBehavior => _skip == 0 && _singleResult ? Behavior | CommandBehavior.SingleRow : Behavior;
 
 	internal T? SingleOrDefault()
-		=> _command.ExecuteReader((_source, _skip, _take), static (reader, s)
+		=> Run((_source, _skip, _take), static (reader, s)
 			=> RowReader.TrySingle(s._source, reader, s._skip, s._take, out T? item) ? item : default, Behavior);
 
 	internal ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((_source, _skip, _take, UseAsyncRead, token), static (reader, s)
+		return RunAsync((_source, _skip, _take, UseAsyncRead, token), static (reader, s)
 			=> reader is DbDataReader db
 				? RowReader.ToListAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token)
 				: new ValueTask<List<T>>(RowReader.ToList(s._source, reader, s._skip, s._take)), Behavior, linked, token);
@@ -209,7 +245,7 @@ readonly struct MappedQueryCore<T>
 	internal ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((_source, _skip, _take, UseAsyncRead, token), static (reader, s)
+		return RunAsync((_source, _skip, _take, UseAsyncRead, token), static (reader, s)
 			=> reader is DbDataReader db
 				? RowReader.ToArrayAsync(s._source, db, s._skip, s._take, s.UseAsyncRead, s.token)
 				: new ValueTask<T[]>(RowReader.ToArray(s._source, reader, s._skip, s._take)), Behavior, linked, token);
@@ -218,7 +254,7 @@ readonly struct MappedQueryCore<T>
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((_source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
+		return RunAsync((_source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
 		{
 			if (reader is DbDataReader db)
 			{
@@ -233,7 +269,7 @@ readonly struct MappedQueryCore<T>
 	internal ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((_source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
+		return RunAsync((_source, _skip, _take, UseAsyncRead, token), static async (reader, s) =>
 		{
 			if (reader is DbDataReader db)
 			{
@@ -271,7 +307,7 @@ readonly struct MappedQueryCore<T>
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 
-		return _command.ExecuteReader((_source, _skip, _take, keySelector, comparer), static (reader, s) =>
+		return Run((_source, _skip, _take, keySelector, comparer), static (reader, s) =>
 		{
 			var sink = new DictionarySink<T, TKey>([with(s.comparer)], s.keySelector);
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
@@ -286,7 +322,7 @@ readonly struct MappedQueryCore<T>
 		Contract.EndContractBlock();
 
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((_source, _skip, _take, keySelector, comparer, UseAsyncRead, token), static async (reader, s) =>
+		return RunAsync((_source, _skip, _take, keySelector, comparer, UseAsyncRead, token), static async (reader, s) =>
 		{
 			var sink = new DictionarySink<T, TKey>([with(s.comparer)], s.keySelector);
 			if (reader is DbDataReader db)
@@ -298,7 +334,7 @@ readonly struct MappedQueryCore<T>
 	}
 
 	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
-		=> _command.ExecuteReader((_source, _skip, _take, comparer), static (reader, s) =>
+		=> Run((_source, _skip, _take, comparer), static (reader, s) =>
 		{
 			var sink = new HashSetSink<T>([with(s.comparer)]);
 			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
@@ -308,7 +344,7 @@ readonly struct MappedQueryCore<T>
 	internal ValueTask<HashSet<T>> ToHashSetAsync(IEqualityComparer<T>? comparer, CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return ExecuteAsync((_source, _skip, _take, comparer, UseAsyncRead, token), static async (reader, s) =>
+		return RunAsync((_source, _skip, _take, comparer, UseAsyncRead, token), static async (reader, s) =>
 		{
 			var sink = new HashSetSink<T>([with(s.comparer)]);
 			if (reader is DbDataReader db)
@@ -334,6 +370,18 @@ public readonly record struct MappedQuery<T> : IMappedQuery<T>
 
 	/// <summary>Limits the result to at most <paramref name="count"/> mapped records.</summary>
 	public MappedQueryWithTake<T> Take(int count) => new(_core.WithTake(count));
+
+	/// <summary>Stops after the first result set and does not read through the later ones.</summary>
+	/// <remarks>
+	/// A <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between; never a row (this library's <c>Results&lt;T&gt;()</c> means rows).
+	/// By default a terminal returns the rows of the first result set only, then reads through the later ones without mapping them, so a failure in a later statement is thrown instead of lost.
+	/// A later failure can follow a write that already committed, so a caller that retries can repeat it, and the rows read are lost when it throws.
+	/// This call asserts nothing: it does not check that there is only one result set. It stops after the first, and a later failure goes unseen.
+	/// A read-through also does not happen when the caller stops reading early or the mapping, the selector or the caller's handler throws.
+	/// <c>FirstOrDefault</c> with nothing skipped also asks the provider for a single row.
+	/// </remarks>
+	/// <returns>The same query, without the read-through.</returns>
+	public MappedQuery<T> SingleResult() => new(_core.WithSingleResult());
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
@@ -384,6 +432,9 @@ public readonly record struct MappedQueryWithSkip<T> : IMappedQuery<T>
 	/// <summary>Limits the result to at most <paramref name="count"/> mapped records.</summary>
 	public MappedQueryWithTake<T> Take(int count) => new(_core.WithTake(count));
 
+	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
+	public MappedQueryWithSkip<T> SingleResult() => new(_core.WithSingleResult());
+
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
 	/// <inheritdoc />
@@ -429,6 +480,9 @@ public readonly record struct MappedQueryWithTake<T> : IMappedQuery<T>
 {
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithTake(MappedQueryCore<T> core) => _core = core;
+
+	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
+	public MappedQueryWithTake<T> SingleResult() => new(_core.WithSingleResult());
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);

@@ -43,9 +43,12 @@ public static class MappedQueryEdgeTests
 	}
 
 	[Theory]
-	[InlineData("take 2", 1)]
-	[InlineData("skip 1", 2)]
-	public static void FirstOrDefault_MapsOnlyTheFirstRowItNeeds_AsksForSingleRowOnlyWhenNothingIsSkipped(string stage, int expectedId)
+	[InlineData("take 2", 1, false)]
+	[InlineData("skip 1", 2, false)]
+	[InlineData("single result, take 2", 1, true)]
+	[InlineData("single result, skip 1", 2, false)]
+	[InlineData("single result", 1, true)]
+	public static void FirstOrDefault_MapsOnlyTheFirstRowItNeeds_AsksForSingleRowOnlyWithSingleResultAndNothingSkipped(string stage, int expectedId, bool singleRow)
 	{
 		int calls = 0;
 		FakeExecuteReader command = Command(5, out Func<int> rowsRead);
@@ -59,13 +62,16 @@ public static class MappedQueryEdgeTests
 		{
 			"take 2" => query.Take(2).FirstOrDefault(),
 			"skip 1" => query.Skip(1).FirstOrDefault(),
+			"single result, take 2" => query.SingleResult().Take(2).FirstOrDefault(),
+			"single result, skip 1" => query.Skip(1).SingleResult().FirstOrDefault(),
+			"single result" => query.SingleResult().FirstOrDefault(),
 			_ => query.FirstOrDefault(),
 		};
 
 		Assert.Equal(expectedId, id);
 		Assert.Equal(1, calls);
 		Assert.Equal(expectedId, rowsRead()); // the skipped row (it has to be read) and the one returned: nothing beyond that
-		Assert.Equal(stage == "take 2", Assert.Single(command.Behaviors).HasFlag(CommandBehavior.SingleRow)); // SingleRow only when no row is skipped first
+		Assert.Equal(singleRow, Assert.Single(command.Behaviors).HasFlag(CommandBehavior.SingleRow)); // SingleRow only with .SingleResult(), and then only when no row is skipped first
 	}
 
 	[Fact]

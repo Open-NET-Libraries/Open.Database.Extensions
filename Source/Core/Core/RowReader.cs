@@ -162,35 +162,57 @@ internal static class RowReader
 		return found;
 	}
 
-	/// <summary>A lazy stream. The reader must stay open while it is enumerated.</summary>
-	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
+	/// <summary>
+	/// A lazy stream. The reader must stay open while it is enumerated.
+	/// With <paramref name="readThrough"/>, once the rows end (including no rows, a take limit or a skip past the end) the later result sets are read through,
+	/// so a failure in one is thrown. An enumeration the caller abandons, or whose consumer throws, never reaches that point.
+	/// </summary>
+	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take, bool readThrough = false)
 	{
-		if (take == 0) yield break;
-		for (; skip > 0; skip--)
-			if (!reader.Read()) yield break;
-
-		int n = 0;
-		if (reader is DbDataReader db)
+		bool skipped = take != 0;
+		if (skipped)
 		{
-			// The virtual-call mapper, not the interface-call one (a second compile per layout otherwise).
-			Func<DbDataReader, T>? dbMap = null;
-			while (db.Read())
+			for (; skip > 0; skip--)
 			{
-				dbMap ??= source.Mapper(db);
-				yield return dbMap(db);
-				if (++n == take) yield break;
+				if (reader.Read()) continue;
+				skipped = false;
+				break;
 			}
-
-			yield break;
 		}
 
-		Func<IDataRecord, T>? map = null;
-		while (reader.Read())
+		if (skipped)
 		{
-			map ??= source.Mapper(reader);
-			yield return map(reader);
-			if (++n == take) yield break;
+			int n = 0;
+			if (reader is DbDataReader db)
+			{
+				// The virtual-call mapper, not the interface-call one (a second compile per layout otherwise).
+				Func<DbDataReader, T>? dbMap = null;
+				while (db.Read())
+				{
+					dbMap ??= source.Mapper(db);
+					yield return dbMap(db);
+					if (++n == take) break;
+				}
+			}
+			else
+			{
+				Func<IDataRecord, T>? map = null;
+				while (reader.Read())
+				{
+					map ??= source.Mapper(reader);
+					yield return map(reader);
+					if (++n == take) break;
+				}
+			}
 		}
+
+		if (readThrough) ReadThrough(reader);
+	}
+
+	// Moves past every later result set without reading its rows; the provider raises a failure in one of them here.
+	internal static void ReadThrough(IDataReader reader)
+	{
+		while (reader.NextResult()) { }
 	}
 
 	static bool SkipRows(DbDataReader reader, int skip)
@@ -291,21 +313,42 @@ internal static class RowReader
 		return (false, default);
 	}
 
-	/// <summary>A lazy async stream. The reader must stay open while it is enumerated.</summary>
+	/// <summary>
+	/// A lazy async stream. The reader must stay open while it is enumerated.
+	/// With <paramref name="readThrough"/>, once the rows end the later result sets are read through (see <see cref="Stream{T}"/>).
+	/// </summary>
 	public static async IAsyncEnumerable<T> StreamAsync<T>(
-		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, bool readThrough,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
-		if (take == 0) yield break;
-		if (!await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)) yield break;
-
-		Func<DbDataReader, T>? map = null;
-		int n = 0;
-		while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+		if (take != 0 && await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false))
 		{
-			map ??= source.Mapper(reader);
-			yield return map(reader);
-			if (++n == take) yield break;
+			Func<DbDataReader, T>? map = null;
+			int n = 0;
+			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
+			{
+				map ??= source.Mapper(reader);
+				yield return map(reader);
+				if (++n == take) break;
+			}
+		}
+
+		if (readThrough) await ReadThroughAsync(reader, cancellationToken).ConfigureAwait(false);
+	}
+
+	internal static ValueTask ReadThroughAsync(IDataReader reader, CancellationToken token)
+	{
+		if (reader is not DbDataReader db)
+		{
+			ReadThrough(reader);
+			return default;
+		}
+
+		return Core(db, token);
+
+		static async ValueTask Core(DbDataReader db, CancellationToken token)
+		{
+			while (await db.NextResultAsync(token).ConfigureAwait(false)) { }
 		}
 	}
 
