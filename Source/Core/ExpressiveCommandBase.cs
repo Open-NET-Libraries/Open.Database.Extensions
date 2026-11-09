@@ -580,9 +580,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		ImmutableArray<string> names = default;
 		bool remembered = false;
-		string key = ProcedureKey(connection);
 		if (Type == CommandType.StoredProcedure)
 		{
+			string key = ProcedureKey(connection);
 			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
 			if (!remembered)
 			{
@@ -599,7 +599,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
 		names = GetProcedureParameterNames(connection, Command);
-		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
+		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, ProcedureKey(connection), names);
 		ApplyDerivedNames(names, final: true);
 	}
 
@@ -607,9 +607,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		ImmutableArray<string> names = default;
 		bool remembered = false;
-		string key = ProcedureKey(connection);
 		if (Type == CommandType.StoredProcedure)
 		{
+			string key = ProcedureKey(connection);
 			remembered = ProcedureNameCache.TryGet(NameCacheOwner, key, out names);
 			if (!remembered)
 			{
@@ -626,7 +626,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// The remembered names did not fit: the procedure may have changed since they were read. Read them again before deciding that nothing matches.
 		names = await GetProcedureParameterNamesAsync(connection, Command, cancellationToken).ConfigureAwait(false);
-		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, key, names);
+		if (!names.IsDefaultOrEmpty) ProcedureNameCache.Set(NameCacheOwner, ProcedureKey(connection), names);
 		ApplyDerivedNames(names, final: true);
 	}
 
