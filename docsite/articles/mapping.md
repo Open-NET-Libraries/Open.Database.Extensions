@@ -110,6 +110,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 |---|---|
 | An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
 | An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
+| A dictionary (`Dictionary<,>`, `IDictionary<,>`, `IReadOnlyDictionary<,>`) or a dynamic object (`ExpandoObject`) | ``'Dictionary`2' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).`` |
 | A single value (`int`, `string`, ...) | `'Int32' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().` |
 | No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
 | Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
