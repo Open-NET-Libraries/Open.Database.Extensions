@@ -241,12 +241,12 @@ public static class DerivedParameterNameTests
 		Assert.Equal(1, proc.Lookups);
 		Assert.StartsWith("dbo.search", proc.LookedUp);
 
-		// A text command has no procedure to ask about: the last member is used as written.
+		// A text command asks nothing: the names are the @name markers found in its text.
 		var textProbe = new ConnectionProbe(ConnectionState.Open);
 		var text = new ProcCommand(textProbe.Connection, CommandType.Text, "select @CompanySerialNum", "@never");
 		text.AddParam(filter.CompanySerialNum).ExecuteNonQuery();
 		Assert.Equal(0, text.Lookups);
-		Assert.Equal(["CompanySerialNum"], SentNames(textProbe));
+		Assert.Equal(["@CompanySerialNum"], SentNames(textProbe));
 	}
 
 	[Fact]
@@ -825,9 +825,9 @@ public static class DerivedParameterNameTests
 			new Dictionary<string, object?> { ["CompanySerialNum"] = 42, ["Region"] = "west", ["EndDate"] = DBNull.Value, ["Unrelated"] = "not a parameter" },
 			Sent(probe));
 
-		// A text command has no procedure to ask: the same.
+		// A text command with no @name marker has no names either: the same.
 		var textProbe = new ConnectionProbe(ConnectionState.Open);
-		var text = new ProcCommand(textProbe.Connection, CommandType.Text, "select @CompanySerialNum", "@never");
+		var text = new ProcCommand(textProbe.Connection, CommandType.Text, "select 1", "@never");
 		text.AddParams(new RecordArgs(7, "r")).ExecuteNonQuery();
 		Assert.Equal(new Dictionary<string, object?> { ["CompanySerialNum"] = 7, ["Region"] = "r" }, Sent(textProbe));
 		Assert.Equal(0, text.Lookups);
@@ -891,9 +891,9 @@ public static class DerivedParameterNameTests
 
 		Assert.Equal(new Dictionary<string, object?> { ["@company_serial_num"] = 42, ["@region"] = "west" }, Sent(probe));
 
-		// The same without the procedure's names (a text command): every member, as written.
+		// The same without the procedure's names (a text command with no @name marker): every member, as written.
 		var textProbe = new ConnectionProbe(ConnectionState.Open);
-		new ProcCommand(textProbe.Connection, CommandType.Text, "select @Id", "@never").AddParams(new { Id = 7 }).ExecuteNonQuery();
+		new ProcCommand(textProbe.Connection, CommandType.Text, "select 1", "@never").AddParams(new { Id = 7 }).ExecuteNonQuery();
 		Assert.Equal(new Dictionary<string, object?> { ["Id"] = 7 }, Sent(textProbe));
 	}
 
