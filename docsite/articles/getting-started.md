@@ -91,6 +91,8 @@ What is different:
 
 ## With SQL Server
 
+![Open.Database.Extensions.MSSqlClient: You write the SQL. The library writes the other twenty lines.](../images/hero-mssqlclient.svg)
+
 `Open.Database.Extensions.MSSqlClient` provides `SqlConnectionFactory`. Everything above works the same way, and stored procedures are one call away:
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_factory)]
