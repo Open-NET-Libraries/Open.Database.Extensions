@@ -829,6 +829,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static async ValueTask<long> ToTargetBlockAsync(this IDbCommand command,
 		ITargetBlock<object[]> target,
@@ -883,6 +884,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static async ValueTask<long> ToTargetBlockAsync(this IDbCommand command,
 		ITargetBlock<object[]> target,
@@ -940,6 +942,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
@@ -995,6 +998,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,
 		ITargetBlock<T> target,
@@ -1036,6 +1040,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	/// <exception cref="InvalidOperationException">The command has no connection. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IDbCommand command,

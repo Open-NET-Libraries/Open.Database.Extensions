@@ -152,7 +152,7 @@ public static partial class ChannelDbExtensions
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs, and the result is larger than the internal buffer (about 1,024 rows); a smaller result can be read and its count returned with nothing delivered. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
 		ChannelWriter<T> target,
@@ -173,7 +173,7 @@ public static partial class ChannelDbExtensions
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read; the records are delivered to the target by a second task, which may still be running.</returns>
-	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed, or is completed while the call runs, and the result is larger than the internal buffer (about 1,024 rows); a smaller result can be read and its count returned with nothing delivered. Each write waits for room in the target; to stop a call that is running, cancel it and then complete the target yourself.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDataReader reader,
@@ -321,7 +321,7 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed and the result is larger than the internal buffer (about 1,024 rows); a smaller result can be read and its count returned with nothing delivered.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
 		ChannelWriter<T> target,
@@ -349,7 +349,7 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">The command has no connection.</exception>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed and the result is larger than the internal buffer (about 1,024 rows); a smaller result can be read and its count returned with nothing delivered.</exception>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IDbCommand command,
@@ -441,7 +441,7 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed and the result is larger than the internal buffer (about 1,024 rows); a smaller result can be read and its count returned with nothing delivered.</exception>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete)
@@ -465,7 +465,7 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <exception cref="ChannelClosedException">The target has already been completed and the result is larger than the internal buffer (about 1,024 rows); a smaller result can be read and its count returned with nothing delivered.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
