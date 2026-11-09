@@ -27,4 +27,43 @@ internal static class CancellationTokens
 		linked = CancellationTokenSource.CreateLinkedTokenSource(commandToken, callToken);
 		return linked.Token;
 	}
+
+	/// <summary>
+	/// Starts a call under the one token that governs it (see <see cref="Combine"/>) and releases the linked source, if any, when the call ends however it ends.
+	/// </summary>
+	/// <remarks>
+	/// When no linked source is needed, <paramref name="start"/> is returned as it is: no state machine, no allocation, and a synchronous throw from it propagates synchronously.
+	/// On the linked path a synchronous throw from <paramref name="start"/> becomes a faulted task.
+	/// Pass a <see langword="static"/> lambda and a state, so a call with no token or one token allocates nothing.
+	/// </remarks>
+	/// <param name="commandToken">The command's own token.</param>
+	/// <param name="callToken">The token passed to the call.</param>
+	/// <param name="state">The state handed to <paramref name="start"/>.</param>
+	/// <param name="start">Starts the call with the governing token.</param>
+	[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last")]
+	public static ValueTask<TResult> RunAsync<TState, TResult>(CancellationToken commandToken, CancellationToken callToken, TState state, Func<TState, CancellationToken, ValueTask<TResult>> start)
+	{
+		CancellationToken token = Combine(commandToken, callToken, out CancellationTokenSource? linked);
+		return linked is null ? start(state, token) : Linked(linked, token, state, start);
+
+		static async ValueTask<TResult> Linked(CancellationTokenSource linked, CancellationToken token, TState state, Func<TState, CancellationToken, ValueTask<TResult>> start)
+		{
+			using (linked)
+				return await start(state, token).ConfigureAwait(false);
+		}
+	}
+
+	/// <inheritdoc cref="RunAsync{TState, TResult}(CancellationToken, CancellationToken, TState, Func{TState, CancellationToken, ValueTask{TResult}})"/>
+	[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last")]
+	public static ValueTask RunAsync<TState>(CancellationToken commandToken, CancellationToken callToken, TState state, Func<TState, CancellationToken, ValueTask> start)
+	{
+		CancellationToken token = Combine(commandToken, callToken, out CancellationTokenSource? linked);
+		return linked is null ? start(state, token) : Linked(linked, token, state, start);
+
+		static async ValueTask Linked(CancellationTokenSource linked, CancellationToken token, TState state, Func<TState, CancellationToken, ValueTask> start)
+		{
+			using (linked)
+				await start(state, token).ConfigureAwait(false);
+		}
+	}
 }
