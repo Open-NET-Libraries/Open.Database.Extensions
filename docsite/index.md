@@ -1,14 +1,10 @@
 ---
-title: Open.Database.Extensions
+title: Open.Database.Extensions (ODX)
 ---
-
-# Open.Database.Extensions
 
 ![Open.Database.Extensions: You write the SQL. The library writes the other twenty lines.](images/hero-core.svg)
 
 Extensions on the standard ADO.NET types that make everyday database work short to write and robust by default. Version 11 is a release candidate.
-
-**You write the SQL. This library writes the other twenty lines.**
 
 [!code-csharp[](samples/BeforeAfter.cs#ode_list_factory)]
 

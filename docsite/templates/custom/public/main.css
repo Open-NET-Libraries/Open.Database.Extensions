@@ -20,3 +20,5 @@
   .side-by-side { grid-template-columns: minmax(0, 1fr); }
   .side-by-side > div + div { margin-top: 1rem; }
 }
+/* Space between the logo and the site name in the header brand (the logo img butts against the text otherwise). */
+.navbar-brand #logo { margin-inline-end: 0.5em; }
