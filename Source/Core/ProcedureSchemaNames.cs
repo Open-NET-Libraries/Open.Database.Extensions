@@ -8,7 +8,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 /// <remarks>
 /// "Not known" is an empty or default array: a procedure name with a database part (the lookup would run in the current database), a provider without the collection,
-/// a procedure the provider does not list, and a name that exists in more than one schema when none was given. A failure of the lookup itself is thrown as it is, except that a `NotSupportedException`, a `NotImplementedException` or an `ArgumentException` (and an `InvalidOperationException` that names the collection) is taken as "the provider does not support the collection".
+/// a procedure the provider does not list, and a name that exists in more than one schema when none was given. A failure of the lookup itself is thrown as it is, except that a `NotSupportedException`, a `NotImplementedException` or an `ArgumentException` is taken as "the provider does not support the collection".
 /// </remarks>
 static class ProcedureSchemaNames
 {
@@ -22,7 +22,7 @@ static class ProcedureSchemaNames
 		{
 			return Names(connection.GetSchema(Collection, restrictions), schemaGiven: restrictions[1] is not null);
 		}
-		catch (Exception ex) when (IsUnsupported(ex))
+		catch (Exception ex) when (ex is NotSupportedException or NotImplementedException or ArgumentException)
 		{
 			return default;
 		}
@@ -50,7 +50,7 @@ static class ProcedureSchemaNames
 			DataTable table = await connection.GetSchemaAsync(Collection, restrictions, cancellationToken).ConfigureAwait(false);
 			return Names(table, schemaGiven: restrictions[1] is not null);
 		}
-		catch (Exception ex) when (IsUnsupported(ex))
+		catch (Exception ex) when (ex is NotSupportedException or NotImplementedException or ArgumentException)
 		{
 			return default;
 		}
@@ -60,18 +60,6 @@ static class ProcedureSchemaNames
 			throw;
 		}
 	}
-#endif
-
-	// A provider that has no such collection says so in one of these ways; an InvalidOperationException only when it names the collection (a closed connection is not "unsupported").
-	static bool IsUnsupported(Exception ex)
-		=> ex is NotSupportedException or NotImplementedException or ArgumentException
-			|| (ex is InvalidOperationException && MentionsCollection(ex.Message));
-
-	static bool MentionsCollection(string message)
-#if NETSTANDARD2_0
-		=> message.IndexOf(Collection, StringComparison.OrdinalIgnoreCase) >= 0;
-#else
-		=> message.Contains(Collection, StringComparison.OrdinalIgnoreCase);
 #endif
 
 	// The restrictions are catalog, schema, name and parameter. Null: the name is not looked up (a database part, or an empty or unclosed part).
