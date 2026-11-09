@@ -21,7 +21,7 @@ namespace Open.Database.Extensions;
 /// The pairs are validated when the map is constructed: an unknown or unsettable property or constructor parameter, a member named twice, an empty column name, a <see langword="null"/> column for a required property,
 /// or two members reading one column throw <see cref="ArgumentException"/>.
 /// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the map is constructed or <see cref="Default"/> is read, which every query method does at the call, even when the result is empty:
-/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
+/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a dictionary or a dynamic object (<c>Dictionary&lt;string, object?&gt;</c>, <see cref="System.Dynamic.ExpandoObject"/>: they have no properties to set, so use <c>Map(selector)</c>), a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
 /// A NULL never overwrites a member the C# type declares non-nullable: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
 /// A property of such a type keeps the value its constructor or initializer gave it, else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
 /// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
@@ -194,7 +194,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
-	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped: it is an interface, an abstract class, a delegate or a single value such as <see cref="int"/> or <see cref="string"/>, a type with two or more public constructors and none without parameters, a class with no public constructor or a type with a <c>required</c> public field (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped: it is an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a dictionary or a dynamic object, a type with two or more public constructors and none without parameters, a class with no public constructor or a type with a <c>required</c> public field (see <see cref="RowMap{T}"/>).</exception>
 	public static RowMap<T> Default
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
@@ -1217,6 +1217,7 @@ sealed class Shape
 
 		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
+		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).";
 
 		return Choose(type, name, out constructor, out setsRequiredMembers) ?? (setsRequiredMembers ? null : RequiredField(type, name));
 	}
@@ -1228,6 +1229,21 @@ sealed class Shape
 		return type.IsPrimitive || type.IsEnum
 			|| type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(DateTimeOffset)
 			|| type == typeof(TimeSpan) || type == typeof(Guid) || type == typeof(byte[]);
+	}
+
+	// A dictionary or a dynamic object has no properties to set: it would be built as one empty row. Any of the interfaces that make a type one counts, the closed generic ones through the type's interface list.
+	static bool IsDictionaryOrDynamic(Type type)
+	{
+		if (typeof(System.Collections.IDictionary).IsAssignableFrom(type) || typeof(System.Dynamic.IDynamicMetaObjectProvider).IsAssignableFrom(type)) return true;
+
+		foreach (Type implemented in type.GetInterfaces())
+		{
+			if (!implemented.IsGenericType) continue;
+			Type definition = implemented.GetGenericTypeDefinition();
+			if (definition == typeof(IDictionary<,>) || definition == typeof(IReadOnlyDictionary<,>)) return true;
+		}
+
+		return false;
 	}
 
 	// What it is when it cannot be created at all, else null.

@@ -1,5 +1,6 @@
 using Open.Database.Extensions.Core;
 using System.Data.Common;
+using System.Dynamic;
 using System.Threading.Tasks.Dataflow;
 
 #nullable enable
@@ -118,6 +119,36 @@ public static class UnmappableTypeTests
 	static string Ambiguous(string name, int count, string signatures) => $"'{name}' cannot be mapped: it has {count} public constructors, {signatures}, and none without parameters. Make one of them non-public, or use Map(selector).";
 	static string ByReference(string name, string parameter) => $"'{name}' cannot be mapped: its constructor parameter '{parameter}' is passed by reference or is a pointer. Use Map(selector).";
 	static string RequiredField(string name, string field) => $"'{name}' cannot be mapped: its required field '{field}' cannot be set. Make it a property.";
+	static string Bag(string name) => $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).";
+
+	// A dictionary or a dynamic object is not a row model: it has no properties to set, so a map of it used to build one empty row and say nothing. Each of these kinds is reached by a different interface.
+	public sealed class DictionaryOfMine : Dictionary<string, object?>;
+
+	public sealed class OnlyReadOnlyDictionary : IReadOnlyDictionary<string, int>
+	{
+		public int this[string key] => throw new NotSupportedException();
+		public IEnumerable<string> Keys => [];
+		public IEnumerable<int> Values => [];
+		public int Count => 0;
+		public bool ContainsKey(string key) => false;
+		public bool TryGetValue(string key, out int value) { value = 0; return false; }
+		public IEnumerator<KeyValuePair<string, int>> GetEnumerator() => Enumerable.Empty<KeyValuePair<string, int>>().GetEnumerator();
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
+	public sealed class OnlyMetaObjectProvider : IDynamicMetaObjectProvider
+	{
+		public DynamicMetaObject GetMetaObject(System.Linq.Expressions.Expression parameter) => throw new NotSupportedException();
+	}
+
+	public sealed class DynamicBag : DynamicObject;
+
+	// A model that merely holds a dictionary is a model like any other.
+	public sealed class HoldsADictionary
+	{
+		public int Id { get; set; }
+		public Dictionary<string, object?>? Extra { get; set; }
+	}
 
 	// Every way to meet a type: the default map, a map constructed for it, and a query over it with no rows. Each one throws the same exception.
 	static void AssertUnmappable<T>(string message)
@@ -233,6 +264,31 @@ public static class UnmappableTypeTests
 		AssertUnmappable<RequiredFieldShape>(RequiredField("RequiredFieldShape", "Id"));
 		AssertUnmappable<RequiredFieldDerived>(RequiredField("RequiredFieldDerived", "Title")); // A required field of a base type counts.
 	}
+
+	[Fact]
+	public static void ADictionaryOrADynamicObject_IsRejected_AtTheCall_WhateverInterfaceMakesItOne()
+	{
+		AssertUnmappable<Dictionary<string, object?>>(Bag("Dictionary`2"));
+		AssertUnmappable<System.Collections.Immutable.ImmutableDictionary<string, object?>>(Bag("ImmutableDictionary`2")); // it has no public constructor either: this is the reason given
+		AssertUnmappable<System.Collections.Hashtable>(Bag("Hashtable")); // the non-generic IDictionary
+		AssertUnmappable<DictionaryOfMine>(Bag("DictionaryOfMine")); // a type derived from one
+		AssertUnmappable<OnlyReadOnlyDictionary>(Bag("OnlyReadOnlyDictionary")); // IReadOnlyDictionary<,> alone
+		AssertUnmappable<ExpandoObject>(Bag("ExpandoObject"));
+		AssertUnmappable<DynamicBag>(Bag("DynamicBag")); // a DynamicObject
+		AssertUnmappable<OnlyMetaObjectProvider>(Bag("OnlyMetaObjectProvider")); // IDynamicMetaObjectProvider alone
+	}
+
+	[Fact]
+	public static void AnInterfaceOrAbstractDictionaryType_KeepsItsOwnReason()
+	{
+		AssertUnmappable<IDictionary<string, object?>>(NotConcrete("IDictionary`2", "an interface"));
+		AssertUnmappable<IReadOnlyDictionary<string, object?>>(NotConcrete("IReadOnlyDictionary`2", "an interface"));
+		AssertUnmappable<IDynamicMetaObjectProvider>(NotConcrete("IDynamicMetaObjectProvider", "an interface"));
+	}
+
+	[Fact]
+	public static void AModelThatHoldsADictionary_StillMaps()
+		=> Assert.Equal(1, new FakeExecuteReader(["Id"], [1]).Map<HoldsADictionary>().ToList().Single().Id);
 
 	[Fact]
 	public static void WhatMapsToday_StillMaps()
