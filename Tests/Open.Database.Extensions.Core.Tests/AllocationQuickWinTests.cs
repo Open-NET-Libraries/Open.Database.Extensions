@@ -18,7 +18,7 @@ public static class AllocationQuickWinTests
 	// ---- measuring ----
 
 	// Bytes per call: after a warm-up, the smallest of three rounds of 1,000 calls (the allocated-bytes counter of this thread is exact, so only a stray JIT or GC adds noise).
-	static long BytesPerCall(Action call)
+	internal static long BytesPerCall(Action call)
 	{
 		for (int i = 0; i < 100; i++) call();
 		long best = long.MaxValue;
