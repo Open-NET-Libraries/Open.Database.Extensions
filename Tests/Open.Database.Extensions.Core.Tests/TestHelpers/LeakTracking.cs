@@ -24,6 +24,9 @@ internal sealed class DbScript
 	/// <summary>Called with the 1-based number of each <c>Read()</c> before it is served (to cancel in the middle of a read).</summary>
 	public Action<int>? OnRead { get; init; }
 
+	/// <summary>When set, <c>NextResult()</c> throws it: the error a provider raises for a statement that follows the rows.</summary>
+	public Exception? NextResultError { get; init; }
+
 	/// <summary>When set, <c>CreateParameter</c> throws (a provider rejecting a parameter).</summary>
 	public bool FailCreateParameter { get; init; }
 }
@@ -257,6 +260,12 @@ internal sealed class TrackedReader(DbTally tally, TrackedConnection connection,
 	public int Disposes { get; private set; }
 
 	public override bool IsClosed => _closed;
+
+	public override bool NextResult()
+	{
+		NextResultError ??= tally.Script.NextResultError;
+		return base.NextResult();
+	}
 
 	public override bool Read()
 	{
