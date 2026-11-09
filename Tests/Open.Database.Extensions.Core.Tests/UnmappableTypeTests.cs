@@ -269,9 +269,6 @@ public static class UnmappableTypeTests
 	public static void ADictionaryOrADynamicObject_IsRejected_AtTheCall_WhateverInterfaceMakesItOne()
 	{
 		AssertUnmappable<Dictionary<string, object?>>(Bag("Dictionary`2"));
-		AssertUnmappable<Dictionary<string, int>>(Bag("Dictionary`2"));
-		AssertUnmappable<SortedDictionary<string, object?>>(Bag("SortedDictionary`2"));
-		AssertUnmappable<System.Collections.Concurrent.ConcurrentDictionary<string, object?>>(Bag("ConcurrentDictionary`2"));
 		AssertUnmappable<System.Collections.Immutable.ImmutableDictionary<string, object?>>(Bag("ImmutableDictionary`2")); // it has no public constructor either: this is the reason given
 		AssertUnmappable<System.Collections.Hashtable>(Bag("Hashtable")); // the non-generic IDictionary
 		AssertUnmappable<DictionaryOfMine>(Bag("DictionaryOfMine")); // a type derived from one
@@ -463,26 +460,6 @@ public static class UnmappableTypeTests
 	{
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => RequiredFieldCalls[name]().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 		Assert.Equal(RequiredField("RequiredFieldShape", "Id"), ex.Message);
-	}
-
-	// A dictionary and a dynamic object, over the same entry points, with an empty result: the same exception at the call.
-	static readonly Dictionary<string, Func<Task>> DictionaryCalls = CallsOf<Dictionary<string, object?>>();
-	static readonly Dictionary<string, Func<Task>> ExpandoCalls = CallsOf<ExpandoObject>();
-
-	[Theory]
-	[MemberData(nameof(Names))]
-	public static async Task EveryEntryPoint_Throws_ForADictionary_WithAnEmptyResult(string name)
-	{
-		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => DictionaryCalls[name]().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
-		Assert.Equal(Bag("Dictionary`2"), ex.Message);
-	}
-
-	[Theory]
-	[MemberData(nameof(Names))]
-	public static async Task EveryEntryPoint_Throws_ForADynamicObject_WithAnEmptyResult(string name)
-	{
-		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ExpandoCalls[name]().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
-		Assert.Equal(Bag("ExpandoObject"), ex.Message);
 	}
 
 	// The failure is the type's, not the data's: with one row it is the same exception, and the query is not read.

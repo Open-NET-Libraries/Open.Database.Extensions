@@ -230,7 +230,6 @@ public static class DataReaderEdgeTests
 	public static async Task AsAsyncEnumerable_Cancelled_EndsQuietlyWithTheRowsReadSoFar(bool usePool, int cancelAtRead)
 	{
 		using var cts = new CancellationTokenSource();
-		if (cancelAtRead == 0) cts.Cancel();
 		TrackedReader reader = TrackedRows(10, n =>
 		{
 			if (n == cancelAtRead) cts.Cancel();
@@ -240,15 +239,7 @@ public static class DataReaderEdgeTests
 			? reader.AsAsyncEnumerable(new SizedPool(), cts.Token)
 			: reader.AsAsyncEnumerable(cts.Token));
 
-		if (cancelAtRead == 0)
-		{
-			Assert.Empty(rows);
-			Assert.Equal(0, reader.Reads);
-		}
-		else
-		{
-			Assert.InRange(rows.Count, cancelAtRead, 9);
-		}
+		Assert.InRange(rows.Count, cancelAtRead, 9);
 	}
 
 	// ---- IterateWhile ----

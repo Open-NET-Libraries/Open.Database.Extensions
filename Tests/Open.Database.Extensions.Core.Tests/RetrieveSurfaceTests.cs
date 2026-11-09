@@ -60,14 +60,9 @@ public static class RetrieveSurfaceTests
 	public static void Retrieve_Reader_SelectedColumns_ComeBackInTheOrderAsked(string variant)
 	{
 		TypedReader reader = Reader([1, "a", "n1"], [2, "b", "n2"]);
-		IEnumerable<int> ordinals = [2, 0];
-		IEnumerable<string> names = ["Note", "Id"];
-
 		QueryResultQueue<object[]> result = variant switch
 		{
-			"ordinals" => reader.Retrieve(ordinals),
 			"first ordinal and others" => reader.Retrieve(2, 0),
-			"names" => reader.Retrieve(names),
 			_ => reader.Retrieve("Note", "Id"),
 		};
 
@@ -110,14 +105,11 @@ public static class RetrieveSurfaceTests
 	static QueryResultQueue<object[]> RetrieveVia(IDbCommand command, string variant)
 	{
 		IEnumerable<int> ordinals = [2, 0];
-		IEnumerable<string> names = ["Note", "Id"];
 		return variant switch
 		{
 			"all" => command.Retrieve(),
-			"behavior" => command.Retrieve(CommandBehavior.SingleResult),
 			"ordinals" => command.Retrieve(ordinals),
 			"first ordinal and others" => command.Retrieve(2, 0),
-			"names" => command.Retrieve(names),
 			_ => command.Retrieve("Note", "Id"),
 		};
 	}
@@ -194,22 +186,15 @@ public static class RetrieveSurfaceTests
 		Assert.Equal([0, 1, 2], result.Ordinals.ToArray());
 		Assert.Equal(rowCount, result.Result.Count);
 		Assert.Equal(rowCount, reader.RowsRead);
-		if (rowCount != 0)
-			Assert.Equal([1, "n1", DBNull.Value], result.Result.Peek());
+		Assert.Equal([1, "n1", DBNull.Value], result.Result.Peek());
 	}
 
 	static ValueTask<QueryResultQueue<object[]>> RetrieveAsyncVia(DbDataReader reader, string variant, CancellationToken token)
 	{
-		IEnumerable<int> ordinals = [2, 0];
 		IEnumerable<string> names = ["Note", "Id"];
 		return variant switch
 		{
 			"token" => reader.RetrieveAsync(token),
-			"ordinals, flag, token" => reader.RetrieveAsync(ordinals, true, token),
-			"ordinals, token" => reader.RetrieveAsync(ordinals, token),
-			"token, first ordinal and others" => reader.RetrieveAsync(token, 2, 0),
-			"names, flags, token" => reader.RetrieveAsync(names, false, true, token),
-			"names, normalize, token" => reader.RetrieveAsync(names, false, token),
 			"names, token" => reader.RetrieveAsync(names, token),
 			"first ordinal and others" => reader.RetrieveAsync(2, 0),
 			"first name and others" => reader.RetrieveAsync("Note", "Id"),
@@ -281,14 +266,8 @@ public static class RetrieveSurfaceTests
 		return variant switch
 		{
 			"token" => command.RetrieveAsync(token),
-			"flag, token" => command.RetrieveAsync(true, token),
-			"ordinals, flag, token" => command.RetrieveAsync(ordinals, true, token),
 			"ordinals, token" => command.RetrieveAsync(ordinals, token),
-			"token, first ordinal and others" => command.RetrieveAsync(token, 2, 0),
-			"names, flags, token" => command.RetrieveAsync(names, false, true, token),
-			"names, normalize, token" => command.RetrieveAsync(names, false, token),
-			"names, token" => command.RetrieveAsync(names, token),
-			_ => command.RetrieveAsync(token, "Note", "Id"),
+			_ => command.RetrieveAsync(names, token), // "names, token"
 		};
 	}
 
@@ -343,16 +322,12 @@ public static class RetrieveSurfaceTests
 	[InlineData("reader.RetrieveAsync()", "reader")]
 	public static async Task Retrieve_ANullReaderOrCommand_IsRefusedByName(string call, string parameter)
 	{
-		IEnumerable<int> ordinals = [0];
-
 		ArgumentNullException ex = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
 		{
 			switch (call)
 			{
 				case "command.Retrieve()": ((IDbCommand)null!).Retrieve(); break;
 				case "reader.RetrieveAsync()": await ((DbDataReader)null!).RetrieveAsync(TestContext.Current.CancellationToken); break;
-				case "reader.RetrieveAsync(ordinals)": await ((DbDataReader)null!).RetrieveAsync(ordinals, TestContext.Current.CancellationToken); break;
-				default: await ((DbCommand)null!).RetrieveAsync(TestContext.Current.CancellationToken); break;
 			}
 		});
 

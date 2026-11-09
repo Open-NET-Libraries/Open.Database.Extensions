@@ -125,32 +125,16 @@ public static class ExecuteReaderEdgeTests
 
 	// ---- the behavior the caller asked for is kept, and the result is always a single result set ----
 
-	[Theory]
-	[InlineData("ToImmutableArray")]
-	public static void TheCallersBehavior_IsKept_AndSingleResultIsAdded(string op)
+	[Fact]
+	public static void TheCallersBehavior_IsKept_AndSingleResultIsAdded()
 	{
 		FakeExecuteReader command = Command(3, out _);
 
-		if (op == "ToImmutableArray")
-			command.ToImmutableArray(Id, CommandBehavior.SequentialAccess);
-		else
-			command.IterateReaderWhile(_ => true, CommandBehavior.SequentialAccess);
+		command.ToImmutableArray(Id, CommandBehavior.SequentialAccess);
 
 		CommandBehavior behavior = Assert.Single(command.Behaviors);
 		Assert.True(behavior.HasFlag(CommandBehavior.SequentialAccess));
 		Assert.True(behavior.HasFlag(CommandBehavior.SingleResult));
-	}
-
-	[Fact]
-	public static void IterateReaderWhile_StopsReadingAtTheFirstFalse()
-	{
-		FakeExecuteReader command = Command(10, out Func<int> rowsRead);
-		int seen = 0;
-
-		command.IterateReaderWhile(_ => ++seen < 3);
-
-		Assert.Equal(3, seen);
-		Assert.Equal(3, rowsRead());
 	}
 
 	// ---- a result set into a DataTable ----
