@@ -94,7 +94,7 @@ ValueMappingException? bad = Mapping.MapValueError(connection);
 Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
 Check(bad?.Message == "Unable to set value of property 'Id' (Int32) from column 'id'.", "the ValueMappingException message names the property, its type and the column");
 Exception? badException = bad;
-Check(badException is DataException and not InvalidOperationException, "ValueMappingException is a DataException, not an InvalidOperationException");
+Check(badException is DataException && badException is not InvalidOperationException, "ValueMappingException is a DataException, not an InvalidOperationException");
 Check(ReferenceEquals(PersonMaps.PersonMap, PersonMaps.PersonMap), "a map held with field ??= is built once and shared");
 Check(ReferenceEquals(HoldingAMap.BackingMap, HoldingAMap.BackingMap), "a map held in a backing field is built once and shared");
 Check(Mapping.MapUnknownProperty().Contains("'Headline'", StringComparison.Ordinal), "a RowMap with an unknown property throws when it is created");
