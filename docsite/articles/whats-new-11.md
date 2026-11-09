@@ -1,7 +1,9 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.1`, a release candidate. The API is settled. Please try it and report what you find.
+> This is `11.0.0-rc.2`, a release candidate. The API is settled. Please try it and report what you find.
+>
+> rc.2 fixes what a production consumer found in rc.1: an error the server raises after the rows is thrown to you, generic commands send a parameter's direction, `AddParams` works with a variable typed `object`, dictionary and `ExpandoObject` rows throw instead of returning an empty row, parameter names are found through any `DbConnection` and on SQL text, and the SQL Server commands take `AddParam(name, DbType, direction)`. See Fixes.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
