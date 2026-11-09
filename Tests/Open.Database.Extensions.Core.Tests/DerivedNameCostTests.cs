@@ -89,9 +89,9 @@ public static class DerivedNameCostTests
 			_connection = new DerivedParameterNameTests.OpenDbConnection(_db);
 		}
 
-		public ExpressiveDbCommand Command() => new NamedDbCommand(_connection, _type, _procedure, Real);
+		public NamedDbCommand Command() => new NamedDbCommand(_connection, _type, _procedure, Real);
 
-		public ExpressiveDbCommand Command(string text) => new NamedDbCommand(_connection, _type, text, Real);
+		public NamedDbCommand Command(string text) => new NamedDbCommand(_connection, _type, text, Real);
 
 		public string[] Sent => [.. _db.Sent.Select(p => p.ParameterName)];
 
@@ -103,7 +103,7 @@ public static class DerivedNameCostTests
 
 		public void RunAsync(ExpressiveDbCommand command)
 		{
-			command.ExecuteNonQueryAsync().GetAwaiter().GetResult();
+			command.ExecuteNonQueryAsync().AsTask().GetAwaiter().GetResult();
 			_db.Sent.Clear();
 		}
 	}
@@ -249,11 +249,10 @@ public static class DerivedNameCostTests
 	sealed class ProcRig(params string[] initial)
 	{
 		readonly DerivedParameterNameTests.RecordingDbCommand _db = new();
-		SwitchableConnection? _connection;
 		public string[] Names = initial;
 		public int Lookups;
 		public string Procedure { get; } = ParameterNameHarness.NewProcedure();
-		public SwitchableConnection Connection => _connection ??= new(_db);
+		public SwitchableConnection Connection => field ??= new(_db);
 
 		sealed class Cmd(DbConnection connection, string procedure, ProcRig owner) : ExpressiveDbCommand(connection, CommandType.StoredProcedure, procedure)
 		{
