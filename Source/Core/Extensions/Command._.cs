@@ -79,7 +79,7 @@ public static partial class CommandExtensions
 		}
 	}
 
-	static void CloseOpened(IDbCommand command)
+	internal static void CloseOpened(IDbCommand command)
 	{
 		try
 		{

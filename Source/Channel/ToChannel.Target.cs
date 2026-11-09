@@ -95,7 +95,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
@@ -115,7 +115,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
@@ -138,7 +138,7 @@ public static partial class ChannelDbExtensions
 	/// Iterates an <see cref="IDataReader"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once all the records have been written to it (or the source is empty).</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
@@ -161,7 +161,7 @@ public static partial class ChannelDbExtensions
 	/// Iterates an <see cref="IDataReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
 	/// <param name="cancellationToken">A token that can cancel the operation.</param>
@@ -181,7 +181,7 @@ public static partial class ChannelDbExtensions
 	/// </summary>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes.</param>
+	/// <param name="reader">The data reader to iterate. The caller owns it: it is not closed or disposed here, and it must stay open until the operation completes. It is moved on to the next result set once the last row has been read, so that an error that follows the rows is raised.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it, or with the error that ended the operation.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -291,8 +291,20 @@ public static partial class ChannelDbExtensions
 			ConnectionState state = command.Connection.EnsureOpen();
 			CommandBehavior behavior = CommandBehavior.Default;
 			if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-			using IDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-			return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
+			IDataReader reader;
+			try
+			{
+				reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+			}
+			catch
+			{
+				// No reader means CloseConnection has nothing to close: the connection this call opened is closed here (never disposed).
+				if (state == ConnectionState.Closed) CommandExtensions.CloseOpened(command);
+				throw;
+			}
+
+			using (reader)
+				return await reader.ToChannel(target, false, transform, cancellationToken).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
