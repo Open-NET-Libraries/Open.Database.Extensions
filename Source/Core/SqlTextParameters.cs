@@ -64,7 +64,7 @@ static class SqlTextParameters
 						break;
 					}
 
-					string token = text.Substring(i, stop - i);
+					string token = text[i..stop];
 					seen ??= new(StringComparer.OrdinalIgnoreCase);
 					if (seen.Add(token)) (tokens ??= ImmutableArray.CreateBuilder<string>()).Add(token);
 					i = stop;

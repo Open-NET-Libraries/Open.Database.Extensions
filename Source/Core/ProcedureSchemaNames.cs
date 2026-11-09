@@ -65,7 +65,14 @@ static class ProcedureSchemaNames
 	// A provider that has no such collection says so in one of these ways; an InvalidOperationException only when it names the collection (a closed connection is not "unsupported").
 	static bool IsUnsupported(Exception ex)
 		=> ex is NotSupportedException or NotImplementedException or ArgumentException
-			|| (ex is InvalidOperationException && ex.Message.IndexOf(Collection, StringComparison.OrdinalIgnoreCase) >= 0);
+			|| (ex is InvalidOperationException && MentionsCollection(ex.Message));
+
+	static bool MentionsCollection(string message)
+#if NETSTANDARD2_0
+		=> message.IndexOf(Collection, StringComparison.OrdinalIgnoreCase) >= 0;
+#else
+		=> message.Contains(Collection, StringComparison.OrdinalIgnoreCase);
+#endif
 
 	// The restrictions are catalog, schema, name and parameter. Null: the name is not looked up (a database part, or an empty or unclosed part).
 	static string?[]? Restrictions(string procedure)
