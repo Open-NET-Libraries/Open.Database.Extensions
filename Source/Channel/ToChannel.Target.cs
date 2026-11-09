@@ -195,7 +195,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -221,7 +221,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -249,7 +249,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -316,7 +316,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -341,7 +341,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -368,7 +368,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -390,7 +390,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -414,7 +414,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -437,7 +437,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
@@ -458,7 +458,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// <para>
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
@@ -708,7 +708,7 @@ public static partial class ChannelDbExtensions
 	/// <returns>The number of records written to the target.</returns>
 	/// <remarks>
 	/// <para>
-	/// The call starts at once: it opens the connection if needed, runs the command and reads, and each write waits for room in the target, so a full target only makes the call wait. If the target is completed while the call runs, the call ends with <see cref="ChannelClosedException"/>; to stop a call that is running, cancel it and then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
+	/// A full target only makes the call wait; to stop a running call, cancel it, then complete the target yourself. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>

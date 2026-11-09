@@ -232,7 +232,7 @@ internal sealed class TrackedCommand(DbTally tally, TrackedConnection connection
 	protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
 	{
 		ThrowIfExecuteFails();
-		var reader = new TrackedReader(tally, connection, behavior);
+		var reader = new TrackedReader(tally, connection, behavior) { NextResultError = tally.Script.NextResultError };
 		tally.Readers.Add(reader);
 		return reader;
 	}
@@ -260,12 +260,6 @@ internal sealed class TrackedReader(DbTally tally, TrackedConnection connection,
 	public int Disposes { get; private set; }
 
 	public override bool IsClosed => _closed;
-
-	public override bool NextResult()
-	{
-		NextResultError ??= tally.Script.NextResultError;
-		return base.NextResult();
-	}
 
 	public override bool Read()
 	{

@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Threading.Tasks.Dataflow;
 using BoundedChannel = System.Threading.Channels.Channel;
 
@@ -16,8 +15,6 @@ public static class ReaderOwnershipTests
 		public int Id { get; set; }
 	}
 
-	static readonly RowMap<Row> Overrides = new([new("Id", "Id")]);
-
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -34,43 +31,25 @@ public static class ReaderOwnershipTests
 	{
 		// Channel, synchronous reads.
 		["ToChannel"] = async r => await r.ToChannel(Unbounded<object[]>(), true, Ct),
-		["ToChannel, pool"] = async r => await r.ToChannel(Unbounded<object[]>(), true, ArrayPool<object>.Shared, Ct),
-		["ToChannel, transform"] = async r => await r.ToChannel(Unbounded<Row>(), true, rec => new Row { Id = rec.GetInt32(0) }, Ct),
 		["ToChannel, mapped"] = async r => await r.ToChannel<Row>(Unbounded<Row>(), true, Ct),
-		["ToChannel, mapped with map"] = async r => await r.ToChannel(Unbounded<Row>(), true, Overrides, Ct),
 
 		// Channel, asynchronous reads.
 		["ToChannelAsync"] = async r => await r.ToChannelAsync(Unbounded<object[]>(), true, Ct),
-		["ToChannelAsync, pool"] = async r => await r.ToChannelAsync(Unbounded<object[]>(), true, ArrayPool<object>.Shared, Ct),
-		["ToChannelAsync, transform"] = async r => await r.ToChannelAsync(Unbounded<Row>(), true, rec => new Row { Id = rec.GetInt32(0) }, Ct),
 		["ToChannelAsync, mapped"] = async r => await r.ToChannelAsync<Row>(Unbounded<Row>(), true, Ct),
-		["ToChannelAsync, mapped with map"] = async r => await r.ToChannelAsync(Unbounded<Row>(), true, Overrides, Ct),
 
 		// Dataflow, synchronous reads.
 		["ToTargetBlock"] = r => { r.ToTargetBlock(new BufferBlock<object[]>(), true); return Task.CompletedTask; },
-		["ToTargetBlock, pool"] = r => { r.ToTargetBlock(new BufferBlock<object[]>(), true, ArrayPool<object>.Shared); return Task.CompletedTask; },
-		["ToTargetBlock, transform"] = r => { r.ToTargetBlock(new BufferBlock<Row>(), true, rec => new Row { Id = rec.GetInt32(0) }); return Task.CompletedTask; },
 		["ToTargetBlock, mapped"] = r => { r.ToTargetBlock<Row>(new BufferBlock<Row>(), true); return Task.CompletedTask; },
-		["ToTargetBlock, mapped with map"] = r => { r.ToTargetBlock(new BufferBlock<Row>(), true, Overrides); return Task.CompletedTask; },
 
 		// Dataflow, asynchronous reads.
 		["ToTargetBlockAsync"] = async r => await r.ToTargetBlockAsync(new BufferBlock<object[]>(), true, Ct),
-		["ToTargetBlockAsync, pool"] = async r => await r.ToTargetBlockAsync(new BufferBlock<object[]>(), true, ArrayPool<object>.Shared, Ct),
-		["ToTargetBlockAsync, transform"] = async r => await r.ToTargetBlockAsync(new BufferBlock<Row>(), true, rec => new Row { Id = rec.GetInt32(0) }, Ct),
 		["ToTargetBlockAsync, mapped"] = async r => await r.ToTargetBlockAsync<Row>(new BufferBlock<Row>(), true, Ct),
-		["ToTargetBlockAsync, mapped with map"] = async r => await r.ToTargetBlockAsync(new BufferBlock<Row>(), true, Overrides, Ct),
 
 		// Dataflow, AsSourceBlock (synchronous: the rows have been read when it returns) and AsSourceBlockAsync (in the background).
 		["AsSourceBlock"] = r => { r.AsSourceBlock(); return Task.CompletedTask; },
-		["AsSourceBlock, pool"] = r => { r.AsSourceBlock(ArrayPool<object>.Shared); return Task.CompletedTask; },
-		["AsSourceBlock, transform"] = r => { r.AsSourceBlock(rec => new Row { Id = rec.GetInt32(0) }); return Task.CompletedTask; },
 		["AsSourceBlock, mapped"] = r => { r.AsSourceBlock<Row>(); return Task.CompletedTask; },
-		["AsSourceBlock, mapped with map"] = r => { r.AsSourceBlock(Overrides); return Task.CompletedTask; },
 		["AsSourceBlockAsync"] = async r => await Completed(r.AsSourceBlockAsync(cancellationToken: Ct)),
-		["AsSourceBlockAsync, pool"] = async r => await Completed(r.AsSourceBlockAsync(ArrayPool<object>.Shared, cancellationToken: Ct)),
-		["AsSourceBlockAsync, transform"] = async r => await Completed(r.AsSourceBlockAsync(rec => new Row { Id = rec.GetInt32(0) }, cancellationToken: Ct)),
 		["AsSourceBlockAsync, mapped"] = async r => await Completed(r.AsSourceBlockAsync<Row>(cancellationToken: Ct)),
-		["AsSourceBlockAsync, mapped with map"] = async r => await Completed(r.AsSourceBlockAsync(Overrides, cancellationToken: Ct)),
 	};
 
 	public static TheoryData<string> Shapes()

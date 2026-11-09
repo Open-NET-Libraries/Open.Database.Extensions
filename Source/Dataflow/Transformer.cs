@@ -269,9 +269,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			}
 			catch (Exception) when (_stop.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
 			{
-				// The pipeline itself stopped the writer (the mapper failed, or the target closed): end quietly.  Whatever a provider
-				// throws when it honours that cancellation (an OperationCanceledException or its own exception) is not a failure of the
-				// caller's operation; the target has already heard about the cause.
+				// The pipeline itself stopped the writer (the mapper failed, or the target closed): end quietly, whatever the provider threw on that cancel.
 			}
 			finally
 			{

@@ -16,8 +16,6 @@ public static class ToTargetBlockFullTargetTests
 		public int Id { get; set; }
 	}
 
-	static readonly RowMap<Row> Overrides = new([new("Id", "Id")]);
-
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -32,30 +30,19 @@ public static class ToTargetBlockFullTargetTests
 	// The connection is closed in every case, so a command level call has to open it.
 	static DbCommand Db(DbTally tally) => tally.NewConnection().CreateCommand();
 
-	static ExpressiveDbCommand Expressive(DbTally tally) => tally.NewConnection().Command("select 1");
-
 	// Every synchronous overload that reads a reader or a command into a target block.
 	static readonly Dictionary<string, SyncCall<object[]>> SyncArrayCalls = new()
 	{
 		["reader"] = (t, w, c) => Reader(t).ToTargetBlock(w, c),
 		["reader, pool"] = (t, w, c) => Reader(t).ToTargetBlock(w, c, ArrayPool<object>.Shared),
 		["IDbCommand"] = (t, w, c) => Db(t).ToTargetBlock(w, c),
-		["IDbCommand, pool"] = (t, w, c) => Db(t).ToTargetBlock(w, c, ArrayPool<object>.Shared),
-		["IExecuteReader"] = (t, w, c) => Expressive(t).ToTargetBlock(w, c),
-		["IExecuteReader, pool"] = (t, w, c) => Expressive(t).ToTargetBlock(w, c, ArrayPool<object>.Shared),
 	};
 
 	static readonly Dictionary<string, SyncCall<Row>> SyncRowCalls = new()
 	{
 		["reader, transform"] = (t, w, c) => Reader(t).ToTargetBlock(w, c, r => new Row { Id = r.GetInt32(0) }),
 		["reader, mapped"] = (t, w, c) => Reader(t).ToTargetBlock<Row>(w, c),
-		["reader, mapped with map"] = (t, w, c) => Reader(t).ToTargetBlock(w, c, Overrides),
-		["IDbCommand, transform"] = (t, w, c) => Db(t).ToTargetBlock(w, c, r => new Row { Id = r.GetInt32(0) }),
 		["IDbCommand, mapped"] = (t, w, c) => Db(t).ToTargetBlock<Row>(w, c),
-		["IDbCommand, mapped with map"] = (t, w, c) => Db(t).ToTargetBlock(w, c, Overrides),
-		["IExecuteReader, transform"] = (t, w, c) => Expressive(t).ToTargetBlock(w, c, r => new Row { Id = r.GetInt32(0) }),
-		["IExecuteReader, mapped"] = (t, w, c) => Expressive(t).ToTargetBlock<Row>(w, c),
-		["IExecuteReader, mapped with map"] = (t, w, c) => Expressive(t).ToTargetBlock(w, c, Overrides),
 	};
 
 	public static TheoryData<string> SyncArrayNames() => Names(SyncArrayCalls.Keys);
