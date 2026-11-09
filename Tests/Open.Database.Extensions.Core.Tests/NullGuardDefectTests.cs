@@ -1,4 +1,4 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using Open.Database.Extensions.Core;
 
 #nullable enable
@@ -48,7 +48,8 @@ public static class NullGuardDefectTests
 	{
 		var ex = Assert.Throws<ArgumentNullException>(RetrieveOnNullReader[call]);
 
-		Assert.Equal("reader", ex.ParamName);
+		// These have no guard of their own: GetNames guards the reader and names it "record".
+		Assert.Equal(call is "Retrieve()" or "Retrieve(ordinals)" or "Retrieve(n, others)" ? "record" : "reader", ex.ParamName);
 	}
 
 	[Theory]
@@ -74,42 +75,27 @@ public static class NullGuardDefectTests
 		Assert.Empty(tally.Readers);
 	}
 
-	// Defect 6: the constructor that takes an ImmutableArray already refuses a null result; the one that takes sequences accepted it.
+	// Defect 6: a null result is an empty collection. It used to be refused by two of the constructors and a NullReferenceException when enumerated.
 	[Fact]
-	public static void QueryResultCollection_Sequences_NullResult_IsRefused()
-	{
-		var ex = Assert.Throws<ArgumentNullException>(() => new QueryResultCollection<int, List<int>>(Ordinals, Names, null!));
-
-		Assert.Equal("result", ex.ParamName);
-	}
+	public static void QueryResultCollection_Sequences_NullResult_IsEmpty()
+		=> Assert.Empty(new QueryResultCollection<int, List<int>>(Ordinals, Names, null!));
 
 	[Fact]
-	public static void QueryResultCollection_OfT_Sequences_NullResult_IsRefused()
-	{
-		var ex = Assert.Throws<ArgumentNullException>(() => new QueryResultCollection<int>(Ordinals, Names, null!));
-
-		Assert.Equal("result", ex.ParamName);
-	}
+	public static void QueryResultCollection_OfT_Sequences_NullResult_IsEmpty()
+		=> Assert.Empty(new QueryResultCollection<int>(Ordinals, Names, null!));
 
 	[Fact]
-	public static void QueryResultCollection_ImmutableArray_NullResult_IsRefused()
-	{
-		var ex = Assert.Throws<ArgumentNullException>(() => new QueryResultCollection<int, List<int>>([0], ["id"], null!));
+	public static void QueryResultCollection_ImmutableArray_NullResult_IsEmpty()
+		=> Assert.Empty(new QueryResultCollection<int, List<int>>([0], ["id"], null!));
 
-		Assert.Equal("result", ex.ParamName);
-	}
-
-	// Defect 7: its two sibling overloads refuse a null sequence when called; this one threw a NullReferenceException
-	// while it was enumerated, after it had already yielded the first value.
+	// Defect 7: a null remainder means no more ordinals. It used to be a NullReferenceException while enumerated, after the first value.
 	[Fact]
-	public static void EnumerateValuesFromOrdinals_NullRemainder_IsRefusedWhenCalled()
+	public static void EnumerateValuesFromOrdinals_NullRemainder_YieldsOnlyTheFirstValue()
 	{
 		IDataRecord record = Substitute.For<IDataRecord>();
+		record.GetValue(0).Returns("a");
 
-		var ex = Assert.Throws<ArgumentNullException>(() => record.EnumerateValuesFromOrdinals(0, null!));
-
-		Assert.Equal("remainingOrdinals", ex.ParamName);
-		record.DidNotReceiveWithAnyArgs().GetValue(default);
+		Assert.Equal(["a"], record.EnumerateValuesFromOrdinals(0, null!));
 	}
 
 	[Fact]

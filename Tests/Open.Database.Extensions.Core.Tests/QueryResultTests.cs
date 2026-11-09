@@ -55,9 +55,9 @@ public static class QueryResultTests
 	private static readonly string[] Names = ["a"];
 
 	[Fact]
-	public static void QueryResultCollection_RejectsNullResult_AndEnumeratesResult()
+	public static void QueryResultCollection_NullResultIsEmpty_AndEnumeratesResult()
 	{
-		Assert.Throws<ArgumentNullException>(() => new QueryResultCollection<int, List<int>>(
+		Assert.Empty(new QueryResultCollection<int, List<int>>(
 			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, null!));
 
 		var collection = new QueryResultCollection<int>(

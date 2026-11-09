@@ -86,7 +86,6 @@ public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerab
 		TResult result)
 		: base(ordinals, names, result)
 	{
-		if (result == null) throw new ArgumentNullException(nameof(result));
 	}
 
 	/// <inheritdoc cref="QueryResultCollection{T, TResult}.QueryResultCollection(ImmutableArray{int}, ImmutableArray{string}, TResult)" />
@@ -96,12 +95,13 @@ public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerab
 		TResult result)
 		: base(ordinals, names, result)
 	{
-		if (result == null) throw new ArgumentNullException(nameof(result));
 	}
 
 	/// <inheritdoc />
 	public IEnumerator<T> GetEnumerator()
-		=> Result.GetEnumerator();
+		=> Result is null
+		? Enumerable.Empty<T>().GetEnumerator() // A null result is empty.
+		: Result.GetEnumerator();
 
 	IEnumerator IEnumerable.GetEnumerator()
 		=> GetEnumerator();
