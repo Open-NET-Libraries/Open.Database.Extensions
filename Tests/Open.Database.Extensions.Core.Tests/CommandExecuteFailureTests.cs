@@ -41,11 +41,11 @@ public static class CommandExecuteFailureTests
 		["ToImmutableArray"] = c => c.ToImmutableArray(r => r.GetValue(0)),
 		["ToDataTable"] = c => c.ToDataTable(),
 		["ToDataTables"] = c => c.ToDataTables(),
-		["ExecuteReader(handler)"] = c => { c.ExecuteReader((IDataReader _) => { }); return null; },
-		["ExecuteReader(transform)"] = c => c.ExecuteReader((IDataReader r) => r.FieldCount),
-		["IterateReader(selector)"] = c => c.IterateReader(r => r.GetValue(0), (IEnumerable<object> e) => e.Count()),
-		["IterateReader(handler)"] = c => { c.IterateReader((IDataRecord _) => { }); return null; },
-		["IterateReader(behavior, handler)"] = c => { c.IterateReader(CommandBehavior.Default, (IDataRecord _) => { }); return null; },
+		["ExecuteReader(handler)"] = c => { c.ExecuteReader(_ => { }); return null; },
+		["ExecuteReader(transform)"] = c => c.ExecuteReader(r => r.FieldCount),
+		["IterateReader(selector)"] = c => c.IterateReader(r => r.GetValue(0), e => e.Count()),
+		["IterateReader(handler)"] = c => { c.IterateReader(_ => { }); return null; },
+		["IterateReader(behavior, handler)"] = c => { c.IterateReader(CommandBehavior.Default, _ => { }); return null; },
 		["IterateReaderWhile"] = c => { c.IterateReaderWhile(_ => true); return null; },
 		["First"] = c => c.First(r => r.GetValue(0)),
 		["FirstOrDefault"] = c => c.FirstOrDefault(r => r.GetValue(0)),
@@ -65,17 +65,17 @@ public static class CommandExecuteFailureTests
 	{
 		["ToListAsync(transform)"] = (c, t) => c.ToListAsync(r => r.GetValue(0), cancellationToken: t).AsTask(),
 		["ToListAsync(behavior, transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, r => r.GetValue(0), true, t).AsTask(),
-		["ToListAsync(async transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, (IDataRecord r) => new ValueTask<object>(r.GetValue(0)), t).AsTask(),
-		["ExecuteReaderAsync(Action)"] = (c, t) => c.ExecuteReaderAsync((DbDataReader _) => { }, CommandBehavior.Default, t).AsTask(),
-		["ExecuteReaderAsync(Func<ValueTask>)"] = (c, t) => c.ExecuteReaderAsync((DbDataReader _) => default, CommandBehavior.Default, t).AsTask(),
-		["ExecuteReaderAsync<T>(Func<T>)"] = (c, t) => c.ExecuteReaderAsync((DbDataReader r) => r.FieldCount, CommandBehavior.Default, t).AsTask(),
-		["ExecuteReaderAsync<T>(Func<ValueTask<T>>)"] = (c, t) => c.ExecuteReaderAsync((DbDataReader r) => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
-		["ExecuteReaderAsync(IDbCommand, Func<ValueTask>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync((IDataReader _) => default, CommandBehavior.Default, t).AsTask(),
-		["ExecuteReaderAsync<T>(IDbCommand, Func<ValueTask<T>>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync((IDataReader r) => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
-		["ForEachAsync(Action)"] = (c, t) => c.ForEachAsync((IDataRecord _) => { }, true, t).AsTask(),
-		["ForEachAsync(behavior, Action)"] = (c, t) => c.ForEachAsync((IDataRecord _) => { }, CommandBehavior.Default, true, t).AsTask(),
-		["ForEachAsync(Func<ValueTask>)"] = (c, t) => c.ForEachAsync((IDataRecord _) => default, true, t).AsTask(),
-		["ForEachAsync(behavior, Func<ValueTask>)"] = (c, t) => c.ForEachAsync((IDataRecord _) => default, CommandBehavior.Default, true, t).AsTask(),
+		["ToListAsync(async transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, r => new ValueTask<object>(r.GetValue(0)), t).AsTask(),
+		["ExecuteReaderAsync(Action)"] = (c, t) => c.ExecuteReaderAsync(_ => { }, CommandBehavior.Default, t).AsTask(),
+		["ExecuteReaderAsync(Func<ValueTask>)"] = (c, t) => c.ExecuteReaderAsync(_ => default, CommandBehavior.Default, t).AsTask(),
+		["ExecuteReaderAsync<T>(Func<T>)"] = (c, t) => c.ExecuteReaderAsync(r => r.FieldCount, CommandBehavior.Default, t).AsTask(),
+		["ExecuteReaderAsync<T>(Func<ValueTask<T>>)"] = (c, t) => c.ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
+		["ExecuteReaderAsync(IDbCommand, Func<ValueTask>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync(_ => default, CommandBehavior.Default, t).AsTask(),
+		["ExecuteReaderAsync<T>(IDbCommand, Func<ValueTask<T>>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
+		["ForEachAsync(Action)"] = (c, t) => c.ForEachAsync(_ => { }, true, t).AsTask(),
+		["ForEachAsync(behavior, Action)"] = (c, t) => c.ForEachAsync(_ => { }, CommandBehavior.Default, true, t).AsTask(),
+		["ForEachAsync(Func<ValueTask>)"] = (c, t) => c.ForEachAsync(_ => default, true, t).AsTask(),
+		["ForEachAsync(behavior, Func<ValueTask>)"] = (c, t) => c.ForEachAsync(_ => default, CommandBehavior.Default, true, t).AsTask(),
 		["IterateReaderWhileAsync"] = (c, t) => c.IterateReaderWhileAsync(_ => new ValueTask<bool>(true), CommandBehavior.Default, true, t).AsTask(),
 		["FirstOrdinalResultsAsync"] = (c, t) => c.FirstOrdinalResultsAsync(CommandBehavior.Default, true, t).AsTask(),
 		["FirstOrdinalResultsAsync<T>"] = (c, t) => c.FirstOrdinalResultsAsync<int>(CommandBehavior.Default, true, t).AsTask(),
@@ -161,8 +161,8 @@ public static class CommandExecuteFailureTests
 		(DbTally tally, TrackedConnection connection, DbCommand command) = Closed(new ProviderFailed());
 		IDbCommand notDb = new OnlyDbCommand(command);
 
-		await Assert.ThrowsAsync<ProviderFailed>(async () => await notDb.ExecuteReaderAsync((IDataReader _) => default, cancellationToken: TestContext.Current.CancellationToken));
-		await Assert.ThrowsAsync<ProviderFailed>(async () => await notDb.ExecuteReaderAsync((IDataReader r) => new ValueTask<int>(r.FieldCount), cancellationToken: TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ProviderFailed>(async () => await notDb.ExecuteReaderAsync(_ => default, cancellationToken: TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ProviderFailed>(async () => await notDb.ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), cancellationToken: TestContext.Current.CancellationToken));
 
 		Assert.Equal(2, connection.Opens);
 		Assert.Equal(2, connection.Closes);

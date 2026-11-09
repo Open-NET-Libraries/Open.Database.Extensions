@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Open.Database.Extensions.Tests;
 
 #nullable enable
@@ -8,15 +10,9 @@ namespace Open.Database.Extensions.Tests;
 public static class ToDataTablesResultSetTests
 {
 	/// <summary>The number of rows of each result set, in order.</summary>
-	public static TheoryData<int[]> ResultSets() => new()
-	{
-		new[] { 0 },
-		new[] { 3 },
-		new[] { 2, 1 },
-		new[] { 0, 2, 0 },
-		new[] { 2, 1, 3 },
-		new[] { 1, 1, 1, 1 },
-	};
+	public static TheoryData<string> ResultSets() => ["0", "3", "2,1", "0,2,0", "2,1,3", "1,1,1,1"];
+
+	static int[] Counts(string rows) => [.. rows.Split(',').Select(n => int.Parse(n, CultureInfo.InvariantCulture))];
 
 	static DataSet DataSetOf(int[] rowCounts)
 	{
@@ -49,8 +45,9 @@ public static class ToDataTablesResultSetTests
 
 	[Theory]
 	[MemberData(nameof(ResultSets))]
-	public static void Reader_ReturnsOneTablePerResultSet(int[] rowCounts)
+	public static void Reader_ReturnsOneTablePerResultSet(string rows)
 	{
+		int[] rowCounts = Counts(rows);
 		using DataSet set = DataSetOf(rowCounts);
 		using DataTableReader reader = set.CreateDataReader();
 
@@ -61,8 +58,9 @@ public static class ToDataTablesResultSetTests
 
 	[Theory]
 	[MemberData(nameof(ResultSets))]
-	public static void Command_ReturnsOneTablePerResultSet(int[] rowCounts)
+	public static void Command_ReturnsOneTablePerResultSet(string rows)
 	{
+		int[] rowCounts = Counts(rows);
 		using DataSet set = DataSetOf(rowCounts);
 		using var connection = new FakeDbConnection();
 		using var command = new FakeDbCommand(connection, () => set.CreateDataReader());

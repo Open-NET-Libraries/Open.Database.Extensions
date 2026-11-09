@@ -29,14 +29,12 @@ public static class ToChannelWaitCancelledTests
 	}
 
 	// The connection is closed in every case, so a command level call waits for room before it opens it.
-	static IDbCommand Plain(DbTally tally) => tally.NewConnection().CreateCommand();
-
 	static DbCommand Db(DbTally tally) => tally.NewConnection().CreateCommand();
 
 	static readonly Dictionary<string, Call<object[]>> ArrayCalls = new()
 	{
-		["IDbCommand"] = (t, w, complete, ct) => Plain(t).ToChannel(w, complete, ct),
-		["IDbCommand, pool"] = (t, w, complete, ct) => Plain(t).ToChannel(w, complete, ArrayPool<object>.Shared, ct),
+		["IDbCommand"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, ct),
+		["IDbCommand, pool"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, ArrayPool<object>.Shared, ct),
 		["DbCommand"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, ct),
 		["DbCommand, pool"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, ArrayPool<object>.Shared, ct),
 		["IExecuteReader"] = (t, w, complete, ct) => ((IExecuteReader)Expressive(t, ct)).ToChannel(w, complete),
@@ -47,9 +45,9 @@ public static class ToChannelWaitCancelledTests
 
 	static readonly Dictionary<string, Call<Row>> RowCalls = new()
 	{
-		["IDbCommand, transform"] = (t, w, complete, ct) => Plain(t).ToChannel(w, complete, _ => new Row(), ct),
-		["IDbCommand, mapped"] = (t, w, complete, ct) => Plain(t).ToChannel<Row>(w, complete, ct),
-		["IDbCommand, mapped with map"] = (t, w, complete, ct) => Plain(t).ToChannel(w, complete, Overrides, ct),
+		["IDbCommand, transform"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, _ => new Row(), ct),
+		["IDbCommand, mapped"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel<Row>(w, complete, ct),
+		["IDbCommand, mapped with map"] = (t, w, complete, ct) => ((IDbCommand)Db(t)).ToChannel(w, complete, Overrides, ct),
 		["DbCommand, transform"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, _ => new Row(), ct),
 		["DbCommand, mapped"] = (t, w, complete, ct) => Db(t).ToChannelAsync<Row>(w, complete, ct),
 		["DbCommand, mapped with map"] = (t, w, complete, ct) => Db(t).ToChannelAsync(w, complete, Overrides, ct),
@@ -103,7 +101,7 @@ public static class ToChannelWaitCancelledTests
 	[Theory]
 	[MemberData(nameof(ArrayShapes))]
 	public static Task Array_CancelledWhileWaitingForRoom_CompletesTheTargetOnlyWhenAsked(string call, bool complete)
-		=> CancelWhileWaitingForRoom(ArrayCalls[call], new object[] { 1 }, complete);
+		=> CancelWhileWaitingForRoom(ArrayCalls[call], [1], complete);
 
 	[Theory]
 	[MemberData(nameof(RowShapes))]
