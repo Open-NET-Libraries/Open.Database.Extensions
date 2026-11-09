@@ -5,24 +5,15 @@
 /// </summary>
 public static partial class SqlCommandExtensions
 {
-	#region Connection.EnsureOpen Shortcuts.
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static ConnectionState EnsureOpen(this IDbCommand command)
-	{
-#if DEBUG
-		if (command.Connection is null) throw new InvalidOperationException("Cannot execute a command with a null connection.");
-#endif
-		return command.Connection!.EnsureOpen();
-	}
+	#region Open and execute the reader
 
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static ValueTask<ConnectionState> EnsureOpenAsync(this IDbCommand command, CancellationToken cancellationToken)
-	{
-#if DEBUG
-		if (command.Connection is null) throw new ArgumentException("Cannot execute a command with a null connection.");
-#endif
-		return command.Connection!.EnsureOpenAsync(cancellationToken);
-	}
+	// These open a closed connection and execute the reader in one step; Core's shared helpers close a connection opened here when the
+	// provider fails to execute. The execute delegates are static lambdas, so there is no closure.
+	static SqlDataReader OpenAndExecuteReader(this SqlCommand command, CommandBehavior behavior)
+		=> CommandExtensions.OpenAndExecuteReader(command, behavior, static (c, b) => c.ExecuteReader(b));
+
+	static ValueTask<SqlDataReader> OpenAndExecuteReaderAsync(this SqlCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
+		=> CommandExtensions.OpenAndExecuteReaderAsync(command, behavior, static (c, b, ct) => c.ExecuteReaderAsync(b, ct), cancellationToken);
 	#endregion
 
 	/// <summary>
@@ -41,9 +32,7 @@ public static partial class SqlCommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		ConnectionState state = command.EnsureOpen();
-		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using SqlDataReader reader = command.ExecuteReader(behavior);
+		using SqlDataReader reader = command.OpenAndExecuteReader(behavior);
 		handler(reader);
 	}
 
@@ -65,9 +54,7 @@ public static partial class SqlCommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		ConnectionState state = command.EnsureOpen();
-		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
-		using SqlDataReader reader = command.ExecuteReader(behavior);
+		using SqlDataReader reader = command.OpenAndExecuteReader(behavior);
 		return transform(reader);
 	}
 
@@ -93,12 +80,10 @@ public static partial class SqlCommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		ConnectionState state = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		using SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 #else
-		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await using var readerDisposal = reader.ConfigureAwait(false);
 #endif
 		await handler(reader).ConfigureAwait(false);
@@ -114,15 +99,10 @@ public static partial class SqlCommandExtensions
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		ConnectionState state = await command
-			.EnsureOpenAsync(cancellationToken)
-			.ConfigureAwait(false);
-
-		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		using SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 #else
-		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await using var readerDisposal = reader.ConfigureAwait(false);
 #endif
 		handler(reader);
@@ -151,15 +131,10 @@ public static partial class SqlCommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		ConnectionState state = await command
-			.EnsureOpenAsync(cancellationToken)
-			.ConfigureAwait(false);
-
-		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		using SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 #else
-		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await using var readerDisposal = reader.ConfigureAwait(false);
 #endif
 		return transform(reader);
@@ -175,15 +150,10 @@ public static partial class SqlCommandExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		ConnectionState state = await command
-			.EnsureOpenAsync(cancellationToken)
-			.ConfigureAwait(false);
-
-		if (state == ConnectionState.Closed) behavior |= CommandBehavior.CloseConnection;
 #if NETSTANDARD2_0
-		using SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		using SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 #else
-		SqlDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		SqlDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 		await using var readerDisposal = reader.ConfigureAwait(false);
 #endif
 		return await transform(reader).ConfigureAwait(false);
