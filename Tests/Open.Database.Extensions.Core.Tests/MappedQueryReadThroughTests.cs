@@ -1,4 +1,3 @@
-using NSubstitute;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -27,10 +26,8 @@ public static class MappedQueryReadThroughTests
 
 	// ---- every terminal ----
 
-	public static TheoryData<string> Terminals =>
-	[
-		"ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "ToDictionary", "ToHashSet", "Read", "ReadResult",
-	];
+	public static TheoryData<string> Terminals
+		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "ToDictionary", "ToHashSet", "Read", "ReadResult"];
 
 	static void RunSync(MappedQuery<int> query, string terminal)
 	{

@@ -88,6 +88,7 @@ public static partial class ConnectionExtensions
 	/// <summary>The <paramref name="configureAwait"/> argument is ignored: the library always uses <c>ConfigureAwait(false)</c>.</summary>
 	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
 	[Obsolete(ObsoleteMessage)]
+	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
 	public static ValueTask<ConnectionState> EnsureOpenAsync(
 		this DbConnection connection,
 		bool configureAwait,
@@ -97,6 +98,7 @@ public static partial class ConnectionExtensions
 	/// <summary>The <paramref name="configureAwait"/> argument is ignored: the library always uses <c>ConfigureAwait(false)</c>.</summary>
 	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
 	[Obsolete(ObsoleteMessage)]
+	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
 	public static ValueTask<ConnectionState> EnsureOpenAsync(
 		this IDbConnection connection,
 		bool configureAwait,
@@ -106,6 +108,7 @@ public static partial class ConnectionExtensions
 	/// <summary>The <paramref name="configureAwait"/> argument is ignored: the library always uses <c>ConfigureAwait(false)</c>.</summary>
 	/// <inheritdoc cref="OpenAsync(IDbConnection, CancellationToken)"/>
 	[Obsolete(ObsoleteMessage)]
+	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
 	public static ValueTask OpenAsync(
 		this IDbConnection connection,
 		bool configureAwait,

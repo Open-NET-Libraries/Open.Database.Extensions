@@ -18,7 +18,7 @@ public static class ToChannelExecuteFailureTests
 		var tally = new DbTally(new() { ExecuteFailure = new ProviderFailed() });
 		TrackedConnection connection = tally.NewConnection();
 		IDbCommand command = connection.CreateCommand();
-		Channel<int> channel = System.Threading.Channels.Channel.CreateUnbounded<int>();
+		var channel = System.Threading.Channels.Channel.CreateUnbounded<int>();
 
 		await Assert.ThrowsAsync<ProviderFailed>(async () => await command.ToChannel(channel.Writer, complete, r => r.GetInt32(0), TestContext.Current.CancellationToken));
 
@@ -35,7 +35,7 @@ public static class ToChannelExecuteFailureTests
 		var tally = new DbTally(new() { ExecuteFailure = new ProviderFailed() });
 		TrackedConnection connection = tally.NewOpenConnection();
 		IDbCommand command = connection.CreateCommand();
-		Channel<int> channel = System.Threading.Channels.Channel.CreateUnbounded<int>();
+		var channel = System.Threading.Channels.Channel.CreateUnbounded<int>();
 
 		await Assert.ThrowsAsync<ProviderFailed>(async () => await command.ToChannel(channel.Writer, false, r => r.GetInt32(0), TestContext.Current.CancellationToken));
 
