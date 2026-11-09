@@ -156,7 +156,7 @@ readonly struct MappedQueryCore<T>
 			: _command.ExecuteReader((state, transform), static (reader, s) =>
 			{
 				TResult result = s.transform(reader, s.state);
-				ReadThrough(reader);
+				RowReader.ReadThrough(reader);
 				return result;
 			}, behavior);
 
@@ -166,31 +166,9 @@ readonly struct MappedQueryCore<T>
 			: ExecuteAsync((state, transform, token), static async (reader, s) =>
 			{
 				TResult result = await s.transform(reader, s.state).ConfigureAwait(false);
-				await ReadThroughAsync(reader, s.token).ConfigureAwait(false);
+				await RowReader.ReadThroughAsync(reader, s.token).ConfigureAwait(false);
 				return result;
 			}, behavior, linked, token);
-
-	// Moves past every later result set without reading its rows; the provider raises a failure in one of them here.
-	static void ReadThrough(IDataReader reader)
-	{
-		while (reader.NextResult()) { }
-	}
-
-	static ValueTask ReadThroughAsync(IDataReader reader, CancellationToken token)
-	{
-		if (reader is not DbDataReader db)
-		{
-			ReadThrough(reader);
-			return default;
-		}
-
-		return Core(db, token);
-
-		static async ValueTask Core(DbDataReader db, CancellationToken token)
-		{
-			while (await db.NextResultAsync(token).ConfigureAwait(false)) { }
-		}
-	}
 
 	// The terminals pass their inputs to the command as state and use static lambdas, so running a
 	// query allocates no closures or delegates of its own.
@@ -200,13 +178,13 @@ readonly struct MappedQueryCore<T>
 	internal void Read(Action<IEnumerable<T>> handler)
 		=> _command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s) =>
 		{
-			s.handler(Stream(s._source, reader, s._skip, s._take, s._singleResult));
+			s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult));
 			return false;
 		}, Behavior);
 
 	internal TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler)
 		=> _command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s)
-			=> s.handler(Stream(s._source, reader, s._skip, s._take, s._singleResult)), Behavior);
+			=> s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult)), Behavior);
 
 	internal ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken)
 	{
@@ -227,31 +205,10 @@ readonly struct MappedQueryCore<T>
 
 	// The streams read through the later result sets after the last row, so a caller who enumerates to the end (or to the take limit) sees a later failure.
 	// An enumeration the caller abandons, or whose handler throws, is disposed before that point and reads nothing more.
-	static IEnumerable<T> Stream(IRowSource<T> source, IDataReader reader, int skip, int take, bool singleResult)
-		=> singleResult ? RowReader.Stream(source, reader, skip, take) : StreamThrough(source, reader, skip, take);
-
-	static IEnumerable<T> StreamThrough(IRowSource<T> source, IDataReader reader, int skip, int take)
-	{
-		foreach (T item in RowReader.Stream(source, reader, skip, take))
-			yield return item;
-
-		ReadThrough(reader);
-	}
-
 	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool singleResult, bool useAsync, CancellationToken token)
-		=> reader is not DbDataReader db
-			? Stream(source, reader, skip, take, singleResult).ToAsyncEnumerable()
-			: singleResult
-				? RowReader.StreamAsync(source, db, skip, take, useAsync, token)
-				: StreamThroughAsync(source, db, skip, take, useAsync, token);
-
-	static async IAsyncEnumerable<T> StreamThroughAsync(IRowSource<T> source, DbDataReader reader, int skip, int take, bool useAsync, [EnumeratorCancellation] CancellationToken token = default)
-	{
-		await foreach (T item in RowReader.StreamAsync(source, reader, skip, take, useAsync, token).ConfigureAwait(false))
-			yield return item;
-
-		await ReadThroughAsync(reader, token).ConfigureAwait(false);
-	}
+		=> reader is DbDataReader db
+			? RowReader.StreamAsync(source, db, skip, take, useAsync, !singleResult, token)
+			: RowReader.Stream(source, reader, skip, take, !singleResult).ToAsyncEnumerable();
 
 	#endregion
 

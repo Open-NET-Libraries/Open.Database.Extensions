@@ -17,6 +17,19 @@ public static class MappedQueryLaterFailureLiveTests
 	const string LateFailure = "select 1 as Id; raiserror('late failure', 16, 1);";
 	const string TrailingStatus = "select 1 as Id; select 7 as Status;";
 
+	static async Task RequireLocalDb()
+	{
+		try
+		{
+			await using var connection = new SqlConnection(ConnectionString);
+			await connection.OpenAsync(Ct);
+		}
+		catch (SqlException ex)
+		{
+			Assert.Skip("SQL Server LocalDB is not available: " + ex.Message);
+		}
+	}
+
 	static async Task<string> Prepare(string body)
 	{
 		string name = "dbo.ode_single_result_" + Guid.NewGuid().ToString("N");
@@ -78,16 +91,10 @@ public static class MappedQueryLaterFailureLiveTests
 	[Fact]
 	public static async Task ATextBatchWithALateFailure_Throws_UnlessSingleResult()
 	{
+		await RequireLocalDb();
 		ExpressiveDbCommand command = Command(CommandType.Text, LateFailure);
-		try
-		{
-			Assert.Throws<SqlException>(() => Ids(command).ToList());
-		}
-		catch (Exception ex) when (ex is not Xunit.Sdk.XunitException && IsUnavailable(ex))
-		{
-			Assert.Skip("SQL Server LocalDB is not available: " + ex.Message);
-		}
 
+		Assert.Throws<SqlException>(() => Ids(command).ToList());
 		await Assert.ThrowsAsync<SqlException>(async () => await Ids(command).ToArrayAsync(Ct));
 		Assert.Equal([1], Ids(command).SingleResult().ToList());
 		Assert.Equal(1, Assert.Single(await Ids(command).SingleResult().ToArrayAsync(Ct)));
@@ -111,6 +118,4 @@ public static class MappedQueryLaterFailureLiveTests
 			await Drop(name);
 		}
 	}
-
-	static bool IsUnavailable(Exception ex) => ex is not SqlException { Number: 50000 } and (SqlException or InvalidOperationException);
 }
