@@ -8,7 +8,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 /// <remarks>
 /// "Not known" is an empty or default array: a procedure name with a database part (the lookup would run in the current database), a provider without the collection,
-/// a procedure the provider does not list, and a name that exists in more than one schema when none was given. A failure of the lookup itself is thrown as it is.
+/// a procedure the provider does not list, and a name that exists in more than one schema when none was given. A failure of the lookup itself is thrown as it is, except that a `NotSupportedException`, a `NotImplementedException` or an `ArgumentException` (and an `InvalidOperationException` that names the collection) is taken as "the provider does not support the collection".
 /// </remarks>
 static class ProcedureSchemaNames
 {

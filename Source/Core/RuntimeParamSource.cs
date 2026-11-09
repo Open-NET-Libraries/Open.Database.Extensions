@@ -36,7 +36,7 @@ sealed class RuntimeParamSource
 			if (!usable) continue;
 
 			Type memberType = member is PropertyInfo p ? p.PropertyType : ((FieldInfo)member).FieldType;
-			if (!seen.Add(member.Name) || !CanBox(memberType)) continue;
+			if (!CanBox(memberType) || !seen.Add(member.Name)) continue;
 
 			Expression value = Expression.Convert(Expression.MakeMemberAccess(typed, member), typeof(object));
 			names.Add(member.Name);

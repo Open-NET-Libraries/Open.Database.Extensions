@@ -114,7 +114,7 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// </summary>
 	/// <remarks>
 	/// The database type of this command is <see cref="SqlDbType"/>, so without this overload a <see cref="DbType"/> argument would be taken as the VALUE of the parameter. It is converted to the <see cref="SqlDbType"/> that the provider maps it to.
-	/// The direction has no default on purpose: this overload is declared on the command, so it hides the inherited ones wherever it applies, and a literal 0 converts to any enum, which would turn <c>AddParam("@count", 0)</c> into a parameter with no value.
+	/// The direction has no default on purpose: this overload is declared on the command, so it hides the inherited ones wherever it applies, and a literal 0 converts to any enum, which would turn <c>AddParam("@count", 0)</c> into a parameter with no value. A constant <c>0</c> with a direction (<c>AddParam("@n", 0, ParameterDirection.InputOutput)</c>) binds to this overload as a <see cref="DbType"/>: write <c>(object)0</c> or use a variable.
 	/// </remarks>
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="type">The database type of the parameter.</param>
