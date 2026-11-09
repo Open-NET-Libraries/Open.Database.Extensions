@@ -13,6 +13,7 @@ Version 11 is a performance release and a tidy-up release. Result mapping is rew
 - `AddParam(value)` finds a stored procedure's parameter names through the `ProcedureParameters` schema on any `DbConnection`.
 - On a text command, `AddParam(value)` and `AddParams(object)` use the `@name` markers in the SQL.
 - `Map<T>()` on a dictionary or `ExpandoObject` throws, where it used to return empty rows.
+- `ToDataTable` now reads one result set and leaves the reader on it, so `NextResult` works after it. A loop on `while (!reader.IsClosed)` around `ToDataTable` no longer ends: use `NextResult`. `ToDataTables` returns one table per result set.
 
 ## Highlights
 
