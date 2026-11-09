@@ -135,6 +135,19 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	{
 	}
 
+	/// <summary>
+	/// Reads the parameter names a stored procedure declares through the ADO.NET schema collection <c>ProcedureParameters</c>, so parameters added with <c>AddParam(value)</c> find their real names on any provider that supports it (SQL Server does).
+	/// </summary>
+	/// <remarks>A name with a database part (<c>otherdb.dbo.proc</c>) is not looked up, because the lookup runs in the connection's current database; a name that exists in more than one schema (when no schema is given) is not known either, and neither is anything from a provider that does not implement the collection:
+	/// in each case the last member of each argument is used as written. A failure of the lookup is thrown as it is (a <see cref="DbException"/> stays one, so a retry policy still sees it), with the procedure's name added to <see cref="Exception.Data"/> under the key <c>Procedure</c>.</remarks>
+	/// <inheritdoc />
+	protected override ImmutableArray<string> GetProcedureParameterNames(DbConnection connection, string procedure)
+		=> ProcedureSchemaNames.Get(connection, procedure);
+
+	/// <inheritdoc cref="GetProcedureParameterNames(DbConnection, string)"/>
+	protected override ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(DbConnection connection, string procedure, CancellationToken cancellationToken)
+		=> ProcedureSchemaNames.GetAsync(connection, procedure, cancellationToken);
+
 	/// <inheritdoc />
 	protected override void AddParams(DbCommand command)
 	{
