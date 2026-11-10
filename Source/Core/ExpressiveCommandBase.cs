@@ -734,7 +734,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return true;
 	}
 
-	static bool SameName(string a, string b) => MemoryExtensions.Equals(Bare(a), Bare(b), StringComparison.OrdinalIgnoreCase);
+	static bool SameName(string a, string b) => Bare(a).Equals(Bare(b), StringComparison.OrdinalIgnoreCase);
 
 	static ReadOnlySpan<char> Bare(string name) => name.Length > 0 && name[0] == '@' ? name.AsSpan(1) : name.AsSpan();
 

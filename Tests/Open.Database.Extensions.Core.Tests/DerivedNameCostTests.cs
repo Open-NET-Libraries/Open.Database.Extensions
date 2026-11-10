@@ -101,7 +101,7 @@ public static class DerivedNameCostTests
 			_db.Sent.Clear();
 		}
 
-		public void RunAsync(ExpressiveDbCommand command)
+		public void RunViaAsync(ExpressiveDbCommand command)
 		{
 			command.ExecuteNonQueryAsync().AsTask().GetAwaiter().GetResult();
 			_db.Sent.Clear();
@@ -116,7 +116,7 @@ public static class DerivedNameCostTests
 	public static void StoredProcedure_PlainLocals_DerivedCostsNoMoreThanExplicit()
 	{
 		var rig = new Rig(CommandType.StoredProcedure);
-		int orderId = 5, customerId = 7;
+		const int orderId = 5, customerId = 7;
 		var startDate = new DateTime(2026, 1, 2);
 
 		long derived = BytesPerCall(() => rig.Run(rig.Command().AddParam(orderId).AddParam(customerId).AddParam(startDate)));
@@ -157,7 +157,7 @@ public static class DerivedNameCostTests
 	public static void Text_LiteralSql_DerivedCostsNoMoreThanExplicit()
 	{
 		var rig = new Rig(CommandType.Text);
-		int orderId = 5, customerId = 7;
+		const int orderId = 5, customerId = 7;
 		var startDate = new DateTime(2026, 1, 2);
 
 		long derived = BytesPerCall(() => rig.Run(rig.Command(Sql).AddParam(orderId).AddParam(customerId).AddParam(startDate)));
@@ -172,7 +172,7 @@ public static class DerivedNameCostTests
 	public static void Text_SqlBuiltOnEveryCall_Works_AndTheCostIsReported()
 	{
 		var rig = new Rig(CommandType.Text);
-		int orderId = 5, customerId = 7;
+		const int orderId = 5, customerId = 7;
 		var startDate = new DateTime(2026, 1, 2);
 
 		long derived = BytesPerCall(() => rig.Run(rig.Command(new string(Sql.AsSpan())).AddParam(orderId).AddParam(customerId).AddParam(startDate)));
@@ -190,11 +190,11 @@ public static class DerivedNameCostTests
 	public static void StoredProcedureAsync_PlainLocals_DerivedCostsNoMoreThanExplicit()
 	{
 		var rig = new Rig(CommandType.StoredProcedure);
-		int orderId = 5, customerId = 7;
+		const int orderId = 5, customerId = 7;
 		var startDate = new DateTime(2026, 1, 2);
 
-		long derived = BytesPerCall(() => rig.RunAsync(rig.Command().AddParam(orderId).AddParam(customerId).AddParam(startDate)));
-		long explicitName = BytesPerCall(() => rig.RunAsync(rig.Command().AddParam("@order_id", orderId).AddParam("@customer_id", customerId).AddParam("@start_date", startDate)));
+		long derived = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParam(orderId).AddParam(customerId).AddParam(startDate)));
+		long explicitName = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParam("@order_id", orderId).AddParam("@customer_id", customerId).AddParam("@start_date", startDate)));
 
 		AssertWithinBudget("stored procedure async, three plain locals", derived, explicitName);
 	}
@@ -205,8 +205,8 @@ public static class DerivedNameCostTests
 		var rig = new Rig(CommandType.StoredProcedure);
 		var args = new Args();
 
-		long derived = BytesPerCall(() => rig.RunAsync(rig.Command().AddParams(args)));
-		long explicitName = BytesPerCall(() => rig.RunAsync(rig.Command().AddParam("@order_id", args.OrderId).AddParam("@customer_id", args.CustomerId).AddParam("@start_date", args.StartDate)));
+		long derived = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParams(args)));
+		long explicitName = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParam("@order_id", args.OrderId).AddParam("@customer_id", args.CustomerId).AddParam("@start_date", args.StartDate)));
 
 		AssertWithinBudget("stored procedure async, AddParams with three members", derived, explicitName);
 	}
@@ -278,7 +278,7 @@ public static class DerivedNameCostTests
 	public static void TheSameProcedureOnAnotherDatabaseOrServer_ResolvesAgainstItsOwnNames()
 	{
 		var rig = new ProcRig("@order_id");
-		int orderId = 1;
+		const int orderId = 1;
 
 		rig.Connection.Server = "srv1";
 		rig.Connection.CurrentDatabase = "dbA";
@@ -307,7 +307,7 @@ public static class DerivedNameCostTests
 	public static void StaleNames_AreReadAgain_AndTheOldSetsAnswersAreNotReused()
 	{
 		var rig = new ProcRig("@order_id");
-		int orderId = 1, customerId = 2;
+		const int orderId = 1, customerId = 2;
 
 		Assert.Equal(["@order_id"], rig.Run(c => c.AddParam(orderId)));
 		Assert.Equal(1, rig.Lookups);
@@ -326,7 +326,7 @@ public static class DerivedNameCostTests
 	public static void AmbiguousArgument_ThrowsOnEveryCall()
 	{
 		var rig = new ProcRig("@company_serial_num", "@companyserial_num");
-		int companySerialNum = 1;
+		const int companySerialNum = 1;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -377,7 +377,7 @@ public static class DerivedNameCostTests
 	public static void Collision_MessagesArePinned()
 	{
 		var rig = new ProcRig("@region");
-		int region = 1, Region = 2;
+		const int region = 1, Region = 2;
 		string tail = $" The procedure '{rig.Procedure}' declares: @region. Name one of them explicitly: AddParam(\"name\", value).";
 
 		var twoArguments = Assert.Throws<InvalidOperationException>(() => rig.Run(c => c.AddParam(region).AddParam(Region)));
@@ -395,7 +395,7 @@ public static class DerivedNameCostTests
 	public static void NoMatch_MessageIsPinned()
 	{
 		var rig = new ProcRig("@a", "@b");
-		int orderId = 1;
+		const int orderId = 1;
 
 		var ex = Assert.Throws<InvalidOperationException>(() => rig.Run(c => c.AddParam(orderId)));
 		Assert.Equal($"The argument 'orderId' matches none of the parameters of '{rig.Procedure}' (tried orderId). The procedure declares: @a, @b. Name the parameter explicitly: AddParam(\"name\", value).", ex.Message);
@@ -408,7 +408,7 @@ public static class DerivedNameCostTests
 	{
 		var db = new DerivedParameterNameTests.RecordingDbCommand();
 		var connection = new DerivedParameterNameTests.OpenDbConnection(db);
-		int orderId = 1;
+		const int orderId = 1;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -432,7 +432,7 @@ public static class DerivedNameCostTests
 		var db = new DerivedParameterNameTests.RecordingDbCommand();
 		var connection = new DerivedParameterNameTests.OpenDbConnection(db);
 		string sql = new("select * from t where order_id = @order_id and x = @leak_check_marker".AsSpan());
-		int orderId = 1;
+		const int orderId = 1;
 		new ExpressiveDbCommand(connection, CommandType.Text, sql).AddParam(orderId).ExecuteNonQuery();
 		Assert.Equal(["@order_id"], db.Sent.Select(p => p.ParameterName));
 		return new WeakReference(sql);

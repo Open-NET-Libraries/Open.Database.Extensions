@@ -12,7 +12,8 @@ sealed class NameSet
 	// Bounded by the call sites and member names that run against this set; the set is replaced when its procedure's names expire (5 minutes) or are read again, so no limit is needed.
 	readonly Dictionary<string, string?> _matches = new(StringComparer.Ordinal);
 
-	/// <param name="names">The names as the provider reported them (a leading <c>@</c> is fine). Never the default array; may be empty (a text without markers).</param>
+	/// <summary>Makes the set from the names as the provider reported them (a leading <c>@</c> is fine); never the default array, but may be empty (a text without markers).</summary>
+	/// <param name="names">The names.</param>
 	internal NameSet(ImmutableArray<string> names)
 	{
 		Debug.Assert(!names.IsDefault, "A set is made from names, not from 'not known'.");
