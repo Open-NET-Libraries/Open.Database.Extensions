@@ -1,6 +1,6 @@
 # Open.Database.Extensions.Channel
 
-![Open.Database.Extensions.Channel: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-channel.svg)
+[![Open.Database.Extensions.Channel: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-channel.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/)
 
 Read query results straight into a `System.Threading.Channels` channel instead of a collection. `ToChannel<T>()` returns a `ChannelReader<T>` immediately; rows are produced in the background, and the channel completes when every row has been written (or completes with the exception if reading fails). **Use it when** another task consumes the rows while they are still being read. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), and rows are mapped the same way as `Map<T>()`.
 
