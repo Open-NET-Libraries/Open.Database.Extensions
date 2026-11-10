@@ -13,7 +13,7 @@ public static class ExpressiveCommands
 		// The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author order by id")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>()
 			.ToArrayAsync();
 		#endregion
@@ -28,7 +28,7 @@ public static class ExpressiveCommands
 		// You own the connection. The command opens it only if it is closed, and closes only what it opened.
 		Post[] posts = connection
 			.Command("select * from posts where author = @author order by id")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>()
 			.ToArray();
 		#endregion
@@ -58,7 +58,7 @@ public static class ExpressiveCommands
 		#region first_post
 		Post? post = connectionFactory
 			.Command("select * from posts where id = @id")
-			.AddParam(id)
+			.AddParam(id) // name and type inferred from the variable
 			.Map<Post>()
 			.FirstOrDefault();
 		#endregion
@@ -74,7 +74,7 @@ public static class ExpressiveCommands
 		// (SQLite counts as long; SQL Server counts as int). Use the Func overload to convert instead.
 		long count = connectionFactory
 			.Command("select count(*) from posts where author = @author")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalar<long>();
 
 		int updated = connectionFactory
@@ -94,7 +94,7 @@ public static class ExpressiveCommands
 		// The insert and a select of the new id in one command; ExecuteScalar<T>() reads the id (SQLite: last_insert_rowid()).
 		long newId = connectionFactory
 			.Command("insert into posts (author, title, body, views) values (@author, 'New', null, 0); select last_insert_rowid()")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalar<long>();
 		#endregion
 
@@ -138,7 +138,7 @@ public static class ExpressiveCommands
 		// The parameter is named from the argument: search.Author adds a parameter named Author. A text command has no procedure to ask, so the name is used as written.
 		Post[] posts = connectionFactory
 			.Command("select * from posts where author = @Author order by id")
-			.AddParam(search.Author)
+			.AddParam(search.Author) // name and type inferred from the member
 			.Map<Post>()
 			.ToArray();
 		#endregion

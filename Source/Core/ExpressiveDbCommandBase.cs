@@ -131,37 +131,67 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command.
 	/// </summary>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
 	/// <returns>The integer response from the method.</returns>
-	public ValueTask<int> ExecuteNonQueryAsync()
-		=> ExecuteCoreAsync(CancellationToken, static (command, _, token) => new ValueTask<int>(command.ExecuteNonQueryAsync(token)));
+	public ValueTask<int> ExecuteNonQueryAsync(
+		CancellationToken cancellationToken = default)
+		=> ExecuteCombinedAsync(
+			cancellationToken,
+			static (command, _, token)
+				=> new ValueTask<int>(command.ExecuteNonQueryAsync(token)));
 
 	/// <summary>
 	/// Calls ExecuteScalarAsync on the underlying command.
 	/// </summary>
 	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExecuteScalar()"/>
-	public ValueTask<object?> ExecuteScalarAsync()
-		=> ExecuteCoreAsync(CancellationToken, static (command, _, token) => new ValueTask<object?>(command.ExecuteScalarAsync(token)));
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<object?> ExecuteScalarAsync(
+		CancellationToken cancellationToken = default)
+		=> ExecuteCombinedAsync(
+			cancellationToken,
+			static (command, _, token)
+				=> new ValueTask<object?>(command.ExecuteScalarAsync(token)));
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <param name="transform">The function that converts the value. It receives <see langword="null"/> when the column is NULL or there is no row, never <see cref="DBNull"/>; any other value is passed as the provider returned it.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
 	/// <returns>The value returned from the transform.</returns>
-	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object?, T> transform)
+	public async ValueTask<T> ExecuteScalarAsync<T>(
+		Func<object?, T> transform,
+		CancellationToken cancellationToken = default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return transform(ScalarValue(await ExecuteScalarAsync().ConfigureAwait(false)));
+		return transform(
+			ScalarValue(
+				await ExecuteScalarAsync(cancellationToken)
+					.ConfigureAwait(false)));
 	}
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command and casts to the expected type.
 	/// </summary>
 	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExecuteScalar{T}()"/>
-	public ValueTask<T> ExecuteScalarAsync<T>()
-		=> ExecuteCoreAsync(CancellationToken, static async (command, _, token)
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<T> ExecuteScalarAsync<T>(
+		CancellationToken cancellationToken = default)
+		=> ExecuteCombinedAsync(cancellationToken, static async (command, _, token)
 			=> CastScalar<T>(await command.ExecuteScalarAsync(token).ConfigureAwait(false)));
 
 	/// <summary>
@@ -169,13 +199,23 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <param name="transform">The function (task) that converts the value. It receives <see langword="null"/> when the column is NULL or there is no row, never <see cref="DBNull"/>; any other value is passed as the provider returned it.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
 	/// <returns>The value returned from the transform.</returns>
-	public async ValueTask<T> ExecuteScalarAsync<T>(Func<object?, ValueTask<T>> transform)
+	public async ValueTask<T> ExecuteScalarAsync<T>(
+		Func<object?, ValueTask<T>> transform,
+		CancellationToken cancellationToken = default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return await transform(ScalarValue(await ExecuteScalarAsync().ConfigureAwait(false))).ConfigureAwait(false);
+		return await transform(
+			ScalarValue(
+				await ExecuteScalarAsync(cancellationToken)
+					.ConfigureAwait(false)))
+			.ConfigureAwait(false);
 	}
 
 	/// <summary>

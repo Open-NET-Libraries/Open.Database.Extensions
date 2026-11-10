@@ -210,7 +210,13 @@ public static class ToChannelMappedCompletionTests
 		IExecuteReader cmd = new FakeExecuteReader(Columns, Rows(Count));
 
 		Task<int> consumer = Task.Run(() => SlowConsumeAll(channel.Reader, ct), ct);
-		long produced = await cmd.ToChannel(channel.Writer, true).AsTask().WaitAsync(Timeout, ct);
+		long produced = await cmd
+			.ToChannel(
+				channel.Writer,
+				true,
+				cancellationToken: TestContext.Current.CancellationToken)
+			.AsTask()
+			.WaitAsync(Timeout, ct);
 		int received = await consumer.WaitAsync(Timeout, ct);
 
 		Assert.Multiple(

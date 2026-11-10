@@ -27,7 +27,9 @@ public static class LeakSetupFailureTests
 		var tally = new DbTally(new() { FailCreateParameter = true });
 		TrackedConnection connection = tally.NewConnection();
 
+#pragma warning disable xUnit1051 // The leak check must see the same token the call has always had: none.
 		await Assert.ThrowsAsync<InvalidOperationException>(async () => await connection.Command("select 1").AddParam("x", 1).ExecuteScalarAsync());
+#pragma warning restore xUnit1051
 
 		Assert.Single(tally.Commands);
 		LeakAssert.CommandsAndReadersDisposed(tally);

@@ -72,7 +72,8 @@ public static class ExpressiveCommandExecutionTests
 			return ValueTask.CompletedTask;
 		}
 
-		await command.ExecuteReaderAsync(handler);
+		await command.ExecuteReaderAsync(
+			handler, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal("Open,CreateCommand,ExecuteReader,Handler,DisposeReader,DisposeCommand,Close", probe.Log);
 		Assert.True(probe.Behaviors.Single().HasFlag(CommandBehavior.CloseConnection));

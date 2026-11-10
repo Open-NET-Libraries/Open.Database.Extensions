@@ -27,7 +27,7 @@ dotnet add package Microsoft.Data.Sqlite
 
 ## Your first query
 
-A model is a class with public settable properties, as below. A positional record or a class with one public constructor works too: it is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)).
+A model is a class with public properties, as below. They can be read-only after construction: `init` properties work (C# 9), and so does `required` (C# 11), which here makes a query without an `id` column fail on its first row. A positional record or a class with one public constructor works too: it is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)).
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 
@@ -37,7 +37,7 @@ A command needs a connection. A connection factory creates them, and you create 
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-There are two ways to start a command: from the factory, or from a connection you own. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToList()`). In the samples `author` is a variable (`int author = 42;`) and `AddParam(author)` names the parameter `author` after it; `AddParam("author", 42)` names it yourself. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
+There are two ways to start a command: from the factory, or from a connection you own. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToListAsync()`). In the samples `author` is a variable (`int author = 42;`) and `AddParam(author)` names the parameter `author` after it; `AddParam("author", 42)` names it yourself. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
 
 <div class="side-by-side">
 <div>

@@ -19,7 +19,7 @@ int author = 42;
 
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author")
-    .AddParam(author)
+    .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
     .ToArrayAsync();
 ```
@@ -34,7 +34,7 @@ var search = new { Author = 42, TitleContains = "ode" };
 
 Post[] posts = await connectionFactory
     .StoredProcedure("[dbo].[SearchPosts]")
-    .AddParam(search.Author)
+    .AddParam(search.Author) // name and type inferred from the member
     .AddParam(search.TitleContains)
     .Map<Post>()
     .ToArrayAsync();

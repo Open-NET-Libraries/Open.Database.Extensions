@@ -784,6 +784,20 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 	}
 
+	// The terminals that take a token:
+	// it is used together with the command's own, and either cancels.
+	// The lambda is given the token that governs the call.
+	[SuppressMessage(
+		"Design", "CA1068:CancellationToken parameters must come last")]
+	private protected ValueTask<TResult> ExecuteCombinedAsync<TResult>(
+		CancellationToken callToken,
+		Func<TCommand, ConnectionState, CancellationToken, ValueTask<TResult>> func)
+		=> CancellationTokens.RunAsync(
+			CancellationToken,
+			callToken,
+			(self: this, func),
+			static (s, token) => s.self.ExecuteCoreAsync(token, s.func, token));
+
 	private protected ValueTask<TResult> ExecuteCoreAsync<TState, TResult>(TState state, Func<TCommand, ConnectionState, TState, ValueTask<TResult>> func)
 		=> ExecuteCoreAsync(state, func, CancellationToken);
 
@@ -956,13 +970,47 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		});
 	}
 
-	/// <inheritdoc />
-	public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>
+	/// Executes a reader on the command,
+	/// passing <paramref name="state"/> to <paramref name="transform"/>.
+	/// </summary>
+	/// <typeparam name="TState">
+	/// The type of the state passed to the transform.
+	/// </typeparam>
+	/// <typeparam name="TResult">
+	/// The return type of the transform function.
+	/// </typeparam>
+	/// <param name="state">The state to pass to the transform.</param>
+	/// <param name="transform">
+	/// The transform function for the data reader.
+	/// </param>
+	/// <param name="behavior">
+	/// The command behavior for once the command the reader is complete.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// Through the <see cref="IExecuteReader"/> interface the token replaces
+	/// the command's own.
+	/// </param>
+	public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, ValueTask<TResult>> transform,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		return ExecuteReaderCoreAsync(state, transform, behavior, CancellationToken);
+		return CancellationTokens.RunAsync(
+			CancellationToken,
+			cancellationToken,
+			(self: this, state, transform, behavior),
+			static (s, token) => s.self.ExecuteReaderCoreAsync(
+				s.state,
+				s.transform,
+				s.behavior,
+				token));
 	}
 
 	// The token passed in replaces the command's own for the whole call; the caller has already combined the two.
@@ -973,6 +1021,24 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		return ExecuteReaderCoreAsync(state, transform, behavior, cancellationToken);
 	}
+
+	// The interface members that have no token:
+	// the command's own token applies, as it always did.
+	ValueTask<TResult> IExecuteReader.ExecuteReaderAsync<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, ValueTask<TResult>> transform,
+		CommandBehavior behavior)
+		=> ExecuteReaderAsync(state, transform, behavior, default);
+
+	ValueTask IExecuteReader<TReader>.ExecuteReaderAsync(
+		Func<TReader, ValueTask> handler,
+		CommandBehavior behavior)
+		=> ExecuteReaderAsync(handler, behavior, default);
+
+	ValueTask<T> IExecuteReader<TReader>.ExecuteReaderAsync<T>(
+		Func<TReader, ValueTask<T>> handler,
+		CommandBehavior behavior)
+		=> ExecuteReaderAsync(handler, behavior, default);
 
 	ValueTask<TResult> ExecuteReaderCoreAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
 		=> ExecuteCoreAsync((state, transform, behavior, cancellationToken), static async (cmd, prior, s) =>
@@ -1014,8 +1080,21 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return ExecuteReader(transform, static (reader, f) => f(EnsureReaderType(reader)), behavior);
 	}
 
-	/// <inheritdoc />
-	public ValueTask ExecuteReaderAsync(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>
+	/// Executes a reader on the command with a handler action.
+	/// </summary>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="behavior">
+	/// The command behavior for once the command the reader is complete.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask ExecuteReaderAsync(
+		Action<TReader> handler,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
@@ -1024,20 +1103,88 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			h(EnsureReaderType(reader));
 			return new ValueTask<bool>(false);
-		}, behavior));
+		}, behavior, cancellationToken));
 	}
 
-	/// <inheritdoc />
-	public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, T> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>
+	/// Executes a reader on the command with a handler action, and a token.
+	/// There is no <c>behavior</c> here: to pass both,
+	/// use the overload that takes the behavior and then the token.
+	/// </summary>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask ExecuteReaderAsync(
+		Action<TReader> handler,
+		CancellationToken cancellationToken)
+		=> ExecuteReaderAsync(
+			handler,
+			CommandBehavior.Default,
+			cancellationToken);
+
+	/// <summary>
+	/// Executes a reader on the command with a transform function.
+	/// </summary>
+	/// <typeparam name="T">The type of the result.</typeparam>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="behavior">
+	/// The command behavior for once the command the reader is complete.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<T> ExecuteReaderAsync<T>(
+		Func<TReader, T> handler,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return ExecuteReaderAsync(handler, static (reader, h) => new ValueTask<T>(h(EnsureReaderType(reader))), behavior);
+		return ExecuteReaderAsync(
+			handler,
+			static (reader, h) => new ValueTask<T>(h(EnsureReaderType(reader))),
+			behavior,
+			cancellationToken);
 	}
 
-	/// <inheritdoc />
-	public ValueTask ExecuteReaderAsync(Func<TReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>
+	/// Executes a reader on the command with a transform function, and a token.
+	/// There is no <c>behavior</c> here: to pass both,
+	/// use the overload that takes the behavior and then the token.
+	/// </summary>
+	/// <typeparam name="T">The type of the result.</typeparam>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<T> ExecuteReaderAsync<T>(
+		Func<TReader, T> handler,
+		CancellationToken cancellationToken)
+		=> ExecuteReaderAsync(
+			handler,
+			CommandBehavior.Default,
+			cancellationToken);
+
+	/// <summary>
+	/// Executes a reader on the command with an asynchronous handler function.
+	/// </summary>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="behavior">
+	/// The command behavior for once the command the reader is complete.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask ExecuteReaderAsync(
+		Func<TReader, ValueTask> handler,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
@@ -1046,17 +1193,76 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			await h(EnsureReaderType(reader)).ConfigureAwait(false);
 			return false;
-		}, behavior));
+		}, behavior, cancellationToken));
 	}
 
-	/// <inheritdoc />
-	public ValueTask<T> ExecuteReaderAsync<T>(Func<TReader, ValueTask<T>> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>
+	/// Executes a reader on the command with an asynchronous handler function,
+	/// and a token.
+	/// There is no <c>behavior</c> here: to pass both,
+	/// use the overload that takes the behavior and then the token.
+	/// </summary>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask ExecuteReaderAsync(
+		Func<TReader, ValueTask> handler,
+		CancellationToken cancellationToken)
+		=> ExecuteReaderAsync(
+			handler,
+			CommandBehavior.Default,
+			cancellationToken);
+
+	/// <summary>
+	/// Executes a reader on the command
+	/// with an asynchronous transform function.
+	/// </summary>
+	/// <typeparam name="T">The type of the result.</typeparam>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="behavior">
+	/// The command behavior for once the command the reader is complete.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<T> ExecuteReaderAsync<T>(
+		Func<TReader, ValueTask<T>> handler,
+		CommandBehavior behavior = CommandBehavior.Default,
+		CancellationToken cancellationToken = default)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return ExecuteReaderAsync(handler, static (reader, h) => h(EnsureReaderType(reader)), behavior);
+		return ExecuteReaderAsync(
+			handler,
+			static (reader, h) => h(EnsureReaderType(reader)),
+			behavior,
+			cancellationToken);
 	}
+
+	/// <summary>
+	/// Executes a reader on the command
+	/// with an asynchronous transform function,
+	/// and a token.
+	/// There is no <c>behavior</c> here: to pass both,
+	/// use the overload that takes the behavior and then the token.
+	/// </summary>
+	/// <typeparam name="T">The type of the result.</typeparam>
+	/// <param name="handler">The handler function for the data reader.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<T> ExecuteReaderAsync<T>(
+		Func<TReader, ValueTask<T>> handler,
+		CancellationToken cancellationToken)
+		=> ExecuteReaderAsync(
+			handler,
+			CommandBehavior.Default,
+			cancellationToken);
 
 	void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
 	{
@@ -1124,11 +1330,19 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
 	/// <inheritdoc cref="ExecuteReturn()"/>
-	public ValueTask<object?> ExecuteReturnAsync()
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public ValueTask<object?> ExecuteReturnAsync(
+		CancellationToken cancellationToken = default)
 	{
-		CancellationToken.ThrowIfCancellationRequested(); // Thrown synchronously, as before.
+		// Thrown synchronously, as before:
+		// both tokens are checked before anything is linked.
+		CancellationToken.ThrowIfCancellationRequested();
+		cancellationToken.ThrowIfCancellationRequested();
 
-		return ExecuteCoreAsync(CancellationToken, static async (cmd, _, token) =>
+		return ExecuteCombinedAsync(cancellationToken, static async (cmd, _, token) =>
 		{
 			IDbDataParameter returnParameter = cmd.AddReturnParameter();
 
@@ -1145,8 +1359,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
 	/// <inheritdoc cref="ExecuteReturn{T}()"/>
-	public async ValueTask<T> ExecuteReturnAsync<T>()
-		=> CastScalar<T>(await ExecuteReturnAsync().ConfigureAwait(false));
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
+	public async ValueTask<T> ExecuteReturnAsync<T>(
+		CancellationToken cancellationToken = default)
+		=> CastScalar<T>(
+			await ExecuteReturnAsync(cancellationToken).ConfigureAwait(false));
 
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command.
