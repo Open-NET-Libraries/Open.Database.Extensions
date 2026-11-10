@@ -263,6 +263,13 @@ public static class TokenTerminalTests
 		await cmd.ToChannelAsync(channel.Writer, false, CancellationToken.None);
 		await cmd.ToChannelAsync(channel.Writer, false, (ArrayPool<object>?)null, ct);
 
+		// A literal default: the token overload has no default to fill, so it wins. ToChannel(..., false, default) used to bind the non-null
+		// ArrayPool overload and throw; it now binds the token overload and runs. ToChannelAsync(..., false, default) used to bind the nullable-pool
+		// overload; it now binds the token one, the same call. A literal null as that argument is ambiguous with the transform overloads (it did not compile before either), so it is not tested.
+		long plainCount = await cmd.ToChannel(channel.Writer, false);
+		Assert.Equal(plainCount, await cmd.ToChannel(channel.Writer, false, default));
+		Assert.Equal(plainCount, await cmd.ToChannelAsync(channel.Writer, false, default));
+
 		var block = new BufferBlock<object[]>();
 		await cmd.ToTargetBlockAsync(block, false);
 		await cmd.ToTargetBlockAsync(block, false, ct);
@@ -272,6 +279,27 @@ public static class TokenTerminalTests
 		Assert.NotNull(cmd.AsSourceBlockAsync(static _ => 1, null, ct));
 		Assert.NotNull(cmd.AsSourceBlockAsync<int>(null, ct));
 		Assert.NotNull(cmd.AsSourceBlockAsync((RowMap<TokenItem>?)null, null, ct));
+	}
+
+	// A null command is a precondition: the ValueTask<long> overloads throw at the call (not through the returned task). A null target is reported through the task.
+	static void Drop(ValueTask<long> task) => GC.KeepAlive(task);
+
+	[Fact]
+	public static async Task Channel_NullCommand_ThrowsAtTheCall_NullTarget_ThroughTheTask()
+	{
+		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
+		var mapped = System.Threading.Channels.Channel.CreateUnbounded<TokenItem>();
+		IExecuteReader? none = null;
+		IExecuteReaderAsync? noneAsync = null;
+
+		Assert.Throws<ArgumentNullException>(() => Drop(none!.ToChannel(channel.Writer, false)));
+		Assert.Throws<ArgumentNullException>(() => Drop(none!.ToChannel(mapped.Writer, false)));
+		Assert.Throws<ArgumentNullException>(() => Drop(noneAsync!.ToChannelAsync(channel.Writer, false)));
+		Assert.Throws<ArgumentNullException>(() => Drop(noneAsync!.ToChannelAsync(mapped.Writer, false)));
+
+		ExpressiveDbCommand cmd = Make(new TokenRig { Recording = false }, ConnectionState.Open);
+		ValueTask<long> viaTask = cmd.ToChannel<TokenItem>(null!, false);
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await viaTask);
 	}
 
 	// ---- the iterating extensions ----

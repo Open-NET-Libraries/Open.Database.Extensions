@@ -369,7 +369,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>; this is thrown at the call, not through the returned task. A <see langword="null"/> <paramref name="target"/> is reported through the returned task.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel(this IExecuteReader command,
@@ -398,7 +398,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>; this is thrown at the call, not through the returned task. A <see langword="null"/> <paramref name="target"/> is reported through the returned task.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel(this IExecuteReader command,
@@ -429,7 +429,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>; this is thrown at the call, not through the returned task. A <see langword="null"/> <paramref name="target"/> is reported through the returned task.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
@@ -459,7 +459,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>; this is thrown at the call, not through the returned task. A <see langword="null"/> <paramref name="target"/> is reported through the returned task.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
@@ -491,7 +491,7 @@ public static partial class ChannelDbExtensions
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
 	/// </para>
 	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>; this is thrown at the call, not through the returned task. A <see langword="null"/> <paramref name="target"/> is reported through the returned task.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
@@ -751,7 +751,7 @@ public static partial class ChannelDbExtensions
 	/// If the connection is not already open, the operation first waits until the target can accept a write, then opens the connection; reading therefore starts immediately only when the connection is already open. To keep a connection open after the operation, open it before calling this method.
 	/// </para>
 	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>; this is thrown at the call, not through the returned task. A <see langword="null"/> <paramref name="target"/> is reported through the returned task.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
