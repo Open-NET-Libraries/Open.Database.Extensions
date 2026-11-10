@@ -238,11 +238,11 @@ public static class TokenTerminalTests
 		await cmd.ExecuteReaderAsync(r => { }, ct);
 		await cmd.ExecuteReaderAsync(r => { }, behavior, ct);
 		await cmd.ExecuteReaderAsync(r => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
-		await cmd.ExecuteReaderAsync((DbDataReader r) => { }, 0); // an int still binds the behavior
-		Assert.Equal(1, await cmd.ExecuteReaderAsync((DbDataReader r) => 1));
-		Assert.Equal(1, await cmd.ExecuteReaderAsync((DbDataReader r) => 1, ct));
-		Assert.Equal(1, await cmd.ExecuteReaderAsync((DbDataReader r) => new ValueTask<int>(1), ct));
-		await cmd.ExecuteReaderAsync((DbDataReader r) => new ValueTask(), ct);
+		await cmd.ExecuteReaderAsync(r => { }, 0); // an int still binds the behavior
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(r => 1));
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(r => 1, ct));
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(r => new ValueTask<int>(1), ct));
+		await cmd.ExecuteReaderAsync(r => new ValueTask(), ct);
 		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (r, s) => new ValueTask<int>(s)));
 		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (r, s) => new ValueTask<int>(s), behavior));
 		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (r, s) => new ValueTask<int>(s), behavior, ct));
@@ -341,7 +341,7 @@ public static class TokenTerminalTests
 	static readonly Func<IDataRecord, TokenItem> ToItem = static r => new TokenItem { Id = r.GetInt32(0) };
 
 	// Runs a ValueTask<long> overload; the writer for the shape is created by the caller.
-	static Task<long> CallChannel(ChannelShape shape, RecordingAsyncExecuteReader c, Channel<object[]> objects, Channel<TokenItem> items, CancellationToken token) => shape switch
+	static Task<long> CallChannel(ChannelShape shape, IExecuteReaderAsync c, Channel<object[]> objects, Channel<TokenItem> items, CancellationToken token) => shape switch
 	{
 		ChannelShape.Plain => c.ToChannel(objects.Writer, false, token).AsTask(),
 		ChannelShape.Pool => c.ToChannel(objects.Writer, false, ArrayPool<object>.Shared, token).AsTask(),
@@ -609,9 +609,8 @@ public static class TokenTerminalTests
 	public static void Allocation_Iterate(IterateShape shape)
 		=> AssertNoMoreThanWithoutAToken(shape.ToString(), (commandToken, callToken) =>
 		{
-			RecordingAsyncExecuteReader cmd = Rows(0);
-			cmd.Recording = false;
-			cmd.CancellationToken = commandToken;
+			// The command of the token rig, not the big fake reader: its few bytes per call are what the counter can tell apart.
+			ExpressiveDbCommand cmd = Make(new TokenRig { Recording = false, Rows = 0 }, ConnectionState.Open).UseCancellationToken(commandToken);
 			return () => Iterate(shape, cmd, null, callToken).GetAwaiter().GetResult();
 		});
 
@@ -625,9 +624,7 @@ public static class TokenTerminalTests
 	public static void Allocation_Channel(ChannelShape shape)
 		=> AssertNoMoreThanWithoutAToken(shape.ToString(), (commandToken, callToken) =>
 		{
-			RecordingAsyncExecuteReader cmd = Rows(0);
-			cmd.Recording = false;
-			cmd.CancellationToken = commandToken;
+			ExpressiveDbCommand cmd = Make(new TokenRig { Recording = false, Rows = 0 }, ConnectionState.Open).UseCancellationToken(commandToken);
 			var objects = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 			var items = System.Threading.Channels.Channel.CreateUnbounded<TokenItem>();
 			return () => CallChannel(shape, cmd, objects, items, callToken).GetAwaiter().GetResult();
