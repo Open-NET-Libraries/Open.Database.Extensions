@@ -103,8 +103,18 @@ Check(Mapping.MapPaging(connection).Select(p => p.Id).SequenceEqual([2, 3]), "Sk
 Check(first?.Id == 1 && single?.Id == 2, "first and single");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().SingleOrDefault()), "SingleOrDefault throws for more than one row");
 Check(Mapping.MapSelector(connection)[0] == "Post 1 (10 views)", "Map(selector)");
-Check(Mapping.MapSingleValue(connection).SequenceEqual(connection.Command("select id from posts order by id").Map(static r => (int)r.GetInt64(0)).ToList()) && Mapping.MapSingleValue(connection).Length == 5, "Map<int>() reads the first column, a SQLite long converted to int");
-Check((await ExpressiveCommands.ColumnOfIds(factory, CancellationToken.None)).SequenceEqual([1, 2, 3, 4, 5]), "ToArrayAsync<int>(token) on a command");
+Check(
+	Mapping.MapSingleValue(connection).SequenceEqual(
+		connection
+			.Command("select id from posts order by id")
+			.Map(static r => (int)r.GetInt64(0))
+			.ToList())
+	&& Mapping.MapSingleValue(connection).Length == 5,
+	"Map<int>() reads the first column, a SQLite long converted to int");
+Check(
+	(await ExpressiveCommands.ColumnOfIds(factory, CancellationToken.None))
+		.SequenceEqual([1, 2, 3, 4, 5]),
+	"ToArrayAsync<int>(token) on a command");
 Check(Mapping.StreamRows(connection) == 15, "Read streams rows inside the handler");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
 

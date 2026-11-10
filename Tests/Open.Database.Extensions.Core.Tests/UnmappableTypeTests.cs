@@ -113,7 +113,8 @@ public static class UnmappableTypeTests
 		public static StructWithPrivateConstructor Make() => new(0);
 	}
 
-	static string Single(string name) => $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().";
+	static string Single(string name)
+		=> $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().";
 	static string NotConcrete(string name, string kind) => $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 	static string NoConstructor(string name) => $"'{name}' cannot be mapped: it has no public constructor.";
 	static string Ambiguous(string name, int count, string signatures) => $"'{name}' cannot be mapped: it has {count} public constructors, {signatures}, and none without parameters. Make one of them non-public, or use Map(selector).";
@@ -151,7 +152,9 @@ public static class UnmappableTypeTests
 	}
 
 	// Every way to meet a type: the default map, a map constructed for it, and a query over it with no rows. Each one throws the same exception.
-	static void AssertUnmappable<T>(string message, bool mapReadsTheFirstColumn = false)
+	static void AssertUnmappable<T>(
+		string message,
+		bool mapReadsTheFirstColumn = false)
 	{
 		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => RowMap<T>.Default).Message);
 		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => RowMap<T>.Default).Message); // Reading it again throws again: it is not a failed type initializer.
@@ -161,7 +164,11 @@ public static class UnmappableTypeTests
 
 		var command = new FakeExecuteReader(["Id"]);
 		if (mapReadsTheFirstColumn) _ = command.Map<T>(); // a single value is read from the first column: Map<T>() works, and runs nothing yet
-		else Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => command.Map<T>()).Message);
+		else Assert.Equal(
+			message,
+			Assert.Throws<InvalidOperationException>(
+					() => command.Map<T>())
+				.Message);
 		Assert.Equal(0, command.ExecuteCount); // Nothing ran: the call failed before the query was executed.
 
 		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).Results<T>()).Message);
@@ -389,9 +396,12 @@ public static class UnmappableTypeTests
 		["Map<T>().ToDictionaryAsync()"] = async () => await Exec().Map<T>().ToDictionaryAsync(_ => 0),
 		["ToListAsync<T>()"] = async () => await Exec().ToListAsync<T>(),
 		["ToArrayAsync<T>()"] = async () => await Exec().ToArrayAsync<T>(),
-		["ToImmutableArrayAsync<T>()"] = async () => await Exec().ToImmutableArrayAsync<T>(),
-		["FirstOrDefaultAsync<T>()"] = async () => await Exec().FirstOrDefaultAsync<T>(),
-		["SingleOrDefaultAsync<T>()"] = async () => await Exec().SingleOrDefaultAsync<T>(),
+		["ToImmutableArrayAsync<T>()"]
+			= async () => await Exec().ToImmutableArrayAsync<T>(),
+		["FirstOrDefaultAsync<T>()"]
+			= async () => await Exec().FirstOrDefaultAsync<T>(),
+		["SingleOrDefaultAsync<T>()"]
+			= async () => await Exec().SingleOrDefaultAsync<T>(),
 		["ToHashSetAsync<T>()"] = async () => await Exec().ToHashSetAsync<T>(),
 		["Map<T>(pair)"] = () => Run(() => Exec().Map<T>(new KeyValuePair<string, string?>("Id", "Id")).ToList()),
 		["Map<T>(pairs)"] = () => Run(() => Exec().Map<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name")).ToList()),
