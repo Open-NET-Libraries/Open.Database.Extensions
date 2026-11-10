@@ -301,7 +301,19 @@ public static class RowMapDeclarationTests
 
 		AssertRenamed(await Drain(Reader().ToChannel(true, declared, TestContext.Current.CancellationToken)));
 		AssertRenamed(await Drain(Reader().ToChannel<Item>(true, [new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")], TestContext.Current.CancellationToken)));
-		AssertRenamed(await Drain(RowMapTests.Cmd(RowMapTests.Renamed, 2).ToChannel<Item>(true, [new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")])));
+		AssertRenamed(
+			await Drain(
+				RowMapTests
+					.Cmd(RowMapTests.Renamed, 2)
+					.ToChannel<Item>(
+						true,
+						[
+							new(nameof(Item.Id), "item_id"),
+							new(nameof(Item.Name), "item_name"),
+							new(nameof(Item.Total), "item_total"),
+							new(nameof(Item.Note), "item_note")
+						],
+						cancellationToken: TestContext.Current.CancellationToken)));
 	}
 
 	// ---- the builder ----

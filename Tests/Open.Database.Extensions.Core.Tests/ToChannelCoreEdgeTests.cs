@@ -83,7 +83,10 @@ public static class ToChannelCoreEdgeTests
 			case Kind.ExecuteReaderAsync:
 				{
 					var command = new ScriptedCommand(failure);
-					return new Subject(command.ToChannelAsync, () => command.Executions);
+					return new Subject(
+						(target, complete)
+							=> command.ToChannelAsync(target, complete),
+						() => command.Executions);
 				}
 
 			case Kind.DbCommandInterface:

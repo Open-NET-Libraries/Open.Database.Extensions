@@ -191,7 +191,19 @@ public static partial class ToChannelPipelineTests
 
 		Assert.Equal(3, await dbCommand.ToChannel(writer, false, none, ct));
 		Assert.Equal(3, await fakeCommand.ToChannelAsync(writer, false, none, ct));
-		Assert.Equal(3, await executeReader.ToChannel(writer, false, none));
-		Assert.Equal(3, await executeReaderAsync.ToChannelAsync(writer, false, none));
+		Assert.Equal(
+			3,
+			await executeReader.ToChannel(
+				writer,
+				false,
+				none,
+				cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			3,
+			await executeReaderAsync.ToChannelAsync(
+				writer,
+				false,
+				none,
+				cancellationToken: TestContext.Current.CancellationToken));
 	}
 }

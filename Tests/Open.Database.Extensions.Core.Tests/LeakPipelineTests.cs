@@ -227,10 +227,16 @@ public static class LeakPipelineTests
 
 		object target = overload switch
 		{
+#pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
 			"ToChannel" => command.ToChannel<Row>(true),
+#pragma warning restore xUnit1051
+#pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
 			"ToChannelAsync" => command.ToChannelAsync<Row>(true),
+#pragma warning restore xUnit1051
 			"AsSourceBlock" => command.AsSourceBlock<Row>(),
+#pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
 			_ => command.AsSourceBlockAsync<Row>(),
+#pragma warning restore xUnit1051
 		};
 
 		await Eventually(() => tally.Readers.Count == 1 && tally.Readers[0].Disposes == 1, "the reader to be disposed", token);
@@ -247,7 +253,9 @@ public static class LeakPipelineTests
 		CancellationToken token = TestContext.Current.CancellationToken;
 		var tally = new DbTally(new() { Rows = Rows(Many) });
 		var block = new BufferBlock<Row>(Options(1));
+#pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
 		Task<long> producer = tally.Command(LeakSource.BareClosed, tally.Pool).ToTargetBlockAsync<Row>(block, true).AsTask();
+#pragma warning restore xUnit1051
 
 		await WaitUntilBlocked(tally, token);
 		block.Complete();
