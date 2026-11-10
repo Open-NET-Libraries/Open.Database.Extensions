@@ -17,6 +17,11 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	where TDbType : struct
 	where TThis : ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
+	const string LaterSets = "Map also reads the later result sets, so a failure in one is thrown; add .SingleResult() to read only the first, as this method does.";
+	const string ResultsAsyncObsolete = "Use .Map<T>().ToListAsync() instead (.Map(map).ToListAsync() when you pass a RowMap; Map does not accept a null map; pass a CancellationToken to ToListAsync if you want one, it is optional and combines with the command's token). " + LaterSets + " Map returns a List<T>. Removed in 12.";
+	const string TakeAsyncObsolete = "Use .Map(selector).Take(count).ToListAsync(cancellationToken) instead. " + LaterSets + " It returns a List<T>, and Take(0) now runs the command; this method did not. Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderWhileAsync(r => { list.Add(selector(r)); return list.Count < count; }, behavior). Removed in 12.";
+	const string ToListAsyncObsolete = "Use .Map(selector).ToListAsync(cancellationToken) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderAsync(r => list.Add(selector(r)), behavior). Removed in 12.";
+
 	/// <summary>Constructs a an expressive command.</summary>
 	/// <param name="connectionPool">The pool to acquire connections from.</param>
 	/// <param name="type">The command type.</param>
@@ -174,13 +179,20 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
+	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/>, then <see cref="MappedQuery{T}.Take(int)"/>, then <see cref="MappedQueryWithTake{T}.ToListAsync(CancellationToken)"/>.
 	/// Asynchronously iterates a IDataReader and returns the each result until the count is met.
 	/// </summary>
+	/// <remarks>
+	/// Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.
+	/// <c>Map</c> has no <see cref="CommandBehavior"/> argument: if you passed one, run the reader yourself with
+	/// <c>IterateReaderWhileAsync(record =&gt; { list.Add(selector(record)); return list.Count &lt; count; }, behavior)</c>.
+	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="transform">The transform function to process each IDataRecord.</param>
 	/// <param name="count">The maximum number of records before complete.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <returns>The value from the transform.</returns>
+	[Obsolete(TakeAsyncObsolete)]
 	public ValueTask<IList<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -238,11 +250,18 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		=> RetrieveAsync(others.Prepend(c));
 
 	/// <summary>
+	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/> then <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>.
 	/// Asynchronously returns all records via a transform function.
 	/// </summary>
+	/// <remarks>
+	/// Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.
+	/// <c>Map</c> has no <see cref="CommandBehavior"/> argument: if you passed one, run the reader yourself with
+	/// <c>IterateReaderAsync(record =&gt; list.Add(selector(record)), behavior)</c>.
+	/// </remarks>
 	/// <param name="transform">The desired column names.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <returns>A task containing the list of results.</returns>
+	[Obsolete(ToListAsyncObsolete)]
 	public async ValueTask<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		var results = new List<T>();
@@ -251,13 +270,16 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
+	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader)"/> then <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>.
 	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>A task containing the list of results.</returns>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(ResultsAsyncObsolete)]
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>(RowMap<T>? map = null)
 	{
 		// An unmappable T fails here, before the command runs.
@@ -267,6 +289,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
+	[Obsolete(ResultsAsyncObsolete)]
 	public ValueTask<IEnumerable<T>> ResultsAsync<T>()
 	{
 		// An unmappable T fails here, before the command runs.

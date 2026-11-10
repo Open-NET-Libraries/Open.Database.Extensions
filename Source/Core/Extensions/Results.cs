@@ -193,18 +193,21 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> ResultsAsync<T>(command, null, true, cancellationToken);
 
-	// NOTE: The Results<T> methods should be faster than the ResultsFromDataTable<T> variations but are provided for validation of this assumption.
+	const string ResultsFromDataTableObsolete = "Use .ToDataTable() then .To<T>(map, true) instead, for example: using var table = command.ToDataTable(); var rows = table.To<T>(map, true).ToList(). This method threw for a type that cannot be mapped before it ran; To<T> still throws, but after the data is loaded: read RowMap<T>.Default (or build your RowMap) first to keep the early failure. Removed in 12.";
 
 	/// <summary>
+	/// Obsolete: use <see cref="DataReaderExtensions.ToDataTable(IDataReader)"/> then <see cref="To{T}(DataTable, RowMap{T}?, bool)"/>.
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="reader">The IDataReader to read results from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(ResultsFromDataTableObsolete)]
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDataReader reader, RowMap<T>? map = null)
 	{
 		// An unmappable T fails here, before the command runs.
@@ -215,15 +218,18 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use <see cref="CommandExtensions.ToDataTable(IDbCommand, CommandBehavior)"/> then <see cref="To{T}(DataTable, RowMap{T}?, bool)"/>.
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="command">The command to generate a reader from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(ResultsFromDataTableObsolete)]
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDbCommand command, RowMap<T>? map = null)
 	{
 		// An unmappable T fails here, before the command runs.

@@ -69,11 +69,14 @@ public class QueryResult<TResult>
 }
 
 /// <summary>
+/// Obsolete: nothing in the library returns this type; there is no replacement (rows come back as a <see cref="List{T}"/> from <see cref="MappedQuery{T}.ToList"/>).
 /// A container for data reader results that also provides the column names and
 /// other helpful data methods.
 /// </summary>
+/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
 /// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
 /// <typeparam name="TResult">The type of the result property.</typeparam>
+[Obsolete(QueryResultExtensions.CollectionObsolete)]
 public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerable<T>
 	where TResult : IEnumerable<T>
 {
@@ -108,10 +111,13 @@ public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerab
 }
 
 /// <summary>
+/// Obsolete: nothing in the library returns this type; there is no replacement (rows come back as a <see cref="List{T}"/> from <see cref="MappedQuery{T}.ToList"/>).
 /// A container for data reader results that also provides the column names and
 /// other helpful data methods.
 /// </summary>
+/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
 /// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
+[Obsolete(QueryResultExtensions.CollectionObsolete)]
 public class QueryResultCollection<T> : QueryResultCollection<T, IEnumerable<T>>
 {
 	/// <summary>Constructs a <see cref="QueryResultCollection{T}"/>.</summary>
@@ -176,6 +182,15 @@ public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enume
 /// </summary>
 public static class QueryResultExtensions
 {
+	internal const string CollectionObsolete = "Nothing in the library returns this type, and there is no replacement. Get rows as a List<T> from .Map<T>().ToList(), or keep your own class. Removed in 12.";
+
+	const string AsMappedDictionariesTail = " DequeueAsMappedDictionaries drains the queue as you enumerate it, so it can be read once; this method could be read again. Removed in 12.";
+	const string AsMappedDictionariesObsolete = "Nothing in the library returns the QueryResult<IEnumerable<object?[]>> this takes. To read rows as dictionaries use .Retrieve().DequeueAsMappedDictionaries(), or .Map(record => ...) with a selector that builds the dictionary." + AsMappedDictionariesTail;
+	const string AsMappedDictionariesAsyncObsolete = "Nothing in the library returns the QueryResult<IEnumerable<object?[]>> this takes. To read rows as dictionaries use (await cmd.RetrieveAsync()).DequeueAsMappedDictionaries(), or .Map(record => ...) with a selector that builds the dictionary." + AsMappedDictionariesTail;
+
+	const string DequeueAsTail = "Map reads in one pass instead of buffering raw rows first, reports a missing required column at the first row (so not for an empty result), and also reads later result sets: add .SingleResult() to read only the first, as Retrieve did. Removed in 12.";
+	const string DequeueAsObsolete = "Use cmd.Map<T>().ToList() instead of cmd.Retrieve().DequeueAs<T>(), or cmd.Map(map).ToList() when you passed a RowMap (DequeueAs accepted a null map; Map(map) throws on null). On an IDbCommand use command.Results<T>() (it takes no CommandBehavior); on an IDataReader use reader.ResultsBuffered<T>() (reader.Results<T>() is lazy). " + DequeueAsTail;
+	const string DequeueAsAsyncObsolete = "Use await cmd.Map<T>().ToListAsync() instead of (await cmd.RetrieveAsync()).DequeueAs<T>(), or cmd.Map(map).ToListAsync() when you passed a RowMap (DequeueAs accepted a null map; Map(map) throws on null). On a DbCommand use await command.ResultsAsync<T>(). " + DequeueAsTail;
 	/// <summary>
 	/// Returns an enumerable that dequeues the results and returns a column
 	/// mapped dictionary for each entry.<see cref="DBNull"/> values are converted to null.
@@ -217,9 +232,11 @@ public static class QueryResultExtensions
 		=> (await source.ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 	/// <summary>
+	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader)"/> then <see cref="MappedQuery{T}.ToList"/> (async: <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>).
 	/// Returns an enumerable that dequeues the results and attempts to map the
 	/// fields to type T.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. Replace the whole chain <c>cmd.Retrieve().DequeueAs&lt;T&gt;()</c>: on an <c>IExecuteReader</c> use <c>cmd.Map&lt;T&gt;().ToList()</c> (<c>cmd.Map(map).ToList()</c> with a <see cref="RowMap{T}"/>); on an <c>IDbCommand</c> use <c>Results&lt;T&gt;()</c>; on an <c>IDataReader</c> use <c>ResultsBuffered&lt;T&gt;()</c>; on a <c>DbCommand</c> async use <c>ResultsAsync&lt;T&gt;()</c>. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the differences and a before/after example.</remarks>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <remarks>DBNull values are converted to null.</remarks>
 	/// <param name="source">The query result.  Typically produced by a
@@ -228,6 +245,7 @@ public static class QueryResultExtensions
 	/// <returns>An enumerable that dequeues the results and returns an entity
 	/// of type T.</returns>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(DequeueAsObsolete)]
 	public static IEnumerable<T> DequeueAs<T>(
 		this QueryResult<Queue<object[]>> source,
 		RowMap<T>? map = null)
@@ -242,6 +260,7 @@ public static class QueryResultExtensions
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(DequeueAsAsyncObsolete)]
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object[]>>> source,
 		RowMap<T>? map = null)
@@ -256,6 +275,7 @@ public static class QueryResultExtensions
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(DequeueAsAsyncObsolete)]
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object[]>>> source,
 		RowMap<T>? map = null)
@@ -265,25 +285,30 @@ public static class QueryResultExtensions
 	}
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
+	[Obsolete(DequeueAsAsyncObsolete)]
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object[]>>> source)
 		=> DequeueAs<T>(source, null);
 
 	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
+	[Obsolete(DequeueAsAsyncObsolete)]
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object[]>>> source)
 		=> DequeueAs<T>(source, null);
 
 	/// <summary>
+	/// Obsolete: nothing produces the source this takes. Use <see cref="DequeueAsMappedDictionaries(QueryResult{Queue{object[]}})"/> on a <c>Retrieve()</c> result, or <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/> with your own selector.
 	/// Returns an enumerable that dequeues the results and returns a column
 	/// mapped dictionary for each entry.<see cref="DBNull"/> values are converted to null.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
 	/// <param name="source">The query result.  Typically produced by a
 	/// .Retrieve method.</param>
 	/// <returns>An enumerable that dequeues the results and returns a column
 	/// mapped dictionary for each entry</returns>
+	[Obsolete(AsMappedDictionariesObsolete)]
 	public static IEnumerable<Dictionary<string, object?>> AsMappedDictionaries(this QueryResult<IEnumerable<object?[]>> source)
 	{
 		return source is null
@@ -307,11 +332,13 @@ public static class QueryResultExtensions
 
 	/// <inheritdoc
 	/// cref="AsMappedDictionaries(QueryResult{IEnumerable{object?[]}})"/>
+	[Obsolete(AsMappedDictionariesAsyncObsolete)]
 	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> AsMappedDictionaries(this ValueTask<QueryResult<IEnumerable<object?[]>>> source)
 		=> AsMappedDictionaries(await source.ConfigureAwait(false));
 
 	/// <inheritdoc
 	/// cref="AsMappedDictionaries(QueryResult{IEnumerable{object?[]}})"/>
+	[Obsolete(AsMappedDictionariesAsyncObsolete)]
 	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> AsMappedDictionaries(this Task<QueryResult<IEnumerable<object?[]>>> source)
 		=> AsMappedDictionaries(await (source ?? throw new ArgumentNullException(nameof(source))).ConfigureAwait(false));
 }
