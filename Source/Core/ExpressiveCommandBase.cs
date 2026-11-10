@@ -753,7 +753,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 	}
 
-	// The terminals that take a token: it is used together with the command's own, and either cancels. The lambda is given the token that governs the call.
+		// The terminals that take a token: it is used together with the command's own, and either cancels. The lambda is given the token that governs the call.
+[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last")]
 	private protected ValueTask<TResult> ExecuteCombinedAsync<TResult>(CancellationToken callToken, Func<TCommand, ConnectionState, CancellationToken, ValueTask<TResult>> func)
 		=> CancellationTokens.RunAsync(CancellationToken, callToken, (self: this, func), static (s, token) => s.self.ExecuteCoreAsync(token, s.func, token));
 
