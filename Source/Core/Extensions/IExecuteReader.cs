@@ -452,12 +452,12 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column from every record and returns the results as a list..
+	/// Reads the first column from every record and returns the values in a queue.
 	/// <see cref="DBNull"/> values are converted to null.
 	/// </summary>
 	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <returns>The list of transformed records.</returns>
-	public static IEnumerable<object?> FirstOrdinalResults(this IExecuteReader command)
+	/// <returns>The queue of first-column values; <see cref="DBNull"/> is already null. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static Queue<object?> FirstOrdinalResults(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -472,8 +472,8 @@ public static class IExecuteReaderExtensions
 	/// <see cref="DBNull"/> values are converted to null.
 	/// </summary>
 	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <returns>The enumerable of casted values.</returns>
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IExecuteReader command)
+	/// <returns>The queue of values cast to T0. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static Queue<T0> FirstOrdinalResults<T0>(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();

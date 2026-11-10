@@ -966,36 +966,44 @@ public static class DataReaderExtensions
 	/// Reads the first column values from every record.
 	/// <see cref="DBNull"/> values are then converted to null.
 	/// </summary>
-	/// <returns>The enumerable first ordinal values.</returns>
-	public static IEnumerable<object?> FirstOrdinalResults(this IDataReader reader)
+	/// <returns>The queue of first-column values; <see cref="DBNull"/> is already null. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static Queue<object?> FirstOrdinalResults(this IDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		// Buffer the first-column values so the reader/connection can be released before the
-		// (deferred) DBNull conversion runs during enumeration.
-		var results = new Queue<object>();
+		// The reader is read to the end here, so it and its connection can be released as soon as the call returns.
+		var results = new Queue<object?>();
 		while (reader.Read())
-			results.Enqueue(reader.GetValue(0));
-		return results.DequeueEach().DBNullToNull();
+			results.Enqueue(CoreExtensions.DBNullValueToNull(reader.GetValue(0)));
+		return results;
 	}
 
 	/// <summary>
 	/// Reads the first column values from every record.
 	/// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
 	/// </summary>
-	/// <returns>The enumerable of casted values.</returns>
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDataReader reader)
-		=> reader is DbDataReader dbr
-		? dbr.FirstOrdinalResults<T0>()
-		: reader.FirstOrdinalResults().Cast<T0>();
+	/// <returns>The queue of values cast to T0. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static Queue<T0> FirstOrdinalResults<T0>(this IDataReader reader)
+	{
+		if (reader is DbDataReader dbr) return dbr.FirstOrdinalResults<T0>();
+
+		if (reader is null) throw new ArgumentNullException(nameof(reader));
+		Contract.EndContractBlock();
+
+		// A value that cannot be cast to T0 throws here, while the queue is built.
+		var results = new Queue<T0>();
+		while (reader.Read())
+			results.Enqueue((T0)CoreExtensions.DBNullValueToNull(reader.GetValue(0))!);
+		return results;
+	}
 
 	/// <summary>
 	/// Reads the first column values from every record.
 	/// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
 	/// </summary>
-	/// <returns>The enumerable of casted values.</returns>
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
+	/// <returns>The queue of values cast to T0. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static Queue<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -1004,7 +1012,7 @@ public static class DataReaderExtensions
 		while (reader.Read())
 			results.Enqueue(ColumnReader.Get<T0>(reader, 0));
 
-		return results.DequeueEach();
+		return results;
 	}
 
 	/// <summary>
@@ -1014,15 +1022,15 @@ public static class DataReaderExtensions
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>The list of values.</returns>
-	public static async ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
+	/// <returns>A task containing the queue of first-column values; <see cref="DBNull"/> is already null. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static async ValueTask<Queue<object?>> FirstOrdinalResultsAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		var results = new Queue<object>();
-		await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)), useReadAsync, cancellationToken).ConfigureAwait(false);
-		return results.DequeueEach().DBNullToNull();
+		var results = new Queue<object?>();
+		await reader.ForEachAsync(r => results.Enqueue(CoreExtensions.DBNullValueToNull(r.GetValue(0))), useReadAsync, cancellationToken).ConfigureAwait(false);
+		return results;
 	}
 
 	/// <summary>
@@ -1032,8 +1040,8 @@ public static class DataReaderExtensions
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>The enumerable of casted values.</returns>
-	public static async ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
+	/// <returns>A task containing the queue of values cast to T0. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static async ValueTask<Queue<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
@@ -1063,6 +1071,6 @@ public static class DataReaderExtensions
 				results.Enqueue(ColumnReader.Get<T0>(reader, 0));
 		}
 
-		return results.DequeueEach();
+		return results;
 	}
 }

@@ -77,7 +77,7 @@ internal static class RowReader
 		return list;
 	}
 
-	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
+	// Buffers mapped rows in a queue so the caller gets the queue to use (Dequeue releases a row to the GC).
 	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 	{
 		var sink = new QueueSink<T>(new Queue<T>());

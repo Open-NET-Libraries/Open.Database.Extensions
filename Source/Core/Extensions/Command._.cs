@@ -768,21 +768,24 @@ public static partial class CommandExtensions
 
 	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
-	public static IEnumerable<object?> FirstOrdinalResults(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
-	{
-		var results = new Queue<object>(IterateReaderInternal(command, behavior | CommandBehavior.SingleResult, r => r.GetValue(0)));
-		return results.DequeueEach().DBNullToNull();
-	}
+	public static Queue<object?> FirstOrdinalResults(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
+		=> new(IterateReaderInternal<object?>(command, behavior | CommandBehavior.SingleResult, static r => CoreExtensions.DBNullValueToNull(r.GetValue(0))));
 
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
-		=> command is DbCommand dbc
-		? dbc.FirstOrdinalResults<T0>(behavior)
-		: command.FirstOrdinalResults(behavior | CommandBehavior.SingleResult).Cast<T0>();
+	public static Queue<T0> FirstOrdinalResults<T0>(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
+	{
+		if (command is DbCommand dbc) return dbc.FirstOrdinalResults<T0>(behavior);
+
+		// A value that cannot be cast to T0 throws here, while the queue is built.
+		var results = new Queue<T0>();
+		foreach (var value in IterateReaderInternal<object?>(command, behavior | CommandBehavior.SingleResult, static r => CoreExtensions.DBNullValueToNull(r.GetValue(0))))
+			results.Enqueue((T0)value!);
+		return results;
+	}
 
 	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)" path="/*[not(self::typeparam)]"/>
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
+	public static Queue<T0> FirstOrdinalResults<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
@@ -793,7 +796,7 @@ public static partial class CommandExtensions
 
 	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
-	public static ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
+	public static ValueTask<Queue<object?>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
 		=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(useReadAsync, cancellationToken), behavior | CommandBehavior.SingleResult, cancellationToken);
 
 	/// <summary>
@@ -805,7 +808,7 @@ public static partial class CommandExtensions
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>The enumerable of casted values.</returns>
-	public static ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
+	/// <returns>A task containing the queue of values cast to T0. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public static ValueTask<Queue<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
 		=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(useReadAsync, cancellationToken), behavior | CommandBehavior.SingleResult, cancellationToken);
 }

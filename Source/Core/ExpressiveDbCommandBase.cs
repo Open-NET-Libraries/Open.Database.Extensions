@@ -216,19 +216,19 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
-	/// Reads the first column from every record and returns the results as a list..
+	/// Reads the first column from every record and returns the values in a queue.
 	/// <see cref="DBNull"/> values are converted to null.
 	/// </summary>
-	/// <returns>The list of transformed records.</returns>
-	public ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync()
+	/// <returns>A task containing the queue of first-column values; <see cref="DBNull"/> is already null. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public ValueTask<Queue<object?>> FirstOrdinalResultsAsync()
 		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(UseAsyncRead, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
 	/// <summary>
 	/// Reads the first column from every record..
 	/// <see cref="DBNull"/> values are converted to null.
 	/// </summary>
-	/// <returns>The enumerable of casted values.</returns>
-	public ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
+	/// <returns>A task containing the queue of values cast to T0. It is the queue the method built: enumerate it as often as you like, or call <c>Dequeue</c> to release each row as you go. Rows stay in memory until the queue is dropped.</returns>
+	public ValueTask<Queue<T0>> FirstOrdinalResultsAsync<T0>()
 		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(UseAsyncRead, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
 	/// <summary>
@@ -285,7 +285,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync<IEnumerable<T>>(async reader => await reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead).ConfigureAwait(false));
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
@@ -295,7 +295,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync<IEnumerable<T>>(async reader => await reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead).ConfigureAwait(false));
 	}
 
 	/// <summary>
