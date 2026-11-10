@@ -401,6 +401,43 @@ public static class DerivedNameCostTests
 		Assert.Equal($"The argument 'orderId' matches none of the parameters of '{rig.Procedure}' (tried orderId). The procedure declares: @a, @b. Name the parameter explicitly: AddParam(\"name\", value).", ex.Message);
 	}
 
+	sealed class Keyword
+	{
+		public int @default { get; set; } = 1;
+	}
+
+	// A member of an AddParams object whose name cannot be derived (a verbatim keyword) reaches the match without a description and fails the same way on every call.
+	[Fact]
+	public static void ObjectMemberThatCannotBeDerived_ThrowsArgumentException_OnEveryCall()
+	{
+		var rig = new ProcRig("@id", "@name");
+		var item = new Keyword();
+
+		for (int i = 0; i < 2; i++)
+		{
+			var ex = Assert.Throws<ArgumentException>(() => rig.Run(c => c.AddParams(item)));
+			Assert.Equal("expression", ex.ParamName);
+			Assert.Equal("Cannot derive a parameter name from the expression 'default'." + Environment.NewLine + "(Parameter 'expression')", ex.Message);
+		}
+	}
+
+	// A text command whose SQL has no @name marker: the names are not known, each argument keeps its last member, and two that read as one name collide.
+	[Fact]
+	public static void TextCommandWithoutMarkers_CollisionMessageSaysTheNamesAreNotKnown()
+	{
+		var db = new DerivedParameterNameTests.RecordingDbCommand();
+		var connection = new DerivedParameterNameTests.OpenDbConnection(db);
+		const int region = 1, Region = 2;
+
+		var ex = Assert.Throws<InvalidOperationException>(
+			() => new ExpressiveDbCommand(connection, CommandType.Text, "select 1").AddParam(region).AddParam(Region).ExecuteNonQuery());
+		Assert.Equal(
+			"Two parameters resolve to 'region': the argument 'region' and the argument 'Region'. "
+			+ "The parameter names are not known, so each argument is used under its last member as written. "
+			+ "Name one of them explicitly: AddParam(\"name\", value).",
+			ex.Message);
+	}
+
 	// ---- text commands ----
 
 	[Fact]
