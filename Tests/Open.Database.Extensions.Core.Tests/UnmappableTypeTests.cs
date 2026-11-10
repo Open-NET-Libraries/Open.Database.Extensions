@@ -164,11 +164,14 @@ public static class UnmappableTypeTests
 
 		var command = new FakeExecuteReader(["Id"]);
 		if (mapReadsTheFirstColumn) _ = command.Map<T>(); // a single value is read from the first column: Map<T>() works, and runs nothing yet
-		else Assert.Equal(
-			message,
-			Assert.Throws<InvalidOperationException>(
-					() => command.Map<T>())
-				.Message);
+		else
+		{
+			Assert.Equal(
+				message,
+				Assert.Throws<InvalidOperationException>(
+						() => command.Map<T>())
+					.Message);
+		}
 		Assert.Equal(0, command.ExecuteCount); // Nothing ran: the call failed before the query was executed.
 
 		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).Results<T>()).Message);

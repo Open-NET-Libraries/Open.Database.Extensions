@@ -673,10 +673,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			isDbNull,
 			getValue,
 			cell) is { } isNull)
+		{
 			value = Expression.Condition(
 				isNull,
 				Expression.Default(typeof(T)),
 				value);
+		}
 
 		Expression guarded = Expression.TryCatch(
 			value,
