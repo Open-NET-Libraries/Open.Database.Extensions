@@ -49,7 +49,7 @@ var people = cmd.Results<Person>(new("FirstName", "first_name"), new("LastName",
 
 // 11
 public static RowMap<Person> PersonMap => field ??= [new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")];
-var people = cmd.Results<Person>(PersonMap);
+var people = cmd.Map<Person>(PersonMap).ToList();
 ```
 
 To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. Only `Map<T>` also takes the pairs themselves, but that builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
@@ -71,6 +71,70 @@ These can change behavior without a compile error, most likely first:
 13. **`EnsureOpenAsync` and `OpenAsync` have an obsolete `bool configureAwait` overload.** The library always awaits with `ConfigureAwait(false)`; returning to your context is your call. The `bool` overloads still compile with a warning and ignore the argument.
 14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
 
+## Deprecated in 11.0
+
+These are obsolete in 11.0 (compile warning CS0618) and will be removed in 12. Each warning names the call to use instead. The old call still works until then.
+
+| Old call | New call | Behaviour difference |
+|---|---|---|
+| `Results<T>(IExecuteReader)` | `.Map<T>().ToList()`; with a map `.Map(map).ToList()` | Later result sets are read, so a later failure throws (`.SingleResult()` keeps the old behaviour). Returns a `List<T>`. A null map is not accepted: use `Map<T>()`. |
+| `ExpressiveDbCommand.ResultsAsync<T>` | `.Map<T>().ToListAsync()` (token optional: `.ToListAsync(cancellationToken)`); with a map `.Map(map).ToListAsync()` | The same as above. |
+| `ResultsFromDataTable<T>` (reader, command) | `using var table = command.ToDataTable(); table.To<T>(map, true)` | The same rows: the old body did exactly this, and `true` clears the table as rows are read. A type that cannot be mapped is reported after the data is loaded, not before the command runs: read `RowMap<T>.Default` first to fail early. |
+| `FirstOrDefault(selector)`, `SingleOrDefault(selector)` on `IExecuteReader` | `.Map(selector).FirstOrDefault()`, `.Map(selector).SingleOrDefault()` | Later result sets are read (`.SingleResult()` keeps the old behaviour). |
+| `Take(n, selector)`, `Skip(n, selector)`, `SkipThenTake(s, t, selector)` on `IExecuteReader` | `.Map(selector).Take(n).ToList()`, `.Map(selector).Skip(n).ToList()`, `.Map(selector).Skip(s).Take(t).ToList()` | The selector is not run on skipped rows, so a selector that throws on one no longer fails the call. `Take(0)` now runs the command. Later result sets are read. |
+| `ExpressiveDbCommand.TakeAsync(selector, n)`, `ExpressiveDbCommand.ToListAsync(selector)` | `.Map(selector).Take(n).ToListAsync(cancellationToken)`, `.Map(selector).ToListAsync(cancellationToken)` | Later result sets are read. Returns a `List<T>`. `Take(0)` now runs the command. `Map` has no `CommandBehavior` argument: if you passed one, call `IterateReaderAsync(handler, behavior)` or `IterateReaderWhileAsync(handler, behavior)` yourself. |
+| `QueryResultCollection<T>`, `QueryResultCollection<T, TResult>` | None | Nothing in the library returns it. Use the `List<T>` from `Map<T>().ToList()`, or your own class. |
+| `cmd.Retrieve().DequeueAs<T>()` (`QueryResultExtensions.DequeueAs<T>`, 5 overloads) | `cmd.Map<T>().ToList()`; with a map `cmd.Map(map).ToList()`. Async: `(await cmd.RetrieveAsync()).DequeueAs<T>()` becomes `await cmd.Map<T>().ToListAsync()`. On an `IDbCommand`: `command.Results<T>()`. On an `IDataReader`: `reader.ResultsBuffered<T>()`. On a `DbCommand`, async: `await command.ResultsAsync<T>()`. | `Map` reads in one pass instead of copying raw rows first. A missing `required` column is reported at the first row, so not for an empty result. Later result sets are read (`.SingleResult()` keeps the first only, as `Retrieve` did). A null map is not accepted. `Results<T>(IDbCommand)` takes no `CommandBehavior`, where `Retrieve(IDbCommand, behavior)` did. |
+| `QueryResultExtensions.AsMappedDictionaries` | `cmd.Retrieve().DequeueAsMappedDictionaries()`; async `(await cmd.RetrieveAsync()).DequeueAsMappedDictionaries()` | Nothing in the library produces the input it takes. `DequeueAsMappedDictionaries` drains the queue as it is enumerated, so it can be read once, where `AsMappedDictionaries` could be read again. |
+
+### Before and after
+
+Each pair below is compiled and run by the documentation build, and a check asserts that the two give the same result.
+
+`Results<T>` on a command:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_results_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_results_after)]
+
+`ResultsAsync<T>` on an expressive command:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsasync_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsasync_after)]
+
+`ResultsFromDataTable<T>`:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsfromdatatable_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsfromdatatable_after)]
+
+The selector forms on an `IExecuteReader`:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_selector_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_selector_after)]
+
+`TakeAsync` and `ToListAsync` with a selector:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_takeasync_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_takeasync_after)]
+
+`QueryResultCollection<T>` has no replacement; a list holds the same rows:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_collection_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_collection_after)]
+
+`AsMappedDictionaries`:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_mappeddictionaries_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_mappeddictionaries_after)]
+
+`Retrieve().DequeueAs<T>()`:
+
+[!code-csharp[](../samples/Deprecated.cs#deprecated_dequeueas_before)]
+[!code-csharp[](../samples/Deprecated.cs#deprecated_dequeueas_after)]
+
+### Why `Map` reads later result sets
+
+The old calls read only the first result set. `Map` reads through the later ones, so a failure in a later result set is thrown, not left unread. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one). Add `.SingleResult()` to read only the first, as the old calls did.
+
 ## Fixes
 
 - **`ExecuteReturn<T>()` and `ExecuteReturnAsync<T>()`** return `default(T)` for a NULL return value instead of throwing `NullReferenceException` for a value type.
@@ -84,11 +148,11 @@ These can change behavior without a compile error, most likely first:
 
 ## Known limitations
 
-- `Retrieve()` followed by `DequeueAs<T>()` is a two-pass route: rows are copied into `object[]` and mapped as they are drained. It is slower and allocates more than a direct `Map<T>()` at larger sizes. For typed results prefer `Map<T>()` or `ResultsBuffered<T>()`.
+- `Retrieve()` followed by `DequeueAs<T>()` is deprecated in 11.0 (a two-pass route, slower than `Map<T>()`): use `Map<T>().ToList()`. See [Deprecated in 11.0](#deprecated-in-110).
 - The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. The cause is in the underlying channel library.
 - Output parameters can be sent, but their values cannot be read back after the call. Providers other than SQL Server supply no real parameter names, so `AddParam(search.Author)` uses the last member as written there.
 - `MappedQuery<T>` has `FirstOrDefault` and `SingleOrDefault` but no throwing `First` or `Single`: check the result for `null`.
-- A missing column for a `required` property is reported at the first row, so an empty result does not report it. `DequeueAs<T>()`, `DataTable.To<T>()`, `ToChannel` and the Dataflow methods know the columns before any row and report it even when no row follows.
+- A missing column for a `required` property is reported by `Map` at the first row, so an empty result does not report it. `DataTable.To<T>()`, `ToChannel` and the Dataflow methods know the columns before any row and report it even when no row follows. (`DequeueAs<T>()` did too; it is deprecated.)
 - The synchronous `ToTargetBlock` overloads post each row without waiting: when the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error, and only the number the call returns (the rows read and handed over) shows the shortfall. Use the `Async` overload to feed a bounded target.
 - `AddParams(source)` sends every public member of `source` that the procedure declares, so pass an object you trust, and add a value that only the server may decide (a tenant, a deleted-rows flag) with `AddParam("name", value)`: a name you pass yourself always wins.
 - The unit tests run on in-memory providers. The documentation samples run on SQLite, and the benchmarks on the in-memory provider, SQLite and SQL Server LocalDB. Feedback from other providers and workloads is welcome.

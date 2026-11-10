@@ -64,7 +64,7 @@ A constructor parameter is matched like a property: the same three tiers (exact,
 
 An `init` property is set like any other settable property. A `required` property is set the same way, and it must be fed:
 
-- **A column must feed it, whatever the query** (a `required` property of a base class too). When the column names and types of a query include none for it, the first row throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it, except through the routes that know the columns before the first row: [`Retrieve()`](foundation.md#reader-and-command-helpers) with `DequeueAs<T>()`, `DataTable.To<T>()`, and `ToChannel` and the Dataflow methods ([Channels and Dataflow](channels-and-dataflow.md)).
+- **A column must feed it, whatever the query** (a `required` property of a base class too). When the column names and types of a query include none for it, the first row throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it, except through the routes that know the columns before the first row: `DataTable.To<T>()`, and `ToChannel` and the Dataflow methods ([Channels and Dataflow](channels-and-dataflow.md)). (`Retrieve()` with `DequeueAs<T>()` did too; it is deprecated.)
 - **A constructor parameter's default does not feed it.** A `required` property needs its own column, even when a constructor parameter has the same name.
 - **A NULL in that column is not an error.** The column must be there, but a NULL cell leaves the property as it was: its initializer, else its default (`null` for a reference type), as for any other property.
 - **It cannot be ignored.** A `RowMap<T>` pair with a `null` column for a `required` property throws `ArgumentException` when the map is created.
@@ -143,7 +143,7 @@ Declare it with the collection syntax, created on first use with the C# 14 `fiel
 
 [!code-csharp[](../samples/Mapping.cs#map_declared)]
 
-Pass it to `Map<T>`. The same `map` parameter is on `Results<T>()` and `DequeueAs<T>()` ([the foundation](foundation.md#reader-and-command-helpers)) and on `ToChannel`, `AsSourceBlock` and `ToTargetBlock` ([Channels and Dataflow](channels-and-dataflow.md)):
+Pass it to `Map<T>`. The same `map` parameter is on `Results<T>()` on a reader or an `IDbCommand` ([the foundation](foundation.md#reader-and-command-helpers); the `IExecuteReader` form is deprecated, use `Map<T>(map).ToList()`) and on `ToChannel`, `AsSourceBlock` and `ToTargetBlock` ([Channels and Dataflow](channels-and-dataflow.md)). `DequeueAs<T>()` also took one and is deprecated: use `Map<T>(map).ToList()`.
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
@@ -229,6 +229,8 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 
 Two cases do not read through, so a later failure goes unseen: `.SingleResult()`, and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
+
+The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()` read only the first result set. `Map` reads through the rest, and `.SingleResult()` restores the old behavior. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
 
 `.SingleResult()` goes after `Map` (and on the result of `Skip` and `Take`). It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 
