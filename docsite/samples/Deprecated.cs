@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
@@ -179,7 +178,7 @@ public static class Deprecated
 	public static int Collection(SqliteConnection connection)
 	{
 		#region deprecated_collection_before
-		var rows = new QueryResultCollection<long>(ImmutableArray.Create(0), ImmutableArray.Create("id"), connection.Command(IdsSql).Map(Id).ToList());
+		var rows = new QueryResultCollection<long>([0], ["id"], connection.Command(IdsSql).Map(Id).ToList());
 		#endregion
 
 		#region deprecated_collection_after
