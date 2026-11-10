@@ -252,7 +252,7 @@ What is different:
 
 ## Async and cancellation
 
-Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call. Await a `ValueTask` once, as usual; to pass it to `Task.WhenAll`, call `.AsTask()` first.
+Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call. The same holds for `ExecuteNonQueryAsync`, `ExecuteScalarAsync` and `ExecuteReaderAsync`. Await a `ValueTask` once, as usual; to pass it to `Task.WhenAll`, call `.AsTask()` first.
 
 ## Where Dapper does more
 
