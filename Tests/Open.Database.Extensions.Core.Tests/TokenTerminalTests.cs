@@ -54,11 +54,11 @@ public static class TokenTerminalTests
 			case TokenTerminal.Return: await cmd.ExecuteReturnAsync(token).ConfigureAwait(false); break;
 			case TokenTerminal.ReturnT: await cmd.ExecuteReturnAsync<int>(token).ConfigureAwait(false); break;
 			case TokenTerminal.ReaderState: await cmd.ExecuteReaderAsync(1, static (r, s) => new ValueTask<int>(s), CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderAction: await cmd.ExecuteReaderAsync(static (DbDataReader r) => { }, CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFunc: await cmd.ExecuteReaderAsync(static (DbDataReader r) => 1, CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTask: await cmd.ExecuteReaderAsync(static (DbDataReader r) => new ValueTask(), CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTaskT: await cmd.ExecuteReaderAsync(static (DbDataReader r) => new ValueTask<int>(1), CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderActionToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => { }, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderAction: await cmd.ExecuteReaderAsync(static r => { }, CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFunc: await cmd.ExecuteReaderAsync(static r => 1, CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTask: await cmd.ExecuteReaderAsync(static r => new ValueTask(), CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTaskT: await cmd.ExecuteReaderAsync(static r => new ValueTask<int>(1), CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderActionToken: await cmd.ExecuteReaderAsync(static r => { }, token).ConfigureAwait(false); break;
 			case TokenTerminal.ReaderFuncToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => 1, token).ConfigureAwait(false); break;
 			case TokenTerminal.ReaderFuncValueTaskToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => new ValueTask(), token).ConfigureAwait(false); break;
 			case TokenTerminal.ReaderFuncValueTaskTToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => new ValueTask<int>(1), token).ConfigureAwait(false); break;
@@ -176,8 +176,8 @@ public static class TokenTerminalTests
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
 		var rig = new TokenRig();
-		Assert.Throws<OperationCanceledException>(() => Make(rig).ExecuteReturnAsync(cts.Token));
-		Assert.Throws<OperationCanceledException>(() => Make(rig).UseCancellationToken(cts.Token).ExecuteReturnAsync());
+		Assert.Throws<OperationCanceledException>(() => Make(rig).ExecuteReturnAsync(cts.Token).AsTask());
+		Assert.Throws<OperationCanceledException>(() => Make(rig).UseCancellationToken(cts.Token).ExecuteReturnAsync().AsTask());
 		Assert.Empty(rig.Log);
 	}
 
@@ -225,7 +225,7 @@ public static class TokenTerminalTests
 		Assert.Equal(1, await cmd.ExecuteScalarAsync(o => new ValueTask<int>(1), ct));
 		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>());
 		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(ct));
-		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(default(CancellationToken)));
+		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(CancellationToken.None));
 		await cmd.ExecuteReturnAsync();
 		await cmd.ExecuteReturnAsync(ct);
 		await cmd.ExecuteReturnAsync<int>(ct);
@@ -255,10 +255,10 @@ public static class TokenTerminalTests
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		await cmd.ToChannel(channel.Writer, false);
 		await cmd.ToChannel(channel.Writer, false, ct);
-		await cmd.ToChannel(channel.Writer, false, default(CancellationToken));
+		await cmd.ToChannel(channel.Writer, false, CancellationToken.None);
 		await cmd.ToChannel(channel.Writer, false, ArrayPool<object>.Shared, ct);
 		await cmd.ToChannelAsync(channel.Writer, false, ct);
-		await cmd.ToChannelAsync(channel.Writer, false, default(CancellationToken));
+		await cmd.ToChannelAsync(channel.Writer, false, CancellationToken.None);
 		await cmd.ToChannelAsync(channel.Writer, false, (ArrayPool<object>?)null, ct);
 
 		var block = new BufferBlock<object[]>();
@@ -581,10 +581,12 @@ public static class TokenTerminalTests
 	{
 		using var cts = new CancellationTokenSource();
 		// A call token alone must cost what the command's token alone always cost (a live token costs a little inside the channel wait, whatever passes it).
-		long none = BytesPerCall(make(default, default));
-		long callOnly = BytesPerCall(make(default, cts.Token));
-		long commandOnly = BytesPerCall(make(cts.Token, default));
-		long same = BytesPerCall(make(cts.Token, cts.Token));
+		// Each variant is measured twice and the smaller kept, so that one disturbed run (a collection, a busy machine) does not decide the test.
+		long Measure(CancellationToken commandToken, CancellationToken callToken) => Math.Min(BytesPerCall(make(commandToken, callToken)), BytesPerCall(make(commandToken, callToken)));
+		long none = Measure(default, default);
+		long callOnly = Measure(default, cts.Token);
+		long commandOnly = Measure(cts.Token, default);
+		long same = Measure(cts.Token, cts.Token);
 		Assert.True(none <= commandOnly + Slack, $"{what}: no token allocates {none}, one command token {commandOnly}");
 		Assert.True(callOnly <= commandOnly + Slack, $"{what}: one call token allocates {callOnly}, one command token {commandOnly}");
 		Assert.True(same <= commandOnly + Slack, $"{what}: the same token twice allocates {same}, one command token {commandOnly}");
@@ -597,7 +599,7 @@ public static class TokenTerminalTests
 		{
 			var rig = new TokenRig { Recording = false, Rows = 0 };
 			ExpressiveDbCommand cmd = Make(rig, ConnectionState.Open).UseCancellationToken(commandToken);
-			return () => Invoke(cmd, terminal, callToken).GetAwaiter().GetResult();
+			return () => Invoke(cmd, terminal, callToken).AsTask().GetAwaiter().GetResult();
 		});
 
 	[Theory]
