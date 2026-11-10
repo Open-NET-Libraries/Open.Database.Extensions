@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 260" role="img" aria-labelledby="t d">
   <title id="t">ODX Core</title>
-  <desc id="d">You write the SQL. The library writes the other twenty lines. Four stacked layers, Performance at the base, then Foundation, Expressive commands and Mapping on top, beside the fluent line db.Command(sql).AddParam("author", 42).Map of Post.</desc>
+  <desc id="d">You write the SQL. ODX writes the other twenty lines. Four stacked layers, Performance at the base, then Foundation, Expressive commands and Mapping on top, beside the fluent line db.Command(sql).AddParam("author", 42).Map of Post.</desc>
   <style>
     :root {
       --bg1: #eef2f7; --bg2: #e1e7f0; --edge: #cdd6e2; --ink: #263040; --ink2: #3c4759; --mute: #6a778a;
@@ -58,6 +58,6 @@
     <path class="rule" d="M248 52V150"/>
   </g>
   <text class="tag1" x="274" y="98">You write the <tspan class="acc">SQL.</tspan></text>
-  <text class="tag2" x="275" y="148">The library writes the other twenty lines.</text>
+  <text class="tag2" x="275" y="148">ODX writes the other twenty lines.</text>
   <rect class="sh" x="904" y="238" width="330" height="12" rx="6" filter="url(#blur)"/><rect class="tf" x="900" y="196" width="316" height="38"/><polygon class="tt" points="900,196 1216,196 1244.6,176.2 928.6,176.2"/><polygon class="ts" points="1216,196 1244.6,176.2 1244.6,214.2 1216,234"/><text class="lbl" x="1058" y="222" text-anchor="middle">Performance</text><rect class="sh" x="933" y="178.1" width="280" height="14" rx="7" filter="url(#blur)"/><rect class="tf" x="915" y="146" width="286" height="38"/><polygon class="tt" points="915,146 1201,146 1229.6,126.2 943.6,126.2"/><polygon class="ts" points="1201,146 1229.6,126.2 1229.6,164.2 1201,184"/><text class="lbl" x="1058" y="172" text-anchor="middle">Foundation</text><rect class="sh" x="948" y="128.1" width="250" height="14" rx="7" filter="url(#blur)"/><rect class="tf" x="930" y="96" width="256" height="38"/><polygon class="tt" points="930,96 1186,96 1214.6,76.2 958.6,76.2"/><polygon class="ts" points="1186,96 1214.6,76.2 1214.6,114.2 1186,134"/><text class="lbl" x="1058" y="122" text-anchor="middle">Expressive commands</text><rect class="sh" x="963" y="78.1" width="220" height="14" rx="7" filter="url(#blur)"/><rect class="tf" x="945" y="46" width="226" height="38"/><polygon class="tt" points="945,46 1171,46 1199.6,26.2 973.6,26.2"/><polygon class="ts" points="1171,46 1199.6,26.2 1199.6,64.2 1171,84"/><text class="lbl" x="1058" y="72" text-anchor="middle">Mapping</text><g><rect x="268" y="186" width="560" height="42" rx="10" class="gf"/><text class="mono" x="286" y="213">db<tspan class="acc">.Command</tspan>(sql)<tspan class="acc">.AddParam</tspan>("author", 42)<tspan class="acc">.Map</tspan>&lt;Post&gt;()</text></g>
 </svg>

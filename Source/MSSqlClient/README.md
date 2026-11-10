@@ -1,6 +1,6 @@
 # Open.Database.Extensions.MSSqlClient
 
-![Open.Database.Extensions.MSSqlClient: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-mssqlclient.svg)
+![Open.Database.Extensions.MSSqlClient: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-mssqlclient.svg)
 
 SQL Server for Open.Database.Extensions: `SqlConnectionFactory`, SQL-specific commands, and stored procedures on `Microsoft.Data.SqlClient`. **Use it when** your database is SQL Server. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/) and the `Microsoft.Data.SqlClient` provider, so there is nothing else to install.
 
