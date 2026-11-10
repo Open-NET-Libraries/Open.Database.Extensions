@@ -82,12 +82,12 @@ public static class IExecuteReaderExtensions
 					{
 						if (reader is DbDataReader r)
 						{
-								await r
-									.ForEachAsync(
-										x.handler,
-										x.UseAsyncRead,
-										x.token)
-									.ConfigureAwait(false);
+							await r
+								.ForEachAsync(
+									x.handler,
+									x.UseAsyncRead,
+									x.token)
+								.ConfigureAwait(false);
 						}
 						else
 							reader.ForEach(x.handler, true, x.token);
@@ -132,12 +132,12 @@ public static class IExecuteReaderExtensions
 					{
 						if (reader is DbDataReader r)
 						{
-								await r
-									.IterateWhileAsync(
-										x.handler,
-										x.UseAsyncRead,
-										x.token)
-									.ConfigureAwait(false);
+							await r
+								.IterateWhileAsync(
+									x.handler,
+									x.UseAsyncRead,
+									x.token)
+								.ConfigureAwait(false);
 						}
 						else
 							reader.IterateWhile(x.handler, true, x.token);

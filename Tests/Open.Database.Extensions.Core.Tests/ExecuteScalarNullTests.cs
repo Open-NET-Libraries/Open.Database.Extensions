@@ -254,11 +254,11 @@ public static class ExecuteScalarNullTests
 	{
 		foreach (object? none in NoValue)
 		{
-				Assert.Null(
-					await Async(none)
-						.ExecuteScalarAsync<int?>(
-							o => (int?)o,
-							cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<int?>(
+						o => (int?)o,
+						cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		Assert.Equal(
@@ -318,11 +318,11 @@ public static class ExecuteScalarNullTests
 	{
 		foreach (object? none in NoValue)
 		{
-				Assert.Null(
-					await Async(none)
-						.ExecuteScalarAsync<int?>(
-							o => new ValueTask<int?>((int?)o),
-							cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<int?>(
+						o => new ValueTask<int?>((int?)o),
+						cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		Assert.Equal(

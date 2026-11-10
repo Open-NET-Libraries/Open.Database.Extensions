@@ -268,19 +268,19 @@ public static class ExecuteReaderEdgeTests
 
 		if (valueTaskHandler)
 		{
-				await command
-					.EnableAsyncRead(true)
-					.IterateReaderWhileAsync(
-						_ => new ValueTask<bool>(++seen < 3),
-						cancellationToken: TestContext.Current.CancellationToken);
+			await command
+				.EnableAsyncRead(true)
+				.IterateReaderWhileAsync(
+					_ => new ValueTask<bool>(++seen < 3),
+					cancellationToken: TestContext.Current.CancellationToken);
 		}
 		else
 		{
-				await command
-					.EnableAsyncRead(true)
-					.IterateReaderWhileAsync(
-						_ => ++seen < 3,
-						cancellationToken: TestContext.Current.CancellationToken);
+			await command
+				.EnableAsyncRead(true)
+				.IterateReaderWhileAsync(
+					_ => ++seen < 3,
+					cancellationToken: TestContext.Current.CancellationToken);
 		}
 
 		Assert.Equal(3, seen);
