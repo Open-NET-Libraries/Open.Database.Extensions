@@ -31,13 +31,13 @@ public static class ConnectionPattern
 		return connectionFactory;
 	}
 
-	public static List<Post> DapperList(string connectionString)
+	public static async Task<List<Post>> DapperList(string connectionString)
 	{
 		const int author = 42;
 		#region dapper_list_call
-		using var connection = new SqliteConnection(connectionString);
-		List<Post> posts = connection.Query<Post>(ListSql,
-			new { author })
+		await using var connection = new SqliteConnection(connectionString);
+		List<Post> posts = (await connection.QueryAsync<Post>(ListSql,
+			new { author }))
 			.AsList();
 		#endregion
 

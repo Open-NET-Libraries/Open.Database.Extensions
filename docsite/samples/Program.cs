@@ -137,7 +137,7 @@ Check(BeforeAfter.PlainNonQuery(Db.ConnectionString) == 3 && BeforeAfter.OdeNonQ
 // The comparisons in the docs: both sides return the same data.
 Db.Seed();
 string connectionString = Db.ConnectionString;
-Check(ConnectionPattern.DapperList(connectionString).Select(p => p.Id).SequenceEqual((await ConnectionPattern.OdeList(factory, CancellationToken.None)).Select(p => p.Id)), "Dapper and factory list agree");
+Check((await ConnectionPattern.DapperList(connectionString)).Select(p => p.Id).SequenceEqual((await ConnectionPattern.OdeList(factory, CancellationToken.None)).Select(p => p.Id)), "Dapper and factory list agree");
 Check((await ConnectionPattern.OdeListOwn(connectionString, CancellationToken.None)).Select(p => p.Id).SequenceEqual([1, 2, 3]), "own-connection list");
 Check((await ConnectionPattern.PlainListAligned(connectionString, CancellationToken.None)).Select(p => p.Id).SequenceEqual((await ConnectionPattern.OdeListAligned(factory, CancellationToken.None)).Select(p => p.Id)), "plain ADO.NET and factory aligned list agree");
 Check(ConnectionPattern.DapperFirst(connectionString)?.Title == ConnectionPattern.OdeFirst(factory)?.Title, "Dapper and factory first row agree");
