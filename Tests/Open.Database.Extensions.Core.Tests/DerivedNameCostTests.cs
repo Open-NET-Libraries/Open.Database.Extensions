@@ -101,7 +101,7 @@ public static class DerivedNameCostTests
 			_db.Sent.Clear();
 		}
 
-		public void RunViaAsync(ExpressiveDbCommand command)
+		public void RunThroughAsyncApi(ExpressiveDbCommand command)
 		{
 			command.ExecuteNonQueryAsync().AsTask().GetAwaiter().GetResult();
 			_db.Sent.Clear();
@@ -193,8 +193,8 @@ public static class DerivedNameCostTests
 		const int orderId = 5, customerId = 7;
 		var startDate = new DateTime(2026, 1, 2);
 
-		long derived = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParam(orderId).AddParam(customerId).AddParam(startDate)));
-		long explicitName = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParam("@order_id", orderId).AddParam("@customer_id", customerId).AddParam("@start_date", startDate)));
+		long derived = BytesPerCall(() => rig.RunThroughAsyncApi(rig.Command().AddParam(orderId).AddParam(customerId).AddParam(startDate)));
+		long explicitName = BytesPerCall(() => rig.RunThroughAsyncApi(rig.Command().AddParam("@order_id", orderId).AddParam("@customer_id", customerId).AddParam("@start_date", startDate)));
 
 		AssertWithinBudget("stored procedure async, three plain locals", derived, explicitName);
 	}
@@ -205,8 +205,8 @@ public static class DerivedNameCostTests
 		var rig = new Rig(CommandType.StoredProcedure);
 		var args = new Args();
 
-		long derived = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParams(args)));
-		long explicitName = BytesPerCall(() => rig.RunViaAsync(rig.Command().AddParam("@order_id", args.OrderId).AddParam("@customer_id", args.CustomerId).AddParam("@start_date", args.StartDate)));
+		long derived = BytesPerCall(() => rig.RunThroughAsyncApi(rig.Command().AddParams(args)));
+		long explicitName = BytesPerCall(() => rig.RunThroughAsyncApi(rig.Command().AddParam("@order_id", args.OrderId).AddParam("@customer_id", args.CustomerId).AddParam("@start_date", args.StartDate)));
 
 		AssertWithinBudget("stored procedure async, AddParams with three members", derived, explicitName);
 	}
