@@ -289,7 +289,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, DataflowBlockOptions?)"/>
+	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, DataflowBlockOptions?, CancellationToken)"/>
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
 	{
@@ -310,7 +310,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, ArrayPool{object}, DataflowBlockOptions?)"/>
+	/// <inheritdoc cref="AsSourceBlockAsync(IExecuteReader, ArrayPool{object}, DataflowBlockOptions?, CancellationToken)"/>
 	public static IReceivableSourceBlock<object[]> AsSourceBlock(this IExecuteReader command,
 		ArrayPool<object> arrayPool,
 		DataflowBlockOptions? options = null)
@@ -332,7 +332,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, Func{IDataRecord, T}, DataflowBlockOptions?)"/>
+	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, Func{IDataRecord, T}, DataflowBlockOptions?, CancellationToken)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		Func<IDataRecord, T> transform,
 		DataflowBlockOptions? options = null)
@@ -357,7 +357,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, DataflowBlockOptions?)"/>
+	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, DataflowBlockOptions?, CancellationToken)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		DataflowBlockOptions? options = null)
 	{
@@ -384,7 +384,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, RowMap{T}?, DataflowBlockOptions?)"/>
+	/// <inheritdoc cref="AsSourceBlockAsync{T}(IExecuteReader, RowMap{T}?, DataflowBlockOptions?, CancellationToken)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(this IExecuteReader command,
 		RowMap<T>? map,
 		DataflowBlockOptions? options = null)
@@ -633,7 +633,7 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record as an array of values as it is read.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
 	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
@@ -641,18 +641,20 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// </remarks>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
-		DataflowBlockOptions? options = null)
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
 	{
 		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
-		_ = ToTargetBlockAsync(command, buffer, true);
+		_ = ToTargetBlockAsync(command, buffer, true, cancellationToken);
 		return buffer;
 	}
 
 	/// <summary>
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record as an array of values rented from an array pool as it is read.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the records is responsible for returning each array to the pool.</param>
 	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
 	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
@@ -661,12 +663,14 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// </remarks>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static IReceivableSourceBlock<object[]> AsSourceBlockAsync(this IExecuteReader command,
 		ArrayPool<object> arrayPool,
-		DataflowBlockOptions? options = null)
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
 	{
 		BufferBlock<object[]> buffer = GetBufferBlock<object[]>(options);
-		_ = ToTargetBlockAsync(command, buffer, true, arrayPool);
+		_ = ToTargetBlockAsync(command, buffer, true, arrayPool, cancellationToken);
 		return buffer;
 	}
 
@@ -674,7 +678,7 @@ public static partial class DataflowExtensions
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record after it has been transformed by <paramref name="transform"/> as it is read.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item delivered to the block.</param>
 	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
 	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
@@ -683,12 +687,14 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// </remarks>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		Func<IDataRecord, T> transform,
-		DataflowBlockOptions? options = null)
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
-		_ = ToTargetBlockAsync(command, buffer, true, transform);
+		_ = ToTargetBlockAsync(command, buffer, true, transform, cancellationToken);
 		return buffer;
 	}
 
@@ -696,7 +702,7 @@ public static partial class DataflowExtensions
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record mapped to a new instance of <typeparamref name="T"/> as it is read.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
 	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
 	/// <remarks>
@@ -704,11 +710,13 @@ public static partial class DataflowExtensions
 	/// The call returns immediately; reading continues on a background task and sends each record with <see cref="DataflowBlock.SendAsync{TInput}(ITargetBlock{TInput}, TInput)"/>, which waits for room in a bounded block. Asynchronous database calls are used when the reader or command derives from the <c>Db*</c> base types. Failures are reported only through the returned block's <see cref="IDataflowBlock.Completion"/>.
 	/// </para>
 	/// </remarks>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
-		DataflowBlockOptions? options = null)
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
-		_ = ToTargetBlockAsync(command, buffer, true);
+		_ = ToTargetBlockAsync(command, buffer, true, cancellationToken);
 		return buffer;
 	}
 
@@ -716,7 +724,7 @@ public static partial class DataflowExtensions
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns a new <see cref="BufferBlock{T}"/> that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, as it is read.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <param name="options">Options for the returned block, such as its bounded capacity, or <see langword="null"/> for the defaults.</param>
 	/// <returns>The block that receives the records. It is completed after the last record has been delivered, or faulted with the exception that ended the reading.</returns>
@@ -729,12 +737,14 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <seealso cref="RowMap{T}"/>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static IReceivableSourceBlock<T> AsSourceBlockAsync<T>(this IExecuteReader command,
 		RowMap<T>? map,
-		DataflowBlockOptions? options = null)
+		DataflowBlockOptions? options = null,
+		CancellationToken cancellationToken = default)
 	{
 		BufferBlock<T> buffer = GetBufferBlock<T>(options);
-		_ = ToTargetBlockAsync(command, buffer, true, map);
+		_ = ToTargetBlockAsync(command, buffer, true, map, cancellationToken);
 		return buffer;
 	}
 }

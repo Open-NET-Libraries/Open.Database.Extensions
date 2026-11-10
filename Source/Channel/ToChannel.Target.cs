@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using CancellationTokens = Open.Database.Extensions.Core.CancellationTokens;
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -45,25 +46,27 @@ public static partial class ChannelDbExtensions
 		}
 	}
 
+	// The token is the one that governs the call, already combined by the public overload: nothing is combined here.
 	private static async ValueTask<long> ToChannelCore<T>(
 		IExecuteReader command,
 		ChannelWriter<T> writer,
 		bool complete,
-		Func<IDataReader, ValueTask<long>> transform)
+		CancellationToken cancellationToken,
+		Func<IDataReader, CancellationToken, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		Contract.EndContractBlock();
 
 		await writer
-			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
+			.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken)
 			.ConfigureAwait(false);
 
 		Exception? exception = null;
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(transform)
+				.ExecuteReaderAsync((transform, cancellationToken), static (reader, s) => s.transform(reader, s.cancellationToken), CommandBehavior.Default, cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -356,7 +359,7 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
 	/// <returns>The number of records written to the target.</returns>
@@ -367,17 +370,25 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel(this IExecuteReader command,
 		ChannelWriter<object[]> target,
-		bool complete)
-		=> ToChannelCore(
-			command, target, complete,
-			reader => reader.ToChannel(target, false, command.CancellationToken));
+		bool complete,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
+			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token,
+				(reader, t) => reader.ToChannel(s.target, false, t)));
+	}
 
 	/// <summary>
 	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the channel is responsible for returning each array to the pool.</param>
@@ -389,19 +400,27 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel(this IExecuteReader command,
 		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object> arrayPool)
-		=> ToChannelCore(
-			command, target, complete,
-			reader => reader.ToChannel(target, false, arrayPool, command.CancellationToken));
+		ArrayPool<object> arrayPool,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, arrayPool),
+			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token,
+				(reader, t) => reader.ToChannel(s.target, false, s.arrayPool, t)));
+	}
 
 	/// <summary>
 	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
@@ -413,19 +432,27 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
-		Func<IDataRecord, T> transform)
-		=> ToChannelCore(
-			command, target, complete,
-			reader => reader.ToChannel(target, false, transform, command.CancellationToken));
+		Func<IDataRecord, T> transform,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, transform),
+			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token,
+				(reader, t) => reader.ToChannel(s.target, false, s.transform, t)));
+	}
 
 	/// <summary>
 	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <returns>The number of records read. The task completes once all the records have been read and the reader has been released; the records are delivered to the target by a second task, which may still be running.</returns>
@@ -436,16 +463,25 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
-		bool complete)
-		=> ToChannelMapped(command, target, complete, null);
+		bool complete,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
+			static (s, token) => ToChannelMapped(s.command, s.target, s.complete, null, token));
+	}
 
 	/// <summary>
 	/// Iterates the results of an <see cref="IExecuteReader"/> and writes each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target channel.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed after the last record has been delivered to it (or with the error that ended the operation), and only once the database reader has been released.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -461,11 +497,20 @@ public static partial class ChannelDbExtensions
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
 	/// <seealso cref="RowMap{T}"/>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannel<T>(this IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
-		RowMap<T>? map)
-		=> ToChannelMapped(command, target, complete, map);
+		RowMap<T>? map,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, map),
+			static (s, token) => ToChannelMapped(s.command, s.target, s.complete, s.map, token));
+	}
 
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		DbCommand command,
@@ -504,25 +549,27 @@ public static partial class ChannelDbExtensions
 		}
 	}
 
+	// The token is the one that governs the call, already combined by the public overload: nothing is combined here.
 	private static async ValueTask<long> ToChannelAsyncCore<T>(
 		IExecuteReaderAsync command,
 		ChannelWriter<T> writer,
 		bool complete,
-		Func<IDataReader, ValueTask<long>> transform)
+		CancellationToken cancellationToken,
+		Func<IDataReader, CancellationToken, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
 		Contract.EndContractBlock();
 
 		await writer
-			.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken)
+			.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken)
 			.ConfigureAwait(false);
 
 		Exception? exception = null;
 		try
 		{
 			return await command
-				.ExecuteReaderAsync(transform)
+				.ExecuteReaderAsync((transform, cancellationToken), static (reader, s) => s.transform(reader, s.cancellationToken), CommandBehavior.Default, cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -678,20 +725,27 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record as an array of values to the target channel.
 	/// </summary>
-	/// <inheritdoc cref="ToChannel(IExecuteReader, ChannelWriter{object[]}, bool)"/>
+	/// <inheritdoc cref="ToChannel(IExecuteReader, ChannelWriter{object[]}, bool, CancellationToken)"/>
 	public static ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
 		ChannelWriter<object[]> target,
-		bool complete)
-		=> ToChannelAsyncCore(
-			command, target, complete,
-			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, false, command.CancellationToken)
-				: reader.ToChannel(target, false, command.CancellationToken));
+		bool complete,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
+			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token,
+				(reader, t) => s.command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(s.target, false, t)
+					: reader.ToChannel(s.target, false, t)));
+	}
 
 	/// <summary>
 	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record as an array of values rented from an array pool to the target channel.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token applies.</param>
+	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
 	/// <param name="target">The channel writer that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the last record has been written to it and the database reader has been released, or with the error that ended the operation.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
@@ -703,48 +757,79 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ChannelClosedException">The target has already been completed.</exception>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
 	public static ValueTask<long> ToChannelAsync(this IExecuteReaderAsync command,
 		ChannelWriter<object[]> target,
 		bool complete,
-		ArrayPool<object>? arrayPool)
-		=> ToChannelAsyncCore(
-			command, target, complete,
-			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, false, arrayPool, command.CancellationToken)
-				: reader.ToChannel(target, false, arrayPool, command.CancellationToken));
+		ArrayPool<object>? arrayPool,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, arrayPool),
+			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token,
+				(reader, t) => s.command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(s.target, false, s.arrayPool, t)
+					: reader.ToChannel(s.target, false, s.arrayPool, t)));
+	}
 
 	/// <summary>
 	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record after it has been transformed by <paramref name="transform"/> to the target channel.
 	/// </summary>
-	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, ChannelWriter{T}, bool, Func{IDataRecord, T})"/>
+	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, ChannelWriter{T}, bool, Func{IDataRecord, T}, CancellationToken)"/>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
-		Func<IDataRecord, T> transform)
-		=> ToChannelAsyncCore(
-			command, target, complete,
-			reader => command.UseAsyncRead && reader is DbDataReader r
-				? r.ToChannelAsync(target, false, transform, command.CancellationToken)
-				: reader.ToChannel(target, false, transform, command.CancellationToken));
+		Func<IDataRecord, T> transform,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, transform),
+			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token,
+				(reader, t) => s.command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(s.target, false, s.transform, t)
+					: reader.ToChannel(s.target, false, s.transform, t)));
+	}
 
 	/// <summary>
 	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record mapped to a new instance of <typeparamref name="T"/> to the target channel.
 	/// </summary>
-	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, ChannelWriter{T}, bool)"/>
+	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, ChannelWriter{T}, bool, CancellationToken)"/>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
-		bool complete)
-		=> ToChannelMappedAsync(command, target, complete, null);
+		bool complete,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
+			static (s, token) => ToChannelMappedAsync(s.command, s.target, s.complete, null, token));
+	}
 
 	/// <summary>
 	/// Asynchronously iterates the results of an <see cref="IExecuteReaderAsync"/> and writes each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target channel.
 	/// </summary>
-	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, ChannelWriter{T}, bool, RowMap{T}?)"/>
+	/// <inheritdoc cref="ToChannel{T}(IExecuteReader, ChannelWriter{T}, bool, RowMap{T}?, CancellationToken)"/>
 	public static ValueTask<long> ToChannelAsync<T>(this IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
-		RowMap<T>? map)
-		=> ToChannelMappedAsync(command, target, complete, map);
+		RowMap<T>? map,
+		CancellationToken cancellationToken = default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (target is null) throw new ArgumentNullException(nameof(target));
+		Contract.EndContractBlock();
+
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, map),
+			static (s, token) => ToChannelMappedAsync(s.command, s.target, s.complete, s.map, token));
+	}
 
 	// A map that the model can't honor is a failure of the operation, not a precondition: with `complete` the target is
 	// faulted with it (so that whoever awaits the target isn't left waiting), and the call throws. Nothing has been executed and there
@@ -805,7 +890,8 @@ public static partial class ChannelDbExtensions
 		IExecuteReader command,
 		ChannelWriter<T> target,
 		bool complete,
-		RowMap<T>? map)
+		RowMap<T>? map,
+		CancellationToken cancellationToken)
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
 		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
@@ -813,12 +899,12 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
+		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
-		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
+		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
-			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Read))
+			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Token, (reader, _) => pipeline.Read(reader)))
 			.ConfigureAwait(false);
 	}
 
@@ -850,7 +936,8 @@ public static partial class ChannelDbExtensions
 		IExecuteReaderAsync command,
 		ChannelWriter<T> target,
 		bool complete,
-		RowMap<T>? map)
+		RowMap<T>? map,
+		CancellationToken cancellationToken)
 	{
 		// The outer guard of the mapped path. It has to run here, before the pipeline exists (creating it starts its second stage), so it
 		// can't be left to the core, which checks the same arguments as the outer guard of the unmapped overloads, and only once it runs.
@@ -858,14 +945,14 @@ public static partial class ChannelDbExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		await target.WaitToWriteAndThrowIfClosedAsync(true, command.CancellationToken).ConfigureAwait(false);
+		await target.WaitToWriteAndThrowIfClosedAsync(true, cancellationToken).ConfigureAwait(false);
 
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
-		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, command.CancellationToken);
+		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
 			.RunAsync(() => ToChannelAsyncCore(
-				command, pipeline.Buffer, true,
-				reader => command.UseAsyncRead && reader is DbDataReader r
+				command, pipeline.Buffer, true, pipeline.Token,
+				(reader, _) => command.UseAsyncRead && reader is DbDataReader r
 					? pipeline.ReadAsync(r)
 					: pipeline.Read(reader)))
 			.ConfigureAwait(false);
