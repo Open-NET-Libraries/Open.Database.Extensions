@@ -36,6 +36,18 @@ public static class ExpressiveCommands
 		return posts;
 	}
 
+	public static async Task<int[]> ColumnOfIds(IDbConnectionFactory<SqliteConnection> connectionFactory, CancellationToken cancellationToken)
+	{
+		#region single_value_async
+		// The terminals take the type: ToArrayAsync<int>(token) reads the first column of each row, as Map<int>().ToArrayAsync(token) does.
+		int[] ids = await connectionFactory
+			.Command("select id from posts order by id")
+			.ToArrayAsync<int>(cancellationToken);
+		#endregion
+
+		return ids;
+	}
+
 	public static Post? FirstPost(IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
 		const int id = 3;

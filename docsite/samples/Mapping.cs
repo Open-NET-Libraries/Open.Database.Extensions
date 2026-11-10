@@ -287,6 +287,16 @@ public static class Mapping
 		return titles;
 	}
 
+	public static int[] MapSingleValue(SqliteConnection connection)
+	{
+		#region map_single_value
+		// One column of every row as an int. A SQLite integer is a long; it converts to int with a range check, as a property would.
+		int[] ids = connection.Command("select id from posts order by id").Map<int>().ToArray();
+		#endregion
+
+		return ids;
+	}
+
 	public static int StreamRows(SqliteConnection connection)
 	{
 		#region map_stream
