@@ -458,7 +458,7 @@ public static class TokenTerminalTests
 				return true;
 			}
 
-			item = null!;
+			item = null;
 			return false;
 		}
 
