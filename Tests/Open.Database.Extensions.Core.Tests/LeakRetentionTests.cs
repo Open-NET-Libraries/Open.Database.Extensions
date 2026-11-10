@@ -69,7 +69,7 @@ public static class LeakRetentionTests
 				model = (await command.ResultsAsync<Row>()).First();
 				break;
 			case "ToChannelAsync":
-				ChannelReader<Row> channel = command.ToChannelAsync<Row>(true);
+				ChannelReader<Row> channel = command.ToChannelAsync<Row>(true, cancellationToken: token);
 				model = await channel.ReadAsync(token);
 				break;
 			default:
@@ -227,7 +227,7 @@ public static class LeakRetentionTests
 						await command.UseCancellationToken(longLived.Token).Map<Row>().ToListAsync(call.Token);
 					break;
 				case "ToChannelAsync":
-					ChannelReader<Row> channel = command.ToChannelAsync<Row>(true);
+					ChannelReader<Row> channel = command.ToChannelAsync<Row>(true, cancellationToken: token);
 					await channel.ReadAllAsync(none).ToListAsync(none);
 					break;
 				case "ToTargetBlockAsync":
