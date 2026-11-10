@@ -76,7 +76,7 @@ public class QueryResult<TResult>
 /// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
 /// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
 /// <typeparam name="TResult">The type of the result property.</typeparam>
-[Obsolete("Nothing in the library returns this type, and there is no replacement. Get rows as a List<T> from .Map<T>().ToList(), or keep your own class. Removed in 12.")]
+[Obsolete(QueryResultExtensions._queryResultCollectionObsolete)]
 public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerable<T>
 	where TResult : IEnumerable<T>
 {
@@ -117,7 +117,7 @@ public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerab
 /// </summary>
 /// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
 /// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
-[Obsolete("Nothing in the library returns this type, and there is no replacement. Get rows as a List<T> from .Map<T>().ToList(), or keep your own class. Removed in 12.")]
+[Obsolete(QueryResultExtensions._queryResultCollectionObsolete)]
 public class QueryResultCollection<T> : QueryResultCollection<T, IEnumerable<T>>
 {
 	/// <summary>Constructs a <see cref="QueryResultCollection{T}"/>.</summary>
@@ -182,11 +182,12 @@ public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enume
 /// </summary>
 public static class QueryResultExtensions
 {
+	internal const string _queryResultCollectionObsolete = "Nothing in the library returns this type, and there is no replacement. Get rows as a List<T> from .Map<T>().ToList(), or keep your own class. Removed in 12.";
 	const string AsMappedDictionariesTail = " DequeueAsMappedDictionaries drains the queue as you enumerate it, so it can be read once; this method could be read again. Removed in 12.";
 	const string AsMappedDictionariesObsolete = "Nothing in the library returns the QueryResult<IEnumerable<object?[]>> this takes. To read rows as dictionaries use .Retrieve().DequeueAsMappedDictionaries(), or .Map(record => ...) with a selector that builds the dictionary." + AsMappedDictionariesTail;
 	const string AsMappedDictionariesAsyncObsolete = "Nothing in the library returns the QueryResult<IEnumerable<object?[]>> this takes. To read rows as dictionaries use (await cmd.RetrieveAsync()).DequeueAsMappedDictionaries(), or .Map(record => ...) with a selector that builds the dictionary." + AsMappedDictionariesTail;
 
-	const string DequeueAsTail = "Map reads in one pass instead of buffering raw rows first, reports a missing required column at the first row (so not for an empty result), and also reads later result sets: add .SingleResult() to read only the first, as Retrieve did. Removed in 12.";
+	const string DequeueAsTail = "Map reads in one pass instead of buffering raw rows first, reports a missing required column at the first row (so not for an empty result), and also reads later result sets: add .SingleResult() to read only the first, as Retrieve did. DequeueAs returned a one-pass enumerable; ToList() returns a List<T>. Removed in 12.";
 	const string DequeueAsObsolete = "Use cmd.Map<T>().ToList() instead of cmd.Retrieve().DequeueAs<T>(), or cmd.Map(map).ToList() when you passed a RowMap (DequeueAs accepted a null map; Map(map) throws on null). On an IDbCommand use command.Results<T>() (it takes no CommandBehavior); on an IDataReader use reader.ResultsBuffered<T>() (reader.Results<T>() is lazy). " + DequeueAsTail;
 	const string DequeueAsAsyncObsolete = "Use await cmd.Map<T>().ToListAsync() instead of (await cmd.RetrieveAsync()).DequeueAs<T>(), or cmd.Map(map).ToListAsync() when you passed a RowMap (DequeueAs accepted a null map; Map(map) throws on null). On a DbCommand use await command.ResultsAsync<T>(). " + DequeueAsTail;
 	/// <summary>

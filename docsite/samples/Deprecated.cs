@@ -159,6 +159,7 @@ public static class Deprecated
 
 		return (oldFailed, newFailed);
 	}
+
 	public static async Task<(string Before, string After)> TakeAsyncAndToListAsync(SqliteConnection connection)
 	{
 		#region deprecated_takeasync_before
