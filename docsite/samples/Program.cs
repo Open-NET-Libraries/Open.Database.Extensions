@@ -173,6 +173,26 @@ Check(connection.State == ConnectionState.Open, "ExecuteTransaction leaves an op
 long newId = ExpressiveCommands.InsertAndReadId(factory);
 Check(newId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "New", "an insert and select last_insert_rowid() in one command return the generated id to ExecuteScalar<long>()");
 factory.Command("delete from posts where id = 6").ExecuteNonQuery();
+// Deprecated in 11.0: each old call and the call that replaces it give the same result.
+Db.Seed();
+(string resultsBefore, string resultsAfter) = Deprecated.Results(connection);
+Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Results<T>() and Map<T>().ToList() return the same rows");
+(resultsBefore, resultsAfter) = await Deprecated.ResultsAsync(connection);
+Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsAsync<T>() and Map<T>().ToListAsync() return the same rows");
+(resultsBefore, resultsAfter) = Deprecated.ResultsFromDataTable(connection);
+Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable().To<T>(map, true) return the same rows");
+(resultsBefore, resultsAfter) = Deprecated.SelectorForms(connection);
+Check(resultsBefore == "1|1,2|4,5|2,3" && resultsBefore == resultsAfter, "FirstOrDefault, Take, Skip and SkipThenTake with a selector match their Map forms");
+Check(Deprecated.SkippedRowSelector(connection) == (true, false), "a selector that throws on a skipped row failed Skip, and does not fail Map(...).Skip");
+Check(Deprecated.TakeOfZero(connection) == (false, true), "Take(0) did not run the command; Map(...).Take(0) does");
+(resultsBefore, resultsAfter) = await Deprecated.TakeAsyncAndToListAsync(connection);
+Check(resultsBefore == "1,2|1,2,3,4,5" && resultsBefore == resultsAfter, "TakeAsync and ToListAsync with a selector match their Map forms");
+Check(Deprecated.Collection(connection) == 10, "QueryResultCollection holds rows; a List<T> from Map holds the same");
+(string dictBefore, string dictAfter, string dictBeforeAsync, string dictAfterAsync) = await Deprecated.MappedDictionaries(connection);
+Check(dictBefore.Length > 0 && dictBefore == dictAfter && dictBeforeAsync == dictAfterAsync && dictBefore == dictBeforeAsync, "AsMappedDictionaries and Retrieve().DequeueAsMappedDictionaries() (awaited too) return the same dictionaries");
+(resultsBefore, resultsAfter) = Deprecated.DequeueAs(connection);
+Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Retrieve().DequeueAs<T>() and Map<T>().ToList() return the same rows");
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 

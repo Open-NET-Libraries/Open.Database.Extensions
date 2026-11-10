@@ -333,7 +333,7 @@ public static class UnmappableTypeTests
 		return table;
 	}
 
-	static QueryResult<Queue<object?[]>> Queued() => new([0], ["Id"], new Queue<object?[]>());
+	static QueryResult<Queue<object[]>> Queued() => new([0], ["Id"], new Queue<object[]>());
 
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
 	{
@@ -392,16 +392,20 @@ public static class UnmappableTypeTests
 		["Results<T>(IDataReader, null)"] = () => Run(() => Reader().Results<T>(null)),
 		["ResultsBuffered<T>(IDataReader)"] = () => Run(() => Reader().ResultsBuffered<T>()),
 		["Results<T>(IDbCommand)"] = () => Run(() => Command().Results<T>()),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["Results<T>(IExecuteReader)"] = () => Run(() => Exec().Results<T>()),
+		#pragma warning restore CS0618
 		["ResultsAsync<T>(DbDataReader)"] = () => Done(DbReader().ResultsAsync<T>()),
 		["ResultsBufferedAsync<T>(DbDataReader)"] = async () => await DbReader().ResultsBufferedAsync<T>(),
 		["ResultsAsync<T>(DbCommand)"] = async () => await DbCmd().ResultsAsync<T>(),
 
 		// Core: DataTable and Retrieve
 		["To<T>(DataTable)"] = () => Run(() => Table().To<T>()),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["DequeueAs<T>(QueryResult)"] = () => Run(() => Queued().DequeueAs<T>()),
 		["DequeueAs<T>(Task)"] = async () => await Task.FromResult(Queued()).DequeueAs<T>(),
-		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs<T>(),
+		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object[]>>>(Queued()).DequeueAs<T>(),
+		#pragma warning restore CS0618
 		["new Transformer<T>()"] = () => Run(() => Transformer<T>.Create()),
 
 		// Channel: a new channel
@@ -569,22 +573,28 @@ public static class UnmappableTypeTests
 		// Core: a command
 		["Results<T>(IDbCommand)"] = t => Run(() => Command(t).Results<T>()),
 		["Results<T>(IDbCommand, null)"] = t => Run(() => Command(t).Results<T>(null)),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["Results<T>(IExecuteReader)"] = t => Run(() => Exec(t).Results<T>()),
 		["Results<T>(IExecuteReader, null)"] = t => Run(() => Exec(t).Results<T>(null)),
+		#pragma warning restore CS0618
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
 		["ResultsAsync<T>(DbCommand)"] = async t => await DbCmd(t).ResultsAsync<T>(),
 		["ResultsAsync<T>(DbCommand, null, token)"] = async t => await DbCmd(t).ResultsAsync<T>(null, CancellationToken.None),
 		["ResultsAsync<T>(DbCommand, token)"] = async t => await DbCmd(t).ResultsAsync<T>(CancellationToken.None),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["ResultsFromDataTable<T>(IDbCommand)"] = t => Run(() => Command(t).ResultsFromDataTable<T>()),
 		["ExpressiveDbCommand.ResultsAsync<T>()"] = async t => await Expressive(t).ResultsAsync<T>(),
 		["ExpressiveDbCommand.ResultsAsync<T>(null)"] = async t => await Expressive(t).ResultsAsync<T>(null),
+		#pragma warning restore CS0618
 
 		// Core: a reader
 		["Results<T>(IDataReader)"] = t => Run(() => Reader(t).Results<T>()),
 		["ResultsBuffered<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsBuffered<T>()),
 		["ResultsAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ResultsAsync<T>()),
 		["ResultsBufferedAsync<T>(DbDataReader)"] = async t => await DbReader(t).ResultsBufferedAsync<T>(),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["ResultsFromDataTable<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsFromDataTable<T>()),
+		#pragma warning restore CS0618
 
 		// Channel: a command, a new channel
 		["ToChannel<T>(IDbCommand)"] = t => Done(Command(t).ToChannel<T>(true)),
@@ -662,11 +672,15 @@ public static class UnmappableTypeTests
 		Assert.True(touched.Count() > 0);
 
 		touched = new Touched();
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		_ = await Expressive(touched).ResultsAsync<ParameterlessAndOther>();
+		#pragma warning restore CS0618
 		Assert.True(touched.Count() > 0);
 
 		touched = new Touched();
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		_ = Exec(touched).Results<ParameterlessAndOther>().ToList();
+		#pragma warning restore CS0618
 		Assert.True(touched.Count() > 0);
 	}
 }

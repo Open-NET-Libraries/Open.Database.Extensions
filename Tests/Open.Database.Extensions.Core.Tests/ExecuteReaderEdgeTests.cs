@@ -30,7 +30,9 @@ public static class ExecuteReaderEdgeTests
 		FakeExecuteReader command = Command(0, out _);
 
 		Assert.Throws<InvalidOperationException>(() => command.First(Id));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Null(command.FirstOrDefault(Name));
+		#pragma warning restore CS0618
 	}
 
 	[Theory]
@@ -39,7 +41,9 @@ public static class ExecuteReaderEdgeTests
 	{
 		FakeExecuteReader command = Command(5, out Func<int> rowsRead);
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		int id = op == "First" ? command.First(Id) : command.FirstOrDefault(Id);
+		#pragma warning restore CS0618
 
 		Assert.Equal(1, id);
 		Assert.Equal(1, rowsRead());
@@ -55,7 +59,9 @@ public static class ExecuteReaderEdgeTests
 	{
 		FakeExecuteReader command = Command(2, out _);
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Throws<InvalidOperationException>(() => op == "Single" ? command.Single(Id) : command.SingleOrDefault(Id));
+		#pragma warning restore CS0618
 
 		Assert.False(Assert.Single(command.Behaviors).HasFlag(CommandBehavior.SingleRow)); // with it, the second row could never be seen
 	}
@@ -73,9 +79,11 @@ public static class ExecuteReaderEdgeTests
 
 		List<int> ids = parts[0] switch
 		{
+			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 			"Take" => command.Take(int.Parse(parts[1]), Id),
 			"Skip" => command.Skip(int.Parse(parts[1]), Id),
 			_ => command.SkipThenTake(int.Parse(parts[1]), int.Parse(parts[2]), Id),
+			#pragma warning restore CS0618
 		};
 
 		Assert.Equal(expectedIds, string.Join(",", ids));
@@ -86,7 +94,9 @@ public static class ExecuteReaderEdgeTests
 	{
 		FakeExecuteReader command = Command(5, out Func<int> rowsRead);
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		command.Take(2, Id);
+		#pragma warning restore CS0618
 
 		Assert.Equal(2, rowsRead());
 	}
@@ -96,8 +106,10 @@ public static class ExecuteReaderEdgeTests
 	{
 		FakeExecuteReader command = Command(5, out _);
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Empty(command.Take(0, Id));
 		Assert.Empty(command.SkipThenTake(3, 0, Id));
+		#pragma warning restore CS0618
 		Assert.Equal(0, command.ExecuteCount);
 	}
 
@@ -112,9 +124,11 @@ public static class ExecuteReaderEdgeTests
 		{
 			switch (call)
 			{
+				#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 				case "Take": command.Take(-1, Id); break;
 				case "Skip": command.Skip(-1, Id); break;
 				default: command.SkipThenTake(0, -1, Id); break;
+				#pragma warning restore CS0618
 			}
 		});
 

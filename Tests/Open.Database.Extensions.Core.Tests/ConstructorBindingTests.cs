@@ -25,8 +25,10 @@ public static class ConstructorBindingTests
 	{
 		if (route == Route.Buffered)
 		{
-			var result = new QueryResult<Queue<object?[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object?[]>(rows));
+			var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object[]>(rows!));
+			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 			return result.DequeueAs(map).ToList();
+			#pragma warning restore CS0618
 		}
 
 		ImmutableArray<ColumnDef> shown = route == Route.Typed ? columns : [.. columns.Select(c => new ColumnDef(c.Name, typeof(object)))];
@@ -126,7 +128,9 @@ public static class ConstructorBindingTests
 		Assert.Equal<Post>(expected, FakeReader.Create(["Id", "Title"], rows).ResultsBuffered<Post>());
 		Assert.Equal<Post>(expected, TypedReader.Create(PostColumns, rows).Results<Post>());
 		Assert.Equal<Post>(expected, TypedReader.Create(PostColumns, rows).ResultsBuffered<Post>());
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal<Post>(expected, new FakeExecuteReader(() => TypedReader.Create(PostColumns, rows)).Results<Post>());
+		#pragma warning restore CS0618
 		Assert.Equal<Post>(expected, await TypedReader.Create(PostColumns, rows).ResultsBufferedAsync<Post>(ct));
 
 		var streamed = new List<Post>();

@@ -78,15 +78,21 @@ public static class NullGuardDefectTests
 	// Defect 6: a null result is an empty collection. It used to be refused by two of the constructors and a NullReferenceException when enumerated.
 	[Fact]
 	public static void QueryResultCollection_Sequences_NullResult_IsEmpty()
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		=> Assert.Empty(new QueryResultCollection<int, List<int>>(Ordinals, Names, null!));
+		#pragma warning restore CS0618
 
 	[Fact]
 	public static void QueryResultCollection_OfT_Sequences_NullResult_IsEmpty()
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		=> Assert.Empty(new QueryResultCollection<int>(Ordinals, Names, null!));
+		#pragma warning restore CS0618
 
 	[Fact]
 	public static void QueryResultCollection_ImmutableArray_NullResult_IsEmpty()
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		=> Assert.Empty(new QueryResultCollection<int, List<int>>([0], ["id"], null!));
+		#pragma warning restore CS0618
 
 	// Defect 7: a null remainder means no more ordinals. It used to be a NullReferenceException while enumerated, after the first value.
 	[Fact]

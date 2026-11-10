@@ -67,17 +67,19 @@ public static class TransformerResultsTests
 	public static void DequeueAs_MapsBufferedRows_CaseInsensitivelyWithOverride()
 	{
 		// A reader-shaped buffered result (column names + queued rows).
-		var queue = new Queue<object?[]>();
+		var queue = new Queue<object[]>();
 		queue.Enqueue(["Jane", 25]);
 		queue.Enqueue(["Jack", 40]);
 
-		var result = new QueryResult<Queue<object?[]>>(
+		var result = new QueryResult<Queue<object[]>>(
 			[0, 1],
 			["first_name", "AGE"],
 			queue);
 
 		var map = new RowMap<Person>([new(nameof(Person.FirstName), "first_name")]);
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<Person> people = [.. result.DequeueAs(map)];
+		#pragma warning restore CS0618
 
 		Assert.Equal(2, people.Count);
 		Assert.Equal("Jane", people[0].FirstName);

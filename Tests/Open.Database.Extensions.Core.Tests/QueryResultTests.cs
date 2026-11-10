@@ -7,11 +7,11 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class QueryResultTests
 {
-	static QueryResult<Queue<object?[]>> Rows(params object?[][] rows)
+	static QueryResult<Queue<object[]>> Rows(params object?[][] rows)
 		=> new(
 			[0, 1],
 			["Id", "Name"],
-			new Queue<object?[]>(rows));
+			new Queue<object[]>(rows!));
 
 	[Fact]
 	public static void Constructor_MismatchedOrdinalAndNameCounts_Throws()
@@ -57,10 +57,14 @@ public static class QueryResultTests
 	[Fact]
 	public static void QueryResultCollection_NullResultIsEmpty_AndEnumeratesResult()
 	{
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Empty(new QueryResultCollection<int, List<int>>(
+		#pragma warning restore CS0618
 			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, null!));
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var collection = new QueryResultCollection<int>(
+		#pragma warning restore CS0618
 			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, Result);
 		Assert.Equal([1, 2, 3], collection.ToList());
 	}
@@ -88,7 +92,9 @@ public static class QueryResultTests
 				[2, DBNull.Value],
 			});
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var dictionaries = result.AsMappedDictionaries().ToList();
+		#pragma warning restore CS0618
 
 		Assert.Equal(2, dictionaries.Count);
 		Assert.Equal(1, dictionaries[0]["Id"]);
@@ -101,7 +107,7 @@ public static class QueryResultTests
 	[Fact]
 	public static void DequeueAsMappedDictionaries_DrainsTheQueueAsItIsEnumerated()
 	{
-		QueryResult<Queue<object?[]>> result = Rows(
+		QueryResult<Queue<object[]>> result = Rows(
 			[1, "a"],
 			[2, DBNull.Value],
 			[3, "c"]);
@@ -120,7 +126,7 @@ public static class QueryResultTests
 	[Fact]
 	public static void DequeueAsMappedDictionaries_NullSource_ThrowsEagerly()
 	{
-		QueryResult<Queue<object?[]>> result = null!;
+		QueryResult<Queue<object[]>> result = null!;
 
 		// Not deferred until enumeration.
 		Assert.Throws<ArgumentNullException>(result.DequeueAsMappedDictionaries);
@@ -129,7 +135,7 @@ public static class QueryResultTests
 	[Fact]
 	public static async Task DequeueAsMappedDictionaries_Task_AwaitsThenMaps()
 	{
-		Task<QueryResult<Queue<object?[]>>> task = Task.FromResult(Rows([1, "a"]));
+		Task<QueryResult<Queue<object[]>>> task = Task.FromResult(Rows([1, "a"]));
 
 		IEnumerable<Dictionary<string, object?>> dictionaries = await task.DequeueAsMappedDictionaries();
 

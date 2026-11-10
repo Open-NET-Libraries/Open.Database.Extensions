@@ -78,7 +78,9 @@ public static class LeakMatrixTests
 			using IEnumerator<Row> e = seq.GetEnumerator();
 			return e.MoveNext();
 		})),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Sync<ExpressiveDbCommand, IEnumerable<Row>>("Results", RM, c => c.Results<Row>()),
+		#pragma warning restore CS0618
 		Sync<ExpressiveDbCommand, bool>("ExecuteReader.State", Traits.Reader, c => c.ExecuteReader(0, static (r, _) => r.Read())),
 		Sync<ExpressiveDbCommand, QueryResultQueue<object[]>>("Retrieve", Traits.Reader, c => c.Retrieve()),
 		Sync<ExpressiveDbCommand, object?>("ExecuteScalar", Traits.None, c => c.ExecuteScalar()),
@@ -97,7 +99,9 @@ public static class LeakMatrixTests
 			await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(ct);
 			return await e.MoveNextAsync();
 		}, ct)),
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Async<ExpressiveDbCommand, IEnumerable<Row>>("ResultsAsync", RM, (c, ct) => c.UseCancellationToken(ct).ResultsAsync<Row>()),
+		#pragma warning restore CS0618
 		Async<ExpressiveDbCommand, bool>("ExecuteReaderAsync.State", Traits.Reader, (c, ct) => c.UseCancellationToken(ct).ExecuteReaderAsync(0, static (r, _) => new ValueTask<bool>(r.Read()))),
 		Async<ExpressiveDbCommand, QueryResultQueue<object[]>>("RetrieveAsync", Traits.Reader, (c, ct) => c.UseCancellationToken(ct).RetrieveAsync()),
 		Async<ExpressiveDbCommand, object?>("ExecuteScalarAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteScalarAsync()),

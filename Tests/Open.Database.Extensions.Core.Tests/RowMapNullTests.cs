@@ -83,8 +83,10 @@ public static class RowMapNullTests
 
 	static List<Solid> ViaArray(RowMap<Solid> map, string? nullColumn)
 	{
-		QueryResult<Queue<object?[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object?[]>([SolidRow(nullColumn)]));
+		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object[]>([SolidRow(nullColumn)!]));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		return result.DequeueAs(map).ToList();
+		#pragma warning restore CS0618
 	}
 
 	static readonly Func<RowMap<Solid>, string?, List<Solid>>[] Routes = [ViaReader, ViaArray];
@@ -131,8 +133,10 @@ public static class RowMapNullTests
 		{
 			AssertSame(new Solid(), Assert.Single(Cmd(SolidColumns, allNull).Map(map).ToList()));
 
-			QueryResult<Queue<object?[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object?[]>([allNull]));
+			QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object[]>([allNull!]));
+			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 			AssertSame(new Solid(), Assert.Single(result.DequeueAs(map).ToList()));
+			#pragma warning restore CS0618
 		}
 	}
 
@@ -146,8 +150,10 @@ public static class RowMapNullTests
 		Assert.Equal(default, viaReader.Created);
 		Assert.Equal(Shade.None, viaReader.Shade);
 
-		QueryResult<Queue<object?[]>> result = new([0, 1, 2], ["Count", "Created", "Shade"], new Queue<object?[]>([[null, DBNull.Value, DBNull.Value]]));
+		QueryResult<Queue<object[]>> result = new([0, 1, 2], ["Count", "Created", "Shade"], new Queue<object[]>([[null!, DBNull.Value, DBNull.Value]]));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Plain viaArray = Assert.Single(result.DequeueAs(RowMap<Plain>.Default).ToList());
+		#pragma warning restore CS0618
 		Assert.Equal(0, viaArray.Count);
 		Assert.Equal(default, viaArray.Created);
 		Assert.Equal(Shade.None, viaArray.Shade);
@@ -190,8 +196,10 @@ public static class RowMapNullTests
 		Assert.Null(viaReader.Tint);
 
 		// Buffered rows: a C# null and a DBNull both count as NULL.
-		QueryResult<Queue<object?[]>> result = new([0, 1, 2], ["Maybe", "Text", "Tint"], new Queue<object?[]>([[null, DBNull.Value, DBNull.Value]]));
+		QueryResult<Queue<object[]>> result = new([0, 1, 2], ["Maybe", "Text", "Tint"], new Queue<object[]>([[null!, DBNull.Value, DBNull.Value]]));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Optional viaArray = Assert.Single(result.DequeueAs(RowMap<Optional>.Default).ToList());
+		#pragma warning restore CS0618
 		Assert.Null(viaArray.Maybe);
 		Assert.Null(viaArray.Text);
 		Assert.Null(viaArray.Tint);

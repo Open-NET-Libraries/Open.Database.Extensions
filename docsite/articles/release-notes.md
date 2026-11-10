@@ -15,6 +15,8 @@ A modernization and allocation-reduction pass. Source-compatible with 10.0: exis
   cmd.Results<Person>([new("FirstName", "first_name"), new("LastName", "last_name")]);
   ```
 
+  In 11, `Results<T>` on an `IExecuteReader` and `ExpressiveDbCommand.ResultsAsync<T>` are deprecated: see [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
+
 - **Modernized `params`.** Ordinal helpers (`Retrieve`, `AsEnumerable` and others) accept `params IEnumerable<int>` and `params IEnumerable<string>`: any enumerable, not just arrays.
 - **Read-only inputs.** Several read-only `IList<T>` parameters were widened to `IReadOnlyList<T>` (`GetValuesFromOrdinals`, `EnumerateValuesFromOrdinals`, `ToDictionary`). Arrays, `List<T>`, `ImmutableArray<T>` and similar types still bind. A custom type that implements only `IList<T>`, and not also `IReadOnlyList<T>`, would need to recompile; no BCL collection is affected.
 - **Lower per-query overhead.** `Transformer<T>` caches its per-type reflection once instead of rebuilding it on every query. Buffered and data-table paths pre-size collections and avoid redundant `Select` iterators.
