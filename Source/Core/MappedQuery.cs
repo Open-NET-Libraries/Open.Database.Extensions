@@ -29,6 +29,8 @@ public static partial class CoreExtensions
 	/// </para>
 	/// <para>
 	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; the overload without a map reads by column name.
+	/// Columns match a property exactly, else ignoring case, else ignoring case and underscores (<c>author_id</c> feeds <c>AuthorId</c>);
+	/// the resolved layout is cached per result-set layout.
 	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call
 	/// (about 29 KB and a reader compile for a one-row read of a 12-property model, against 464 B through a declared map; see
 	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
@@ -42,20 +44,24 @@ public static partial class CoreExtensions
 	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
-	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with.</param>
+	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with; <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does (before 11.0.0-rc.4 it threw).</param>
 	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="map"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(1)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
-		RowMap<T> map)
+		RowMap<T>? map)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (map is null) throw new ArgumentNullException(nameof(map));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, map, 0, -1, false));
+		// No map reads exactly as Map<T>() does:
+		// a single value from the first column, a model by name.
+		return map is null
+			? Map<T>(command)
+			: new MappedQuery<T>(
+				new MappedQueryCore<T>(command, map, 0, -1, false));
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
@@ -65,7 +71,9 @@ public static partial class CoreExtensions
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
 		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		=> Map(command, RowMap<T>.From(mappings));
+		=> mappings.IsEmpty
+			? Map<T>(command)
+			: Map(command, RowMap<T>.From(mappings));
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
 	/// <param name="command">The command to read from.</param>
@@ -132,36 +140,42 @@ readonly struct MappedQueryCore<T>
 	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take, bool singleResult)
 	{ _command = command; _source = source; _skip = skip; _take = take; _singleResult = singleResult; }
 
+	// A default struct has no command: any use of it says so,
+	// the same way for every type of the family.
+	IExecuteReader Command
+		=> _command ?? throw new InvalidOperationException(
+			"This query was not created by Map<T>(); a default value cannot be used.");
+
 	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.
 	CommandBehavior Behavior => _singleResult
 		? (_source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping)
 		: (_source is SelectorSource<T> ? CommandBehavior.Default : CommandBehavior.SequentialAccess);
 
-	internal MappedQueryCore<T> WithSingleResult() => new(_command, _source, _skip, _take, true);
+	internal MappedQueryCore<T> WithSingleResult() => new(Command, _source, _skip, _take, true);
 
 	internal MappedQueryCore<T> WithSkip(int count)
-		=> count >= 0 ? new(_command, _source, _skip + count, _take, _singleResult)
+		=> count >= 0 ? new(Command, _source, _skip + count, _take, _singleResult)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Take is set exactly once (the staging structs only expose it before any take exists), so this
 	// just records the limit; it applies after the skip, i.e. Enumerable.Skip(a).Take(b).
 	internal MappedQueryCore<T> WithTake(int count)
-		=> count >= 0 ? new(_command, _source, _skip, count, _singleResult)
+		=> count >= 0 ? new(Command, _source, _skip, count, _singleResult)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Honors the command's UseAsyncRead choice (default false: rows are pulled with Read() after an async execute).
-	bool UseAsyncRead => _command is IExecuteReaderAsync { UseAsyncRead: true };
+	bool UseAsyncRead => Command is IExecuteReaderAsync { UseAsyncRead: true };
 
 	// One token governs a whole call: the one passed to the terminal together with the command's own (either cancels), for the connection open, the name lookup, the execute and the reads.
 	// No token, one token, or the same token twice needs no source, so those calls allocate nothing for it. Two different tokens need a linked source, which the call disposes when it ends.
 	CancellationToken Combine(CancellationToken cancellationToken, out CancellationTokenSource? linked)
-		=> CancellationTokens.Combine(_command.CancellationToken, cancellationToken, out linked);
+		=> CancellationTokens.Combine(Command.CancellationToken, cancellationToken, out linked);
 
 	// `token` is the combined token; it is also in `state`, which the terminal's static lambda reads it from.
 	ValueTask<TResult> ExecuteAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource? linked, CancellationToken token)
 		=> linked is null
-			? _command.ExecuteReaderAsync(state, transform, behavior, token)
-			: ExecuteLinkedAsync(_command, state, transform, behavior, linked, token);
+			? Command.ExecuteReaderAsync(state, transform, behavior, token)
+			: ExecuteLinkedAsync(Command, state, transform, behavior, linked, token);
 
 	static async ValueTask<TResult> ExecuteLinkedAsync<TState, TResult>(IExecuteReader command, TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource linked, CancellationToken token)
 	{
@@ -173,8 +187,8 @@ readonly struct MappedQueryCore<T>
 	// Nothing is read through when the transform throws, so the caller's own exception is never replaced.
 	TResult Run<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior)
 		=> _singleResult
-			? _command.ExecuteReader(state, transform, behavior)
-			: _command.ExecuteReader((state, transform), static (reader, s) =>
+			? Command.ExecuteReader(state, transform, behavior)
+			: Command.ExecuteReader((state, transform), static (reader, s) =>
 			{
 				TResult result = s.transform(reader, s.state);
 				RowReader.ReadThrough(reader);
@@ -197,14 +211,14 @@ readonly struct MappedQueryCore<T>
 	#region Handler (streaming) terminals
 
 	internal void Read(Action<IEnumerable<T>> handler)
-		=> _command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s) =>
+		=> Command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s) =>
 		{
 			s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult));
 			return false;
 		}, Behavior);
 
 	internal TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler)
-		=> _command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s)
+		=> Command.ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s)
 			=> s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult)), Behavior);
 
 	internal ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken)

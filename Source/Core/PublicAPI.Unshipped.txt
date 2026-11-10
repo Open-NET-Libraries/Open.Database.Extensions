@@ -71,3 +71,60 @@ static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs<T>(this Sys
 static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(this Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object![]!>!>! source) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.Dictionary<string!, object?>!>!
 static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(this System.Threading.Tasks.Task<Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object![]!>!>!>! source) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IEnumerable<System.Collections.Generic.Dictionary<string!, object?>!>!>
 static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAsMappedDictionaries(this System.Threading.Tasks.ValueTask<Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object![]!>!>!> source) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IEnumerable<System.Collections.Generic.Dictionary<string!, object?>!>!>
+*REMOVED*static Open.Database.Extensions.CoreExtensions.Map<T>(this Open.Database.Extensions.IExecuteReader! command, Open.Database.Extensions.RowMap<T>! map) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this Open.Database.Extensions.IExecuteReader! command, Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDataReader! reader) -> Open.Database.Extensions.MappedReader<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDataReader! reader, Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedReader<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDataReader! reader, System.Collections.Generic.KeyValuePair<string!, string?> mapping) -> Open.Database.Extensions.MappedReader<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDataReader! reader, System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedReader<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDataReader! reader, params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.MappedReader<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDbCommand! command) -> Open.Database.Extensions.MappedCommand<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDbCommand! command, Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedCommand<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDbCommand! command, System.Collections.Generic.KeyValuePair<string!, string?> mapping) -> Open.Database.Extensions.MappedCommand<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDbCommand! command, System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedCommand<T>
+static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.IDbCommand! command, params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.MappedCommand<T>
+Open.Database.Extensions.MappedReader<T>
+Open.Database.Extensions.MappedReader<T>.FirstOrDefault() -> T?
+Open.Database.Extensions.MappedReader<T>.FirstOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Open.Database.Extensions.MappedReader<T>.MappedQuery() -> void
+Open.Database.Extensions.MappedReader<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+Open.Database.Extensions.MappedReader<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+Open.Database.Extensions.MappedReader<T>.ReadAsync(System.Func<System.Collections.Generic.IAsyncEnumerable<T>!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+Open.Database.Extensions.MappedReader<T>.ReadAsync<TResult>(System.Func<System.Collections.Generic.IAsyncEnumerable<T>!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResult>
+Open.Database.Extensions.MappedReader<T>.SingleOrDefault() -> T?
+Open.Database.Extensions.MappedReader<T>.SingleOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Open.Database.Extensions.MappedReader<T>.Skip(int count) -> Open.Database.Extensions.MappedQueryWithSkip<T>
+Open.Database.Extensions.MappedReader<T>.Take(int count) -> Open.Database.Extensions.MappedQueryWithTake<T>
+Open.Database.Extensions.MappedReader<T>.ToArray() -> T[]!
+Open.Database.Extensions.MappedReader<T>.ToArrayAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T[]!>
+Open.Database.Extensions.MappedReader<T>.ToDictionary<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+Open.Database.Extensions.MappedReader<T>.ToDictionaryAsync<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.Dictionary<TKey, T>!>
+Open.Database.Extensions.MappedReader<T>.ToHashSet(System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+Open.Database.Extensions.MappedReader<T>.ToHashSetAsync(System.Collections.Generic.IEqualityComparer<T>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
+Open.Database.Extensions.MappedReader<T>.ToImmutableArray() -> System.Collections.Immutable.ImmutableArray<T>
+Open.Database.Extensions.MappedReader<T>.ToImmutableArrayAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableArray<T>>
+Open.Database.Extensions.MappedReader<T>.ToList() -> System.Collections.Generic.List<T>!
+Open.Database.Extensions.MappedReader<T>.ToListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.List<T>!>
+Open.Database.Extensions.MappedCommand<T>
+Open.Database.Extensions.MappedCommand<T>.FirstOrDefault() -> T?
+Open.Database.Extensions.MappedCommand<T>.FirstOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Open.Database.Extensions.MappedCommand<T>.MappedQuery() -> void
+Open.Database.Extensions.MappedCommand<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+Open.Database.Extensions.MappedCommand<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+Open.Database.Extensions.MappedCommand<T>.ReadAsync(System.Func<System.Collections.Generic.IAsyncEnumerable<T>!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+Open.Database.Extensions.MappedCommand<T>.ReadAsync<TResult>(System.Func<System.Collections.Generic.IAsyncEnumerable<T>!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResult>
+Open.Database.Extensions.MappedCommand<T>.SingleOrDefault() -> T?
+Open.Database.Extensions.MappedCommand<T>.SingleOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Open.Database.Extensions.MappedCommand<T>.Skip(int count) -> Open.Database.Extensions.MappedQueryWithSkip<T>
+Open.Database.Extensions.MappedCommand<T>.Take(int count) -> Open.Database.Extensions.MappedQueryWithTake<T>
+Open.Database.Extensions.MappedCommand<T>.ToArray() -> T[]!
+Open.Database.Extensions.MappedCommand<T>.ToArrayAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T[]!>
+Open.Database.Extensions.MappedCommand<T>.ToDictionary<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+Open.Database.Extensions.MappedCommand<T>.ToDictionaryAsync<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.Dictionary<TKey, T>!>
+Open.Database.Extensions.MappedCommand<T>.ToHashSet(System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+Open.Database.Extensions.MappedCommand<T>.ToHashSetAsync(System.Collections.Generic.IEqualityComparer<T>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
+Open.Database.Extensions.MappedCommand<T>.ToImmutableArray() -> System.Collections.Immutable.ImmutableArray<T>
+Open.Database.Extensions.MappedCommand<T>.ToImmutableArrayAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableArray<T>>
+Open.Database.Extensions.MappedCommand<T>.ToList() -> System.Collections.Generic.List<T>!
+Open.Database.Extensions.MappedCommand<T>.ToListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.List<T>!>
+Open.Database.Extensions.MappedCommand<T>.SingleResult() -> Open.Database.Extensions.MappedCommand<T>
