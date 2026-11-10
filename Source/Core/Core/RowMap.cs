@@ -21,7 +21,7 @@ namespace Open.Database.Extensions;
 /// The pairs are validated when the map is constructed: an unknown or unsettable property or constructor parameter, a member named twice, an empty column name, a <see langword="null"/> column for a required property,
 /// or two members reading one column throw <see cref="ArgumentException"/>.
 /// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the map is constructed or <see cref="Default"/> is read, which every query method does at the call, even when the result is empty:
-/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a dictionary or a dynamic object (<c>Dictionary&lt;string, object?&gt;</c>, <see cref="System.Dynamic.ExpandoObject"/>: they have no properties to set, so use <c>Map(selector)</c>), a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
+/// an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/> (use <c>Map&lt;T&gt;()</c> on a command to read one column), a dictionary or a dynamic object (<c>Dictionary&lt;string, object?&gt;</c>, <see cref="System.Dynamic.ExpandoObject"/>: they have no properties to set, so use <c>Map(selector)</c>), a type with two or more public constructors and none without parameters, a class with no public constructor and a type with a <c>required</c> public field (a field is never mapped, so it cannot be set).
 /// A NULL never overwrites a member the C# type declares non-nullable: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
 /// A property of such a type keeps the value its constructor or initializer gave it, else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
 /// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
@@ -622,6 +622,50 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			cell);
 	}
 
+	// The reader of a single value (FirstColumn<T>): column 0 read exactly as a property of type T is, with the same typed getter, conversion and NULL rule.
+	// A NULL into a type the C# type declares non-nullable is default(T); any other NULL is null. Built from the helpers below, so the two cannot drift apart.
+	internal static Func<TReader, T> FirstColumnReader<TReader>(Type columnType)
+		where TReader : class, IDataRecord
+	{
+		Type readerType = typeof(TReader);
+		MethodInfo isDbNull = readerType.GetMethod(nameof(IDataRecord.IsDBNull), [typeof(int)])!;
+		MethodInfo getValue = readerType.GetMethod(nameof(IDataRecord.GetValue), [typeof(int)])!;
+
+		ParameterExpression r = Expression.Parameter(readerType, "r");
+		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
+		ParameterExpression ex = Expression.Parameter(typeof(Exception), "ex");
+		Expression ordinal = Expression.Constant(0);
+		var slot = new Slot(typeof(T));
+
+		Expression value = ReadValue(r, ordinal, columnType, slot, readerType, isDbNull, getValue, cell);
+		if (NullTest(r, ordinal, columnType, slot, readerType, isDbNull, getValue, cell) is { } isNull)
+			value = Expression.Condition(isNull, Expression.Default(typeof(T)), value);
+
+		Expression guarded = Expression.TryCatch(
+			value,
+			Expression.Catch(
+				ex,
+				Expression.Condition(
+					Expression.OrElse(
+						Expression.TypeIs(ex, typeof(DbException)),
+						Expression.TypeIs(ex, typeof(OperationCanceledException))),
+					Expression.Rethrow(typeof(T)),
+					Expression.Throw(
+						Expression.Call(typeof(RowMap<T>).GetMethod(nameof(FirstColumnError), BindingFlags.Static | BindingFlags.NonPublic)!, ex, r),
+						typeof(T)))));
+
+		return Expression.Lambda<Func<TReader, T>>(Expression.Block(typeof(T), [cell], guarded), r).Compile();
+	}
+
+	static ValueMappingException FirstColumnError(Exception ex, IDataRecord record)
+	{
+		string column;
+		try { column = record.GetName(0); }
+		catch (Exception) { column = ""; } // Nothing to name: the failure being reported matters more.
+
+		return new ValueMappingException($"Unable to read column '{column}' as {Shape.TypeName(typeof(T))}.", "", column, typeof(T), ex);
+	}
+
 	// The skeleton shared by both mappers. A model built as it always was (a class with a public parameterless constructor, a struct with no constructor of its own):
 	// `new T()`, then for each column that maps to a property, `item.Property = <cell>`. A model built through a constructor: every fed cell is read, in column order, into a typed local,
 	// then `new T(arguments)`, then the properties no parameter covers are set. Only how a cell is read differs (a live reader vs buffered object[] rows).
@@ -991,6 +1035,45 @@ static class TypedGetters
 	}.ToFrozenDictionary();
 }
 
+// The row source of a single-value model type (Shape.IsScalar): column 0 of every row, read as a property of type T is, whatever the column is named, other columns ignored.
+// One instance per T (null for any other T, so Map<T>() branches on it). Like a property, the reader is chosen once per result set, from the column's reported type;
+// the cache is keyed by that type alone, so there is no name matching to pay for.
+internal sealed class FirstColumn<T> : IRowSource<T>
+{
+	internal static readonly FirstColumn<T>? Instance = Shape.IsScalar(typeof(T)) ? new() : null;
+
+	sealed class Entry(Type columnType)
+	{
+		public readonly Type ColumnType = columnType;
+		public Func<DbDataReader, T>? Db;
+		public Func<IDataRecord, T>? Rec;
+	}
+
+	readonly ConcurrentDictionary<Type, Entry> _entries = new();
+	Entry? _last;
+
+	Entry Resolve(IDataRecord reader)
+	{
+		Entry? last = _last;
+		Type columnType = reader.GetFieldType(0) ?? typeof(object); // Tolerant of a provider that reports no type, as the layout of a model is.
+		return last is not null && last.ColumnType == columnType
+			? last
+			: _last = _entries.GetOrAdd(columnType, static t => new Entry(t));
+	}
+
+	public Func<DbDataReader, T> Mapper(DbDataReader reader)
+	{
+		Entry e = Resolve(reader);
+		return e.Db ??= RowMap<T>.FirstColumnReader<DbDataReader>(e.ColumnType);
+	}
+
+	public Func<IDataRecord, T> Mapper(IDataRecord reader)
+	{
+		Entry e = Resolve(reader);
+		return e.Rec ??= RowMap<T>.FirstColumnReader<IDataRecord>(e.ColumnType);
+	}
+}
+
 // What one column can feed: a constructor parameter, or a settable public instance property of the model, held once per model type in an ImmutableArray<Slot> in place of PropertyInfo,
 // so the matcher and the compiled readers see only a name, the type a value must become and where it goes. It does not depend on the model type either.
 // A slot fed through the constructor has a Position and no Setter; a parameter and a property of the same name (ignoring case) are one such slot, so the property is never set again.
@@ -1006,6 +1089,15 @@ sealed class Slot
 		Position = -1;
 		IsProperty = true;
 		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
+	}
+
+	// The one value of a single-value model type (FirstColumn<T>): no name, nothing to set.
+	public Slot(Type type)
+	{
+		Name = "";
+		Type = type;
+		Position = -1;
+		KeepsValueOnNull = KeepsOnNull(type, false);
 	}
 
 	// A constructor parameter, named after the property of that name when there is one.
@@ -1215,7 +1307,7 @@ sealed class Shape
 		setsRequiredMembers = false;
 		string name = TypeName(type);
 
-		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. Use ExecuteScalar<T>() or FirstOrdinalResults<T>().";
+		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).";
 
@@ -1223,12 +1315,14 @@ sealed class Shape
 	}
 
 	// A single value, not a row: a column of it, not a model with properties. Nullable<T> of these is one too.
-	static bool IsScalar(Type type)
+	// DateOnly and TimeOnly are matched by name, so every target framework agrees (the netstandard builds cannot name them).
+	internal static bool IsScalar(Type type)
 	{
 		type = Nullable.GetUnderlyingType(type) ?? type;
 		return type.IsPrimitive || type.IsEnum
 			|| type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(DateTimeOffset)
-			|| type == typeof(TimeSpan) || type == typeof(Guid) || type == typeof(byte[]);
+			|| type == typeof(TimeSpan) || type == typeof(Guid) || type == typeof(byte[])
+			|| type.FullName is "System.DateOnly" or "System.TimeOnly";
 	}
 
 	// A dictionary or a dynamic object has no properties to set: it would be built as one empty row. Any of the interfaces that make a type one counts, the closed generic ones through the type's interface list.

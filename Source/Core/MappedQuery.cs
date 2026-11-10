@@ -12,7 +12,8 @@ public static partial class CoreExtensions
 	/// <para>
 	/// A type with a public parameterless constructor is built with <c>new T()</c>, and its public settable properties (<c>init</c> and <c>required</c> ones too) are set from the columns.
 	/// Any other type is built through its one public constructor (a positional record, a record struct, a class with one constructor), and the properties the constructor does not cover are set afterwards.
-	/// A <c>required</c> property needs a column. A <typeparamref name="T"/> that cannot be mapped (an interface, an abstract class, a single value such as <see cref="int"/>, a type with two or more public constructors and none without parameters)
+	/// A <c>required</c> property needs a column. A single value such as <see cref="int"/> (a primitive, an enum, <see cref="string"/>, <see cref="decimal"/>, a date or time, <see cref="Guid"/>, <c>byte[]</c> or a <see cref="Nullable{T}"/> of one) is read from the first column of each row, converted as a property of that type is; a NULL is <c>default</c> for a non-nullable value type, so declare <c>int?</c> to tell NULL from 0.
+	/// A <typeparamref name="T"/> that cannot be mapped (an interface, an abstract class, a type with two or more public constructors and none without parameters)
 	/// throws <see cref="InvalidOperationException"/> when the map is built or <see cref="RowMap{T}.Default"/> is read, which the overloads without a <see cref="RowMap{T}"/> do at the call.
 	/// See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#records-and-constructors">Records and constructors</see>.
 	/// </para>
@@ -69,7 +70,15 @@ public static partial class CoreExtensions
 	[OverloadResolutionPriority(4)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command)
-		=> Map(command, RowMap<T>.Default);
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		// A single value such as int is read from the first column; any other T maps by column name.
+		return FirstColumn<T>.Instance is { } firstColumn
+			? new MappedQuery<T>(new MappedQueryCore<T>(command, firstColumn, 0, -1, false))
+			: Map(command, RowMap<T>.Default);
+	}
 
 	/// <summary>
 	/// Locks in a custom projection and returns a deferred <see cref="MappedQuery{T}"/>. Nothing runs until
