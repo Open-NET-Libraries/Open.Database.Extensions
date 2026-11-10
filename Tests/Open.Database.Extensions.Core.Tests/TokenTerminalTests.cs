@@ -59,9 +59,9 @@ public static class TokenTerminalTests
 			case TokenTerminal.ReaderFuncValueTask: await cmd.ExecuteReaderAsync(static r => new ValueTask(), CommandBehavior.Default, token).ConfigureAwait(false); break;
 			case TokenTerminal.ReaderFuncValueTaskT: await cmd.ExecuteReaderAsync(static r => new ValueTask<int>(1), CommandBehavior.Default, token).ConfigureAwait(false); break;
 			case TokenTerminal.ReaderActionToken: await cmd.ExecuteReaderAsync(static r => { }, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => 1, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTaskToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => new ValueTask(), token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTaskTToken: await cmd.ExecuteReaderAsync(static (DbDataReader r) => new ValueTask<int>(1), token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncToken: await cmd.ExecuteReaderAsync(static r => 1, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTaskToken: await cmd.ExecuteReaderAsync(static r => new ValueTask(), token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTaskTToken: await cmd.ExecuteReaderAsync(static r => new ValueTask<int>(1), token).ConfigureAwait(false); break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal));
 		}
 	}
@@ -176,8 +176,10 @@ public static class TokenTerminalTests
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
 		var rig = new TokenRig();
-		Assert.Throws<OperationCanceledException>(() => Make(rig).ExecuteReturnAsync(cts.Token).AsTask());
-		Assert.Throws<OperationCanceledException>(() => Make(rig).UseCancellationToken(cts.Token).ExecuteReturnAsync().AsTask());
+#pragma warning disable CA2012 // The call throws before it returns a ValueTask.
+		Assert.Throws<OperationCanceledException>(() => { _ = Make(rig).ExecuteReturnAsync(cts.Token); });
+		Assert.Throws<OperationCanceledException>(() => { _ = Make(rig).UseCancellationToken(cts.Token).ExecuteReturnAsync(); });
+#pragma warning restore CA2012
 		Assert.Empty(rig.Log);
 	}
 
@@ -231,11 +233,11 @@ public static class TokenTerminalTests
 		await cmd.ExecuteReturnAsync<int>(ct);
 
 		// the reader terminals with 1, 2, 3 and 4 arguments, lambdas and static lambdas
-		await cmd.ExecuteReaderAsync((DbDataReader r) => { });
-		await cmd.ExecuteReaderAsync((DbDataReader r) => { }, behavior);
-		await cmd.ExecuteReaderAsync((DbDataReader r) => { }, ct);
-		await cmd.ExecuteReaderAsync((DbDataReader r) => { }, behavior, ct);
-		await cmd.ExecuteReaderAsync((DbDataReader r) => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
+		await cmd.ExecuteReaderAsync(r => { });
+		await cmd.ExecuteReaderAsync(r => { }, behavior);
+		await cmd.ExecuteReaderAsync(r => { }, ct);
+		await cmd.ExecuteReaderAsync(r => { }, behavior, ct);
+		await cmd.ExecuteReaderAsync(r => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
 		await cmd.ExecuteReaderAsync((DbDataReader r) => { }, 0); // an int still binds the behavior
 		Assert.Equal(1, await cmd.ExecuteReaderAsync((DbDataReader r) => 1));
 		Assert.Equal(1, await cmd.ExecuteReaderAsync((DbDataReader r) => 1, ct));
