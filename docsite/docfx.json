@@ -53,8 +53,8 @@
     "output": "_site",
     "template": [ "default", "modern", "templates/custom" ],
     "globalMetadata": {
-      "_appName": "Open.Database.Extensions",
-      "_appTitle": "Open.Database.Extensions",
+      "_appName": "Open.Database.Extensions (ODX)",
+      "_appTitle": "Open.Database.Extensions (ODX)",
       "_appFooter": "<span>Open.Database.Extensions &middot; MIT license &middot; built from <code>master</code> by GitHub Actions</span>",
       "_appLogoPath": "images/logo.png",
       "_appFaviconPath": "images/favicon.png",
