@@ -184,7 +184,8 @@ public static class MappedViewParityTests
 		static FakeDbCommand Cmd()
 			=> new(new FakeDbConnection(), () => Reader(Rows(2)));
 		RowMap<Person> map = new(
-			new KeyValuePair<string, string?>(nameof(Person.Note), "Name"));
+			new KeyValuePair<string, string?>(nameof(Person.Note), "Name"),
+			new KeyValuePair<string, string?>(nameof(Person.Name), null));
 
 		Assert.Equal([1, 2], Rd().Map(r => r.GetInt32(0)).ToList());
 		Assert.Equal([1, 2], Cmd().Map(r => r.GetInt32(0)).ToList());
@@ -194,9 +195,9 @@ public static class MappedViewParityTests
 		Assert.Equal("n1", Cmd().Map(map).FirstOrDefault()!.Note);
 		Assert.Equal(
 			"n2",
-			Rd().Map<Person>(new KeyValuePair<string, string?>("Note", "Name"))
+			Rd().Map<Person>(new KeyValuePair<string, string?>("Note", null))
 				.Skip(1)
-				.FirstOrDefault()!.Note);
+				.FirstOrDefault()!.Name);
 		Assert.Equal(
 			"n1",
 			Cmd().Map<Person>(

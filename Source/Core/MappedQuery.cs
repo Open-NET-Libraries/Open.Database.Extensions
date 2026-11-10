@@ -145,7 +145,6 @@ readonly struct MappedQueryCore<T>
 	{
 		get => field ?? throw new InvalidOperationException(
 			"This query was not created by Map<T>(); a default value cannot be used.");
-		init;
 	}
 
 	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.

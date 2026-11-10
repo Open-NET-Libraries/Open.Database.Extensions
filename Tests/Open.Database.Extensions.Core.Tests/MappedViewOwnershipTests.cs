@@ -59,6 +59,11 @@ public static class MappedViewOwnershipTests
 			"ToList", "ToArray", "FirstOrDefault", "SingleOrDefault",
 			"ToDictionary", "ToHashSet", "Read", "Skip", "Take"];
 
+	// SingleOrDefault throws on a second row, as on a MappedQuery,
+	// so it reads a one-row set.
+	static object?[][] RowsFor(string terminal)
+		=> Rows(terminal == "SingleOrDefault" ? 1 : 3);
+
 	static void Sync(MappedReader<Row> q, string terminal)
 	{
 		switch (terminal)
@@ -104,7 +109,7 @@ public static class MappedViewOwnershipTests
 	public static void TheReaderView_NeverCallsNextResultCloseOrDispose(
 		string terminal)
 	{
-		using var reader = new CountingReader(Rows(3));
+		using var reader = new CountingReader(RowsFor(terminal));
 		Sync(reader.Map<Row>(), terminal);
 		reader.AssertUntouched();
 	}
@@ -113,7 +118,7 @@ public static class MappedViewOwnershipTests
 	public static async Task TheReaderView_NeverCallsNextResultCloseOrDispose_Async(
 		string terminal)
 	{
-		using var reader = new CountingReader(Rows(3));
+		using var reader = new CountingReader(RowsFor(terminal));
 		await Async(reader.Map<Row>(), terminal);
 		reader.AssertUntouched();
 	}
