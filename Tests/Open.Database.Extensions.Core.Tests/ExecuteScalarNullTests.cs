@@ -253,11 +253,13 @@ public static class ExecuteScalarNullTests
 	public static async Task ExecuteScalarAsync_Transform_NullableCast_GivesNullForNullAndTheValueForAValue()
 	{
 		foreach (object? none in NoValue)
-			Assert.Null(
-				await Async(none)
-					.ExecuteScalarAsync<int?>(
-						o => (int?)o,
-						cancellationToken: TestContext.Current.CancellationToken));
+		{
+				Assert.Null(
+					await Async(none)
+						.ExecuteScalarAsync<int?>(
+							o => (int?)o,
+							cancellationToken: TestContext.Current.CancellationToken));
+		}
 
 		Assert.Equal(
 			42,
@@ -315,11 +317,13 @@ public static class ExecuteScalarNullTests
 	public static async Task ExecuteScalarAsync_TaskTransform_NullableCast_GivesNullForNullAndTheValueForAValue()
 	{
 		foreach (object? none in NoValue)
-			Assert.Null(
-				await Async(none)
-					.ExecuteScalarAsync<int?>(
-						o => new ValueTask<int?>((int?)o),
-						cancellationToken: TestContext.Current.CancellationToken));
+		{
+				Assert.Null(
+					await Async(none)
+						.ExecuteScalarAsync<int?>(
+							o => new ValueTask<int?>((int?)o),
+							cancellationToken: TestContext.Current.CancellationToken));
+		}
 
 		Assert.Equal(
 			42,
