@@ -197,8 +197,10 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 			using SqlCommand command = ProcedureNamesCommand(connection, procedure);
 			using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 #else
-			await using SqlCommand command = ProcedureNamesCommand(connection, procedure);
-			await using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+			SqlCommand command = ProcedureNamesCommand(connection, procedure);
+			await using var commandDisposal = command.ConfigureAwait(false);
+			SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+			await using var readerDisposal = reader.ConfigureAwait(false);
 #endif
 			return await ReadNamesAsync(reader, cancellationToken).ConfigureAwait(false);
 		}
