@@ -39,54 +39,81 @@ public static class IExecuteReaderExtensions
 			behavior | CommandBehavior.SingleResult);
 	}
 
-	/// <inheritdoc cref="IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"/>
-	public static ValueTask IterateReaderAsync(this IExecuteReaderAsync command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>Iterates a reader on a command with a handler function.</summary>
+	/// <param name="command">The command to iterate.</param>
+	/// <param name="handler">The handler function for each IDataRecord.</param>
+	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional <paramref name="behavior"/>: pass it by name (<c>cancellationToken: token</c>) or pass the behavior too.</param>
+	public static ValueTask IterateReaderAsync(this IExecuteReaderAsync command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReaderAsync(
-			reader =>
-			{
-				if (reader is DbDataReader r)
-					return r.ForEachAsync(handler, command.UseAsyncRead, command.CancellationToken);
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, handler, behavior), static (s, token)
+			=> ValueTaskHelpers.Discard(s.command.ExecuteReaderAsync(
+				(s.handler, s.command.UseAsyncRead, token),
+				static async (reader, x) =>
+				{
+					if (reader is DbDataReader r)
+						await r.ForEachAsync(x.handler, x.UseAsyncRead, x.token).ConfigureAwait(false);
+					else
+						reader.ForEach(x.handler, true, x.token);
 
-				reader.ForEach(handler, true, command.CancellationToken);
-				return new ValueTask();
-			},
-			behavior | CommandBehavior.SingleResult);
+					return false;
+				},
+				s.behavior | CommandBehavior.SingleResult,
+				token)));
 	}
 
-	/// <inheritdoc cref="IterateReaderWhile(IExecuteReader, Func{IDataRecord, bool}, CommandBehavior)"/>
-	public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>Iterates a reader on a command while the handler function returns true.</summary>
+	/// <param name="command">The command to iterate.</param>
+	/// <param name="handler">The handler function for each IDataRecord.</param>
+	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional <paramref name="behavior"/>: pass it by name (<c>cancellationToken: token</c>) or pass the behavior too.</param>
+	public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReaderAsync(
-			reader =>
-			{
-				if (reader is DbDataReader r)
-					return r.IterateWhileAsync(handler, command.UseAsyncRead, command.CancellationToken);
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, handler, behavior), static (s, token)
+			=> ValueTaskHelpers.Discard(s.command.ExecuteReaderAsync(
+				(s.handler, s.command.UseAsyncRead, token),
+				static async (reader, x) =>
+				{
+					if (reader is DbDataReader r)
+						await r.IterateWhileAsync(x.handler, x.UseAsyncRead, x.token).ConfigureAwait(false);
+					else
+						reader.IterateWhile(x.handler, true, x.token);
 
-				reader.IterateWhile(handler, true, command.CancellationToken);
-				return new ValueTask();
-			},
-			behavior | CommandBehavior.SingleResult);
+					return false;
+				},
+				s.behavior | CommandBehavior.SingleResult,
+				token)));
 	}
 
-	/// <inheritdoc cref="IterateReaderWhile(IExecuteReader, Func{IDataRecord, bool}, CommandBehavior)"/>
-	public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, ValueTask<bool>> handler, CommandBehavior behavior = CommandBehavior.Default)
+	/// <summary>Iterates a reader on a command while the handler function returns true.</summary>
+	/// <param name="command">The command to iterate.</param>
+	/// <param name="handler">The handler function for each IDataRecord.</param>
+	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional <paramref name="behavior"/>: pass it by name (<c>cancellationToken: token</c>) or pass the behavior too.</param>
+	public static ValueTask IterateReaderWhileAsync(this IExecuteReaderAsync command, Func<IDataRecord, ValueTask<bool>> handler, CommandBehavior behavior = CommandBehavior.Default, CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReaderAsync(
-			reader => reader.IterateWhileAsync(handler, command.CancellationToken),
-			behavior | CommandBehavior.SingleResult);
+		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, handler, behavior), static (s, token)
+			=> ValueTaskHelpers.Discard(s.command.ExecuteReaderAsync(
+				(s.handler, token),
+				static async (reader, x) =>
+				{
+					await reader.IterateWhileAsync(x.handler, x.token).ConfigureAwait(false);
+					return false;
+				},
+				s.behavior | CommandBehavior.SingleResult,
+				token)));
 	}
 
 	/// <summary>
