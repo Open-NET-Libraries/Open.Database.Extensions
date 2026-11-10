@@ -376,7 +376,9 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 			if (connection is not null
 				&& (before & (ConnectionState.Open | ConnectionState.Broken))
 					!= ConnectionState.Open)
+			{
 				await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+			}
 
 			CommandBehavior b = before == ConnectionState.Closed
 				? behavior | CommandBehavior.CloseConnection

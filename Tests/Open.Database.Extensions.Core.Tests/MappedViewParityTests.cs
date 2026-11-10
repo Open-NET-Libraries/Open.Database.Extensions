@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Data.Common;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
@@ -35,8 +36,12 @@ public static class MappedViewParityTests
 		{
 			TheoryData<string, string> data = [];
 			foreach (string set in Sets)
+			{
 				foreach (string terminal in Terminals)
+				{
 					data.Add(set, terminal);
+				}
+			}
 
 			return data;
 		}
@@ -158,11 +163,12 @@ public static class MappedViewParityTests
 		ImmutableArray<ColumnDef> columns = [("V", typeof(string))];
 		object?[][] rows = [["a"], [null]];
 
+		string?[] expected = ["a", null];
 		Assert.Equal(
-			["a", null],
+			expected,
 			await TypedReader.Create(columns, rows).Map<string>().ToListAsync(Ct));
 		Assert.Equal(
-			["a", null],
+			expected,
 			await new FakeDbCommand(
 				new FakeDbConnection(),
 				() => TypedReader.Create(columns, rows))
@@ -250,24 +256,26 @@ public static class MappedViewParityTests
 			Assert.Contains("Map<T>()", ex.Message);
 		}
 
-		static void Fails(Func<ValueTask> use)
+		static void FailsPlain(Func<ValueTask> use)
 		{
 			InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
 				() => use().AsTask().GetAwaiter().GetResult());
 			Assert.Contains("Map<T>()", ex.Message);
 		}
 
+		static ValueTask H1(IAsyncEnumerable<int> items, CancellationToken token)
+			=> default;
+
+		static ValueTask<int> H2(IAsyncEnumerable<int> items, CancellationToken token)
+			=> new(0);
+
 		static void All<TQuery>(TQuery q, Action<TQuery> more)
 			where TQuery : IMappedQuery<int>
 		{
 			Throws(() => q.Read(_ => { }));
 			Throws(() => q.Read(items => items.Count()));
-			Func<IAsyncEnumerable<int>, CancellationToken, ValueTask> h1
-				= (_, _) => default;
-			Func<IAsyncEnumerable<int>, CancellationToken, ValueTask<int>> h2
-				= (_, _) => new ValueTask<int>(0);
-			Fails(() => q.ReadAsync(h1, default));
-			Fails(() => q.ReadAsync(h2, default));
+			FailsPlain(() => q.ReadAsync(H1, default));
+			Fails(() => q.ReadAsync(H2, default));
 			more(q);
 		}
 
@@ -345,8 +353,10 @@ public static class MappedViewParityTests
 			Throws(() => q.SingleResult());
 		});
 
-		Assert.Equal(default(MappedReader<int>), default(MappedReader<int>));
-		Assert.Equal(default(MappedCommand<int>), default(MappedCommand<int>));
+		MappedReader<int> reader = default;
+		MappedCommand<int> command = default;
+		Assert.Equal(reader, new MappedReader<int>());
+		Assert.Equal(command, new MappedCommand<int>());
 	}
 
 	// No map, in every spelling, reads exactly as Map<T>() does.

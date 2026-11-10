@@ -131,20 +131,22 @@ readonly struct MappedQueryCore<T>
 	// A caller-supplied selector may read in any order, so it runs with the default access mode.
 	const CommandBehavior GeneratedMapping = CommandBehavior.SingleResult | CommandBehavior.SequentialAccess;
 
-	readonly IExecuteReader _command;
 	readonly IRowSource<T> _source;
 	readonly int _skip;
 	readonly int _take; // -1 == unbounded.
 	readonly bool _singleResult; // SingleResult() was called: stop after the first result set and do not read through the rest.
 
 	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take, bool singleResult)
-	{ _command = command; _source = source; _skip = skip; _take = take; _singleResult = singleResult; }
+	{ Command = command; _source = source; _skip = skip; _take = take; _singleResult = singleResult; }
 
 	// A default struct has no command: any use of it says so,
 	// the same way for every type of the family.
 	IExecuteReader Command
-		=> _command ?? throw new InvalidOperationException(
+	{
+		get => field ?? throw new InvalidOperationException(
 			"This query was not created by Map<T>(); a default value cannot be used.");
+		init;
+	}
 
 	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.
 	CommandBehavior Behavior => _singleResult

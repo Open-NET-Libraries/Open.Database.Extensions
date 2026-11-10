@@ -257,8 +257,10 @@ public static class MappedViewOwnershipTests
 	[Fact]
 	public static void ACommandWithoutAReaderThatIsADbCommand_RunsSynchronously()
 	{
-		var probe = new ConnectionProbe();
-		probe.ReaderFactory = () => FakeReader.Create(["Id", "Name"], [1, "a"]);
+		var probe = new ConnectionProbe
+		{
+			ReaderFactory = () => FakeReader.Create(["Id", "Name"], [1, "a"]),
+		};
 
 		Assert.Single(probe.Command.Map<Row>().ToList());
 
@@ -271,8 +273,10 @@ public static class MappedViewOwnershipTests
 	[Fact]
 	public static async Task ACommandThatIsNotADbCommand_RunsAsyncTerminalsToo()
 	{
-		var probe = new ConnectionProbe(ConnectionState.Open);
-		probe.ReaderFactory = () => FakeReader.Create(["Id", "Name"], [1, "a"]);
+		var probe = new ConnectionProbe(ConnectionState.Open)
+		{
+			ReaderFactory = () => FakeReader.Create(["Id", "Name"], [1, "a"]),
+		};
 
 		Assert.Single(await probe.Command.Map<Row>().ToListAsync(Ct));
 
