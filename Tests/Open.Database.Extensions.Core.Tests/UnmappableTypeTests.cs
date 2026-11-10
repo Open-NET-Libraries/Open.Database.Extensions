@@ -163,7 +163,10 @@ public static class UnmappableTypeTests
 		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => RowMap<T>.From([])).Message);
 
 		var command = new FakeExecuteReader(["Id"]);
-		if (mapReadsTheFirstColumn) _ = command.Map<T>(); // a single value is read from the first column: Map<T>() works, and runs nothing yet
+		if (mapReadsTheFirstColumn)
+		{
+			_ = command.Map<T>(); // a single value is read from the first column: Map<T>() works, and runs nothing yet
+		}
 		else
 		{
 			Assert.Equal(
