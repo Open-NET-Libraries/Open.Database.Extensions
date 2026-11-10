@@ -799,7 +799,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			try
 			{
 				ConnectionState prior = await OpenIfNeededAsync(single, cancellationToken).ConfigureAwait(false);
-				if (_hasDerivedParams) await ResolveDerivedParamsAsync(single,cancellationToken).ConfigureAwait(false);
+				if (_hasDerivedParams) await ResolveDerivedParamsAsync(single, cancellationToken).ConfigureAwait(false);
 				using TCommand cmd = PrepareCommand(single);
 				return await func(cmd, prior, state).ConfigureAwait(false);
 			}
@@ -814,7 +814,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		try
 		{
 			ConnectionState prior = await OpenIfNeededAsync(conn, cancellationToken).ConfigureAwait(false);
-			if (_hasDerivedParams) await ResolveDerivedParamsAsync(conn,cancellationToken).ConfigureAwait(false);
+			if (_hasDerivedParams) await ResolveDerivedParamsAsync(conn, cancellationToken).ConfigureAwait(false);
 			using TCommand cmd = PrepareCommand(conn);
 			return await func(cmd, prior, state).ConfigureAwait(false);
 		}
