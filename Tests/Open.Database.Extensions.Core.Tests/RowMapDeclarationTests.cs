@@ -279,7 +279,9 @@ public static class RowMapDeclarationTests
 
 		AssertRenamed(Reader().Results(declared).ToList());
 		AssertRenamed(Reader().Results<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")]).ToList());
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		AssertRenamed(RowMapTests.Cmd(RowMapTests.Renamed, 2).Results<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")]).ToList());
+		#pragma warning restore CS0618
 		AssertRenamed(Reader().Results(new RowMap<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")])).ToList());
 		AssertRenamed(Reader().Results(new RowMap<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList());
 		Assert.Equal(7, Assert.Single(FakeReader.Create(["Id"], [[7]]).Results<Item>([]).ToList()).Id);

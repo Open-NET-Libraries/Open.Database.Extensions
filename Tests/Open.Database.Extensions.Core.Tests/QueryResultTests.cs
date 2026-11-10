@@ -57,10 +57,14 @@ public static class QueryResultTests
 	[Fact]
 	public static void QueryResultCollection_NullResultIsEmpty_AndEnumeratesResult()
 	{
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Empty(new QueryResultCollection<int, List<int>>(
+		#pragma warning restore CS0618
 			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, null!));
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var collection = new QueryResultCollection<int>(
+		#pragma warning restore CS0618
 			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, Result);
 		Assert.Equal([1, 2, 3], collection.ToList());
 	}
@@ -88,7 +92,9 @@ public static class QueryResultTests
 				[2, DBNull.Value],
 			});
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var dictionaries = result.AsMappedDictionaries().ToList();
+		#pragma warning restore CS0618
 
 		Assert.Equal(2, dictionaries.Count);
 		Assert.Equal(1, dictionaries[0]["Id"]);

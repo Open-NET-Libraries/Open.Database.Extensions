@@ -224,7 +224,9 @@ public static class RequiredMemberTests
 		Assert.Null(command.Map<RequiredPost>().FirstOrDefault());
 		Assert.Empty(await command.Map<RequiredPost>().ToListAsync(ct));
 		Assert.Null(await command.Map<RequiredPost>().FirstOrDefaultAsync(ct));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Empty(command.Results<RequiredPost>());
+		#pragma warning restore CS0618
 
 		Assert.Empty(FakeReader.Create(["Id"]).Results<RequiredPost>());
 		Assert.Empty(FakeReader.Create(["Id"]).ResultsBuffered<RequiredPost>());
@@ -245,7 +247,9 @@ public static class RequiredMemberTests
 	{
 		string message = Missing("RequiredPost", "Title", "String", "Title");
 		var result = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>());
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => result.DequeueAs<RequiredPost>()).Message);
+		#pragma warning restore CS0618
 
 		var table = new DataTable();
 		table.Columns.Add("Id", typeof(int));
@@ -253,7 +257,9 @@ public static class RequiredMemberTests
 
 		// With every column present an empty buffer maps to nothing.
 		var complete = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>());
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Empty(complete.DequeueAs<RequiredPost>());
+		#pragma warning restore CS0618
 	}
 
 	// ---- T15: a null column for a required property in a pair cannot be ignored ----
@@ -350,9 +356,13 @@ public static class RequiredMemberTests
 		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new FakeExecuteReader(() => TypedReader.Create(IdOnly, [1])).Map<RequiredPost>().ToListAsync(ct))).Message);
 
 		var result = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>(rows!));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal([1, 2], (await Task.FromResult(result).DequeueAs<RequiredPost>()).Select(p => p.Id));
+		#pragma warning restore CS0618
 		var one = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>([[1]]));
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new ValueTask<QueryResult<Queue<object[]>>>(one).DequeueAs<RequiredPost>())).Message);
+		#pragma warning restore CS0618
 	}
 
 	[Fact]
@@ -578,7 +588,9 @@ public static class RequiredMemberTests
 		var result = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>([[1]]));
 		try
 		{
+			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 			Assert.Single(result.DequeueAs<T>());
+			#pragma warning restore CS0618
 			return null;
 		}
 		catch (ValueMappingException ex)

@@ -20,7 +20,9 @@ public static class CaseInsensitiveMappingTests
 		queue.Enqueue(["Ada"]);
 		var result = new QueryResult<Queue<object[]>>([0], [columnName], queue);
 
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<TransformerResultsTests.Person> people = [.. result.DequeueAs<TransformerResultsTests.Person>()];
+		#pragma warning restore CS0618
 
 		Assert.Equal("Ada", Assert.Single(people).FirstName);
 	}
