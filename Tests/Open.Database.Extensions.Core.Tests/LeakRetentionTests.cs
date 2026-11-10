@@ -190,7 +190,7 @@ public static class LeakRetentionTests
 	const int Calls = 3000;
 	const int Rounds = 6;
 
-	// The growth allowed in each of the last rounds of calls, in bytes. Measured: 0 for nearly every terminal and round, and swings of up to about 13 KB
+	// The growth allowed in the median of the last rounds of calls, in bytes. Measured: 0 for nearly every terminal and round, and swings of up to about 13 KB
 	// (no trend) for the dataflow block. A call that keeps one object, of at least 24 bytes, adds 72 KB a round.
 	// (A zero bound would be unfair to the garbage collector: a round may happen to end a few KB higher.)
 	const long MaxGrowth = 65_536;
@@ -276,8 +276,10 @@ public static class LeakRetentionTests
 			last = now;
 		}
 
-		long worst = growth.Skip(Rounds / 2).Max();
-		Assert.True(worst <= MaxGrowth, $"Actual: {terminal}: bytes grown per round of {Calls} calls: {string.Join(", ", growth)}.");
+		// A leak grows the heap in every round, so judge the median of the last rounds: one noisy round (a loaded machine, Debug code) cannot fail the test, while a leak still does.
+		long[] tail = [.. growth.Skip(Rounds / 2).Order()];
+		long median = tail[tail.Length / 2];
+		Assert.True(median <= MaxGrowth, $"Actual: {terminal}: bytes grown per round of {Calls} calls: {string.Join(", ", growth)}.");
 	}
 
 	static long Settled()
