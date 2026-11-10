@@ -37,7 +37,7 @@ A command needs a connection. A connection factory creates them, and you create 
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-There are two ways to start a command: from the factory, or from a connection you own. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToList()`). In the samples `author` is a variable (`int author = 42;`) and `AddParam(author)` names the parameter `author` after it; `AddParam("author", 42)` names it yourself. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
+There are two ways to start a command: from the factory, or from a connection you own. Both end the same way, with `AddParam` for parameters and a terminal (the call that runs the query, such as `ToListAsync()`). In the samples `author` is a variable (`int author = 42;`) and `AddParam(author)` names the parameter `author` after it; `AddParam("author", 42)` names it yourself. Side by side, row against row ("nothing" marks a step the factory makes unnecessary):
 
 <div class="side-by-side">
 <div>
