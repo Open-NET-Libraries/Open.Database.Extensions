@@ -52,7 +52,7 @@ public static class ConnectionPattern
 		#region ode_list_call
 		// nothing: the factory creates, opens and disposes the connection
 		List<Post> posts = await connectionFactory.Command(ListSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>().ToListAsync(cancellationToken);
 		#endregion
 
@@ -67,7 +67,7 @@ public static class ConnectionPattern
 		#region ode_list_own
 		await using var connection = new SqliteConnection(connectionString);
 		List<Post> posts = await connection.Command(ListSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>().ToListAsync(cancellationToken);
 		#endregion
 
@@ -93,7 +93,7 @@ public static class ConnectionPattern
 		#region ode_first_call
 		// nothing: the factory creates, opens and disposes the connection
 		Post? post = connectionFactory.Command(OneSql)
-			.AddParam(id)
+			.AddParam(id) // name and type inferred from the variable
 			.Map<Post>().FirstOrDefault();
 		#endregion
 
@@ -119,7 +119,7 @@ public static class ConnectionPattern
 		#region ode_scalar_call
 		// nothing: the factory creates, opens and disposes the connection
 		long count = connectionFactory.Command(CountSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalar<long>();
 		#endregion
 
@@ -145,7 +145,7 @@ public static class ConnectionPattern
 		#region ode_nonquery_call
 		// nothing: the factory creates, opens and disposes the connection
 		int updated = connectionFactory.Command(TouchSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteNonQuery();
 		#endregion
 
@@ -227,7 +227,7 @@ public static class ConnectionPattern
 
 		List<Post> posts = await connectionFactory
 			.Command(ListSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 
 
 
@@ -266,7 +266,7 @@ public static class ConnectionPattern
 public class PostService(IDbConnectionFactory<SqliteConnection> connectionFactory)
 {
 	public List<Post> ByAuthor(int author) => connectionFactory.Command(ListSql)
-		.AddParam(author)
+		.AddParam(author) // name and type inferred from the variable
 		.Map<Post>().ToList();
 }
 #endregion

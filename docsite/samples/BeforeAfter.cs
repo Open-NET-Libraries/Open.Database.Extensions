@@ -45,7 +45,7 @@ public static class BeforeAfter
 		#region ode_list_factory
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author order by id")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>()
 			.ToArrayAsync();
 		#endregion
@@ -91,7 +91,7 @@ public static class BeforeAfter
 		#region ode_first_factory
 		Post? post = connectionFactory
 			.Command("select * from posts where id = @id")
-			.AddParam(id)
+			.AddParam(id) // name and type inferred from the variable
 			.Map<Post>()
 			.FirstOrDefault();
 		#endregion
@@ -125,7 +125,7 @@ public static class BeforeAfter
 		#region ode_scalar_factory
 		long count = connectionFactory
 			.Command("select count(*) from posts where author = @author")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalar<long>();
 		#endregion
 
@@ -158,7 +158,7 @@ public static class BeforeAfter
 		#region ode_nonquery
 		int updated = connectionFactory
 			.Command("update posts set views = views + 1 where author = @author")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteNonQuery();
 		#endregion
 

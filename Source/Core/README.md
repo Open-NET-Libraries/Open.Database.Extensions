@@ -23,7 +23,7 @@ int author = 42;
 // The command opens a connection when the terminal runs and disposes it afterwards.
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author order by id")
-    .AddParam(author)
+    .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
     .ToArrayAsync();
 ```

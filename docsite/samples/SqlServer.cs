@@ -15,7 +15,7 @@ public static class SqlServer
 
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>()
 			.ToArrayAsync();
 
@@ -38,7 +38,7 @@ public static class SqlServer
 		// The procedure declares @author and @title_contains. Each argument is matched to a real parameter, so search.TitleContains finds @title_contains.
 		Post[] byArguments = await connectionFactory
 			.StoredProcedure("[dbo].[SearchPosts]")
-			.AddParam(search.Author)
+			.AddParam(search.Author) // name and type inferred from the member
 			.AddParam(search.TitleContains)
 			.Map<Post>()
 			.ToArrayAsync();
@@ -65,7 +65,7 @@ public static class SqlServer
 		// T must be the type the provider returns (a SQL Server procedure returns an int, its RETURN code).
 		int returned = connectionFactory
 			.StoredProcedure("[dbo].[TouchPosts]")
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteReturn<int>();
 
 		// The Async twin.
