@@ -403,6 +403,7 @@ public static class DerivedNameCostTests
 
 	sealed class Keyword
 	{
+		[SuppressMessage("Naming", "IDE1006:Naming Styles", Justification = "The member is named like a keyword on purpose: its name cannot be derived.")]
 		public int @default { get; set; } = 1;
 	}
 
@@ -417,7 +418,7 @@ public static class DerivedNameCostTests
 		{
 			var ex = Assert.Throws<ArgumentException>(() => rig.Run(c => c.AddParams(item)));
 			Assert.Equal("expression", ex.ParamName);
-			Assert.Equal("Cannot derive a parameter name from the expression 'default'." + Environment.NewLine + "(Parameter 'expression')", ex.Message);
+			Assert.Equal("Cannot derive a parameter name from the expression 'default'. (Parameter 'expression')", ex.Message);
 		}
 	}
 
