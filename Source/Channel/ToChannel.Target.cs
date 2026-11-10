@@ -47,12 +47,13 @@ public static partial class ChannelDbExtensions
 	}
 
 	// The token is the one that governs the call, already combined by the public overload: nothing is combined here.
-	private static async ValueTask<long> ToChannelCore<T>(
+	private static async ValueTask<long> ToChannelCore<T, TState>(
 		IExecuteReader command,
 		ChannelWriter<T> writer,
 		bool complete,
 		CancellationToken cancellationToken,
-		Func<IDataReader, CancellationToken, ValueTask<long>> transform)
+		TState state,
+		Func<IDataReader, TState, CancellationToken, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -66,7 +67,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			return await command
-				.ExecuteReaderAsync((transform, cancellationToken), static (reader, s) => s.transform(reader, s.cancellationToken), CommandBehavior.Default, cancellationToken)
+				.ExecuteReaderAsync((transform, state, cancellationToken), static (reader, s) => s.transform(reader, s.state, s.cancellationToken), CommandBehavior.Default, cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -377,12 +378,11 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
-			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token,
-				(reader, t) => reader.ToChannel(s.target, false, t)));
+			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token, s,
+				static (reader, x, t) => reader.ToChannel(x.target, false, t)));
 	}
 
 	/// <summary>
@@ -408,12 +408,11 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, arrayPool),
-			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token,
-				(reader, t) => reader.ToChannel(s.target, false, s.arrayPool, t)));
+			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token, s,
+				static (reader, x, t) => reader.ToChannel(x.target, false, x.arrayPool, t)));
 	}
 
 	/// <summary>
@@ -440,12 +439,11 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, transform),
-			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token,
-				(reader, t) => reader.ToChannel(s.target, false, s.transform, t)));
+			static (s, token) => ToChannelCore(s.command, s.target, s.complete, token, s,
+				static (reader, x, t) => reader.ToChannel(x.target, false, x.transform, t)));
 	}
 
 	/// <summary>
@@ -470,7 +468,6 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
@@ -505,7 +502,6 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, map),
@@ -550,12 +546,13 @@ public static partial class ChannelDbExtensions
 	}
 
 	// The token is the one that governs the call, already combined by the public overload: nothing is combined here.
-	private static async ValueTask<long> ToChannelAsyncCore<T>(
+	private static async ValueTask<long> ToChannelAsyncCore<T, TState>(
 		IExecuteReaderAsync command,
 		ChannelWriter<T> writer,
 		bool complete,
 		CancellationToken cancellationToken,
-		Func<IDataReader, CancellationToken, ValueTask<long>> transform)
+		TState state,
+		Func<IDataReader, TState, CancellationToken, ValueTask<long>> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -569,7 +566,7 @@ public static partial class ChannelDbExtensions
 		try
 		{
 			return await command
-				.ExecuteReaderAsync((transform, cancellationToken), static (reader, s) => s.transform(reader, s.cancellationToken), CommandBehavior.Default, cancellationToken)
+				.ExecuteReaderAsync((transform, state, cancellationToken), static (reader, s) => s.transform(reader, s.state, s.cancellationToken), CommandBehavior.Default, cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (Exception ex)
@@ -732,14 +729,13 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
-			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token,
-				(reader, t) => s.command.UseAsyncRead && reader is DbDataReader r
-					? r.ToChannelAsync(s.target, false, t)
-					: reader.ToChannel(s.target, false, t)));
+			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token, s,
+				static (reader, x, t) => x.command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(x.target, false, t)
+					: reader.ToChannel(x.target, false, t)));
 	}
 
 	/// <summary>
@@ -765,14 +761,13 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, arrayPool),
-			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token,
-				(reader, t) => s.command.UseAsyncRead && reader is DbDataReader r
-					? r.ToChannelAsync(s.target, false, s.arrayPool, t)
-					: reader.ToChannel(s.target, false, s.arrayPool, t)));
+			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token, s,
+				static (reader, x, t) => x.command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(x.target, false, x.arrayPool, t)
+					: reader.ToChannel(x.target, false, x.arrayPool, t)));
 	}
 
 	/// <summary>
@@ -786,14 +781,13 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, transform),
-			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token,
-				(reader, t) => s.command.UseAsyncRead && reader is DbDataReader r
-					? r.ToChannelAsync(s.target, false, s.transform, t)
-					: reader.ToChannel(s.target, false, s.transform, t)));
+			static (s, token) => ToChannelAsyncCore(s.command, s.target, s.complete, token, s,
+				static (reader, x, t) => x.command.UseAsyncRead && reader is DbDataReader r
+					? r.ToChannelAsync(x.target, false, x.transform, t)
+					: reader.ToChannel(x.target, false, x.transform, t)));
 	}
 
 	/// <summary>
@@ -806,7 +800,6 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete),
@@ -824,7 +817,6 @@ public static partial class ChannelDbExtensions
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
-		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
 		return CancellationTokens.RunAsync(command.CancellationToken, cancellationToken, (command, target, complete, map),
@@ -904,7 +896,7 @@ public static partial class ChannelDbExtensions
 		Channel.Transformer<T> mapper = CreateMapper(map, target, complete);
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
-			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Token, (reader, _) => pipeline.Read(reader)))
+			.RunAsync(() => ToChannelCore(command, pipeline.Buffer, true, pipeline.Token, pipeline, static (reader, p, _) => p.Read(reader)))
 			.ConfigureAwait(false);
 	}
 
@@ -951,10 +943,10 @@ public static partial class ChannelDbExtensions
 		Channel.Transformer<T>.Pipeline pipeline = mapper.CreatePipeline(target, complete, cancellationToken);
 		return await pipeline
 			.RunAsync(() => ToChannelAsyncCore(
-				command, pipeline.Buffer, true, pipeline.Token,
-				(reader, _) => command.UseAsyncRead && reader is DbDataReader r
-					? pipeline.ReadAsync(r)
-					: pipeline.Read(reader)))
+				command, pipeline.Buffer, true, pipeline.Token, (command, pipeline),
+				static (reader, x, _) => x.command.UseAsyncRead && reader is DbDataReader r
+					? x.pipeline.ReadAsync(r)
+					: x.pipeline.Read(reader)))
 			.ConfigureAwait(false);
 	}
 }
