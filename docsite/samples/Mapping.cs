@@ -274,6 +274,38 @@ public static class Mapping
 		return (first, single);
 	}
 
+	public static async Task<Post[]> MapReaderView(
+		SqliteConnection connection)
+	{
+		#region map_reader_view
+		// The reader is yours: Map never closes or disposes it,
+		// and never moves it to the next result set.
+		using SqliteCommand command = connection.CreateCommand();
+		command.CommandText = "select * from posts order by id";
+		using SqliteDataReader reader = await command.ExecuteReaderAsync();
+
+		Post[] posts = await reader.Map<Post>().ToArrayAsync();
+		#endregion
+
+		return posts;
+	}
+
+	public static async Task<Post[]> MapCommandView(
+		SqliteConnection connection)
+	{
+		#region map_command_view
+		// The connection is opened if it is closed,
+		// and closed again only if this call opened it.
+		// The command is yours and is never disposed here.
+		using SqliteCommand command = connection.CreateCommand();
+		command.CommandText = "select * from posts where author = 42 order by id";
+
+		Post[] posts = await command.Map<Post>().ToArrayAsync();
+		#endregion
+
+		return posts;
+	}
+
 	public static string[] MapSelector(SqliteConnection connection)
 	{
 		#region map_selector

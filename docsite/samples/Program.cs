@@ -68,6 +68,16 @@ Check(declarationForms[0].Select(pair => pair.Key).SequenceEqual([nameof(Person.
 Check(PersonMaps.PersonNamesOnlyMap.Count() == 3 && PersonMaps.PersonNamesOnlyMap.Single(pair => pair.Value is null).Key == nameof(Person.LastName), "an ignored property is enumerated with a null column");
 Person[] snake = Mapping.MapSnakeCase(connection);
 Check(snake[0] is { Id: 0, FirstName: "Ada", LastName: "Lovelace" }, "snake_case columns feed PascalCase properties with no map");
+Post[] readerView = await Mapping.MapReaderView(connection);
+Check(readerView.Length == 5 && readerView[0].Title == "Post 1", "reader.Map<T>() maps the rows of the caller's reader");
+Post[] commandView = await Mapping.MapCommandView(connection);
+Check(commandView.Length == 3 && connection.State == ConnectionState.Open, "command.Map<T>() on an open connection leaves it open");
+using (SqliteConnection closedConnection = factory.Create())
+{
+	Check(closedConnection.State == ConnectionState.Closed, "a new connection is closed");
+	Post[] viaClosed = await Mapping.MapCommandView(closedConnection);
+	Check(viaClosed.Length == 3 && closedConnection.State == ConnectionState.Closed, "command.Map<T>() opens a closed connection and closes it again");
+}
 Person? exactFirst = connection.Command("select 'Alan' as first_name, 'Ada' as FirstName").Map<Person>().FirstOrDefault();
 Person? exactSecond = connection.Command("select 'Ada' as FirstName, 'Alan' as first_name").Map<Person>().FirstOrDefault();
 Check(exactFirst?.FirstName == "Ada" && exactSecond?.FirstName == "Ada", "an exact column beats an underscore match, in either column order");

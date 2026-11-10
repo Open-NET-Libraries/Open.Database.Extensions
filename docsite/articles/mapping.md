@@ -232,6 +232,18 @@ Every terminal has an `Async` twin that takes a `CancellationToken`:
 
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_async)]
 
+## Mapping a reader or a command you already have
+
+`Map<T>()` also works on a plain `IDataReader` and on a plain `IDbCommand`. `reader.Map<T>()` returns a `MappedReader<T>` and `command.Map<T>()` returns a `MappedCommand<T>`. Both have the same overloads as the expressive command's `Map` (no argument, a `RowMap<T>`, pairs, a selector) and the same terminals, synchronous and asynchronous, including `Skip`, `Take` and `Read`. The rules for mapping `T` are the ones above.
+
+On a reader, the reader is yours. A terminal never opens, closes or disposes it, and never calls `NextResult` on it: it reads the current result set from where the reader stands and stops. To map the next result set, call `NextResult` yourself and map again.
+
+[!code-csharp[](../samples/Mapping.cs#map_reader_view)]
+
+On a command, the terminal opens the connection only if it is closed, and closes it again (`Close`, not `Dispose`) only if it opened it, as an expressive command does. Like a `Map` on an expressive command, it reads through the later result sets, so a failure in a later statement is thrown, and `.SingleResult()` turns that off. The command is yours and is never disposed. The asynchronous terminals open and execute asynchronously when the command is a `DbCommand`.
+
+[!code-csharp[](../samples/Mapping.cs#map_command_view)]
+
 ## Taking over: `Map(selector)`
 
 When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function for each row. It has the same deferred terminals:
