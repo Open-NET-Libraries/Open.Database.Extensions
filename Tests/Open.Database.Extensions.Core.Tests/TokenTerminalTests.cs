@@ -622,9 +622,9 @@ public static class TokenTerminalTests
 		long callOnly = Measure(default, cts.Token);
 		long commandOnly = Measure(cts.Token, default);
 		long same = Measure(cts.Token, cts.Token);
-		Assert.True(none <= commandOnly + Slack, $"{what}: no token allocates {none}, one command token {commandOnly}");
-		Assert.True(callOnly <= commandOnly + Slack, $"{what}: one call token allocates {callOnly}, one command token {commandOnly}");
-		Assert.True(same <= commandOnly + Slack, $"{what}: the same token twice allocates {same}, one command token {commandOnly}");
+		Assert.True(none <= commandOnly + Slack, $"{what}: no token allocates {none}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
+		Assert.True(callOnly <= commandOnly + Slack, $"{what}: one call token allocates {callOnly}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
+		Assert.True(same <= commandOnly + Slack, $"{what}: the same token twice allocates {same}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
 	}
 
 	[Theory]
