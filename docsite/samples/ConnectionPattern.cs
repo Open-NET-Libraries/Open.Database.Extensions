@@ -31,40 +31,44 @@ public static class ConnectionPattern
 		return connectionFactory;
 	}
 
-	public static List<Post> DapperList(string connectionString)
+	public static async Task<List<Post>> DapperList(string connectionString)
 	{
 		const int author = 42;
 		#region dapper_list_call
-		using var connection = new SqliteConnection(connectionString);
-		List<Post> posts = connection.Query<Post>(ListSql,
-			new { author })
+		await using var connection = new SqliteConnection(connectionString);
+		List<Post> posts = (await connection.QueryAsync<Post>(ListSql,
+			new { author }))
 			.AsList();
 		#endregion
 
 		return posts;
 	}
 
-	public static List<Post> OdeList(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<List<Post>> OdeList(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_list_call
 		// nothing: the factory creates, opens and disposes the connection
-		List<Post> posts = connectionFactory.Command(ListSql)
-			.AddParam(author)
-			.Map<Post>().ToList();
+		List<Post> posts = await connectionFactory.Command(ListSql)
+			.AddParam(author) // name and type inferred from the variable
+			.Map<Post>().ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static List<Post> OdeListOwn(string connectionString)
+	public static async Task<List<Post>> OdeListOwn(
+		string connectionString,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_list_own
-		using var connection = new SqliteConnection(connectionString);
-		List<Post> posts = connection.Command(ListSql)
-			.AddParam(author)
-			.Map<Post>().ToList();
+		await using var connection = new SqliteConnection(connectionString);
+		List<Post> posts = await connection.Command(ListSql)
+			.AddParam(author) // name and type inferred from the variable
+			.Map<Post>().ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -89,7 +93,7 @@ public static class ConnectionPattern
 		#region ode_first_call
 		// nothing: the factory creates, opens and disposes the connection
 		Post? post = connectionFactory.Command(OneSql)
-			.AddParam(id)
+			.AddParam(id) // name and type inferred from the variable
 			.Map<Post>().FirstOrDefault();
 		#endregion
 
@@ -115,7 +119,7 @@ public static class ConnectionPattern
 		#region ode_scalar_call
 		// nothing: the factory creates, opens and disposes the connection
 		long count = connectionFactory.Command(CountSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalar<long>();
 		#endregion
 
@@ -141,7 +145,7 @@ public static class ConnectionPattern
 		#region ode_nonquery_call
 		// nothing: the factory creates, opens and disposes the connection
 		int updated = connectionFactory.Command(TouchSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 			.ExecuteNonQuery();
 		#endregion
 
@@ -182,21 +186,23 @@ public static class ConnectionPattern
 		// nothing: it rolls back if the action throws
 		// nothing: Using disposes the connection
 		#endregion
-	public static List<Post> PlainListAligned(string connectionString)
+	public static async Task<List<Post>> PlainListAligned(
+		string connectionString,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region plain_list_aligned
-		using var connection = new SqliteConnection(connectionString);
-		connection.Open();
-		using var command = connection.CreateCommand();
+		await using var connection = new SqliteConnection(connectionString);
+		await connection.OpenAsync(cancellationToken);
+		await using var command = connection.CreateCommand();
 		command.CommandText = ListSql;
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
 		parameter.Value = author;
 		command.Parameters.Add(parameter);
 		var posts = new List<Post>();
-		using var reader = command.ExecuteReader();
-		while (reader.Read())
+		await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+		while (await reader.ReadAsync(cancellationToken))
 		{
 			posts.Add(new Post
 			{
@@ -211,20 +217,22 @@ public static class ConnectionPattern
 		return posts;
 	}
 
-	public static List<Post> OdeListAligned(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<List<Post>> OdeListAligned(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_list_aligned
 		// nothing: the factory creates, opens and disposes the connection
 
-		List<Post> posts = connectionFactory
+		List<Post> posts = await connectionFactory
 			.Command(ListSql)
-			.AddParam(author)
+			.AddParam(author) // name and type inferred from the variable
 
 
 
 			.Map<Post>()
-			.ToList();
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -258,7 +266,7 @@ public static class ConnectionPattern
 public class PostService(IDbConnectionFactory<SqliteConnection> connectionFactory)
 {
 	public List<Post> ByAuthor(int author) => connectionFactory.Command(ListSql)
-		.AddParam(author)
+		.AddParam(author) // name and type inferred from the variable
 		.Map<Post>().ToList();
 }
 #endregion

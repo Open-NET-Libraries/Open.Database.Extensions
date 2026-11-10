@@ -20,7 +20,7 @@ int author = 42;
 
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author")
-    .AddParam(author)
+    .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
     .ToArrayAsync();
 ```

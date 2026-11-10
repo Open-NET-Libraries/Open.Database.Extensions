@@ -48,7 +48,7 @@ int author = 42;
 
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author order by id")
-    .AddParam(author)
+    .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
     .ToArrayAsync();
 ```
@@ -119,7 +119,7 @@ int author = 42;
 // The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author order by id")
-    .AddParam(author)
+    .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
     .ToArrayAsync();
 ```
@@ -132,7 +132,7 @@ int author = 42;
 // You own the connection. The command opens it only if it is closed, and closes only what it opened.
 Post[] posts = connection
     .Command("select * from posts where author = @author order by id")
-    .AddParam(author)
+    .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
     .ToArray();
 ```
