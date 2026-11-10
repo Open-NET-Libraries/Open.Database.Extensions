@@ -5,6 +5,13 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Breaking in rc.4
+
+Rebuild consumers of rc.3. Both changes are source-compatible for every call except the ones noted.
+
+- `ExpressiveDbCommand.RetrieveAsync` takes a trailing `CancellationToken cancellationToken = default` on the three overloads that can: `RetrieveAsync(CancellationToken)`, `RetrieveAsync(IEnumerable<int>, CancellationToken)` and `RetrieveAsync(IEnumerable<string>, bool, CancellationToken)`. The token is used together with the command's own token. A `params` list must come last, so the two `params` overloads (`RetrieveAsync(int, params IEnumerable<int>)` and `RetrieveAsync(string, params IEnumerable<string>)`) are unchanged and take no token: pass the ordinals or names as a collection to the `IEnumerable` overload to cancel. A call that passed no token binds to the same overload as before, but the signatures are new, so rebuild.
+- Three parameters are renamed to say what they hold. This breaks only a caller that passes the argument by name: `CreateTextCommand(SqlTransaction, ...)` in `SqlClient` and `MSSqlClient` takes `commandText` (it was `procedureName`), `CreateStoredProcedureCommand(IDbConnection, ...)` in Core takes `procedureName` (it was `commandText`), and the type parameter `TConn` of the `Using` and `UsingAsync` connection helpers is now `TConnection`. The type-parameter rename breaks no caller.
+
 ## Changes since rc.2
 
 - A `Map` terminal now reads through the later result sets after the first, so a failure in a later statement is thrown, where rc.2 returned the rows and lost it. This is a behavior change from rc.2. `Map` still returns only the first set's rows. `.SingleResult()` after `Map` stops after the first set and does not see a later failure. A later failure can follow a write that already committed, so a caller that retries can repeat it. The older command methods, Channel and Dataflow do not read through yet.
