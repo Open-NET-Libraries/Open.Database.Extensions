@@ -69,7 +69,17 @@ These can change behavior without a compile error, most likely first:
 11. **Channels and Dataflow.** On the mapped overloads a mapping failure faults the target when `complete` is `true`; the target is never completed or faulted before the reader is released; `ArgumentNullException.ParamName` for a null target is `"target"`; a cancelled mapped async channel call succeeds only if the reader had already reported the end of the results, else it throws `OperationCanceledException`.
 12. **Async calls pass the command's `CancellationToken` to the connection open.**
 13. **`EnsureOpenAsync` and `OpenAsync` have an obsolete `bool configureAwait` overload.** The library always awaits with `ConfigureAwait(false)`; returning to your context is your call. The `bool` overloads still compile with a warning and ignore the argument.
-14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
+14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*`, `Results<T>(IDbCommand)`, `ResultsAsync<T>(DbCommand)` and `FirstOrdinalResults*` return the `Queue<T>` they build. Enumerating it does not empty it: see [The buffered results are a queue](#the-buffered-results-are-a-queue).
+
+## The buffered results are a queue
+
+`ResultsBuffered*`, `Results<T>(IDbCommand)`, `ResultsAsync<T>(DbCommand)` and the `FirstOrdinalResults` family read every row before they return, and hand back the `Queue<T>` they built (async: `ValueTask<Queue<T>>`) instead of a one-shot enumerable. A second loop sees the rows again and `Count` is the number of rows read. The rows stay in memory until you drop the queue; to release them as you go, call `Dequeue` (`TryDequeue` where it exists). The `object` forms hold `null`, never `DBNull`. The queue is the library's own buffer, not a copy, so it is yours to change.
+
+[!code-csharp[](../samples/BufferedQueue.cs#buffered_queue)]
+
+[!code-csharp[](../samples/BufferedQueue.cs#buffered_queue_first_column)]
+
+The return type changed, so code compiled against 10.x must be recompiled, and a few source shapes stop compiling: `var rows = command.Results<T>(); rows = rows.Where(...)`, `ValueTask<IEnumerable<T>> task = command.ResultsAsync<T>()` on a `DbCommand` or reader, and `.AsTask()` assigned to a `Task<IEnumerable<T>>`. In the non-provider `FirstOrdinalResults<T>` path (a reader that is not a `DbDataReader`), a value that cannot be cast to `T` now throws from the call, not while you enumerate. The members marked obsolete below keep their `IEnumerable<T>` return type.
 
 ## Deprecated in 11.0
 

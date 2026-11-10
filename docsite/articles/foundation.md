@@ -35,7 +35,7 @@ A command built from a single connection refuses concurrent terminals: a second 
 Several helpers exist to keep the time a connection is open short:
 
 - `EnsureOpen()` and `EnsureOpenAsync()` open a closed (or broken) connection and return its prior state, so you can restore it.
-- Buffering helpers such as `ResultsBuffered<T>()` buffer the rows and map them in one call. On an `IExecuteReader`, `Results<T>()`, `FirstOrDefault(selector)`, `SingleOrDefault(selector)`, `Take`, `Skip` and `SkipThenTake` are deprecated; use `Map(...)`. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
+- Buffering helpers such as `ResultsBuffered<T>()` read every row and map it first, then return the rows as a `Queue<T>`; the connection is free as soon as the call returns. On an `IExecuteReader`, `Results<T>()`, `FirstOrDefault(selector)`, `SingleOrDefault(selector)`, `Take`, `Skip` and `SkipThenTake` are deprecated; use `Map(...)`. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
 - `Map<T>()` streams rows straight out of the reader while the connection is open; the connection is released as soon as the terminal returns.
 
 ## Transactions
