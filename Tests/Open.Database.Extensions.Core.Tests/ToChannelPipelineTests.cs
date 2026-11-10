@@ -295,14 +295,14 @@ public static partial class ToChannelPipelineTests
 			case Kind.ExecuteReader:
 				{
 					IExecuteReader command = new ScriptedCommand(factory, false, default);
-					return command.ToChannel;
+					return (target, complete) => command.ToChannel(target, complete);
 				}
 
 			case Kind.ExecuteReaderAsync:
 			case Kind.ExecuteReaderAsyncUsingAsyncRead:
 				{
 					IExecuteReaderAsync command = new ScriptedCommand(factory, kind == Kind.ExecuteReaderAsyncUsingAsyncRead, default);
-					return command.ToChannelAsync;
+					return (target, complete) => command.ToChannelAsync(target, complete);
 				}
 
 			case Kind.DbCommandInterface:
@@ -705,12 +705,12 @@ public static partial class ToChannelPipelineTests
 
 		await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((IDbCommand)null!).ToChannel(writer, true, ct));
 		await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((DbCommand)null!).ToChannelAsync(writer, true, ct));
-		await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((IExecuteReader)null!).ToChannel(writer, true));
-		await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((IExecuteReaderAsync)null!).ToChannelAsync(writer, true));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((IExecuteReader)null!).ToChannel(writer, true, cancellationToken: TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((IExecuteReaderAsync)null!).ToChannelAsync(writer, true, cancellationToken: TestContext.Current.CancellationToken));
 		await Assert.ThrowsAsync<ArgumentNullException>(async () => await dbCommand.ToChannel<Row>(null!, true, ct));
 		await Assert.ThrowsAsync<ArgumentNullException>(async () => await fakeCommand.ToChannelAsync<Row>(null!, true, ct));
-		await Assert.ThrowsAsync<ArgumentNullException>(async () => await executeReader.ToChannel<Row>(null!, true));
-		await Assert.ThrowsAsync<ArgumentNullException>(async () => await executeReaderAsync.ToChannelAsync<Row>(null!, true));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await executeReader.ToChannel<Row>(null!, true, cancellationToken: TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () => await executeReaderAsync.ToChannelAsync<Row>(null!, true, cancellationToken: TestContext.Current.CancellationToken));
 
 		dbCommand.Connection.Returns((IDbConnection?)null);
 		fakeCommand.Connection = null;

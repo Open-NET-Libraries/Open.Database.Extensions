@@ -211,7 +211,7 @@ public static class ExecuteReaderEdgeTests
 		(DbTally tally, ExpressiveDbCommand command) = Tracked(3);
 		int handled = 0;
 
-		await command.EnableAsyncRead(useAsyncRead).IterateReaderAsync(_ => handled++);
+		await command.EnableAsyncRead(useAsyncRead).IterateReaderAsync(_ => handled++, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(3, handled);
 		LeakAssert.CommandsAndReadersDisposed(tally);
@@ -232,7 +232,9 @@ public static class ExecuteReaderEdgeTests
 		int handled = 0;
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+#pragma warning disable xUnit1051 // The command token alone must govern this call: a live call token would link a second one.
 			await command.EnableAsyncRead(true).UseCancellationToken(cts.Token).IterateReaderAsync(_ => handled++));
+#pragma warning restore xUnit1051
 
 		Assert.Equal(cancelAtRead == 0 ? 0 : 2, handled); // the rows read before the cancel were handled, and nothing was read after it
 		LeakAssert.CommandsAndReadersDisposed(tally);
@@ -247,9 +249,9 @@ public static class ExecuteReaderEdgeTests
 		int seen = 0;
 
 		if (valueTaskHandler)
-			await command.EnableAsyncRead(true).IterateReaderWhileAsync(_ => new ValueTask<bool>(++seen < 3));
+			await command.EnableAsyncRead(true).IterateReaderWhileAsync(_ => new ValueTask<bool>(++seen < 3), cancellationToken: TestContext.Current.CancellationToken);
 		else
-			await command.EnableAsyncRead(true).IterateReaderWhileAsync(_ => ++seen < 3);
+			await command.EnableAsyncRead(true).IterateReaderWhileAsync(_ => ++seen < 3, cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(3, seen);
 		Assert.Equal(3, Assert.Single(tally.Readers).Reads);

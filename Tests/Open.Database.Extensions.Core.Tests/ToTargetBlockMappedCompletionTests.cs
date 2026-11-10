@@ -511,7 +511,7 @@ public static class ToTargetBlockMappedCompletionTests
 			default:
 				{
 					IExecuteReader command = new FakeExecuteReader(Columns, rows);
-					return command.ToTargetBlockAsync;
+					return (target, complete) => command.ToTargetBlockAsync(target, complete);
 				}
 		}
 	}

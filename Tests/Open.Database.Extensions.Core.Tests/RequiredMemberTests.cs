@@ -418,7 +418,7 @@ public static class RequiredMemberTests
 
 		Assert.Equal([1, 2, 3], (await Drain(TypedReader.Create(IdTitle, rows).ToChannel<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
 		Assert.Equal([1, 2, 3], (await Drain(TypedReader.Create(IdTitle, rows).ToChannelAsync<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
-		Assert.Equal([1, 2, 3], (await Drain(new FakeExecuteReader(() => TypedReader.Create(IdTitle, rows)).ToChannel<RequiredPost>(true), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
+		Assert.Equal([1, 2, 3], (await Drain(new FakeExecuteReader(() => TypedReader.Create(IdTitle, rows)).ToChannel<RequiredPost>(true, cancellationToken: TestContext.Current.CancellationToken), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
 		Assert.Equal([1, 2, 3], (await Drain(TypedReader.Create([("post_id", typeof(int)), ("post_title", typeof(string))], rows).ToChannel(true, PostMap, ct), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
 
 		ValueMappingException ex = await Assert.ThrowsAsync<ValueMappingException>(() => Drain(TypedReader.Create(IdOnly, [1], [2]).ToChannel<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct));

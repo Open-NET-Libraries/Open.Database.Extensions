@@ -422,7 +422,7 @@ public static class DerivedParameterNameTests
 		await proc
 			.AddParam(filter.CompanySerialNum)
 			.AddParam(order.Customer.Name)
-			.ExecuteNonQueryAsync();
+			.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(1, proc.AsyncLookups);
 		Assert.Equal(0, proc.SyncLookups);

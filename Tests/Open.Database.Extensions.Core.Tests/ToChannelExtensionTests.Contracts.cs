@@ -119,7 +119,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannel(true));
+			() => command.ToChannel(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -131,7 +131,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannel(true, arrayPool));
+			() => command.ToChannel(true, arrayPool, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -143,7 +143,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannel(true, transform));
+			() => command.ToChannel(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 #if !NETSTANDARD2_0
@@ -225,7 +225,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannelAsync(true));
+			() => command.ToChannelAsync(true, cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -237,7 +237,7 @@ public static class ToChannelExtensionsContractTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(
-			() => command.ToChannelAsync(true, transform));
+			() => command.ToChannelAsync(true, transform, cancellationToken: TestContext.Current.CancellationToken));
 	}
 #endif
 }
