@@ -73,7 +73,14 @@ public static class ConstructorBindingPipelineTests
 		ImmutableArray<ColumnDef> columns = Columns(Layouts[layout]);
 
 		AssertEntries(await Drain(Reader(columns).ToChannel<Entry>(true, ct), ct).WaitAsync(Timeout, ct));
-		AssertEntries(await Drain(new FakeExecuteReader(() => Reader(columns)).ToChannel<Entry>(true, cancellationToken: TestContext.Current.CancellationToken), ct).WaitAsync(Timeout, ct));
+		AssertEntries(
+			await Drain(
+				new FakeExecuteReader(() => Reader(columns))
+					.ToChannel<Entry>(
+						true,
+						cancellationToken: TestContext.Current.CancellationToken),
+				ct)
+				.WaitAsync(Timeout, ct));
 	}
 
 	[Theory]

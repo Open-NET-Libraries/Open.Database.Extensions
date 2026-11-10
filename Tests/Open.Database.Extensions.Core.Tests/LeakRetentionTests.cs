@@ -71,7 +71,8 @@ public static class LeakRetentionTests
 				#pragma warning restore CS0618
 				break;
 			case "ToChannelAsync":
-				ChannelReader<Row> channel = command.ToChannelAsync<Row>(true, cancellationToken: token);
+				ChannelReader<Row> channel = command.ToChannelAsync<Row>(
+					true, cancellationToken: token);
 				model = await channel.ReadAsync(token);
 				break;
 			default:

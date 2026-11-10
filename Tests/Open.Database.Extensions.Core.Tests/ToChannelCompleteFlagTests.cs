@@ -37,7 +37,10 @@ public static class ToChannelCompleteFlagTests
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		var cmd = new FakeExecuteReader(Columns, ThreeRows);
 
-		long n = await cmd.ToChannel(channel.Writer, false, cancellationToken: TestContext.Current.CancellationToken);
+		long n = await cmd.ToChannel(
+			channel.Writer,
+			false,
+			cancellationToken: TestContext.Current.CancellationToken);
 
 		bool open = WriterIsOpen(channel); // This write adds a 4th item when the writer is open.
 		int delivered = await DrainAfterCompleting(channel, TestContext.Current.CancellationToken);
@@ -55,7 +58,10 @@ public static class ToChannelCompleteFlagTests
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		var cmd = new FakeExecuteReader(Columns, ThreeRows);
 
-		long n = await cmd.ToChannel(channel.Writer, true, cancellationToken: TestContext.Current.CancellationToken);
+		long n = await cmd.ToChannel(
+			channel.Writer,
+			true,
+			cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(1, cmd.ExecuteCount);
 		Assert.Equal(3, n);
@@ -90,7 +96,11 @@ public static class ToChannelCompleteFlagTests
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		var inner = new FakeExecuteReader(Columns, ThreeRows);
 
-		long n = await new AsyncCommand(inner).ToChannelAsync(channel.Writer, false, cancellationToken: TestContext.Current.CancellationToken);
+		long n = await new AsyncCommand(inner)
+			.ToChannelAsync(
+				channel.Writer,
+				false,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 		bool open = WriterIsOpen(channel);
 		int delivered = await DrainAfterCompleting(channel, TestContext.Current.CancellationToken);
@@ -108,7 +118,11 @@ public static class ToChannelCompleteFlagTests
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		var inner = new FakeExecuteReader(Columns, ThreeRows);
 
-		long n = await new AsyncCommand(inner).ToChannelAsync(channel.Writer, true, cancellationToken: TestContext.Current.CancellationToken);
+		long n = await new AsyncCommand(inner)
+			.ToChannelAsync(
+				channel.Writer,
+				true,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(1, inner.ExecuteCount);
 		Assert.Equal(3, n);

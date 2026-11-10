@@ -316,7 +316,13 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
 	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
 	/// <remarks>
@@ -328,7 +334,13 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static ChannelReader<object[]> ToChannel(this IExecuteReader command,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
@@ -344,7 +356,13 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values rented from an array pool.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the channel is responsible for returning each array to the pool.</param>
 	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
@@ -357,7 +375,13 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static ChannelReader<object[]> ToChannel(this IExecuteReader command,
 		bool singleReader,
 		ArrayPool<object> arrayPool,
@@ -368,7 +392,12 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, arrayPool, cancellationToken);
+		_ = ToChannel(
+			command,
+			channel.Writer,
+			true,
+			arrayPool,
+			cancellationToken);
 		return channel.Reader;
 	}
 
@@ -376,7 +405,13 @@ public static partial class ChannelDbExtensions
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record after it has been transformed by <paramref name="transform"/>.
 	/// </summary>
 	/// <typeparam name="T">The type of the items written to the channel: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item written to the channel.</param>
 	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
@@ -389,7 +424,13 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
 		Func<IDataRecord, T> transform,
@@ -400,7 +441,12 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannel(command, channel.Writer, true, transform, cancellationToken);
+		_ = ToChannel(
+			command,
+			channel.Writer,
+			true,
+			transform,
+			cancellationToken);
 		return channel.Reader;
 	}
 
@@ -408,7 +454,13 @@ public static partial class ChannelDbExtensions
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/>.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
 	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
 	/// <remarks>
@@ -420,7 +472,13 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
 		CancellationToken cancellationToken = default)
@@ -437,7 +495,13 @@ public static partial class ChannelDbExtensions
 	/// Starts reading the results of an <see cref="IExecuteReader"/> in the background and returns the reader of a new unbounded channel that receives each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
@@ -454,7 +518,13 @@ public static partial class ChannelDbExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static ChannelReader<T> ToChannel<T>(this IExecuteReader command,
 		bool singleReader,
 		RowMap<T>? map,
@@ -670,7 +740,13 @@ public static partial class ChannelDbExtensions
 	/// <summary>
 	/// Starts asynchronously reading the results of an <see cref="IExecuteReaderAsync"/> in the background and returns the reader of a new unbounded channel that receives each record as an array of values rented from an array pool.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="singleReader"><see langword="true"/> if at most one consumer reads from the returned channel at a time, which lets the channel optimize for that; otherwise <see langword="false"/>.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from, or <see langword="null"/> to allocate new arrays. The consumer of the channel is responsible for returning each array to the pool.</param>
 	/// <returns>The reader of the channel that receives the records. Its <see cref="ChannelReader{T}.Completion"/> completes after the last record has been written, or faults with the exception that ended the reading.</returns>
@@ -683,7 +759,13 @@ public static partial class ChannelDbExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static ChannelReader<object[]> ToChannelAsync(this IExecuteReaderAsync command,
 		bool singleReader,
 		ArrayPool<object>? arrayPool,
@@ -693,7 +775,12 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<object[]> channel = CreateChannel<object[]>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, arrayPool, cancellationToken);
+		_ = ToChannelAsync(
+			command,
+			channel.Writer,
+			true,
+			arrayPool,
+			cancellationToken);
 		return channel.Reader;
 	}
 
@@ -711,7 +798,12 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, transform, cancellationToken);
+		_ = ToChannelAsync(
+			command,
+			channel.Writer,
+			true,
+			transform,
+			cancellationToken);
 		return channel.Reader;
 	}
 
@@ -744,7 +836,12 @@ public static partial class ChannelDbExtensions
 		Contract.EndContractBlock();
 
 		Channel<T> channel = CreateChannel<T>(-1, singleReader);
-		_ = ToChannelAsync(command, channel.Writer, true, map, cancellationToken);
+		_ = ToChannelAsync(
+			command,
+			channel.Writer,
+			true,
+			map,
+			cancellationToken);
 		return channel.Reader;
 	}
 }

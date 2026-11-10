@@ -225,7 +225,11 @@ public static class ExecuteReaderEdgeTests
 		(DbTally tally, ExpressiveDbCommand command) = Tracked(3);
 		int handled = 0;
 
-		await command.EnableAsyncRead(useAsyncRead).IterateReaderAsync(_ => handled++, cancellationToken: TestContext.Current.CancellationToken);
+		await command
+			.EnableAsyncRead(useAsyncRead)
+			.IterateReaderAsync(
+				_ => handled++,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(3, handled);
 		LeakAssert.CommandsAndReadersDisposed(tally);
@@ -263,9 +267,17 @@ public static class ExecuteReaderEdgeTests
 		int seen = 0;
 
 		if (valueTaskHandler)
-			await command.EnableAsyncRead(true).IterateReaderWhileAsync(_ => new ValueTask<bool>(++seen < 3), cancellationToken: TestContext.Current.CancellationToken);
+			await command
+				.EnableAsyncRead(true)
+				.IterateReaderWhileAsync(
+					_ => new ValueTask<bool>(++seen < 3),
+					cancellationToken: TestContext.Current.CancellationToken);
 		else
-			await command.EnableAsyncRead(true).IterateReaderWhileAsync(_ => ++seen < 3, cancellationToken: TestContext.Current.CancellationToken);
+			await command
+				.EnableAsyncRead(true)
+				.IterateReaderWhileAsync(
+					_ => ++seen < 3,
+					cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(3, seen);
 		Assert.Equal(3, Assert.Single(tally.Readers).Reads);

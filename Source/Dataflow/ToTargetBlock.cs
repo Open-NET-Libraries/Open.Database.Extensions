@@ -378,7 +378,13 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record as an array of values to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends and the reader has been released (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <returns>The number of records accepted by the target.</returns>
@@ -424,7 +430,13 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends and the reader has been released (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the records is responsible for returning each array to the pool.</param>
@@ -474,7 +486,13 @@ public static partial class DataflowExtensions
 	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends and the reader has been released (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item delivered to the block.</param>
@@ -524,7 +542,13 @@ public static partial class DataflowExtensions
 	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
@@ -552,7 +576,13 @@ public static partial class DataflowExtensions
 	/// Reads the results of an <see cref="IExecuteReader"/>, posting each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -1061,7 +1091,13 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record as an array of values to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends and the reader has been released (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <returns>The number of records accepted by the target.</returns>
@@ -1074,7 +1110,13 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static async ValueTask<long> ToTargetBlockAsync(this IExecuteReader command,
 		ITargetBlock<object[]> target,
 		bool complete,
@@ -1084,13 +1126,26 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		CancellationToken token = CancellationTokens.Combine(command.CancellationToken, cancellationToken, out CancellationTokenSource? linked);
+		CancellationToken token = CancellationTokens.Combine(
+			command.CancellationToken,
+			cancellationToken,
+			out CancellationTokenSource? linked);
 		try
 		{
 			await Task.Yield();
 			try
 			{
-				return await command.ExecuteReaderAsync((target, token), static (reader, s) => ToTargetBlockAsync(reader, s.target, false, s.token), CommandBehavior.Default, token).ConfigureAwait(false);
+				return await command
+					.ExecuteReaderAsync(
+						(target, token),
+						static (reader, s) => ToTargetBlockAsync(
+							reader,
+							s.target,
+							false,
+							s.token),
+						CommandBehavior.Default,
+						token)
+					.ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1117,7 +1172,13 @@ public static partial class DataflowExtensions
 	/// <summary>
 	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record as an array of values rented from an array pool to the target block, and stops when the target declines a record.
 	/// </summary>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends and the reader has been released (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="arrayPool">The array pool to rent each record's array from. The consumer of the records is responsible for returning each array to the pool.</param>
@@ -1131,7 +1192,13 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static async ValueTask<long> ToTargetBlockAsync(this IExecuteReader command,
 		ITargetBlock<object[]> target,
 		bool complete,
@@ -1143,13 +1210,27 @@ public static partial class DataflowExtensions
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
 		Contract.EndContractBlock();
 
-		CancellationToken token = CancellationTokens.Combine(command.CancellationToken, cancellationToken, out CancellationTokenSource? linked);
+		CancellationToken token = CancellationTokens.Combine(
+			command.CancellationToken,
+			cancellationToken,
+			out CancellationTokenSource? linked);
 		try
 		{
 			await Task.Yield();
 			try
 			{
-				return await command.ExecuteReaderAsync((target, arrayPool, token), static (reader, s) => ToTargetBlockAsync(reader, s.target, false, s.arrayPool, s.token), CommandBehavior.Default, token).ConfigureAwait(false);
+				return await command
+					.ExecuteReaderAsync(
+						(target, arrayPool, token),
+						static (reader, s) => ToTargetBlockAsync(
+							reader,
+							s.target,
+							false,
+							s.arrayPool,
+							s.token),
+						CommandBehavior.Default,
+						token)
+					.ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1177,7 +1258,13 @@ public static partial class DataflowExtensions
 	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record after it has been transformed by <paramref name="transform"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type of the items delivered to the block: the return type of the transform function.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed when reading ends and the reader has been released (including when reading stops because the target declined a record), or faulted with the exception that ended the operation.</param>
 	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/> into the item delivered to the block.</param>
@@ -1191,7 +1278,13 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -1202,13 +1295,27 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		CancellationToken token = CancellationTokens.Combine(command.CancellationToken, cancellationToken, out CancellationTokenSource? linked);
+		CancellationToken token = CancellationTokens.Combine(
+			command.CancellationToken,
+			cancellationToken,
+			out CancellationTokenSource? linked);
 		try
 		{
 			await Task.Yield();
 			try
 			{
-				return await command.ExecuteReaderAsync((target, transform, token), static (reader, s) => ToTargetBlockAsync(reader, s.target, false, s.transform, s.token), CommandBehavior.Default, token).ConfigureAwait(false);
+				return await command
+					.ExecuteReaderAsync(
+						(target, transform, token),
+						static (reader, s) => ToTargetBlockAsync(
+							reader,
+							s.target,
+							false,
+							s.transform,
+							s.token),
+						CommandBehavior.Default,
+						token)
+					.ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
@@ -1236,7 +1343,13 @@ public static partial class DataflowExtensions
 	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <returns>The number of records read and handed to the internal buffer. Delivery to the target continues in the background, so some of them may not have reached it yet when this returns.</returns>
@@ -1249,7 +1362,13 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -1259,13 +1378,24 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		CancellationToken token = CancellationTokens.Combine(command.CancellationToken, cancellationToken, out CancellationTokenSource? linked);
+		CancellationToken token = CancellationTokens.Combine(
+			command.CancellationToken,
+			cancellationToken,
+			out CancellationTokenSource? linked);
 		try
 		{
 			await Task.Yield();
 			return await ToTargetBlockMappedAsync(
-				read => command.ExecuteReaderAsync((read, token), static (r, s) => s.read(r), CommandBehavior.Default, token),
-				target, complete, null, token).ConfigureAwait(false);
+				read => command.ExecuteReaderAsync(
+					(read, token),
+					static (r, s) => s.read(r),
+					CommandBehavior.Default,
+					token),
+				target,
+				complete,
+				null,
+				token)
+				.ConfigureAwait(false);
 		}
 		finally
 		{
@@ -1277,7 +1407,13 @@ public static partial class DataflowExtensions
 	/// Asynchronously reads the results of an <see cref="IExecuteReader"/>, sending each record mapped to a new instance of <typeparamref name="T"/> by name, or through <paramref name="map"/> when given, to the target block, and stops when the target declines a record.
 	/// </summary>
 	/// <typeparam name="T">The type each record is mapped to.</typeparam>
-	/// <param name="command">The expressive command to execute. The connection follows the command's ownership rules: it is opened only if needed and released when reading finishes. The command's own cancellation token and the one passed apply; either cancels.</param>
+	/// <param name="command">
+	/// The expressive command to execute.
+	/// The connection follows the command's ownership rules:
+	/// it is opened only if needed and released when reading finishes.
+	/// The command's own cancellation token and the one passed apply;
+	/// either cancels.
+	/// </param>
 	/// <param name="target">The block that receives the records.</param>
 	/// <param name="complete">If <see langword="true"/>, the target is completed once the reader has been released and every record has been delivered to it (which can be after this method has returned), or faulted with the exception that ended the operation.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
@@ -1295,7 +1431,13 @@ public static partial class DataflowExtensions
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="target"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <seealso cref="RowMap{T}"/>
-	/// <param name="cancellationToken">A token that can cancel the call. It is used together with the command's own token; either one cancels. It comes after the optional parameters: pass it by name (<c>cancellationToken: token</c>) when they are left out.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// It comes after the optional parameters:
+	/// pass it by name (<c>cancellationToken: token</c>)
+	/// when they are left out.
+	/// </param>
 	public static async ValueTask<long> ToTargetBlockAsync<T>(this IExecuteReader command,
 		ITargetBlock<T> target,
 		bool complete,
@@ -1306,13 +1448,24 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		CancellationToken token = CancellationTokens.Combine(command.CancellationToken, cancellationToken, out CancellationTokenSource? linked);
+		CancellationToken token = CancellationTokens.Combine(
+			command.CancellationToken,
+			cancellationToken,
+			out CancellationTokenSource? linked);
 		try
 		{
 			await Task.Yield();
 			return await ToTargetBlockMappedAsync(
-				read => command.ExecuteReaderAsync((read, token), static (r, s) => s.read(r), CommandBehavior.Default, token),
-				target, complete, map, token).ConfigureAwait(false);
+				read => command.ExecuteReaderAsync(
+					(read, token),
+					static (r, s) => s.read(r),
+					CommandBehavior.Default,
+					token),
+				target,
+				complete,
+				map,
+				token)
+				.ConfigureAwait(false);
 		}
 		finally
 		{

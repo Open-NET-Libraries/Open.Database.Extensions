@@ -53,19 +53,47 @@ public static class ExecuteReturnNullTests
 	{
 		foreach (object? none in NoValue)
 		{
-			Assert.Equal(0, await Returning(none).ExecuteReturnAsync<int>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Returning(none).ExecuteReturnAsync<int?>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Returning(none).ExecuteReturnAsync<string>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Returning(none).ExecuteReturnAsync<object>(cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Equal(
+				0,
+				await Returning(none)
+					.ExecuteReturnAsync<int>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Returning(none)
+					.ExecuteReturnAsync<int?>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Returning(none)
+					.ExecuteReturnAsync<string>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Returning(none)
+					.ExecuteReturnAsync<object>(
+						cancellationToken: TestContext.Current.CancellationToken));
 		}
 	}
 
 	[Fact]
 	public static async Task ExecuteReturnAsync_AValue_IsStillTheExactCast()
 	{
-		Assert.Equal(42, await Returning(42).ExecuteReturnAsync<int>(cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal(42, await Returning(42).ExecuteReturnAsync<int?>(cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal("v", await Returning("v").ExecuteReturnAsync<string>(cancellationToken: TestContext.Current.CancellationToken));
-		await Assert.ThrowsAsync<InvalidCastException>(async () => await Returning(42).ExecuteReturnAsync<long>(cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Returning(42)
+				.ExecuteReturnAsync<int>(
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Returning(42)
+				.ExecuteReturnAsync<int?>(
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			"v",
+			await Returning("v")
+				.ExecuteReturnAsync<string>(
+					cancellationToken: TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<InvalidCastException>(
+			async () => await Returning(42)
+				.ExecuteReturnAsync<long>(
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 }

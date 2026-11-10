@@ -29,7 +29,8 @@ public static class ParameterDirectionTests
 
 		await DbCommand(recorder)
 			.AddParam("@p", 5, DbType.Int32, direction)
-			.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
+			.ExecuteNonQueryAsync(
+				cancellationToken: TestContext.Current.CancellationToken);
 
 		Assert.Equal(direction, Assert.Single(recorder.Sent).Direction);
 	}

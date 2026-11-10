@@ -78,23 +78,62 @@ public static class ExecuteScalarNullTests
 	{
 		foreach (object? none in NoValue)
 		{
-			Assert.Equal(0, await Async(none).ExecuteScalarAsync<int>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Equal(0L, await Async(none).ExecuteScalarAsync<long>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Equal(default, await Async(none).ExecuteScalarAsync<DateTime>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Async(none).ExecuteScalarAsync<int?>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Async(none).ExecuteScalarAsync<Guid?>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Async(none).ExecuteScalarAsync<string>(cancellationToken: TestContext.Current.CancellationToken));
-			Assert.Null(await Async(none).ExecuteScalarAsync<object>(cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Equal(
+				0,
+				await Async(none)
+					.ExecuteScalarAsync<int>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Equal(
+				0L,
+				await Async(none)
+					.ExecuteScalarAsync<long>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Equal(
+				default,
+				await Async(none)
+					.ExecuteScalarAsync<DateTime>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<int?>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<Guid?>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<string>(
+						cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<object>(
+						cancellationToken: TestContext.Current.CancellationToken));
 		}
 	}
 
 	[Fact]
 	public static async Task ExecuteScalarAsync_AValue_IsStillTheExactCast()
 	{
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync<int>(cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync<int?>(cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal("v", await Async("v").ExecuteScalarAsync<string>(cancellationToken: TestContext.Current.CancellationToken));
-		await Assert.ThrowsAsync<InvalidCastException>(async () => await Async(42).ExecuteScalarAsync<long>(cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync<int>(
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync<int?>(
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			"v",
+			await Async("v")
+				.ExecuteScalarAsync<string>(
+					cancellationToken: TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<InvalidCastException>(
+			async () => await Async(42)
+				.ExecuteScalarAsync<long>(
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	// ---- the raw scalar: the ADO.NET primitive, not normalized (the only way to tell NULL from no row) ----
@@ -110,9 +149,20 @@ public static class ExecuteScalarNullTests
 	[Fact]
 	public static async Task ExecuteScalarAsync_Raw_ReturnsDBNullForNullAndNullForNoRow()
 	{
-		Assert.Same(DBNull.Value, await Async(DBNull.Value).ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Null(await Async(null).ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Same(
+			DBNull.Value,
+			await Async(DBNull.Value)
+				.ExecuteScalarAsync(
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Null(
+			await Async(null)
+				.ExecuteScalarAsync(
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync(
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	// ---- the transform overloads: NULL and no row both reach the function as null, never DBNull ----
@@ -178,19 +228,43 @@ public static class ExecuteScalarNullTests
 	[Fact]
 	public static async Task ExecuteScalarAsync_Transform_PassesAValueThroughUnchanged()
 	{
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync(o => o, cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal("v", await Async("v").ExecuteScalarAsync(o => o, cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync(
+					o => o,
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			"v",
+			await Async("v")
+				.ExecuteScalarAsync(
+					o => o,
+					cancellationToken: TestContext.Current.CancellationToken));
 		object boxed = 42;
-		Assert.Same(boxed, await Async(boxed).ExecuteScalarAsync(o => o, cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Same(
+			boxed,
+			await Async(boxed)
+				.ExecuteScalarAsync(
+					o => o,
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
 	public static async Task ExecuteScalarAsync_Transform_NullableCast_GivesNullForNullAndTheValueForAValue()
 	{
 		foreach (object? none in NoValue)
-			Assert.Null(await Async(none).ExecuteScalarAsync<int?>(o => (int?)o, cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<int?>(
+						o => (int?)o,
+						cancellationToken: TestContext.Current.CancellationToken));
 
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync<int?>(o => (int?)o, cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync<int?>(
+					o => (int?)o,
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -216,18 +290,42 @@ public static class ExecuteScalarNullTests
 	[Fact]
 	public static async Task ExecuteScalarAsync_TaskTransform_PassesAValueThroughUnchanged()
 	{
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync(o => new ValueTask<object?>(o), cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal("v", await Async("v").ExecuteScalarAsync(o => new ValueTask<object?>(o), cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync(
+					o => new ValueTask<object?>(o),
+					cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			"v",
+			await Async("v")
+				.ExecuteScalarAsync(
+					o => new ValueTask<object?>(o),
+					cancellationToken: TestContext.Current.CancellationToken));
 		object boxed = 42;
-		Assert.Same(boxed, await Async(boxed).ExecuteScalarAsync(o => new ValueTask<object?>(o), cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Same(
+			boxed,
+			await Async(boxed)
+				.ExecuteScalarAsync(
+					o => new ValueTask<object?>(o),
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
 	public static async Task ExecuteScalarAsync_TaskTransform_NullableCast_GivesNullForNullAndTheValueForAValue()
 	{
 		foreach (object? none in NoValue)
-			Assert.Null(await Async(none).ExecuteScalarAsync<int?>(o => new ValueTask<int?>((int?)o), cancellationToken: TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Async(none)
+					.ExecuteScalarAsync<int?>(
+						o => new ValueTask<int?>((int?)o),
+						cancellationToken: TestContext.Current.CancellationToken));
 
-		Assert.Equal(42, await Async(42).ExecuteScalarAsync<int?>(o => new ValueTask<int?>((int?)o), cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			42,
+			await Async(42)
+				.ExecuteScalarAsync<int?>(
+					o => new ValueTask<int?>((int?)o),
+					cancellationToken: TestContext.Current.CancellationToken));
 	}
 }
