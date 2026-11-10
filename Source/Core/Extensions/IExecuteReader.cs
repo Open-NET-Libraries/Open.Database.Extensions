@@ -90,7 +90,9 @@ public static class IExecuteReaderExtensions
 								.ConfigureAwait(false);
 						}
 						else
+						{
 							reader.ForEach(x.handler, true, x.token);
+						}
 
 						return false;
 					},
@@ -140,7 +142,9 @@ public static class IExecuteReaderExtensions
 								.ConfigureAwait(false);
 						}
 						else
+						{
 							reader.IterateWhile(x.handler, true, x.token);
+						}
 
 						return false;
 					},
