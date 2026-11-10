@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 200" role="img" aria-labelledby="t d">
   <title id="t">ODX SqlClient</title>
-  <desc id="d">You write the SQL. The library writes the other twenty lines. Deprecated: a faded database points toward the brighter MSSqlClient database, which replaces it.</desc>
+  <desc id="d">You write the SQL. ODX writes the other twenty lines. Deprecated: a faded database points toward the brighter MSSqlClient database, which replaces it.</desc>
   <style>
     :root {
       --bg1: #eef2f7; --bg2: #e1e7f0; --edge: #cdd6e2; --ink: #263040; --ink2: #3c4759; --mute: #6a778a;
@@ -63,6 +63,6 @@
     <path class="rule" d="M248 52V150"/>
   </g>
   <text class="tag1" x="274" y="88">You write the <tspan class="acc">SQL.</tspan></text>
-  <text class="tag2" x="275" y="142">The library writes the other twenty lines.</text>
+  <text class="tag2" x="275" y="142">ODX writes the other twenty lines.</text>
   <rect class="sh" x="900" y="132" width="80" height="10" rx="5" filter="url(#blur)"/><rect class="sh" x="1112" y="146" width="116" height="12" rx="6" filter="url(#blur)"/><g class="ghost"><path class="ts" d="M900 106v16a40 10 0 0 0 80 0v-16z"/><ellipse class="tt" cx="940" cy="106" rx="40" ry="10"/><path class="ts" d="M900 85v16a40 10 0 0 0 80 0v-16z"/><ellipse class="tt" cx="940" cy="85" rx="40" ry="10"/><path class="ts" d="M900 64v16a40 10 0 0 0 80 0v-16z"/><ellipse class="tt" cx="940" cy="64" rx="40" ry="10"/></g><path class="m2s" d="M1116 108v22a54 13 0 0 0 108 0v-22z"/><ellipse class="m2t" cx="1170" cy="108" rx="54" ry="13"/><path class="m2s" d="M1116 81v22a54 13 0 0 0 108 0v-22z"/><ellipse class="m2t" cx="1170" cy="81" rx="54" ry="13"/><path class="m2s" d="M1116 54v22a54 13 0 0 0 108 0v-22z"/><ellipse class="m2t" cx="1170" cy="54" rx="54" ry="13"/><path class="wire" d="M998 98H1094" stroke-dasharray="2 8"/><path class="wire" d="M1086 91l9 7-9 7"/><text class="word" x="940" y="178" text-anchor="middle">deprecated</text><text class="word ms2" x="1170" y="178" text-anchor="middle">MSSqlClient</text>
 </svg>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 200" role="img" aria-labelledby="t d">
   <title id="t">ODX Channel</title>
-  <desc id="d">You write the SQL. The library writes the other twenty lines. Rows drift through a glass pipe into an open channel, where they queue for the reader.</desc>
+  <desc id="d">You write the SQL. ODX writes the other twenty lines. Rows drift through a glass pipe into an open channel, where they queue for the reader.</desc>
   <style>
     :root {
       --bg1: #eef2f7; --bg2: #e1e7f0; --edge: #cdd6e2; --ink: #263040; --ink2: #3c4759; --mute: #6a778a;
@@ -63,6 +63,6 @@
     <path class="rule" d="M248 52V150"/>
   </g>
   <text class="tag1" x="274" y="88">You write the <tspan class="acc">SQL.</tspan></text>
-  <text class="tag2" x="275" y="142">The library writes the other twenty lines.</text>
+  <text class="tag2" x="275" y="142">ODX writes the other twenty lines.</text>
   <g transform="translate(332.7 2.1) scale(0.727)"><rect class="sh" x="770" y="150" width="230" height="12" rx="6" filter="url(#blur)"/><rect class="sh" x="1010" y="176" width="230" height="12" rx="6" filter="url(#blur)"/><rect class="tube" x="760" y="86" width="236" height="52" rx="26"/><g clip-path="url(#tubeclip)"><g class="mv drift"><g class="row"><rect x="708" y="101" width="40" height="22" rx="4"/><path d="M721.3 105v14M734.7 105v14"/></g><g class="row"><rect x="766" y="101" width="40" height="22" rx="4"/><path d="M779.3 105v14M792.7 105v14"/></g><g class="row"><rect x="824" y="101" width="40" height="22" rx="4"/><path d="M837.3 105v14M850.7 105v14"/></g><g class="row"><rect x="882" y="101" width="40" height="22" rx="4"/><path d="M895.3 105v14M908.7 105v14"/></g><g class="row"><rect x="940" y="101" width="40" height="22" rx="4"/><path d="M953.3 105v14M966.7 105v14"/></g><g class="row"><rect x="998" y="101" width="40" height="22" rx="4"/><path d="M1011.3 105v14M1024.7 105v14"/></g></g></g><rect class="tubehi" x="772" y="92" width="212" height="12" rx="6"/><ellipse class="gt" cx="996" cy="112" rx="9" ry="26"/><rect class="gs" x="1036.8" y="112.7" width="224" height="34"/><polygon class="gt" points="1006,168 1230,168 1260.8,146.7 1036.8,146.7"/><rect class="af" x="1030" y="146" width="36" height="14"/><polygon class="at" points="1030,146 1066,146 1078.1,137.6 1042.1,137.6"/><polygon class="as" points="1066,146 1078.1,137.6 1078.1,151.6 1066,160"/><rect class="af" x="1078" y="146" width="36" height="14"/><polygon class="at" points="1078,146 1114,146 1126.1,137.6 1090.1,137.6"/><polygon class="as" points="1114,146 1126.1,137.6 1126.1,151.6 1114,160"/><rect class="af" x="1126" y="146" width="36" height="14"/><polygon class="at" points="1126,146 1162,146 1174.1,137.6 1138.1,137.6"/><polygon class="as" points="1162,146 1174.1,137.6 1174.1,151.6 1162,160"/><rect class="af" x="1174" y="146" width="36" height="14"/><polygon class="at" points="1174,146 1210,146 1222.1,137.6 1186.1,137.6"/><polygon class="as" points="1210,146 1222.1,137.6 1222.1,151.6 1210,160"/><rect class="gf" x="1006" y="144" width="224" height="24"/><polygon class="gs" points="1230,144 1260.8,112.7 1260.8,146.7 1230,168"/></g>
 </svg>
