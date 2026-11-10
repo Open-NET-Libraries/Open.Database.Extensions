@@ -16,9 +16,9 @@ public static class CaseInsensitiveMappingTests
 	[InlineData("fIrStNaMe")]
 	public static void Transformer_MatchesColumn_RegardlessOfCase(string columnName)
 	{
-		var queue = new Queue<object?[]>();
+		var queue = new Queue<object[]>();
 		queue.Enqueue(["Ada"]);
-		var result = new QueryResult<Queue<object?[]>>([0], [columnName], queue);
+		var result = new QueryResult<Queue<object[]>>([0], [columnName], queue);
 
 		List<TransformerResultsTests.Person> people = [.. result.DequeueAs<TransformerResultsTests.Person>()];
 

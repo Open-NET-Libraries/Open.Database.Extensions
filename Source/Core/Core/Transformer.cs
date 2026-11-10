@@ -1,4 +1,4 @@
-﻿
+
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
@@ -108,8 +108,8 @@ public class Transformer<T>
 			=> Transform = Transformer._plan.ArrayMapper(names);
 	}
 
-	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object?[]}}, ArrayPool{object?}, bool)" />
-	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object?[]>> results)
+	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object[]}}, ArrayPool{object}, bool)" />
+	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results)
 	{
 		if (results is null) throw new ArgumentNullException(nameof(results));
 		Contract.EndContractBlock();
@@ -134,7 +134,7 @@ public class Transformer<T>
 	}
 
 	// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
-	static IEnumerable<T> Drain(Queue<object?[]> queue, Func<object?[], T> map)
+	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map)
 	{
 		while (queue.Count > 0)
 			yield return map(queue.Dequeue());

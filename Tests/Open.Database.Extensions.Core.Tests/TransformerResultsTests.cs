@@ -67,11 +67,11 @@ public static class TransformerResultsTests
 	public static void DequeueAs_MapsBufferedRows_CaseInsensitivelyWithOverride()
 	{
 		// A reader-shaped buffered result (column names + queued rows).
-		var queue = new Queue<object?[]>();
+		var queue = new Queue<object[]>();
 		queue.Enqueue(["Jane", 25]);
 		queue.Enqueue(["Jack", 40]);
 
-		var result = new QueryResult<Queue<object?[]>>(
+		var result = new QueryResult<Queue<object[]>>(
 			[0, 1],
 			["first_name", "AGE"],
 			queue);

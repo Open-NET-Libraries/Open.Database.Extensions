@@ -75,8 +75,8 @@ public static class RowMapFamilyTests
 		return table;
 	}
 
-	static QueryResult<Queue<object?[]>> Queued()
-		=> new([0, 1, 2, 3], [.. RowMapTests.Renamed], new Queue<object?[]>(Rows));
+	static QueryResult<Queue<object[]>> Queued()
+		=> new([0, 1, 2, 3], [.. RowMapTests.Renamed], new Queue<object[]>(Rows!));
 
 	// ---- draining what each family produces ----
 	static async Task<List<Item>> Drain(ChannelReader<Item> reader)
@@ -131,7 +131,7 @@ public static class RowMapFamilyTests
 		["To(DataTable)"] = m => Now(Table().To(m)),
 		["DequeueAs(QueryResult)"] = m => Now(Queued().DequeueAs(m)),
 		["DequeueAs(Task)"] = async m => (await Task.FromResult(Queued()).DequeueAs(m)).ToList(),
-		["DequeueAs(ValueTask)"] = async m => (await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs(m)).ToList(),
+		["DequeueAs(ValueTask)"] = async m => (await new ValueTask<QueryResult<Queue<object[]>>>(Queued()).DequeueAs(m)).ToList(),
 
 		// Channel: a new channel
 		["ToChannel(IDataReader)"] = m => Drain(Reader().ToChannel(true, m)),

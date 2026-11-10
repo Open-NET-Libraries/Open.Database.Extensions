@@ -333,4 +333,43 @@ public static class RetrieveSurfaceTests
 
 		Assert.Equal(parameter, ex.ParamName);
 	}
+
+	// ---- Retrieve's result goes straight into DequeueAs and DequeueAsMappedDictionaries (no cast, no nullable warning) ----
+
+	sealed class NamedRow
+	{
+		public int Id { get; set; }
+		public string? Name { get; set; }
+	}
+
+	static DbCommand NamedRowsCommand()
+	{
+		var tally = new DbTally(new DbScript
+		{
+			Columns = [("Id", typeof(int)), ("Name", typeof(string))],
+			Rows = [[1, "a"], [2, "b"]],
+		});
+		return tally.NewOpenConnection().CreateCommand();
+	}
+
+	[Fact]
+	public static void Retrieve_DequeueAsMappedDictionaries_NeedsNoCast()
+	{
+		List<Dictionary<string, object?>> rows = [.. NamedRowsCommand().Retrieve().DequeueAsMappedDictionaries()];
+
+		Assert.Equal(2, rows.Count);
+		Assert.Equal(1, rows[0]["Id"]);
+		Assert.Equal("a", rows[0]["Name"]);
+		Assert.Equal(2, rows[1]["Id"]);
+		Assert.Equal("b", rows[1]["Name"]);
+	}
+
+	[Fact]
+	public static void Retrieve_DequeueAs_NeedsNoCast()
+	{
+		List<NamedRow> rows = [.. NamedRowsCommand().Retrieve().DequeueAs<NamedRow>()];
+
+		Assert.Equal([1, 2], rows.Select(r => r.Id));
+		Assert.Equal(["a", "b"], rows.Select(r => r.Name));
+	}
 }

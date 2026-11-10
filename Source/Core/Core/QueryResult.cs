@@ -1,4 +1,4 @@
-﻿
+
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
@@ -184,20 +184,20 @@ public static class QueryResultExtensions
 	/// .Retrieve method.</param>
 	/// <returns>An enumerable that dequeues the results and returns a column
 	/// mapped dictionary for each entry</returns>
-	public static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionaries(this QueryResult<Queue<object?[]>> source)
+	public static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionaries(this QueryResult<Queue<object[]>> source)
 	{
 		return source is null
 			? throw new ArgumentNullException(nameof(source))
 			: DequeueAsMappedDictionariesCore(source);
 
-		static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionariesCore(QueryResult<Queue<object?[]>> source)
+		static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionariesCore(QueryResult<Queue<object[]>> source)
 		{
-			Queue<object?[]> q = source.Result;
+			Queue<object[]> q = source.Result;
 			ImmutableArray<string> names = source.Names;
 			int count = source.ColumnCount;
 			while (q.Count != 0)
 			{
-				object?[] r = q.Dequeue();
+				object[] r = q.Dequeue();
 				var d = new Dictionary<string, object?>(count);
 				for (int i = 0; i < count; i++)
 					d.Add(names[i], CoreExtensions.DBNullValueToNull(r[i]));
@@ -207,13 +207,13 @@ public static class QueryResultExtensions
 	}
 
 	/// <inheritdoc
-	/// cref="DequeueAsMappedDictionaries(QueryResult{Queue{object?[]}})"/>
-	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object?[]>>> source)
+	/// cref="DequeueAsMappedDictionaries(QueryResult{Queue{object[]}})"/>
+	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this Task<QueryResult<Queue<object[]>>> source)
 		=> (await (source ?? throw new ArgumentNullException(nameof(source))).ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 	/// <inheritdoc
-	/// cref="DequeueAsMappedDictionaries(QueryResult{Queue{object?[]}})"/>
-	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this ValueTask<QueryResult<Queue<object?[]>>> source)
+	/// cref="DequeueAsMappedDictionaries(QueryResult{Queue{object[]}})"/>
+	public static async ValueTask<IEnumerable<Dictionary<string, object?>>> DequeueAsMappedDictionaries(this ValueTask<QueryResult<Queue<object[]>>> source)
 		=> (await source.ConfigureAwait(false)).DequeueAsMappedDictionaries();
 
 	/// <summary>
@@ -229,7 +229,7 @@ public static class QueryResultExtensions
 	/// of type T.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> DequeueAs<T>(
-		this QueryResult<Queue<object?[]>> source,
+		this QueryResult<Queue<object[]>> source,
 		RowMap<T>? map = null)
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
@@ -239,11 +239,11 @@ public static class QueryResultExtensions
 		return x.AsDequeueingEnumerable(source);
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
-		this Task<QueryResult<Queue<object?[]>>> source,
+		this Task<QueryResult<Queue<object[]>>> source,
 		RowMap<T>? map = null)
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
@@ -253,27 +253,27 @@ public static class QueryResultExtensions
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
-		this ValueTask<QueryResult<Queue<object?[]>>> source,
+		this ValueTask<QueryResult<Queue<object[]>>> source,
 		RowMap<T>? map = null)
 	{
 		var x = new Transformer<T>(map);
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
-		this Task<QueryResult<Queue<object?[]>>> source)
+		this Task<QueryResult<Queue<object[]>>> source)
 		=> DequeueAs<T>(source, null);
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object?[]}}, RowMap{T}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
-		this ValueTask<QueryResult<Queue<object?[]>>> source)
+		this ValueTask<QueryResult<Queue<object[]>>> source)
 		=> DequeueAs<T>(source, null);
 
 	/// <summary>

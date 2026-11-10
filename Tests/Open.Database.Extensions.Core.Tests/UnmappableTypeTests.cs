@@ -333,7 +333,7 @@ public static class UnmappableTypeTests
 		return table;
 	}
 
-	static QueryResult<Queue<object?[]>> Queued() => new([0], ["Id"], new Queue<object?[]>());
+	static QueryResult<Queue<object[]>> Queued() => new([0], ["Id"], new Queue<object[]>());
 
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
 	{
@@ -401,7 +401,7 @@ public static class UnmappableTypeTests
 		["To<T>(DataTable)"] = () => Run(() => Table().To<T>()),
 		["DequeueAs<T>(QueryResult)"] = () => Run(() => Queued().DequeueAs<T>()),
 		["DequeueAs<T>(Task)"] = async () => await Task.FromResult(Queued()).DequeueAs<T>(),
-		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object?[]>>>(Queued()).DequeueAs<T>(),
+		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object[]>>>(Queued()).DequeueAs<T>(),
 		["new Transformer<T>()"] = () => Run(() => Transformer<T>.Create()),
 
 		// Channel: a new channel
