@@ -272,7 +272,7 @@ public static class MappingCostAndRaceCharacterizationTests
 			ImmutableArray<ColumnDef> columns = [.. names.Select(n => new ColumnDef(n, typeof(object)))];
 			for (int n = 0; n < 100; n++)
 			{
-				var result = new QueryResult<Queue<object?[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object?[]>([Row(columns, 1)]));
+				var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([Row(columns, 1)!]));
 				AssertGadgets([.. result.DequeueAs(shared)], 1, hasNote: names.Contains("gadget_note"));
 			}
 		});
@@ -488,7 +488,7 @@ public static class MappingCostAndRaceCharacterizationTests
 			ImmutableArray<ColumnDef> columns = [.. names.Select(n => new ColumnDef(n, typeof(object)))];
 			for (int n = 0; n < 100; n++)
 			{
-				var result = new QueryResult<Queue<object?[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object?[]>([Row(columns, 1)]));
+				var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([Row(columns, 1)!]));
 				AssertGadgetRecords([.. result.DequeueAs(shared)], 1, hasNote: names.Contains("gadget_note"));
 			}
 		});

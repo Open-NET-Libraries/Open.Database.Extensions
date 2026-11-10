@@ -83,7 +83,7 @@ public static class RowMapNullTests
 
 	static List<Solid> ViaArray(RowMap<Solid> map, string? nullColumn)
 	{
-		QueryResult<Queue<object?[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object?[]>([SolidRow(nullColumn)]));
+		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object[]>([SolidRow(nullColumn)!]));
 		return result.DequeueAs(map).ToList();
 	}
 
@@ -131,7 +131,7 @@ public static class RowMapNullTests
 		{
 			AssertSame(new Solid(), Assert.Single(Cmd(SolidColumns, allNull).Map(map).ToList()));
 
-			QueryResult<Queue<object?[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object?[]>([allNull]));
+			QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object[]>([allNull!]));
 			AssertSame(new Solid(), Assert.Single(result.DequeueAs(map).ToList()));
 		}
 	}
@@ -146,7 +146,7 @@ public static class RowMapNullTests
 		Assert.Equal(default, viaReader.Created);
 		Assert.Equal(Shade.None, viaReader.Shade);
 
-		QueryResult<Queue<object?[]>> result = new([0, 1, 2], ["Count", "Created", "Shade"], new Queue<object?[]>([[null, DBNull.Value, DBNull.Value]]));
+		QueryResult<Queue<object[]>> result = new([0, 1, 2], ["Count", "Created", "Shade"], new Queue<object[]>([[null!, DBNull.Value, DBNull.Value]]));
 		Plain viaArray = Assert.Single(result.DequeueAs(RowMap<Plain>.Default).ToList());
 		Assert.Equal(0, viaArray.Count);
 		Assert.Equal(default, viaArray.Created);
@@ -190,7 +190,7 @@ public static class RowMapNullTests
 		Assert.Null(viaReader.Tint);
 
 		// Buffered rows: a C# null and a DBNull both count as NULL.
-		QueryResult<Queue<object?[]>> result = new([0, 1, 2], ["Maybe", "Text", "Tint"], new Queue<object?[]>([[null, DBNull.Value, DBNull.Value]]));
+		QueryResult<Queue<object[]>> result = new([0, 1, 2], ["Maybe", "Text", "Tint"], new Queue<object[]>([[null!, DBNull.Value, DBNull.Value]]));
 		Optional viaArray = Assert.Single(result.DequeueAs(RowMap<Optional>.Default).ToList());
 		Assert.Null(viaArray.Maybe);
 		Assert.Null(viaArray.Text);

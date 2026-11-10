@@ -25,7 +25,7 @@ public static class ConstructorBindingTests
 	{
 		if (route == Route.Buffered)
 		{
-			var result = new QueryResult<Queue<object?[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object?[]>(rows));
+			var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object[]>(rows!));
 			return result.DequeueAs(map).ToList();
 		}
 

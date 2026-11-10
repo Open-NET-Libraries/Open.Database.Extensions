@@ -22,7 +22,7 @@ public static class MappingCharacterizationTests
 			return (map is null ? command.Map<T>() : command.Map(map)).ToList();
 		}
 
-		var result = new QueryResult<Queue<object?[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object?[]>([row]));
+		var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object[]>([row!]));
 		return result.DequeueAs(map).ToList();
 	}
 

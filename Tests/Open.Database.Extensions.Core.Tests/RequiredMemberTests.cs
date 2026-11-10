@@ -244,7 +244,7 @@ public static class RequiredMemberTests
 	public static void TheBufferedRoutes_BuildThePlanWhenTheBufferIsHandedOver_SoEvenAnEmptyOneReportsAMissingColumn()
 	{
 		string message = Missing("RequiredPost", "Title", "String", "Title");
-		var result = new QueryResult<Queue<object?[]>>([0], ["Id"], new Queue<object?[]>());
+		var result = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>());
 		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => result.DequeueAs<RequiredPost>()).Message);
 
 		var table = new DataTable();
@@ -252,7 +252,7 @@ public static class RequiredMemberTests
 		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => table.To<RequiredPost>()).Message);
 
 		// With every column present an empty buffer maps to nothing.
-		var complete = new QueryResult<Queue<object?[]>>([0, 1], ["Id", "Title"], new Queue<object?[]>());
+		var complete = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>());
 		Assert.Empty(complete.DequeueAs<RequiredPost>());
 	}
 
@@ -349,10 +349,10 @@ public static class RequiredMemberTests
 
 		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new FakeExecuteReader(() => TypedReader.Create(IdOnly, [1])).Map<RequiredPost>().ToListAsync(ct))).Message);
 
-		var result = new QueryResult<Queue<object?[]>>([0, 1], ["Id", "Title"], new Queue<object?[]>(rows));
+		var result = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>(rows!));
 		Assert.Equal([1, 2], (await Task.FromResult(result).DequeueAs<RequiredPost>()).Select(p => p.Id));
-		var one = new QueryResult<Queue<object?[]>>([0], ["Id"], new Queue<object?[]>([[1]]));
-		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new ValueTask<QueryResult<Queue<object?[]>>>(one).DequeueAs<RequiredPost>())).Message);
+		var one = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>([[1]]));
+		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new ValueTask<QueryResult<Queue<object[]>>>(one).DequeueAs<RequiredPost>())).Message);
 	}
 
 	[Fact]
@@ -575,7 +575,7 @@ public static class RequiredMemberTests
 	// The message of the ValueMappingException the buffered route raises for a row with only the Id column, or null when the row maps.
 	internal static string? MissingTitle<T>()
 	{
-		var result = new QueryResult<Queue<object?[]>>([0], ["Id"], new Queue<object?[]>([[1]]));
+		var result = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>([[1]]));
 		try
 		{
 			Assert.Single(result.DequeueAs<T>());
