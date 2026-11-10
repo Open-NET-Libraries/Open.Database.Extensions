@@ -4,6 +4,8 @@ namespace Open.Database.Extensions.Tests;
 
 #nullable enable
 
+#pragma warning disable RCS1261 // The synchronous members cannot dispose asynchronously, and the fake stays simple.
+
 /// <summary>
 /// An <see cref="IExecuteReaderAsync"/> that records the token its four-parameter <c>ExecuteReaderAsync</c> receives (the one that governs the call)
 /// and completes synchronously unless <see cref="Stall"/> is set, so the allocation tests can use it.

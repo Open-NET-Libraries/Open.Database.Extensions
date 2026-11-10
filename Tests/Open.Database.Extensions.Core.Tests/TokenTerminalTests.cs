@@ -48,20 +48,20 @@ public static class TokenTerminalTests
 		{
 			case TokenTerminal.NonQuery: await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false); break;
 			case TokenTerminal.Scalar: await cmd.ExecuteScalarAsync(token).ConfigureAwait(false); break;
-			case TokenTerminal.ScalarFunc: await cmd.ExecuteScalarAsync(static o => 1, token).ConfigureAwait(false); break;
-			case TokenTerminal.ScalarFuncValueTask: await cmd.ExecuteScalarAsync(static o => new ValueTask<int>(1), token).ConfigureAwait(false); break;
+			case TokenTerminal.ScalarFunc: await cmd.ExecuteScalarAsync(static _ => 1, token).ConfigureAwait(false); break;
+			case TokenTerminal.ScalarFuncValueTask: await cmd.ExecuteScalarAsync(static _ => new ValueTask<int>(1), token).ConfigureAwait(false); break;
 			case TokenTerminal.ScalarT: await cmd.ExecuteScalarAsync<int>(token).ConfigureAwait(false); break;
 			case TokenTerminal.Return: await cmd.ExecuteReturnAsync(token).ConfigureAwait(false); break;
 			case TokenTerminal.ReturnT: await cmd.ExecuteReturnAsync<int>(token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderState: await cmd.ExecuteReaderAsync(1, static (r, s) => new ValueTask<int>(s), CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderAction: await cmd.ExecuteReaderAsync(static r => { }, CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFunc: await cmd.ExecuteReaderAsync(static r => 1, CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTask: await cmd.ExecuteReaderAsync(static r => new ValueTask(), CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTaskT: await cmd.ExecuteReaderAsync(static r => new ValueTask<int>(1), CommandBehavior.Default, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderActionToken: await cmd.ExecuteReaderAsync(static r => { }, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncToken: await cmd.ExecuteReaderAsync(static r => 1, token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTaskToken: await cmd.ExecuteReaderAsync(static r => new ValueTask(), token).ConfigureAwait(false); break;
-			case TokenTerminal.ReaderFuncValueTaskTToken: await cmd.ExecuteReaderAsync(static r => new ValueTask<int>(1), token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderState: await cmd.ExecuteReaderAsync(1, static (_, s) => new ValueTask<int>(s), CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderAction: await cmd.ExecuteReaderAsync(static _ => { }, CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFunc: await cmd.ExecuteReaderAsync(static _ => 1, CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTask: await cmd.ExecuteReaderAsync(static _ => new ValueTask(), CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTaskT: await cmd.ExecuteReaderAsync(static _ => new ValueTask<int>(1), CommandBehavior.Default, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderActionToken: await cmd.ExecuteReaderAsync(static _ => { }, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncToken: await cmd.ExecuteReaderAsync(static _ => 1, token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTaskToken: await cmd.ExecuteReaderAsync(static _ => new ValueTask(), token).ConfigureAwait(false); break;
+			case TokenTerminal.ReaderFuncValueTaskTToken: await cmd.ExecuteReaderAsync(static _ => new ValueTask<int>(1), token).ConfigureAwait(false); break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal));
 		}
 	}
@@ -177,8 +177,8 @@ public static class TokenTerminalTests
 		cts.Cancel();
 		var rig = new TokenRig();
 #pragma warning disable CA2012 // The call throws before it returns a ValueTask.
-		Assert.Throws<OperationCanceledException>(() => { _ = Make(rig).ExecuteReturnAsync(cts.Token); });
-		Assert.Throws<OperationCanceledException>(() => { _ = Make(rig).UseCancellationToken(cts.Token).ExecuteReturnAsync(); });
+		Assert.Throws<OperationCanceledException>(() => _ = Make(rig).ExecuteReturnAsync(cts.Token));
+		Assert.Throws<OperationCanceledException>(() => _ = Make(rig).UseCancellationToken(cts.Token).ExecuteReturnAsync());
 #pragma warning restore CA2012
 		Assert.Empty(rig.Log);
 	}
@@ -192,18 +192,18 @@ public static class TokenTerminalTests
 
 		var viaInterface = new TokenRig();
 		IExecuteReader asInterface = Make(viaInterface).UseCancellationToken(commandSource.Token);
-		await asInterface.ExecuteReaderAsync(1, static (r, s) => new ValueTask<int>(s), CommandBehavior.Default, callSource.Token);
+		await asInterface.ExecuteReaderAsync(1, static (_, s) => new ValueTask<int>(s), CommandBehavior.Default, callSource.Token);
 		Assert.Equal(callSource.Token, Assert.Single(viaInterface.Open));
 
 		var viaClass = new TokenRig();
-		await Make(viaClass).UseCancellationToken(commandSource.Token).ExecuteReaderAsync(1, static (r, s) => new ValueTask<int>(s), CommandBehavior.Default, callSource.Token);
+		await Make(viaClass).UseCancellationToken(commandSource.Token).ExecuteReaderAsync(1, static (_, s) => new ValueTask<int>(s), CommandBehavior.Default, callSource.Token);
 		CancellationToken seen = Assert.Single(viaClass.Open);
 		Assert.NotEqual(callSource.Token, seen);
 		Assert.NotEqual(commandSource.Token, seen);
 
 		// and the interface members without a token still use the command's own
 		var plain = new TokenRig();
-		await ((IExecuteReader)Make(plain).UseCancellationToken(commandSource.Token)).ExecuteReaderAsync(1, static (r, s) => new ValueTask<int>(s));
+		await ((IExecuteReader)Make(plain).UseCancellationToken(commandSource.Token)).ExecuteReaderAsync(1, static (_, s) => new ValueTask<int>(s));
 		Assert.Equal(commandSource.Token, Assert.Single(plain.Open));
 	}
 
@@ -221,10 +221,10 @@ public static class TokenTerminalTests
 		await cmd.ExecuteNonQueryAsync(ct);
 		await cmd.ExecuteScalarAsync();
 		await cmd.ExecuteScalarAsync(ct);
-		Assert.Equal(1, await cmd.ExecuteScalarAsync(o => 1));
-		Assert.Equal(1, await cmd.ExecuteScalarAsync(o => new ValueTask<int>(1)));
-		Assert.Equal(1, await cmd.ExecuteScalarAsync(o => 1, ct));
-		Assert.Equal(1, await cmd.ExecuteScalarAsync(o => new ValueTask<int>(1), ct));
+		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1));
+		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1)));
+		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1, ct));
+		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1), ct));
 		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>());
 		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(ct));
 		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(CancellationToken.None));
@@ -233,26 +233,26 @@ public static class TokenTerminalTests
 		await cmd.ExecuteReturnAsync<int>(ct);
 
 		// the reader terminals with 1, 2, 3 and 4 arguments, lambdas and static lambdas
-		await cmd.ExecuteReaderAsync(r => { });
-		await cmd.ExecuteReaderAsync(r => { }, behavior);
-		await cmd.ExecuteReaderAsync(r => { }, ct);
-		await cmd.ExecuteReaderAsync(r => { }, behavior, ct);
-		await cmd.ExecuteReaderAsync(r => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
-		await cmd.ExecuteReaderAsync(r => { }, 0); // an int still binds the behavior
-		Assert.Equal(1, await cmd.ExecuteReaderAsync(r => 1));
-		Assert.Equal(1, await cmd.ExecuteReaderAsync(r => 1, ct));
-		Assert.Equal(1, await cmd.ExecuteReaderAsync(r => new ValueTask<int>(1), ct));
-		await cmd.ExecuteReaderAsync(r => new ValueTask(), ct);
-		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (r, s) => new ValueTask<int>(s)));
-		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (r, s) => new ValueTask<int>(s), behavior));
-		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (r, s) => new ValueTask<int>(s), behavior, ct));
+		await cmd.ExecuteReaderAsync(_ => { });
+		await cmd.ExecuteReaderAsync(_ => { }, behavior);
+		await cmd.ExecuteReaderAsync(_ => { }, ct);
+		await cmd.ExecuteReaderAsync(_ => { }, behavior, ct);
+		await cmd.ExecuteReaderAsync(_ => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
+		await cmd.ExecuteReaderAsync(_ => { }, 0); // an int still binds the behavior
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => 1));
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => 1, ct));
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => new ValueTask<int>(1), ct));
+		await cmd.ExecuteReaderAsync(_ => new ValueTask(), ct);
+		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (_, s) => new ValueTask<int>(s)));
+		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (_, s) => new ValueTask<int>(s), behavior));
+		Assert.Equal(7, await cmd.ExecuteReaderAsync(7, static (_, s) => new ValueTask<int>(s), behavior, ct));
 
 		// the extensions: the token after the optional parameters
-		await cmd.IterateReaderAsync(r => { });
-		await cmd.IterateReaderAsync(r => { }, behavior, ct);
-		await cmd.IterateReaderAsync(r => { }, cancellationToken: ct);
-		await cmd.IterateReaderWhileAsync(r => true, cancellationToken: ct);
-		await cmd.IterateReaderWhileAsync(r => new ValueTask<bool>(true), cancellationToken: ct);
+		await cmd.IterateReaderAsync(_ => { });
+		await cmd.IterateReaderAsync(_ => { }, behavior, ct);
+		await cmd.IterateReaderAsync(_ => { }, cancellationToken: ct);
+		await cmd.IterateReaderWhileAsync(_ => true, cancellationToken: ct);
+		await cmd.IterateReaderWhileAsync(_ => new ValueTask<bool>(true), cancellationToken: ct);
 
 		var channel = System.Threading.Channels.Channel.CreateUnbounded<object[]>();
 		await cmd.ToChannel(channel.Writer, false);
@@ -269,7 +269,7 @@ public static class TokenTerminalTests
 		Assert.NotNull(cmd.AsSourceBlockAsync());
 		Assert.NotNull(cmd.AsSourceBlockAsync(null, ct));
 		Assert.NotNull(cmd.AsSourceBlockAsync(ArrayPool<object>.Shared, null, ct));
-		Assert.NotNull(cmd.AsSourceBlockAsync(static r => 1, null, ct));
+		Assert.NotNull(cmd.AsSourceBlockAsync(static _ => 1, null, ct));
 		Assert.NotNull(cmd.AsSourceBlockAsync<int>(null, ct));
 		Assert.NotNull(cmd.AsSourceBlockAsync((RowMap<TokenItem>?)null, null, ct));
 	}
@@ -281,9 +281,9 @@ public static class TokenTerminalTests
 
 	static Task Iterate(IterateShape shape, IExecuteReaderAsync cmd, Action? each, CancellationToken token) => shape switch
 	{
-		IterateShape.Action => cmd.IterateReaderAsync(r => each?.Invoke(), CommandBehavior.Default, token).AsTask(),
-		IterateShape.While => cmd.IterateReaderWhileAsync(r => { each?.Invoke(); return true; }, CommandBehavior.Default, token).AsTask(),
-		IterateShape.WhileAsync => cmd.IterateReaderWhileAsync(r => { each?.Invoke(); return new ValueTask<bool>(true); }, CommandBehavior.Default, token).AsTask(),
+		IterateShape.Action => cmd.IterateReaderAsync(_ => each?.Invoke(), CommandBehavior.Default, token).AsTask(),
+		IterateShape.While => cmd.IterateReaderWhileAsync(_ => { each?.Invoke(); return true; }, CommandBehavior.Default, token).AsTask(),
+		IterateShape.WhileAsync => cmd.IterateReaderWhileAsync(_ => { each?.Invoke(); return new ValueTask<bool>(true); }, CommandBehavior.Default, token).AsTask(),
 		_ => throw new ArgumentOutOfRangeException(nameof(shape)),
 	};
 
@@ -452,9 +452,14 @@ public static class TokenTerminalTests
 		public override Task Completion => inner.Completion;
 		public override bool TryRead([MaybeNullWhen(false)] out object item)
 		{
-			bool ok = inner.TryRead(out T? value);
-			item = value!;
-			return ok;
+			if (inner.TryRead(out T? value))
+			{
+				item = value;
+				return true;
+			}
+
+			item = null!;
+			return false;
 		}
 
 		public override ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken = default) => inner.WaitToReadAsync(cancellationToken);
