@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
@@ -53,19 +54,19 @@ public static class Deprecated
 
 	public static (string Before, string After) ResultsFromDataTable(SqliteConnection connection)
 	{
-		static IDbCommand Create(SqliteConnection connection)
+		static SqliteCommand Create(SqliteConnection connection)
 		{
-			IDbCommand command = connection.CreateCommand();
+			SqliteCommand command = connection.CreateCommand();
 			command.CommandText = PostsSql;
 			return command;
 		}
 
-		using IDbCommand oldCommand = Create(connection);
+		using SqliteCommand oldCommand = Create(connection);
 		#region deprecated_resultsfromdatatable_before
 		List<Post> before = oldCommand.ResultsFromDataTable<Post>().ToList();
 		#endregion
 
-		using IDbCommand newCommand = Create(connection);
+		using SqliteCommand newCommand = Create(connection);
 		#region deprecated_resultsfromdatatable_after
 		// Reading the map first keeps the old behavior of failing before the command runs for a type that cannot be mapped.
 		RowMap<Post> map = RowMap<Post>.Default;
@@ -178,7 +179,7 @@ public static class Deprecated
 	public static int Collection(SqliteConnection connection)
 	{
 		#region deprecated_collection_before
-		var rows = new QueryResultCollection<long>(new int[] { 0 }, new string[] { "id" }, connection.Command(IdsSql).Map(Id).ToList());
+		var rows = new QueryResultCollection<long>(ImmutableArray.Create(0), ImmutableArray.Create("id"), connection.Command(IdsSql).Map(Id).ToList());
 		#endregion
 
 		#region deprecated_collection_after
