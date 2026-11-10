@@ -4,10 +4,10 @@ namespace Samples;
 #region post_model
 public class Post
 {
-	public int Id { get; set; }
-	public int Author { get; set; }
-	public string Title { get; set; } = "";
-	public string? Body { get; set; }
+	public required int Id { get; init; }
+	public int Author { get; init; }
+	public string Title { get; init; } = "";
+	public string? Body { get; init; }
 }
 #endregion
 

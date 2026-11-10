@@ -27,7 +27,7 @@ dotnet add package Microsoft.Data.Sqlite
 
 ## Your first query
 
-A model is a class with public settable properties, as below. A positional record or a class with one public constructor works too: it is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)).
+A model is a class with public properties, as below. They can be read-only after construction: `init` properties work (C# 9), and so does `required` (C# 11), which here makes a query without an `id` column fail on its first row. A positional record or a class with one public constructor works too: it is built through that constructor (see [Records and constructors](mapping.md#records-and-constructors)).
 
 [!code-csharp[](../samples/Models.cs#post_model)]
 
