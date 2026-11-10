@@ -1,4 +1,4 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -177,10 +177,12 @@ public static class ExecuteReaderEdgeTests
 		TypedReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = TypedReader.Create([("Id", typeof(int))], [1], [null], [3]));
 
-		IEnumerable<object?> values = command.FirstOrdinalResults();
+		Queue<object?> values = command.FirstOrdinalResults();
 
 		Assert.Equal(3, reader!.RowsRead); // the reader is already disposed when the caller enumerates
+		Assert.Equal(3, values.Count);
 		Assert.Equal([1, null, 3], values.ToArray());
+		Assert.Equal([1, null, 3], values.ToArray()); // enumerating does not empty the queue
 		Assert.Equal([1, null, 3], command.FirstOrdinalResults<int?>().ToArray());
 		CommandBehavior behavior = command.Behaviors[0];
 		Assert.True(behavior.HasFlag(CommandBehavior.SequentialAccess));

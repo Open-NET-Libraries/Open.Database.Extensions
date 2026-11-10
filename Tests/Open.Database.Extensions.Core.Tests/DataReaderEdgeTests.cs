@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -307,11 +307,13 @@ public static class DataReaderEdgeTests
 			? TypedReader.Create([("Id", typeof(int))], rows)
 			: FakeReader.Create(["Id"], rows);
 
-		IEnumerable<object?> values = reader.FirstOrdinalResults();
+		Queue<object?> values = reader.FirstOrdinalResults();
 
 		if (reader is TypedReader typed)
 			Assert.Equal(3, typed.RowsRead); // before it is enumerated, so the connection can be released
+		Assert.Equal(3, values.Count);
 		Assert.Equal([1, null, 3], values.ToArray());
+		Assert.Equal([1, null, 3], values.ToArray()); // enumerating does not empty the queue
 	}
 
 	// ---- argument guards ----
