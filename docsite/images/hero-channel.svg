@@ -58,7 +58,7 @@
   <ellipse cx="1070" cy="100" rx="250" ry="110" fill="url(#glow)"/>
 
   <g transform="translate(0 -6)">
-    <path class="ms" d="M48 101v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="101" rx="22" ry="6.5"/><path class="ms" d="M48 88v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="88" rx="22" ry="6.5"/><path class="ms" d="M48 75v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="75" rx="22" ry="6.5"/><path class="letters" d="M120 74.5a13.5 16.5 0 1 0 0.01 0ZM147.5 74.5V107.5H154.5A15 16.5 0 0 0 154.5 74.5ZM182.5 74.5L206.5 107.5M206.5 74.5L182.5 107.5"/>
+    <path class="ms" d="M48 101v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="101" rx="22" ry="6.5"/><path class="ms" d="M48 88v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="88" rx="22" ry="6.5"/><path class="ms" d="M48 75v9a22 6.5 0 0 0 44 0v-9z"/><ellipse class="mt" cx="70" cy="75" rx="22" ry="6.5"/><path class="letters" d="M120 74.5a13.5 16.5 0 1 0 0.01 0ZM147.5 74.5V107.5H154.5A15 16.5 0 0 0 154.5 74.5ZM180.5 74.5L204.5 107.5M204.5 74.5L180.5 107.5"/>
     <text class="pk" x="125" y="143" text-anchor="middle">Channel</text>
     <path class="rule" d="M248 52V150"/>
   </g>
