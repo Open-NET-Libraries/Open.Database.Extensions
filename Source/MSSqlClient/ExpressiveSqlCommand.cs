@@ -194,8 +194,10 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 		try
 		{
 #if NET10_0_OR_GREATER
-			await using SqlCommand command = ProcedureNamesCommand(connection, procedure);
-			await using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+			SqlCommand command = ProcedureNamesCommand(connection, procedure);
+			await using var commandDisposal = command.ConfigureAwait(false);
+			SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+			await using var readerDisposal = reader.ConfigureAwait(false);
 #else
 			using SqlCommand command = ProcedureNamesCommand(connection, procedure);
 			using SqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
