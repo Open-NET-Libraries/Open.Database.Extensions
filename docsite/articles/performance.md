@@ -35,7 +35,7 @@ With a real database the server and the network dominate the time, so the speed 
 
 ## Where it is not faster
 
-- `Retrieve().DequeueAs<T>()` copies every row to `object[]` first and maps later. It is not faster than a plain loop, and for typed results `Map<T>()` is the better route.
+- `Retrieve().DequeueAs<T>()` is deprecated: it copies every row to `object[]` first and maps later, so it is not faster than a plain loop. Use `Map<T>()`.
 - `ToChannel` and the Dataflow methods are not faster than reading rows in a plain loop. They exist to feed pipelines: see [Channels and Dataflow](channels-and-dataflow.md).
 - Selector-based mapping (`Map(selector)`) and `ScalarAsync` are ties with Dapper.
 - A few fixed-cost scenarios, such as a scalar query, allocate slightly more than Dapper because of the command object.

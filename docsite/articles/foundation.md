@@ -35,7 +35,7 @@ A command built from a single connection refuses concurrent terminals: a second 
 Several helpers exist to keep the time a connection is open short:
 
 - `EnsureOpen()` and `EnsureOpenAsync()` open a closed (or broken) connection and return its prior state, so you can restore it.
-- Buffering helpers such as `Results<T>()` queue the rows first and apply the transformation as you enumerate them.
+- Buffering helpers such as `ResultsBuffered<T>()` buffer the rows and map them in one call. On an `IExecuteReader`, `Results<T>()`, `FirstOrDefault(selector)`, `SingleOrDefault(selector)`, `Take`, `Skip` and `SkipThenTake` are deprecated; use `Map(...)`. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
 - `Map<T>()` streams rows straight out of the reader while the connection is open; the connection is released as soon as the terminal returns.
 
 ## Transactions
@@ -46,6 +46,6 @@ Several helpers exist to keep the time a connection is open short:
 
 ## Reader and command helpers
 
-The foundation also includes helpers you can use without the expressive syntax: `ForEach` and `ForEachAsync` over a reader, `Select` and `SelectAsync`, `AsEnumerable` and `AsAsyncEnumerable` (rows as `object[]`), `ToList`, `ToArray`, `ToDataTable` and friends on commands. Buffered reads copy the rows out of the reader first, so the connection can be released early: `Retrieve()` copies every row into a queue of `object[]`, and `DequeueAs<T>()` maps that queue to `T` as you enumerate it. `Results<T>()` buffers and maps in one call, and `FirstOrdinalResults<T>()` reads the first column of every row as `T`. For typed rows `Map<T>()` is the better route (see [Performance](performance.md#where-it-is-not-faster)).
+The foundation also includes helpers you can use without the expressive syntax: `ForEach` and `ForEachAsync` over a reader, `Select` and `SelectAsync`, `AsEnumerable` and `AsAsyncEnumerable` (rows as `object[]`), `ToList`, `ToArray`, `ToDataTable` and friends on commands. Buffered reads copy the rows out of the reader first, so the connection can be released early: `Retrieve()` copies every row into a queue of `object[]` (raw rows with column names; `DequeueAsMappedDictionaries()` turns them into dictionaries). `DequeueAs<T>()`, which mapped that queue to `T`, is deprecated: use `Map<T>().ToList()`. `ResultsBuffered<T>()` (and `Results<T>()` on an `IDbCommand`, which buffers the rows and stays) buffers and maps in one call; `Results<T>()` on an `IExecuteReader` is deprecated, use `Map<T>().ToList()`. `FirstOrdinalResults<T>()` reads the first column of every row as `T`. For typed rows `Map<T>()` is the better route (see [Performance](performance.md#where-it-is-not-faster)).
 
 See the [API reference](xref:Open.Database.Extensions) for the full list.

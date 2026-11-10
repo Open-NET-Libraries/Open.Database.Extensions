@@ -92,7 +92,9 @@ public class SyncBenchmarks
 	public List<Post> QueryResult_Dapper() => _conn.Query<Post>(Sql).AsList();
 
 	[BenchmarkCategory("QueryResult"), Benchmark]
+#pragma warning disable CS0618 // measures the deprecated Retrieve + DequeueAs route until 12
 	public List<Post> QueryResult_ODE() => _conn.Command(Sql).Retrieve().DequeueAs<Post>().ToList();
+#pragma warning restore CS0618
 
 	[BenchmarkCategory("Dictionary"), Benchmark(Baseline = true)]
 	public Dictionary<int, Post> Dictionary_Dapper() => _conn.Query<Post>(Sql).ToDictionary(p => p.Id);

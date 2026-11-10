@@ -77,7 +77,9 @@ public static class TransformerResultsTests
 			queue);
 
 		var map = new RowMap<Person>([new(nameof(Person.FirstName), "first_name")]);
+		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<Person> people = [.. result.DequeueAs(map)];
+		#pragma warning restore CS0618
 
 		Assert.Equal(2, people.Count);
 		Assert.Equal("Jane", people[0].FirstName);

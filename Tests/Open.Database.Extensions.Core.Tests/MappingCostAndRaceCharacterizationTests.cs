@@ -273,7 +273,9 @@ public static class MappingCostAndRaceCharacterizationTests
 			for (int n = 0; n < 100; n++)
 			{
 				var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([Row(columns, 1)!]));
+				#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 				AssertGadgets([.. result.DequeueAs(shared)], 1, hasNote: names.Contains("gadget_note"));
+				#pragma warning restore CS0618
 			}
 		});
 	}
@@ -489,7 +491,9 @@ public static class MappingCostAndRaceCharacterizationTests
 			for (int n = 0; n < 100; n++)
 			{
 				var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([Row(columns, 1)!]));
+				#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 				AssertGadgetRecords([.. result.DequeueAs(shared)], 1, hasNote: names.Contains("gadget_note"));
+				#pragma warning restore CS0618
 			}
 		});
 	}

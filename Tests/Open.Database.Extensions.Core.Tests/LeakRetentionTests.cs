@@ -66,7 +66,9 @@ public static class LeakRetentionTests
 				model = (await command.Map<Row>().ToListAsync(token))[0];
 				break;
 			case "ResultsAsync":
+				#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 				model = (await command.ResultsAsync<Row>()).First();
+				#pragma warning restore CS0618
 				break;
 			case "ToChannelAsync":
 				ChannelReader<Row> channel = command.ToChannelAsync<Row>(true);
