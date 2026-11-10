@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
 using Samples;
@@ -193,6 +193,13 @@ Check(dictBefore.Length > 0 && dictBefore == dictAfter && dictBeforeAsync == dic
 (resultsBefore, resultsAfter) = Deprecated.DequeueAs(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Retrieve().DequeueAs<T>() and Map<T>().ToList() return the same rows");
 
+// The buffered Results calls return the queue they build.
+Db.Seed();
+(int queueCount, string queueFirstPass, string queueSecondPass, int queueLeft) = BufferedQueue.Replay(connection);
+Check(queueCount == 5 && queueFirstPass == "1,2,3,4,5" && queueSecondPass == queueFirstPass, "Results<T>() returns a queue that can be enumerated again");
+Check(queueLeft == 0, "TryDequeue releases every row");
+Queue<object?> queueBodies = await BufferedQueue.FirstColumn(connection);
+Check(queueBodies.Count == 5 && queueBodies.Contains(null) && !queueBodies.Any(value => value is DBNull), "FirstOrdinalResultsAsync() returns a queue that holds null, never DBNull");
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
