@@ -70,6 +70,8 @@ Person[] snake = Mapping.MapSnakeCase(connection);
 Check(snake[0] is { Id: 0, FirstName: "Ada", LastName: "Lovelace" }, "snake_case columns feed PascalCase properties with no map");
 Post[] readerView = await Mapping.MapReaderView(connection);
 Check(readerView.Length == 5 && readerView[0].Title == "Post 1", "reader.Map<T>() maps the rows of the caller's reader");
+Post[] tableView = await Mapping.MapTableView(connection);
+Check(tableView.Length == 5 && tableView[0].Title == "Post 1", "table.Map<T>() maps the rows of a DataTable");
 Post[] commandView = await Mapping.MapCommandView(connection);
 Check(commandView.Length == 3 && connection.State == ConnectionState.Open, "command.Map<T>() on an open connection leaves it open");
 using (SqliteConnection closedConnection = factory.Create())
@@ -202,7 +204,7 @@ Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Results<T>() a
 (resultsBefore, resultsAfter) = await Deprecated.ResultsAsync(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsAsync<T>() and Map<T>().ToListAsync() return the same rows");
 (resultsBefore, resultsAfter) = Deprecated.ResultsFromDataTable(connection);
-Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable().To<T>(map, true) return the same rows");
+Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable() read with ToDataTable().Map(map).ToList() return the same rows");
 (resultsBefore, resultsAfter) = Deprecated.SelectorForms(connection);
 Check(resultsBefore == "1|1,2|4,5|2,3" && resultsBefore == resultsAfter, "FirstOrDefault, Take, Skip and SkipThenTake with a selector match their Map forms");
 Check(Deprecated.SkippedRowSelector(connection) == (true, false), "a selector that throws on a skipped row failed Skip, and does not fail Map(...).Skip");

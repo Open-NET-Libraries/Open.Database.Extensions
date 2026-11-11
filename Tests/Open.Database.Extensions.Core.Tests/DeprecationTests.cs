@@ -55,7 +55,7 @@ public static class DeprecationTests
 
 		yield return ("1a Results<T>(IExecuteReader)", [.. OnReader("Results", false)], [".Map<T>().ToList()", ".Map(map).ToList()", ".SingleResult()"]);
 		yield return ("1b/1c ResultsAsync<T>", [.. Of(command, "ResultsAsync")], [".Map<T>().ToListAsync()", ".Map(map).ToListAsync()", ".SingleResult()"]);
-		yield return ("2 ResultsFromDataTable<T>", [.. Of(typeof(CoreExtensions), "ResultsFromDataTable")], [".ToDataTable()", ".CreateDataReader().Map(map).ToList()", "RowMap<T>.Default"]);
+		yield return ("2 ResultsFromDataTable<T>", [.. Of(typeof(CoreExtensions), "ResultsFromDataTable")], [".ToDataTable()", "table.Map(map).ToList()", "RowMap<T>.Default"]);
 		yield return ("3a FirstOrDefault(selector)", [.. OnReader("FirstOrDefault", true)], [".Map(selector).FirstOrDefault()"]);
 		yield return ("3b SingleOrDefault(selector)", [.. OnReader("SingleOrDefault", true)], [".Map(selector).SingleOrDefault()"]);
 		yield return ("3c Take(selector)", [.. OnReader("Take", true)], [".Map(selector).Take(count).ToList()", "Take(0) now runs the command"]);
@@ -76,8 +76,8 @@ public static class DeprecationTests
 		yield return ("9a IExecuteReader ToList/ToArray/ToImmutableArray(transform)", [.. ReaderTerminals.SelectMany(name => OnReader(name, true))], [".Map(transform)", "CommandBehavior.SingleResult", ".SingleResult()"]);
 		yield return ("9b IExecuteReader IterateReader(transform, selector)", [.. OnReader("IterateReader", true).Where(m => m.GetGenericArguments().Length == 2)], [".Map(transform).Read(selector)", "CommandBehavior.SingleResult", ".SingleResult()"]);
 		yield return ("10 DbCommand ToListAsync(transform)", [.. Of(typeof(CommandExtensions), "ToListAsync", m => m.GetParameters() is [{ ParameterType: var first }, ..] && first == typeof(DbCommand) && m.GetParameters().Any(IsRecordSelector))], ["await command.Map(transform).ToListAsync(cancellationToken)", ".SingleResult()"]);
-		yield return ("11a To<T>(DataTable)", [.. Of(typeof(CoreExtensions), "To", m => m.GetParameters()[0].ParameterType == typeof(DataTable))], ["table.CreateDataReader().Map(map).ToList()", "clear the table yourself"]);
-		yield return ("11b Transformer<T>.Results(DataTable)", [.. Of(typeof(Transformer<>), "Results", m => m.GetParameters() is [{ ParameterType: var first }, ..] && first == typeof(DataTable))], ["table.CreateDataReader().Map(map).ToList()", "clear the table yourself"]);
+		yield return ("11a To<T>(DataTable)", [.. Of(typeof(CoreExtensions), "To", m => m.GetParameters()[0].ParameterType == typeof(DataTable))], ["table.Map(map).ToList()", "clear the table yourself"]);
+		yield return ("11b Transformer<T>.Results(DataTable)", [.. Of(typeof(Transformer<>), "Results", m => m.GetParameters() is [{ ParameterType: var first }, ..] && first == typeof(DataTable))], ["table.Map(map).ToList()", "clear the table yourself"]);
 		yield return ("12 MappedQueryExtensions.ReadAsync(token first)", [.. Of(typeof(MappedQueryExtensions), "ReadAsync", m => m.GetParameters()[1].ParameterType == typeof(CancellationToken))], ["query.ReadAsync(handler, cancellationToken)"]);
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		yield return ("13 SqlClient types", [typeof(ExpressiveSqlCommand), typeof(SqlConnectionFactory), typeof(SqlCommandExtensions), typeof(SqlConnectionExtensions), typeof(SqlTransactionExtensions)], ["Open.Database.Extensions.MSSqlClient"]);
@@ -152,9 +152,7 @@ public static class DeprecationTests
 		string old = Show(source.CreateDataReader().ResultsFromDataTable<Thing>());
 #pragma warning restore CS0618
 		using var table = source.CreateDataReader().ToDataTable();
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		string replacement = Show(table.To<Thing>(null, true).ToList());
-#pragma warning restore CS0618
+		string replacement = Show(table.Map<Thing>().ToList());
 
 		Assert.Equal("1:n1,2:n2", old);
 		Assert.Equal(old, replacement);

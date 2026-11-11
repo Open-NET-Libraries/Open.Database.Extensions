@@ -244,6 +244,10 @@ On a command, the terminal opens the connection only if it is closed, and closes
 
 [!code-csharp[](../samples/Mapping.cs#map_command_view)]
 
+A `DataTable` you already have works too: `table.Map<T>()` returns a `MappedTable<T>`, with the same overloads and terminals. Each terminal reads the table through its own `DataTableReader` and disposes it; the table is not changed or cleared, so the view can be read more than once, and there is no connection to open. It is a shortcut for `table.CreateDataReader().Map<T>()` where the view owns the readers it creates.
+
+[!code-csharp[](../samples/Mapping.cs#map_table_view)]
+
 ## Taking over: `Map(selector)`
 
 When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function for each row. It has the same deferred terminals:
