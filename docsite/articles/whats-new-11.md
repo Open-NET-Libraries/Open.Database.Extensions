@@ -16,6 +16,7 @@ Rebuild consumers of rc.3. Both changes are source-compatible for every call exc
 
 - `reader.Map<T>()` and `command.Map<T>()` map a plain `IDataReader` or `IDbCommand` with the same terminals as an expressive command's `Map<T>()`. The reader is never opened, closed, disposed or advanced to the next result set; a command opens and closes only the connection it opened. See [Mapping a reader or a command you already have](mapping.md#mapping-a-reader-or-a-command-you-already-have).
 - A null `RowMap<T>` passed to `Map<T>(map)` no longer throws `ArgumentNullException`: it maps exactly as `Map<T>()` does (a single value reads the first column).
+- A type of your own that implements both `IExecuteReader` and `IDbCommand` (or `IDataReader`) now gets an ambiguous `Map` call (CS0121); cast it to the interface you mean.
 - A `default` `MappedQuery<T>` (or `MappedQueryWithSkip<T>`, `MappedQueryWithTake<T>`) now throws `InvalidOperationException` when used, where it threw `NullReferenceException`.
 - The `Map<T>` documentation now says how columns match by default: exactly, else ignoring case, else ignoring case and underscores (`author_id` feeds `AuthorId`).
 

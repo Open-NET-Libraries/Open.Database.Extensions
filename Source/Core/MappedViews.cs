@@ -325,7 +325,13 @@ sealed class ReaderExecutor(IDataReader reader) : ViewExecutor
 		CommandBehavior behavior,
 		CancellationToken cancellationToken)
 	{
-		cancellationToken.ThrowIfCancellationRequested();
+		// A cancelled token gives a cancelled task, not an exception at the call.
+		if (cancellationToken.IsCancellationRequested)
+		{
+			return new ValueTask<TResult>(
+				Task.FromCanceled<TResult>(cancellationToken));
+		}
+
 		return transform(reader, state);
 	}
 }
@@ -387,10 +393,15 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 			if (command is DbCommand dbCommand)
 			{
 #if NETSTANDARD2_0
+				using DbDataReader dbReader = await dbCommand
+					.ExecuteReaderAsync(b, cancellationToken)
+					.ConfigureAwait(false);
 #else
-				await
+				DbDataReader dbReader = await dbCommand
+					.ExecuteReaderAsync(b, cancellationToken)
+					.ConfigureAwait(false);
+				await using var dbReaderDisposal = dbReader.ConfigureAwait(false);
 #endif
-				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, cancellationToken).ConfigureAwait(false);
 				return await transform(dbReader, state).ConfigureAwait(false);
 			}
 
@@ -417,6 +428,8 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 /// it reads the rows of the current result set from the reader's current position and stops,
 /// leaving the reader open and positioned after that set's last row.
 /// A caller who wants the next result set calls <c>NextResult</c> and maps again.
+/// The asynchronous terminals read the rows with <c>Read()</c>,
+/// as an expressive command does by default.
 /// </para>
 /// <para>
 /// <c>Skip</c> and <c>Take</c> return the types of <see cref="MappedQuery{T}"/>;
@@ -548,7 +561,8 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 /// The connection is opened only if it is closed,
 /// and a connection the terminal opened is closed (<c>Close</c>, not <c>Dispose</c>) when it ends;
 /// one that was already open is left open.
-/// The asynchronous terminals open and execute asynchronously when the command is a <see cref="DbCommand"/>.
+/// The asynchronous terminals open and execute asynchronously when the command is a <see cref="DbCommand"/>,
+/// then read the rows with <c>Read()</c>, as an expressive command does by default.
 /// </para>
 /// <para>
 /// A terminal returns the rows of the first result set only,
