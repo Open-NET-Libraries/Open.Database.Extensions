@@ -188,7 +188,9 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Closed, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1, 2);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), cancellationToken: TestContext.Current.CancellationToken);
+#pragma warning restore CS0618
 
 		Assert.Equal([1, 2], results);
 		Assert.Equal("OpenAsync", probe.Log);
@@ -201,7 +203,9 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Open, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1, 2);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), cancellationToken: TestContext.Current.CancellationToken);
+#pragma warning restore CS0618
 
 		Assert.Equal([1, 2], results);
 		Assert.Equal(string.Empty, probe.Log);
@@ -214,7 +218,9 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe(ConnectionState.Open, dbConnection: true);
 		FakeDbCommand command = NewDbCommand(probe, 1, 2, 3);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<int> results = await command.ToListAsync(r => (int)r.GetValue(0), useReadAsync: false, cancellationToken: TestContext.Current.CancellationToken);
+#pragma warning restore CS0618
 
 		Assert.Equal([1, 2, 3], results);
 	}

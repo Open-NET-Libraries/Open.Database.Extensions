@@ -3,6 +3,7 @@
 /// <summary>
 /// Core non-DB-specific extensions for acquiring and operating on different connection factories.
 /// </summary>
+[Obsolete(SqlClientObsolete._message)]
 public static partial class SqlConnectionExtensions
 {
 	/// <summary>

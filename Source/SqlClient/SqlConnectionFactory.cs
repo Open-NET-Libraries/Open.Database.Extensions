@@ -7,6 +7,7 @@
 /// The factory holds no connections. The caller of <c>Create</c> owns the connection it receives and disposes it; the expressive commands do this automatically.
 /// </remarks>
 /// <seealso cref="DbConnectionFactory{TConnection}"/>
+[Obsolete(SqlClientObsolete._message)]
 public class SqlConnectionFactory : DbConnectionFactory<SqlConnection>
 {
 	/// <summary>

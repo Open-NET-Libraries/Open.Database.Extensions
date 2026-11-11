@@ -29,6 +29,8 @@ namespace Open.Database.Extensions;
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Convenience and style.")]
 public static class MappedQueryExtensions
 {
+	const string ReadAsyncTokenFirstObsolete = "Pass the token last: query.ReadAsync(handler, cancellationToken). Removed in 12.";
+
 	/// <summary>
 	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> as they are read. Use this overload when the handler does not need the cancellation token.
 	/// </summary>
@@ -68,22 +70,30 @@ public static class MappedQueryExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
 	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/>. The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <inheritdoc cref="ReadAsync{T}(IMappedQuery{T}, Func{IAsyncEnumerable{T}, ValueTask}, CancellationToken)"/>
+	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, ValueTask> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
+	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
 	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/>, and returns the handler's result. The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <inheritdoc cref="ReadAsync{T, TResult}(IMappedQuery{T}, Func{IAsyncEnumerable{T}, ValueTask{TResult}}, CancellationToken)"/>
+	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, ValueTask<TResult>> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
+	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
 	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect. The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
@@ -91,12 +101,15 @@ public static class MappedQueryExtensions
 	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
+	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
+	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
 	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect, and returns the handler's result. The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
 	/// <param name="query">The query to execute.</param>
@@ -105,6 +118,7 @@ public static class MappedQueryExtensions
 	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync{TResult}(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask{TResult}}, CancellationToken)"/>
+	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
@@ -136,8 +150,9 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(cancellationToken,
-			async (items, token) => await items.ToListAsync(token).ConfigureAwait(false));
+		=> query.ReadAsync(
+			async (items, token) => await items.ToListAsync(token).ConfigureAwait(false),
+			cancellationToken);
 
 	/// <summary>
 	/// Reads every mapped row into a new array.
@@ -167,8 +182,9 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(cancellationToken,
-			async (items, token) => await items.ToArrayAsync(token).ConfigureAwait(false));
+		=> query.ReadAsync(
+			async (items, token) => await items.ToArrayAsync(token).ConfigureAwait(false),
+			cancellationToken);
 
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="ImmutableArray{T}"/>.
@@ -212,8 +228,9 @@ public static class MappedQueryExtensions
 	/// </remarks>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default) => query.ReadAsync(cancellationToken,
-			async (items, token) => await items.ToImmutableArrayAsync(token).ConfigureAwait(false));
+	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default) => query.ReadAsync(
+			async (items, token) => await items.ToImmutableArrayAsync(token).ConfigureAwait(false),
+			cancellationToken);
 
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
@@ -264,8 +281,9 @@ public static class MappedQueryExtensions
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
-		return query.ReadAsync(cancellationToken,
-			async (items, token) => await items.ToDictionaryAsync(keySelector, comparer, token).ConfigureAwait(false));
+		return query.ReadAsync(
+			async (items, token) => await items.ToDictionaryAsync(keySelector, comparer, token).ConfigureAwait(false),
+			cancellationToken);
 	}
 
 	/// <summary>
@@ -316,17 +334,21 @@ public static class MappedQueryExtensions
 	{
 #if NETSTANDARD2_0
 		var result = new HashSet<T>(comparer);
-		return query.ReadAsync(cancellationToken, async (items, token) =>
-		{
-			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		return query.ReadAsync(
+			async (items, token) =>
 			{
-				result.Add(item);
-			}
+				await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+				{
+					result.Add(item);
+				}
 
-			return result;
-		});
+				return result;
+			},
+			cancellationToken);
 #else
-		return query.ReadAsync(cancellationToken, (items, token) => items.ToHashSetAsync(comparer, token));
+		return query.ReadAsync(
+			(items, token) => items.ToHashSetAsync(comparer, token),
+			cancellationToken);
 #endif
 	}
 
@@ -361,8 +383,9 @@ public static class MappedQueryExtensions
 	/// </remarks>
 	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	public static ValueTask<T?> FirstOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(cancellationToken,
-			async (items, token) => await items.FirstOrDefaultAsync(token).ConfigureAwait(false));
+		=> query.ReadAsync(
+			async (items, token) => await items.FirstOrDefaultAsync(token).ConfigureAwait(false),
+			cancellationToken);
 
 	/// <summary>
 	/// Reads the only mapped row.
@@ -386,6 +409,7 @@ public static class MappedQueryExtensions
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
 	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	public static ValueTask<T?> SingleOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(cancellationToken,
-			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false));
+		=> query.ReadAsync(
+			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false),
+			cancellationToken);
 }

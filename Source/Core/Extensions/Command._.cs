@@ -6,6 +6,8 @@ namespace Open.Database.Extensions;
 /// </summary>
 public static partial class CommandExtensions
 {
+	const string ToListAsyncObsolete = "Use await command.Map(transform).ToListAsync(cancellationToken) instead. Map also reads the later result sets, so a failure in one is thrown; add .SingleResult() to read only the first, as this method does. Map executes asynchronously and then reads the rows with Read(), as useReadAsync: false did. It has no CommandBehavior argument: if you passed one, use await command.ExecuteReaderAsync(r => r.Map(transform).ToList(), behavior | CommandBehavior.SingleResult, cancellationToken). Removed in 12.";
+
 	#region Connection.EnsureOpen Shortcuts.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static ConnectionState EnsureOpen(this IDbCommand command)
@@ -162,8 +164,10 @@ public static partial class CommandExtensions
 		=> ToListAsync(command, behavior, transform, cancellationToken);
 
 	/// <summary>
+	/// Obsolete: use await command.Map(transform).ToListAsync(cancellationToken).
 	/// Asynchronously iterates all records using an <see cref="IDataReader"/> and returns the desired results as a list.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -171,6 +175,7 @@ public static partial class CommandExtensions
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <returns>A task containing a list of all results.</returns>
+	[Obsolete(ToListAsyncObsolete)]
 	public static async ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 		CommandBehavior behavior,
 		Func<IDataRecord, T> transform,
@@ -187,26 +192,31 @@ public static partial class CommandExtensions
 #endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
 
-		if (useReadAsync) return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
+		if (useReadAsync) return await DataReaderExtensions.ToListAsyncCore(reader, transform, cancellationToken).ConfigureAwait(false);
 
-		var r = reader.ToList(transform, cancellationToken);
-		return r;
+		return reader.Select(transform, cancellationToken).ToList();
 	}
 
 	/// <inheritdoc cref="ToListAsync{T}(DbCommand, CommandBehavior, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	[Obsolete(ToListAsyncObsolete)]
 	public static ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 		CommandBehavior behavior,
 		Func<IDataRecord, T> transform,
 		CancellationToken cancellationToken = default)
+#pragma warning disable CS0618 // One obsolete overload forwards to another.
 		=> ToListAsync(command, behavior, transform, true, cancellationToken);
+#pragma warning restore CS0618
 
 	/// <inheritdoc cref="ToListAsync{T}(DbCommand, CommandBehavior, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	[Obsolete(ToListAsyncObsolete)]
 	public static ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 		Func<IDataRecord, T> transform,
 		CommandBehavior behavior = CommandBehavior.Default,
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
+#pragma warning disable CS0618 // One obsolete overload forwards to another.
 		=> ToListAsync(command, behavior, transform, useReadAsync, cancellationToken);
+#pragma warning restore CS0618
 
 	/// <summary>
 	/// Iterates all records using an <see cref="IDataReader"/> and returns the desired results as an array.

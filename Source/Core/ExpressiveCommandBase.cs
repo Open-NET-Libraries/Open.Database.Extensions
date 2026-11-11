@@ -17,12 +17,15 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		where TDbType : struct
 		where TThis : ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
+	const string ConcatObsolete = "Not part of the command API: use remaining is null ? [first] : remaining.Prepend(first) (Prepend alone throws on null). Removed in 12.";
+
 	/// <summary>
 	/// Utility for simplifying param concatenation.
 	/// </summary>
 	/// <typeparam name="T">The type of the enumerable.</typeparam>
 	/// <param name="first">The first value.</param>
 	/// <param name="remaining">The remaining values.</param>
+	[Obsolete(ConcatObsolete)]
 	protected static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
 		=> CoreExtensions.Concat(first, remaining);
 

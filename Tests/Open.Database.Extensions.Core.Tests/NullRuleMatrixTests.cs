@@ -250,28 +250,36 @@ public static class NullRuleMatrixTests
 		foreach (ColumnDef column in PropsOnColumns) props.Columns.Add(column.Name, column.Type);
 		props.Rows.Add(DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		PropsOn item = Assert.Single(props.To<PropsOn>());
+#pragma warning restore CS0618
 		Assert.Equal((7, null, "init", null, null, null), (item.Value, item.Maybe, item.KeepsInit, item.NoInit, item.Nullable, item.Allowed));
 
 		DataTable parameters = new();
 		foreach (ColumnDef column in ParamsOnColumns) parameters.Columns.Add(column.Name, column.Type);
 		parameters.Rows.Add(DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		ParamsOn built = Assert.Single(parameters.To<ParamsOn>());
+#pragma warning restore CS0618
 		Assert.Equal((null, 7, null, "d", null), (built.NoDefault, built.Value, built.Maybe, built.Keeps, built.Nullable));
 
 		DataTable named = new();
 		named.Columns.Add("Name", typeof(string));
 		named.Rows.Add(DBNull.Value);
 		named.Rows.Add("given");
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal<string>(["", "given"], named.To<Named>().Select(n => n.Name));
+#pragma warning restore CS0618
 
 		DataTable defaulted = new();
 		defaulted.Columns.Add("Id", typeof(int));
 		defaulted.Columns.Add("Title", typeof(string));
 		defaulted.Rows.Add(1, DBNull.Value);
 		defaulted.Rows.Add(2, "given");
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal<Defaulted>([new(1, "n/a"), new(2, "given")], defaulted.To<Defaulted>());
+#pragma warning restore CS0618
 	}
 
 	// ---- the cases the owner named ----

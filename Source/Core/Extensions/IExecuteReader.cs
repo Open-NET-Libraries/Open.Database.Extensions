@@ -13,6 +13,10 @@ public static class IExecuteReaderExtensions
 	const string TakeObsolete = "Use .Map(selector).Take(count).ToList() instead. " + LaterSets + " Take(0) now runs the command; this method did not. Removed in 12.";
 	const string SkipObsolete = "Use .Map(selector).Skip(count).ToList() instead. " + LaterSets + " " + SkipDifference + " Removed in 12.";
 	const string SkipThenTakeObsolete = "Use .Map(selector).Skip(skip).Take(take).ToList() instead. " + LaterSets + " " + SkipDifference + " Take(0) now runs the command; this method did not. Removed in 12.";
+	const string ToListObsolete = "Use .Map(transform).ToList() instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use cmd.ExecuteReader(r => r.Map(transform).ToList(), behavior | CommandBehavior.SingleResult). Removed in 12.";
+	const string ToArrayObsolete = "Use .Map(transform).ToArray() instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use cmd.ExecuteReader(r => r.Map(transform).ToArray(), behavior | CommandBehavior.SingleResult). Removed in 12.";
+	const string ToImmutableArrayObsolete = "Use .Map(transform).ToImmutableArray() instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use cmd.ExecuteReader(r => r.Map(transform).ToImmutableArray(), behavior | CommandBehavior.SingleResult). Removed in 12.";
+	const string IterateReaderObsolete = "Use .Map(transform).Read(selector) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use cmd.ExecuteReader(r => selector(r.Select(transform)), behavior | CommandBehavior.SingleResult). Removed in 12.";
 
 	/// <summary>
 	/// Iterates a reader on a command with a handler function.
@@ -194,8 +198,10 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use .Map(transform).Read(selector).
 	/// Executes a reader on a command with a transform function.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
 	/// <typeparam name="TResult">The type returned by the selector.</typeparam>
 	/// <param name="command">The IExecuteReader to iterate.</param>
@@ -203,6 +209,7 @@ public static class IExecuteReaderExtensions
 	/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <returns>The result of the transform.</returns>
+	[Obsolete(IterateReaderObsolete)]
 	public static TResult IterateReader<TEntity, TResult>(
 		this IExecuteReader command,
 		Func<IDataRecord, TEntity> transform,
@@ -342,7 +349,7 @@ public static class IExecuteReaderExtensions
 
 		return command.ExecuteReader(
 			reader => count == 0
-				? reader.ToList(transform)
+				? reader.Select(transform).ToList()
 				: reader.Select(transform).Skip(count).ToList(),
 			CommandBehavior.SingleResult);
 	}
@@ -375,13 +382,16 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use .Map(transform).ToList().
 	/// Converts all IDataRecords into a list using a transform function.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The expected return type.</typeparam>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="transform">The transform function.</param>
 	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 	/// <returns>The list of transformed records.</returns>
+	[Obsolete(ToListObsolete)]
 	public static List<T> ToList<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -394,13 +404,16 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use .Map(transform).ToArray().
 	/// Converts all IDataRecords into an array using a transform function.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The expected return type.</typeparam>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="transform">The transform function.</param>
 	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 	/// <returns>The array of transformed records.</returns>
+	[Obsolete(ToArrayObsolete)]
 	public static T[] ToArray<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -413,13 +426,16 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use .Map(transform).ToImmutableArray().
 	/// Converts all IDataRecords into an immutable array using a transform function.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The expected return type.</typeparam>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="transform">The transform function.</param>
 	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
 	/// <returns>The array of transformed records.</returns>
+	[Obsolete(ToImmutableArrayObsolete)]
 	public static ImmutableArray<T> ToImmutableArray<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));

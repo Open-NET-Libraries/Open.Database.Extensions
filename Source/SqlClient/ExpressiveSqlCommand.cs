@@ -15,6 +15,7 @@ namespace Open.Database.Extensions;
 /// </remarks>
 /// <seealso cref="ExpressiveDbCommand"/>
 /// <seealso cref="SqlConnectionExtensions"/>
+[Obsolete(SqlClientObsolete._message)]
 public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCommand, SqlDataReader, SqlDbType, ExpressiveSqlCommand>
 {
 	/// <summary>

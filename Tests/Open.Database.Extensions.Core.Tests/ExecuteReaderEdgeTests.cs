@@ -144,7 +144,9 @@ public static class ExecuteReaderEdgeTests
 	{
 		FakeExecuteReader command = Command(3, out _);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		command.ToImmutableArray(Id, CommandBehavior.SequentialAccess);
+#pragma warning restore CS0618
 
 		CommandBehavior behavior = Assert.Single(command.Behaviors);
 		Assert.True(behavior.HasFlag(CommandBehavior.SequentialAccess));
@@ -202,7 +204,9 @@ public static class ExecuteReaderEdgeTests
 			{
 				case "First transform": command.First((Func<IDataRecord, int>)null!); break;
 				case "Retrieve columnNames": command.Retrieve((IEnumerable<string>)null!); break;
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 				default: ((IExecuteReader)null!).ToList(Id); break;
+#pragma warning restore CS0618
 			}
 		});
 

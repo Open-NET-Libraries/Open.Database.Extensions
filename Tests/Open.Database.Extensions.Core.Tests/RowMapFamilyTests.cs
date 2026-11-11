@@ -132,7 +132,9 @@ public static class RowMapFamilyTests
 		["ResultsAsync(DbDataReader)"] = m => Enumerate(DbReader().ResultsAsync(m)),
 		["ResultsBufferedAsync(DbDataReader)"] = async m => (await DbReader().ResultsBufferedAsync(m)).ToList(),
 		["ResultsAsync(DbCommand)"] = async m => (await DbCmd().ResultsAsync(m)).ToList(),
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["To(DataTable)"] = m => Now(Table().To(m)),
+#pragma warning restore CS0618
 		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["DequeueAs(QueryResult)"] = m => Now(Queued().DequeueAs(m)),
 		["DequeueAs(Task)"] = async m => (await Task.FromResult(Queued()).DequeueAs(m)).ToList(),
