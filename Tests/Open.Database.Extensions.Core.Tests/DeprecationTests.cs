@@ -152,9 +152,8 @@ public static class DeprecationTests
 		string old = Show(source.CreateDataReader().ResultsFromDataTable<Thing>());
 #pragma warning restore CS0618
 		using var table = source.CreateDataReader().ToDataTable();
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		string replacement = Show(table.To<Thing>(null, true).ToList());
-#pragma warning restore CS0618
+		using var tableReader = table.CreateDataReader();
+		string replacement = Show(tableReader.Map<Thing>().ToList());
 
 		Assert.Equal("1:n1,2:n2", old);
 		Assert.Equal(old, replacement);

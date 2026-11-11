@@ -202,7 +202,7 @@ Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Results<T>() a
 (resultsBefore, resultsAfter) = await Deprecated.ResultsAsync(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsAsync<T>() and Map<T>().ToListAsync() return the same rows");
 (resultsBefore, resultsAfter) = Deprecated.ResultsFromDataTable(connection);
-Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable().To<T>(map, true) return the same rows");
+Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable() read with CreateDataReader().Map(map).ToList() return the same rows");
 (resultsBefore, resultsAfter) = Deprecated.SelectorForms(connection);
 Check(resultsBefore == "1|1,2|4,5|2,3" && resultsBefore == resultsAfter, "FirstOrDefault, Take, Skip and SkipThenTake with a selector match their Map forms");
 Check(Deprecated.SkippedRowSelector(connection) == (true, false), "a selector that throws on a skipped row failed Skip, and does not fail Map(...).Skip");
