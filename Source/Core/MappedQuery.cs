@@ -142,10 +142,8 @@ readonly struct MappedQueryCore<T>
 	// A default struct has no command: any use of it says so,
 	// the same way for every type of the family.
 	IExecuteReader Command
-	{
-		get => field ?? throw new InvalidOperationException(
+		=> field ?? throw new InvalidOperationException(
 			"This query was not created by Map<T>(); a default value cannot be used.");
-	}
 
 	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.
 	CommandBehavior Behavior => _singleResult
