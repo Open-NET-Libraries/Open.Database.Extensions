@@ -8,6 +8,7 @@
 /// System.Data.SqlClient specific extensions for database transactions.
 /// </summary>
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
+[Obsolete(SqlClientObsolete._message)]
 public static partial class SqlTransactionExtensions
 {
 	/// <summary>

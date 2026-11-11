@@ -3,6 +3,7 @@
 /// <summary>
 /// SqlClient extensions for building a command and retrieving data using best practices.
 /// </summary>
+[Obsolete(SqlClientObsolete._message)]
 public static partial class SqlCommandExtensions
 {
 	#region Open and execute the reader

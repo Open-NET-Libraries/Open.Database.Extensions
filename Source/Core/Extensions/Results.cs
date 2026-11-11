@@ -193,10 +193,10 @@ public static partial class CoreExtensions
 		CancellationToken cancellationToken)
 		=> ResultsAsync<T>(command, null, true, cancellationToken);
 
-	const string ResultsFromDataTableObsolete = "Use .ToDataTable() then .To<T>(map, true) instead, for example: using var table = command.ToDataTable(); var rows = table.To<T>(map, true).ToList(). This method threw for a type that cannot be mapped before it ran; To<T> still throws, but after the data is loaded: read RowMap<T>.Default (or build your RowMap) first to keep the early failure. Removed in 12.";
+	const string ResultsFromDataTableObsolete = "Use .ToDataTable() then table.CreateDataReader().Map(map).ToList() instead, for example: using var table = command.ToDataTable(); using var tableReader = table.CreateDataReader(); var rows = tableReader.Map(map).ToList(). This method cleared the table as the rows were read; Map does not, so dispose or clear the table yourself. This method threw for a type that cannot be mapped before it ran; Map<T> still throws, but after the data is loaded: read RowMap<T>.Default (or build your RowMap) first to keep the early failure. Removed in 12.";
 
 	/// <summary>
-	/// Obsolete: use <see cref="DataReaderExtensions.ToDataTable(IDataReader)"/> then <see cref="To{T}(DataTable, RowMap{T}?, bool)"/>.
+	/// Obsolete: use <see cref="DataReaderExtensions.ToDataTable(IDataReader)"/> then table.CreateDataReader().Map(map).ToList().
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>
@@ -218,7 +218,7 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use <see cref="CommandExtensions.ToDataTable(IDbCommand, CommandBehavior)"/> then <see cref="To{T}(DataTable, RowMap{T}?, bool)"/>.
+	/// Obsolete: use <see cref="CommandExtensions.ToDataTable(IDbCommand, CommandBehavior)"/> then table.CreateDataReader().Map(map).ToList().
 	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
 	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
 	/// </summary>

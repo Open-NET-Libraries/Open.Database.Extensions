@@ -11,6 +11,11 @@ namespace Open.Database.Extensions;
 #pragma warning restore IDE0079 // Remove unnecessary suppression
 public static class DataReaderExtensions
 {
+	const string ReaderToListObsolete = "Use reader.Map(transform).ToList() instead. It reads the current result set, as this method does, and takes no CancellationToken: if you passed one, use reader.Select(transform, cancellationToken).ToList(). Removed in 12.";
+	const string ReaderToArrayObsolete = "Use reader.Map(transform).ToArray() instead. It reads the current result set, as this method does. Removed in 12.";
+	const string ReaderToImmutableArrayObsolete = "Use reader.Map(transform).ToImmutableArray() instead. It reads the current result set, as this method does. Removed in 12.";
+	const string ReaderToListAsyncObsolete = "Use await reader.Map(transform).ToListAsync(cancellationToken) instead. It reads the current result set, as this method does. Removed in 12.";
+
 	/// <summary>
 	/// Iterates all records from an <see cref="IDataReader"/>.
 	/// </summary>
@@ -663,27 +668,37 @@ public static class DataReaderExtensions
 		=> SelectAsync(reader, transform, false, cancellationToken);
 
 	/// <summary>
+	/// Obsolete: use reader.Map(transform).ToList().
 	/// Shortcut for .Iterate(transform).ToList();
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
 	/// <returns>A list of the transformed results.</returns>
+	[Obsolete(ReaderToListObsolete)]
 	public static List<T> ToList<T>(this IDataReader reader,
 		Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
 		=> reader.Select(transform, cancellationToken).ToList();
 
 	/// <summary>
+	/// Obsolete: use await reader.Map(transform).ToListAsync(cancellationToken).
 	/// Asynchronously iterates all records using the data reader and returns the desired results as a list.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The SqlDataReader to read from.</param>
 	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
 	/// <returns>A task containing a list of all results.</returns>
-	public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
+	[Obsolete(ReaderToListAsyncObsolete)]
+	public static ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 		Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
+		=> ToListAsyncCore(reader, transform, cancellationToken);
+
+	internal static async ValueTask<List<T>> ToListAsyncCore<T>(DbDataReader reader,
+		Func<IDataRecord, T> transform, CancellationToken cancellationToken)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -708,22 +723,28 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use reader.Map(transform).ToArray().
 	/// Shortcut for .Select(transform).ToArray();
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
 	/// <returns>An array of the transformed results.</returns>
+	[Obsolete(ReaderToArrayObsolete)]
 	public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 		=> reader.Select(transform).ToArray();
 
 	/// <summary>
+	/// Obsolete: use reader.Map(transform).ToImmutableArray().
 	/// Shortcut for .Select(transform).ToImmutableArray();
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
 	/// <returns>An immutable array of the transformed results.</returns>
+	[Obsolete(ReaderToImmutableArrayObsolete)]
 	public static ImmutableArray<T> ToImmutableArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 		=> reader.Select(transform).ToImmutableArray();
 

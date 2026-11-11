@@ -69,6 +69,7 @@ public static partial class SqlCommandExtensions
 	/// <exception cref="InvalidCastException"><paramref name="target"/> is not a <see cref="SqlCommand"/>.</exception>
 	/// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	[Obsolete("Call AddParameterType on the SqlCommand: this overload casts any IDbCommand to SqlCommand and throws InvalidCastException for any other command. Removed in 12.")]
 	public static SqlParameter AddParameterType(this IDbCommand target,
 		string name, SqlDbType type)
 		=> AddParameterType((SqlCommand)target, name, type);

@@ -13,6 +13,8 @@ namespace Open.Database.Extensions.Core;
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
 {
+	const string ResultsObsolete = "Use table.CreateDataReader().Map(map).ToList() instead, where map is the RowMap<T> you gave Transformer<T>.Create. It returns a List<T>, not a lazy enumerable, and has no clearTable argument: clear the table yourself after reading it. Removed in 12.";
+
 	/// <summary>
 	/// Maximum number of arrays to hold in the local array pool per bucket.
 	/// May also define how many records are pre buffered before transforming.
@@ -162,11 +164,14 @@ public class Transformer<T>
 	}
 
 	/// <summary>
+	/// Obsolete: use table.CreateDataReader().Map(map).ToList().
 	/// Processes the data from the data table into a queue. Then dequeues the results and transforms each one by one during enumeration.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <param name="table">The data to process.</param>
 	/// <param name="clearTable">If true, will clear the table after buffering the data.</param>
 	/// <returns>A dequeuing enumerable of the transformed results.</returns>
+	[Obsolete(ResultsObsolete)]
 	public IEnumerable<T> Results(DataTable table, bool clearTable)
 	{
 		if (table is null) throw new ArgumentNullException(nameof(table));

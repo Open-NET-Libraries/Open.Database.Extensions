@@ -5,6 +5,8 @@
 /// </summary>
 public static partial class CoreExtensions
 {
+	const string ToDataTableObsolete = "Use table.CreateDataReader().Map(map).ToList() instead. It returns a List<T>, not a lazy enumerable, and has no clearSourceTable argument: clear the table yourself after reading it. Removed in 12.";
+
 	internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
 		=> (remaining == null || remaining.Count == 0) ? [first] : remaining.Prepend(first);
 
@@ -198,8 +200,10 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
+	/// Obsolete: use table.CreateDataReader().Map(map).ToList().
 	/// Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
 	/// </summary>
+	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
 	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="table">The <see cref="DataTable"/> to read from.</param>
@@ -207,6 +211,7 @@ public static partial class CoreExtensions
 	/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
 	/// <returns>An enumerable used to iterate the results.</returns>
 	/// <seealso cref="RowMap{T}"/>
+	[Obsolete(ToDataTableObsolete)]
 	public static IEnumerable<T> To<T>(this DataTable table, RowMap<T>? map = null, bool clearSourceTable = false)
 		=> Transformer<T>
 		.Create(map)
