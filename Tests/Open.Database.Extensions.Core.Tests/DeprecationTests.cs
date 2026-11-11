@@ -101,14 +101,14 @@ public static class DeprecationTests
 	}
 
 	[Fact]
-	public static void ANullMap_IsAcceptedByResults_ButNotByMap()
+	public static void ANullMap_IsAcceptedByResults_AndByMap()
 	{
 		FakeExecuteReader command = Command(1);
 
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Single(command.Results((RowMap<Thing>?)null));
 #pragma warning restore CS0618
-		Assert.Throws<ArgumentNullException>(() => command.Map((RowMap<Thing>)null!));
+		Assert.Single(command.Map((RowMap<Thing>?)null).ToList());
 	}
 
 	// ---- group 2 ----
@@ -240,13 +240,13 @@ public static class DeprecationTests
 	}
 
 	[Fact]
-	public static void ANullMap_IsAcceptedByDequeueAs_ButNotByMap()
+	public static void ANullMap_IsAcceptedByDequeueAs_AndByMap()
 	{
 		FakeExecuteReader command = Command(1);
 
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Single(command.Retrieve().DequeueAs<Thing>(null));
 #pragma warning restore CS0618
-		Assert.Throws<ArgumentNullException>(() => command.Map((RowMap<Thing>)null!));
+		Assert.Single(command.Map((RowMap<Thing>?)null).ToList());
 	}
 }

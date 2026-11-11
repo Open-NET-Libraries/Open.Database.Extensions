@@ -12,6 +12,14 @@ Rebuild consumers of rc.3. Both changes are source-compatible for every call exc
 - `ExpressiveDbCommand.RetrieveAsync` takes a trailing `CancellationToken cancellationToken = default` on the three overloads that can: `RetrieveAsync(CancellationToken)`, `RetrieveAsync(IEnumerable<int>, CancellationToken)` and `RetrieveAsync(IEnumerable<string>, bool, CancellationToken)`. The token is used together with the command's own token. A `params` list must come last, so the two `params` overloads (`RetrieveAsync(int, params IEnumerable<int>)` and `RetrieveAsync(string, params IEnumerable<string>)`) are unchanged and take no token: pass the ordinals or names as a collection to the `IEnumerable` overload to cancel. A call that passed no token binds to the same overload as before, but the signatures are new, so rebuild.
 - Three parameters are renamed to say what they hold. This breaks only a caller that passes the argument by name: `CreateTextCommand(SqlTransaction, ...)` in `SqlClient` and `MSSqlClient` takes `commandText` (it was `procedureName`), `CreateStoredProcedureCommand(IDbConnection, ...)` in Core takes `procedureName` (it was `commandText`), and the type parameter `TConn` of the `Using` and `UsingAsync` connection helpers is now `TConnection`. The type-parameter rename breaks no caller.
 
+## Changes since rc.3
+
+- `reader.Map<T>()` and `command.Map<T>()` map a plain `IDataReader` or `IDbCommand` with the same terminals as an expressive command's `Map<T>()`. The reader is never opened, closed, disposed or advanced to the next result set; a command opens and closes only the connection it opened. See [Mapping a reader or a command you already have](mapping.md#mapping-a-reader-or-a-command-you-already-have).
+- A null `RowMap<T>` passed to `Map<T>(map)` no longer throws `ArgumentNullException`: it maps exactly as `Map<T>()` does (a single value reads the first column).
+- A type of your own that implements both `IExecuteReader` and `IDbCommand` (or `IDataReader`) now gets an ambiguous `Map` call (CS0121); cast it to the interface you mean.
+- A `default` `MappedQuery<T>` (or `MappedQueryWithSkip<T>`, `MappedQueryWithTake<T>`) now throws `InvalidOperationException` when used, where it threw `NullReferenceException`.
+- The `Map<T>` documentation now says how columns match by default: exactly, else ignoring case, else ignoring case and underscores (`author_id` feeds `AuthorId`).
+
 ## Changes since rc.2
 
 - A `Map` terminal now reads through the later result sets after the first, so a failure in a later statement is thrown, where rc.2 returned the rows and lost it. This is a behavior change from rc.2. `Map` still returns only the first set's rows. `.SingleResult()` after `Map` stops after the first set and does not see a later failure. A later failure can follow a write that already committed, so a caller that retries can repeat it. The older command methods, Channel and Dataflow do not read through yet.
