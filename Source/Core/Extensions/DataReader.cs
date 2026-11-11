@@ -14,7 +14,7 @@ public static class DataReaderExtensions
 	const string ReaderToListObsolete = "Use reader.Map(transform).ToList() instead. It reads the current result set, as this method does, and takes no CancellationToken: if you passed one, use reader.Select(transform, cancellationToken).ToList(). Removed in 12.";
 	const string ReaderToArrayObsolete = "Use reader.Map(transform).ToArray() instead. It reads the current result set, as this method does. Removed in 12.";
 	const string ReaderToImmutableArrayObsolete = "Use reader.Map(transform).ToImmutableArray() instead. It reads the current result set, as this method does. Removed in 12.";
-	const string ReaderToListAsyncObsolete = "Use await reader.Map(transform).ToListAsync(cancellationToken) instead. It reads the current result set, as this method does. Removed in 12.";
+	const string ReaderToListAsyncObsolete = "Use await reader.Map(transform).ToListAsync(cancellationToken) instead. It reads the current result set, as this method does, but with Read() where this method used ReadAsync. Removed in 12.";
 
 	/// <summary>
 	/// Iterates all records from an <see cref="IDataReader"/>.
