@@ -148,10 +148,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 
 		return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 	}
@@ -187,10 +188,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 
 		if (useReadAsync) return await DataReaderExtensions.ToListAsyncCore(reader, transform, cancellationToken).ConfigureAwait(false);
 
@@ -356,10 +358,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		handler(reader);
 	}
 
@@ -405,10 +408,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		await handler(reader).ConfigureAwait(false);
 	}
 
@@ -431,10 +435,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		return transform(reader);
 	}
 
@@ -474,10 +479,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		return await transform(reader).ConfigureAwait(false);
 	}
 
@@ -595,10 +601,11 @@ public static partial class CommandExtensions
 		cancellationToken.ThrowIfCancellationRequested();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		await reader.ForEachAsync(handler, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -622,10 +629,11 @@ public static partial class CommandExtensions
 		cancellationToken.ThrowIfCancellationRequested();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		await reader.ForEachAsync(handler, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -651,10 +659,11 @@ public static partial class CommandExtensions
 		Contract.EndContractBlock();
 
 #if NETSTANDARD2_0
-#else
-		await
-#endif
 		using DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+#else
+		DbDataReader reader = await command.OpenAndExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		await reader.IterateWhileAsync(predicate, useReadAsync, cancellationToken).ConfigureAwait(false);
 	}
 
