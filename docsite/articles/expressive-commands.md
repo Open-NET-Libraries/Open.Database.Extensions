@@ -122,7 +122,12 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `Execute(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
 | `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
+| `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
+
+The terminals that take the type read one column as easily as a model; the token goes last:
+
+[!code-csharp[](../samples/ExpressiveCommands.cs#single_value_async)]
 
 `ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds. On SQL Server the lookup of a stored procedure's parameter names uses the same timeout. A failed lookup throws the provider's own exception (a `SqlException` stays a `SqlException`, so a retry policy still sees it), with the procedure's name in `Exception.Data["Procedure"]`.
 
@@ -133,6 +138,7 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 - **`ExecuteScalar<T>()`** when `T` is the type the provider returns. A `NULL` or no rows gives `default(T)`.
 - **`ExecuteScalar(value => ...)`** to convert. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
 - **`ExecuteScalar()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
+- **`ToListAsync<T>()`** (or `Map<T>().ToList()`, `ToArrayAsync<T>()`, ...) for many rows of one column: it converts like a property (a SQLite `long` into `int`), where `ExecuteScalar<T>()` casts. See [One value per row](mapping.md#one-value-per-row).
 
 `ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type, and any other type throws `InvalidCastException`. To tell a `NULL` from 0, use the nullable form of the provider's type: `long?` for `count(*)` on SQLite, `int?` on SQL Server.
 

@@ -96,7 +96,7 @@ Lines you write, counted from `dapper_scalar_call` and `ode_scalar_call`: Dapper
 
 What is different:
 
-- **The value's type.** Dapper converts the provider's value to `T` where it can (it uses `Convert.ChangeType`) and returns `default` for `NULL`. The extensions' `ExecuteScalar<T>()` also returns `default` for `NULL` or no rows, and otherwise casts the value exactly as the provider returns it, so `T` must be that type: SQLite returns `count(*)` as `long` and SQL Server as `int`, and any other `T` throws `InvalidCastException`. To convert, pass a function: `ExecuteScalar(value => ...)`.
+- **The value's type.** Dapper converts the provider's value to `T` where it can (it uses `Convert.ChangeType`) and returns `default` for `NULL`. The extensions' `ExecuteScalar<T>()` also returns `default` for `NULL` or no rows, and otherwise casts the value exactly as the provider returns it, so `T` must be that type: SQLite returns `count(*)` as `long` and SQL Server as `int`, and any other `T` throws `InvalidCastException`. To convert, pass a function: `ExecuteScalar(value => ...)`. For many rows of one column, `Map<int>().ToList()` converts like a property (a `long` into an `int` included), which `ExecuteScalar<T>()` does not.
 
 ### A command with no result set
 
@@ -274,10 +274,10 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 | `Query<T>` | `Map<T>().ToList()` (or `ToArray()`) |
 | `QueryFirstOrDefault<T>`, `QuerySingleOrDefault<T>` | `Map<T>().FirstOrDefault()`, `Map<T>().SingleOrDefault()` |
 | `QueryFirst<T>`, `QuerySingle<T>` | No throwing form: call `FirstOrDefault()` or `SingleOrDefault()` and check for `null` |
-| `Query<int>` over one column | `FirstOrdinalResults<T>()`, which casts the first column of every row to `T`, so `T` is the provider's own type (`long` for an integer on SQLite). `Map<int>()` throws: a single value is not a row model |
+| `Query<int>` over one column | `Map<int>().ToList()`: the first column, converted like a property (a `long` into `int` is range-checked); a NULL gives 0, so declare `int?` to tell it from 0. `FirstOrdinalResults<T>()` returns the provider's own type instead (`long` for an integer on SQLite) |
 | `ExecuteScalar<T>` | `ExecuteScalar<T>()`; `T` must be the type the provider returns |
 | `Execute` | `ExecuteNonQuery()` |
-| `QueryAsync<T>` | `Map<T>().ToListAsync()`, which returns a `ValueTask` (async terminals need a factory of a `DbConnection` type) |
+| `QueryAsync<T>` | `ToListAsync<T>(cancellationToken)` (or `Map<T>().ToListAsync()`), which returns a `ValueTask` (async terminals need a factory of a `DbConnection` type) |
 | `Execute("usp_x", ..., commandType: CommandType.StoredProcedure)` | `StoredProcedure("usp_x")`, then `AddParam(...)` and `ExecuteNonQuery()` (see [Return values and output parameters](expressive-commands.md#return-values-and-output-parameters)) |
 | A transaction passed to each call | Start from the transaction: `transaction.Command(sql)` |
 
