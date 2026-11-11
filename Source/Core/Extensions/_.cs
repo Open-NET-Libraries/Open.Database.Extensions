@@ -203,8 +203,14 @@ public static partial class CoreExtensions
 	/// Obsolete: use table.CreateDataReader().Map(map).ToList().
 	/// Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
+	/// <remarks>
+	/// <para>Obsolete in 11.0, removed in 12.
+	/// See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>
+	/// for the difference and a before/after example.</para>
+	/// <para>Declare the <see cref="RowMap{T}"/> once and pass it:
+	/// a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument)
+	/// is rebuilt, and its row reader compiled, on every call.</para>
+	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
 	/// <param name="table">The <see cref="DataTable"/> to read from.</param>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
