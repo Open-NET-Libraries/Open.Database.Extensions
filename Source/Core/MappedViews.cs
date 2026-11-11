@@ -215,6 +215,110 @@ public static partial class CoreExtensions
 		return new MappedCommand<T>(
 			Views.CommandCore(command, new SelectorSource<T>(selector)));
 	}
+
+	/// <summary>
+	/// Locks in a mapping to model type <typeparamref name="T"/> over the rows of a <see cref="DataTable"/> you already have and returns a deferred <see cref="MappedTable{T}"/>.
+	/// A shortcut for <c>table.CreateDataReader().Map&lt;T&gt;()</c>, with the difference that the view owns and disposes the readers it creates.
+	/// Nothing runs until a terminal (<c>ToList</c>, <c>FirstOrDefault</c>, and so on) is invoked.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Each terminal reads the table's current rows through a new <see cref="DataTableReader"/> and disposes it.
+	/// The table is not changed or cleared, so the view can be read more than once.
+	/// </para>
+	/// <para>
+	/// How <typeparamref name="T"/> is mapped is the same as for
+	/// <see cref="Map{T}(IExecuteReader, RowMap{T}?)"/>:
+	/// a <see cref="RowMap{T}"/> reads columns whose names differ from the properties,
+	/// and the overload without one reads by column name
+	/// (exactly, else ignoring case, else ignoring case and underscores, so <c>author_id</c> feeds <c>AuthorId</c>).
+	/// A single value such as <see cref="int"/> is read from the first column.
+	/// </para>
+	/// </remarks>
+	/// <typeparam name="T">The model type to map the values to.</typeparam>
+	/// <param name="table">The table whose rows are mapped.</param>
+	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with; <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does.</param>
+	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="table"/> is <see langword="null"/>.</exception>
+	/// <seealso cref="RowMap{T}"/>
+	[OverloadResolutionPriority(1)]
+	public static MappedTable<T> Map<T>(
+		this DataTable table,
+		RowMap<T>? map)
+	{
+		if (table is null) throw new ArgumentNullException(nameof(table));
+		Contract.EndContractBlock();
+
+		// No map reads exactly as Map<T>() does:
+		// a single value from the first column, a model by name.
+		return map is null
+			? Map<T>(table)
+			: new MappedTable<T>(Views.TableCore(table, map));
+	}
+
+	/// <inheritdoc cref="Map{T}(DataTable, RowMap{T}?)" path="/*[not(self::param)]"/>
+	/// <param name="table">The table whose rows are mapped.</param>
+	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
+	[OverloadResolutionPriority(2)]
+	public static MappedTable<T> Map<T>(
+		this DataTable table,
+		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
+		=> mappings.IsEmpty
+			? Map<T>(table)
+			: Map(table, RowMap<T>.From(mappings));
+
+	/// <inheritdoc cref="Map{T}(DataTable, RowMap{T}?)" path="/*[not(self::param)]"/>
+	/// <param name="table">The table whose rows are mapped.</param>
+	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
+	[OverloadResolutionPriority(3)]
+	public static MappedTable<T> Map<T>(
+		this DataTable table,
+		KeyValuePair<string, string?> mapping)
+		=> Map(table, new RowMap<T>(mapping));
+
+	/// <inheritdoc cref="Map{T}(DataTable, RowMap{T}?)"/>
+	[OverloadResolutionPriority(4)]
+	public static MappedTable<T> Map<T>(
+		this DataTable table)
+	{
+		if (table is null) throw new ArgumentNullException(nameof(table));
+		Contract.EndContractBlock();
+
+		// A single value such as int is read from the first column;
+		// any other T maps by column name.
+		return FirstColumn<T>.Instance is { } firstColumn
+			? new MappedTable<T>(Views.TableCore(table, firstColumn))
+			: Map(table, RowMap<T>.Default);
+	}
+
+	/// <summary>
+	/// Locks in a custom projection over the rows of a <see cref="DataTable"/> you already have and returns a deferred <see cref="MappedTable{T}"/>.
+	/// Nothing runs until a terminal is invoked;
+	/// <paramref name="selector"/> is applied per row as the table is read.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Each terminal reads the table's current rows through a new <see cref="DataTableReader"/> and disposes it.
+	/// The table is not changed or cleared, so the view can be read more than once.
+	/// </para>
+	/// </remarks>
+	/// <typeparam name="T">The type each record is projected to.</typeparam>
+	/// <param name="table">The table whose rows are projected.</param>
+	/// <param name="selector">The transform applied to each <see cref="IDataRecord"/>.</param>
+	/// <returns>A deferred query whose results are produced by <paramref name="selector"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="table"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
+	[OverloadResolutionPriority(-1)]
+	public static MappedTable<T> Map<T>(
+		this DataTable table,
+		Func<IDataRecord, T> selector)
+	{
+		if (table is null) throw new ArgumentNullException(nameof(table));
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new MappedTable<T>(
+			Views.TableCore(table, new SelectorSource<T>(selector)));
+	}
 }
 
 // Builds the core a view runs over.
@@ -233,6 +337,11 @@ static class Views
 		IDbCommand command,
 		IRowSource<T> source)
 		=> new(new CommandExecutor(command), source, 0, -1, false);
+
+	internal static MappedQueryCore<T> TableCore<T>(
+		DataTable table,
+		IRowSource<T> source)
+		=> new(new TableExecutor(table), source, 0, -1, true);
 }
 
 // The two executors let MappedQueryCore<T> run over a reader or a raw command.
@@ -415,6 +524,47 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 	}
 }
 
+// A DataTable the caller has: each call reads it through a new
+// DataTableReader, which is disposed when the call is done.
+// There is no connection, and a table has one result set,
+// so NextResult is never called.
+// The rows are in memory, so the asynchronous form completes synchronously.
+sealed class TableExecutor(DataTable table) : ViewExecutor
+{
+	public override TResult ExecuteReader<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, TResult> transform,
+		CommandBehavior behavior = CommandBehavior.Default)
+	{
+		using DataTableReader reader = table.CreateDataReader();
+		return transform(reader, state);
+	}
+
+	public override ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, ValueTask<TResult>> transform,
+		CommandBehavior behavior,
+		CancellationToken cancellationToken)
+	{
+		// A cancelled token gives a cancelled task, not an exception at the call.
+		if (cancellationToken.IsCancellationRequested)
+		{
+			return new ValueTask<TResult>(
+				Task.FromCanceled<TResult>(cancellationToken));
+		}
+
+		return ReadAsync(state, transform);
+	}
+
+	async ValueTask<TResult> ReadAsync<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, ValueTask<TResult>> transform)
+	{
+		using DataTableReader reader = table.CreateDataReader();
+		return await transform(reader, state).ConfigureAwait(false);
+	}
+}
+
 /// <summary>
 /// A deferred, type-locked read over a data reader the caller owns.
 /// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
@@ -592,6 +742,136 @@ public readonly record struct MappedCommand<T> : IMappedQuery<T>
 	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
 	public MappedCommand<T> SingleResult()
 		=> new(_core.WithSingleResult());
+
+	/// <inheritdoc />
+	public void Read(Action<IEnumerable<T>> handler)
+		=> _core.Read(handler);
+
+	/// <inheritdoc />
+	public TResult Read<TResult>(
+		Func<IEnumerable<T>, TResult> handler)
+		=> _core.Read(handler);
+
+	/// <inheritdoc />
+	public ValueTask ReadAsync(
+		Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler,
+		CancellationToken cancellationToken)
+		=> _core.ReadAsync(handler, cancellationToken);
+
+	/// <inheritdoc />
+	public ValueTask<TResult> ReadAsync<TResult>(
+		Func<
+			IAsyncEnumerable<T>,
+			CancellationToken,
+			ValueTask<TResult>> handler,
+		CancellationToken cancellationToken)
+		=> _core.ReadAsync(handler, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToList"/>
+	public List<T> ToList()
+		=> _core.ToList();
+
+	/// <inheritdoc cref="MappedQuery{T}.ToListAsync"/>
+	public ValueTask<List<T>> ToListAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.ToListAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToArray"/>
+	public T[] ToArray()
+		=> _core.ToArray();
+
+	/// <inheritdoc cref="MappedQuery{T}.ToArrayAsync"/>
+	public ValueTask<T[]> ToArrayAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.ToArrayAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.FirstOrDefault"/>
+	public T? FirstOrDefault()
+		=> _core.FirstOrDefault();
+
+	/// <inheritdoc cref="MappedQuery{T}.FirstOrDefaultAsync"/>
+	public ValueTask<T?> FirstOrDefaultAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.FirstOrDefaultAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.SingleOrDefault"/>
+	public T? SingleOrDefault()
+		=> _core.SingleOrDefault();
+
+	/// <inheritdoc cref="MappedQuery{T}.SingleOrDefaultAsync"/>
+	public ValueTask<T?> SingleOrDefaultAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.SingleOrDefaultAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArray"/>
+	public ImmutableArray<T> ToImmutableArray()
+		=> _core.ToImmutableArray();
+
+	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArrayAsync"/>
+	public ValueTask<ImmutableArray<T>> ToImmutableArrayAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.ToImmutableArrayAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionary{TKey}"/>
+	public Dictionary<TKey, T> ToDictionary<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer = null)
+		where TKey : notnull
+		=> _core.ToDictionary(keySelector, comparer);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}"/>
+	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToHashSet"/>
+	public HashSet<T> ToHashSet(
+		IEqualityComparer<T>? comparer = null)
+		=> _core.ToHashSet(comparer);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync"/>
+	public ValueTask<HashSet<T>> ToHashSetAsync(
+		IEqualityComparer<T>? comparer = null,
+		CancellationToken cancellationToken = default)
+		=> _core.ToHashSetAsync(comparer, cancellationToken);
+}
+
+/// <summary>
+/// A deferred, type-locked read over the rows of a <see cref="DataTable"/>.
+/// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
+/// </summary>
+/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <remarks>
+/// <para>
+/// Each terminal reads the table's current rows through a new <see cref="DataTableReader"/> and disposes it.
+/// The table itself is not changed or cleared, so the view can be read more than once.
+/// The view never touches a connection and never calls <see cref="IDataReader.NextResult"/>.
+/// The asynchronous terminals complete synchronously: the rows are already in memory.
+/// </para>
+/// <para>
+/// <c>Skip</c> and <c>Take</c> return the types of <see cref="MappedQuery{T}"/>;
+/// the <c>SingleResult</c> they carry changes nothing here, since a table has one result set.
+/// </para>
+/// </remarks>
+/// <seealso cref="MappedQuery{T}"/>
+/// <seealso cref="MappedReader{T}"/>
+public readonly record struct MappedTable<T> : IMappedQuery<T>
+{
+	readonly MappedQueryCore<T> _core;
+
+	internal MappedTable(MappedQueryCore<T> core)
+		=> _core = core;
+
+	/// <inheritdoc cref="MappedQuery{T}.Skip(int)"/>
+	public MappedQueryWithSkip<T> Skip(int count)
+		=> new(_core.WithSkip(count));
+
+	/// <inheritdoc cref="MappedQuery{T}.Take(int)"/>
+	public MappedQueryWithTake<T> Take(int count)
+		=> new(_core.WithTake(count));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler)
