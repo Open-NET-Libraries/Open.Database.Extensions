@@ -439,6 +439,7 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 	/// <inheritdoc cref="MappedQuery{T}.Take(int)"/>
 	public MappedQueryWithTake<T> Take(int count)
 		=> new(_core.WithTake(count));
+
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler)
 		=> _core.Read(handler);
@@ -577,6 +578,7 @@ public readonly record struct MappedCommand<T> : IMappedQuery<T>
 	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
 	public MappedCommand<T> SingleResult()
 		=> new(_core.WithSingleResult());
+
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler)
 		=> _core.Read(handler);

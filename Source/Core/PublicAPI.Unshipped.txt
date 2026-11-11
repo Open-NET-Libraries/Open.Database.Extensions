@@ -115,6 +115,7 @@ Open.Database.Extensions.MappedCommand<T>.ReadAsync(System.Func<System.Collectio
 Open.Database.Extensions.MappedCommand<T>.ReadAsync<TResult>(System.Func<System.Collections.Generic.IAsyncEnumerable<T>!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResult>
 Open.Database.Extensions.MappedCommand<T>.SingleOrDefault() -> T?
 Open.Database.Extensions.MappedCommand<T>.SingleOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Open.Database.Extensions.MappedCommand<T>.SingleResult() -> Open.Database.Extensions.MappedCommand<T>
 Open.Database.Extensions.MappedCommand<T>.Skip(int count) -> Open.Database.Extensions.MappedQueryWithSkip<T>
 Open.Database.Extensions.MappedCommand<T>.Take(int count) -> Open.Database.Extensions.MappedQueryWithTake<T>
 Open.Database.Extensions.MappedCommand<T>.ToArray() -> T[]!
@@ -127,4 +128,3 @@ Open.Database.Extensions.MappedCommand<T>.ToImmutableArray() -> System.Collectio
 Open.Database.Extensions.MappedCommand<T>.ToImmutableArrayAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableArray<T>>
 Open.Database.Extensions.MappedCommand<T>.ToList() -> System.Collections.Generic.List<T>!
 Open.Database.Extensions.MappedCommand<T>.ToListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.List<T>!>
-Open.Database.Extensions.MappedCommand<T>.SingleResult() -> Open.Database.Extensions.MappedCommand<T>

@@ -644,5 +644,4 @@ public static class MappedViewParityTests
 			ct);
 		return list;
 	}
-
 }
