@@ -1047,10 +1047,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			if (cmd is DbCommand dbCommand)
 			{
 #if NETSTANDARD2_0
-#else
-				await
-#endif
 				using DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.cancellationToken).ConfigureAwait(false);
+#else
+				DbDataReader dbReader = await dbCommand.ExecuteReaderAsync(b, s.cancellationToken).ConfigureAwait(false);
+				await using var dbReaderDisposal = dbReader.ConfigureAwait(false);
+#endif
 				return await s.transform(dbReader, s.state).ConfigureAwait(false);
 			}
 
