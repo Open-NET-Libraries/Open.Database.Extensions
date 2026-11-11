@@ -560,7 +560,12 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform)
 	{
+#if NETSTANDARD2_0
 		using DataTableReader reader = table.CreateDataReader();
+#else
+		DataTableReader reader = table.CreateDataReader();
+		await using var readerDisposal = reader.ConfigureAwait(false);
+#endif
 		return await transform(reader, state).ConfigureAwait(false);
 	}
 }

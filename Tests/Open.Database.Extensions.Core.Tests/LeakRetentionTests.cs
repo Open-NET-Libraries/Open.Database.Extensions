@@ -213,7 +213,7 @@ public static class LeakRetentionTests
 				case "ToArrayAsync": await command.Map<Row>().ToArrayAsync(none); break;
 				case "ToDictionaryAsync": await command.Map<Row>().ToDictionaryAsync(r => r.Id, cancellationToken: none); break;
 				case "ReadAsyncAbandon":
-					await command.Map<Row>().ReadAsync<Row, bool>(async seq =>
+					await command.Map<Row>().ReadAsync(async seq =>
 					{
 						await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(none);
 						return await e.MoveNextAsync();
@@ -235,7 +235,7 @@ public static class LeakRetentionTests
 					break;
 				case "ToTargetBlockAsync":
 					var block = new BufferBlock<Row>();
-					await command.ToTargetBlockAsync<Row>(block, true);
+					await command.ToTargetBlockAsync(block, true);
 					block.TryReceiveAll(out _);
 					break;
 				default: throw new ArgumentOutOfRangeException(nameof(terminal), terminal, null);

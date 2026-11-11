@@ -86,7 +86,7 @@ public static partial class ToChannelPipelineTests
 		string[] layout = Layouts[layoutIndex];
 		var probe = new Probe();
 		var channel = BoundedChannel.CreateBounded<Wide>(TargetCapacity);
-		var call = Mapped<Wide>(kind, overrides, probe.Factory(WideRows(layout, Count), columns: layout), ct, mapping: WideOverrides);
+		var call = Mapped(kind, overrides, probe.Factory(WideRows(layout, Count), columns: layout), ct, mapping: WideOverrides);
 
 		Task<(List<Wide> Items, Exception? Error)> consumer = Task.Run(() => Drain(channel.Reader, ct), ct);
 		long produced = await call(channel.Writer, true).AsTask().WaitAsync(Timeout, ct);

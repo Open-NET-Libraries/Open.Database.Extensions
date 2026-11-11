@@ -348,7 +348,7 @@ public static class SingleValueTerminalTests
 	// ---- 7. a row model maps by name;
 	// a type that cannot be mapped fails at the call ----
 
-	public interface IShapeless { }
+	public interface IShapeless;
 
 	[Fact]
 	public static void ARowModel_MapsByColumnName()

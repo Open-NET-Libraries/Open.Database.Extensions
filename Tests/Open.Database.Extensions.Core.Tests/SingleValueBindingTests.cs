@@ -31,6 +31,7 @@ public static class SingleValueBindingTests
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
 
 	static void Pin<T>(T _) { }
+	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
 	static void PinAsync<T>(ValueTask<T> _) { }
 
 	static int Id(IDataRecord r)
@@ -44,51 +45,51 @@ public static class SingleValueBindingTests
 		CancellationToken> Table = static (cmd, exec, ct) =>
 	{
 		// The transform overloads, as before.
-		Pin<List<int>>(cmd.ToList(r => r.GetInt32(0)));
-		Pin<List<int>>(cmd.ToList(Id));
-		Pin<List<int>>(cmd.ToList(Id, CommandBehavior.SequentialAccess));
-		Pin<List<int>>(cmd.ToList<int>(null!));
-		Pin<int[]>(cmd.ToArray(r => r.GetInt32(0)));
-		Pin<int[]>(cmd.ToArray(Id, CommandBehavior.SequentialAccess));
-		Pin<ImmutableArray<int>>(cmd.ToImmutableArray(Id));
-		Pin<ImmutableArray<int>>(
+		Pin(cmd.ToList(r => r.GetInt32(0)));
+		Pin(cmd.ToList(Id));
+		Pin(cmd.ToList(Id, CommandBehavior.SequentialAccess));
+		Pin(cmd.ToList<int>(null!));
+		Pin(cmd.ToArray(r => r.GetInt32(0)));
+		Pin(cmd.ToArray(Id, CommandBehavior.SequentialAccess));
+		Pin(cmd.ToImmutableArray(Id));
+		Pin(
 			cmd.ToImmutableArray(Id, CommandBehavior.SequentialAccess));
-		Pin<int>(cmd.FirstOrDefault(Id));
-		Pin<int>(cmd.SingleOrDefault(Id));
-		Pin<int>(cmd.First(Id));
-		Pin<int>(cmd.Single(Id));
-		Pin<List<int>>(exec.ToList(Id));
-		PinAsync<List<int>>(cmd.ToListAsync(r => r.GetInt32(0)));
-		PinAsync<List<int>>(
+		Pin(cmd.FirstOrDefault(Id));
+		Pin(cmd.SingleOrDefault(Id));
+		Pin(cmd.First(Id));
+		Pin(cmd.Single(Id));
+		Pin(exec.ToList(Id));
+		PinAsync(cmd.ToListAsync(r => r.GetInt32(0)));
+		PinAsync(
 			cmd.ToListAsync(
 				r => r.GetInt32(0),
 				CommandBehavior.SequentialAccess));
 
 		// The new terminals.
 
-		PinAsync<List<int>>(cmd.ToListAsync<int>());
-		PinAsync<List<int>>(cmd.ToListAsync<int>(ct));
-		PinAsync<List<int>>(cmd.ToListAsync<int>(cancellationToken: ct));
-		PinAsync<int[]>(cmd.ToArrayAsync<int>());
-		PinAsync<int[]>(cmd.ToArrayAsync<int>(ct));
-		PinAsync<int[]>(cmd.ToArrayAsync<int>(cancellationToken: ct));
-		PinAsync<ImmutableArray<int>>(cmd.ToImmutableArrayAsync<int>(ct));
+		PinAsync(cmd.ToListAsync<int>());
+		PinAsync(cmd.ToListAsync<int>(ct));
+		PinAsync(cmd.ToListAsync<int>(cancellationToken: ct));
+		PinAsync(cmd.ToArrayAsync<int>());
+		PinAsync(cmd.ToArrayAsync<int>(ct));
+		PinAsync(cmd.ToArrayAsync<int>(cancellationToken: ct));
+		PinAsync(cmd.ToImmutableArrayAsync<int>(ct));
 		PinAsync<int>(cmd.FirstOrDefaultAsync<int>(ct));
 		PinAsync<int>(cmd.SingleOrDefaultAsync<int>(ct));
-		PinAsync<HashSet<int>>(cmd.ToHashSetAsync<int>());
-		PinAsync<HashSet<int>>(
-			cmd.ToHashSetAsync<int>(EqualityComparer<int>.Default, ct));
-		PinAsync<HashSet<int>>(cmd.ToHashSetAsync<int>(cancellationToken: ct));
-		PinAsync<List<int>>(exec.ToListAsync<int>(ct));
-		PinAsync<int[]>(exec.ToArrayAsync<int>(ct));
+		PinAsync(cmd.ToHashSetAsync<int>());
+		PinAsync(
+			cmd.ToHashSetAsync(EqualityComparer<int>.Default, ct));
+		PinAsync(cmd.ToHashSetAsync<int>(cancellationToken: ct));
+		PinAsync(exec.ToListAsync<int>(ct));
+		PinAsync(exec.ToArrayAsync<int>(ct));
 
 		// A row model,
 		// and the Map twin (a MappedQuery is not an IExecuteReader,
 		// so its own terminals are untouched).
-		PinAsync<List<SingleValueTerminalTests.PostRow>>(
+		PinAsync(
 			cmd.ToListAsync<SingleValueTerminalTests.PostRow>(ct));
-		Pin<List<int>>(cmd.Map<int>().ToList());
-		Pin<List<int>>(cmd.Map(Id).ToList());
+		Pin(cmd.Map<int>().ToList());
+		Pin(cmd.Map(Id).ToList());
 	};
 
 	[Fact]

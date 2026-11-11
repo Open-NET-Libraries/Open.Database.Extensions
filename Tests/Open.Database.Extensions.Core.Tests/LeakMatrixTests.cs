@@ -94,7 +94,7 @@ public static class LeakMatrixTests
 		Async<ExpressiveDbCommand, Dictionary<int, Row>>("Map.ToDictionaryAsync", RM, (c, ct) => c.Map<Row>().ToDictionaryAsync(r => r.Id, cancellationToken: ct)),
 		Async<ExpressiveDbCommand, HashSet<Row>>("Map.ToHashSetAsync", RM, (c, ct) => c.Map<Row>().ToHashSetAsync(cancellationToken: ct)),
 		Async<ExpressiveDbCommand, ImmutableArray<Row>>("Map.ToImmutableArrayAsync", RM, (c, ct) => c.Map<Row>().ToImmutableArrayAsync(ct)),
-		Async<ExpressiveDbCommand, bool>("Map.ReadAsync.Abandon", RM | Traits.Streams, (c, ct) => c.Map<Row>().ReadAsync<Row, bool>(async seq =>
+		Async<ExpressiveDbCommand, bool>("Map.ReadAsync.Abandon", RM | Traits.Streams, (c, ct) => c.Map<Row>().ReadAsync(async seq =>
 		{
 			await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(ct);
 			return await e.MoveNextAsync();
@@ -123,7 +123,7 @@ public static class LeakMatrixTests
 		Sync<ExpressiveCommand, object?>("ExecuteScalar", Traits.None, c => c.ExecuteScalar()),
 		Sync<ExpressiveCommand, int>("ExecuteNonQuery", Traits.None, c => c.ExecuteNonQuery()),
 		Async<ExpressiveCommand, List<Row>>("Map.ToListAsync", RM, (c, ct) => c.Map<Row>().ToListAsync(ct)),
-		Async<ExpressiveCommand, bool>("Map.ReadAsync.Abandon", RM | Traits.Streams, (c, ct) => c.Map<Row>().ReadAsync<Row, bool>(async seq =>
+		Async<ExpressiveCommand, bool>("Map.ReadAsync.Abandon", RM | Traits.Streams, (c, ct) => c.Map<Row>().ReadAsync(async seq =>
 		{
 			await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(ct);
 			return await e.MoveNextAsync();

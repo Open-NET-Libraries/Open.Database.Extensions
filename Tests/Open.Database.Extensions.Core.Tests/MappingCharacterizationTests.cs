@@ -280,7 +280,7 @@ public static class MappingCharacterizationTests
 	public static void AMapEnumeratesThePairsItWasDeclaredWith()
 	{
 		IEnumerable<KeyValuePair<string, string?>> pairs = new RowMap<Post>([new(nameof(Post.Body), null), new(nameof(Post.Title), "post_title")]);
-		Assert.Equal<KeyValuePair<string, string?>>([new(nameof(Post.Title), "post_title"), new(nameof(Post.Body), null)], pairs); // declaration order of the properties, not of the pairs
+		Assert.Equal([new(nameof(Post.Title), "post_title"), new(nameof(Post.Body), null)], pairs); // declaration order of the properties, not of the pairs
 		Assert.Empty(RowMap<Post>.Default);
 	}
 

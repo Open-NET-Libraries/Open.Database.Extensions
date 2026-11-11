@@ -34,46 +34,46 @@ public static class MappedViewBindingTests
 		RowMap<Item>> Table = static (reader, command, dbCommand, expressive, exec, map) =>
 	{
 		// The reader.
-		Pin<MappedReader<Item>>(reader.Map<Item>());
-		Pin<MappedReader<Item>>(reader.Map(map));
-		Pin<MappedReader<Item>>(reader.Map<Item>((RowMap<Item>?)null));
-		Pin<MappedReader<Item>>(reader.Map<Item>(null));
-		Pin<MappedReader<int>>(reader.Map<int>());
-		Pin<MappedReader<int>>(reader.Map(Id));
-		Pin<MappedReader<int>>(reader.Map(r => r.GetInt32(0)));
-		Pin<MappedReader<Item>>(
+		Pin(reader.Map<Item>());
+		Pin(reader.Map(map));
+		Pin(reader.Map((RowMap<Item>?)null));
+		Pin(reader.Map<Item>(null));
+		Pin(reader.Map<int>());
+		Pin(reader.Map(Id));
+		Pin(reader.Map(r => r.GetInt32(0)));
+		Pin(
 			reader.Map<Item>(new KeyValuePair<string, string?>("Id", "N")));
-		Pin<MappedReader<Item>>(
+		Pin(
 			reader.Map<Item>(
 				new KeyValuePair<string, string?>("Id", "N"),
 				new KeyValuePair<string, string?>("Id", "M")));
-		Pin<MappedReader<Item>>(reader.Map<Item>([]));
+		Pin(reader.Map<Item>([]));
 
 		// The command, and a DbCommand, which is also an IDbCommand.
-		Pin<MappedCommand<Item>>(command.Map<Item>());
-		Pin<MappedCommand<Item>>(command.Map(map));
-		Pin<MappedCommand<Item>>(command.Map<Item>((RowMap<Item>?)null));
-		Pin<MappedCommand<Item>>(command.Map<Item>(null));
-		Pin<MappedCommand<int>>(command.Map<int>());
-		Pin<MappedCommand<int>>(command.Map(Id));
-		Pin<MappedCommand<Item>>(
+		Pin(command.Map<Item>());
+		Pin(command.Map(map));
+		Pin(command.Map((RowMap<Item>?)null));
+		Pin(command.Map<Item>(null));
+		Pin(command.Map<int>());
+		Pin(command.Map(Id));
+		Pin(
 			command.Map<Item>(new KeyValuePair<string, string?>("Id", "N")));
-		Pin<MappedCommand<Item>>(
+		Pin(
 			command.Map<Item>(
 				new KeyValuePair<string, string?>("Id", "N"),
 				new KeyValuePair<string, string?>("Id", "M")));
-		Pin<MappedCommand<Item>>(dbCommand.Map<Item>());
-		Pin<MappedCommand<int>>(dbCommand.Map(Id));
+		Pin(dbCommand.Map<Item>());
+		Pin(dbCommand.Map(Id));
 
 		// What existed still binds as it did.
-		Pin<MappedQuery<Item>>(exec.Map<Item>());
-		Pin<MappedQuery<Item>>(exec.Map(map));
-		Pin<MappedQuery<Item>>(exec.Map<Item>((RowMap<Item>?)null));
-		Pin<MappedQuery<Item>>(exec.Map<Item>(null));
-		Pin<MappedQuery<int>>(exec.Map(Id));
-		Pin<MappedQuery<int>>(expressive.Map<int>());
-		Pin<MappedQuery<Item>>(expressive.Map(map));
-		Pin<MappedQuery<int>>(expressive.Map(r => r.GetInt32(0)));
+		Pin(exec.Map<Item>());
+		Pin(exec.Map(map));
+		Pin(exec.Map((RowMap<Item>?)null));
+		Pin(exec.Map<Item>(null));
+		Pin(exec.Map(Id));
+		Pin(expressive.Map<int>());
+		Pin(expressive.Map(map));
+		Pin(expressive.Map(r => r.GetInt32(0)));
 	};
 
 	[Fact]

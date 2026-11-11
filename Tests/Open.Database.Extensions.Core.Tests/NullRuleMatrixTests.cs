@@ -269,7 +269,7 @@ public static class NullRuleMatrixTests
 		named.Rows.Add(DBNull.Value);
 		named.Rows.Add("given");
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal<string>(["", "given"], named.To<Named>().Select(n => n.Name));
+		Assert.Equal(["", "given"], named.To<Named>().Select(n => n.Name));
 #pragma warning restore CS0618
 
 		DataTable defaulted = new();
@@ -278,7 +278,7 @@ public static class NullRuleMatrixTests
 		defaulted.Rows.Add(1, DBNull.Value);
 		defaulted.Rows.Add(2, "given");
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal<Defaulted>([new(1, "n/a"), new(2, "given")], defaulted.To<Defaulted>());
+		Assert.Equal([new(1, "n/a"), new(2, "given")], defaulted.To<Defaulted>());
 #pragma warning restore CS0618
 	}
 
@@ -289,7 +289,7 @@ public static class NullRuleMatrixTests
 	public static void AStringPropertyWithAnEmptyInitializer_KeepsItWhenTheColumnIsNull(Route route)
 	{
 		ImmutableArray<ColumnDef> columns = [("Name", typeof(string))];
-		Assert.Equal<string>(["", "given"], ReadRows<Named>(route, columns, [[null], ["given"]]).Select(n => n.Name));
+		Assert.Equal(["", "given"], ReadRows<Named>(route, columns, [[null], ["given"]]).Select(n => n.Name));
 	}
 
 	[Theory]

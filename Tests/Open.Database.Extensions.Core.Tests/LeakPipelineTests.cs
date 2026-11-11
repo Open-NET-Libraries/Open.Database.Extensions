@@ -74,13 +74,13 @@ public static class LeakPipelineTests
 				return new(command.ToChannelAsync(rawChannel.Writer, true).AsTask(), () => rawChannel.Writer.TryComplete());
 			case (Shape.Mapped, Sink.Channel):
 				Channel<Row> mappedChannel = Make<Row>(capacity);
-				return new(command.ToChannelAsync<Row>(mappedChannel.Writer, true).AsTask(), () => mappedChannel.Writer.TryComplete());
+				return new(command.ToChannelAsync(mappedChannel.Writer, true).AsTask(), () => mappedChannel.Writer.TryComplete());
 			case (Shape.Raw, _):
 				var rawBlock = new BufferBlock<object[]>(Options(capacity));
 				return new(command.ToTargetBlockAsync(rawBlock, true).AsTask(), () => ((IDataflowBlock)rawBlock).Fault(ConsumerGone()));
 			default:
 				var mappedBlock = new BufferBlock<Row>(Options(capacity));
-				return new(command.ToTargetBlockAsync<Row>(mappedBlock, true).AsTask(), () => ((IDataflowBlock)mappedBlock).Fault(ConsumerGone()));
+				return new(command.ToTargetBlockAsync(mappedBlock, true).AsTask(), () => ((IDataflowBlock)mappedBlock).Fault(ConsumerGone()));
 		}
 	}
 
@@ -254,7 +254,7 @@ public static class LeakPipelineTests
 		var tally = new DbTally(new() { Rows = Rows(Many) });
 		var block = new BufferBlock<Row>(Options(1));
 #pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
-		Task<long> producer = tally.Command(LeakSource.BareClosed, tally.Pool).ToTargetBlockAsync<Row>(block, true).AsTask();
+		Task<long> producer = tally.Command(LeakSource.BareClosed, tally.Pool).ToTargetBlockAsync(block, true).AsTask();
 #pragma warning restore xUnit1051
 
 		await WaitUntilBlocked(tally, token);

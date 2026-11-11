@@ -115,7 +115,7 @@ public static class SingleValueAllocationTests
 				.ToList(),
 			$"ToList<int?> over {rows} rows");
 
-		PlainReaderCommand texts = Rows(typeof(string), rows, i => "t");
+		PlainReaderCommand texts = Rows(typeof(string), rows, _ => "t");
 		NoMoreThanByHand(
 			() => texts.Map<string>().ToList(),
 			() => texts

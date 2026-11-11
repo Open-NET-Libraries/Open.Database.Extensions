@@ -123,7 +123,7 @@ public static class ConfigureAwaitTests
 
 	static readonly KeyValuePair<string, Func<GatedConnection, Task>>[] Calls =
 	[
-		new("ExecuteTransactionConditionalAsync<T>", c => c.ExecuteTransactionConditionalAsync<int>((_, _) => ActPair(c), cancellationToken: TestContext.Current.CancellationToken).AsTask()),
+		new("ExecuteTransactionConditionalAsync<T>", c => c.ExecuteTransactionConditionalAsync((_, _) => ActPair(c), cancellationToken: TestContext.Current.CancellationToken).AsTask()),
 		new("ExecuteTransactionConditionalAsync(bool)", c => c.ExecuteTransactionConditionalAsync(_ => ActBool(c), cancellationToken: TestContext.Current.CancellationToken).AsTask()),
 		new("ExecuteTransactionAsync<T>", c => c.ExecuteTransactionAsync(_ => ActInt(c), cancellationToken: TestContext.Current.CancellationToken).AsTask()),
 		new("ExecuteTransactionAsync", c => c.ExecuteTransactionAsync(_ => Act(c), cancellationToken: TestContext.Current.CancellationToken).AsTask()),

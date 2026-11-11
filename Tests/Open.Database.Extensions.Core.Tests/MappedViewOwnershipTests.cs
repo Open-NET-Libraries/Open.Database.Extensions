@@ -118,7 +118,7 @@ public static class MappedViewOwnershipTests
 	public static async Task TheReaderView_NeverCallsNextResultCloseOrDispose_Async(
 		string terminal)
 	{
-		using var reader = new CountingReader(RowsFor(terminal));
+		await using var reader = new CountingReader(RowsFor(terminal));
 		await Async(reader.Map<Row>(), terminal);
 		reader.AssertUntouched();
 	}
@@ -429,7 +429,7 @@ public static class MappedViewOwnershipTests
 	[Fact]
 	public static async Task SingleResultThroughSkipAndTake_IsANoOp_OnAReaderView_Async()
 	{
-		using var reader = new CountingReader(Rows(3));
+		await using var reader = new CountingReader(Rows(3));
 
 		Assert.Equal(
 			2,

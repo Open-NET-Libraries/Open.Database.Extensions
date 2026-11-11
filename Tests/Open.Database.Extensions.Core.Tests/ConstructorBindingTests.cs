@@ -96,16 +96,16 @@ public static class ConstructorBindingTests
 		var command = new FakeExecuteReader(() => TypedReader.Create(PostColumns, [1, "one"], [2, "two"], [3, "three"]));
 		Post[] all = [new(1, "one"), new(2, "two"), new(3, "three")];
 
-		Assert.Equal<Post>(all, command.Map<Post>().ToList());
+		Assert.Equal(all, command.Map<Post>().ToList());
 		Assert.Equal<Post>(all, command.Map<Post>().ToArray());
 		Assert.Equal(all, command.Map<Post>().ToImmutableArray().ToArray());
 		Assert.Equal(all.ToHashSet(), command.Map<Post>().ToHashSet());
 		Assert.Equal(all[0], command.Map<Post>().FirstOrDefault());
-		Assert.Equal<Post>(all[1..], command.Map<Post>().Skip(1).ToList());
-		Assert.Equal<Post>(all.Take(2), command.Map<Post>().Take(2).ToArray());
-		Assert.Equal<Post>(all[1..2], command.Map<Post>().Skip(1).Take(1).ToList());
+		Assert.Equal(all[1..], command.Map<Post>().Skip(1).ToList());
+		Assert.Equal(all.Take(2), command.Map<Post>().Take(2).ToArray());
+		Assert.Equal(all[1..2], command.Map<Post>().Skip(1).Take(1).ToList());
 
-		Assert.Equal<Post>(all, await command.Map<Post>().ToListAsync(ct));
+		Assert.Equal(all, await command.Map<Post>().ToListAsync(ct));
 		Post[] asArray = await command.Map<Post>().ToArrayAsync(ct);
 		Assert.Equal(all, asArray);
 		Assert.Equal(all[0], await command.Map<Post>().FirstOrDefaultAsync(ct));
@@ -124,18 +124,18 @@ public static class ConstructorBindingTests
 		Post[] expected = [new(1, "one"), new(2, "two")];
 
 		// The substitute readers report object columns (the general path); the typed reader reports the real types.
-		Assert.Equal<Post>(expected, FakeReader.Create(["Id", "Title"], rows).Results<Post>());
-		Assert.Equal<Post>(expected, FakeReader.Create(["Id", "Title"], rows).ResultsBuffered<Post>());
-		Assert.Equal<Post>(expected, TypedReader.Create(PostColumns, rows).Results<Post>());
-		Assert.Equal<Post>(expected, TypedReader.Create(PostColumns, rows).ResultsBuffered<Post>());
+		Assert.Equal(expected, FakeReader.Create(["Id", "Title"], rows).Results<Post>());
+		Assert.Equal(expected, FakeReader.Create(["Id", "Title"], rows).ResultsBuffered<Post>());
+		Assert.Equal(expected, TypedReader.Create(PostColumns, rows).Results<Post>());
+		Assert.Equal(expected, TypedReader.Create(PostColumns, rows).ResultsBuffered<Post>());
 		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal<Post>(expected, new FakeExecuteReader(() => TypedReader.Create(PostColumns, rows)).Results<Post>());
+		Assert.Equal(expected, new FakeExecuteReader(() => TypedReader.Create(PostColumns, rows)).Results<Post>());
 		#pragma warning restore CS0618
-		Assert.Equal<Post>(expected, await TypedReader.Create(PostColumns, rows).ResultsBufferedAsync<Post>(ct));
+		Assert.Equal(expected, await TypedReader.Create(PostColumns, rows).ResultsBufferedAsync<Post>(ct));
 
 		var streamed = new List<Post>();
 		await foreach (Post post in TypedReader.Create(PostColumns, rows).ResultsAsync<Post>(cancellationToken: ct)) streamed.Add(post);
-		Assert.Equal<Post>(expected, streamed);
+		Assert.Equal(expected, streamed);
 	}
 
 	[Fact]
@@ -148,7 +148,7 @@ public static class ConstructorBindingTests
 		table.Rows.Add(2, DBNull.Value);
 
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal<Post>([new(1, "one"), new(2, null!)], table.To<Post>()); // a NULL into a non-nullable reference parameter gets its fallback: no declared default, so null (NullRuleMatrixTests covers one with a default)
+		Assert.Equal([new(1, "one"), new(2, null!)], table.To<Post>()); // a NULL into a non-nullable reference parameter gets its fallback: no declared default, so null (NullRuleMatrixTests covers one with a default)
 #pragma warning restore CS0618
 	}
 
@@ -494,7 +494,7 @@ public static class ConstructorBindingTests
 	public static void AMapOverAConstructorType_EnumeratesItsPairs_InSlotOrder()
 	{
 		IEnumerable<KeyValuePair<string, string?>> pairs = new RowMap<PostExtra>([new(nameof(PostExtra.Views), null), new("title", "post_title")]);
-		Assert.Equal<KeyValuePair<string, string?>>([new(nameof(PostExtra.Title), "post_title"), new(nameof(PostExtra.Views), null)], pairs); // the parameters first, then the other properties
+		Assert.Equal([new(nameof(PostExtra.Title), "post_title"), new(nameof(PostExtra.Views), null)], pairs); // the parameters first, then the other properties
 		Assert.Empty(RowMap<Post>.Default);
 	}
 
@@ -524,7 +524,7 @@ public static class ConstructorBindingTests
 		Competing swapped = Assert.Single(Read<Competing>(route, [("Id", typeof(int)), ("id", typeof(int))], [10, 20]));
 		Assert.Equal((10, 20), (swapped.Id, swapped.Lower));
 
-		Assert.Equal<string>(["id", "Id"], new RowMap<Competing>([new("Id", "x"), new("id", "y")]).Select(p => p.Key)); // slot order: the parameters, in order
+		Assert.Equal(["id", "Id"], new RowMap<Competing>([new("Id", "x"), new("id", "y")]).Select(p => p.Key)); // slot order: the parameters, in order
 	}
 
 	// ---- T9: the matching tiers, against parameters ----

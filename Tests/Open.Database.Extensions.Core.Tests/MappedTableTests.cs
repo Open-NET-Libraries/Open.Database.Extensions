@@ -123,7 +123,7 @@ public static class MappedTableTests
 		using DataTable table = Table(2);
 		string expected = Show(table.Map<Person>().ToList());
 
-		Assert.Equal(expected, Show(table.Map<Person>((RowMap<Person>?)null).ToList()));
+		Assert.Equal(expected, Show(table.Map((RowMap<Person>?)null).ToList()));
 		Assert.Equal(expected, Show(table.Map<Person>([]).ToList()));
 		Assert.Equal(expected, Show(table.Map(RowMap<Person>.Default).ToList()));
 	}
@@ -204,12 +204,12 @@ public static class MappedTableTests
 		DataTable? table = null;
 
 		Assert.Throws<ArgumentNullException>(() => table!.Map<Person>());
-		Assert.Throws<ArgumentNullException>(() => table!.Map<Person>((RowMap<Person>?)null));
+		Assert.Throws<ArgumentNullException>(() => table!.Map((RowMap<Person>?)null));
 		Assert.Throws<ArgumentNullException>(() => table!.Map<Person>([]));
 		Assert.Throws<ArgumentNullException>(
 			() => table!.Map<Person>(new KeyValuePair<string, string?>("Id", "Id")));
 		Assert.Throws<ArgumentNullException>(() => table!.Map(r => r.GetInt32(0)));
 		Assert.Throws<ArgumentNullException>(
-			() => new DataTable().Map<int>((Func<IDataRecord, int>)null!));
+			() => new DataTable().Map((Func<IDataRecord, int>)null!));
 	}
 }

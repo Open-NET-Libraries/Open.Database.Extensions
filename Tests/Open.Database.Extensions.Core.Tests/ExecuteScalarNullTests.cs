@@ -200,9 +200,9 @@ public static class ExecuteScalarNullTests
 	public static void ExecuteScalar_Transform_NullableCast_GivesNullForNullAndTheValueForAValue()
 	{
 		foreach (object? none in NoValue)
-			Assert.Null(Sync(none).ExecuteScalar<int?>(o => (int?)o));
+			Assert.Null(Sync(none).ExecuteScalar(o => (int?)o));
 
-		Assert.Equal(42, Sync(42).ExecuteScalar<int?>(o => (int?)o));
+		Assert.Equal(42, Sync(42).ExecuteScalar(o => (int?)o));
 	}
 
 	[Fact]
@@ -256,7 +256,7 @@ public static class ExecuteScalarNullTests
 		{
 			Assert.Null(
 				await Async(none)
-					.ExecuteScalarAsync<int?>(
+					.ExecuteScalarAsync(
 						o => (int?)o,
 						cancellationToken: TestContext.Current.CancellationToken));
 		}
@@ -264,7 +264,7 @@ public static class ExecuteScalarNullTests
 		Assert.Equal(
 			42,
 			await Async(42)
-				.ExecuteScalarAsync<int?>(
+				.ExecuteScalarAsync(
 					o => (int?)o,
 					cancellationToken: TestContext.Current.CancellationToken));
 	}
@@ -320,7 +320,7 @@ public static class ExecuteScalarNullTests
 		{
 			Assert.Null(
 				await Async(none)
-					.ExecuteScalarAsync<int?>(
+					.ExecuteScalarAsync(
 						o => new ValueTask<int?>((int?)o),
 						cancellationToken: TestContext.Current.CancellationToken));
 		}
@@ -328,7 +328,7 @@ public static class ExecuteScalarNullTests
 		Assert.Equal(
 			42,
 			await Async(42)
-				.ExecuteScalarAsync<int?>(
+				.ExecuteScalarAsync(
 					o => new ValueTask<int?>((int?)o),
 					cancellationToken: TestContext.Current.CancellationToken));
 	}

@@ -41,13 +41,13 @@ public static partial class ToChannelPipelineTests
 
 		// No target.
 		await Names("target", () => dbCommand.ToChannel<Row>(null!, true, ct));
-		await Names("target", () => dbCommand.ToChannel<Row>(null!, true, Overrides, ct));
+		await Names("target", () => dbCommand.ToChannel(null!, true, Overrides, ct));
 		await Names("target", () => fakeCommand.ToChannelAsync<Row>(null!, true, ct));
-		await Names("target", () => fakeCommand.ToChannelAsync<Row>(null!, true, Overrides, ct));
+		await Names("target", () => fakeCommand.ToChannelAsync(null!, true, Overrides, ct));
 		await Names("target", () => executeReader.ToChannel<Row>(null!, true));
-		await Names("target", () => executeReader.ToChannel<Row>(null!, true, Overrides));
+		await Names("target", () => executeReader.ToChannel(null!, true, Overrides));
 		await Names("target", () => executeReaderAsync.ToChannelAsync<Row>(null!, true));
-		await Names("target", () => executeReaderAsync.ToChannelAsync<Row>(null!, true, Overrides));
+		await Names("target", () => executeReaderAsync.ToChannelAsync(null!, true, Overrides));
 	}
 
 	// ---- cancellation reads the same whichever way the records are read ----
@@ -171,9 +171,9 @@ public static partial class ToChannelPipelineTests
 		Names("reader", () => NeverReturns(((DbDataReader)null!).ToChannelAsync(writer, true, ct)));
 		Names("reader", () => NeverReturns(((DbDataReader)null!).ToChannelAsync(writer, true, Overrides, ct)));
 		Names("target", () => NeverReturns(reader.ToChannel<Row>(null!, true, ct)));
-		Names("target", () => NeverReturns(reader.ToChannel<Row>(null!, true, Overrides, ct)));
+		Names("target", () => NeverReturns(reader.ToChannel(null!, true, Overrides, ct)));
 		Names("target", () => NeverReturns(reader.ToChannelAsync<Row>(null!, true, ct)));
-		Names("target", () => NeverReturns(reader.ToChannelAsync<Row>(null!, true, Overrides, ct)));
+		Names("target", () => NeverReturns(reader.ToChannelAsync(null!, true, Overrides, ct)));
 	}
 
 	// A null map is no map.

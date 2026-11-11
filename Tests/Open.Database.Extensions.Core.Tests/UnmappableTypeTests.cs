@@ -175,6 +175,7 @@ public static class UnmappableTypeTests
 						() => command.Map<T>())
 					.Message);
 		}
+
 		Assert.Equal(0, command.ExecuteCount); // Nothing ran: the call failed before the query was executed.
 
 		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).Results<T>()).Message);
@@ -285,7 +286,7 @@ public static class UnmappableTypeTests
 	public static void ADictionaryOrADynamicObject_IsRejected_AtTheCall_WhateverInterfaceMakesItOne()
 	{
 		AssertUnmappable<Dictionary<string, object?>>(Bag("Dictionary`2"));
-		AssertUnmappable<System.Collections.Immutable.ImmutableDictionary<string, object?>>(Bag("ImmutableDictionary`2")); // it has no public constructor either: this is the reason given
+		AssertUnmappable<ImmutableDictionary<string, object?>>(Bag("ImmutableDictionary`2")); // it has no public constructor either: this is the reason given
 		AssertUnmappable<System.Collections.Hashtable>(Bag("Hashtable")); // the non-generic IDictionary
 		AssertUnmappable<DictionaryOfMine>(Bag("DictionaryOfMine")); // a type derived from one
 		AssertUnmappable<OnlyReadOnlyDictionary>(Bag("OnlyReadOnlyDictionary")); // IReadOnlyDictionary<,> alone
@@ -417,9 +418,9 @@ public static class UnmappableTypeTests
 		["Results<T>(IDataReader, null)"] = () => Run(() => Reader().Results<T>(null)),
 		["ResultsBuffered<T>(IDataReader)"] = () => Run(() => Reader().ResultsBuffered<T>()),
 		["Results<T>(IDbCommand)"] = () => Run(() => Command().Results<T>()),
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["Results<T>(IExecuteReader)"] = () => Run(() => Exec().Results<T>()),
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 		["ResultsAsync<T>(DbDataReader)"] = () => Done(DbReader().ResultsAsync<T>()),
 		["ResultsBufferedAsync<T>(DbDataReader)"] = async () => await DbReader().ResultsBufferedAsync<T>(),
 		["ResultsAsync<T>(DbCommand)"] = async () => await DbCmd().ResultsAsync<T>(),
@@ -428,16 +429,16 @@ public static class UnmappableTypeTests
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["To<T>(DataTable)"] = () => Run(() => Table().To<T>()),
 #pragma warning restore CS0618
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["DequeueAs<T>(QueryResult)"] = () => Run(() => Queued().DequeueAs<T>()),
 		["DequeueAs<T>(Task)"] = async () => await Task.FromResult(Queued()).DequeueAs<T>(),
 		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object[]>>>(Queued()).DequeueAs<T>(),
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 		["new Transformer<T>()"] = () => Run(() => Transformer<T>.Create()),
 
 		// Channel: a new channel
 		["ToChannel<T>(IDataReader)"] = () => Done(Reader().ToChannel<T>(true)),
-		["ToChannel<T>(IDataReader, null)"] = () => Done(Reader().ToChannel<T>(true, (RowMap<T>?)null)),
+		["ToChannel<T>(IDataReader, null)"] = () => Done(Reader().ToChannel(true, (RowMap<T>?)null)),
 		["ToChannel<T>(IDbCommand)"] = () => Done(Command().ToChannel<T>(true)),
 		["ToChannel<T>(IExecuteReader)"] = () => Done(Exec().ToChannel<T>(true)),
 		["ToChannelAsync<T>(DbDataReader)"] = () => Done(DbReader().ToChannelAsync<T>(true)),
@@ -445,13 +446,13 @@ public static class UnmappableTypeTests
 		["ToChannelAsync<T>(IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync<T>(true)),
 
 		// Channel: the caller's writer
-		["ToChannel<T>(writer, IDataReader)"] = () => Done(Reader().ToChannel<T>(Writer<T>().Writer, true)),
-		["ToChannel<T>(writer, IDataReader, null)"] = () => Done(Reader().ToChannel<T>(Writer<T>().Writer, true, (RowMap<T>?)null)),
-		["ToChannel<T>(writer, IDbCommand)"] = () => Done(Command().ToChannel<T>(Writer<T>().Writer, true)),
-		["ToChannel<T>(writer, IExecuteReader)"] = () => Done(Exec().ToChannel<T>(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, DbDataReader)"] = () => Done(DbReader().ToChannelAsync<T>(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, DbCommand)"] = () => Done(DbCmd().ToChannelAsync<T>(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync<T>(Writer<T>().Writer, true)),
+		["ToChannel<T>(writer, IDataReader)"] = () => Done(Reader().ToChannel(Writer<T>().Writer, true)),
+		["ToChannel<T>(writer, IDataReader, null)"] = () => Done(Reader().ToChannel(Writer<T>().Writer, true, (RowMap<T>?)null)),
+		["ToChannel<T>(writer, IDbCommand)"] = () => Done(Command().ToChannel(Writer<T>().Writer, true)),
+		["ToChannel<T>(writer, IExecuteReader)"] = () => Done(Exec().ToChannel(Writer<T>().Writer, true)),
+		["ToChannelAsync<T>(writer, DbDataReader)"] = () => Done(DbReader().ToChannelAsync(Writer<T>().Writer, true)),
+		["ToChannelAsync<T>(writer, DbCommand)"] = () => Done(DbCmd().ToChannelAsync(Writer<T>().Writer, true)),
+		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync(Writer<T>().Writer, true)),
 
 		// Dataflow: into a block
 		["ToTargetBlock<T>(IDataReader)"] = () => Done(new ValueTask<long>(Reader().ToTargetBlock(new BufferBlock<T>(), true, (RowMap<T>?)null))),
@@ -600,48 +601,48 @@ public static class UnmappableTypeTests
 		// Core: a command
 		["Results<T>(IDbCommand)"] = t => Run(() => Command(t).Results<T>()),
 		["Results<T>(IDbCommand, null)"] = t => Run(() => Command(t).Results<T>(null)),
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["Results<T>(IExecuteReader)"] = t => Run(() => Exec(t).Results<T>()),
 		["Results<T>(IExecuteReader, null)"] = t => Run(() => Exec(t).Results<T>(null)),
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
 		["ResultsAsync<T>(DbCommand)"] = async t => await DbCmd(t).ResultsAsync<T>(),
 		["ResultsAsync<T>(DbCommand, null, token)"] = async t => await DbCmd(t).ResultsAsync<T>(null, CancellationToken.None),
 		["ResultsAsync<T>(DbCommand, token)"] = async t => await DbCmd(t).ResultsAsync<T>(CancellationToken.None),
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["ResultsFromDataTable<T>(IDbCommand)"] = t => Run(() => Command(t).ResultsFromDataTable<T>()),
 		["ExpressiveDbCommand.ResultsAsync<T>()"] = async t => await Expressive(t).ResultsAsync<T>(),
 		["ExpressiveDbCommand.ResultsAsync<T>(null)"] = async t => await Expressive(t).ResultsAsync<T>(null),
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 
 		// Core: a reader
 		["Results<T>(IDataReader)"] = t => Run(() => Reader(t).Results<T>()),
 		["ResultsBuffered<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsBuffered<T>()),
 		["ResultsAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ResultsAsync<T>()),
 		["ResultsBufferedAsync<T>(DbDataReader)"] = async t => await DbReader(t).ResultsBufferedAsync<T>(),
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["ResultsFromDataTable<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsFromDataTable<T>()),
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 
 		// Channel: a command, a new channel
 		["ToChannel<T>(IDbCommand)"] = t => Done(Command(t).ToChannel<T>(true)),
-		["ToChannel<T>(IDbCommand, null)"] = t => Done(Command(t).ToChannel<T>(true, (RowMap<T>?)null)),
+		["ToChannel<T>(IDbCommand, null)"] = t => Done(Command(t).ToChannel(true, (RowMap<T>?)null)),
 		["ToChannel<T>(IExecuteReader)"] = t => Done(Exec(t).ToChannel<T>(true)),
 		["ToChannelAsync<T>(DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync<T>(true)),
 		["ToChannelAsync<T>(IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync<T>(true)),
 
 		// Channel: a command, the caller's writer
-		["ToChannel<T>(writer, IDbCommand)"] = t => Done(Command(t).ToChannel<T>(Writer<T>().Writer, true)),
-		["ToChannel<T>(writer, IDbCommand, null)"] = t => Done(Command(t).ToChannel<T>(Writer<T>().Writer, true, (RowMap<T>?)null)),
-		["ToChannel<T>(writer, IExecuteReader)"] = t => Done(Exec(t).ToChannel<T>(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync<T>(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync<T>(Writer<T>().Writer, true)),
+		["ToChannel<T>(writer, IDbCommand)"] = t => Done(Command(t).ToChannel(Writer<T>().Writer, true)),
+		["ToChannel<T>(writer, IDbCommand, null)"] = t => Done(Command(t).ToChannel(Writer<T>().Writer, true, (RowMap<T>?)null)),
+		["ToChannel<T>(writer, IExecuteReader)"] = t => Done(Exec(t).ToChannel(Writer<T>().Writer, true)),
+		["ToChannelAsync<T>(writer, DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync(Writer<T>().Writer, true)),
+		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync(Writer<T>().Writer, true)),
 
 		// Channel: a reader
 		["ToChannel<T>(IDataReader)"] = t => Done(Reader(t).ToChannel<T>(true)),
-		["ToChannel<T>(writer, IDataReader)"] = t => Done(Reader(t).ToChannel<T>(Writer<T>().Writer, true)),
+		["ToChannel<T>(writer, IDataReader)"] = t => Done(Reader(t).ToChannel(Writer<T>().Writer, true)),
 		["ToChannelAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync<T>(true)),
-		["ToChannelAsync<T>(writer, DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync<T>(Writer<T>().Writer, true)),
+		["ToChannelAsync<T>(writer, DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync(Writer<T>().Writer, true)),
 
 		// Dataflow: a command
 		["ToTargetBlock<T>(IDbCommand)"] = t => Done(new ValueTask<long>(Command(t).ToTargetBlock(Target<T>(), true, (RowMap<T>?)null))),
@@ -699,15 +700,16 @@ public static class UnmappableTypeTests
 		Assert.True(touched.Count() > 0);
 
 		touched = new Touched();
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		_ = await Expressive(touched).ResultsAsync<ParameterlessAndOther>();
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 		Assert.True(touched.Count() > 0);
 
 		touched = new Touched();
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		_ = Exec(touched).Results<ParameterlessAndOther>().ToList();
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 		Assert.True(touched.Count() > 0);
 	}
 }
+
