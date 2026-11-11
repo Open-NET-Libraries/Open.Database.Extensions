@@ -1,6 +1,6 @@
 # Open.Database.Extensions.Dataflow
 
-![Open.Database.Extensions.Dataflow: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-dataflow.svg)
+[![Open.Database.Extensions.Dataflow: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-dataflow.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/)
 
 Read query results straight into a TPL Dataflow pipeline. `ToTargetBlock<T>()` posts each row to a block, and `AsSourceBlock<T>()` exposes the results as a source block. **Use it when** your processing is already built from dataflow blocks. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/), and rows are mapped the same way as `Map<T>()`.
 

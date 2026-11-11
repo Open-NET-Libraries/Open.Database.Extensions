@@ -274,19 +274,31 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
 	/// </summary>
+	/// <remarks>
+	/// A <see langword="params"/> parameter must come last, so this overload takes no token:
+	/// to cancel, use the overload that takes the <see cref="IEnumerable{T}"/> and a token.
+	/// </remarks>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(int n, params IEnumerable<int> others)
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
+		int n,
+		params IEnumerable<int> others)
 		=> RetrieveAsync(others.Prepend(n));
 
 	/// <summary>
 	/// Iterates all records within the current result set using an IDataReader and returns the desired results.
 	/// </summary>
+	/// <remarks>
+	/// A <see langword="params"/> parameter must come last, so this overload takes no token:
+	/// to cancel, use the overload that takes the <see cref="IEnumerable{T}"/> and a token.
+	/// </remarks>
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(string c, params IEnumerable<string> others)
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
+		string c,
+		params IEnumerable<string> others)
 		=> RetrieveAsync(others.Prepend(c));
 
 	/// <summary>
@@ -341,24 +353,60 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
 	/// </summary>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync()
-		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(useReadAsync: UseAsyncRead), CommandBehavior.SingleResult);
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(
+			reader => reader.RetrieveAsync(
+				UseAsyncRead,
+				cancellationToken),
+			CommandBehavior.SingleResult,
+			cancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
 	/// </summary>
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<int> ordinals)
-		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(ordinals, useReadAsync: UseAsyncRead), CommandBehavior.SingleResult);
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
+		IEnumerable<int> ordinals,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(
+			reader => reader.RetrieveAsync(
+				ordinals,
+				UseAsyncRead,
+				cancellationToken),
+			CommandBehavior.SingleResult,
+			cancellationToken);
 
 	/// <summary>
 	/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
 	/// </summary>
 	/// <param name="columnNames">The column names to select.</param>
 	/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
+	/// <param name="cancellationToken">
+	/// A token that can cancel the call.
+	/// It is used together with the command's own token; either one cancels.
+	/// </param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
-	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(IEnumerable<string> columnNames, bool normalizeColumnOrder = false)
-		=> ExecuteReaderAsync(reader => reader.RetrieveAsync(columnNames, normalizeColumnOrder, useReadAsync: UseAsyncRead));
+	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
+		IEnumerable<string> columnNames,
+		bool normalizeColumnOrder = false,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(
+			reader => reader.RetrieveAsync(
+				columnNames,
+				normalizeColumnOrder,
+				UseAsyncRead,
+				cancellationToken),
+			CommandBehavior.Default,
+			cancellationToken);
 }

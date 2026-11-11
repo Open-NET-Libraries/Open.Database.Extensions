@@ -1,6 +1,6 @@
 # Open.Database.Extensions (ODX)
 
-![Open.Database.Extensions: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-core.svg)
+[![Open.Database.Extensions: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-core.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/)
 
 [![NuGet](https://img.shields.io/nuget/vpre/Open.Database.Extensions.Core.svg?style=flat)](https://www.nuget.org/packages/Open.Database.Extensions.Core/)
 [![Docs](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml/badge.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml)
@@ -88,7 +88,7 @@ Targets: `netstandard2.0`, `netstandard2.1` and `net10.0` (`MSSqlClient`: `net47
 
 ## How it fits together
 
-![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands, row mapping, all resting on performance.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/architecture.svg)
+[![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands, row mapping, all resting on performance.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/architecture.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/articles/foundation.html)
 
 ## The foundation: best practice by default
 

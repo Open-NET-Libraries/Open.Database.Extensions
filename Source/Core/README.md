@@ -1,6 +1,6 @@
 # Open.Database.Extensions.Core
 
-![Open.Database.Extensions.Core: You write the SQL. The library writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-core.svg)
+[![Open.Database.Extensions.Core: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-core.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/)
 
 Core is the foundation of Open.Database.Extensions: ADO.NET extension methods with best-practice defaults, expressive commands that open, run and dispose their own connection, and `Map<T>()` to turn rows into objects. It has no database dependency of its own. **Use it for any ADO.NET database;** most applications need only this package.
 
