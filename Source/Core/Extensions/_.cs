@@ -5,7 +5,7 @@
 /// </summary>
 public static partial class CoreExtensions
 {
-	const string ToDataTableObsolete = "Use table.CreateDataReader().Map(map).ToList() instead. It returns a List<T>, not a lazy enumerable, and has no clearSourceTable argument: clear the table yourself after reading it. Removed in 12.";
+	const string ToDataTableObsolete = "Use table.Map(map).ToList() instead. It returns a List<T>, not a lazy enumerable, and has no clearSourceTable argument: clear the table yourself after reading it. Removed in 12.";
 
 	internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
 		=> (remaining == null || remaining.Count == 0) ? [first] : remaining.Prepend(first);
@@ -200,7 +200,7 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use table.CreateDataReader().Map(map).ToList().
+	/// Obsolete: use table.Map(map).ToList().
 	/// Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
 	/// </summary>
 	/// <remarks>

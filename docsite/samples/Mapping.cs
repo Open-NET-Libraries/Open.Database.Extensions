@@ -306,6 +306,23 @@ public static class Mapping
 		return posts;
 	}
 
+	public static async Task<Post[]> MapTableView(
+		SqliteConnection connection)
+	{
+		#region map_table_view
+		// The table is yours and is left as it is:
+		// each terminal reads it through its own DataTableReader.
+		using SqliteCommand command = connection.CreateCommand();
+		command.CommandText = "select * from posts order by id";
+		using SqliteDataReader reader = await command.ExecuteReaderAsync();
+		using DataTable table = reader.ToDataTable();
+
+		Post[] posts = table.Map<Post>().ToArray();
+		#endregion
+
+		return posts;
+	}
+
 	public static string[] MapSelector(SqliteConnection connection)
 	{
 		#region map_selector

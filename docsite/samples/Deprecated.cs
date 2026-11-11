@@ -70,7 +70,7 @@ public static class Deprecated
 		// Reading the map first keeps the old behavior of failing before the command runs for a type that cannot be mapped.
 		RowMap<Post> map = RowMap<Post>.Default;
 		using var table = newCommand.ToDataTable();
-		List<Post> after = table.To<Post>(map, true).ToList();
+		List<Post> after = table.Map(map).ToList();
 		#endregion
 
 		return (Key(before), Key(after));
