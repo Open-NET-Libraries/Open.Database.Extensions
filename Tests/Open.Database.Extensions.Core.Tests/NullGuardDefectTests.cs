@@ -68,7 +68,9 @@ public static class NullGuardDefectTests
 		var tally = new DbTally();
 		ExpressiveDbCommand command = tally.Factory.Command("select 1");
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var ex = Assert.Throws<ArgumentNullException>(() => command.IterateReader(r => r.GetValue(0), (Func<IEnumerable<object>, int>)null!));
+#pragma warning restore CS0618
 
 		Assert.Equal("selector", ex.ParamName);
 		Assert.Empty(tally.Connections);

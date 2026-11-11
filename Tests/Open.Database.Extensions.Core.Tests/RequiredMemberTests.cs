@@ -253,7 +253,9 @@ public static class RequiredMemberTests
 
 		var table = new DataTable();
 		table.Columns.Add("Id", typeof(int));
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => table.To<RequiredPost>()).Message);
+#pragma warning restore CS0618
 
 		// With every column present an empty buffer maps to nothing.
 		var complete = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>());
@@ -373,12 +375,16 @@ public static class RequiredMemberTests
 		table.Columns.Add("Title", typeof(string));
 		table.Rows.Add(1, "one");
 		table.Rows.Add(2, "two");
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal([(1, "one"), (2, "two")], table.To<RequiredPost>().Select(p => (p.Id, p.Title)));
+#pragma warning restore CS0618
 
 		var withoutTitle = new DataTable();
 		withoutTitle.Columns.Add("Id", typeof(int));
 		withoutTitle.Rows.Add(1);
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal(Missing("RequiredPost", "Title", "String", "Title"), Assert.Throws<ValueMappingException>(() => withoutTitle.To<RequiredPost>()).Message);
+#pragma warning restore CS0618
 	}
 
 	// A table is only cleared (clearSourceTable) once the rows could be mapped: a missing required column fails the call and leaves the caller's rows where they were.
@@ -390,12 +396,16 @@ public static class RequiredMemberTests
 		table.Rows.Add(1);
 		table.Rows.Add(2);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		_ = Assert.Throws<ValueMappingException>(() => table.To<RequiredPost>(clearSourceTable: true));
+#pragma warning restore CS0618
 		Assert.Equal(2, table.Rows.Count);
 
 		table.Columns.Add("Title", typeof(string));
 		foreach (DataRow row in table.Rows) row["Title"] = "t";
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Equal(2, table.To<RequiredPost>(clearSourceTable: true).Count());
+#pragma warning restore CS0618
 		Assert.Equal(0, table.Rows.Count); // a mappable table is cleared, as ever
 	}
 

@@ -131,7 +131,9 @@ public static class TransformerBufferTests
 	{
 		DataTable table = NewTable();
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var people = Transformer<Person>.Create().Results(table, clearTable: true).ToList();
+#pragma warning restore CS0618
 
 		Assert.Empty(table.Rows);
 		Assert.Equal([1, 2], people.Select(p => p.Id));
@@ -143,7 +145,9 @@ public static class TransformerBufferTests
 	{
 		DataTable table = NewTable();
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		var people = Transformer<Person>.Create().Results(table, clearTable: false).ToList();
+#pragma warning restore CS0618
 
 		Assert.Equal(2, table.Rows.Count);
 		Assert.Equal(2, people.Count);

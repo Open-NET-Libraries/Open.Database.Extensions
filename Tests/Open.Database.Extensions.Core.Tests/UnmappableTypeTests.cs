@@ -400,7 +400,9 @@ public static class UnmappableTypeTests
 		["ResultsAsync<T>(DbCommand)"] = async () => await DbCmd().ResultsAsync<T>(),
 
 		// Core: DataTable and Retrieve
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["To<T>(DataTable)"] = () => Run(() => Table().To<T>()),
+#pragma warning restore CS0618
 		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["DequeueAs<T>(QueryResult)"] = () => Run(() => Queued().DequeueAs<T>()),
 		["DequeueAs<T>(Task)"] = async () => await Task.FromResult(Queued()).DequeueAs<T>(),

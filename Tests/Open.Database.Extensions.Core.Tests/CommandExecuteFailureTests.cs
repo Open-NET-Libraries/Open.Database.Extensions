@@ -63,8 +63,12 @@ public static class CommandExecuteFailureTests
 
 	static readonly Dictionary<string, Func<DbCommand, CancellationToken, Task>> AsyncCalls = new()
 	{
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["ToListAsync(transform)"] = (c, t) => c.ToListAsync(r => r.GetValue(0), cancellationToken: t).AsTask(),
+#pragma warning restore CS0618
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		["ToListAsync(behavior, transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, r => r.GetValue(0), true, t).AsTask(),
+#pragma warning restore CS0618
 		["ToListAsync(async transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, r => new ValueTask<object>(r.GetValue(0)), t).AsTask(),
 		["ExecuteReaderAsync(Action)"] = (c, t) => c.ExecuteReaderAsync(_ => { }, CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync(Func<ValueTask>)"] = (c, t) => c.ExecuteReaderAsync(_ => default, CommandBehavior.Default, t).AsTask(),

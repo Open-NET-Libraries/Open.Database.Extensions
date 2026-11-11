@@ -30,7 +30,9 @@ public static class TransformerResultsTests
 	{
 		DataTable table = BuildTable();
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<Person> people = [.. table.To<Person>()];
+#pragma warning restore CS0618
 
 		Assert.Equal(2, people.Count);
 		Assert.Equal("John", people[0].FirstName);
@@ -44,7 +46,9 @@ public static class TransformerResultsTests
 		DataTable table = BuildTable();
 		var map = new RowMap<Person>([new(nameof(Person.LastName), "last_name")]);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<Person> people = [.. table.To(map)];
+#pragma warning restore CS0618
 
 		Assert.Equal("Doe", people[0].LastName);
 		Assert.Equal("Roe", people[1].LastName);
@@ -57,7 +61,9 @@ public static class TransformerResultsTests
 		// Explicitly ignore Age even though an AGE column is present.
 		var map = new RowMap<Person>([new(nameof(Person.Age), null)]);
 
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		List<Person> people = [.. table.To(map)];
+#pragma warning restore CS0618
 
 		Assert.Equal(0, people[0].Age); // ignored -> default
 		Assert.Equal("John", people[0].FirstName);
