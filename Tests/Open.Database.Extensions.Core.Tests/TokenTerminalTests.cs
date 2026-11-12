@@ -964,22 +964,50 @@ public static class TokenTerminalTests
 	// ---- allocation: a call with no token, or one token,
 	// or the same token twice, costs what the call with no token costs ----
 
-	// Bytes per call: after a warm-up,
-	// the smallest of three rounds of 1,000 calls (the allocated-bytes counter
-	// of this thread is exact).
-	static long BytesPerCall(Action call)
+	const int Rounds = 7;
+	const int CallsPerRound = 1000;
+
+	// Bytes per call of each of the calls, after a warm-up: the median
+	// of the rounds (as in the heap-growth test), so that a round
+	// with a collection or a busy machine does not decide.
+	// The calls take turns, one of each in every step of a round,
+	// and the bytes are counted call by call (the allocated-bytes counter
+	// of this thread is exact). The JIT recompiles the hot code of a process
+	// while it runs, and the new code allocates less (tens of bytes a call):
+	// calls measured one after the other, each for its own while,
+	// are measured against different states of the same code, and one
+	// can cost more than another only because it ran before the recompile.
+	// Calls that take turns meet the same state, whenever it changes.
+	static long[] BytesPerCall(Action[] calls)
 	{
-		for (int i = 0; i < 300; i++) call();
-		long best = long.MaxValue;
-		for (int round = 0; round < 7; round++)
+		foreach (Action call in calls)
 		{
-			long before = GC.GetAllocatedBytesForCurrentThread();
-			for (int i = 0; i < 1000; i++) call();
-			best = Math.Min(
-				best, (GC.GetAllocatedBytesForCurrentThread() - before) / 1000);
+			for (int i = 0; i < 300; i++) call();
 		}
 
-		return best;
+		long[][] rounds = [.. calls.Select(_ => new long[Rounds])];
+		long[] bytes = new long[calls.Length];
+		for (int round = 0; round < Rounds; round++)
+		{
+			Array.Clear(bytes);
+			for (int i = 0; i < CallsPerRound; i++)
+			{
+				// The first call of the step moves on by one each time,
+				// so that no call is always the one that follows the same other.
+				for (int j = 0; j < calls.Length; j++)
+				{
+					int c = (i + j) % calls.Length;
+					long before = GC.GetAllocatedBytesForCurrentThread();
+					calls[c]();
+					bytes[c] += GC.GetAllocatedBytesForCurrentThread() - before;
+				}
+			}
+
+			for (int c = 0; c < calls.Length; c++)
+				rounds[c][round] = bytes[c] / CallsPerRound;
+		}
+
+		return [.. rounds.Select(r => r.Order().ElementAt(Rounds / 2))];
 	}
 
 	const int Slack = 16;
@@ -997,19 +1025,18 @@ public static class TokenTerminalTests
 		// A call token alone must cost what the command's token alone always
 		// cost (a live token costs a little inside the channel wait, whatever
 		// passes it).
-		// Each variant is measured twice and the smaller kept,
-		// so that one disturbed run (a collection, a busy machine) does
-		// not decide the test.
-		long Measure(
-			CancellationToken commandToken,
-			CancellationToken callToken)
-			=> Math.Min(
-				BytesPerCall(make(commandToken, callToken)),
-				BytesPerCall(make(commandToken, callToken)));
-		long none = Measure(default, default);
-		long callOnly = Measure(default, cts.Token);
-		long commandOnly = Measure(cts.Token, default);
-		long same = Measure(cts.Token, cts.Token);
+		// The four variants are measured together (see BytesPerCall).
+		long[] measured = BytesPerCall(
+		[
+			make(default, default),
+			make(default, cts.Token),
+			make(cts.Token, default),
+			make(cts.Token, cts.Token),
+		]);
+		long none = measured[0];
+		long callOnly = measured[1];
+		long commandOnly = measured[2];
+		long same = measured[3];
 		Assert.True(
 			none <= commandOnly + Slack,
 			$"{what}: no token allocates {none}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
