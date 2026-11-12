@@ -129,7 +129,7 @@ The rules:
 - **The first column, whatever its name.** The other columns are ignored, so select only the one you need.
 - **Converted like a property of that type.** When the column type matches, or is an integer that fits (a `long` into an `int` is range-checked; a `short` widens), the value is read with the typed getter and nothing is boxed. Otherwise it is converted: a `decimal` into an `int` rounds, text into a `Guid`, an enum from its name (ignoring case) or its number, a `DateTime` into a `DateTimeOffset`. A value that cannot be converted throws `ValueMappingException`. The reader is chosen once per result set, from the type the first row reports.
 - **NULL.** A non-nullable value type gets `default` (`0`, `Guid.Empty`); `int?`, `string` and `byte[]` get `null`. Declare `int?` to tell NULL from 0.
-- **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `.SingleResult()` on `Map<T>()` stops after the first.
+- **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
 It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, cast exactly as the provider returns it (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
@@ -261,7 +261,7 @@ On a reader, the reader is yours. A terminal never opens, closes or disposes it,
 
 [!code-csharp[](../samples/Mapping.cs#map_reader_view)]
 
-On a command, the terminal opens the connection only if it is closed, and closes it again (`Close`, not `Dispose`) only if it opened it, as an expressive command does. Like a `Map` on an expressive command, it reads through the later result sets, so a failure in a later statement is thrown, and `.SingleResult()` turns that off. The command is yours and is never disposed. The asynchronous terminals open and execute asynchronously when the command is a `DbCommand`.
+On a command, the terminal opens the connection only if it is closed, and closes it again (`Close`, not `Dispose`) only if it opened it, as an expressive command does. Like a `Map` on an expressive command, it reads through the later result sets, so a failure in a later statement is thrown, and `command.SingleResult().Map<T>()` turns that off. The command is yours and is never disposed. The asynchronous terminals open and execute asynchronously when the command is a `DbCommand`.
 
 [!code-csharp[](../samples/Mapping.cs#map_command_view)]
 
@@ -281,15 +281,17 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 
-Two cases do not read through, so a later failure goes unseen: `.SingleResult()`, and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
+Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
 
-The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, the `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()` read only the first result set. `Map` reads through the rest, and `.SingleResult()` restores the old behavior. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
+The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, the `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()` read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` restores the old behavior. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
 
-`.SingleResult()` goes after `Map` (and on the result of `Skip` and `Take`). It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
+`.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 
 ```csharp
-var ids = await command.Map<int>().SingleResult().ToListAsync();
+var ids = await command.SingleResult().Map<int>().ToListAsync();
 ```
+
+A reader and a `DataTable` have no `.SingleResult()` before `Map`: their views never read through, so there is nothing to opt out of.
 
 > [!WARNING]
 > A later failure can follow a write that has already committed, so a caller that retries on it can repeat the write. The rows already read are lost when the failure is thrown.
