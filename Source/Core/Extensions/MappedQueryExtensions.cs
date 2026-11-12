@@ -1,7 +1,7 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Terminal operations for <see cref="IMappedQuery{T}"/>: they materialize the mapped rows into a collection or take a single row. <see cref="MappedQuery{T}"/> and its skip and take variants expose the same operations directly.
+/// Terminal operations for <see cref="IMappedQuery{T}"/>: they materialize the mapped rows into a collection or take a single row, and <see cref="Select{T, TResult}(IMappedQuery{T}, Func{T, TResult})"/> projects them lazily. <see cref="MappedQuery{T}"/> and its skip and take variants expose the same operations directly.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -711,5 +711,49 @@ public static class MappedQueryExtensions
 		return query.ReadAsync(
 			async (items, token) => await items.SingleAsync(token).ConfigureAwait(false),
 			cancellationToken);
+	}
+
+	/// <summary>
+	/// Projects each mapped row with <paramref name="selector"/>, lazily: nothing runs until a terminal of the returned query runs.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <typeparam name="TResult">The type <paramref name="selector"/> returns.</typeparam>
+	/// <param name="query">The query to project.</param>
+	/// <param name="selector">Produces the projected value for each mapped row. It runs once per row, in row order, only while a terminal is reading the rows.</param>
+	/// <returns>A deferred query of the projected rows. Every terminal in <see cref="MappedQueryExtensions"/> works on it, and so does <c>Select</c> again.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
+	/// <remarks>
+	/// <para>
+	/// This call executes nothing and does not run <paramref name="selector"/>. The command runs once for each terminal called on the returned query, exactly as it does on <paramref name="query"/>, so a method can return the projected query and let each caller pick the terminal (<c>ToListAsync</c> or <c>FirstOrDefaultAsync</c>, for example). A query read by two terminals executes the command twice.
+	/// </para>
+	/// <para>
+	/// The projection is built on <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> and <see cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>, so how <paramref name="query"/> opens and releases the connection, reads through later result sets and honors <c>SingleResult()</c> and cancellation is unchanged. <c>Skip</c> and <c>Take</c> apply to the rows of <paramref name="query"/>, before the selector runs: call them before <c>Select</c>. A terminal that stops early, such as <c>FirstOrDefault</c>, runs <paramref name="selector"/> only for the rows it reads.
+	/// </para>
+	/// <para>
+	/// An exception thrown by <paramref name="selector"/> propagates to the caller of the terminal, and the reader and the connection are released as they are when a handler throws. A projection of a projection reads through one reader.
+	/// </para>
+	/// </remarks>
+	/// <example>
+	/// <code>
+	/// static IMappedQuery&lt;CustomerName&gt; Names(IDbConnectionFactory&lt;SqlConnection&gt; factory)
+	///     => factory
+	///         .Command("SELECT Id, Name FROM Customers")
+	///         .Map&lt;Customer&gt;()
+	///         .Select(c => new CustomerName(c.Id, c.Name));
+	///
+	/// List&lt;CustomerName&gt; all = await Names(factory).ToListAsync(cancellationToken);
+	/// CustomerName? first = await Names(factory).FirstOrDefaultAsync(cancellationToken);
+	/// </code>
+	/// </example>
+	/// <seealso cref="IMappedQuery{T}"/>
+	public static IMappedQuery<TResult> Select<T, TResult>(
+		this IMappedQuery<T> query,
+		Func<T, TResult> selector)
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new ProjectedQuery<T, TResult>(query, selector);
 	}
 }
