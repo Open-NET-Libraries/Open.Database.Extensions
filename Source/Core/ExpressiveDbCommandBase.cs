@@ -17,7 +17,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	where TDbType : struct
 	where TThis : ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
-	const string LaterSets = "Map also reads the later result sets, so a failure in one is thrown; add .SingleResult() to read only the first, as this method does.";
+	const string LaterSets = "Map also reads the later result sets, so a failure in one is thrown; to read only the first, as this method does, call .SingleResult() before Map (cmd.SingleResult().Map(...); .Map(...).SingleResult() still works).";
 	const string ResultsAsyncObsolete = "Use .Map<T>().ToListAsync() instead (.Map(map).ToListAsync() when you pass a RowMap; Map does not accept a null map; pass a CancellationToken to ToListAsync if you want one, it is optional and combines with the command's token). " + LaterSets + " Map returns a List<T>. Removed in 12.";
 	const string TakeAsyncObsolete = "Use .Map(selector).Take(count).ToListAsync(cancellationToken) instead. " + LaterSets + " It returns a List<T>, and Take(0) now runs the command; this method did not. Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderWhileAsync(r => { list.Add(selector(r)); return list.Count < count; }, behavior). Removed in 12.";
 	const string ToListAsyncObsolete = "Use .Map(selector).ToListAsync(cancellationToken) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderAsync(r => list.Add(selector(r)), behavior). Removed in 12.";

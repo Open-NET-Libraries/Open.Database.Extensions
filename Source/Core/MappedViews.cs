@@ -117,7 +117,7 @@ public static partial class CoreExtensions
 	/// The connection is opened only if it is closed, and a connection this call opened is closed (not disposed) when it ends; one that was already open is left open.
 	/// Like an expressive command,
 	/// a terminal reads through the later result sets after the first, so a failure in a later statement is thrown;
-	/// <c>.SingleResult()</c> turns that off.
+	/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off (<c>.SingleResult()</c> after <c>Map</c> does too).
 	/// </para>
 	/// <para>
 	/// How <typeparamref name="T"/> is mapped is the same as for
@@ -195,7 +195,7 @@ public static partial class CoreExtensions
 	/// The connection is opened only if it is closed, and a connection this call opened is closed (not disposed) when it ends; one that was already open is left open.
 	/// Like an expressive command,
 	/// a terminal reads through the later result sets after the first, so a failure in a later statement is thrown;
-	/// <c>.SingleResult()</c> turns that off.
+	/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off (<c>.SingleResult()</c> after <c>Map</c> does too).
 	/// </para>
 	/// </remarks>
 	/// <typeparam name="T">The type each record is projected to.</typeparam>
@@ -326,8 +326,18 @@ public static partial class CoreExtensions
 // so it takes the single-result path of the core,
 // which never calls NextResult.
 // A command takes the same path as an expressive command.
+// A command that came through SingleResult() is unwrapped here:
+// the query runs against the command itself
+// with the core's singleResult flag set.
 static class Views
 {
+	internal static MappedQueryCore<T> QueryCore<T>(
+		IExecuteReader command,
+		IRowSource<T> source)
+		=> command is SingleResultReader single
+			? new(single.Command, source, 0, -1, true)
+			: new(command, source, 0, -1, false);
+
 	internal static MappedQueryCore<T> ReaderCore<T>(
 		IDataReader reader,
 		IRowSource<T> source)
@@ -336,7 +346,9 @@ static class Views
 	internal static MappedQueryCore<T> CommandCore<T>(
 		IDbCommand command,
 		IRowSource<T> source)
-		=> new(new CommandExecutor(command), source, 0, -1, false);
+		=> command is SingleResultDbCommand single
+			? new(new CommandExecutor(single.Command), source, 0, -1, true)
+			: new(new CommandExecutor(command), source, 0, -1, false);
 
 	internal static MappedQueryCore<T> TableCore<T>(
 		DataTable table,
@@ -723,7 +735,7 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 /// A terminal returns the rows of the first result set only,
 /// then reads through the later sets without reading their rows,
 /// so a failure in a later statement is thrown as the provider raised it;
-/// <see cref="SingleResult"/> turns that off.
+/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off, and so does <see cref="SingleResult"/> after <c>Map</c>.
 /// See <see cref="MappedQuery{T}"/> for what a read-through does and does not do.
 /// </para>
 /// </remarks>

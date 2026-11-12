@@ -38,7 +38,7 @@ public static partial class CoreExtensions
 	/// <para>
 	/// A terminal returns the rows of the first result set only (a <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between; never a row) and never maps a later set.
 	/// It then reads through the later sets without reading their rows, so a failure in a later statement is thrown as the provider raised it.
-	/// That is not done after <c>.SingleResult()</c>, when the caller stops reading early, or when the mapping, a selector or the caller's handler throws.
+	/// That is not done with <c>.SingleResult()</c>, written before <c>Map</c> (<c>command.SingleResult().Map&lt;T&gt;()</c>, see <see cref="SingleResult(IExecuteReader)"/>) or after it (<c>command.Map&lt;T&gt;().SingleResult()</c>, the same), when the caller stops reading early, or when the mapping, a selector or the caller's handler throws.
 	/// A later failure can follow a write that already committed, so a caller that retries can repeat it, and the rows read are lost when it throws.
 	/// </para>
 	/// </remarks>
@@ -60,8 +60,7 @@ public static partial class CoreExtensions
 		// a single value from the first column, a model by name.
 		return map is null
 			? Map<T>(command)
-			: new MappedQuery<T>(
-				new MappedQueryCore<T>(command, map, 0, -1, false));
+			: new MappedQuery<T>(Views.QueryCore(command, map));
 	}
 
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
@@ -95,8 +94,7 @@ public static partial class CoreExtensions
 		// A single value such as int is read from the first column;
 		// any other T maps by column name.
 		return FirstColumn<T>.Instance is { } firstColumn
-			? new MappedQuery<T>(
-				new MappedQueryCore<T>(command, firstColumn, 0, -1, false))
+			? new MappedQuery<T>(Views.QueryCore(command, firstColumn))
 			: Map(command, RowMap<T>.Default);
 	}
 
@@ -117,7 +115,7 @@ public static partial class CoreExtensions
 		if (selector is null) throw new ArgumentNullException(nameof(selector));
 		Contract.EndContractBlock();
 
-		return new MappedQuery<T>(new MappedQueryCore<T>(command, new SelectorSource<T>(selector), 0, -1, false));
+		return new MappedQuery<T>(Views.QueryCore(command, new SelectorSource<T>(selector)));
 	}
 }
 
@@ -413,6 +411,7 @@ public readonly record struct MappedQuery<T> : IMappedQuery<T>
 	/// This call asserts nothing: it does not check that there is only one result set. It stops after the first, and a later failure goes unseen.
 	/// A read-through also does not happen when the caller stops reading early or the mapping, the selector or the caller's handler throws.
 	/// <c>FirstOrDefault</c> with nothing skipped also asks the provider for a single row.
+	/// <c>command.SingleResult().Map&lt;T&gt;()</c> (see <see cref="CoreExtensions.SingleResult(IExecuteReader)"/>) is the same as <c>command.Map&lt;T&gt;().SingleResult()</c>.
 	/// </remarks>
 	/// <returns>The same query, without the read-through.</returns>
 	public MappedQuery<T> SingleResult() => new(_core.WithSingleResult());
