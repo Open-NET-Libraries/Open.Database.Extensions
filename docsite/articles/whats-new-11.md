@@ -7,6 +7,7 @@ Version 11 is a performance release and a tidy-up release. Result mapping is rew
 
 ## Changes since rc.4
 
+- Version 11 targets .NET 11: every package adds `net11.0` next to `net10.0` (LTS), `netstandard2.0` and `netstandard2.1` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Each major version of the library targets the matching .NET. Building the repository needs the .NET 11 SDK (`global.json`).
 - `First()` and `Single()` (and `FirstAsync(cancellationToken)`, `SingleAsync(cancellationToken)`) on `Map<T>()` throw `InvalidOperationException` when the query returns no row, and `Single` also when it returns more than one. An insert that returns its new id is one `await command.Map<long>().SingleAsync(cancellationToken)`, with no handler to check the row count. The commands have the shortcuts too: `command.SingleAsync<long>(cancellationToken)`. A `NULL` value is still a row. The error for no rows is thrown after the connection is released and the later result sets are read, so a failure in one of them comes first. See [Terminals](mapping.md#terminals).
 - `ToDictionary` and `ToDictionaryAsync` on `Map<T>()` take a value selector: `ToDictionaryAsync(post => post.Id, post => post.Body ?? "")` builds the lookup in one pass, without keeping the rows. A duplicate key throws, as it does without the value selector.
 
@@ -26,7 +27,7 @@ Rebuild consumers of rc.3. Both changes are source-compatible for every call exc
 - A type of your own that implements both `IExecuteReader` and `IDbCommand` (or `IDataReader`) now gets an ambiguous `Map` call (CS0121); cast it to the interface you mean.
 - A `default` `MappedQuery<T>` (or `MappedQueryWithSkip<T>`, `MappedQueryWithTake<T>`) now throws `InvalidOperationException` when used, where it threw `NullReferenceException`.
 - Members with a better route are marked `[Obsolete]`. Each message names the replacement, and they are removed in 12. They are warnings, never errors, but a build that treats warnings as errors stops on them until you move to the replacement or suppress `CS0618`. See [Deprecated in 11.0](#deprecated-in-110).
-- The asynchronous command paths dispose their reader with `ConfigureAwait(false)` on `netstandard2.1` and `net10.0`.
+- The asynchronous command paths dispose their reader with `ConfigureAwait(false)` on `netstandard2.1`, `net10.0` and `net11.0`.
 - The `Map<T>` documentation now says how columns match by default: exactly, else ignoring case, else ignoring case and underscores (`author_id` feeds `AuthorId`).
 
 ## Changes since rc.2
@@ -189,6 +190,6 @@ The old calls read only the first result set. `Map` reads through the later ones
 - The synchronous `ToTargetBlock` overloads post each row without waiting: when the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error, and only the number the call returns (the rows read and handed over) shows the shortfall. Use the `Async` overload to feed a bounded target.
 - `AddParams(source)` sends every public member of `source` that the procedure declares, so pass an object you trust, and add a value that only the server may decide (a tenant, a deleted-rows flag) with `AddParam("name", value)`: a name you pass yourself always wins.
 - The unit tests run on in-memory providers. The documentation samples run on SQLite, and the benchmarks on the in-memory provider, SQLite and SQL Server LocalDB. Feedback from other providers and workloads is welcome.
-- The tests of the mapper, the pipelines and the commands run on net10.0. The netstandard2.0, netstandard2.1 and net472 builds share the code through `#if` switches; a small test project runs the `AddParam` overloads on net472, net8.0 and net10.0 under older language versions.
+- The tests of the mapper, the pipelines and the commands run on net10.0 and net11.0. The netstandard2.0, netstandard2.1 and net472 builds share the code through `#if` switches; a small test project runs the `AddParam` overloads on net472, net8.0 and net10.0 under older language versions.
 
 Earlier versions are in [Earlier release notes](release-notes.md).
