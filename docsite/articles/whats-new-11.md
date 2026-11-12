@@ -5,6 +5,10 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.4
+
+- `Select(selector)` on an `IMappedQuery<T>` (what `Map<T>()` returns at every level) is a lazy projection that returns an `IMappedQuery<TResult>`: building it runs nothing, and each terminal you pick runs the command once and the selector once per row. A data class can return the query and let the caller choose `ToListAsync`, `FirstOrDefaultAsync` or any other terminal. See [Query factories](mapping.md#query-factories-select).
+
 ## Breaking in rc.4
 
 Rebuild consumers of rc.3. Both changes are source-compatible for every call except the ones noted.
