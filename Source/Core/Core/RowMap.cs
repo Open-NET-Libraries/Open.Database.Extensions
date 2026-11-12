@@ -637,7 +637,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// with the same typed getter, conversion and NULL rule.
 	// A NULL into a type the C# type declares non-nullable is default(T);
 	// any other NULL is null.
-	// Built from the helpers below, so the two cannot drift apart.
+	// Built from the helpers below, which the single-column reader also uses.
 	internal static Func<TReader, T> FirstColumnReader<TReader>(Type columnType)
 		where TReader : class, IDataRecord
 	{
@@ -733,7 +733,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// which is the type the reader reports for the column.
 	// A failure is the ValueMappingException the column read gives.
 	// Built from the same helpers (TypedGetters, TryConvert, ConvertValue),
-	// so the two cannot drift apart.
+	// the same ones the single-column reader uses; the two agree for every provider tested, which the parity matrix checks.
 	internal static T ConvertScalar(object? value)
 	{
 		if (value is null or DBNull) return default!;
