@@ -6,10 +6,10 @@ Most applications need one package. The others add integrations.
 
 | Package | Use it for | Targets |
 |---|---|---|
-| `Open.Database.Extensions.Core` | Everything in this guide except channels, dataflow and SQL Server helpers. Provider-agnostic. | `netstandard2.0`, `netstandard2.1`, `net10.0` |
+| `Open.Database.Extensions.Core` | Everything in this guide except channels, dataflow and SQL Server helpers. Provider-agnostic. | `netstandard2.0`, `netstandard2.1`, `net10.0`, `net11.0` |
 | `Open.Database.Extensions.Channel` | [Reading into channels](channels-and-dataflow.md) | same |
 | `Open.Database.Extensions.Dataflow` | [Reading into dataflow blocks](channels-and-dataflow.md) | same |
-| `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient` | `net472`, `net10.0` |
+| `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient` | `net472`, `net10.0`, `net11.0` |
 
 .NET 8 and .NET 9 applications use the `netstandard2.1` build; .NET Framework applications use `netstandard2.0` (or `net472` for the SQL Server package). Version 11 is a release candidate, so ask for prereleases:
 
