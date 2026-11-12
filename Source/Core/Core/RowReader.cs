@@ -224,6 +224,10 @@ internal static class RowReader
 
 	static InvalidOperationException MoreThanOne() => new("Sequence contains more than one element.");
 
+	// For the throwing terminals (First, Single) when the query returned no row; thrown after the reader is cleaned up.
+	internal static InvalidOperationException NoRows(string terminal)
+		=> new($"Sequence contains no elements: the query returned no rows, and {terminal} needs one.");
+
 	#endregion
 
 	#region Asynchronous
@@ -397,6 +401,13 @@ internal readonly struct DictionarySink<T, TKey>(Dictionary<TKey, T> dictionary,
 {
 	public Dictionary<TKey, T> Dictionary { get; } = dictionary;
 	public void Add(T item) => Dictionary.Add(keySelector(item), item);
+}
+
+internal readonly struct DictionarySink<T, TKey, TValue>(Dictionary<TKey, TValue> dictionary, Func<T, TKey> keySelector, Func<T, TValue> valueSelector) : IRowSink<T>
+	where TKey : notnull
+{
+	public Dictionary<TKey, TValue> Dictionary { get; } = dictionary;
+	public void Add(T item) => Dictionary.Add(keySelector(item), valueSelector(item));
 }
 
 internal readonly struct HashSetSink<T>(HashSet<T> set) : IRowSink<T>

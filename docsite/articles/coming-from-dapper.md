@@ -71,7 +71,7 @@ Lines you write, counted from `dapper_first_call` and `ode_first_call`: Dapper 3
 
 What is different:
 
-- **No rows, or several.** Dapper's `QueryFirstOrDefault` returns `default` for no rows and the first row for several. `QuerySingleOrDefault` returns `default` for none and throws for more than one. `QueryFirst` and `QuerySingle` throw when there is no row. The extensions' `FirstOrDefault()` returns `null` for no rows and the first row for several; `SingleOrDefault()` returns `null` for none and throws `InvalidOperationException` for more than one. There is no throwing `First` or `Single`.
+- **No rows, or several.** Dapper's `QueryFirstOrDefault` returns `default` for no rows and the first row for several. `QuerySingleOrDefault` returns `default` for none and throws for more than one. `QueryFirst` and `QuerySingle` throw when there is no row. The extensions' `FirstOrDefault()` returns `null` for no rows and the first row for several; `SingleOrDefault()` returns `null` for none and throws `InvalidOperationException` for more than one. `First()` throws `InvalidOperationException` for no rows and returns the first row for several; `Single()` throws for none and for more than one.
 
 ### A scalar
 
@@ -273,7 +273,7 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 |---|---|
 | `Query<T>` | `Map<T>().ToList()` (or `ToArray()`) |
 | `QueryFirstOrDefault<T>`, `QuerySingleOrDefault<T>` | `Map<T>().FirstOrDefault()`, `Map<T>().SingleOrDefault()` |
-| `QueryFirst<T>`, `QuerySingle<T>` | No throwing form: call `FirstOrDefault()` or `SingleOrDefault()` and check for `null` |
+| `QueryFirst<T>`, `QuerySingle<T>` | `Map<T>().First()`, `Map<T>().Single()` |
 | `Query<int>` over one column | `Map<int>().ToList()`: the first column, converted like a property (a `long` into `int` is range-checked); a NULL gives 0, so declare `int?` to tell it from 0. `FirstOrdinalResults<T>()` returns the provider's own type instead (`long` for an integer on SQLite) |
 | `ExecuteScalar<T>` | `ExecuteScalar<T>()`; `T` must be the type the provider returns |
 | `Execute` | `ExecuteNonQuery()` |

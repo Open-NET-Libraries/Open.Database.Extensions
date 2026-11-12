@@ -129,6 +129,12 @@ Check(
 	"ToArrayAsync<int>(token) on a command");
 Check(Mapping.StreamRows(connection) == 15, "Read streams rows inside the handler");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
+Dictionary<int, string> bodiesById = await Mapping.BodiesByIdAsync(connection, CancellationToken.None);
+Check(bodiesById.Count == 5 && bodiesById[1] == "Body 1" && bodiesById[2] == "", "ToDictionaryAsync with a value selector keeps only the value (NULL as empty text)");
+Check(connection.Command("select * from posts order by id").Map<Post>().First().Id == 1, "First returns the first of several rows");
+Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().Single()), "Single throws for more than one row");
+Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts where id = 999").Map<Post>().First()), "First throws for no rows");
+Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts where id = 999").Map<Post>().Single()), "Single throws for no rows");
 
 // Channels and Dataflow.
 List<Post> viaChannel = await ChannelsAndDataflow.ToChannelSample(factory);
@@ -196,6 +202,9 @@ connection.ExecuteTransaction(tx => tx.Command("select 1").ExecuteScalar());
 Check(connection.State == ConnectionState.Open, "ExecuteTransaction leaves an open connection open");
 long newId = ExpressiveCommands.InsertAndReadId(factory);
 Check(newId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "New", "an insert and select last_insert_rowid() in one command return the generated id to ExecuteScalar<long>()");
+factory.Command("delete from posts where id = 6").ExecuteNonQuery();
+long draftId = await Mapping.InsertReturningIdAsync(factory, CancellationToken.None);
+Check(draftId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "Draft", "an insert returns its new id, read with SingleAsync");
 factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 // Deprecated in 11.0: each old call and the call that replaces it give the same result.
 Db.Seed();

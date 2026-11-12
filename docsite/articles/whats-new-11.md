@@ -5,6 +5,11 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.4
+
+- `First()` and `Single()` (and `FirstAsync(cancellationToken)`, `SingleAsync(cancellationToken)`) on `Map<T>()` throw `InvalidOperationException` when the query returns no row, and `Single` also when it returns more than one. An insert that returns its new id is one `await command.Map<long>().SingleAsync(cancellationToken)`, with no handler to check the row count. The commands have the shortcuts too: `command.SingleAsync<long>(cancellationToken)`. A `NULL` value is still a row. The error for no rows is thrown after the connection is released and the later result sets are read, so a failure in one of them comes first. See [Terminals](mapping.md#terminals).
+- `ToDictionary` and `ToDictionaryAsync` on `Map<T>()` take a value selector: `ToDictionaryAsync(post => post.Id, post => post.Body ?? "")` builds the lookup in one pass, without keeping the rows. A duplicate key throws, as it does without the value selector.
+
 ## Breaking in rc.4
 
 Rebuild consumers of rc.3. Both changes are source-compatible for every call except the ones noted.
@@ -180,7 +185,6 @@ The old calls read only the first result set. `Map` reads through the later ones
 - `Retrieve()` followed by `DequeueAs<T>()` is deprecated in 11.0 (a two-pass route, slower than `Map<T>()`): use `Map<T>().ToList()`. See [Deprecated in 11.0](#deprecated-in-110).
 - The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. The cause is in the underlying channel library.
 - Output parameters can be sent, but their values cannot be read back after the call. Providers other than SQL Server supply no real parameter names, so `AddParam(search.Author)` uses the last member as written there.
-- `MappedQuery<T>` has `FirstOrDefault` and `SingleOrDefault` but no throwing `First` or `Single`: check the result for `null`.
 - A missing column for a `required` property is reported by `Map` at the first row, so an empty result does not report it. `DataTable.To<T>()` (deprecated), `ToChannel` and the Dataflow methods know the columns before any row and report it even when no row follows. (`DequeueAs<T>()` did too; it is deprecated.)
 - The synchronous `ToTargetBlock` overloads post each row without waiting: when the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error, and only the number the call returns (the rows read and handed over) shows the shortfall. Use the `Async` overload to feed a bounded target.
 - `AddParams(source)` sends every public member of `source` that the procedure declares, so pass an object you trust, and add a value that only the server may decide (a tenant, a deleted-rows flag) with `AddParam("name", value)`: a name you pass yourself always wins.

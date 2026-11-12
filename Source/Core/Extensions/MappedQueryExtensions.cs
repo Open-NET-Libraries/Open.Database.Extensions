@@ -287,6 +287,93 @@ public static class MappedQueryExtensions
 	}
 
 	/// <summary>
+	/// Reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>,
+	/// keyed by <paramref name="keySelector"/>, with the value
+	/// <paramref name="valueSelector"/> returns for the row.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+	/// <typeparam name="TValue">The type of the dictionary value.</typeparam>
+	/// <param name="query">The query to execute.</param>
+	/// <param name="keySelector">Produces the key for each mapped row.</param>
+	/// <param name="valueSelector">Produces the value for each mapped row.</param>
+	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
+	/// <returns>A dictionary of all the rows. It is empty if there are no rows.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
+	/// <remarks>
+	/// <para>
+	/// The dictionary is built in one pass: each selector is called once per row, key first, and no list of the rows is kept.
+	/// A duplicate key throws, as it does for <see cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/> and for LINQ's <c>ToDictionary</c>.
+	/// </para>
+	/// <para>
+	/// The selectors run while the reader is open, so keep them quick and do not touch the connection from inside them.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
+	public static Dictionary<TKey, TValue> ToDictionary<T, TKey, TValue>(
+		this IMappedQuery<T> query,
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null)
+		where TKey : notnull
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
+		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
+		Contract.EndContractBlock();
+
+		return query.Read(
+			items => items.ToDictionary(keySelector, valueSelector, comparer));
+	}
+
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>,
+	/// keyed by <paramref name="keySelector"/>, with the value
+	/// <paramref name="valueSelector"/> returns for the row.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+	/// <typeparam name="TValue">The type of the dictionary value.</typeparam>
+	/// <param name="query">The query to execute.</param>
+	/// <param name="keySelector">Produces the key for each mapped row.</param>
+	/// <param name="valueSelector">Produces the value for each mapped row.</param>
+	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <returns>A task that produces a dictionary of all the rows.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <remarks>
+	/// <para>
+	/// The dictionary is built in one pass: each selector is called once per row, key first, and no list of the rows is kept.
+	/// A duplicate key throws, as it does for <see cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>.
+	/// </para>
+	/// <para>
+	/// The comparer comes before the token, as it does there: pass the token by name,
+	/// <c>ToDictionaryAsync(keySelector, valueSelector, cancellationToken: ct)</c>.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="ToDictionary{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/>
+	public static ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<T, TKey, TValue>(
+		this IMappedQuery<T> query,
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
+		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
+		Contract.EndContractBlock();
+
+		return query.ReadAsync(
+			async (items, token) => await items.ToDictionaryAsync(keySelector, valueSelector, comparer, token).ConfigureAwait(false),
+			cancellationToken);
+	}
+
+	/// <summary>
 	/// Reads every mapped row into a new <see cref="HashSet{T}"/>.
 	/// </summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
@@ -412,4 +499,122 @@ public static class MappedQueryExtensions
 		=> query.ReadAsync(
 			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false),
 			cancellationToken);
+
+	/// <summary>
+	/// Reads the first mapped row; throws if the query returns no rows.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="query">The query to execute.</param>
+	/// <returns>The first row.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The query returns no rows.</exception>
+	/// <remarks>
+	/// <para>
+	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
+	/// </para>
+	/// <para>
+	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Single{T}(IMappedQuery{T})"/>
+	public static T First<T>(this IMappedQuery<T> query)
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query.Read(items => items.First());
+	}
+
+	/// <summary>
+	/// Asynchronously reads the first mapped row; throws if the query returns no rows.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="query">The query to execute.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <returns>A task that produces the first row.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The query returns no rows.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <remarks>
+	/// <para>
+	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
+	/// </para>
+	/// <para>
+	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	public static ValueTask<T> FirstAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query.ReadAsync(
+			async (items, token) => await items.FirstAsync(token).ConfigureAwait(false),
+			cancellationToken);
+	}
+
+	/// <summary>
+	/// Reads the only mapped row; throws if the query returns no rows or more than one.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="query">The query to execute.</param>
+	/// <returns>The single row.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
+	/// <remarks>
+	/// <para>
+	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
+	/// The provider is not asked for a single row, because it could then hide the second one.
+	/// </para>
+	/// <para>
+	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
+	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="First{T}(IMappedQuery{T})"/>
+	public static T Single<T>(this IMappedQuery<T> query)
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query.Read(items => items.Single());
+	}
+
+	/// <summary>
+	/// Asynchronously reads the only mapped row; throws if the query returns no rows or more than one.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="query">The query to execute.</param>
+	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <returns>A task that produces the single row.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
+	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <remarks>
+	/// <para>
+	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
+	/// The provider is not asked for a single row, because it could then hide the second one.
+	/// </para>
+	/// <para>
+	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
+	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	public static ValueTask<T> SingleAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query.ReadAsync(
+			async (items, token) => await items.SingleAsync(token).ConfigureAwait(false),
+			cancellationToken);
+	}
 }

@@ -27,7 +27,7 @@ public static class MappedQueryReadThroughTests
 	// ---- every terminal ----
 
 	public static TheoryData<string> Terminals
-		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "ToDictionary", "ToHashSet", "Read", "ReadResult"];
+		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet", "Read", "ReadResult"];
 
 	static void RunSync(MappedQuery<int> query, string terminal)
 	{
@@ -38,7 +38,10 @@ public static class MappedQueryReadThroughTests
 			case "ToImmutableArray": query.ToImmutableArray(); break;
 			case "FirstOrDefault": query.FirstOrDefault(); break;
 			case "SingleOrDefault": query.SingleOrDefault(); break;
+			case "First": query.First(); break;
+			case "Single": query.Single(); break;
 			case "ToDictionary": query.ToDictionary(i => i); break;
+			case "ToDictionaryValues": query.ToDictionary(i => i, i => i * 2); break;
 			case "ToHashSet": query.ToHashSet(); break;
 			case "Read": query.Read(items => { foreach (int _ in items) { } }); break;
 			case "ReadResult": query.Read(items => items.Count()); break;
@@ -55,7 +58,10 @@ public static class MappedQueryReadThroughTests
 			case "ToImmutableArray": await query.ToImmutableArrayAsync(token); break;
 			case "FirstOrDefault": await query.FirstOrDefaultAsync(token); break;
 			case "SingleOrDefault": await query.SingleOrDefaultAsync(token); break;
+			case "First": await query.FirstAsync(token); break;
+			case "Single": await query.SingleAsync(token); break;
 			case "ToDictionary": await query.ToDictionaryAsync(i => i, null, token); break;
+			case "ToDictionaryValues": await query.ToDictionaryAsync(i => i, i => i * 2, null, token); break;
 			case "ToHashSet": await query.ToHashSetAsync(null, token); break;
 			case "Read": await query.ReadAsync(async (items, t) => { await foreach (int _ in items.WithCancellation(t)) { } }, token); break;
 			case "ReadResult": await query.ReadAsync(async (items, t) => { int n = 0; await foreach (int _ in items.WithCancellation(t)) n++; return n; }, token); break;
