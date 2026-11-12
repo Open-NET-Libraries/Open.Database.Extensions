@@ -8,6 +8,7 @@ Version 11 is a performance release and a tidy-up release. Result mapping is rew
 ## Changes since rc.4
 
 - Version 11 targets .NET 11: every package adds `net11.0` next to `net10.0` (LTS), `netstandard2.0` and `netstandard2.1` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Each major version of the library targets the matching .NET. Building the repository needs the .NET 11 SDK (`global.json`).
+- `.SingleResult()` can be written before `Map`, so a query reads as behavior first, then shape: `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)`. It works on an expressive command (`IExecuteReader`) and on a raw `IDbCommand` or `DbCommand`, with the same `Map` overloads as before, and it is the same as `command.Map<Post>().SingleResult()`, which still works. There is none on `IDataReader` or `DataTable`: their views never read through, so there is nothing to opt out of. Nothing changes by default: without it a `Map` terminal still reads through the later result sets.
 
 ## Breaking in rc.4
 
@@ -166,7 +167,7 @@ The selector forms on an `IExecuteReader`:
 
 ### Why `Map` reads later result sets
 
-The old calls read only the first result set. `Map` reads through the later ones, so a failure in a later result set is thrown, not left unread. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one). Add `.SingleResult()` to read only the first, as the old calls did.
+The old calls read only the first result set. `Map` reads through the later ones, so a failure in a later result set is thrown, not left unread. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one). Call `.SingleResult()` before `Map` to read only the first, as the old calls did: `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)`. `command.Map<Post>().SingleResult()` still works.
 
 ## Fixes
 
