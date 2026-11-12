@@ -898,6 +898,20 @@ public static class DerivedParameterNameTests
 		Assert.Equal(new Dictionary<string, object?> { ["Id"] = 7 }, Sent(textProbe));
 	}
 
+	// A text command that has @name markers is matched against them like a procedure's names:
+	// a member of the object that the text does not use is not sent.
+	[Fact]
+	public static void AddParams_OnATextCommandWithMarkers_SendsOnlyTheMembersTheTextUses()
+	{
+		var probe = new ConnectionProbe(ConnectionState.Open);
+
+		new ProcCommand(probe.Connection, CommandType.Text, "select 1 where a = @id and b = @region", "@never")
+			.AddParams(new { Id = 7, Region = "west", Unrelated = true })
+			.ExecuteNonQuery();
+
+		Assert.Equal(new Dictionary<string, object?> { ["@id"] = 7, ["@region"] = "west" }, Sent(probe));
+	}
+
 	[Fact]
 	public static void AddParams_Null_Throws_AndAnObjectWithNoMembersAddsNothing()
 	{

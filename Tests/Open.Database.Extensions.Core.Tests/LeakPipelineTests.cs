@@ -105,10 +105,31 @@ public static class LeakPipelineTests
 		}
 	}
 
+	// Runs the assertion until it holds, within Bound;
+	// what is reported is the last failure.
+	static async Task EventuallyHolds(Action assertion, CancellationToken token)
+	{
+		DateTime until = DateTime.UtcNow + Bound;
+		while (true)
+		{
+			try
+			{
+				assertion();
+				return;
+			}
+			catch (Xunit.Sdk.XunitException) when (DateTime.UtcNow <= until)
+			{
+				await Task.Delay(5, token);
+			}
+		}
+	}
+
 	// The producer has read as much as it is going to: its reader has not been read from for a while.
 	static async Task WaitUntilBlocked(DbTally tally, CancellationToken token)
 	{
-		await Eventually(() => tally.Readers.Count == 1 && tally.Readers[0].Reads >= 2, "the producer to start reading", token);
+		// (A pattern, not an index: see the first wait of
+		// CreatedTarget_NobodyEverReads_TheReaderIsStillReleased.)
+		await Eventually(() => tally.Readers.Count == 1 && tally.Readers[0] is { Reads: >= 2 }, "the producer to start reading", token);
 		int last = -1;
 		while (tally.Readers[0].Reads != last)
 		{
@@ -239,8 +260,16 @@ public static class LeakPipelineTests
 #pragma warning restore xUnit1051
 		};
 
-		await Eventually(() => tally.Readers.Count == 1 && tally.Readers[0].Disposes == 1, "the reader to be disposed", token);
-		AssertReleased(tally, source);
+		// The producer adds its reader to the list on its own thread, and
+		// List<T> counts an item before it stores it: a look from here can
+		// find a count of 1 and a null item. A pattern is false for null.
+		await Eventually(() => tally.Readers.Count == 1 && tally.Readers[0] is { Disposes: 1 }, "the reader to be disposed", token);
+
+		// Disposing the reader is the first step of the release, not the last:
+		// the producer then disposes the command and releases the connection,
+		// a moment later on its own thread. Wait for the whole state,
+		// or a look that falls between two steps fails a release under way.
+		await EventuallyHolds(() => AssertReleased(tally, source), token);
 		GC.KeepAlive(target);
 	}
 
