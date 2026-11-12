@@ -70,8 +70,9 @@ public static class ExpressiveCommands
 	{
 		const int author = 42;
 		#region scalar_and_nonquery
-		// ExecuteScalar<T> casts the value the provider returns, so T must be that exact type
-		// (SQLite counts as long; SQL Server counts as int). Use the Func overload to convert instead.
+		// ExecuteScalar<T> converts the value the provider returns, as Map<T>() does:
+		// a count can be read as long or as int (SQLite counts as long; SQL Server counts as int).
+		// Use the Func overload to convert in your own way.
 		long count = connectionFactory
 			.Command("select count(*) from posts where author = @author")
 			.AddParam(author) // name and type inferred from the variable
@@ -107,6 +108,22 @@ public static class ExpressiveCommands
 		int count = connectionFactory
 			.Command("select count(*) from posts")
 			.ExecuteScalar(value => Convert.ToInt32(value));
+		#endregion
+
+		return count;
+	}
+
+	public static async Task<int> ScalarReadAsInt(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		#region scalar_read_as_int
+		// SQLite returns count(*) as a long (a bigint).
+		// ExecuteScalarAsync<int> converts it, as Map<int>() does:
+		// a value that does not fit in an int throws ValueMappingException.
+		int count = await connectionFactory
+			.Command("select count(*) from posts")
+			.ExecuteScalarAsync<int>(cancellationToken);
 		#endregion
 
 		return count;

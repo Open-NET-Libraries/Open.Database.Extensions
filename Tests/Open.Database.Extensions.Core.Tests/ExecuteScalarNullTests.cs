@@ -5,7 +5,7 @@ using System.Data.Common;
 namespace Open.Database.Extensions.Tests;
 
 // ExecuteScalar<T>() / ExecuteScalarAsync<T>() with a NULL scalar or a query that returned no row (the provider hands back null or DBNull):
-// default(T) for every T (0 for int, null for int? and reference types). A value is still the exact cast.
+// default(T) for every T (0 for int, null for int? and reference types). A value converts as Map<T>() does (ExecuteScalarConversionTests).
 // The transform overloads get null for both (never DBNull); the raw ExecuteScalar()/ExecuteScalarAsync() stay raw.
 [ExcludeFromCodeCoverage]
 public static class ExecuteScalarNullTests
@@ -13,7 +13,7 @@ public static class ExecuteScalarNullTests
 	// What a provider returns for a NULL scalar (DBNull) and for no rows (null).
 	static readonly object?[] NoValue = [null, DBNull.Value];
 
-	static ExpressiveCommand Sync(object? scalar)
+	internal static ExpressiveCommand Sync(object? scalar)
 	{
 		var probe = new ConnectionProbe(ConnectionState.Open);
 		probe.Command.ExecuteScalar().Returns(_ => scalar);
@@ -37,7 +37,7 @@ public static class ExecuteScalarNullTests
 	}
 
 	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
-	static ExpressiveDbCommand Async(object? scalar)
+	internal static ExpressiveDbCommand Async(object? scalar)
 	{
 		DbCommand command = Substitute.For<DbCommand>();
 		command.ExecuteScalarAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(scalar));
@@ -63,12 +63,12 @@ public static class ExecuteScalarNullTests
 	}
 
 	[Fact]
-	public static void ExecuteScalar_AValue_IsStillTheExactCast()
+	public static void ExecuteScalar_AValue_IsConverted()
 	{
 		Assert.Equal(42, Sync(42).ExecuteScalar<int>());
 		Assert.Equal(42, Sync(42).ExecuteScalar<int?>());
 		Assert.Equal("v", Sync("v").ExecuteScalar<string>());
-		Assert.Throws<InvalidCastException>(() => Sync(42).ExecuteScalar<long>()); // a cast, not a conversion
+		Assert.Equal(42L, Sync(42).ExecuteScalar<long>()); // a conversion, not a cast
 	}
 
 	// ---- async ----
@@ -113,7 +113,7 @@ public static class ExecuteScalarNullTests
 	}
 
 	[Fact]
-	public static async Task ExecuteScalarAsync_AValue_IsStillTheExactCast()
+	public static async Task ExecuteScalarAsync_AValue_IsConverted()
 	{
 		Assert.Equal(
 			42,
@@ -130,8 +130,9 @@ public static class ExecuteScalarNullTests
 			await Async("v")
 				.ExecuteScalarAsync<string>(
 					cancellationToken: TestContext.Current.CancellationToken));
-		await Assert.ThrowsAsync<InvalidCastException>(
-			async () => await Async(42)
+		Assert.Equal(
+			42L,
+			await Async(42)
 				.ExecuteScalarAsync<long>(
 					cancellationToken: TestContext.Current.CancellationToken));
 	}

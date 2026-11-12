@@ -182,17 +182,19 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
-	/// Asynchronously executes scalar on the underlying command and casts to the expected type.
+	/// Asynchronously executes scalar on the underlying command and converts the value to the expected type, as <c>Map&lt;T&gt;()</c> converts a column.
 	/// </summary>
 	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExecuteScalar{T}()"/>
 	/// <param name="cancellationToken">
 	/// A token that can cancel the call.
 	/// It is used together with the command's own token; either one cancels.
 	/// </param>
-	public ValueTask<T> ExecuteScalarAsync<T>(
+	public async ValueTask<T> ExecuteScalarAsync<T>(
 		CancellationToken cancellationToken = default)
-		=> ExecuteCombinedAsync(cancellationToken, static async (command, _, token)
-			=> CastScalar<T>(await command.ExecuteScalarAsync(token).ConfigureAwait(false)));
+		// Converted after the command has released the connection.
+		=> RowMap<T>.ConvertScalar(
+			await ExecuteScalarAsync(cancellationToken)
+				.ConfigureAwait(false));
 
 	/// <summary>
 	/// Asynchronously executes scalar on the underlying command.

@@ -3,7 +3,7 @@
 namespace Open.Database.Extensions.Tests;
 
 // ExecuteReturn<T>() / ExecuteReturnAsync<T>() with a NULL return value (the provider leaves null or DBNull in the return parameter):
-// default(T) for every T, the same rule as ExecuteScalar<T>(). A value is still the exact cast.
+// default(T) for every T, the same rule as ExecuteScalar<T>(). A value converts as Map<T>() does (ExecuteScalarConversionTests).
 [ExcludeFromCodeCoverage]
 public static class ExecuteReturnNullTests
 {
@@ -38,12 +38,13 @@ public static class ExecuteReturnNullTests
 	}
 
 	[Fact]
-	public static void ExecuteReturn_AValue_IsStillTheExactCast()
+	public static void ExecuteReturn_AValue_IsConverted()
 	{
 		Assert.Equal(42, Returning(42).ExecuteReturn<int>());
 		Assert.Equal(42, Returning(42).ExecuteReturn<int?>());
 		Assert.Equal("v", Returning("v").ExecuteReturn<string>());
-		Assert.Throws<InvalidCastException>(() => Returning(42).ExecuteReturn<long>()); // a cast, not a conversion
+		Assert.Equal(42L, Returning(42).ExecuteReturn<long>()); // a conversion, not a cast
+		Assert.Throws<ValueMappingException>(() => Returning(5_000_000_000L).ExecuteReturn<int>()); // a range check, as Map<int>() does
 	}
 
 	// ---- async ----
@@ -74,7 +75,7 @@ public static class ExecuteReturnNullTests
 	}
 
 	[Fact]
-	public static async Task ExecuteReturnAsync_AValue_IsStillTheExactCast()
+	public static async Task ExecuteReturnAsync_AValue_IsConverted()
 	{
 		Assert.Equal(
 			42,
@@ -91,8 +92,9 @@ public static class ExecuteReturnNullTests
 			await Returning("v")
 				.ExecuteReturnAsync<string>(
 					cancellationToken: TestContext.Current.CancellationToken));
-		await Assert.ThrowsAsync<InvalidCastException>(
-			async () => await Returning(42)
+		Assert.Equal(
+			42L,
+			await Returning(42)
 				.ExecuteReturnAsync<long>(
 					cancellationToken: TestContext.Current.CancellationToken));
 	}
