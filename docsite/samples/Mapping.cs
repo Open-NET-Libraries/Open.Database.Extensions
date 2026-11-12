@@ -275,6 +275,23 @@ public static class Mapping
 		return (first, single);
 	}
 
+	public static async Task<long> InsertReturningIdAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		#region map_single_insert
+		// The insert and a select of the new id in one command (SQLite: last_insert_rowid()).
+		// SingleAsync throws unless exactly one row comes back, so there is no handler and no check.
+		long newId = await connectionFactory
+			.Command("insert into posts (author, title, body, views) values (@author, 'Draft', null, 0); select last_insert_rowid()")
+			.AddParam("author", 42)
+			.Map<long>()
+			.SingleAsync(cancellationToken);
+		#endregion
+
+		return newId;
+	}
+
 	public static async Task<Post[]> MapReaderView(
 		SqliteConnection connection)
 	{
@@ -393,6 +410,22 @@ public static class Mapping
 		#endregion
 
 		return byId;
+	}
+
+	public static async Task<Dictionary<int, string>> BodiesByIdAsync(SqliteConnection connection, CancellationToken cancellationToken)
+	{
+		#region map_dictionary_values
+		// A key selector and a value selector build the lookup in one pass: no Post is kept, only the text.
+		Dictionary<int, string> bodies = await connection
+			.Command("select * from posts")
+			.Map<Post>()
+			.ToDictionaryAsync(
+				post => post.Id,
+				post => post.Body ?? "",
+				cancellationToken: cancellationToken);
+		#endregion
+
+		return bodies;
 	}
 
 	public static async Task<Order[]> MapConverted(

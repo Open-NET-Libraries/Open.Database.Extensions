@@ -119,7 +119,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 
 ## One value per row
 
-On a command, `Map<int>()` reads the first column of each row as one value, and the terminals of `Map<int>()` work as for a row model: `db.Command(sql).Map<int>().ToList()`. The async terminals are also on the command itself, taking the type: `db.Command(sql).ToArrayAsync<int>(ct)` is `db.Command(sql).Map<int>().ToArrayAsync(ct)` (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `FirstOrDefaultAsync`, `SingleOrDefaultAsync`). For a row model the same terminals map by column name, so `ToListAsync<Post>(ct)` is `Map<Post>().ToListAsync(ct)`. There is no synchronous shortcut on the command: write `Map<T>().ToList()`.
+On a command, `Map<int>()` reads the first column of each row as one value, and the terminals of `Map<int>()` work as for a row model: `db.Command(sql).Map<int>().ToList()`. The async terminals are also on the command itself, taking the type: `db.Command(sql).ToArrayAsync<int>(ct)` is `db.Command(sql).Map<int>().ToArrayAsync(ct)` (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `FirstAsync`, `FirstOrDefaultAsync`, `SingleAsync`, `SingleOrDefaultAsync`). For a row model the same terminals map by column name, so `ToListAsync<Post>(ct)` is `Map<Post>().ToListAsync(ct)`. There is no synchronous shortcut on the command: write `Map<T>().ToList()`.
 
 [!code-csharp[](../samples/Mapping.cs#map_single_value)]
 
@@ -237,9 +237,17 @@ Some columns are not the type the model wants: a number the model keeps as text,
 
 ## Terminals
 
-`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` and `Read`, each with an `Async` twin. There is no throwing `First` or `Single`: the `OrDefault` forms return `null` for no rows. Prefer `ToArray` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToList` when you add to or remove from the result afterwards.
+`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `First`, `FirstOrDefault`, `Single`, `SingleOrDefault` and `Read`, each with an `Async` twin. `First` and `Single` throw `InvalidOperationException` when the query returns no row (and `Single` when it returns more than one); the `OrDefault` forms return `null` for no rows. A row whose value is `NULL` is still a row. Prefer `ToArray` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToList` when you add to or remove from the result afterwards. Called through `IMappedQuery<T>` (in generic code), `First`, `FirstOrDefault`, `Single` and `SingleOrDefault` do the same as the members of every `Map` type of the library, the no-rows message and the read-through included; another implementation of the interface gets a LINQ fallback that stops at the row, so it cannot read through the later result sets.
 
 [!code-csharp[](../samples/Mapping.cs#map_first_single)]
+
+An insert that returns its new id is one `SingleAsync`: no handler, and no check for the row you expect, because it throws unless there is exactly one. The failure is thrown after the connection is released and the later result sets are read, so a failure in one of them comes first.
+
+[!code-csharp[](../samples/Mapping.cs#map_single_insert)]
+
+`ToDictionary` keys the rows by a key selector. Add a value selector to keep something other than the whole row, such as an id-to-text lookup, built in one pass:
+
+[!code-csharp[](../samples/Mapping.cs#map_dictionary_values)]
 
 `Skip` and `Take` are part of the query: skipped rows are advanced without being mapped, and reading stops once the take is satisfied. Call `Skip` before `Take`, as the types enforce:
 
@@ -293,11 +301,11 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 
-Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
+Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through (also through `IMappedQuery<T>`), and the provider discards the first set's unread rows on the way.
 
 The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, the `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()` read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` restores the old behavior. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
 
-`.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
+`.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 
 ```csharp
 var ids = await command.SingleResult().Map<int>().ToListAsync();
@@ -310,4 +318,4 @@ A reader and a `DataTable` have no `.SingleResult()` before `Map`: their views n
 
 ## How it works
 
-The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`, and with `SingleResult` (plus `SingleRow` for `FirstOrDefault` when nothing is skipped) only after `.SingleResult()`; without it the reader is asked for every result set, to read through them. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.
+The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`, and with `SingleResult` (plus `SingleRow` for `First` and `FirstOrDefault` when nothing is skipped) only after `.SingleResult()`; without it the reader is asked for every result set, to read through them. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.

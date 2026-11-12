@@ -560,6 +560,39 @@ public static class IExecuteReaderExtensions
 		=> command.Map<T>().SingleOrDefaultAsync(cancellationToken);
 
 	/// <summary>
+	/// Reads the first row, asynchronously; throws when there is none.
+	/// Equivalent to <c>command.Map&lt;T&gt;().FirstAsync(cancellationToken)</c>.
+	/// </summary>
+	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
+	/// <param name="command">The command to read from.</param>
+	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <returns>The first row.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// There is no row.
+	/// </exception>
+	public static ValueTask<T> FirstAsync<T>(
+		this IExecuteReader command,
+		CancellationToken cancellationToken = default)
+		=> command.Map<T>().FirstAsync(cancellationToken);
+
+	/// <summary>
+	/// Reads the only row, asynchronously; throws when there is none
+	/// or more than one.
+	/// Equivalent to <c>command.Map&lt;T&gt;().SingleAsync(cancellationToken)</c>.
+	/// </summary>
+	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
+	/// <param name="command">The command to read from.</param>
+	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <returns>The only row.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// There is no row, or more than one.
+	/// </exception>
+	public static ValueTask<T> SingleAsync<T>(
+		this IExecuteReader command,
+		CancellationToken cancellationToken = default)
+		=> command.Map<T>().SingleAsync(cancellationToken);
+
+	/// <summary>
 	/// Reads every row into a hash set, asynchronously.
 	/// Equivalent to <c>command.Map&lt;T&gt;().ToHashSetAsync(comparer, cancellationToken)</c>.
 	/// The comparer comes first, as on <see cref="MappedQuery{T}"/>:

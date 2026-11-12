@@ -605,7 +605,8 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedCommand{T}"/>
-public readonly record struct MappedReader<T> : IMappedQuery<T>
+public readonly record struct MappedReader<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 
@@ -680,6 +681,24 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 		CancellationToken cancellationToken = default)
 		=> _core.SingleOrDefaultAsync(cancellationToken);
 
+	/// <inheritdoc cref="MappedQuery{T}.First"/>
+	public T First()
+		=> _core.First();
+
+	/// <inheritdoc cref="MappedQuery{T}.FirstAsync"/>
+	public ValueTask<T> FirstAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.FirstAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.Single"/>
+	public T Single()
+		=> _core.Single();
+
+	/// <inheritdoc cref="MappedQuery{T}.SingleAsync"/>
+	public ValueTask<T> SingleAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.SingleAsync(cancellationToken);
+
 	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArray"/>
 	public ImmutableArray<T> ToImmutableArray()
 		=> _core.ToImmutableArray();
@@ -703,6 +722,24 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionary{TKey, TValue}"/>
+	public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null)
+		where TKey : notnull
+		=> _core.ToDictionary(keySelector, valueSelector, comparer);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}"/>
+	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> _core.ToDictionaryAsync(
+			keySelector, valueSelector, comparer, cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.ToHashSet"/>
 	public HashSet<T> ToHashSet(
@@ -741,7 +778,8 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
-public readonly record struct MappedCommand<T> : IMappedQuery<T>
+public readonly record struct MappedCommand<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 
@@ -820,6 +858,24 @@ public readonly record struct MappedCommand<T> : IMappedQuery<T>
 		CancellationToken cancellationToken = default)
 		=> _core.SingleOrDefaultAsync(cancellationToken);
 
+	/// <inheritdoc cref="MappedQuery{T}.First"/>
+	public T First()
+		=> _core.First();
+
+	/// <inheritdoc cref="MappedQuery{T}.FirstAsync"/>
+	public ValueTask<T> FirstAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.FirstAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.Single"/>
+	public T Single()
+		=> _core.Single();
+
+	/// <inheritdoc cref="MappedQuery{T}.SingleAsync"/>
+	public ValueTask<T> SingleAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.SingleAsync(cancellationToken);
+
 	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArray"/>
 	public ImmutableArray<T> ToImmutableArray()
 		=> _core.ToImmutableArray();
@@ -843,6 +899,24 @@ public readonly record struct MappedCommand<T> : IMappedQuery<T>
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionary{TKey, TValue}"/>
+	public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null)
+		where TKey : notnull
+		=> _core.ToDictionary(keySelector, valueSelector, comparer);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}"/>
+	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> _core.ToDictionaryAsync(
+			keySelector, valueSelector, comparer, cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.ToHashSet"/>
 	public HashSet<T> ToHashSet(
@@ -875,7 +949,8 @@ public readonly record struct MappedCommand<T> : IMappedQuery<T>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
-public readonly record struct MappedTable<T> : IMappedQuery<T>
+public readonly record struct MappedTable<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 
@@ -950,6 +1025,24 @@ public readonly record struct MappedTable<T> : IMappedQuery<T>
 		CancellationToken cancellationToken = default)
 		=> _core.SingleOrDefaultAsync(cancellationToken);
 
+	/// <inheritdoc cref="MappedQuery{T}.First"/>
+	public T First()
+		=> _core.First();
+
+	/// <inheritdoc cref="MappedQuery{T}.FirstAsync"/>
+	public ValueTask<T> FirstAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.FirstAsync(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.Single"/>
+	public T Single()
+		=> _core.Single();
+
+	/// <inheritdoc cref="MappedQuery{T}.SingleAsync"/>
+	public ValueTask<T> SingleAsync(
+		CancellationToken cancellationToken = default)
+		=> _core.SingleAsync(cancellationToken);
+
 	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArray"/>
 	public ImmutableArray<T> ToImmutableArray()
 		=> _core.ToImmutableArray();
@@ -973,6 +1066,24 @@ public readonly record struct MappedTable<T> : IMappedQuery<T>
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionary{TKey, TValue}"/>
+	public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null)
+		where TKey : notnull
+		=> _core.ToDictionary(keySelector, valueSelector, comparer);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}"/>
+	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> _core.ToDictionaryAsync(
+			keySelector, valueSelector, comparer, cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.ToHashSet"/>
 	public HashSet<T> ToHashSet(

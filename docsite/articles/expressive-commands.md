@@ -122,7 +122,7 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `Execute(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
 | `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
-| `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
+| `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
 The terminals that take the type read one column as easily as a model; the token goes last:

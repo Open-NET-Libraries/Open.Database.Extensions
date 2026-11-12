@@ -25,7 +25,7 @@ public static class MappedViewParityTests
 	[
 		"ToList", "ToArray", "ToImmutableArray", "FirstOrDefault",
 		"SingleOrDefault", "ToDictionary", "ToHashSet", "Read", "ReadResult",
-		"Skip", "Take", "SkipTake",
+		"Skip", "Take", "SkipTake", "First", "Single", "ToDictionaryValues",
 	];
 
 	static readonly string[] Sets = ["three", "nulls", "one", "empty"];
@@ -416,6 +416,9 @@ public static class MappedViewParityTests
 			"ToImmutableArray" => q.ToImmutableArray(),
 			"FirstOrDefault" => q.FirstOrDefault(),
 			"SingleOrDefault" => q.SingleOrDefault(),
+			"First" => q.First(),
+			"Single" => q.Single(),
+			"ToDictionaryValues" => q.ToDictionary(p => p.Id, p => p.Name),
 			"ToDictionary" => q.ToDictionary(p => p.Id),
 			"ToHashSet" => q.ToHashSet(),
 			"Read" => ReadAll(q),
@@ -447,6 +450,10 @@ public static class MappedViewParityTests
 				"ToImmutableArray" => await q.ToImmutableArrayAsync(ct),
 				"FirstOrDefault" => await q.FirstOrDefaultAsync(ct),
 				"SingleOrDefault" => await q.SingleOrDefaultAsync(ct),
+				"First" => await q.FirstAsync(ct),
+				"Single" => await q.SingleAsync(ct),
+				"ToDictionaryValues" => await q.ToDictionaryAsync(
+					p => p.Id, p => p.Name, null, ct),
 				"ToDictionary" => await q.ToDictionaryAsync(p => p.Id, null, ct),
 				"ToHashSet" => await q.ToHashSetAsync(null, ct),
 				"Read" => await ReadAllAsync(q, ct),
@@ -495,6 +502,9 @@ public static class MappedViewParityTests
 			"ToImmutableArray" => q.ToImmutableArray(),
 			"FirstOrDefault" => q.FirstOrDefault(),
 			"SingleOrDefault" => q.SingleOrDefault(),
+			"First" => q.First(),
+			"Single" => q.Single(),
+			"ToDictionaryValues" => q.ToDictionary(p => p.Id, p => p.Name),
 			"ToDictionary" => q.ToDictionary(p => p.Id),
 			"ToHashSet" => q.ToHashSet(),
 			"Read" => ReadAll(q),
@@ -526,6 +536,10 @@ public static class MappedViewParityTests
 				"ToImmutableArray" => await q.ToImmutableArrayAsync(ct),
 				"FirstOrDefault" => await q.FirstOrDefaultAsync(ct),
 				"SingleOrDefault" => await q.SingleOrDefaultAsync(ct),
+				"First" => await q.FirstAsync(ct),
+				"Single" => await q.SingleAsync(ct),
+				"ToDictionaryValues" => await q.ToDictionaryAsync(
+					p => p.Id, p => p.Name, null, ct),
 				"ToDictionary" => await q.ToDictionaryAsync(p => p.Id, null, ct),
 				"ToHashSet" => await q.ToHashSetAsync(null, ct),
 				"Read" => await ReadAllAsync(q, ct),
@@ -574,6 +588,9 @@ public static class MappedViewParityTests
 			"ToImmutableArray" => q.ToImmutableArray(),
 			"FirstOrDefault" => q.FirstOrDefault(),
 			"SingleOrDefault" => q.SingleOrDefault(),
+			"First" => q.First(),
+			"Single" => q.Single(),
+			"ToDictionaryValues" => q.ToDictionary(p => p.Id, p => p.Name),
 			"ToDictionary" => q.ToDictionary(p => p.Id),
 			"ToHashSet" => q.ToHashSet(),
 			"Read" => ReadAll(q),
@@ -605,6 +622,10 @@ public static class MappedViewParityTests
 				"ToImmutableArray" => await q.ToImmutableArrayAsync(ct),
 				"FirstOrDefault" => await q.FirstOrDefaultAsync(ct),
 				"SingleOrDefault" => await q.SingleOrDefaultAsync(ct),
+				"First" => await q.FirstAsync(ct),
+				"Single" => await q.SingleAsync(ct),
+				"ToDictionaryValues" => await q.ToDictionaryAsync(
+					p => p.Id, p => p.Name, null, ct),
 				"ToDictionary" => await q.ToDictionaryAsync(p => p.Id, null, ct),
 				"ToHashSet" => await q.ToHashSetAsync(null, ct),
 				"Read" => await ReadAllAsync(q, ct),
