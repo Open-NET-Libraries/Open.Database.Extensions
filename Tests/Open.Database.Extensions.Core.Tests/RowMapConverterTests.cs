@@ -413,8 +413,11 @@ public static class RowMapConverterTests
 	public static void ADelegateConvertedByVariance_IsCalledAsDeclared()
 	{
 		ImmutableArray<ColumnDef> columns = [("Tag", typeof(string))];
-		Func<object, string> describe = o => "<" + o + ">"; // takes any object, returns a string: a Func<string, object> by variance
-		Func<string, string> same = s => s + "!";
+		static string Describe(object o) => "<" + o + ">";
+		// Takes any object, returns a string: usable as a Func<string, string> by variance.
+		Func<object, string> describe = Describe;
+		static string Same(string s) => s + "!";
+		Func<string, string> same = Same;
 
 		RowMap<Measure> map = RowMap<Measure>.Default
 			.Convert<string, string>(nameof(Measure.Tag), describe);
@@ -578,7 +581,8 @@ public static class RowMapConverterTests
 	[Fact]
 	public static void EveryWayOfDeclaringAMap_TakesAConverter()
 	{
-		Func<long, string> pad = n => n.ToString("D6", Invariant);
+		static string Pad(long n) => n.ToString("D6", Invariant);
+		Func<long, string> pad = Pad;
 		KeyValuePair<string, string?> note = new(nameof(Order.Note), "Note");
 		RowMap<Order> declared = [note];
 		RowMap<Order>[] maps =
@@ -674,7 +678,7 @@ public static class RowMapConverterTests
 	[Fact]
 	public static void ANullRowThroughATable_FollowsTheNullRules()
 	{
-		using DataTable table = Table(new object?[] { 7, null, null, null, null, null, null });
+		using DataTable table = Table([7, null, null, null, null, null, null]);
 
 		Order order = Assert.Single(table.Map(Full).ToList());
 
