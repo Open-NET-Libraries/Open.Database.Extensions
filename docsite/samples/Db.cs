@@ -30,6 +30,9 @@ public static class Db
 		Factory.Command("drop table if exists people").ExecuteNonQuery();
 		Factory.Command("create table posts (id integer primary key, author integer not null, title text not null, body text null, views integer not null)").ExecuteNonQuery();
 		Factory.Command("create table people (person_id integer primary key, first_name text not null, last_name text not null)").ExecuteNonQuery();
+		Factory.Command("drop table if exists orders").ExecuteNonQuery();
+		Factory.Command("create table orders (id integer primary key, order_num integer not null, first_load_datetime text null, customer text null)").ExecuteNonQuery();
+		Factory.Command("insert into orders (id, order_num, first_load_datetime, customer) values (1, 42, '2024-05-06 14:05:00', '  Ada  '), (2, 7, null, null)").ExecuteNonQuery();
 
 		for (int i = 1; i <= 5; i++)
 		{

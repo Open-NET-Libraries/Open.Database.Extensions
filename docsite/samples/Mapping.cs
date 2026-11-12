@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Data;
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
 
@@ -393,6 +394,30 @@ public static class Mapping
 
 		return byId;
 	}
+
+	public static async Task<Order[]> MapConverted(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+	{
+		#region map_converted_use
+		// order_num (an integer column) becomes text, first_load_datetime (a timestamp) becomes "HH:mm" and customer is trimmed:
+		// the rows map straight into Order, with no row type to copy from.
+		Order[] orders = await connection
+			.Command("select id, order_num, first_load_datetime, customer from orders order by id")
+			.Map<Order>(OrderMaps.OrderMap)
+			.ToArrayAsync(cancellationToken);
+		#endregion
+
+		return orders;
+	}
+
+	public static async Task<Order[]> MapConvertedNull(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+		=> await connection
+			.Command("select id, order_num, first_load_datetime, customer from orders order by id")
+			.Map<Order>(OrderMaps.NullAwareOrderMap)
+			.ToArrayAsync(cancellationToken);
 }
 
 // Declared once and built on first use: a large application only ever builds the maps it actually uses.
@@ -415,6 +440,26 @@ public static class PersonMaps
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), null),
 	];
+	#endregion
+}
+
+public static class OrderMaps
+{
+	#region map_converted
+	// Convert<TColumn, TMember>(member, convert): the column is the one the member matches by name (order_num feeds OrderNum, ignoring underscores).
+	// Convert<TColumn, TMember>(member, column, convert) names the column too, for first_load_datetime, which matches no property.
+	// The delegate runs inside the compiled row reader, once per row, and is never called for a NULL cell: that property keeps its initial value.
+	public static RowMap<Order> OrderMap => field ??= RowMap<Order>.Default
+		.Convert<long, string>(nameof(Order.OrderNum), number => number.ToString("D6", CultureInfo.InvariantCulture))
+		.Convert<DateTime, string>(nameof(Order.FirstLoad), "first_load_datetime", loaded => loaded.ToString("HH:mm", CultureInfo.InvariantCulture))
+		.Convert<string, string>(nameof(Order.Customer), customer => customer.Trim());
+	#endregion
+
+	#region map_converted_null
+	// A converter that must see NULL asks for a nullable TColumn: it is called with null,
+	// and what it returns is the value of the property.
+	public static RowMap<Order> NullAwareOrderMap => field ??= RowMap<Order>.Default
+		.Convert<DateTime?, string>(nameof(Order.FirstLoad), "first_load_datetime", loaded => loaded?.ToString("HH:mm", CultureInfo.InvariantCulture) ?? "--:--");
 	#endregion
 }
 

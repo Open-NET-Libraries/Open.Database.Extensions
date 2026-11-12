@@ -214,6 +214,27 @@ A value that cannot be mapped (an unconvertible value, an overflow) throws `Valu
 
 [!code-csharp[](../samples/Mapping.cs#map_value_error)]
 
+## Converting a column
+
+Some columns are not the type the model wants: a number the model keeps as text, a timestamp it shows as `HH:mm`, text that needs a trim or a parse. Without a converter you map the row into a type shaped like the table and copy it into the type you want. With one, the map names the member, the column and the conversion, and the rest of the type still maps by name.
+
+`Convert<TColumn, TMember>(member, convert)` returns a new `RowMap<T>` (the one you call it on is unchanged), so it chains. `TColumn` is the type the column is read as, which the delegate receives; `TMember` is what it returns: the member's type, or one assignable to it. It uses the column the map already names for the member (a pair), else the column the member matches by name. `Convert<TColumn, TMember>(member, column, convert)` also names the column: a pair with a converter. Declare the map once, like any other:
+
+[!code-csharp[](../samples/Models.cs#order_model)]
+
+[!code-csharp[](../samples/Mapping.cs#map_converted)]
+
+[!code-csharp[](../samples/Mapping.cs#map_converted_use)]
+
+- **It runs inside the row reader.** The delegate is called once per row, as the value is read, not in a second pass over a row object. When the column's type is `TColumn` the value is read with the provider's typed getter, so nothing is boxed; when it is not, it is read the way `Map<int>()` reads a single value (an integer converts within its range, and an overflow throws `ValueMappingException`). An exception the delegate throws surfaces as a `ValueMappingException` with the original as its inner exception, like any other failure while reading a value; a database exception and a cancellation pass through unchanged, so catch the wrapper, not `FormatException`. The delegate is the only cost. It works for a property, a constructor parameter and a `required` or `init` member (a `required` member still needs its column).
+- **A NULL is not converted.** The delegate is not called for a NULL cell, and the member follows [the NULL rules](#null-in-a-non-nullable-column): `null` for a nullable member; for a non-nullable one its own value, or the constructor parameter's default. A trim or a parse needs no NULL check. A converter that must see NULL asks for a nullable value type as `TColumn` (`int?`, `DateTime?`): it is then called with `null`, and what it returns is the value of the member, a non-nullable member included. A nullable reference type does not do this: `string?` says nothing at run time, so a reference type is never null in a converter.
+
+[!code-csharp[](../samples/Mapping.cs#map_converted_null)]
+
+- **It is checked when you call `Convert`.** It throws `ArgumentException` for a member that does not exist or cannot be set, one that has a converter already (a second `Convert` replaces nothing), one the map ignores with a `null` column, a `TMember` that cannot be assigned to the member, and a column another member reads; and `ArgumentNullException` for a `null` argument. With a column, the member must not have a pair already: the first form takes the pair's column.
+- **Name the types.** A lambda alone does not say what the column is read as: write `Convert<long, string>(...)`, or give the lambda's parameter a type.
+- **Pairs, not delegates, are enumerated.** A map enumerates the pairs it was declared with, and the column of a `Convert` that names one, so `new RowMap<T>(map)` makes a copy without the converters. Call `Convert` on the copy again.
+
 ## Terminals
 
 `ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `FirstOrDefault`, `SingleOrDefault` and `Read`, each with an `Async` twin. There is no throwing `First` or `Single`: the `OrDefault` forms return `null` for no rows. Prefer `ToArray` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToList` when you add to or remove from the result afterwards.

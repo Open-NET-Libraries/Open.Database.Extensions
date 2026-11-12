@@ -38,6 +38,17 @@ namespace Open.Database.Extensions;
 /// The annotations are read from the assembly the model is declared in, once per model type.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
+/// A column that needs a trim, a parse or a format on its way to a member has a converter:
+/// <c>map.Convert&lt;long, string&gt;(nameof(Order.Number), n =&gt; n.ToString("D6"))</c> returns a new map (this one is unchanged)
+/// in which the member receives what the delegate makes of its column, and every other member still maps by name.
+/// The delegate is called inside the compiled row reader, on the value read with the typed getter when the column is a <c>TColumn</c> (nothing is boxed),
+/// else read the way <c>Map&lt;int&gt;()</c> reads a single value: an integer converts only within the range of <c>TColumn</c>, else the row throws <see cref="ValueMappingException"/>.
+/// A converter is not called for a NULL cell, and the member follows the NULL rules above:
+/// <see langword="null"/> for a nullable member, its own value (a property) or its declared default (a constructor parameter) for a non-nullable one.
+/// A converter that must see NULL names a <see cref="Nullable{T}"/> as <c>TColumn</c> (<c>int?</c>, <c>DateTime?</c>): it is called with <see langword="null"/>,
+/// and what it returns is the member's value, a non-nullable member's included.
+/// A reference type never receives null (<c>string?</c> says nothing at run time, where the annotation does not exist), so a converter of text sees only text.
+/// A converter is not a pair: a map enumerates the pairs it was declared with and the columns <c>Convert</c> was given, never the delegates.
 /// </remarks>
 /// <example>
 /// <code>
@@ -96,6 +107,17 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		_ => mappings.ToArray()
 	};
 
+	// What Convert makes: the validated pairs of the map it was called on, and the converters so far with one more.
+	RowMap(
+		string?[] columns,
+		bool[] named,
+		Converter?[] converters)
+	{
+		_columns = columns;
+		_named = named;
+		_converters = converters;
+	}
+
 	/// <summary>Returns <see cref="Default"/> when <paramref name="mappings"/> is empty; otherwise creates a new map from them, exactly as the constructor does.</summary>
 	/// <param name="mappings">The (property name, column name) pairs; a <see langword="null"/> column means "do not map this property".</param>
 	/// <returns>The default map, or a new map built from <paramref name="mappings"/>.</returns>
@@ -113,6 +135,125 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<KeyValuePair<string, string?>>)this).GetEnumerator();
+
+	/// <summary>
+	/// Returns a new map in which <paramref name="member"/> receives
+	/// what <paramref name="convert"/> makes of its column,
+	/// for a column that needs a trim, a parse or a format on its way to the member.
+	/// Every other member maps as it did, and this map is unchanged.
+	/// </summary>
+	/// <remarks>
+	/// The column is the one the map already names for the member (a pair),
+	/// else the one the member matches by name
+	/// (exactly, ignoring case, then ignoring case and underscores).
+	/// To name the column here, use
+	/// <see cref="Convert{TColumn, TMember}(string, string, Func{TColumn, TMember})"/>.
+	/// The delegate is not called for a NULL cell,
+	/// unless <typeparamref name="TColumn"/> is a <see cref="Nullable{T}"/>
+	/// (see <see cref="RowMap{T}"/>).
+	/// A lambda does not say what the column is read as:
+	/// name the types, <c>Convert&lt;long, string&gt;(...)</c>,
+	/// or type the parameter of the lambda.
+	/// </remarks>
+	/// <typeparam name="TColumn">The type the column is read as and the delegate receives: the column's own type, else any type a single value can be read as (<c>Map&lt;TColumn&gt;()</c>); an integer converts only within its range.</typeparam>
+	/// <typeparam name="TMember">The type the delegate returns: the member's type, or one assignable to it.</typeparam>
+	/// <param name="member">The name of the property (exactly), or of the constructor parameter (ignoring case), that receives the converted value.</param>
+	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row, inside the compiled row reader.</param>
+	/// <returns>The new map.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="member"/> or <paramref name="convert"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">The member is unknown or unsettable, has a converter already, is mapped to <see langword="null"/> (it reads no column), or <typeparamref name="TMember"/> cannot be assigned to it.</exception>
+	public RowMap<T> Convert<TColumn, TMember>(
+		string member,
+		Func<TColumn, TMember> convert)
+	{
+		if (member is null) throw new ArgumentNullException(nameof(member));
+		if (convert is null) throw new ArgumentNullException(nameof(convert));
+		Contract.EndContractBlock();
+
+		return Converting(member, null, convert);
+	}
+
+	/// <summary>
+	/// Returns a new map in which <paramref name="member"/> receives
+	/// what <paramref name="convert"/> makes of <paramref name="column"/>:
+	/// a pair (<c>new(member, column)</c>) with a converter.
+	/// Every other member maps as it did, and this map is unchanged.
+	/// </summary>
+	/// <remarks>
+	/// Like a pair, it is matched exactly, else ignoring case.
+	/// A member the map has a pair for is converted without naming its column:
+	/// <see cref="Convert{TColumn, TMember}(string, Func{TColumn, TMember})"/>.
+	/// </remarks>
+	/// <typeparam name="TColumn">The type the column is read as and the delegate receives: the column's own type, else any type a single value can be read as (<c>Map&lt;TColumn&gt;()</c>); an integer converts only within its range.</typeparam>
+	/// <typeparam name="TMember">The type the delegate returns: the member's type, or one assignable to it.</typeparam>
+	/// <param name="member">The name of the property (exactly), or of the constructor parameter (ignoring case), that receives the converted value.</param>
+	/// <param name="column">The name of the column the member reads.</param>
+	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row, inside the compiled row reader.</param>
+	/// <returns>The new map.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="member"/>, <paramref name="column"/> or <paramref name="convert"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">The member is unknown or unsettable, is mapped by a pair or has a converter already, <paramref name="column"/> is empty or is read by another member, or <typeparamref name="TMember"/> cannot be assigned to the member.</exception>
+	public RowMap<T> Convert<TColumn, TMember>(
+		string member,
+		string column,
+		Func<TColumn, TMember> convert)
+	{
+		if (member is null) throw new ArgumentNullException(nameof(member));
+		if (column is null) throw new ArgumentNullException(nameof(column));
+		if (convert is null) throw new ArgumentNullException(nameof(convert));
+		Contract.EndContractBlock();
+
+		return Converting(member, column, convert);
+	}
+
+	// Both forms. A map is immutable: the new one has copies of the pairs, with the column (when the call names it) and the converter of the member.
+	RowMap<T> Converting<TColumn, TMember>(
+		string member,
+		string? column,
+		Func<TColumn, TMember> convert)
+	{
+		if (!TryFindSlot(member, out int index))
+			throw new ArgumentException(UnknownMember(member), nameof(member));
+
+		Slot slot = Slots[index];
+		if (_converters?[index] is not null)
+			throw new ArgumentException($"The {Describe(slot)} has a converter already.", nameof(member));
+
+		if (!slot.Type.IsAssignableFrom(typeof(TMember)))
+		{
+			throw new ArgumentException(
+				$"The converter of the {Describe(slot)} returns {Shape.TypeName(typeof(TMember))}, which cannot be assigned to {Shape.TypeName(slot.Type)}.",
+				nameof(convert));
+		}
+
+		string?[] columns = [.. _columns];
+		bool[] named = [.. _named];
+		if (column is null)
+		{
+			if (columns[index] is null)
+				throw new ArgumentException($"The {Describe(slot)} is mapped to null, so it reads no column to convert.", nameof(member));
+		}
+		else
+		{
+			if (column.Length == 0)
+				throw new ArgumentException($"The {Describe(slot)} is converted from an empty column name.", nameof(column));
+
+			if (named[index])
+				throw new ArgumentException($"The {Describe(slot)} is mapped more than once: a pair names its column already.", nameof(member));
+
+			columns[index] = column;
+			named[index] = true;
+			RejectSharedColumns(columns, named, nameof(column));
+		}
+
+		Converter?[] converters = _converters is null ? new Converter?[Slots.Length] : [.. _converters];
+		converters[index] = new Converter(
+			convert,
+			typeof(Func<TColumn, TMember>),
+			typeof(TColumn),
+			typeof(TMember));
+
+		return new RowMap<T>(columns, named, converters);
+	}
 
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
 	// so after the first query of a given shape no reflection, expression building or compilation happens again.
@@ -222,6 +363,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Aligned with Slots: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
 	// only a property no pair named is eligible for the underscore tier.
 	readonly bool[] _named;
+
+	// Aligned with Slots: the converter the value of a slot goes through on its way from its column (Convert), or null for a slot with none.
+	// The array itself is null for a map nothing was converted in, so such a map pays nothing for it.
+	readonly Converter?[]? _converters;
 
 	/// <summary>The names of the properties that are mapped.</summary>
 	internal IEnumerable<string> PropertyNames
@@ -381,7 +526,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			}
 
 			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
-			if (!known) throw new ArgumentException($"'{typeof(T)}' has no settable public property{(TypeShape.Constructor is null ? null : " or constructor parameter")} named '{pair.Key}'.", paramName);
+			if (!known) throw new ArgumentException(UnknownMember(pair.Key), paramName);
 
 			if (pair.Value is null && Slots[index].Required) throw new ArgumentException($"The property '{Slots[index].Name}' is required, so it cannot be mapped to null. Map it to a column.", paramName);
 
@@ -406,6 +551,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 		return false;
 	}
+
+	static string UnknownMember(string name)
+		=> $"'{typeof(T)}' has no settable public property{(TypeShape.Constructor is null ? null : " or constructor parameter")} named '{name}'.";
 
 	static string Describe(Slot slot) => (slot.IsProperty ? "property '" : "constructor parameter '") + slot.Name + "'";
 
@@ -594,10 +742,25 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 		MethodInfo isNullCell = typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!;
 
+		// The cell of column i as a slot's type: NULL is its default.
+		Expression Read(int i, Slot slot)
+			=> Expression.Call(convert.MakeGenericMethod(slot.Type), Expression.ArrayIndex(row, Expression.Constant(i)));
+
+		// Whether that cell is NULL, asked only for a slot that keeps its value on NULL.
+		Expression? IsNull(int i, Slot slot)
+			=> slot.KeepsValueOnNull ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null;
+
 		// A property the type declares non-nullable (a value type, or a reference with nullable annotations on) is skipped when its cell is NULL; a constructor parameter of one gets its fallback.
-		return Compile<object?[]>(row, layout.Names, (i, slot)
-			=> Expression.Call(convert.MakeGenericMethod(slot.Type), Expression.ArrayIndex(row, Expression.Constant(i))),
-			(i, slot) => slot.KeepsValueOnNull ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null);
+		// A slot with a converter reads its column as the converter's type, and is skipped or defaulted by that (see Converted).
+		return Compile<object?[]>(
+			row,
+			layout.Names,
+			(i, slot) => ConverterOf(slot) is { } converter
+				? Converted(converter, slot, Read(i, converter.Column), IsNull(i, converter.Column))
+				: Read(i, slot),
+			(i, slot) => ConverterOf(slot) is { } converter
+				? SkipsOnNull(slot, IsNull(i, converter.Column))
+				: IsNull(i, slot));
 	}
 
 	#endregion
@@ -626,11 +789,44 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		// The general path reads a cell once into `cell`, tests it for NULL, and converts that same value.
 		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
 
-		return Compile<TReader>(r, layout.Names, (i, slot)
-			=> ReadValue(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell),
-			(i, slot) => NullTest(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell),
+		// What column i gives a slot, and whether its NULL leaves the slot alone, as the type it is read as:
+		// the member's own, or the one the converter of the slot receives (see Converted).
+		Expression Read(int i, Slot slot)
+			=> ReadValue(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell);
+
+		MethodCallExpression? IsNull(int i, Slot slot)
+			=> NullTest(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell);
+
+		return Compile<TReader>(
+			r,
+			layout.Names,
+			(i, slot) => ConverterOf(slot) is { } converter
+				? Converted(converter, slot, Read(i, converter.Column), IsNull(i, converter.Column))
+				: Read(i, slot),
+			(i, slot) => ConverterOf(slot) is { } converter
+				? SkipsOnNull(slot, IsNull(i, converter.Column))
+				: IsNull(i, slot),
 			cell);
 	}
+
+	// The slot's converter, or null for a slot without one (every slot of a map nothing was converted in).
+	Converter? ConverterOf(Slot slot) => _converters?[Slots.IndexOf(slot)];
+
+	// What a slot with a converter reads: the delegate applied to the column read as the delegate's own parameter type.
+	// The column is a slot of that type (Converter.Column), so it is read, and its NULL judged, as a member of that type is:
+	// only a Nullable<T> is given NULL (columnIsNull is null then), and what the delegate returns is the value of the member, a non-nullable one's too.
+	// For anything else the delegate is not called on NULL: the slot is skipped (SkipsOnNull) when the member keeps its value on NULL,
+	// and is otherwise default, null for a nullable member.
+	static Expression Converted(Converter converter, Slot slot, Expression column, Expression? columnIsNull)
+	{
+		Expression value = converter.Invoke(column, slot.Type);
+		return columnIsNull is not null && !slot.KeepsValueOnNull
+			? Expression.Condition(columnIsNull, Expression.Default(slot.Type), value)
+			: value;
+	}
+
+	// The test that leaves a slot with a converter alone (a property keeps its value, a constructor parameter gets its fallback) when the cell is NULL, or null for none.
+	static Expression? SkipsOnNull(Slot slot, Expression? columnIsNull) => slot.KeepsValueOnNull ? columnIsNull : null;
 
 	// The reader of a single value (FirstColumn<T>):
 	// column 0 read exactly as a property of type T is,
@@ -1062,7 +1258,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 				if (value is byte[])
 					throw new InvalidCastException("A byte array cannot be assigned to a string; map it to byte[] or convert it explicitly.");
 
-				return Convert.ToString(value, CultureInfo.InvariantCulture)!;
+				return System.Convert.ToString(value, CultureInfo.InvariantCulture)!;
 			}
 
 			// The date and time types are not IConvertible, so Convert.ChangeType cannot read them from what a provider returns: a DateTime for a date column,
@@ -1112,7 +1308,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			}
 #endif
 
-			return Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
+			return System.Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
 		}
 	}
 
@@ -1218,12 +1414,15 @@ sealed class Slot
 
 	// The one value of a single-value model type (FirstColumn<T>): no name,
 	// nothing to set.
-	public Slot(Type type)
+	public Slot(Type type) : this(type, false) { }
+
+	// The same, for a value that is not a member (the column a converter is given): a reference type of it is declared non-nullable when told so.
+	public Slot(Type type, bool nonNullableReference)
 	{
 		Name = "";
 		Type = type;
 		Position = -1;
-		KeepsValueOnNull = KeepsOnNull(type, false);
+		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
 	}
 
 	// A constructor parameter, named after the property of that name when there is one.
@@ -1286,6 +1485,28 @@ sealed class Slot
 		Type underlying = Nullable.GetUnderlyingType(type) ?? type;
 		if (underlying.IsEnum && value.GetType() != underlying) value = Enum.ToObject(underlying, value);
 		return Expression.Constant(value, type);
+	}
+}
+
+// The converter of one slot: the delegate a caller gave RowMap<T>.Convert, as the compiled row readers call it.
+// One per Convert call, shared by every row, layout and thread of its map (the delegate is only called, never changed).
+// It does not depend on the model type, so it is not generic.
+sealed class Converter(
+	Delegate function,
+	Type functionType,
+	Type column,
+	Type member)
+{
+	// The column as a slot of the type the delegate receives, so the readers read it and judge its NULL as they do a member of that type.
+	// A NULL is a value only for a Nullable<T>: a reference type is declared non-nullable here, as its annotations do not exist at run time (a Func<string?, int> is a Func<string, int>).
+	public readonly Slot Column = new(column, true);
+
+	// The call, typed as the delegate was declared (a delegate converted by variance keeps its own type), and converted to the type of the slot when that is not the one the delegate returns.
+	// The delegate is a constant of the expression tree: it is held once by the compiled row reader, and calling it allocates nothing.
+	public Expression Invoke(Expression value, Type slotType)
+	{
+		Expression call = Expression.Invoke(Expression.Constant(function, functionType), value);
+		return member == slotType ? call : Expression.Convert(call, slotType);
 	}
 }
 
