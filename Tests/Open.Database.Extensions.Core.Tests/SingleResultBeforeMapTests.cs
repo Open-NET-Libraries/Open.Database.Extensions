@@ -101,102 +101,102 @@ public static class SingleResultBeforeMapTests
 
 	static object? RunSync(MappedQuery<int> q, string terminal)
 	{
-		switch (terminal)
+		return terminal switch
 		{
-			case "ToList": return q.ToList();
-			case "ToArray": return q.ToArray();
-			case "ToImmutableArray": return q.ToImmutableArray();
-			case "FirstOrDefault": return q.FirstOrDefault();
-			case "SingleOrDefault": return q.SingleOrDefault();
-			case "ToDictionary": return q.ToDictionary(i => i);
-			case "ToHashSet": return q.ToHashSet();
-			case "Read": return Sum(q.Read);
-			case "ReadResult": return q.Read(items => items.Sum());
-			case "Skip": return q.Skip(1).ToList();
-			case "Take": return q.Take(2).ToList();
-			case "SkipTake": return q.Skip(1).Take(1).ToList();
-			case "TakeFirst": return q.Take(2).FirstOrDefault();
-			default: throw new ArgumentOutOfRangeException(nameof(terminal));
-		}
+			"ToList" => q.ToList(),
+			"ToArray" => q.ToArray(),
+			"ToImmutableArray" => q.ToImmutableArray(),
+			"FirstOrDefault" => q.FirstOrDefault(),
+			"SingleOrDefault" => q.SingleOrDefault(),
+			"ToDictionary" => q.ToDictionary(i => i),
+			"ToHashSet" => q.ToHashSet(),
+			"Read" => Sum(q.Read),
+			"ReadResult" => q.Read(items => items.Sum()),
+			"Skip" => q.Skip(1).ToList(),
+			"Take" => q.Take(2).ToList(),
+			"SkipTake" => q.Skip(1).Take(1).ToList(),
+			"TakeFirst" => q.Take(2).FirstOrDefault(),
+			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
+		};
 	}
 
 	static object? RunSync(MappedCommand<int> q, string terminal)
 	{
-		switch (terminal)
+		return terminal switch
 		{
-			case "ToList": return q.ToList();
-			case "ToArray": return q.ToArray();
-			case "ToImmutableArray": return q.ToImmutableArray();
-			case "FirstOrDefault": return q.FirstOrDefault();
-			case "SingleOrDefault": return q.SingleOrDefault();
-			case "ToDictionary": return q.ToDictionary(i => i);
-			case "ToHashSet": return q.ToHashSet();
-			case "Read": return Sum(q.Read);
-			case "ReadResult": return q.Read(items => items.Sum());
-			case "Skip": return q.Skip(1).ToList();
-			case "Take": return q.Take(2).ToList();
-			case "SkipTake": return q.Skip(1).Take(1).ToList();
-			case "TakeFirst": return q.Take(2).FirstOrDefault();
-			default: throw new ArgumentOutOfRangeException(nameof(terminal));
-		}
+			"ToList" => q.ToList(),
+			"ToArray" => q.ToArray(),
+			"ToImmutableArray" => q.ToImmutableArray(),
+			"FirstOrDefault" => q.FirstOrDefault(),
+			"SingleOrDefault" => q.SingleOrDefault(),
+			"ToDictionary" => q.ToDictionary(i => i),
+			"ToHashSet" => q.ToHashSet(),
+			"Read" => Sum(q.Read),
+			"ReadResult" => q.Read(items => items.Sum()),
+			"Skip" => q.Skip(1).ToList(),
+			"Take" => q.Take(2).ToList(),
+			"SkipTake" => q.Skip(1).Take(1).ToList(),
+			"TakeFirst" => q.Take(2).FirstOrDefault(),
+			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
+		};
 	}
 
 	static async Task<object?> RunAsync(MappedQuery<int> q, string terminal)
 	{
-		switch (terminal)
+		return terminal switch
 		{
-			case "ToList": return await q.ToListAsync(Ct);
-			case "ToArray": return await q.ToArrayAsync(Ct);
-			case "ToImmutableArray": return await q.ToImmutableArrayAsync(Ct);
-			case "FirstOrDefault": return await q.FirstOrDefaultAsync(Ct);
-			case "SingleOrDefault": return await q.SingleOrDefaultAsync(Ct);
-			case "ToDictionary": return await q.ToDictionaryAsync(i => i, null, Ct);
-			case "ToHashSet": return await q.ToHashSetAsync(null, Ct);
-			case "Read": return await SumAsync(handler => q.ReadAsync(handler, Ct));
-			case "ReadResult":
-				return await q.ReadAsync(
+			"ToList" => await q.ToListAsync(Ct),
+			"ToArray" => await q.ToArrayAsync(Ct),
+			"ToImmutableArray" => await q.ToImmutableArrayAsync(Ct),
+			"FirstOrDefault" => await q.FirstOrDefaultAsync(Ct),
+			"SingleOrDefault" => await q.SingleOrDefaultAsync(Ct),
+			"ToDictionary" => await q.ToDictionaryAsync(i => i, null, Ct),
+			"ToHashSet" => await q.ToHashSetAsync(null, Ct),
+			"Read" => await SumAsync(handler => q.ReadAsync(handler, Ct)),
+			"ReadResult" =>
+				await q.ReadAsync(
 					async (items, token) =>
 					{
 						int sum = 0;
 						await foreach (int i in items.WithCancellation(token)) sum += i;
-						return sum;
+						sum;
 					},
-					Ct);
-			case "Skip": return await q.Skip(1).ToListAsync(Ct);
-			case "Take": return await q.Take(2).ToListAsync(Ct);
-			case "SkipTake": return await q.Skip(1).Take(1).ToListAsync(Ct);
-			case "TakeFirst": return await q.Take(2).FirstOrDefaultAsync(Ct);
-			default: throw new ArgumentOutOfRangeException(nameof(terminal));
-		}
+					Ct),
+			"Skip" => await q.Skip(1).ToListAsync(Ct),
+			"Take" => await q.Take(2).ToListAsync(Ct),
+			"SkipTake" => await q.Skip(1).Take(1).ToListAsync(Ct),
+			"TakeFirst" => await q.Take(2).FirstOrDefaultAsync(Ct),
+			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
+		};
 	}
 
 	static async Task<object?> RunAsync(MappedCommand<int> q, string terminal)
 	{
-		switch (terminal)
+		return terminal switch
 		{
-			case "ToList": return await q.ToListAsync(Ct);
-			case "ToArray": return await q.ToArrayAsync(Ct);
-			case "ToImmutableArray": return await q.ToImmutableArrayAsync(Ct);
-			case "FirstOrDefault": return await q.FirstOrDefaultAsync(Ct);
-			case "SingleOrDefault": return await q.SingleOrDefaultAsync(Ct);
-			case "ToDictionary": return await q.ToDictionaryAsync(i => i, null, Ct);
-			case "ToHashSet": return await q.ToHashSetAsync(null, Ct);
-			case "Read": return await SumAsync(handler => q.ReadAsync(handler, Ct));
-			case "ReadResult":
-				return await q.ReadAsync(
+			"ToList" => await q.ToListAsync(Ct),
+			"ToArray" => await q.ToArrayAsync(Ct),
+			"ToImmutableArray" => await q.ToImmutableArrayAsync(Ct),
+			"FirstOrDefault" => await q.FirstOrDefaultAsync(Ct),
+			"SingleOrDefault" => await q.SingleOrDefaultAsync(Ct),
+			"ToDictionary" => await q.ToDictionaryAsync(i => i, null, Ct),
+			"ToHashSet" => await q.ToHashSetAsync(null, Ct),
+			"Read" => await SumAsync(handler => q.ReadAsync(handler, Ct)),
+			"ReadResult" =>
+				await q.ReadAsync(
 					async (items, token) =>
 					{
 						int sum = 0;
 						await foreach (int i in items.WithCancellation(token)) sum += i;
-						return sum;
+						sum;
 					},
-					Ct);
-			case "Skip": return await q.Skip(1).ToListAsync(Ct);
-			case "Take": return await q.Take(2).ToListAsync(Ct);
-			case "SkipTake": return await q.Skip(1).Take(1).ToListAsync(Ct);
-			case "TakeFirst": return await q.Take(2).FirstOrDefaultAsync(Ct);
-			default: throw new ArgumentOutOfRangeException(nameof(terminal));
-		}
+					Ct),
+			"Skip" => await q.Skip(1).ToListAsync(Ct),
+			"Take" => await q.Take(2).ToListAsync(Ct),
+			"SkipTake" => await q.Skip(1).Take(1).ToListAsync(Ct),
+			"TakeFirst" => await q.Take(2).FirstOrDefaultAsync(Ct),
+			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
+		};
 	}
 
 	// ---- an expressive command (IExecuteReader) ----
