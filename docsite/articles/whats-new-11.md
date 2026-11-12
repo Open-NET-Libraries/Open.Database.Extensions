@@ -5,6 +5,10 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.4
+
+- A `RowMap<T>` takes a converter for a column that needs a trim, a parse or a format on its way to a member: `map.Convert<long, string>(nameof(Order.OrderNum), n => n.ToString("D6"))`, or `Convert<TColumn, TMember>(member, column, convert)` to name the column as well. It returns a new map, and the delegate runs inside the compiled row reader, so a result maps straight into the type you want, with no row type to copy from. A converter is not called for a NULL cell (the member follows the NULL rules); a `Nullable<>` `TColumn` is called with null. See [Converting a column](mapping.md#converting-a-column).
+
 ## Breaking in rc.4
 
 Rebuild consumers of rc.3. Both changes are source-compatible for every call except the ones noted.
