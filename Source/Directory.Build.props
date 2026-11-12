@@ -8,6 +8,10 @@
 		<!-- Release candidate line: delete this element (or pass -p:VersionSuffix=) to build the stable 11.0.0 packages. -->
 		<VersionSuffix Condition="'$(Configuration)' != 'Debug'">rc.5</VersionSuffix>
 
+		<!-- A package built on a developer machine must not carry that machine's folder names. In a Release build the SDK maps the repository root to a neutral prefix
+		     in every path it embeds: the source files, the debug-symbol path inside each dll, and the Source Link mapping inside the symbols. -->
+		<DeterministicSourcePaths Condition="'$(Configuration)' == 'Release'">true</DeterministicSourcePaths>
+
 		<!-- net11.0 is the primary/modern target: each major version of ODX targets the matching .NET.
 		     net10.0 (LTS) stays alongside it. netstandard2.0/2.1 are retained as shimmed
 		     legacy paths (via #if switching + BCL compat packages). net472 lives only on the
