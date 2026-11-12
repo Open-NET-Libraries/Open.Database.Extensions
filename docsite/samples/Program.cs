@@ -135,6 +135,17 @@ Check(
 	"ToArrayAsync<int>(token) on a command");
 Check(Mapping.StreamRows(connection) == 15, "Read streams rows inside the handler");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
+(List<PostSummary> summaries, PostSummary? newest) = await Mapping.QueryFactoryCallers(factory);
+Check(summaries.Select(s => s.Id).SequenceEqual([3, 2, 1]) && newest == new PostSummary(3, "Post 3"), "a query factory returns IMappedQuery<PostSummary> and each caller picks the terminal");
+int projected = 0;
+IMappedQuery<int> lazyIds = connection.Command("select * from posts order by id").Map<Post>().Select(p =>
+{
+	projected++;
+	return p.Id;
+});
+Check(projected == 0, "Select runs nothing until a terminal runs");
+Check(lazyIds.ToList().Count == 5 && projected == 5, "the selector runs once per row");
+Check(lazyIds.FirstOrDefault() == 1 && projected == 6, "a terminal that stops early projects only the rows it reads, and runs the command again");
 
 // Channels and Dataflow.
 List<Post> viaChannel = await ChannelsAndDataflow.ToChannelSample(factory);

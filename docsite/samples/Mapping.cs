@@ -337,6 +337,24 @@ public static class Mapping
 		return titles;
 	}
 
+	public static async Task<(List<PostSummary> All, PostSummary? Newest)> QueryFactoryCallers(
+		IDbConnectionFactory<SqliteConnection> factory)
+	{
+		#region map_query_factory_use
+		// Each caller picks the terminal.
+		// Building the query ran nothing; each terminal runs the command once.
+		List<PostSummary> all = await PostQueries
+			.ByAuthor(factory, 42)
+			.ToListAsync();
+
+		PostSummary? newest = await PostQueries
+			.ByAuthor(factory, 42)
+			.FirstOrDefaultAsync();
+		#endregion
+
+		return (all, newest);
+	}
+
 	public static int[] MapSingleValue(SqliteConnection connection)
 	{
 		#region map_single_value
@@ -465,5 +483,22 @@ public static class HoldingAMap
 		new(nameof(Person.FirstName), "first_name"),
 		new(nameof(Person.LastName), "last_name"),
 	];
+	#endregion
+}
+
+// A data class that returns the query and lets the caller pick the terminal.
+public static class PostQueries
+{
+	#region map_query_factory
+	// Select is lazy: nothing runs here.
+	// The command runs once for each terminal the caller picks.
+	public static IMappedQuery<PostSummary> ByAuthor(
+		IDbConnectionFactory<SqliteConnection> factory,
+		int author)
+		=> factory
+			.Command("select * from posts where author = @author order by id desc")
+			.AddParam("author", author)
+			.Map<Post>()
+			.Select(p => new PostSummary(p.Id, p.Title));
 	#endregion
 }
