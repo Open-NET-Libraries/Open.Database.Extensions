@@ -1,7 +1,7 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.4`, a release candidate. The API is settled. Please try it and report what you find.
+> This is `11.0.0-rc.5`, a release candidate. The API is settled. Please try it and report what you find.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
