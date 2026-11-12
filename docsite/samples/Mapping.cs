@@ -382,7 +382,7 @@ public static class Mapping
 		CancellationToken cancellationToken)
 	{
 		#region map_converted_use
-		// order_num arrives as text, first_load_datetime as "HH:mm" and customer trimmed:
+		// order_num (an integer column) becomes text, first_load_datetime (a timestamp) becomes "HH:mm" and customer is trimmed:
 		// the rows map straight into Order, with no row type to copy from.
 		Order[] orders = await connection
 			.Command("select id, order_num, first_load_datetime, customer from orders order by id")

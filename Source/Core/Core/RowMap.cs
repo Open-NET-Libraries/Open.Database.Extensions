@@ -42,7 +42,7 @@ namespace Open.Database.Extensions;
 /// <c>map.Convert&lt;long, string&gt;(nameof(Order.Number), n =&gt; n.ToString("D6"))</c> returns a new map (this one is unchanged)
 /// in which the member receives what the delegate makes of its column, and every other member still maps by name.
 /// The delegate is called inside the compiled row reader, on the value read with the typed getter when the column is a <c>TColumn</c> (nothing is boxed),
-/// else read as a single value is (<c>Map&lt;int&gt;()</c>): an integer converts only within the range of <c>TColumn</c>, else the row throws <see cref="ValueMappingException"/>.
+/// else read the way <c>Map&lt;int&gt;()</c> reads a single value: an integer converts only within the range of <c>TColumn</c>, else the row throws <see cref="ValueMappingException"/>.
 /// A converter is not called for a NULL cell, and the member follows the NULL rules above:
 /// <see langword="null"/> for a nullable member, its own value (a property) or its declared default (a constructor parameter) for a non-nullable one.
 /// A converter that must see NULL names a <see cref="Nullable{T}"/> as <c>TColumn</c> (<c>int?</c>, <c>DateTime?</c>): it is called with <see langword="null"/>,
@@ -157,7 +157,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// </remarks>
 	/// <typeparam name="TColumn">The type the column is read as and the delegate receives: the column's own type, else any type a single value can be read as (<c>Map&lt;TColumn&gt;()</c>); an integer converts only within its range.</typeparam>
 	/// <typeparam name="TMember">The type the delegate returns: the member's type, or one assignable to it.</typeparam>
-	/// <param name="member">The name of the property, or of the constructor parameter (ignoring case), that receives the converted value.</param>
+	/// <param name="member">The name of the property (exactly), or of the constructor parameter (ignoring case), that receives the converted value.</param>
 	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row, inside the compiled row reader.</param>
 	/// <returns>The new map.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="member"/> or <paramref name="convert"/> is <see langword="null"/>.</exception>
@@ -186,7 +186,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// </remarks>
 	/// <typeparam name="TColumn">The type the column is read as and the delegate receives: the column's own type, else any type a single value can be read as (<c>Map&lt;TColumn&gt;()</c>); an integer converts only within its range.</typeparam>
 	/// <typeparam name="TMember">The type the delegate returns: the member's type, or one assignable to it.</typeparam>
-	/// <param name="member">The name of the property, or of the constructor parameter (ignoring case), that receives the converted value.</param>
+	/// <param name="member">The name of the property (exactly), or of the constructor parameter (ignoring case), that receives the converted value.</param>
 	/// <param name="column">The name of the column the member reads.</param>
 	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row, inside the compiled row reader.</param>
 	/// <returns>The new map.</returns>
