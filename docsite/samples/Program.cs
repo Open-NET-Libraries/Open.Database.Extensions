@@ -42,7 +42,9 @@ Check(openBefore == ConnectionState.Open && openAfter == ConnectionState.Open, "
 (long count, int updated) = ExpressiveCommands.ScalarAndNonQuery(factory);
 Check(count == 3 && updated == 3, "scalar and non-query");
 Check(ExpressiveCommands.ConvertedScalar(factory) == 5, "ExecuteScalar with a conversion");
-Check(Throws<InvalidCastException>(() => factory.Command("select count(*) from posts").ExecuteScalar<int>()), "ExecuteScalar<int> over a SQLite integer is a failed cast");
+Check(await ExpressiveCommands.ScalarReadAsInt(factory, CancellationToken.None) == 5, "ExecuteScalarAsync<int> reads a SQLite bigint as int");
+Check(factory.Command("select count(*) from posts").ExecuteScalar<int>() == 5, "ExecuteScalar<int> over a SQLite integer converts, as Map<int>() does");
+Check(Throws<ValueMappingException>(() => factory.Command("select 5000000000").ExecuteScalar<int>()), "ExecuteScalar<int> over a value that does not fit throws ValueMappingException");
 Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over NULL is default");
 Check(factory.Command("select id from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over no rows is default");
 Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long?>() is null, "ExecuteScalar<long?> over NULL is null");

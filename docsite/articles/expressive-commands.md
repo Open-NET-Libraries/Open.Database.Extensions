@@ -135,12 +135,14 @@ The terminals that take the type read one column as easily as a model; the token
 
 ### Which scalar form
 
-- **`ExecuteScalar<T>()`** when `T` is the type the provider returns. A `NULL` or no rows gives `default(T)`.
-- **`ExecuteScalar(value => ...)`** to convert. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
+- **`ExecuteScalar<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). A `NULL` or no rows gives `default(T)`.
+- **`ExecuteScalar(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
 - **`ExecuteScalar()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
-- **`ToListAsync<T>()`** (or `Map<T>().ToList()`, `ToArrayAsync<T>()`, ...) for many rows of one column: it converts like a property (a SQLite `long` into `int`), where `ExecuteScalar<T>()` casts. See [One value per row](mapping.md#one-value-per-row).
+- **`ToListAsync<T>()`** (or `Map<T>().ToList()`, `ToArrayAsync<T>()`, ...) for many rows of one column: it converts like a property, as `ExecuteScalar<T>()` does. See [One value per row](mapping.md#one-value-per-row).
 
-`ExecuteScalar<T>()` casts the value the provider returns, so `T` must be that exact type, and any other type throws `InvalidCastException`. To tell a `NULL` from 0, use the nullable form of the provider's type: `long?` for `count(*)` on SQLite, `int?` on SQL Server.
+`ExecuteScalar<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. To tell a `NULL` from 0, ask for the nullable type: `int?` or `long?`.
+
+[!code-csharp[](../samples/ExpressiveCommands.cs#scalar_read_as_int)]
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#scalar_and_nonquery)]
 
