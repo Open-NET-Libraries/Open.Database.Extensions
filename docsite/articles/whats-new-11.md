@@ -5,6 +5,10 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.4
+
+- **`ExecuteScalar<T>()` and `ExecuteScalarAsync<T>()` convert the way `Map<T>()` does.** They cast the provider's value exactly, so a `bigint` read as `int`, or a `numeric` read as `long`, threw `InvalidCastException`, which a port from Dapper met only on a real database. Now a value that is already a `T` is returned as it is, an integer converts to another integer type with a range check, and any other value takes the general conversion. `NULL` and no row still give `default(T)`. A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's error inside. **Behavior change:** a call that threw `InvalidCastException` now converts, or throws that exception. `ExecuteReturn<T>()` and `ExecuteReturnAsync<T>()` convert the same way. The overloads that take a `Func<object?, T>` are unchanged.
+
 ## Breaking in rc.4
 
 Rebuild consumers of rc.3. Both changes are source-compatible for every call except the ones noted.

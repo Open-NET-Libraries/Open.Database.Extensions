@@ -131,7 +131,7 @@ The rules:
 - **NULL.** A non-nullable value type gets `default` (`0`, `Guid.Empty`); `int?`, `string` and `byte[]` get `null`. Declare `int?` to tell NULL from 0.
 - **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `.SingleResult()` on `Map<T>()` stops after the first.
 
-It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, cast exactly as the provider returns it (see [which scalar form](expressive-commands.md#which-scalar-form)).
+It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
 Pass the token or nothing to these `Async` forms: `ToListAsync<int>(default)` on an expressive command binds to its older `ToListAsync(transform, behavior)`, which has no transform to call. `ToHashSetAsync<int>(cancellationToken: ct)` names the token because the comparer comes first, as on `MappedQuery<T>`.
 

@@ -1324,11 +1324,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
 	/// </summary>
-	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value from the return parameter; <see langword="default"/> when it is NULL.</returns>
-	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
+	/// <typeparam name="T">The type to convert the value to.</typeparam>
+	/// <returns>
+	/// The value from the return parameter, converted to <typeparamref name="T"/> as <c>Map&lt;T&gt;()</c> converts a column: a value that is already a <typeparamref name="T"/> is returned as is, an integer is converted to another integer type with a range check, and any other value takes the general conversion.
+	/// <see langword="default"/> when it is NULL.
+	/// </returns>
+	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range.</exception>
 	public T ExecuteReturn<T>()
-		=> CastScalar<T>(ExecuteReturn());
+		=> RowMap<T>.ConvertScalar(ExecuteReturn());
 
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
@@ -1369,7 +1372,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </param>
 	public async ValueTask<T> ExecuteReturnAsync<T>(
 		CancellationToken cancellationToken = default)
-		=> CastScalar<T>(
+		=> RowMap<T>.ConvertScalar(
 			await ExecuteReturnAsync(cancellationToken).ConfigureAwait(false));
 
 	/// <summary>
@@ -1387,17 +1390,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		=> Execute(command => command.ExecuteScalar());
 
 	/// <summary>
-	/// Calls ExecuteScalar on the underlying command and casts to the expected type.
+	/// Calls ExecuteScalar on the underlying command and converts the value to the expected type, as <c>Map&lt;T&gt;()</c> converts a column.
 	/// </summary>
-	/// <typeparam name="T">The type expected.</typeparam>
-	/// <returns>The value returned from the method; <see langword="default"/> when the result is NULL or there was no row.</returns>
-	/// <exception cref="InvalidCastException">The value is not of type <typeparamref name="T"/>.</exception>
+	/// <typeparam name="T">The type to convert the value to.</typeparam>
+	/// <returns>
+	/// The value, converted to <typeparamref name="T"/>: a value that is already a <typeparamref name="T"/> is returned as is, an integer is converted to another integer type with a range check (a <see cref="long"/> read as an <see cref="int"/>), and any other value takes the general conversion (a <see cref="decimal"/> read as a <see cref="long"/>).
+	/// <see langword="default"/> when the result is NULL or there was no row.
+	/// </returns>
+	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range; the conversion's own error is the inner exception.</exception>
 	public T ExecuteScalar<T>()
-		=> CastScalar<T>(ExecuteScalar());
-
-	// NULL and no row (null or DBNull) become default(T) for every T; anything else is the plain cast.
-	private protected static T CastScalar<T>(object? value)
-		=> value is null or DBNull ? default! : (T)value;
+		=> RowMap<T>.ConvertScalar(ExecuteScalar());
 
 	// What the transform overloads hand to the user's function: NULL (DBNull) becomes null, like no row; any other value is passed unchanged.
 	private protected static object? ScalarValue(object? value)
