@@ -637,7 +637,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// with the same typed getter, conversion and NULL rule.
 	// A NULL into a type the C# type declares non-nullable is default(T);
 	// any other NULL is null.
-	// Built from the helpers below, so the two cannot drift apart.
+	// Built from the helpers below, which the single-column reader also uses.
 	internal static Func<TReader, T> FirstColumnReader<TReader>(Type columnType)
 		where TReader : class, IDataRecord
 	{
@@ -721,6 +721,68 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			column,
 			typeof(T),
 			ex);
+	}
+
+	// The scalar of a command (ExecuteScalar<T>, ExecuteReturn<T>):
+	// a value that has arrived boxed, converted as column 0 of Map<T>() is.
+	// NULL, DBNull and no row are default(T);
+	// a value that is already a T is returned as it is;
+	// any other value takes the conversion Map<T>() gives a column of that
+	// type (a checked integer conversion, a widening to a fractional type,
+	// else ConvertValue), chosen by the runtime type of the value,
+	// which is the type the reader reports for the column.
+	// A failure is the ValueMappingException the column read gives.
+	// Built from the same helpers (TypedGetters, TryConvert, ConvertValue),
+	// the same ones the single-column reader uses; the two agree for every provider tested, which the parity matrix checks.
+	internal static T ConvertScalar(object? value)
+	{
+		if (value is null or DBNull) return default!;
+		if (value is T exact) return exact;
+
+		try
+		{
+			Func<object, T> convert
+				= Scalars.GetOrAdd(value.GetType(), BuildScalar);
+			return convert(value);
+		}
+		catch (Exception ex)
+		{
+			throw new ValueMappingException(
+				$"Unable to read the scalar as {Shape.TypeName(typeof(T))}.",
+				"",
+				"",
+				typeof(T),
+				ex);
+		}
+	}
+
+	// One converter per runtime type of the value:
+	// as many as the types a provider returns for one T.
+	static readonly ConcurrentDictionary<Type, Func<object, T>> Scalars = new();
+
+	// The typed read of Map<T>() (TypedRead and ReadValue)
+	// applied to an unboxed value;
+	// a type with no direct conversion to T takes the general path.
+	static Func<object, T> BuildScalar(Type valueType)
+	{
+		Type? underlying = Nullable.GetUnderlyingType(typeof(T));
+		ParameterExpression input = Expression.Parameter(typeof(object), "value");
+
+		if (TypedGetters.ByType.ContainsKey(valueType)
+			&& TryConvert(
+				Expression.Convert(input, valueType),
+				underlying ?? typeof(T)) is { } typed)
+		{
+			return Expression
+				.Lambda<Func<object, T>>(
+					underlying is null
+						? typed
+						: Expression.Convert(typed, typeof(T)),
+					input)
+				.Compile();
+		}
+
+		return static value => ConvertValue<T>(value);
 	}
 
 	// The skeleton shared by both mappers. A model built as it always was (a class with a public parameterless constructor, a struct with no constructor of its own):
