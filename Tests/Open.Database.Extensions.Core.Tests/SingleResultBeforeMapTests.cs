@@ -702,8 +702,8 @@ public static class SingleResultBeforeMapTests
 		RecordingAsyncExecuteReader reading = Recording(useAsyncRead: true);
 		FakeExecuteReader other = Expressive(1, out _);
 
-		Assert.True(Assert.IsAssignableFrom<IExecuteReaderAsync>(reading.SingleResult()).UseAsyncRead);
-		Assert.False(Assert.IsAssignableFrom<IExecuteReaderAsync>(other.SingleResult()).UseAsyncRead);
+		Assert.True(Assert.IsType<IExecuteReaderAsync>(reading.SingleResult(), exactMatch: false).UseAsyncRead);
+		Assert.False(Assert.IsType<IExecuteReaderAsync>(other.SingleResult(), exactMatch: false).UseAsyncRead);
 	}
 
 	[Fact]

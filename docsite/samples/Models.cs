@@ -20,6 +20,20 @@ public class Person
 	public string LastName { get; set; } = "";
 }
 
+// order_num is a number, first_load_datetime a timestamp: the model keeps the first as text and shows the second as "HH:mm" (see the converters in OrderMaps).
+#region order_model
+public class Order
+{
+	public required int Id { get; init; }
+	public string OrderNum { get; init; } = "";
+	public string FirstLoad { get; init; } = "";
+	public string Customer { get; init; } = "";
+
+	// Computed from the converted members: never mapped.
+	public string Summary => $"{OrderNum} at {FirstLoad}";
+}
+#endregion
+
 #region order_line_model
 public class OrderLine
 {
