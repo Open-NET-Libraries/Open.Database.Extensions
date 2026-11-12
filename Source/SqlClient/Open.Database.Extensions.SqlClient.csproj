@@ -19,12 +19,4 @@
 
 	<!-- The OverloadResolutionPriority polyfill and the timeout constants are Core's internals, shared through InternalsVisibleTo. -->
 
-	<ItemGroup>
-	  <EditorConfigFiles Remove="D:\Users\essence\Development\- GitHub\- Open-NET-Libraries\Open.Database.Extensions\Source\SqlClient\.editorconfig" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="D:\Users\essence\Development\- GitHub\- Open-NET-Libraries\Open.Database.Extensions\Source\SqlClient\.editorconfig" />
-	</ItemGroup>
-
 </Project>
