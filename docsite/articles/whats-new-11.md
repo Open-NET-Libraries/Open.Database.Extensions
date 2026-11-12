@@ -5,6 +5,10 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.4
+
+- `.SingleResult()` can be written before `Map`, so a query reads as behavior first, then shape: `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)`. It works on an expressive command (`IExecuteReader`) and on a raw `IDbCommand` or `DbCommand`, with the same `Map` overloads as before, and it is the same as `command.Map<Post>().SingleResult()`, which still works. There is none on `IDataReader` or `DataTable`: their views never read through, so there is nothing to opt out of. Nothing changes by default: without it a `Map` terminal still reads through the later result sets.
+
 ## Breaking in rc.4
 
 Rebuild consumers of rc.3. Both changes are source-compatible for every call except the ones noted.
@@ -162,7 +166,7 @@ The selector forms on an `IExecuteReader`:
 
 ### Why `Map` reads later result sets
 
-The old calls read only the first result set. `Map` reads through the later ones, so a failure in a later result set is thrown, not left unread. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one). Add `.SingleResult()` to read only the first, as the old calls did.
+The old calls read only the first result set. `Map` reads through the later ones, so a failure in a later result set is thrown, not left unread. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one). Call `.SingleResult()` before `Map` to read only the first, as the old calls did: `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)`. `command.Map<Post>().SingleResult()` still works.
 
 ## Fixes
 
