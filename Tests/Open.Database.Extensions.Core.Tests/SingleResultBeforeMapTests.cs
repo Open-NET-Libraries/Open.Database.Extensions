@@ -693,7 +693,7 @@ public static class SingleResultBeforeMapTests
 				CommandBehavior.SingleResult | CommandBehavior.KeyInfo
 			],
 			command.Behaviors);
-		Assert.Equal(Ct, command.ReaderTokens.Last());
+		Assert.Equal(Ct, command.ReaderTokens[^1]);
 	}
 
 	[Fact]

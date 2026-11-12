@@ -219,3 +219,6 @@ dotnet_diagnostic.RCS1123.severity = silent
 
 # IDE0028: Collection simplification
 dotnet_diagnostic.IDE0028.severity = silent
+
+# IDE0008: var
+dotnet_diagnostic.IDE0008.severity = silent

@@ -226,10 +226,10 @@ public static class MappedViewParityTests
 		Assert.Throws<ArgumentNullException>(() => reader!.Map(map));
 		Assert.Throws<ArgumentNullException>(
 			() => reader!.Map<Person>(new KeyValuePair<string, string?>("Id", "Id")));
-		Assert.Throws<ArgumentNullException>(() => reader!.Map(r => 1));
+		Assert.Throws<ArgumentNullException>(() => reader!.Map(_ => 1));
 		Assert.Throws<ArgumentNullException>(() => command!.Map<Person>());
 		Assert.Throws<ArgumentNullException>(() => command!.Map(map));
-		Assert.Throws<ArgumentNullException>(() => command!.Map(r => 1));
+		Assert.Throws<ArgumentNullException>(() => command!.Map(_ => 1));
 		Assert.Throws<ArgumentNullException>(
 			() => Reader(Rows(1)).Map((Func<IDataRecord, int>)null!));
 		Assert.Throws<ArgumentNullException>(
@@ -264,10 +264,10 @@ public static class MappedViewParityTests
 			Assert.Contains("Map<T>()", ex.Message);
 		}
 
-		static ValueTask H1(IAsyncEnumerable<int> items, CancellationToken token)
+		static ValueTask H1(IAsyncEnumerable<int> __, CancellationToken _)
 			=> default;
 
-		static ValueTask<int> H2(IAsyncEnumerable<int> items, CancellationToken token)
+		static ValueTask<int> H2(IAsyncEnumerable<int> __, CancellationToken _)
 			=> new(0);
 
 		static void All<TQuery>(TQuery q, Action<TQuery> more)

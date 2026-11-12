@@ -205,9 +205,7 @@ public static partial class CommandExtensions
 		CommandBehavior behavior,
 		Func<IDataRecord, T> transform,
 		CancellationToken cancellationToken = default)
-#pragma warning disable CS0618 // One obsolete overload forwards to another.
 		=> ToListAsync(command, behavior, transform, true, cancellationToken);
-#pragma warning restore CS0618
 
 	/// <inheritdoc cref="ToListAsync{T}(DbCommand, CommandBehavior, Func{IDataRecord, T}, bool, CancellationToken)"/>
 	[Obsolete(ToListAsyncObsolete)]
@@ -216,9 +214,7 @@ public static partial class CommandExtensions
 		CommandBehavior behavior = CommandBehavior.Default,
 		bool useReadAsync = true,
 		CancellationToken cancellationToken = default)
-#pragma warning disable CS0618 // One obsolete overload forwards to another.
 		=> ToListAsync(command, behavior, transform, useReadAsync, cancellationToken);
-#pragma warning restore CS0618
 
 	/// <summary>
 	/// Iterates all records using an <see cref="IDataReader"/> and returns the desired results as an array.

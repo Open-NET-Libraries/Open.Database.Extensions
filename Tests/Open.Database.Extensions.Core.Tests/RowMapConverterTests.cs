@@ -1,5 +1,4 @@
 using Open.Database.Extensions.Core;
-using System.Data.Common;
 using System.Globalization;
 
 #nullable enable
@@ -661,7 +660,7 @@ public static class RowMapConverterTests
 	[Fact]
 	public static async Task AReaderACommandAndATable_GiveTheSameRows()
 	{
-		using (TypedReader reader = TypedReader.Create(Columns, Valid()))
+		await using (var reader = TypedReader.Create(Columns, Valid()))
 			AssertFull(Assert.Single(reader.Map(Full).ToList()));
 
 		AssertFull(Assert.Single(Cmd(Columns, Valid()).Map(Full).ToList()));
@@ -693,9 +692,9 @@ public static class RowMapConverterTests
 	{
 		string[] names = [.. Columns.Select(c => c.Name)];
 		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([row!]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
+#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		return result.DequeueAs(map).ToList();
-		#pragma warning restore CS0618
+#pragma warning restore CS0618
 	}
 
 	[Fact]
