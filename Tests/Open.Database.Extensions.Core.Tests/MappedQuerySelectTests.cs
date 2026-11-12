@@ -595,7 +595,7 @@ public static class MappedQuerySelectTests
 		LeakAssert.ConnectionsReleased(tally, LeakSource.Factory, tally.Pool, 1);
 	}
 
-	static IMappedQuery<Person> Expressive(DbTally tally)
+	static MappedQuery<Person> Expressive(DbTally tally)
 		=> tally.Factory.Command("select").Map<Person>();
 
 	static string Boom(Person p)
@@ -1116,9 +1116,7 @@ public static class MappedQuerySelectTests
 		sealed class Rows(TaskCompletionSource gate, string gated)
 			: IAsyncEnumerable<int>, IAsyncEnumerator<int>
 		{
-			int _row;
-
-			public int Current => _row;
+			public int Current { get; private set; }
 
 			public IAsyncEnumerator<int> GetAsyncEnumerator(
 				CancellationToken cancellationToken = default)
@@ -1126,9 +1124,9 @@ public static class MappedQuerySelectTests
 
 			public ValueTask<bool> MoveNextAsync()
 			{
-				_row++;
-				if (_row > 2) return new(false);
-				return _row == 1 && gated == "move"
+				Current++;
+				if (Current > 2) return new(false);
+				return Current == 1 && gated == "move"
 					? new(Opened(gate.Task))
 					: new(true);
 			}
