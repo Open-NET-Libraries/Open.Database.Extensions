@@ -6,7 +6,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 public static partial class CommandExtensions
 {
-	const string ToListAsyncObsolete = "Use await command.Map(transform).ToListAsync(cancellationToken) instead. Map also reads the later result sets, so a failure in one is thrown; add .SingleResult() to read only the first, as this method does. Map executes asynchronously and then reads the rows with Read(), as useReadAsync: false did. It has no CommandBehavior argument: if you passed one, use await command.ExecuteReaderAsync(r => r.Map(transform).ToList(), behavior | CommandBehavior.SingleResult, cancellationToken). Removed in 12.";
+	const string ToListAsyncObsolete = "Use await command.Map(transform).ToListAsync(cancellationToken) instead. Map also reads the later result sets, so a failure in one is thrown; to read only the first, as this method does, call .SingleResult() before Map (command.SingleResult().Map(transform); .Map(transform).SingleResult() still works). Map executes asynchronously and then reads the rows with Read(), as useReadAsync: false did. It has no CommandBehavior argument: if you passed one, use await command.ExecuteReaderAsync(r => r.Map(transform).ToList(), behavior | CommandBehavior.SingleResult, cancellationToken). Removed in 12.";
 
 	#region Connection.EnsureOpen Shortcuts.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]

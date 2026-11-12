@@ -88,6 +88,8 @@ static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.DataTable
 static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.DataTable! table, System.Collections.Generic.KeyValuePair<string!, string?> mapping) -> Open.Database.Extensions.MappedTable<T>
 static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.DataTable! table, System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedTable<T>
 static Open.Database.Extensions.CoreExtensions.Map<T>(this System.Data.DataTable! table, params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.MappedTable<T>
+static Open.Database.Extensions.CoreExtensions.SingleResult(this Open.Database.Extensions.IExecuteReader! command) -> Open.Database.Extensions.IExecuteReader!
+static Open.Database.Extensions.CoreExtensions.SingleResult(this System.Data.IDbCommand! command) -> System.Data.IDbCommand!
 Open.Database.Extensions.MappedReader<T>
 Open.Database.Extensions.MappedReader<T>.FirstOrDefault() -> T?
 Open.Database.Extensions.MappedReader<T>.FirstOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
