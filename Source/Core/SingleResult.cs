@@ -74,6 +74,8 @@ public static partial class CoreExtensions
 	/// and the five <c>Map</c> overloads that follow are the ones that
 	/// <see cref="Map{T}(IDbCommand, RowMap{T}?)"/> has.
 	/// The command is not changed and belongs to the caller; the query never disposes it.
+	/// A caller that uses the returned view directly as a command should know
+	/// that disposing the view disposes the command, so dispose one or the other.
 	/// </para>
 	/// <para>
 	/// A later failure can follow a write that already committed,
