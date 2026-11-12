@@ -51,27 +51,25 @@ public static class MappedQueryDictionaryValuesTests
 		Func<Person, int> key,
 		Func<Person, string?> value,
 		IEqualityComparer<int>? comparer = null)
-	{
-		switch (level)
+		=> level switch
 		{
-			case "command":
-				return Command(rows).Map<Person>()
-					.ToDictionary(key, value, comparer);
-			case "reader":
-				return Reader(Rows(rows)).Map<Person>()
-					.ToDictionary(key, value, comparer);
-			case "commandView":
-				return new FakeDbCommand(
+			"command" =>
+				Command(rows).Map<Person>()
+					.ToDictionary(key, value, comparer),
+			"reader" =>
+				Reader(Rows(rows)).Map<Person>()
+					.ToDictionary(key, value, comparer),
+			"commandView" =>
+				new FakeDbCommand(
 					new FakeDbConnection(),
 					() => Reader(Rows(rows))).Map<Person>()
-					.ToDictionary(key, value, comparer);
-			case "table":
-				return Table(rows).Map<Person>()
-					.ToDictionary(key, value, comparer);
-			default:
-				throw new ArgumentOutOfRangeException(nameof(level));
-		}
-	}
+					.ToDictionary(key, value, comparer),
+			"table" =>
+				Table(rows).Map<Person>()
+					.ToDictionary(key, value, comparer),
+			_ =>
+				throw new ArgumentOutOfRangeException(nameof(level)),
+		};
 
 	static async Task<Dictionary<int, string?>> Async(
 		string level,
@@ -79,27 +77,25 @@ public static class MappedQueryDictionaryValuesTests
 		Func<Person, int> key,
 		Func<Person, string?> value,
 		IEqualityComparer<int>? comparer = null)
-	{
-		switch (level)
+		=> level switch
 		{
-			case "command":
-				return await Command(rows).Map<Person>()
-					.ToDictionaryAsync(key, value, comparer, Ct);
-			case "reader":
-				return await Reader(Rows(rows)).Map<Person>()
-					.ToDictionaryAsync(key, value, comparer, Ct);
-			case "commandView":
-				return await new FakeDbCommand(
+			"command" =>
+				await Command(rows).Map<Person>()
+					.ToDictionaryAsync(key, value, comparer, Ct),
+			"reader" =>
+				await Reader(Rows(rows)).Map<Person>()
+					.ToDictionaryAsync(key, value, comparer, Ct),
+			"commandView" =>
+				await new FakeDbCommand(
 					new FakeDbConnection(),
 					() => Reader(Rows(rows))).Map<Person>()
-					.ToDictionaryAsync(key, value, comparer, Ct);
-			case "table":
-				return await Table(rows).Map<Person>()
-					.ToDictionaryAsync(key, value, comparer, Ct);
-			default:
-				throw new ArgumentOutOfRangeException(nameof(level));
-		}
-	}
+					.ToDictionaryAsync(key, value, comparer, Ct),
+			"table" =>
+				await Table(rows).Map<Person>()
+					.ToDictionaryAsync(key, value, comparer, Ct),
+			_ =>
+				throw new ArgumentOutOfRangeException(nameof(level)),
+		};
 
 	static void AssertThreeRows(Dictionary<int, string?> actual)
 		=> Assert.Equal(

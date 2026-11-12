@@ -45,7 +45,7 @@ public static class MappedQueryFirstSingleTests
 	static FakeExecuteReader One(Type column, object? cell)
 		=> new(() => TypedReader.Create(
 			[("v", column)],
-			[new object?[] { cell }]));
+			[[cell]]));
 
 	static DataTable Table(int count)
 	{
@@ -594,23 +594,6 @@ public static class MappedQueryFirstSingleTests
 
 	// ---- through IMappedQuery<T> (the extensions, for generic code) ----
 
-	// One outer guard: a null query is an ArgumentNullException at the call, for every terminal,
-	// including the async ones (they are not async methods, so they throw at the call).
-	[Fact]
-	public static void ANullQuery_ThrowsArgumentNullException_ForEveryInterfaceTerminal()
-	{
-		IMappedQuery<int> query = null!;
-
-		Assert.Throws<ArgumentNullException>(() => query.First());
-		Assert.Throws<ArgumentNullException>(() => query.Single());
-		Assert.Throws<ArgumentNullException>(() => query.FirstOrDefault());
-		Assert.Throws<ArgumentNullException>(() => query.SingleOrDefault());
-		Assert.Throws<ArgumentNullException>(() => query.FirstAsync(Ct));
-		Assert.Throws<ArgumentNullException>(() => query.SingleAsync(Ct));
-		Assert.Throws<ArgumentNullException>(() => query.FirstOrDefaultAsync(Ct));
-		Assert.Throws<ArgumentNullException>(() => query.SingleOrDefaultAsync(Ct));
-	}
-
 	[Fact]
 	public static async Task ThroughTheInterface_TheExtensionsDoTheSame()
 	{
@@ -633,24 +616,28 @@ public static class MappedQueryFirstSingleTests
 	}
 
 	[Fact]
-	public static void ThroughTheInterface_ANullQueryIsRefused()
+	public static async Task ThroughTheInterface_ANullQueryIsRefused()
 	{
 		IMappedQuery<int> query = null!;
 
-		Assert.Equal(
-			"query",
-			Assert.Throws<ArgumentNullException>(() => query.First()).ParamName);
-		Assert.Equal(
-			"query",
-			Assert.Throws<ArgumentNullException>(() => query.Single()).ParamName);
-		Assert.Equal(
-			"query",
-			Assert.Throws<ArgumentNullException>(
-				() => query.FirstAsync(Ct)).ParamName);
-		Assert.Equal(
-			"query",
-			Assert.Throws<ArgumentNullException>(
-				() => query.SingleAsync(Ct)).ParamName);
+		static void Refused(Action call)
+			=> Assert.Equal(
+				"query",
+				Assert.Throws<ArgumentNullException>(call).ParamName);
+
+		static async Task RefusedAsync(Func<Task> call)
+			=> Assert.Equal(
+				"query",
+				(await Assert.ThrowsAsync<ArgumentNullException>(call)).ParamName);
+
+		Refused(() => query.First());
+		Refused(() => query.Single());
+		Refused(() => query.FirstOrDefault());
+		Refused(() => query.SingleOrDefault());
+		await RefusedAsync(async () => await query.FirstAsync(Ct));
+		await RefusedAsync(async () => await query.SingleAsync(Ct));
+		await RefusedAsync(async () => await query.FirstOrDefaultAsync(Ct));
+		await RefusedAsync(async () => await query.SingleOrDefaultAsync(Ct));
 	}
 
 	// ---- through IMappedQuery<T>: the six library types, eight terminals ----
@@ -833,11 +820,9 @@ public static class MappedQueryFirstSingleTests
 	[InlineData("table")]
 	public static async Task ThroughTheInterface_AReaderViewOrATable_IsNotReadThrough(
 		string level)
-	{
-		Assert.All(
+		=> Assert.All(
 			await SameAsTheMembers(level, 1, failAt: 1),
 			o => Assert.Equal("row 1", o));
-	}
 
 	// The later sets are walked in full after the row, as for the members.
 	[Fact]
