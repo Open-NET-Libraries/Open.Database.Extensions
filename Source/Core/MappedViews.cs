@@ -593,7 +593,8 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedCommand{T}"/>
-public readonly record struct MappedReader<T> : IMappedQuery<T>
+public readonly record struct MappedReader<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 
@@ -765,7 +766,8 @@ public readonly record struct MappedReader<T> : IMappedQuery<T>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
-public readonly record struct MappedCommand<T> : IMappedQuery<T>
+public readonly record struct MappedCommand<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 
@@ -935,7 +937,8 @@ public readonly record struct MappedCommand<T> : IMappedQuery<T>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
-public readonly record struct MappedTable<T> : IMappedQuery<T>
+public readonly record struct MappedTable<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 

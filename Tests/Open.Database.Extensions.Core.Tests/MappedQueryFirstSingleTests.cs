@@ -66,19 +66,55 @@ public static class MappedQueryFirstSingleTests
 		Func<Person> First,
 		Func<Person> Single,
 		Func<CancellationToken, ValueTask<Person>> FirstAsync,
-		Func<CancellationToken, ValueTask<Person>> SingleAsync);
+		Func<CancellationToken, ValueTask<Person>> SingleAsync,
+		Func<Person?> FirstOrDefault,
+		Func<Person?> SingleOrDefault,
+		Func<CancellationToken, ValueTask<Person?>> FirstOrDefaultAsync,
+		Func<CancellationToken, ValueTask<Person?>> SingleOrDefaultAsync);
 
 	static Terminals Of(MappedQuery<Person> q)
-		=> new(q.First, q.Single, q.FirstAsync, q.SingleAsync);
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
+
+	static Terminals Of(MappedQueryWithSkip<Person> q)
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
+
+	static Terminals Of(MappedQueryWithTake<Person> q)
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
 
 	static Terminals Of(MappedReader<Person> q)
-		=> new(q.First, q.Single, q.FirstAsync, q.SingleAsync);
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
 
 	static Terminals Of(MappedCommand<Person> q)
-		=> new(q.First, q.Single, q.FirstAsync, q.SingleAsync);
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
 
 	static Terminals Of(MappedTable<Person> q)
-		=> new(q.First, q.Single, q.FirstAsync, q.SingleAsync);
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
+
+	// The same terminals through the extensions on the interface.
+	// Not an overload of Of: a struct would bind to it by mistake.
+	static Terminals OfBoxed(IMappedQuery<Person> q)
+		=> new(
+			q.First, q.Single, q.FirstAsync, q.SingleAsync,
+			q.FirstOrDefault, q.SingleOrDefault,
+			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
 
 	// A new source every call: a reader view is spent once it has been read.
 	static Terminals At(string level, int rows)
@@ -558,6 +594,23 @@ public static class MappedQueryFirstSingleTests
 
 	// ---- through IMappedQuery<T> (the extensions, for generic code) ----
 
+	// One outer guard: a null query is an ArgumentNullException at the call, for every terminal,
+	// including the async ones (they are not async methods, so they throw at the call).
+	[Fact]
+	public static void ANullQuery_ThrowsArgumentNullException_ForEveryInterfaceTerminal()
+	{
+		IMappedQuery<int> query = null!;
+
+		Assert.Throws<ArgumentNullException>(() => query.First());
+		Assert.Throws<ArgumentNullException>(() => query.Single());
+		Assert.Throws<ArgumentNullException>(() => query.FirstOrDefault());
+		Assert.Throws<ArgumentNullException>(() => query.SingleOrDefault());
+		Assert.Throws<ArgumentNullException>(() => query.FirstAsync(Ct));
+		Assert.Throws<ArgumentNullException>(() => query.SingleAsync(Ct));
+		Assert.Throws<ArgumentNullException>(() => query.FirstOrDefaultAsync(Ct));
+		Assert.Throws<ArgumentNullException>(() => query.SingleOrDefaultAsync(Ct));
+	}
+
 	[Fact]
 	public static async Task ThroughTheInterface_TheExtensionsDoTheSame()
 	{
@@ -598,6 +651,304 @@ public static class MappedQueryFirstSingleTests
 			"query",
 			Assert.Throws<ArgumentNullException>(
 				() => query.SingleAsync(Ct)).ParamName);
+	}
+
+	// ---- through IMappedQuery<T>: the six library types, eight terminals ----
+
+	// The extensions on the interface are the same call as the members for
+	// the library types: the same no-rows message, and the later
+	// result sets are read through. Only another implementation of
+	// IMappedQuery<T> falls back to LINQ over its Read handler.
+
+	public static TheoryData<string> InterfaceLevels
+		=> ["query", "skip", "take", "reader", "commandView", "table"];
+
+	// The levels that read through the later result sets.
+	public static TheoryData<string> ReadThroughLevels
+		=> ["query", "skip", "take", "commandView"];
+
+	static MultiSetReader SetsReader(int rows, int? failAt)
+		=> new(Rows(rows), LaterSets, failAt);
+
+	static MappedQuery<Person> QueryOf(int rows, int? failAt)
+		=> Sets(rows, out _, failAt).Map<Person>();
+
+	static MappedCommand<Person> CommandOf(int rows, int? failAt)
+		=> new FakeDbCommand(
+			new FakeDbConnection(),
+			() => SetsReader(rows, failAt)).Map<Person>();
+
+	// The query as its own type, for the members.
+	static Terminals MembersAt(string level, int rows, int? failAt)
+		=> level switch
+		{
+			"query" => Of(QueryOf(rows, failAt)),
+			"skip" => Of(QueryOf(rows, failAt).Skip(0)),
+			"take" => Of(QueryOf(rows, failAt).Take(10)),
+			"reader" => Of(SetsReader(rows, failAt).Map<Person>()),
+			"commandView" => Of(CommandOf(rows, failAt)),
+			"table" => Of(Table(rows).Map<Person>()),
+			_ => throw new ArgumentOutOfRangeException(nameof(level)),
+		};
+
+	// The same query as an IMappedQuery<T>, for the extensions.
+	static IMappedQuery<Person> BoxedAt(string level, int rows, int? failAt)
+		=> level switch
+		{
+			"query" => QueryOf(rows, failAt),
+			"skip" => QueryOf(rows, failAt).Skip(0),
+			"take" => QueryOf(rows, failAt).Take(10),
+			"reader" => SetsReader(rows, failAt).Map<Person>(),
+			"commandView" => CommandOf(rows, failAt),
+			"table" => Table(rows).Map<Person>(),
+			_ => throw new ArgumentOutOfRangeException(nameof(level)),
+		};
+
+	static string Describe(object? result)
+		=> result is Person person ? $"row {person.Id}" : "null";
+
+	static string Outcome<T>(Func<T> run)
+	{
+		try
+		{
+			return Describe(run());
+		}
+		catch (Exception ex)
+		{
+			return $"{ex.GetType().Name}: {ex.Message}";
+		}
+	}
+
+	static async Task<string> OutcomeAsync<T>(Func<ValueTask<T>> run)
+	{
+		try
+		{
+			return Describe(await run());
+		}
+		catch (Exception ex)
+		{
+			return $"{ex.GetType().Name}: {ex.Message}";
+		}
+	}
+
+	// What each of the eight terminals did, in the order of
+	// First, Single, FirstOrDefault, SingleOrDefault and their async twins.
+	// A new source for every call: a reader view is spent once it is read.
+	static async Task<string[]> Outcomes(Func<Terminals> fresh)
+		=> [
+			Outcome(() => fresh().First()),
+			Outcome(() => fresh().Single()),
+			Outcome(() => fresh().FirstOrDefault()),
+			Outcome(() => fresh().SingleOrDefault()),
+			await OutcomeAsync(() => fresh().FirstAsync(Ct)),
+			await OutcomeAsync(() => fresh().SingleAsync(Ct)),
+			await OutcomeAsync(() => fresh().FirstOrDefaultAsync(Ct)),
+			await OutcomeAsync(() => fresh().SingleOrDefaultAsync(Ct)),
+		];
+
+	// Asserts the interface did what the members did, and returns it.
+	static async Task<string[]> SameAsTheMembers(
+		string level,
+		int rows,
+		int? failAt = null)
+	{
+		string[] members = await Outcomes(
+			() => MembersAt(level, rows, failAt));
+		string[] boxed = await Outcomes(
+			() => OfBoxed(BoxedAt(level, rows, failAt)));
+
+		Assert.Equal(members, boxed);
+		return boxed;
+	}
+
+	[Theory, MemberData(nameof(InterfaceLevels))]
+	public static async Task ThroughTheInterface_EveryTerminalDoesWhatTheMembersDo(
+		string level)
+	{
+		await SameAsTheMembers(level, 0);
+		await SameAsTheMembers(level, 1);
+		await SameAsTheMembers(level, 2);
+		await SameAsTheMembers(level, 1, failAt: 1);
+		await SameAsTheMembers(level, 1, failAt: 2);
+		await SameAsTheMembers(level, 0, failAt: 1);
+		await SameAsTheMembers(level, 2, failAt: 1);
+	}
+
+	[Theory, MemberData(nameof(InterfaceLevels))]
+	public static async Task ThroughTheInterface_NoRows_ThrowTheLibraryMessage_NamingTheTerminal(
+		string level)
+	{
+		string[] outcomes = await SameAsTheMembers(level, 0);
+
+		Assert.StartsWith("InvalidOperationException: ", outcomes[0]);
+		Assert.Contains("no rows, and First needs one", outcomes[0]);
+		Assert.Contains("no rows, and Single needs one", outcomes[1]);
+		Assert.Equal("null", outcomes[2]);
+		Assert.Equal("null", outcomes[3]);
+		Assert.Contains("no rows, and FirstAsync needs one", outcomes[4]);
+		Assert.Contains("no rows, and SingleAsync needs one", outcomes[5]);
+		Assert.Equal("null", outcomes[6]);
+		Assert.Equal("null", outcomes[7]);
+	}
+
+	[Theory, MemberData(nameof(InterfaceLevels))]
+	public static async Task ThroughTheInterface_Rows_AreFirstSingleOrTooMany(
+		string level)
+	{
+		Assert.All(
+			await SameAsTheMembers(level, 1),
+			o => Assert.Equal("row 1", o));
+
+		string[] two = await SameAsTheMembers(level, 2);
+		Assert.Equal("row 1", two[0]);
+		Assert.Contains("more than one", two[1]);
+		Assert.Equal("row 1", two[2]);
+		Assert.Contains("more than one", two[3]);
+		Assert.Equal("row 1", two[4]);
+		Assert.Contains("more than one", two[5]);
+		Assert.Equal("row 1", two[6]);
+		Assert.Contains("more than one", two[7]);
+	}
+
+	// The failure of a later result set is thrown through the interface too:
+	// the terminals stop at the row, then read the later sets through.
+	[Theory, MemberData(nameof(ReadThroughLevels))]
+	public static async Task ThroughTheInterface_ALaterFailure_IsThrown_ForEveryTerminal(
+		string level)
+	{
+		foreach (int rows in new[] { 1, 0 })
+		{
+			foreach (int failAt in new[] { 1, 2 })
+			{
+				Assert.All(
+					await SameAsTheMembers(level, rows, failAt),
+					o => Assert.StartsWith("LaterSetFailure: ", o));
+			}
+		}
+	}
+
+	// A reader view is never read through, and a table has one result set.
+	[Theory]
+	[InlineData("reader")]
+	[InlineData("table")]
+	public static async Task ThroughTheInterface_AReaderViewOrATable_IsNotReadThrough(
+		string level)
+	{
+		Assert.All(
+			await SameAsTheMembers(level, 1, failAt: 1),
+			o => Assert.Equal("row 1", o));
+	}
+
+	// The later sets are walked in full after the row, as for the members.
+	[Fact]
+	public static async Task ThroughTheInterface_ReadsThroughTheLaterSets_ThenReturns()
+	{
+		FakeExecuteReader sync = Sets(1, out Func<MultiSetReader> syncReader);
+		IMappedQuery<Person> boxed = sync.Map<Person>();
+		Assert.Equal(1, boxed.First().Id);
+		Assert.Equal(LaterSets + 1, syncReader().NextResultCalls);
+		Assert.Equal(0, syncReader().ReadsAfterNextResult);
+
+		FakeExecuteReader viaAsync = Sets(1, out Func<MultiSetReader> asyncReader);
+		IMappedQuery<Person> boxedAsync = viaAsync.Map<Person>();
+		Assert.Equal(1, (await boxedAsync.SingleAsync(Ct)).Id);
+		Assert.Equal(LaterSets + 1, asyncReader().NextResultCalls);
+		Assert.Equal(LaterSets + 1, asyncReader().AsyncCalls);
+		Assert.Equal(0, asyncReader().ReadsAfterNextResult);
+	}
+
+	// ---- another implementation of IMappedQuery<T>: the LINQ fallback ----
+
+	// A tiny list-backed query that is not one of the library types.
+	sealed class ListQuery<T>(params T[] rows) : IMappedQuery<T>
+	{
+		public int Enumerated { get; private set; }
+
+		IEnumerable<T> Items()
+		{
+			foreach (T row in rows)
+			{
+				Enumerated++;
+				yield return row;
+			}
+		}
+
+		async IAsyncEnumerable<T> ItemsAsync()
+		{
+			foreach (T row in Items())
+			{
+				await Task.Yield();
+				yield return row;
+			}
+		}
+
+		public void Read(Action<IEnumerable<T>> handler)
+			=> handler(Items());
+
+		public TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler)
+			=> handler(Items());
+
+		public async ValueTask ReadAsync(
+			Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler,
+			CancellationToken cancellationToken)
+			=> await handler(ItemsAsync(), cancellationToken);
+
+		public async ValueTask<TResult> ReadAsync<TResult>(
+			Func<
+				IAsyncEnumerable<T>,
+				CancellationToken,
+				ValueTask<TResult>> handler,
+			CancellationToken cancellationToken)
+			=> await handler(ItemsAsync(), cancellationToken);
+	}
+
+	static Person Row(int id)
+		=> new() { Id = id };
+
+	[Fact]
+	public static async Task AnotherImplementation_StillWorks_ThroughTheLinqFallback()
+	{
+		static IMappedQuery<Person> Q(int rows)
+			=> new ListQuery<Person>(
+				[.. Enumerable.Range(1, rows).Select(Row)]);
+
+		Assert.Equal(1, Q(3).First().Id);
+		Assert.Equal(1, Q(1).Single().Id);
+		Assert.Equal(1, Q(3).FirstOrDefault()?.Id);
+		Assert.Equal(1, Q(1).SingleOrDefault()?.Id);
+		Assert.Equal(1, (await Q(3).FirstAsync(Ct)).Id);
+		Assert.Equal(1, (await Q(1).SingleAsync(Ct)).Id);
+		Assert.Equal(1, (await Q(3).FirstOrDefaultAsync(Ct))?.Id);
+		Assert.Equal(1, (await Q(1).SingleOrDefaultAsync(Ct))?.Id);
+
+		Assert.Null(Q(0).FirstOrDefault());
+		Assert.Null(Q(0).SingleOrDefault());
+		Assert.Null(await Q(0).FirstOrDefaultAsync(Ct));
+		Assert.Null(await Q(0).SingleOrDefaultAsync(Ct));
+
+		// No rows, and more than one: an InvalidOperationException, but the
+		// fallback's message is LINQ's and does not name the terminal.
+		Assert.Throws<InvalidOperationException>(() => Q(0).First());
+		Assert.Throws<InvalidOperationException>(() => Q(0).Single());
+		Assert.Throws<InvalidOperationException>(() => Q(2).Single());
+		Assert.Throws<InvalidOperationException>(() => Q(2).SingleOrDefault());
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Q(0).FirstAsync(Ct));
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Q(0).SingleAsync(Ct));
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Q(2).SingleAsync(Ct));
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Q(2).SingleOrDefaultAsync(Ct));
+	}
+
+	[Fact]
+	public static void AnotherImplementation_FirstStopsAtTheFirstRow()
+	{
+		ListQuery<Person> three = new(Row(1), Row(2), Row(3));
+
+		Assert.Equal(1, ((IMappedQuery<Person>)three).First().Id);
+		Assert.Equal(1, three.Enumerated);
 	}
 
 	// ---- the command shortcuts ----

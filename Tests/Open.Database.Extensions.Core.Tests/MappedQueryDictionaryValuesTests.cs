@@ -395,6 +395,111 @@ public static class MappedQueryDictionaryValuesTests
 		Assert.Equal(0, reader().NextResultCalls);
 	}
 
+	// A key selector that throws on a later row: its exception is thrown as it
+	// is, the dictionary built so far is dropped, the later result sets are not
+	// read through, and the connection the call opened is closed again.
+	[Fact]
+	public static async Task AKeySelectorThatThrows_IsNotReplaced_AndLeavesNoLeak()
+	{
+		static int Key(Person person)
+			=> person.Id == 2 ? throw new FormatException("mine") : person.Id;
+
+		FakeExecuteReader command = Sets(
+			3, out Func<MultiSetReader> reader, failAt: 1);
+
+		Assert.Equal(
+			"mine",
+			Assert.Throws<FormatException>(
+				() => command.Map<Person>()
+					.ToDictionary<int, string?>(Key, p => p.Name)).Message);
+		Assert.Equal(
+			"mine",
+			(await Assert.ThrowsAsync<FormatException>(
+				async () => await command.Map<Person>()
+					.ToDictionaryAsync<int, string?>(
+						Key, p => p.Name, null, Ct))).Message);
+		Assert.Equal(0, reader().NextResultCalls);
+
+		// The connection the call opened is closed again.
+		var connection = new FakeDbConnection();
+		var closed = new FakeDbCommand(connection, () => Reader(Rows(3)));
+
+		Assert.Throws<FormatException>(
+			() => closed.Map<Person>()
+				.ToDictionary<int, string?>(Key, p => p.Name));
+		await Assert.ThrowsAsync<FormatException>(
+			async () => await closed.Map<Person>()
+				.ToDictionaryAsync<int, string?>(Key, p => p.Name, null, Ct));
+
+		Assert.Equal(["open", "close", "open", "close"], connection.Log);
+		Assert.Equal(ConnectionState.Closed, connection.State);
+
+		// A connection that was open is left open.
+		var openConnection = new FakeDbConnection();
+		openConnection.SetState(ConnectionState.Open);
+		var opened = new FakeDbCommand(openConnection, () => Reader(Rows(3)));
+
+		Assert.Throws<FormatException>(
+			() => opened.Map<Person>()
+				.ToDictionary<int, string?>(Key, p => p.Name));
+		await Assert.ThrowsAsync<FormatException>(
+			async () => await opened.Map<Person>()
+				.ToDictionaryAsync<int, string?>(Key, p => p.Name, null, Ct));
+
+		Assert.Empty(openConnection.Log);
+		Assert.Equal(ConnectionState.Open, openConnection.State);
+	}
+
+	// The value-selector overloads throw what the key-only form throws for a
+	// duplicate key, sync and async, and the connection the call opened is
+	// closed again.
+	[Fact]
+	public static async Task ADuplicateKey_WithValueSelectors_ThrowsLikeTheKeyOnlyForm_AndLeavesNoLeak()
+	{
+		var connection = new FakeDbConnection();
+		var command = new FakeDbCommand(connection, () => Reader(Rows(3)));
+		IEqualityComparer<int> comparer = EqualityComparer<int>.Default;
+
+		string keyOnly = Assert.Throws<ArgumentException>(
+			() => command.Map<Person>().ToDictionary(_ => 1)).Message;
+
+		Assert.Equal(
+			keyOnly,
+			Assert.Throws<ArgumentException>(
+				() => command.Map<Person>()
+					.ToDictionary(_ => 1, p => p.Name)).Message);
+		Assert.Equal(
+			keyOnly,
+			Assert.Throws<ArgumentException>(
+				() => command.Map<Person>()
+					.ToDictionary(_ => 1, p => p.Name, comparer)).Message);
+
+		Assert.Equal(
+			keyOnly,
+			(await Assert.ThrowsAsync<ArgumentException>(
+				async () => await command.Map<Person>()
+					.ToDictionaryAsync(_ => 1, null, Ct))).Message);
+		Assert.Equal(
+			keyOnly,
+			(await Assert.ThrowsAsync<ArgumentException>(
+				async () => await command.Map<Person>()
+					.ToDictionaryAsync(_ => 1, p => p.Name, null, Ct))).Message);
+		Assert.Equal(
+			keyOnly,
+			(await Assert.ThrowsAsync<ArgumentException>(
+				async () => await command.Map<Person>()
+					.ToDictionaryAsync(
+						_ => 1, p => p.Name, comparer, Ct))).Message);
+
+		// Six calls: each opened the connection and closed it again.
+		Assert.Equal(6, connection.OpenCalls);
+		Assert.Equal(ConnectionState.Closed, connection.State);
+		Assert.Equal(12, connection.Log.Count);
+		Assert.All(
+			connection.Log.Chunk(2),
+			pair => Assert.Equal(["open", "close"], pair));
+	}
+
 	[Fact]
 	public static async Task ACanceledToken_Cancels_AndTheCallsTokenReachesTheReader()
 	{

@@ -528,7 +528,8 @@ readonly struct MappedQueryCore<T>
 
 /// <summary>A deferred, type-locked query over any <see cref="IExecuteReader"/>. Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.</summary>
 /// <typeparam name="T">The type each record is mapped to.</typeparam>
-public readonly record struct MappedQuery<T> : IMappedQuery<T>
+public readonly record struct MappedQuery<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 	internal MappedQuery(MappedQueryCore<T> core) => _core = core;
@@ -622,7 +623,8 @@ public readonly record struct MappedQuery<T> : IMappedQuery<T>
 
 /// <summary>A <see cref="MappedQuery{T}"/> with a pending skip; can still be limited with <see cref="Take(int)"/>.</summary>
 /// <typeparam name="T">The type each record is mapped to.</typeparam>
-public readonly record struct MappedQueryWithSkip<T> : IMappedQuery<T>
+public readonly record struct MappedQueryWithSkip<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithSkip(MappedQueryCore<T> core) => _core = core;
@@ -704,7 +706,8 @@ public readonly record struct MappedQueryWithSkip<T> : IMappedQuery<T>
 
 /// <summary>A fully-configured <see cref="MappedQuery{T}"/> with a take (and any preceding skip); terminal-only.</summary>
 /// <typeparam name="T">The type each record is mapped to.</typeparam>
-public readonly record struct MappedQueryWithTake<T> : IMappedQuery<T>
+public readonly record struct MappedQueryWithTake<T>
+	: IMappedQuery<T>, IMappedTerminals<T>
 {
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithTake(MappedQueryCore<T> core) => _core = core;

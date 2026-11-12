@@ -446,13 +446,24 @@ public static class MappedQueryExtensions
 	/// <param name="query">The query to execute.</param>
 	/// <returns>The first row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <remarks>
+	/// <para>
 	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// </para>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	public static T? FirstOrDefault<T>(this IMappedQuery<T> query)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.FirstOrDefault();
+		}
 
 		return query.Read(items => items.FirstOrDefault());
 	}
@@ -466,13 +477,29 @@ public static class MappedQueryExtensions
 	/// <returns>A task that produces the first row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
+	/// <para>
 	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// </para>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	public static ValueTask<T?> FirstOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.FirstOrDefaultAsync(cancellationToken);
+		}
+
+		return query.ReadAsync(
 			async (items, token) => await items.FirstOrDefaultAsync(token).ConfigureAwait(false),
 			cancellationToken);
+	}
 
 	/// <summary>
 	/// Reads the only mapped row.
@@ -481,9 +508,25 @@ public static class MappedQueryExtensions
 	/// <param name="query">The query to execute.</param>
 	/// <returns>The single row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
+	/// <remarks>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
+	/// </para>
+	/// </remarks>
 	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	public static T? SingleOrDefault<T>(this IMappedQuery<T> query)
-		=> query.Read(items => items.SingleOrDefault());
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.SingleOrDefault();
+		}
+
+		return query.Read(items => items.SingleOrDefault());
+	}
 
 	/// <summary>
 	/// Asynchronously reads the only mapped row.
@@ -494,11 +537,27 @@ public static class MappedQueryExtensions
 	/// <returns>A task that produces the single row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
+	/// <remarks>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
+	/// </para>
+	/// </remarks>
 	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	public static ValueTask<T?> SingleOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.SingleOrDefaultAsync(cancellationToken);
+		}
+
+		return query.ReadAsync(
 			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false),
 			cancellationToken);
+	}
 
 	/// <summary>
 	/// Reads the first mapped row; throws if the query returns no rows.
@@ -516,6 +575,10 @@ public static class MappedQueryExtensions
 	/// <para>
 	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
 	/// </para>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	/// <seealso cref="Single{T}(IMappedQuery{T})"/>
@@ -523,6 +586,11 @@ public static class MappedQueryExtensions
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.First();
+		}
 
 		return query.Read(items => items.First());
 	}
@@ -545,6 +613,10 @@ public static class MappedQueryExtensions
 	/// <para>
 	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
 	/// </para>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
@@ -552,6 +624,11 @@ public static class MappedQueryExtensions
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.FirstAsync(cancellationToken);
+		}
 
 		return query.ReadAsync(
 			async (items, token) => await items.FirstAsync(token).ConfigureAwait(false),
@@ -575,6 +652,10 @@ public static class MappedQueryExtensions
 	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
 	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
 	/// </para>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	/// <seealso cref="First{T}(IMappedQuery{T})"/>
@@ -582,6 +663,11 @@ public static class MappedQueryExtensions
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.Single();
+		}
 
 		return query.Read(items => items.Single());
 	}
@@ -605,6 +691,10 @@ public static class MappedQueryExtensions
 	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
 	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
 	/// </para>
+	/// <para>
+	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
+	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
@@ -612,6 +702,11 @@ public static class MappedQueryExtensions
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+		{
+			return terminals.SingleAsync(cancellationToken);
+		}
 
 		return query.ReadAsync(
 			async (items, token) => await items.SingleAsync(token).ConfigureAwait(false),
