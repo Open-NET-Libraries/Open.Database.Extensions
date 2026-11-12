@@ -100,8 +100,7 @@ public static class SingleResultBeforeMapTests
 	}
 
 	static object? RunSync(MappedQuery<int> q, string terminal)
-	{
-		return terminal switch
+		=> terminal switch
 		{
 			"ToList" => q.ToList(),
 			"ToArray" => q.ToArray(),
@@ -118,11 +117,9 @@ public static class SingleResultBeforeMapTests
 			"TakeFirst" => q.Take(2).FirstOrDefault(),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		};
-	}
 
 	static object? RunSync(MappedCommand<int> q, string terminal)
-	{
-		return terminal switch
+		=> terminal switch
 		{
 			"ToList" => q.ToList(),
 			"ToArray" => q.ToArray(),
@@ -139,11 +136,9 @@ public static class SingleResultBeforeMapTests
 			"TakeFirst" => q.Take(2).FirstOrDefault(),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		};
-	}
 
 	static async Task<object?> RunAsync(MappedQuery<int> q, string terminal)
-	{
-		return terminal switch
+		=> terminal switch
 		{
 			"ToList" => await q.ToListAsync(Ct),
 			"ToArray" => await q.ToArrayAsync(Ct),
@@ -159,7 +154,7 @@ public static class SingleResultBeforeMapTests
 					{
 						int sum = 0;
 						await foreach (int i in items.WithCancellation(token)) sum += i;
-						sum;
+						return sum;
 					},
 					Ct),
 			"Skip" => await q.Skip(1).ToListAsync(Ct),
@@ -168,11 +163,9 @@ public static class SingleResultBeforeMapTests
 			"TakeFirst" => await q.Take(2).FirstOrDefaultAsync(Ct),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		};
-	}
 
 	static async Task<object?> RunAsync(MappedCommand<int> q, string terminal)
-	{
-		return terminal switch
+		=> terminal switch
 		{
 			"ToList" => await q.ToListAsync(Ct),
 			"ToArray" => await q.ToArrayAsync(Ct),
@@ -188,7 +181,7 @@ public static class SingleResultBeforeMapTests
 					{
 						int sum = 0;
 						await foreach (int i in items.WithCancellation(token)) sum += i;
-						sum;
+						return sum;
 					},
 					Ct),
 			"Skip" => await q.Skip(1).ToListAsync(Ct),
@@ -197,7 +190,6 @@ public static class SingleResultBeforeMapTests
 			"TakeFirst" => await q.Take(2).FirstOrDefaultAsync(Ct),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		};
-	}
 
 	// ---- an expressive command (IExecuteReader) ----
 
