@@ -36,19 +36,20 @@ public static class SingleValueAllocationTests
 	// the two differ by no more than a rounding of the measurement.
 	const int Slack = 16;
 
-	// A DataTableReader is a DbDataReader that reports its column type
+	// A TypedReader is a DbDataReader that reports its column type
 	// and has typed getters,
 	// so the typed (unboxed) path runs.
+	// Its cells are boxed once, here, outside the measurement
+	// (a DataTableReader boxes every int it serves,
+	// and the JIT removes that box part way through a measurement).
 	static PlainReaderCommand Rows(
 		Type column,
 		int count,
 		Func<int, object> value)
 	{
-		var table = new DataTable();
-		table.Columns.Add("v", column);
-		table.Columns.Add("other", typeof(string));
-		for (int i = 0; i < count; i++) table.Rows.Add(value(i), "x");
-		return new PlainReaderCommand(() => new DataTableReader(table));
+		ImmutableArray<ColumnDef> columns = [("v", column), ("other", typeof(string))];
+		object?[][] rows = [.. Enumerable.Range(0, count).Select(i => (object?[])[value(i), "x"])];
+		return new PlainReaderCommand(() => TypedReader.Create(columns, rows));
 	}
 
 	static void NoMoreThanByHand(
