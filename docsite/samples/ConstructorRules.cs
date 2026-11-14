@@ -1,31 +1,6 @@
-using Microsoft.Data.Sqlite;
-using Open.Database.Extensions;
-
 namespace Samples;
 
 // Check-only models (not shown in the documentation): the constructor rule at its edges.
-public static class ConstructorRules
-{
-	// The Source of a CountedStruct read through each terminal.
-	public static async Task<string?[]> StructSources(SqliteConnection connection)
-	{
-		const string sql = "select 1 as Id";
-		return
-		[
-			connection.Command(sql).Map<CountedStruct>().ToList().Single().Source,
-			(await connection.Command(sql).Map<CountedStruct>().ToListAsync(CancellationToken.None)).Single().Source,
-			connection.Command(sql).Map<CountedStruct>().FirstOrDefault().Source,
-		];
-	}
-}
-
-// A struct with its own public parameterless constructor: it runs, and it is what sets Source.
-public struct CountedStruct
-{
-	public CountedStruct() => Source = "parameterless constructor";
-	public int Id { get; set; }
-	public string Source { get; }
-}
 
 // A record with a second public constructor: two public constructors and none without parameters.
 public sealed record PairRecord(int Id, string Name)
