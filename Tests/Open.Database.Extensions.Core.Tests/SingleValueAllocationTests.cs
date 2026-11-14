@@ -36,10 +36,10 @@ public static class SingleValueAllocationTests
 	// the two differ by no more than a rounding of the measurement.
 	const int Slack = 16;
 
-	// An ArrayReader is a DbDataReader that reports its column type
+	// A TypedReader is a DbDataReader that reports its column type
 	// and has typed getters,
 	// so the typed (unboxed) path runs.
-	// It reads straight from the arrays and allocates nothing per row
+	// Its cells are boxed once, here, outside the measurement
 	// (a DataTableReader boxes every int it serves,
 	// and the JIT removes that box part way through a measurement).
 	static PlainReaderCommand Rows(
@@ -47,17 +47,9 @@ public static class SingleValueAllocationTests
 		int count,
 		Func<int, object> value)
 	{
-		Array values = Array.CreateInstance(column, count);
-		string[] others = new string[count];
-		for (int i = 0; i < count; i++)
-		{
-			values.SetValue(value(i), i);
-			others[i] = "x";
-		}
-
-		string[] names = ["v", "other"];
-		Array[] columns = [values, others];
-		return new PlainReaderCommand(() => new ArrayReader(names, columns));
+		ImmutableArray<ColumnDef> columns = [("v", column), ("other", typeof(string))];
+		object?[][] rows = [.. Enumerable.Range(0, count).Select(i => (object?[])[value(i), "x"])];
+		return new PlainReaderCommand(() => TypedReader.Create(columns, rows));
 	}
 
 	static void NoMoreThanByHand(

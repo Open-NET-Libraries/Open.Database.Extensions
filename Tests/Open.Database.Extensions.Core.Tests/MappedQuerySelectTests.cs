@@ -974,14 +974,12 @@ public static class MappedQuerySelectTests
 
 	static PlainReaderCommand Ints(int count)
 	{
-		// An ArrayReader serves the ints from an array without boxing them
-		// (a DataTableReader boxes each one, and the JIT removes that box
-		// part way through a measurement).
-		int[] values = new int[count];
-		for (int i = 0; i < count; i++) values[i] = i;
-		string[] names = ["v"];
-		Array[] columns = [values];
-		return new PlainReaderCommand(() => new ArrayReader(names, columns));
+		// A TypedReader serves cells boxed once, here, outside the measurement
+		// (a DataTableReader boxes each int again on every read,
+		// and the JIT removes that box part way through a measurement).
+		ImmutableArray<ColumnDef> columns = [("v", typeof(int))];
+		object?[][] rows = [.. Enumerable.Range(0, count).Select(i => (object?[])[i])];
+		return new PlainReaderCommand(() => TypedReader.Create(columns, rows));
 	}
 
 	// Bytes per call: after a warm-up,
