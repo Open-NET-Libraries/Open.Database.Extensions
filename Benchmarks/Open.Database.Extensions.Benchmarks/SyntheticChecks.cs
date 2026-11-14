@@ -10,6 +10,7 @@ namespace Open.Database.Extensions.Benchmarks;
 // The three checks of the synthetic provider, run from the command line. None of them is a benchmark.
 //   --verify                 equal final objects from every variant, the provider's switches, every read path, a timing printout
 //   --selftest-open-time     a delay inside an open reader grows reader-open time; the same delay after the close does not
+//   --selftest-pace          consumer pace grows reader-open for the inline variants (V3, V3s, V4a, V4b, V6c, Dapper twins) and not for V5 and V6d
 //   --selftest-alloc         the typed-getter loop allocates 0 B per row
 public static class SyntheticChecks
 {
@@ -37,11 +38,17 @@ public static class SyntheticChecks
 	public static int Verify()
 	{
 		var report = new Report();
-		Console.WriteLine("== equal final objects: every variant against V1 (and V1 against the table) ==");
+		Console.WriteLine("== equal final objects: every variant against V1 (and V1 against the table); V3-V7 against the domain oracle ==");
 		foreach (int width in VerifyWidths)
 		{
 			foreach (int rows in VerifyRows) VerifyVariants(report, width, rows);
 		}
+
+		Console.WriteLine("== scalar variants V8 and V7 scalars: each against the table value, its own reference ==");
+		VerifyScalars(report);
+
+		Console.WriteLine("== the benchmark methods through the benchmark class's own Setup ==");
+		VerifyBenchmarkPath(report);
 
 		Console.WriteLine("== provider switches ==");
 		VerifySwitches(report);
@@ -100,7 +107,207 @@ public static class SyntheticChecks
 			}
 		}
 
-		Console.WriteLine($"  ok  {where}: V0, V0b, V1, V2 (sync and async) equal ({rows} rows)");
+		VerifyVariantsB(report, conn, table, width, rows, v1, where);
+
+		Console.WriteLine($"  ok  {where}: V0, V0b, V1, V2, V3-V7 (sync and async) equal ({rows} rows)");
+	}
+
+	// The benchmark methods themselves, through the benchmark class's own Setup (so a field Setup forgets to assign, or a variant wired to the wrong helper,
+	// fails here and not in a run): every [Benchmark] method is invoked by reflection, its result compared with the oracle, and the number of NextResult
+	// calls it made is checked (3 extra result sets: every variant, hand-written, library and Dapper, makes the same 4 calls, so a NextResult cost is
+	// charged to all alike; the scalar variants read a one-set table and are not part of this).
+	static void VerifyBenchmarkPath(Report report)
+	{
+		int invoked = 0;
+		foreach (int width in VerifyWidths)
+		{
+			foreach (int rows in VerifyRows)
+			{
+				var table = SyntheticTable.Create(width, rows);
+				var v1 = SyntheticVariants.V1(new SyntheticConnection(table, new SyntheticOptions()));
+				var plain = new List<SynItem>(rows);
+				var massaged = new List<SynItem>(rows);
+				for (int i = 0; i < rows; i++)
+				{
+					plain.Add(SynItem.From(SynRow.FromTable(table, i)));
+					massaged.Add(SynItem.Massage(SynItem.From(SynRow.FromTable(table, i)), width));
+				}
+
+				var bench = new SyntheticBenchmarks { Width = width, Rows = rows, RowCost = 0, ExtraSets = 3, NextResultCost = 0, Pace = 0 };
+				bench.Setup();
+				foreach (var method in typeof(SyntheticBenchmarks).GetMethods().Where(static m => m.GetCustomAttributes(typeof(BenchmarkDotNet.Attributes.BenchmarkAttribute), false).Length > 0))
+				{
+					bench.Connection.Options.Recorder.Reset();
+					object? result;
+					try { result = Await(method.Invoke(bench, null)); }
+					catch (Exception ex)
+					{
+						report.Fail($"benchmark {method.Name} width={width} rows={rows} threw {(ex.InnerException ?? ex).GetType().Name}: {(ex.InnerException ?? ex).Message}");
+						continue;
+					}
+
+					invoked++;
+					string where = $"width={width} rows={rows}";
+					string name = "benchmark " + method.Name;
+					switch (result)
+					{
+						case List<SynRow> typed:
+							Compare(report, name, where, v1, typed);
+							break;
+						case List<SynItem> domain:
+							CompareItems(report, name, where, method.Name.Contains("V6", StringComparison.Ordinal) ? massaged : plain, domain);
+							break;
+						case List<object[]> boxed:
+							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
+							break;
+						default:
+							report.Fail($"{name} {where}: unexpected result {result?.GetType().Name ?? "null"}");
+							break;
+					}
+
+					var rec = bench.Connection.Options.Recorder;
+					report.Check(rec.NextResultCalls == 4, $"{name} {where}: {rec.NextResultCalls} NextResult calls, expected 4 (every variant makes the same drain)");
+				}
+
+				bench.Cleanup();
+			}
+		}
+
+		var scalars = new SyntheticScalarBenchmarks();
+		scalars.Setup();
+		int expected = ((int[])SyntheticTable.Create(1, 1).Columns[0])[0];
+		foreach (var method in typeof(SyntheticScalarBenchmarks).GetMethods().Where(static m => m.GetCustomAttributes(typeof(BenchmarkDotNet.Attributes.BenchmarkAttribute), false).Length > 0))
+		{
+			invoked++;
+			var result = Await(method.Invoke(scalars, null));
+			report.Check(result is int value && value == expected, $"benchmark {method.Name} (scalar, own reference): got {result}, expected {expected}");
+		}
+
+		scalars.Cleanup();
+		Console.WriteLine($"  ok  {invoked} benchmark-method invocations through Setup (output equal to the oracle; NextResult drain: 4 calls for every variant)");
+	}
+
+	static object? Await(object? result)
+	{
+		if (result is null) return null;
+		var type = result.GetType();
+		if (result is Task task)
+		{
+			task.GetAwaiter().GetResult();
+			return type.GetProperty("Result")?.GetValue(result);
+		}
+
+		if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValueTask<>))
+			return Await(type.GetMethod("AsTask")!.Invoke(result, null));
+		return result;
+	}
+
+	// V3 to V6 produce SynItem: compared with the oracle built from the table (SynItem.From of the table's row; V6 also massaged).
+	// Dapper's rows (SynRow) compare with V1's, its items with the V3/V6 oracles. The pace changes timing only, so a pace of 25 is run too.
+	static void VerifyVariantsB(Report report, SyntheticConnection conn, SyntheticTable table, int width, int rows, List<SynRow> v1, string where)
+	{
+		var plain = new List<SynItem>(rows);
+		var massaged = new List<SynItem>(rows);
+		for (int i = 0; i < rows; i++)
+		{
+			plain.Add(SynItem.From(SynRow.FromTable(table, i)));
+			massaged.Add(SynItem.Massage(SynItem.From(SynRow.FromTable(table, i)), width));
+		}
+
+		var handM = SyntheticVariantsB.HandMassaged(width);
+		KeyValuePair<string, Func<List<SynItem>>>[] items =
+		[
+			new("V3 sync", () => SyntheticVariantsB.V3(conn, 0)),
+			new("V3 sync pace=25", () => SyntheticVariantsB.V3(conn, 25)),
+			new("V3 async", () => Wait(SyntheticVariantsB.V3Async(conn, 0))),
+			new("V3s async", () => Wait(SyntheticVariantsB.V3s(conn, 0))),
+			new("V3s async pace=25", () => Wait(SyntheticVariantsB.V3s(conn, 25))),
+			new("V4a sync", () => SyntheticVariantsB.V4a(conn, width, 0)),
+			new("V4a sync pace=25", () => SyntheticVariantsB.V4a(conn, width, 25)),
+			new("V4a async", () => Wait(SyntheticVariantsB.V4aAsync(conn, width, 0))),
+			new("V4b sync", () => SyntheticVariantsB.V4b(conn, width, 0)),
+			new("V4b sync pace=25", () => SyntheticVariantsB.V4b(conn, width, 25)),
+			new("V4b async", () => Wait(SyntheticVariantsB.V4bAsync(conn, width, 0))),
+			new("V5 sync", () => SyntheticVariantsB.V5(conn)),
+			new("V5 async", () => Wait(SyntheticVariantsB.V5Async(conn))),
+			new("V7 Dapper V3 sync (unbuffered)", () => SyntheticDapper.V3(conn, 0)),
+			new("V7 Dapper V3s async (unbuffered)", () => SyntheticDapper.V3s(conn, 0).GetAwaiter().GetResult()),
+			new("V7 Dapper V5 sync", () => SyntheticDapper.V5(conn)),
+			new("V7 Dapper V5 async", () => SyntheticDapper.V5Async(conn).GetAwaiter().GetResult()),
+		];
+		foreach (var variant in items)
+			CompareItems(report, variant.Key, where, plain, variant.Value());
+
+		KeyValuePair<string, Func<List<SynItem>>>[] massagedItems =
+		[
+			new("V6a sync", () => SyntheticVariantsB.V6a(conn, handM)),
+			new("V6a async", () => Wait(SyntheticVariantsB.V6aAsync(conn, handM))),
+			new("V6c sync", () => SyntheticVariantsB.V6c(conn, width, 0)),
+			new("V6c sync pace=25", () => SyntheticVariantsB.V6c(conn, width, 25)),
+			new("V6c async", () => Wait(SyntheticVariantsB.V6cAsync(conn, width, 0))),
+			new("V6d sync", () => SyntheticVariantsB.V6d(conn, width)),
+			new("V6d async", () => Wait(SyntheticVariantsB.V6dAsync(conn, width))),
+			new("V7 Dapper V6c sync", () => SyntheticDapper.V6c(conn, width, 0)),
+			new("V7 Dapper V6d sync", () => SyntheticDapper.V6d(conn, width)),
+			new("V7 Dapper V6d async", () => SyntheticDapper.V6dAsync(conn, width).GetAwaiter().GetResult()),
+		];
+		foreach (var variant in massagedItems)
+			CompareItems(report, variant.Key, where, massaged, variant.Value());
+
+		// Dapper's typed rows against the library's V1 rows.
+		Compare(report, "V7 Dapper V1 sync vs V1", where, v1, SyntheticDapper.V1(conn));
+		Compare(report, "V7 Dapper V1 async vs V1", where, v1, SyntheticDapper.V1Async(conn).GetAwaiter().GetResult());
+
+		// The massage must change something at every width (R1 at least, on rows 10, 20, ...), or the V6 check is empty.
+		if (rows >= 100) report.Check(massaged.Zip(plain).Any(static p => SynItem.Diff(p.First, p.Second).Count > 0), $"the V6 massage changed no row {where}");
+	}
+
+	static void CompareItems(Report report, string name, string where, List<SynItem> expected, List<SynItem> actual)
+	{
+		if (actual.Count != expected.Count)
+		{
+			report.Fail($"{name} {where}: {actual.Count} rows, expected {expected.Count}");
+			return;
+		}
+
+		for (int i = 0; i < expected.Count; i++)
+		{
+			var diff = SynItem.Diff(expected[i], actual[i]);
+			if (diff.Count == 0) continue;
+			report.Fail($"{name} {where} row {i} differs: {string.Join("; ", diff)}");
+			return;
+		}
+
+		report.Check(true, name);
+	}
+
+	// The scalar variants have no row objects: each is compared with the value the table holds (Id of row 0), its own reference.
+	// Dapper's scalar variants are compared the same way (they do not compare with the library's objects).
+	static void VerifyScalars(Report report)
+	{
+		var table = SyntheticTable.Create(1, 1);
+		var conn = new SyntheticConnection(table, new SyntheticOptions());
+		int want = ((int[])table.Columns[0])[0];
+		KeyValuePair<string, Func<int>>[] scalars =
+		[
+			new("V8a ExecuteScalar<int>", () => SyntheticVariantsB.V8a(conn)),
+			new("V8a async", () => Wait(SyntheticVariantsB.V8aAsync(conn))),
+			new("V8b object path", () => SyntheticVariantsB.V8b(conn)),
+			new("V8b async", () => Wait(SyntheticVariantsB.V8bAsync(conn))),
+			new("V8c Map<int>().First()", () => SyntheticVariantsB.V8c(conn)),
+			new("V8c async", () => Wait(SyntheticVariantsB.V8cAsync(conn))),
+			new("V7 Dapper ExecuteScalar<int>", () => SyntheticDapper.V8a(conn)),
+			new("V7 Dapper ExecuteScalar<int> async", () => SyntheticDapper.V8aAsync(conn).GetAwaiter().GetResult()),
+			new("V7 Dapper QueryFirst<int>", () => SyntheticDapper.V8b(conn)),
+			new("V7 Dapper QueryFirst<int> async", () => SyntheticDapper.V8bAsync(conn).GetAwaiter().GetResult()),
+		];
+		foreach (var s in scalars)
+		{
+			int got = s.Value();
+			report.Check(got == want, $"{s.Key} (scalar, own reference = the table's Id of row 0): got {got}, expected {want}");
+		}
+
+		Console.WriteLine($"  ok  {scalars.Length} scalar variants return the table value {want} (each against its own reference, not against the row variants)");
 	}
 
 	static void Compare(Report report, string name, string where, List<SynRow> expected, List<SynRow> actual)
@@ -327,7 +534,7 @@ public static class SyntheticChecks
 	// ---- the printout: reader-open, drain and total, one process, indicative only ----------------------------------------------------------------
 	static void PrintTimings()
 	{
-		Console.WriteLine("  (reader-open includes the drain; total is a stopwatch around the whole variant call (mean of 50 runs; the others are medians); V0 and V0b never call NextResult, so their drain is 0; widths 5 and 20, 100 rows, 3 extra result sets at 2000 iterations each, no row cost)");
+		Console.WriteLine("  (reader-open includes the drain; total is a stopwatch around the whole variant call (mean of 50 runs; the others are medians); every variant makes the same drain (--verify checks the call counts); widths 5 and 20, 100 rows, 3 extra result sets at 2000 iterations each, no row cost)");
 		foreach (int width in new[] { 5, 20 })
 		{
 			var table = SyntheticTable.Create(width, 100);
@@ -421,6 +628,83 @@ public static class SyntheticChecks
 		report.Check(s.MedianDrainUs > 0 && s.MedianOpenUs >= s.MedianDrainUs, "the drain is not reported inside reader-open time");
 
 		Console.WriteLine(report.Failures == 0 ? $"SELFTEST OPEN TIME PASS ({report.Checks} checks)" : $"SELFTEST OPEN TIME FAIL ({report.Failures} of {report.Checks})");
+		return report.Failures == 0 ? 0 : 1;
+	}
+
+	// ---- --selftest-pace ----------------------------------------------------------------
+	// Consumer pace is a busy-wait per item, paid by the variants that run caller code while the reader is open (V3, V4a, V4b, V6c, V3s and the
+	// Dapper unbuffered twins). Reader-open must grow with it for those, and must not for V5 and V6d (their work is after the close; the pace is ignored).
+	// A control shows the same cost paid by the consumer after the close: total time grows, reader-open does not.
+	public static int SelfTestPace()
+	{
+		const int Rows = 100, Reps = 9, Width = 3;
+		var table = SyntheticTable.Create(Width, Rows);
+		var hand = SyntheticVariants.Hand(Width);
+		var handM = SyntheticVariantsB.HandMassaged(Width);
+		var report = new Report();
+
+		// Calibrate: how long one Spin iteration takes here, so the pace is about 50 us per item (informational; the expectation is measured from it).
+		Spin.Iterations(200_000);
+		long t0 = Stopwatch.GetTimestamp();
+		for (int i = 0; i < 20; i++) Spin.Iterations(100_000);
+		double nsPerIteration = (Stopwatch.GetTimestamp() - t0) * 1_000_000_000d / Stopwatch.Frequency / (20d * 100_000);
+		int pace = Math.Max(1, (int)(50_000 / nsPerIteration));
+		Console.WriteLine($"{Rows} rows, width {Width}; one Spin iteration is about {nsPerIteration:F1} ns here, so pace = {pace} iterations per item (about 50 us), {Rows * 50} us expected per reader when the pace is paid while the reader is open; median over {Reps} runs, microseconds");
+
+		(double Open, double Total) Run(Func<SyntheticConnection, object?> work)
+		{
+			var rec = new SyntheticRecorder();
+			var conn = new SyntheticConnection(table, new SyntheticOptions { Recorder = rec });
+			work(conn);
+			rec.Reset();
+			long start = Stopwatch.GetTimestamp();
+			for (int i = 0; i < Reps; i++) work(conn);
+			double total = (Stopwatch.GetTimestamp() - start) * 1_000_000d / Stopwatch.Frequency / Reps;
+			return (rec.Summary().MedianOpenUs, total);
+		}
+
+		double expected = Rows * pace * nsPerIteration / 1000d;
+
+		void Judge(string name, Func<int, Func<SyntheticConnection, object?>> make, bool paysWhileOpen)
+		{
+			var off = Run(make(0));
+			var on = Run(make(pace));
+			double grew = on.Open - off.Open;
+			Console.WriteLine($"  {name,-28} reader-open {off.Open,9:F1} -> {on.Open,9:F1} ({(grew >= 0 ? "+" : "")}{grew:F0}us)   total {off.Total,9:F1} -> {on.Total,9:F1}   {(paysWhileOpen ? "inline: must grow" : "after close: must not grow")}");
+			if (paysWhileOpen)
+				report.Check(grew >= 0.8 * expected && grew <= 1.5 * expected + 1000, $"{name}: reader-open grew by {grew:F0}us with the pace, expected about {expected:F0}us");
+			else
+				report.Check(Math.Abs(grew) <= 0.1 * expected, $"{name}: reader-open changed by {grew:F0}us with the pace, expected about 0");
+		}
+
+		Judge("V3 sync", p => c => SyntheticVariantsB.V3(c, p), true);
+		Judge("V3 async", p => c => Wait(SyntheticVariantsB.V3Async(c, p)), true);
+		Judge("V3s async (streaming)", p => c => Wait(SyntheticVariantsB.V3s(c, p)), true);
+		Judge("V4a sync", p => c => SyntheticVariantsB.V4a(c, Width, p), true);
+		Judge("V4b sync", p => c => SyntheticVariantsB.V4b(c, Width, p), true);
+		Judge("V6c sync", p => c => SyntheticVariantsB.V6c(c, Width, p), true);
+		Judge("V7 Dapper V3 (unbuffered)", p => c => SyntheticDapper.V3(c, p), true);
+		Judge("V7 Dapper V6c (unbuffered)", p => c => SyntheticDapper.V6c(c, Width, p), true);
+		// V5 and V6d take no pace: the work is after the close. The harness hands them none, so the pair below is the same call twice (a stability check).
+		Judge("V5 sync (no pace taken)", static p => c => SyntheticVariantsB.V5(c), false);
+		Judge("V6d sync (no pace taken)", static p => c => SyntheticVariantsB.V6d(c, Width), false);
+		// Controls: the consumer pays the pace itself AFTER the close, once per item. Total grows, reader-open does not.
+		Judge("V5 + pace after close", p => c =>
+		{
+			var items = SyntheticVariantsB.V5(c);
+			if (p > 0) foreach (var _ in items) Spin.Iterations(p);
+			return items;
+		}, false);
+		Judge("V6d + pace after close", p => c =>
+		{
+			var items = SyntheticVariantsB.V6d(c, Width);
+			if (p > 0) foreach (var _ in items) Spin.Iterations(p);
+			return items;
+		}, false);
+
+		_ = hand;
+		_ = handM;
+		Console.WriteLine(report.Failures == 0 ? $"SELFTEST PACE PASS ({report.Checks} checks)" : $"SELFTEST PACE FAIL ({report.Failures} of {report.Checks})");
 		return report.Failures == 0 ? 0 : 1;
 	}
 

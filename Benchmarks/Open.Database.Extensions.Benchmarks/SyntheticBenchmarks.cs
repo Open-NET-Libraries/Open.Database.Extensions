@@ -14,13 +14,15 @@ namespace Open.Database.Extensions.Benchmarks;
 public static class SyntheticParams
 {
 	public const string WidthsVariable = "ODX_SYN_WIDTHS", RowsVariable = "ODX_SYN_ROWS", RowCostVariable = "ODX_SYN_ROWCOST",
-		ExtraSetsVariable = "ODX_SYN_EXTRASETS", NextResultCostVariable = "ODX_SYN_NRCOST";
+		ExtraSetsVariable = "ODX_SYN_EXTRASETS", NextResultCostVariable = "ODX_SYN_NRCOST", PaceVariable = "ODX_SYN_PACE";
 
 	public static IEnumerable<int> Widths => Read(WidthsVariable, SyntheticCatalog.Widths);
 	public static IEnumerable<int> Rows => Read(RowsVariable, SyntheticCatalog.RowCounts);
 	public static IEnumerable<int> RowCosts => Read(RowCostVariable, [SyntheticOptions.DefaultRowCostIterations]);
 	public static IEnumerable<int> ExtraSets => Read(ExtraSetsVariable, [0]);
 	public static IEnumerable<int> NextResultCosts => Read(NextResultCostVariable, [SyntheticOptions.DefaultNextResultCostIterations]);
+	// Consumer pace: Spin iterations per item, paid only by the variants that run caller code while the reader is open or stream. 0 = off.
+	public static IEnumerable<int> Paces => Read(PaceVariable, [0]);
 
 	/// <summary>Maps a command-line option to its variable; returns false when the option is not one of ours.</summary>
 	public static bool TryGetVariable(string option, out string variable)
@@ -32,6 +34,7 @@ public static class SyntheticParams
 			"--row-cost" => RowCostVariable,
 			"--extra-sets" => ExtraSetsVariable,
 			"--next-result-cost" => NextResultCostVariable,
+			"--pace" => PaceVariable,
 			_ => "",
 		};
 		return variable.Length > 0;
@@ -112,60 +115,199 @@ public class SyntheticBenchmarks
 	[ParamsSource(nameof(NextResultCostsValues), Priority = 4)]
 	public int NextResultCost { get; set; }
 
+	/// <summary>Consumer pace: Spin iterations per item for the variants that run caller code while the reader is open or stream (V3, V3s, V4a, V4b, V6c and their Dapper twins). 0 = off.</summary>
+	[ParamsSource(nameof(PacesValues), Priority = 5)]
+	public int Pace { get; set; }
+
 	public static IEnumerable<int> WidthsValues => SyntheticParams.Widths;
 	public static IEnumerable<int> RowsValues => SyntheticParams.Rows;
 	public static IEnumerable<int> RowCostsValues => SyntheticParams.RowCosts;
 	public static IEnumerable<int> ExtraSetsValues => SyntheticParams.ExtraSets;
 	public static IEnumerable<int> NextResultCostsValues => SyntheticParams.NextResultCosts;
+	public static IEnumerable<int> PacesValues => SyntheticParams.Paces;
 
-	SyntheticConnection _conn = null!;
+	// The connection of this case; --verify drives the benchmark methods through Setup and reads its recorder.
+	internal SyntheticConnection Connection { get; private set; } = null!;
 	Func<System.Data.IDataRecord, SynRow> _hand = null!;
+	Func<System.Data.IDataRecord, SynItem> _handM = null!;
 	string _label = "";
 
 	[GlobalSetup]
 	public void Setup()
 	{
-		_conn = new SyntheticConnection(
+		Connection = new SyntheticConnection(
 			SyntheticTable.Create(Width, Rows),
 			new SyntheticOptions { RowCostIterations = RowCost, ExtraResultSets = ExtraSets, NextResultCostIterations = NextResultCost });
 		_hand = SyntheticVariants.Hand(Width);
+		_handM = SyntheticVariantsB.HandMassaged(Width);
 	}
 
 	// The label is the benchmark method that ran, so the recorder's numbers can be filed under the case the column asks about.
 	[GlobalCleanup]
 	public void Cleanup()
 	{
-		var summary = _conn.Options.Recorder.Summary();
+		var summary = Connection.Options.Recorder.Summary();
 		if (_label.Length == 0 || summary.Readers == 0) return;
-		var key = Key(_label, [(nameof(Width), Width), (nameof(Rows), Rows), (nameof(RowCost), RowCost), (nameof(ExtraSets), ExtraSets), (nameof(NextResultCost), NextResultCost)]);
+		var key = Key(_label, [(nameof(Width), Width), (nameof(Rows), Rows), (nameof(RowCost), RowCost), (nameof(ExtraSets), ExtraSets), (nameof(NextResultCost), NextResultCost), (nameof(Pace), Pace)]);
 		Results[key] = summary;
 		Console.WriteLine($"// SYNTHETIC {key} {summary}");
 	}
 
 	[Benchmark]
-	public List<object[]> V0_Sync() { _label = nameof(V0_Sync); return SyntheticVariants.V0(_conn); }
+	public List<object[]> V0_Sync() { _label = nameof(V0_Sync); return SyntheticVariants.V0(Connection); }
 
 	[Benchmark]
-	public ValueTask<List<object[]>> V0_Async() { _label = nameof(V0_Async); return SyntheticVariants.V0Async(_conn); }
+	public ValueTask<List<object[]>> V0_Async() { _label = nameof(V0_Async); return SyntheticVariants.V0Async(Connection); }
 
 	[Benchmark]
-	public List<SynRow> V0b_Sync() { _label = nameof(V0b_Sync); return SyntheticVariants.V0b(_conn); }
+	public List<SynRow> V0b_Sync() { _label = nameof(V0b_Sync); return SyntheticVariants.V0b(Connection); }
 
 	[Benchmark]
-	public ValueTask<List<SynRow>> V0b_Async() { _label = nameof(V0b_Async); return SyntheticVariants.V0bAsync(_conn); }
+	public ValueTask<List<SynRow>> V0b_Async() { _label = nameof(V0b_Async); return SyntheticVariants.V0bAsync(Connection); }
 
 	[Benchmark(Baseline = true)]
-	public List<SynRow> V1_Sync() { _label = nameof(V1_Sync); return SyntheticVariants.V1(_conn); }
+	public List<SynRow> V1_Sync() { _label = nameof(V1_Sync); return SyntheticVariants.V1(Connection); }
 
 	[Benchmark]
-	public ValueTask<List<SynRow>> V1_Async() { _label = nameof(V1_Async); return SyntheticVariants.V1Async(_conn); }
+	public ValueTask<List<SynRow>> V1_Async() { _label = nameof(V1_Async); return SyntheticVariants.V1Async(Connection); }
 
 	[Benchmark]
-	public ValueTask<List<SynRow>> V1_AsyncRead() { _label = nameof(V1_AsyncRead); return SyntheticVariants.V1AsyncRead(_conn); }
+	public ValueTask<List<SynRow>> V1_AsyncRead() { _label = nameof(V1_AsyncRead); return SyntheticVariants.V1AsyncRead(Connection); }
 
 	[Benchmark]
-	public List<SynRow> V2_Sync() { _label = nameof(V2_Sync); return SyntheticVariants.V2(_conn, _hand); }
+	public List<SynRow> V2_Sync() { _label = nameof(V2_Sync); return SyntheticVariants.V2(Connection, _hand); }
 
 	[Benchmark]
-	public ValueTask<List<SynRow>> V2_Async() { _label = nameof(V2_Async); return SyntheticVariants.V2Async(_conn, _hand); }
+	public ValueTask<List<SynRow>> V2_Async() { _label = nameof(V2_Async); return SyntheticVariants.V2Async(Connection, _hand); }
+
+	// ---- V3 to V6 (BS-B): the domain object is SynItem; Pace applies to V3, V3s, V4a, V4b, V6c only ----------------------------------------------------------------
+	[Benchmark]
+	public List<SynItem> V3_Sync() { _label = nameof(V3_Sync); return SyntheticVariantsB.V3(Connection, Pace); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V3_Async() { _label = nameof(V3_Async); return SyntheticVariantsB.V3Async(Connection, Pace); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V3s_Async() { _label = nameof(V3s_Async); return SyntheticVariantsB.V3s(Connection, Pace); }
+
+	[Benchmark]
+	public List<SynItem> V4a_Sync() { _label = nameof(V4a_Sync); return SyntheticVariantsB.V4a(Connection, Width, Pace); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V4a_Async() { _label = nameof(V4a_Async); return SyntheticVariantsB.V4aAsync(Connection, Width, Pace); }
+
+	[Benchmark]
+	public List<SynItem> V4b_Sync() { _label = nameof(V4b_Sync); return SyntheticVariantsB.V4b(Connection, Width, Pace); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V4b_Async() { _label = nameof(V4b_Async); return SyntheticVariantsB.V4bAsync(Connection, Width, Pace); }
+
+	[Benchmark]
+	public List<SynItem> V5_Sync() { _label = nameof(V5_Sync); return SyntheticVariantsB.V5(Connection); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V5_Async() { _label = nameof(V5_Async); return SyntheticVariantsB.V5Async(Connection); }
+
+	[Benchmark]
+	public List<SynItem> V6a_Sync() { _label = nameof(V6a_Sync); return SyntheticVariantsB.V6a(Connection, _handM); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V6a_Async() { _label = nameof(V6a_Async); return SyntheticVariantsB.V6aAsync(Connection, _handM); }
+
+	// V6b: RESERVED for DS1a. No method.
+
+	[Benchmark]
+	public List<SynItem> V6c_Sync() { _label = nameof(V6c_Sync); return SyntheticVariantsB.V6c(Connection, Width, Pace); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V6c_Async() { _label = nameof(V6c_Async); return SyntheticVariantsB.V6cAsync(Connection, Width, Pace); }
+
+	[Benchmark]
+	public List<SynItem> V6d_Sync() { _label = nameof(V6d_Sync); return SyntheticVariantsB.V6d(Connection, Width); }
+
+	[Benchmark]
+	public ValueTask<List<SynItem>> V6d_Async() { _label = nameof(V6d_Async); return SyntheticVariantsB.V6dAsync(Connection, Width); }
+
+	// ---- V7: Dapper, the shapes it can do (SyntheticDapper lists the ones it cannot) ----------------------------------------------------------------
+	[Benchmark]
+	public List<SynRow> V7_V1_Sync() { _label = nameof(V7_V1_Sync); return SyntheticDapper.V1(Connection); }
+
+	[Benchmark]
+	public Task<List<SynRow>> V7_V1_Async() { _label = nameof(V7_V1_Async); return SyntheticDapper.V1Async(Connection); }
+
+	[Benchmark]
+	public List<SynItem> V7_V3_Sync() { _label = nameof(V7_V3_Sync); return SyntheticDapper.V3(Connection, Pace); }
+
+	[Benchmark]
+	public Task<List<SynItem>> V7_V3s_Async() { _label = nameof(V7_V3s_Async); return SyntheticDapper.V3s(Connection, Pace); }
+
+	[Benchmark]
+	public List<SynItem> V7_V5_Sync() { _label = nameof(V7_V5_Sync); return SyntheticDapper.V5(Connection); }
+
+	[Benchmark]
+	public Task<List<SynItem>> V7_V5_Async() { _label = nameof(V7_V5_Async); return SyntheticDapper.V5Async(Connection); }
+
+	[Benchmark]
+	public List<SynItem> V7_V6c_Sync() { _label = nameof(V7_V6c_Sync); return SyntheticDapper.V6c(Connection, Width, Pace); }
+
+	[Benchmark]
+	public List<SynItem> V7_V6d_Sync() { _label = nameof(V7_V6d_Sync); return SyntheticDapper.V6d(Connection, Width); }
+
+	[Benchmark]
+	public Task<List<SynItem>> V7_V6d_Async() { _label = nameof(V7_V6d_Async); return SyntheticDapper.V6dAsync(Connection, Width); }
+}
+
+/// <summary>
+/// V8: the scalar (1 row x 1 column) variants, library and Dapper, over a width-1, 1-row table. No parameters (the shape is fixed).
+/// Run in process for the ReaderOpen and Drain columns, as for <see cref="SyntheticBenchmarks"/>.
+/// </summary>
+[MemoryDiagnoser]
+[Config(typeof(SyntheticConfig))]
+public class SyntheticScalarBenchmarks
+{
+	SyntheticConnection _conn = null!;
+	string _label = "";
+
+	[GlobalSetup]
+	public void Setup() => _conn = new SyntheticConnection(SyntheticTable.Create(1, 1), new SyntheticOptions());
+
+	[GlobalCleanup]
+	public void Cleanup()
+	{
+		var summary = _conn.Options.Recorder.Summary();
+		if (_label.Length == 0 || summary.Readers == 0) return;
+		var key = SyntheticBenchmarks.Key(_label, []);
+		SyntheticBenchmarks.Results[key] = summary;
+		Console.WriteLine($"// SYNTHETIC {key} {summary}");
+	}
+
+	[Benchmark(Baseline = true)]
+	public int V8a_Sync() { _label = nameof(V8a_Sync); return SyntheticVariantsB.V8a(_conn); }
+
+	[Benchmark]
+	public ValueTask<int> V8a_Async() { _label = nameof(V8a_Async); return SyntheticVariantsB.V8aAsync(_conn); }
+
+	[Benchmark]
+	public int V8b_Sync() { _label = nameof(V8b_Sync); return SyntheticVariantsB.V8b(_conn); }
+
+	[Benchmark]
+	public ValueTask<int> V8b_Async() { _label = nameof(V8b_Async); return SyntheticVariantsB.V8bAsync(_conn); }
+
+	[Benchmark]
+	public int V8c_Sync() { _label = nameof(V8c_Sync); return SyntheticVariantsB.V8c(_conn); }
+
+	[Benchmark]
+	public ValueTask<int> V8c_Async() { _label = nameof(V8c_Async); return SyntheticVariantsB.V8cAsync(_conn); }
+
+	[Benchmark]
+	public int V7_V8a_Sync() { _label = nameof(V7_V8a_Sync); return SyntheticDapper.V8a(_conn); }
+
+	[Benchmark]
+	public Task<int> V7_V8a_Async() { _label = nameof(V7_V8a_Async); return SyntheticDapper.V8aAsync(_conn); }
+
+	[Benchmark]
+	public int V7_V8b_Sync() { _label = nameof(V7_V8b_Sync); return SyntheticDapper.V8b(_conn); }
+
+	[Benchmark]
+	public Task<int> V7_V8b_Async() { _label = nameof(V7_V8b_Async); return SyntheticDapper.V8bAsync(_conn); }
 }

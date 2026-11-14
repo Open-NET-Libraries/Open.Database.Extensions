@@ -133,7 +133,7 @@ public static class SyntheticVariants
 {
 	public const string Sql = "select * from synthetic";
 
-	// ---- V0: dump every row into object[] (GetValues), close, stop ----------------------------------------------------------------
+	// ---- V0: dump every row into object[] (GetValues), drain the later result sets as the library does, close ----------------------------------------------------------------
 	public static List<object[]> V0(SyntheticConnection connection)
 		=> connection.Command(Sql).ExecuteReader(static reader =>
 		{
@@ -145,6 +145,8 @@ public static class SyntheticVariants
 				rows.Add(row);
 			}
 
+			// The drain the library's default makes before it closes the reader (RowReader.ReadThrough), so a NextResult cost is charged to every variant alike.
+			while (reader.NextResult()) { }
 			return rows;
 		}, CommandBehavior.SequentialAccess);
 
@@ -160,6 +162,8 @@ public static class SyntheticVariants
 				rows.Add(row);
 			}
 
+			// The same drain as the sync V0 and as the library's default (which calls NextResult, not NextResultAsync, here).
+			while (db.NextResult()) { }
 			return rows;
 		}, CommandBehavior.SequentialAccess);
 

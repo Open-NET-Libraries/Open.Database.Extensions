@@ -8,7 +8,16 @@ using Open.Database.Extensions.Benchmarks;
 // Checks that are not benchmarks:
 //   -- --verify                 equal final objects from every variant, the provider's switches and read paths
 //   -- --selftest-open-time     a delay inside an open reader shows in reader-open time; after the close it does not
+//   -- --selftest-pace          consumer pace (--pace N) grows reader-open for the inline variants, not for V5 and V6d
 //   -- --selftest-alloc         the typed-getter loop allocates 0 B per row
+// The checks say which runtime and target framework they ran on (the build is multi-targeted).
+if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace"))
+{
+	Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+		+ ", built for: " + System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false)
+			.Cast<System.Runtime.Versioning.TargetFrameworkAttribute>().First().FrameworkName);
+}
+
 if (args.Contains("--verify"))
 {
 	Environment.ExitCode = SyntheticChecks.Verify();
@@ -18,6 +27,12 @@ if (args.Contains("--verify"))
 if (args.Contains("--selftest-open-time"))
 {
 	Environment.ExitCode = SyntheticChecks.SelfTestOpenTime();
+	return;
+}
+
+if (args.Contains("--selftest-pace"))
+{
+	Environment.ExitCode = SyntheticChecks.SelfTestPace();
 	return;
 }
 
