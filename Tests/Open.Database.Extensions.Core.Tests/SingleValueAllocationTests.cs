@@ -36,19 +36,28 @@ public static class SingleValueAllocationTests
 	// the two differ by no more than a rounding of the measurement.
 	const int Slack = 16;
 
-	// A DataTableReader is a DbDataReader that reports its column type
+	// An ArrayReader is a DbDataReader that reports its column type
 	// and has typed getters,
 	// so the typed (unboxed) path runs.
+	// It reads straight from the arrays and allocates nothing per row
+	// (a DataTableReader boxes every int it serves,
+	// and the JIT removes that box part way through a measurement).
 	static PlainReaderCommand Rows(
 		Type column,
 		int count,
 		Func<int, object> value)
 	{
-		var table = new DataTable();
-		table.Columns.Add("v", column);
-		table.Columns.Add("other", typeof(string));
-		for (int i = 0; i < count; i++) table.Rows.Add(value(i), "x");
-		return new PlainReaderCommand(() => new DataTableReader(table));
+		Array values = Array.CreateInstance(column, count);
+		string[] others = new string[count];
+		for (int i = 0; i < count; i++)
+		{
+			values.SetValue(value(i), i);
+			others[i] = "x";
+		}
+
+		string[] names = ["v", "other"];
+		Array[] columns = [values, others];
+		return new PlainReaderCommand(() => new ArrayReader(names, columns));
 	}
 
 	static void NoMoreThanByHand(

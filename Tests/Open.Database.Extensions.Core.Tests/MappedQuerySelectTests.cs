@@ -974,10 +974,14 @@ public static class MappedQuerySelectTests
 
 	static PlainReaderCommand Ints(int count)
 	{
-		DataTable table = new();
-		table.Columns.Add("v", typeof(int));
-		for (int i = 0; i < count; i++) table.Rows.Add(i);
-		return new PlainReaderCommand(() => new DataTableReader(table));
+		// An ArrayReader serves the ints from an array without boxing them
+		// (a DataTableReader boxes each one, and the JIT removes that box
+		// part way through a measurement).
+		int[] values = new int[count];
+		for (int i = 0; i < count; i++) values[i] = i;
+		string[] names = ["v"];
+		Array[] columns = [values];
+		return new PlainReaderCommand(() => new ArrayReader(names, columns));
 	}
 
 	// Bytes per call: after a warm-up,
