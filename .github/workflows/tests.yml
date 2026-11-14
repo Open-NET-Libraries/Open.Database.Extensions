@@ -1,0 +1,122 @@
+name: Tests
+
+# Runs the Core test suite on every pull request and every push to master, and checks the packages for known vulnerabilities.
+# The suite runs on net10.0 and net11.0 in Release, and on net11.0 in Debug (Debug.Assert is live there).
+# SQL Server LocalDB is part of the runner image. ODX_REQUIRE_SQL=1 makes the tests that need it fail, instead of skip, when it is missing.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Pull requests get their own group per branch so a newer push cancels the older run.
+# Everything else queues per ref and is never cancelled.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('tests-pr-{0}', github.ref) || format('tests-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  test:
+    name: Test ${{ matrix.name }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: net10.0-Release
+            tfm: net10.0
+            configuration: Release
+          - name: net11.0-Release
+            tfm: net11.0
+            configuration: Release
+          - name: net11.0-Debug
+            tfm: net11.0
+            configuration: Debug
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+
+      # The tests that need a real SQL Server connect to (localdb)\MSSQLLocalDB. The runner image carries the LocalDB runtime,
+      # but the automatic instance is created on its first start, which can outlast a connection timeout. Start it here,
+      # so the first test does not pay for it, and fail now, with a clear message, if the image has no LocalDB.
+      - name: Start SQL Server LocalDB
+        run: |
+          $exe = (Get-Command SqlLocalDB.exe -ErrorAction SilentlyContinue)?.Source
+          if (-not $exe) {
+            $exe = Get-ChildItem "$env:ProgramFiles\Microsoft SQL Server\*\Tools\Binn\SqlLocalDB.exe" -ErrorAction SilentlyContinue |
+              Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+          }
+          if (-not $exe) { throw 'SqlLocalDB.exe was not found on this runner image, so the SQL Server tests cannot run.' }
+          & $exe start MSSQLLocalDB
+          if ($LASTEXITCODE -ne 0) { throw "SqlLocalDB start MSSQLLocalDB failed with exit code $LASTEXITCODE" }
+          & $exe info MSSQLLocalDB
+
+      - name: Run the tests (${{ matrix.name }})
+        env:
+          ODX_REQUIRE_SQL: 1
+        run: dotnet test Tests/Open.Database.Extensions.Core.Tests -c ${{ matrix.configuration }} -f ${{ matrix.tfm }} --logger "trx;LogFileName=${{ matrix.name }}.trx" --results-directory TestResults/${{ matrix.name }}
+
+      - name: Upload the TRX files
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: trx-${{ matrix.name }}
+          path: TestResults/${{ matrix.name }}/*.trx
+
+  vulnerable-packages:
+    name: Vulnerable packages
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+
+      # `dotnet list package --vulnerable` exits 0 even when it finds something, so read what it prints.
+      # Each library project, plus the test project, is listed with its transitive packages.
+      - name: List vulnerable packages (any finding fails the run)
+        run: |
+          $projects = @(Get-ChildItem Source -Recurse -Filter *.csproj) + @(Get-Item Tests/Open.Database.Extensions.Core.Tests/*.csproj)
+          $failures = @()
+          foreach ($project in $projects) {
+            $output = (dotnet list $project.FullName package --vulnerable --include-transitive 2>&1 | Out-String)
+            $exitCode = $LASTEXITCODE
+            Write-Host $output
+            if ($exitCode -ne 0) {
+              $failures += "$($project.Name): dotnet list exited with code $exitCode"
+            }
+            elseif ($output -match 'has the following vulnerable packages') {
+              $failures += "$($project.Name): vulnerable packages found (listed above)"
+            }
+            elseif ($output -match 'NU1900') {
+              $failures += "$($project.Name): the vulnerability data could not be read, so the check proved nothing"
+            }
+          }
+          if ($failures.Count -gt 0) {
+            foreach ($failure in $failures) { Write-Host "::error title=Vulnerable packages::$failure" }
+            exit 1
+          }
+          "No vulnerable packages in $($projects.Count) project(s)."

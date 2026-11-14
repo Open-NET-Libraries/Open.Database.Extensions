@@ -7,10 +7,12 @@ namespace Open.Database.Extensions.Tests;
 /// <summary>
 /// SQL Server LocalDB for the few tests that need a real server (the SQL Server package's typed <c>SqlCommand</c> and <c>SqlTransaction</c> extensions, which fakes cannot stand in for).
 /// Call <see cref="SkipUnlessAvailable"/> first in such a test: it reports the test as skipped, not as passed or failed, when LocalDB cannot be reached, so the suite stays green on a machine or build agent without it.
+/// Where a skip would hide a gap (continuous integration), set the environment variable named by <see cref="RequireVariable"/>: the same tests then fail, with the reason, instead of being skipped.
 /// </summary>
 /// <remarks>
 /// The reachability check runs once per test run. It is the same connection every test uses, so a machine without LocalDB fails fast (the instance does not exist) instead of waiting for a timeout in every test.
 /// Setting the environment variable named by <see cref="ForceSkipVariable"/> skips every server test without looking for LocalDB, which is how to see the suite as a machine without LocalDB sees it.
+/// <see cref="RequireVariable"/> wins over <see cref="ForceSkipVariable"/>: with both set the server tests fail, so forcing a skip can never turn a required run into a green one.
 /// Everything the tests create lives in <c>tempdb</c> under a name made unique by a new <see cref="Guid"/>, and is dropped when its <see cref="Scratch"/> is disposed.
 /// </remarks>
 [ExcludeFromCodeCoverage]
@@ -18,6 +20,9 @@ internal static class LocalDbFixture
 {
 	/// <summary>The environment variable that, when it has any value, skips every test that needs LocalDB.</summary>
 	public const string ForceSkipVariable = "ODE_TEST_NO_LOCALDB";
+
+	/// <summary>The environment variable that, when it has any value, makes every test that needs LocalDB fail instead of skip when LocalDB cannot be reached (or when <see cref="ForceSkipVariable"/> is set).</summary>
+	public const string RequireVariable = "ODX_REQUIRE_SQL";
 
 	/// <summary>The default instance every Visual Studio and SQL Server Express LocalDB install creates, working in <c>tempdb</c>.</summary>
 	public const string ConnectionString = @"Server=(localdb)\MSSQLLocalDB;Database=tempdb;Integrated Security=true;Encrypt=False;Connect Timeout=20";
@@ -42,10 +47,15 @@ internal static class LocalDbFixture
 		}
 	}
 
-	/// <summary>Skips the calling test (it is reported as skipped) when LocalDB cannot be reached.</summary>
+	/// <summary>Skips the calling test (it is reported as skipped) when LocalDB cannot be reached, or fails it instead when <see cref="RequireVariable"/> is set.</summary>
 	public static void SkipUnlessAvailable()
 	{
-		if (Unavailable.Value is { } reason) Assert.Skip(reason);
+		if (Unavailable.Value is not { } reason) return;
+
+		if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(RequireVariable)))
+			Assert.Fail($"{RequireVariable} is set, so a missing SQL Server is a failure, not a skip: {reason}");
+
+		Assert.Skip(reason);
 	}
 
 	/// <summary>A new, closed connection to LocalDB's <c>tempdb</c>. The caller disposes it.</summary>
