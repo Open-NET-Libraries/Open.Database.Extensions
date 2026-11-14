@@ -94,6 +94,13 @@ Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).Fi
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName is "", "a property named by a pair is not matched by an underscore column");
 Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
+Check(connection.Command("select null").Map<int>().Single() == 0 && connection.Command("select null").Map<int?>().Single() is null && connection.Command("select null").Map<string>().Single() is null, "a single value: NULL into int is 0, into int? and string is null");
+Check(Throws<Exception>(() => Dapper.SqlMapper.QuerySingle<int>(connection, "select null")),"Dapper QuerySingle<int> over NULL throws");
+Check(connection.Command("select 1 as Id, 'Ada' as FirstName, 'Lovelace' as LastName").Map<Person>(new RowMap<Person>([new(nameof(Person.LastName), null)])).Single() is { Id: 1, FirstName: "Ada", LastName: "" }
+	&& connection.Command("select 1 as Id, 'Ada' as FirstName, 'Lovelace' as LastName").Map<Person>().Single() is { LastName: "Lovelace" }, "new(nameof(Person.LastName), null) needs no null!: the member stays unmapped although a column of that name exists, and the other members still map");
+Check(await ConstructorRules.StructSources(connection) is ["parameterless constructor", "parameterless constructor", "parameterless constructor"], "a struct's own public parameterless constructor is called on ToList, ToListAsync and FirstOrDefault");
+Check(Throws<InvalidOperationException>(() => connection.Command("select 1 as Id, 'Ada' as Name").Map<PairRecord>()) && Throws<InvalidOperationException>(() => connection.Command("select 1 as Id, 'Ada' as Name").Map<AllOptional>()), "a record with a second public constructor, and a constructor with only optional parameters next to another one, are the two-or-more-public-constructors case");
+Check(connection.Command("select 1 as Id, 'Ada' as Name").Map<ParameterlessRecord>().Single() is { Id: 1, Name: "Ada" }, "a record with a second, parameterless public constructor is built with new(), then its properties are set");
 PostRecord[] records = Mapping.MapRecord(connection);
 Check(records.Length == 5 && records[0] == new PostRecord(1, 42, "Post 1", "Body 1") && records[1] == new PostRecord(2, 42, "Post 2", null), "a positional record is built through its constructor, NULL included");
 Check(Mapping.MapRecordExtra(connection)[0] == new PostSummary(1, "Post 1") { Views = 10 }, "a record with an init property: the constructor, then the init property from its column, unmatched columns ignored, an init property with no column keeps its initializer");
@@ -217,6 +224,29 @@ using (var closedConnection = new SqliteConnection(connectionString))
 
 connection.ExecuteTransaction(tx => tx.Command("select 1").ExecuteScalar());
 Check(connection.State == ConnectionState.Open, "ExecuteTransaction leaves an open connection open");
+Check(await Transactions.Async(factory, CancellationToken.None) == 1, "ExecuteTransactionAsync commits when the action returns");
+using (CancellationTokenSource cancelledInAction = new())
+{
+	bool cancelled = false;
+	try
+	{
+		await factory.UsingAsync(c => c.ExecuteTransactionAsync(async tx =>
+		{
+			await tx.Command(Sql.InsertSql).AddParam("id", 100).ExecuteNonQueryAsync();
+			cancelledInAction.Cancel();
+		}, cancelledInAction.Token));
+	}
+	catch (OperationCanceledException) { cancelled = true; }
+
+	Check(cancelled && RowsFrom100() == 0, "ExecuteTransactionAsync: a token cancelled by the time the action returns throws OperationCanceledException and nothing commits");
+}
+
+using (CancellationTokenSource liveToken = new())
+using (CommitTokenConnection recording = new(connectionString))
+{
+	await recording.ExecuteTransactionAsync(_ => ValueTask.CompletedTask, liveToken.Token);
+	Check(recording.CommitTokens is [{ CanBeCanceled: false }], "ExecuteTransactionAsync sends the commit without the caller's token (CancellationToken.None), though the token was passed and live");
+}
 long newId = ExpressiveCommands.InsertAndReadId(factory);
 Check(newId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "New", "an insert and select last_insert_rowid() in one command return the generated id to ExecuteScalar<long>()");
 factory.Command("delete from posts where id = 6").ExecuteNonQuery();

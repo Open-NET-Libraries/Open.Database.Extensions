@@ -11,14 +11,14 @@
 | Named differently | Declare a `RowMap<T>` once and pass it: `Map<T>(map)` |
 | One property must not be read | A pair whose column is the C# `null` (not SQL NULL) in the `RowMap<T>` |
 | A property must always be read | Declare it `required` ([`required` and `init` members](#required-and-init-members)) |
-| A column can hold NULL | Declare the property nullable (`int?`, `string?`); a property the type declares non-nullable (`int`, or a `string` with `<Nullable>enable</Nullable>`) keeps its initializer, else its default |
+| A column can hold NULL | Declare the property nullable (`int?`, `string?`): see [NULL in a non-nullable column](#null-in-a-non-nullable-column) |
 | Your own conversion | `Map(selector)` |
 
 ## The rules
 
 - **Construction.** A row is built through the type's constructor or from its default value, as the table in [Which types are built through a constructor](#which-types-are-built-through-a-constructor) says, and then its properties are set; any other type throws `InvalidOperationException` at the call, even for an empty result (see [Errors](#errors)).
 - **What is set.** The parameters of the constructor, when the type is built through one, and the public instance properties that have a public setter (a record's `init` property included). A parameter and a property of the same name, ignoring case, are one member: it is fed once, through the constructor. Public fields and static properties are not mapped.
-- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`); so does a parameter the type declares non-nullable (a value type, or a reference type with nullable annotations on) when the cell is `NULL`.
+- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`). A `NULL` cell follows [the NULL rules](#null-in-a-non-nullable-column).
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).
 - **No other conventions.** The library has no mapping attributes of its own. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
 
@@ -46,9 +46,11 @@ The result is `PostRecord(1, 42, "Post 1", "Body 1")` and `PostRecord(2, 42, "Po
 | The type | How a row is built |
 |---|---|
 | A class with a public parameterless constructor (it may have other constructors) | `new T()`, then its properties are set. The other constructors are never used |
-| A struct with no public constructor, or with a public parameterless one | Its default value, then its properties are set. A struct's own parameterless constructor is not called |
+| A struct with no public constructor, or with a public parameterless one | `new T()`, so a parameterless constructor you wrote runs; then its properties are set |
 | A positional record, a record struct, or any class or struct whose only public constructor takes parameters | Through that constructor, then the properties it does not cover are set |
 | A class or struct with two or more public constructors and none without parameters | Not mappable: `InvalidOperationException` at the call. Use `Map(selector)`, or make all but one constructor non-public |
+
+A record is a class or struct like any other here: a record with a second public constructor is in the last row, unless the second one is parameterless, which puts it in the first. A constructor whose parameters all have default values still takes parameters, so it never counts as the parameterless one: next to another public constructor it is the last row too.
 
 Only public constructors count. The choice depends on the type alone, never on the columns of a query. Use `Map(selector)` when you need to choose a constructor by the columns.
 
@@ -66,7 +68,7 @@ An `init` property is set like any other settable property. A `required` propert
 
 - **A column must feed it, whatever the query** (a `required` property of a base class too). When the column names and types of a query include none for it, the first row throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it, except through the routes that know the columns before the first row: `DataTable.To<T>()`, and `ToChannel` and the Dataflow methods ([Channels and Dataflow](channels-and-dataflow.md)). (`Retrieve()` with `DequeueAs<T>()` did too; it is deprecated.)
 - **A constructor parameter's default does not feed it.** A `required` property needs its own column, even when a constructor parameter has the same name.
-- **A NULL in that column is not an error.** The column must be there, but a NULL cell leaves the property as it was: its initializer, else its default (`null` for a reference type), as for any other property.
+- **A NULL in that column is not an error.** The column must be there, but a NULL cell follows [the NULL rules](#null-in-a-non-nullable-column), as for any other property.
 - **It cannot be ignored.** A `RowMap<T>` pair with a `null` column for a `required` property throws `ArgumentException` when the map is created.
 - **`[SetsRequiredMembers]`.** When the constructor the type is built through carries it, nothing is enforced: the members are ordinary properties.
 - **A `required` public field** cannot be set, because fields are never mapped, so the type throws `InvalidOperationException` at the call. Declare it as a property.
@@ -128,7 +130,7 @@ The rules:
 - **Which types.** A primitive, an enum, `string`, `decimal`, `DateTime`, `DateTimeOffset`, `TimeSpan`, `DateOnly`, `TimeOnly`, `Guid`, `byte[]` and a `Nullable<>` of those. Not `object`, `char[]`, a provider type such as `SqlInt32`, or a `Stream` (the reader is closed when the terminal returns): use `Map(selector)` for those.
 - **The first column, whatever its name.** The other columns are ignored, so select only the one you need.
 - **Converted like a property of that type.** When the column type matches, or is an integer that fits (a `long` into an `int` is range-checked; a `short` widens), the value is read with the typed getter and nothing is boxed. Otherwise it is converted: a `decimal` into an `int` rounds, text into a `Guid`, an enum from its name (ignoring case) or its number, a `DateTime` into a `DateTimeOffset`. A value that cannot be converted throws `ValueMappingException`. The reader is chosen once per result set, from the type the first row reports.
-- **NULL.** A non-nullable value type gets `default` (`0`, `Guid.Empty`); `int?`, `string` and `byte[]` get `null`. Declare `int?` to tell NULL from 0.
+- **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>().Single()` over a NULL is `0`, and `Map<int?>()` gives `null`.
 - **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
 It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
@@ -177,6 +179,8 @@ Declare the map once and reuse it. A map is immutable and safe to share between 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_ignore)]
 
+The pair's column is a `string?`, so write the `null` as it is, `new(nameof(Person.LastName), null)`: it needs no `!`.
+
 Compilers older than C# 14 have no `field` keyword and need an explicit backing field:
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_backing)]
@@ -203,6 +207,8 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 ## NULL in a non-nullable column
 
 A NULL never overwrites a member the C# type declares non-nullable. A value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default, and so does a reference-type property when nullable annotations are on: `string Name { get; set; } = "";` keeps `""`, and one with no initializer stays `null`. A constructor parameter of such a type gets its declared default value, else its default. `Nullable<T>` (`int?`), a reference declared nullable (`string?`, or `[AllowNull]` on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter (`T Value`) get `null`; nothing throws. If NULL means something, declare the member nullable (`int?`, `string?`): that is the only way to tell NULL from 0 or "".
+
+The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>().Single()` over a NULL is `0` and does not throw, while `Map<int?>()` and `Map<string>()` give `null`.
 
 The rule reads the nullable annotations the compiler stores in the assembly, so it needs `<Nullable>enable</Nullable>` (or `#nullable enable`) in the code that declares the model.
 
