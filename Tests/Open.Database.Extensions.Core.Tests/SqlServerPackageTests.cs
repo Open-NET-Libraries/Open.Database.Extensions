@@ -197,9 +197,7 @@ public static class SqlServerPackageTests
 #pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Throws<InvalidCastException>(() => SqlCmd.AddParameterType(command, "@x", SqlDbType.Int));
 #pragma warning restore CS0618
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
 		Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType(null!, "@x", SqlDbType.Int));
-#pragma warning restore CS0618
 	}
 
 	[Fact]

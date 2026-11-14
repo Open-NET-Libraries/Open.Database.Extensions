@@ -775,24 +775,22 @@ public static class SingleResultBeforeMapTests
 		var expressiveDb = new ExpressiveDbCommand(new FakeDbConnection(), CommandType.Text, "select 1");
 
 		// The expressive commands implement IExecuteReader only.
-		Is<MappedQuery<int>>(legacyExpressive.SingleResult().Map<int>());
-		Is<MappedQuery<int>>(expressiveSql.SingleResult().Map<int>());
-		Is<MappedQuery<int>>(expressive.SingleResult().Map<int>());
-		Is<MappedQuery<int>>(expressiveDb.SingleResult().Map<int>());
-		Is<MappedQuery<IdRow>>(expressiveDb.SingleResult().Map(RowMap<IdRow>.Default));
-		Is<MappedQuery<int>>(expressiveDb.SingleResult().Map(r => r.GetInt32(0)));
+		Is(legacyExpressive.SingleResult().Map<int>());
+		Is(expressiveSql.SingleResult().Map<int>());
+		Is(expressive.SingleResult().Map<int>());
+		Is(expressiveDb.SingleResult().Map<int>());
+		Is(expressiveDb.SingleResult().Map(RowMap<IdRow>.Default));
+		Is(expressiveDb.SingleResult().Map(r => r.GetInt32(0)));
 
 		// Raw commands are IDbCommand only.
-#pragma warning disable CS0618
-		Is<MappedCommand<int>>(legacyCommand.SingleResult().Map<int>());
-#pragma warning restore CS0618
-		Is<MappedCommand<int>>(sqlCommand.SingleResult().Map<int>());
-		Is<MappedCommand<IdRow>>(sqlCommand.SingleResult().Map(RowMap<IdRow>.Default));
+		Is(legacyCommand.SingleResult().Map<int>());
+		Is(sqlCommand.SingleResult().Map<int>());
+		Is(sqlCommand.SingleResult().Map(RowMap<IdRow>.Default));
 
 		DbCommand db = sqlCommand;
 		IDbCommand plain = sqlCommand;
-		Is<MappedCommand<int>>(db.SingleResult().Map<int>());
-		Is<MappedCommand<int>>(plain.SingleResult().Map<int>());
-		Is<MappedCommand<int>>(db.SingleResult().Map(r => r.GetInt32(0)));
+		Is(db.SingleResult().Map<int>());
+		Is(plain.SingleResult().Map<int>());
+		Is(db.SingleResult().Map(r => r.GetInt32(0)));
 	}
 }

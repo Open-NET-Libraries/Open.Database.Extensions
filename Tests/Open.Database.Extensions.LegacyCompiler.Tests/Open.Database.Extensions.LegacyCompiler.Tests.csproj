@@ -13,6 +13,7 @@
 		<IsPackable>false</IsPackable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
+		<NoWarn>$(NoWarn);IDE0161;IDE0090</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net472'">

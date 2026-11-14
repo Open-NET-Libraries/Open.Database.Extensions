@@ -1,4 +1,3 @@
-using System.Data;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -242,7 +241,7 @@ public static class MappedQueryDictionaryValuesTests
 	[Fact]
 	public static async Task ANullValue_IsKept()
 	{
-		Dictionary<int, string?> sync
+		var sync
 			= People().Map<Person>().ToDictionary(p => p.Id, p => p.Name);
 		Assert.Equal("a", sync[1]);
 		Assert.True(sync.ContainsKey(2));
@@ -272,7 +271,7 @@ public static class MappedQueryDictionaryValuesTests
 	{
 		FakeExecuteReader command = new(() => Reader([[1, "a", null], [2, "b", null]]));
 
-		Dictionary<string, int> sync = command.Map<Person>().ToDictionary(
+		var sync = command.Map<Person>().ToDictionary(
 			p => p.Name!, p => p.Id, StringComparer.OrdinalIgnoreCase);
 		Assert.Equal(1, sync["A"]);
 		Assert.Equal(2, sync["B"]);
@@ -407,12 +406,12 @@ public static class MappedQueryDictionaryValuesTests
 			"mine",
 			Assert.Throws<FormatException>(
 				() => command.Map<Person>()
-					.ToDictionary<int, string?>(Key, p => p.Name)).Message);
+					.ToDictionary(Key, p => p.Name)).Message);
 		Assert.Equal(
 			"mine",
 			(await Assert.ThrowsAsync<FormatException>(
 				async () => await command.Map<Person>()
-					.ToDictionaryAsync<int, string?>(
+					.ToDictionaryAsync(
 						Key, p => p.Name, null, Ct))).Message);
 		Assert.Equal(0, reader().NextResultCalls);
 
@@ -422,10 +421,10 @@ public static class MappedQueryDictionaryValuesTests
 
 		Assert.Throws<FormatException>(
 			() => closed.Map<Person>()
-				.ToDictionary<int, string?>(Key, p => p.Name));
+				.ToDictionary(Key, p => p.Name));
 		await Assert.ThrowsAsync<FormatException>(
 			async () => await closed.Map<Person>()
-				.ToDictionaryAsync<int, string?>(Key, p => p.Name, null, Ct));
+				.ToDictionaryAsync(Key, p => p.Name, null, Ct));
 
 		Assert.Equal(["open", "close", "open", "close"], connection.Log);
 		Assert.Equal(ConnectionState.Closed, connection.State);
@@ -437,10 +436,10 @@ public static class MappedQueryDictionaryValuesTests
 
 		Assert.Throws<FormatException>(
 			() => opened.Map<Person>()
-				.ToDictionary<int, string?>(Key, p => p.Name));
+				.ToDictionary(Key, p => p.Name));
 		await Assert.ThrowsAsync<FormatException>(
 			async () => await opened.Map<Person>()
-				.ToDictionaryAsync<int, string?>(Key, p => p.Name, null, Ct));
+				.ToDictionaryAsync(Key, p => p.Name, null, Ct));
 
 		Assert.Empty(openConnection.Log);
 		Assert.Equal(ConnectionState.Open, openConnection.State);
@@ -604,7 +603,7 @@ public static class MappedQueryDictionaryValuesTests
 		MappedQuery<Person> q = People().Map<Person>();
 		IEqualityComparer<int> comparer = EqualityComparer<int>.Default;
 
-		Dictionary<int, Person> keyOnly = q.ToDictionary(p => p.Id);
+		var keyOnly = q.ToDictionary(p => p.Id);
 		keyOnly = q.ToDictionary(p => p.Id, null);
 		keyOnly = q.ToDictionary(p => p.Id, comparer);
 		keyOnly = await q.ToDictionaryAsync(p => p.Id, null, Ct);
@@ -612,7 +611,7 @@ public static class MappedQueryDictionaryValuesTests
 		keyOnly = await q.ToDictionaryAsync(p => p.Id, cancellationToken: Ct);
 		Assert.Equal(2, keyOnly.Count);
 
-		Dictionary<int, string?> values = q.ToDictionary(p => p.Id, p => p.Name);
+		var values = q.ToDictionary(p => p.Id, p => p.Name);
 		values = q.ToDictionary(p => p.Id, p => p.Name, null);
 		values = q.ToDictionary(p => p.Id, p => p.Name, comparer);
 		values = q.ToDictionary(p => p.Id, p => p.Name, comparer: comparer);

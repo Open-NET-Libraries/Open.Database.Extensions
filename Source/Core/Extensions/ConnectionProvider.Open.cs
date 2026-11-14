@@ -13,7 +13,7 @@ public static partial class ConnectionExtensions
 	/// <remarks>
 	/// Useful for single-line operations. Exceptions thrown by the action propagate after the connection has been disposed.
 	/// </remarks>
-	/// <seealso cref="ConnectionExtensions.EnsureOpen(IDbConnection)"/>
+	/// <seealso cref="EnsureOpen(IDbConnection)"/>
 	public static T Open<T>(this IDbConnectionFactory connectionFactory, Func<IDbConnection, T> action)
 	{
 		if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));

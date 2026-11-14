@@ -75,7 +75,7 @@ public static partial class CoreExtensions
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return command.ExecuteReader(reader => reader.ResultsBuffered<T>(map));
+		return command.ExecuteReader(reader => reader.ResultsBuffered(map));
 	}
 
 	/// <inheritdoc cref="Results{T}(IDbCommand, RowMap{T}?)" />
@@ -147,7 +147,7 @@ public static partial class CoreExtensions
 	this DbDataReader reader,
 	RowMap<T>? map,
 	CancellationToken cancellationToken)
-	=> ResultsBufferedAsync<T>(reader, map, true, cancellationToken);
+	=> ResultsBufferedAsync(reader, map, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
@@ -174,7 +174,7 @@ public static partial class CoreExtensions
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return command.ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
+		return command.ExecuteReaderAsync(reader => reader.ResultsBufferedAsync(map, useReadAsync, cancellationToken), CommandBehavior.SingleResult, cancellationToken);
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
@@ -185,7 +185,7 @@ public static partial class CoreExtensions
 		this DbCommand command,
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
-		=> ResultsAsync<T>(command, map, true, cancellationToken);
+		=> ResultsAsync(command, map, true, cancellationToken);
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
@@ -214,7 +214,7 @@ public static partial class CoreExtensions
 		RowMap<T>.ThrowIfUnmappable();
 
 		using var table = reader.ToDataTable();
-		return table.To<T>(map, true);
+		return table.To(map, true);
 	}
 
 	/// <summary>
@@ -236,6 +236,6 @@ public static partial class CoreExtensions
 		RowMap<T>.ThrowIfUnmappable();
 
 		using var table = command.ToDataTable();
-		return table.To<T>(map, true);
+		return table.To(map, true);
 	}
 }

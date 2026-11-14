@@ -48,7 +48,7 @@ public static class DbConnectionFactoryExtensions
 	/// <remarks>
 	/// Nothing is pooled. This adapter lets code written against <see cref="IDbConnectionPool"/> accept a plain factory.
 	/// </remarks>
-	/// <seealso cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/>
+	/// <seealso cref="AsPool(IDbConnectionFactory)"/>
 	public readonly struct ConnectionFactoryToPoolAdapter(Func<IDbConnection> factory) : IDbConnectionPool
 	{
 		/// <summary>
@@ -80,7 +80,7 @@ public static class DbConnectionFactoryExtensions
 	/// <remarks>
 	/// Nothing is pooled. This adapter lets code written against <see cref="IDbConnectionPool{TConnection}"/> accept a plain factory.
 	/// </remarks>
-	/// <seealso cref="DbConnectionFactoryExtensions.AsPool{TConnection}(IDbConnectionFactory{TConnection})"/>
+	/// <seealso cref="AsPool{TConnection}(IDbConnectionFactory{TConnection})"/>
 	public readonly struct ConnectionFactoryToPoolAdapter<TConnection>(Func<TConnection> factory) : IDbConnectionPool<TConnection>
 		where TConnection : IDbConnection
 	{

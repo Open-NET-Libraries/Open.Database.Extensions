@@ -314,7 +314,7 @@ public static class RowMapConverterTests
 		CountingReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = new CountingReader(columns, [["1"], ["2"], [null]]));
 
-		List<Order> orders = command.Map(map).ToList();
+		var orders = command.Map(map).ToList();
 
 		Assert.Equal(new string?[] { "000001", "000002", null }, orders.Select(o => o.OrderNum));
 		Assert.Equal(3, reader!.GetValueCalls);
@@ -466,7 +466,7 @@ public static class RowMapConverterTests
 	[Fact]
 	public static void ATMemberThatCannotBeAssigned_Throws()
 	{
-		ArgumentException ex = Rejects(() => RowMap<Order>.Default.Convert<string, string>(nameof(Order.Id), Same));
+		ArgumentException ex = Rejects(() => RowMap<Order>.Default.Convert(nameof(Order.Id), Same));
 
 		Assert.Contains("String", ex.Message);
 		Assert.Contains("Int32", ex.Message);
@@ -483,10 +483,10 @@ public static class RowMapConverterTests
 		RowMap<Order> map = RowMap<Order>.Default;
 
 		Assert.Equal("convert", Assert.Throws<ArgumentNullException>(() => map.Convert<string, string>(nameof(Order.Customer), null!)).ParamName);
-		Assert.Equal("member", Assert.Throws<ArgumentNullException>(() => map.Convert<string, string>(null!, Same)).ParamName);
+		Assert.Equal("member", Assert.Throws<ArgumentNullException>(() => map.Convert(null!, Same)).ParamName);
 		Assert.Equal("convert", Assert.Throws<ArgumentNullException>(() => map.Convert<string, string>(nameof(Order.Customer), "Customer", null!)).ParamName);
-		Assert.Equal("member", Assert.Throws<ArgumentNullException>(() => map.Convert<string, string>(null!, "Customer", Same)).ParamName);
-		Assert.Equal("column", Assert.Throws<ArgumentNullException>(() => map.Convert<string, string>(nameof(Order.Customer), null!, Same)).ParamName);
+		Assert.Equal("member", Assert.Throws<ArgumentNullException>(() => map.Convert(null!, "Customer", Same)).ParamName);
+		Assert.Equal("column", Assert.Throws<ArgumentNullException>(() => map.Convert(nameof(Order.Customer), null!, Same)).ParamName);
 	}
 
 	[Fact]
@@ -537,7 +537,7 @@ public static class RowMapConverterTests
 	{
 		RowMap<Order> map = LoadPair;
 		Rejects(() => map.Convert("Nope", Same));
-		Rejects(() => map.Convert<string, string>(nameof(Order.Id), Same));
+		Rejects(() => map.Convert(nameof(Order.Id), Same));
 
 		Order order = One(map, Columns, Valid());
 		Assert.Equal(7, order.Id);

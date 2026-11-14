@@ -339,7 +339,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(map, useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync(map, useReadAsync: UseAsyncRead));
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>

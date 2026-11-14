@@ -70,7 +70,7 @@ public class DbConnectionFactory<TConnection>
 	/// <summary>
 	/// Constructs a <see cref="DbConnectionFactory{TConnection}"/> from a factory function.
 	/// </summary>
-	/// <inheritdoc cref="DbConnectionFactory.DbConnectionFactory(Func{IDbConnection})"/>
+	/// <inheritdoc cref="DbConnectionFactory(Func{IDbConnection})"/>
 	public DbConnectionFactory(Func<TConnection> factory)
 		: base(() => factory())
 	{

@@ -1679,7 +1679,7 @@ sealed class Shape
 	// A dictionary or a dynamic object has no properties to set: it would be built as one empty row. Any of the interfaces that make a type one counts, the closed generic ones through the type's interface list.
 	static bool IsDictionaryOrDynamic(Type type)
 	{
-		if (typeof(System.Collections.IDictionary).IsAssignableFrom(type) || typeof(System.Dynamic.IDynamicMetaObjectProvider).IsAssignableFrom(type)) return true;
+		if (typeof(IDictionary).IsAssignableFrom(type) || typeof(System.Dynamic.IDynamicMetaObjectProvider).IsAssignableFrom(type)) return true;
 
 		foreach (Type implemented in type.GetInterfaces())
 		{
