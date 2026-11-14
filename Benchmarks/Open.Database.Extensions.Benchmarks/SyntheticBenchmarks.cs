@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 
@@ -61,12 +62,12 @@ public sealed class SyntheticConfig : ManualConfig
 	public SyntheticConfig()
 	{
 		Add(DefaultConfig.Instance);
-		AddColumn(new OpenTimeColumn("ReaderOpen", "Reader-open: from ExecuteReader until the reader is closed, per operation, median over the last readers; the drain is inside it", static s => s.MedianOpenUs),
-			new OpenTimeColumn("Drain", "Time inside NextResult/NextResultAsync, per operation, median over the last readers", static s => s.MedianDrainUs));
+		AddColumn(new OpenTimeColumn("ReaderOpen", "Reader-open: from ExecuteReader until the reader is closed, summed over the readers of one operation. MEAN per operation over the iterations BenchmarkDotNet's Mean is made of (WorkloadActual minus the outliers it removed); the drain is inside it", static s => s.OpenUs),
+			new OpenTimeColumn("Drain", "Time inside NextResult/NextResultAsync, per operation: MEAN over the same iterations as ReaderOpen", static s => s.DrainUs));
 	}
 }
 
-sealed class OpenTimeColumn(string name, string legend, Func<OpenTimeSummary, double> pick) : IColumn
+sealed class OpenTimeColumn(string name, string legend, Func<MeasuredOpenSummary, double> pick) : IColumn
 {
 	public string Id => "Synthetic." + name;
 	public string ColumnName => name + " (us)";
@@ -80,10 +81,17 @@ sealed class OpenTimeColumn(string name, string legend, Func<OpenTimeSummary, do
 	public bool IsDefault(Summary summary, BenchmarkCase benchmarkCase) => false;
 	public string GetValue(Summary summary, BenchmarkCase benchmarkCase) => GetValue(summary, benchmarkCase, SummaryStyle.Default);
 
+	// Three decimals: the check script compares this with Mean, and a case of 100 ns would lose 5% to two.
 	public string GetValue(Summary summary, BenchmarkCase benchmarkCase, SummaryStyle style)
-		=> SyntheticBenchmarks.Results.TryGetValue(SyntheticBenchmarks.Key(benchmarkCase.Descriptor.WorkloadMethod.Name, benchmarkCase.Parameters.Items.Select(static p => (p.Name, p.Value))), out var s)
-			? pick(s).ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
-			: "n/a (not in-process)";
+	{
+		if (!SyntheticBenchmarks.Results.TryGetValue(SyntheticBenchmarks.Key(benchmarkCase.Descriptor.WorkloadMethod.Name, benchmarkCase.Parameters.Items.Select(static p => (p.Name, p.Value))), out var recorded))
+			return "n/a (not in-process)";
+		if (summary[benchmarkCase] is not { } report) return "n/a (no report)";
+		var actual = report.AllMeasurements.Where(static m => m.Is(IterationMode.Workload, IterationStage.Actual)).ToList();
+		return MeasuredOpenTime.TrySummarize(recorded, actual, report.GetResultRuns(), out var s, out string reason)
+			? pick(s).ToString("F3", System.Globalization.CultureInfo.InvariantCulture)
+			: "n/a (" + reason + ")";
+	}
 }
 
 /// <summary>
@@ -94,8 +102,18 @@ sealed class OpenTimeColumn(string name, string legend, Func<OpenTimeSummary, do
 [Config(typeof(SyntheticConfig))]
 public class SyntheticBenchmarks
 {
-	/// <summary>The recorder numbers of every case run in this process, by <see cref="Key"/>. Filled when a case is cleaned up.</summary>
-	public static readonly ConcurrentDictionary<string, OpenTimeSummary> Results = new();
+	/// <summary>The WorkloadActual iterations the recorder saw for every case run in this process, by <see cref="Key"/>. Filled when a case is cleaned up.</summary>
+	public static readonly ConcurrentDictionary<string, MeasuredIteration[]> Results = new();
+
+	/// <summary>Files the recorder's iterations under the case (appended, so a second launch of the same case adds to the first) and logs a line.</summary>
+	internal static void FileResults(string key, SyntheticRecorder recorder)
+	{
+		SyntheticIterationListener.Detach(recorder);
+		var iterations = recorder.MeasuredIterations;
+		Results.AddOrUpdate(key, iterations, (_, earlier) => [.. earlier, .. iterations]);
+		var all = MeasuredOpenTime.MeanOfAll(iterations);
+		Console.WriteLine($"// SYNTHETIC {key} {recorder.Summary()} | WorkloadActual iterations={all.Iterations}, per operation, mean over all of them (outliers not yet removed): reader-open={all.OpenUs:F3}us drain={all.DrainUs:F3}us");
+	}
 
 	public static string Key(string method, IEnumerable<(string Name, object Value)> parameters)
 		=> method + "|" + string.Join(",", parameters.OrderBy(static p => p.Name, StringComparer.Ordinal).Select(static p => p.Name + "=" + p.Value));
@@ -140,17 +158,16 @@ public class SyntheticBenchmarks
 			new SyntheticOptions { RowCostIterations = RowCost, ExtraResultSets = ExtraSets, NextResultCostIterations = NextResultCost });
 		_hand = SyntheticVariants.Hand(Width);
 		_handM = SyntheticVariantsB.HandMassaged(Width);
+		SyntheticIterationListener.Attach(Connection.Options.Recorder);
 	}
 
 	// The label is the benchmark method that ran, so the recorder's numbers can be filed under the case the column asks about.
 	[GlobalCleanup]
 	public void Cleanup()
 	{
-		var summary = Connection.Options.Recorder.Summary();
-		if (_label.Length == 0 || summary.Readers == 0) return;
+		if (_label.Length == 0) return;
 		var key = Key(_label, [(nameof(Width), Width), (nameof(Rows), Rows), (nameof(RowCost), RowCost), (nameof(ExtraSets), ExtraSets), (nameof(NextResultCost), NextResultCost), (nameof(Pace), Pace)]);
-		Results[key] = summary;
-		Console.WriteLine($"// SYNTHETIC {key} {summary}");
+		FileResults(key, Connection.Options.Recorder);
 	}
 
 	[Benchmark]
@@ -269,16 +286,17 @@ public class SyntheticScalarBenchmarks
 	string _label = "";
 
 	[GlobalSetup]
-	public void Setup() => _conn = new SyntheticConnection(SyntheticTable.Create(1, 1), new SyntheticOptions());
+	public void Setup()
+	{
+		_conn = new SyntheticConnection(SyntheticTable.Create(1, 1), new SyntheticOptions());
+		SyntheticIterationListener.Attach(_conn.Options.Recorder);
+	}
 
 	[GlobalCleanup]
 	public void Cleanup()
 	{
-		var summary = _conn.Options.Recorder.Summary();
-		if (_label.Length == 0 || summary.Readers == 0) return;
-		var key = SyntheticBenchmarks.Key(_label, []);
-		SyntheticBenchmarks.Results[key] = summary;
-		Console.WriteLine($"// SYNTHETIC {key} {summary}");
+		if (_label.Length == 0) return;
+		SyntheticBenchmarks.FileResults(SyntheticBenchmarks.Key(_label, []), _conn.Options.Recorder);
 	}
 
 	[Benchmark(Baseline = true)]

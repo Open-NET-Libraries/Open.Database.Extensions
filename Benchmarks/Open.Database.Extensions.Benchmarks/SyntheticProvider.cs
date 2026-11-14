@@ -54,7 +54,10 @@ public sealed class SyntheticOptions
 	public SyntheticRecorder Recorder { get; init; } = new();
 }
 
-/// <summary>What the recorder holds, in microseconds per reader. Reader-open includes the drain.</summary>
+/// <summary>
+/// What the recorder holds over every reader it saw (mean) and the last readers (median), in microseconds per reader. Reader-open includes the drain.
+/// This includes warm-up and pilot readers, so it is NOT what the BenchmarkDotNet columns show; those use <see cref="MeasuredOpenTime"/>.
+/// </summary>
 public readonly record struct OpenTimeSummary(long Readers, double MeanOpenUs, double MedianOpenUs, double MeanDrainUs, double MedianDrainUs)
 {
 	public override string ToString()
@@ -71,6 +74,12 @@ public sealed class SyntheticRecorder
 
 	readonly long[] _open = new long[RingSize], _drain = new long[RingSize];
 	long _readers, _openTicks, _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges, _extraSetsServed;
+
+	// The readers that closed inside one WorkloadActual iteration (between BeginMeasuredIteration and EndMeasuredIteration), summed.
+	// Nothing is allocated per reader: a flag read and two Interlocked adds.
+	readonly List<MeasuredIteration> _iterations = [];
+	volatile bool _measuring;
+	long _iterOpenTicks, _iterDrainTicks;
 
 	public long Readers => Interlocked.Read(ref _readers);
 	public long Rows => Interlocked.Read(ref _rows);
@@ -94,6 +103,10 @@ public sealed class SyntheticRecorder
 		Interlocked.Exchange(ref _extraSetsServed, 0);
 		Array.Clear(_open);
 		Array.Clear(_drain);
+		_measuring = false;
+		Interlocked.Exchange(ref _iterOpenTicks, 0);
+		Interlocked.Exchange(ref _iterDrainTicks, 0);
+		lock (_iterations) _iterations.Clear();
 	}
 
 	internal void ReaderClosed(long openTicks, long drainTicks, long rows, long rowCostCharges, long nextResultCalls, long nextResultCostCharges, long extraSets)
@@ -108,6 +121,34 @@ public sealed class SyntheticRecorder
 		Interlocked.Add(ref _nextResultCalls, nextResultCalls);
 		Interlocked.Add(ref _nextResultCostCharges, nextResultCostCharges);
 		Interlocked.Add(ref _extraSetsServed, extraSets);
+		if (!_measuring) return;
+		Interlocked.Add(ref _iterOpenTicks, openTicks);
+		Interlocked.Add(ref _iterDrainTicks, drainTicks);
+	}
+
+	/// <summary>Starts a WorkloadActual iteration: readers that close from here until <see cref="EndMeasuredIteration"/> belong to it.</summary>
+	public void BeginMeasuredIteration()
+	{
+		Interlocked.Exchange(ref _iterOpenTicks, 0);
+		Interlocked.Exchange(ref _iterDrainTicks, 0);
+		_measuring = true;
+	}
+
+	/// <summary>Ends the iteration and files it with the number of operations it ran.</summary>
+	public void EndMeasuredIteration(long operations)
+	{
+		_measuring = false;
+		var iteration = new MeasuredIteration(operations, Interlocked.Read(ref _iterOpenTicks), Interlocked.Read(ref _iterDrainTicks));
+		lock (_iterations) _iterations.Add(iteration);
+	}
+
+	/// <summary>The WorkloadActual iterations seen so far, in order.</summary>
+	public MeasuredIteration[] MeasuredIterations
+	{
+		get
+		{
+			lock (_iterations) return [.. _iterations];
+		}
 	}
 
 	public OpenTimeSummary Summary()

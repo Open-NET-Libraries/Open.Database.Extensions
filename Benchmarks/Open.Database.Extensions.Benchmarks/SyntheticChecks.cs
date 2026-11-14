@@ -1,8 +1,11 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Reflection;
 using System.Globalization;
 using System.Runtime;
+using BenchmarkDotNet.Engines;
+using BenchmarkDotNet.Reports;
 using Open.Database.Extensions.Core;
 
 namespace Open.Database.Extensions.Benchmarks;
@@ -10,6 +13,7 @@ namespace Open.Database.Extensions.Benchmarks;
 // The three checks of the synthetic provider, run from the command line. None of them is a benchmark.
 //   --verify                 equal final objects from every variant, the provider's switches, every read path, a timing printout
 //   --selftest-open-time     a delay inside an open reader grows reader-open time; the same delay after the close does not
+//                            and the ReaderOpen/Drain summary covers the WorkloadActual iterations only (BS-RO)
 //   --selftest-pace          consumer pace grows reader-open for the inline variants (V3, V3s, V4a, V4b, V6c, Dapper twins) and not for V5 and V6d
 //   --selftest-alloc         the typed-getter loop allocates 0 B per row
 public static class SyntheticChecks
@@ -626,9 +630,98 @@ public static class SyntheticChecks
 		var s = rec.Summary();
 		Console.WriteLine($"  drain: k=3 extra sets, 20000 iterations per NextResult call, via Map<T>().ToList(): {s}");
 		report.Check(s.MedianDrainUs > 0 && s.MedianOpenUs >= s.MedianDrainUs, "the drain is not reported inside reader-open time");
+		CheckMeasuredIterations(report, table);
 
 		Console.WriteLine(report.Failures == 0 ? $"SELFTEST OPEN TIME PASS ({report.Checks} checks)" : $"SELFTEST OPEN TIME FAIL ({report.Failures} of {report.Checks})");
 		return report.Failures == 0 ? 0 : 1;
+	}
+
+	// ---- the ReaderOpen/Drain summary covers the WorkloadActual iterations only (BS-RO) ----------------------------------------------------------------
+	// No benchmark runs here. The listener is fed with BenchmarkDotNet's real engine events, written through reflection (the engine writes them itself
+	// in a run), and BenchmarkDotNet's measurements are built by hand with the shape of the stage-1a log (12 iterations, the last an outlier).
+	static void CheckMeasuredIterations(Report report, SyntheticTable table)
+	{
+		var sourceType = typeof(EngineEventSource);
+		object log = sourceType.GetField("Log", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+		var start = sourceType.GetMethod("IterationStart", BindingFlags.NonPublic | BindingFlags.Instance)!;
+		var stop = sourceType.GetMethod("IterationStop", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+		var rec = new SyntheticRecorder();
+		var conn = new SyntheticConnection(table, new SyntheticOptions { Recorder = rec });
+		SyntheticIterationListener.Attach(rec);
+
+		void Iteration(IterationMode mode, IterationStage stage, long operations, int readers, double holdUs)
+		{
+			start.Invoke(log, [mode, stage, operations]);
+			for (int i = 0; i < readers; i++)
+			{
+				using var r = Open(conn);
+				ReadAllRows(r);
+				Spin.Microseconds(holdUs);
+			}
+
+			stop.Invoke(log, [mode, stage, operations]);
+		}
+
+		// Every stage BenchmarkDotNet has, with a long hold (5 ms) in all but the WorkloadActual iterations; a reader outside any iteration too.
+		const double Hold = 500;
+		Iteration(IterationMode.Workload, IterationStage.Jitting, 1, 1, 5000);
+		Iteration(IterationMode.Workload, IterationStage.Pilot, 4, 4, 5000);
+		Iteration(IterationMode.Overhead, IterationStage.Actual, 4, 0, 0);
+		Iteration(IterationMode.Workload, IterationStage.Warmup, 4, 4, 5000);
+		for (int i = 0; i < 3; i++) Iteration(IterationMode.Workload, IterationStage.Actual, 4, 4, Hold);
+		using (var r = Open(conn)) { ReadAllRows(r); Spin.Microseconds(5000); } // the extra GC pass after the last iteration, or a stray reader
+		var seen = rec.MeasuredIterations;
+		report.Check(seen.Length == 3 && seen.All(static i => i.Operations == 4), $"the listener recorded {seen.Length} iterations ({string.Join(",", seen.Select(static i => i.Operations))}), expected 3 of 4 operations (WorkloadActual only)");
+		var all = MeasuredOpenTime.MeanOfAll(seen);
+		report.Check(all.OpenUs >= Hold && all.OpenUs <= Hold + 300 && all.DrainUs == 0, $"reader-open per operation was {all.OpenUs:F1}us, expected {Hold}us plus the read of {table.Rows} rows; drain {all.DrainUs:F1}us, expected 0 (warm-up, pilot and stray readers of 5000us must not count)");
+		Console.WriteLine($"  iterations: 3 WorkloadActual of 4 operations recorded out of 7 iterations and a stray reader; reader-open per operation {all.OpenUs:F1}us (hold {Hold}us per reader)");
+
+		// What the recorder sums in an iteration is at most what the iteration took (ReaderOpen can never exceed Mean), and most of it for this loop.
+		rec.Reset();
+		long t0 = Stopwatch.GetTimestamp();
+		start.Invoke(log, [IterationMode.Workload, IterationStage.Actual, 300L]);
+		for (int i = 0; i < 300; i++) SyntheticVariants.V1(conn);
+		stop.Invoke(log, [IterationMode.Workload, IterationStage.Actual, 300L]);
+		double wallUs = (Stopwatch.GetTimestamp() - t0) * 1_000_000d / Stopwatch.Frequency / 300;
+		double openUs = MeasuredOpenTime.MeanOfAll(rec.MeasuredIterations).OpenUs;
+		Console.WriteLine($"  ReaderOpen {openUs:F2}us per operation against {wallUs:F2}us for the whole operation (V1, {table.Rows} rows)");
+		report.Check(openUs <= wallUs * 1.05 && openUs >= wallUs * 0.5, $"reader-open per operation {openUs:F2}us against {wallUs:F2}us for the operation: it must be at most 105% and, for this loop, over 50%");
+		SyntheticIterationListener.Detach(rec);
+
+		// Matching to BenchmarkDotNet's report: 12 actual iterations, the 6th and the last removed as outliers, every result is its actual less the same overhead.
+		double[] perOpUs = [47.0367, 51.4732, 49.1089, 47.7901, 47.1352, 52.0846, 50.0557, 47.1315, 47.8332, 47.2171, 47.4400, 61.8285];
+		const long Operations = 16384;
+		const double OverheadNs = 34200;
+		var actual = new List<Measurement>();
+		var recorded = new List<MeasuredIteration>();
+		for (int i = 0; i < perOpUs.Length; i++)
+		{
+			actual.Add(new Measurement(1, IterationMode.Workload, IterationStage.Actual, i + 1, Operations, perOpUs[i] * 1000 * Operations));
+			recorded.Add(new MeasuredIteration(Operations, (long)(perOpUs[i] * 0.95 * Operations * Stopwatch.Frequency / 1_000_000d), 0));
+		}
+
+		var removed = new HashSet<int> { 5, 11 };
+		var results = new List<Measurement>();
+		foreach (int i in Enumerable.Range(0, perOpUs.Length).Where(i => !removed.Contains(i)))
+			results.Add(new Measurement(1, IterationMode.Workload, IterationStage.Result, results.Count + 1, Operations, (perOpUs[i] * 1000 * Operations) - OverheadNs));
+
+		double expected = 0.95 * Enumerable.Range(0, perOpUs.Length).Where(i => !removed.Contains(i)).Average(i => perOpUs[i]);
+		double everything = 0.95 * perOpUs.Average();
+		bool ok = MeasuredOpenTime.TrySummarize(recorded, actual, results, out var summary, out string reason);
+		report.Check(ok && summary.Iterations == 10 && Math.Abs(summary.OpenUs - expected) < 0.01, $"matching the 10 results to the 12 iterations: ok={ok} ({reason}), mean {summary.OpenUs:F3}us over {summary.Iterations}, expected {expected:F3}us");
+		report.Check(Math.Abs(everything - expected) > 0.5, "the test data do not tell the removed outliers apart (the all-iterations mean equals the survivors' mean)");
+		Console.WriteLine($"  matching: 12 iterations, 2 removed (6th and 12th), survivors' mean {summary.OpenUs:F3}us (expected {expected:F3}us), all 12 would give {everything:F3}us");
+
+		report.Check(!MeasuredOpenTime.TrySummarize(recorded.Take(11).ToList(), actual, results, out _, out _), "a recording of 11 iterations was accepted for 12 reported");
+		var wrongOps = recorded.ToList();
+		wrongOps[3] = wrongOps[3] with { Operations = 8192 };
+		report.Check(!MeasuredOpenTime.TrySummarize(wrongOps, actual, results, out _, out _), "an iteration with other operations was accepted");
+		var shifted = results.ToList();
+		shifted[4] = new Measurement(1, IterationMode.Workload, IterationStage.Result, 5, Operations, shifted[4].Nanoseconds - (3 * Operations));
+		report.Check(!MeasuredOpenTime.TrySummarize(recorded, actual, shifted, out _, out _), "results that differ from their iterations by different amounts were accepted");
+		var every = actual.Select(static a => new Measurement(1, IterationMode.Workload, IterationStage.Result, 1, a.Operations, a.Nanoseconds - OverheadNs)).ToList();
+		report.Check(MeasuredOpenTime.TrySummarize(recorded, actual, every, out var none, out _) && none.Iterations == 12, "no outlier removed: all 12 iterations were not used");
 	}
 
 	// ---- --selftest-pace ----------------------------------------------------------------
