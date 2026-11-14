@@ -36,10 +36,10 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 
 		// What the command holds: name=value databaseType direction, "-" when no database type was given.
 		static string Sent(SqlTyped command)
-			=> string.Join("; ", command.Params.Select(p => p.Name + "=" + Show(p.Value) + " " + (p.Type.HasValue ? p.Type.Value.ToString() : "-") + " " + p.Direction));
+			=> string.Join("; ", command.Params.Select(p => $"{p.Name}={Show(p.Value)} {(p.Type.HasValue ? p.Type.Value.ToString() : "-")} {p.Direction}"));
 
 		static string SentDb(ExpressiveCommand command)
-			=> string.Join("; ", command.Params.Select(p => p.Name + "=" + Show(p.Value) + " " + (p.Type.HasValue ? p.Type.Value.ToString() : "-") + " " + p.Direction));
+			=> string.Join("; ", command.Params.Select(p => $"{p.Name}={Show(p.Value)} {(p.Type.HasValue ? p.Type.Value.ToString() : "-")} {p.Direction}"));
 
 		// ---- a value and a database type: the forms that were ambiguous ----
 
