@@ -193,6 +193,7 @@ public class SyntheticBenchmarks
 		_handM = SyntheticVariantsB.HandMassaged(Width);
 		_hands = Hands.For(Width);
 		_f = FHands.For(Width); // DS1b-F: the trees are compiled and the method emitted here, once per case
+		Console.WriteLine($"// ENV DOTNET_TieredPGO={Environment.GetEnvironmentVariable("DOTNET_TieredPGO") ?? "(unset)"} DOTNET_TieredCompilation={Environment.GetEnvironmentVariable("DOTNET_TieredCompilation") ?? "(unset)"}");
 		_connU = new UnsealedSyntheticConnection(Connection.Table, Connection.Options); // F2u: the unsealed copy of the provider path over the same table and options (same recorder)
 		_k = SyntheticVariantsC.K(Width);
 		SyntheticIterationListener.Attach(Connection.Options.Recorder);
@@ -302,6 +303,12 @@ public class SyntheticBenchmarks
 
 	[Benchmark]
 	public List<SynRow> F3_Sync() { _label = nameof(F3_Sync); return SyntheticVariantsF.F3(Connection, _f); }
+
+	[Benchmark]
+	public List<SynRow> F3r_Sync() { _label = nameof(F3r_Sync); return SyntheticVariantsF.F3r(Connection, _f); }
+
+	[Benchmark]
+	public List<SynRow> F1f_Sync() { _label = nameof(F1f_Sync); return SyntheticVariantsF.F1f(Connection, _f); }
 
 	[Benchmark]
 	public List<SynRow> F2u_Sync() { _label = nameof(F2u_Sync); return SyntheticVariantsF.F2u(_connU, _f); }

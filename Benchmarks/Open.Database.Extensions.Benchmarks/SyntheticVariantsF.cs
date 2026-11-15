@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
+using FastExpressionCompiler;
 
 namespace Open.Database.Extensions.Benchmarks;
 
@@ -22,6 +23,9 @@ namespace Open.Database.Extensions.Benchmarks;
 //       terminal), whose one cast per query sits in its ExecuteReader callback (the reader already is a DbDataReader; the cast is the loop's own, outside the row loop).
 //   F3  the F1 logic as a static method of a real type emitted with Reflection.Emit into a collectible AssemblyBuilder (RunAndCollect), turned into a
 //       delegate with CreateDelegate; used through V2's terminal. A real method on a real type, where Expression.Compile emits a DynamicMethod.
+//   F3r F3's emitted method in a NON-collectible assembly (AssemblyBuilderAccess.Run); everything else as F3. F3r minus F3 = what collectibility costs.
+//   F1f F1's tree compiled with FastExpressionCompiler.CompileFast (a different compiler than Expression.Compile; null on failure, which setup turns into an
+//       error); V2's terminal. F1f minus F1 = the compiler, with the same tree.
 
 /// <summary>What the three F variants run, built once per width: the compiled trees and the emitted method.</summary>
 public sealed class FHands
@@ -78,6 +82,12 @@ public sealed class FHands
 	/// <summary>F3: the emitted static method, as a delegate over IDataRecord.</summary>
 	public required Func<IDataRecord, SynRow> F3 { get; init; }
 
+	/// <summary>F3r: the same emitted static method, in a NON-collectible (Run) assembly.</summary>
+	public required Func<IDataRecord, SynRow> F3r { get; init; }
+
+	/// <summary>F1f: F1's tree compiled with FastExpressionCompiler's CompileFast.</summary>
+	public required Func<IDataRecord, SynRow> F1f { get; init; }
+
 	/// <summary>The three for a width (any width 1 to 20), built on the first call and kept.</summary>
 	public static FHands For(int width)
 	{
@@ -91,7 +101,10 @@ public sealed class FHands
 			F2 = Tree<SyntheticReader>(w).Compile(),
 			F2u = Tree<UnsealedSyntheticReader>(w).Compile(),
 			F4 = Tree<DbDataReader>(w).Compile(),
-			F3 = Emit(w),
+			F3 = Emit(w, AssemblyBuilderAccess.RunAndCollect),
+			F3r = Emit(w, AssemblyBuilderAccess.Run),
+			F1f = Tree<IDataRecord>(w).CompileFast(ifFastFailedReturnNull: true)
+				?? throw new InvalidOperationException($"FastExpressionCompiler could not compile the F1 tree at width {w}."),
 		});
 	}
 
@@ -185,11 +198,12 @@ public sealed class FHands
 	}
 
 	// The same selector as IL: newobj, then for each member dup, the value, callvirt the setter (what the C# compiler emits for V2's Read<width>).
-	static Func<IDataRecord, SynRow> Emit(int width)
+	static Func<IDataRecord, SynRow> Emit(int width, AssemblyBuilderAccess access)
 	{
-		var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("OdxFEmit" + width), AssemblyBuilderAccess.RunAndCollect);
+		var name = "OdxFEmit" + access + width;
+		var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(name), access);
 		Emitted.Add(assembly);
-		var module = assembly.DefineDynamicModule("OdxFEmit" + width);
+		var module = assembly.DefineDynamicModule(name);
 		var type = module.DefineType("Readers", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed);
 		var method = type.DefineMethod("Read", MethodAttributes.Public | MethodAttributes.Static, typeof(SynRow), [typeof(IDataRecord)]);
 		var il = method.GetILGenerator();
@@ -294,4 +308,10 @@ public static class SyntheticVariantsF
 
 	/// <summary>F3: V2's terminal with the emitted static method.</summary>
 	public static List<SynRow> F3(SyntheticConnection connection, FHands hands) => SyntheticVariants.V2(connection, hands.F3);
+
+	/// <summary>F3r: V2's terminal with the method emitted into a non-collectible assembly.</summary>
+	public static List<SynRow> F3r(SyntheticConnection connection, FHands hands) => SyntheticVariants.V2(connection, hands.F3r);
+
+	/// <summary>F1f: V2's terminal with F1's tree compiled by FastExpressionCompiler.</summary>
+	public static List<SynRow> F1f(SyntheticConnection connection, FHands hands) => SyntheticVariants.V2(connection, hands.F1f);
 }

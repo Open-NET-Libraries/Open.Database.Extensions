@@ -52,6 +52,8 @@ public static partial class SyntheticChecks
 			new("F1", () => SyntheticVariantsF.F1(conn, fHands)),
 			new("F2", () => SyntheticVariantsF.F2(conn, fHands)),
 			new("F3", () => SyntheticVariantsF.F3(conn, fHands)),
+			new("F3r", () => SyntheticVariantsF.F3r(conn, fHands)),
+			new("F1f", () => SyntheticVariantsF.F1f(conn, fHands)),
 			new("F2u", () => SyntheticVariantsF.F2u(connU, fHands)),
 			new("F4", () => SyntheticVariantsF.F4(conn, fHands)),
 			new("V9d", () => SyntheticVariantsC.V9d(conn, hands)),
@@ -87,7 +89,7 @@ public static partial class SyntheticChecks
 		// V9a: every rented array came back (rents equal returns, growth included).
 		report.Check(PoolTally.Rented == PoolTally.Returned && PoolTally.Rented > 0, $"V9a {where}: ArrayPool rented {PoolTally.Rented} arrays, returned {PoolTally.Returned}");
 
-		Console.WriteLine($"  ok  {where}: V9c-Db, V9c-Syn, F0, F1, F2, F2u, F3, F4, V9d, V9e, V9a-off equal V1 and the table; V6b-F, V6b-E ({DelegateCallsPerRow(width)} delegate calls per row), V6b-K, V9a-on, V9b, V9d-M equal the massaged oracle; pool rented={PoolTally.Rented} returned={PoolTally.Returned}");
+		Console.WriteLine($"  ok  {where}: V9c-Db, V9c-Syn, F0, F1, F2, F2u, F3, F3r, F1f, F4, V9d, V9e, V9a-off equal V1 and the table; V6b-F, V6b-E ({DelegateCallsPerRow(width)} delegate calls per row), V6b-K, V9a-on, V9b, V9d-M equal the massaged oracle; pool rented={PoolTally.Rented} returned={PoolTally.Returned}");
 	}
 
 	static List<SynItem> HandCounted(SyntheticConnection conn, Hands hands)
@@ -102,6 +104,14 @@ public static partial class SyntheticChecks
 		bool own = conn.Command(SyntheticVariants.Sql).ExecuteReader(static reader => reader.GetType() == typeof(UnsealedSyntheticReader), CommandBehavior.SequentialAccess);
 		report.Check(own, "the reader handed to ExecuteReader on the unsealed connection is not the UnsealedSyntheticReader itself");
 		Console.WriteLine($"  ok  UnsealedSyntheticReader.IsSealed={typeof(UnsealedSyntheticReader).IsSealed}, SyntheticReader.IsSealed={typeof(SyntheticReader).IsSealed}; the unsealed connection hands out the UnsealedSyntheticReader itself");
+
+		// F3r / F3: the emitted method lives in a non-collectible / a collectible assembly (read from the delegate's method).
+		var fHands = FHands.For(1);
+		bool f3Collectible = fHands.F3.Method.DeclaringType!.Assembly.IsCollectible;
+		bool f3rCollectible = fHands.F3r.Method.DeclaringType!.Assembly.IsCollectible;
+		report.Check(f3Collectible, "F3's assembly is not collectible");
+		report.Check(!f3rCollectible, "F3r's assembly is collectible");
+		Console.WriteLine($"  ok  F3 assembly collectible={f3Collectible}, F3r assembly collectible={f3rCollectible}; F1f is {fHands.F1f.Method.GetType().Name} over {fHands.F1f.Method.DeclaringType?.Name ?? "(no declaring type)"}, F1 is {fHands.F1.Method.GetType().Name}");
 	}
 
 	// F0, planted bad cell: one cell fails (GetInt32 on a string column; the provider throws InvalidCastException) and the exception F0 throws must name that column.
