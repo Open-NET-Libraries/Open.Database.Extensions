@@ -108,9 +108,10 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Reads the rows of an async terminal with <c>ReadAsync</c> instead of <c>Read</c>, for this command.
 	/// </summary>
 	/// <remarks>
-	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>.
-	/// <c>ReadAsync</c> can add latency and CPU overhead, so choose it only for a clear reason and profile before and after.
-	/// It changes nothing on a synchronous terminal.
+	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>, the fastest and lightest way, also for large values.
+	/// This opts in to <c>ReadAsync</c> (the getters stay synchronous, and the later result sets are read through with <c>NextResultAsync</c>) for this command only.
+	/// A selector map (<c>Map(Func)</c>) on one very large value reads slower and uses more memory this way.
+	/// It changes nothing on a synchronous terminal. The same call is available on the mapped views (<see cref="MappedQuery{T}.AsyncReads"/>), in any order with <c>Skip</c>, <c>Take</c> and <c>SingleResult</c>.
 	/// </remarks>
 	/// <returns>The same command.</returns>
 	public TThis AsyncReads()
