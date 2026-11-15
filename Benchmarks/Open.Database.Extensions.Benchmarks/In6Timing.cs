@@ -142,8 +142,8 @@ sealed class WaitTimer(In6Stats stats, long start)
 	public void Done() => stats.AddWait(Stopwatch.GetTimestamp() - start);
 }
 
-/// <summary>Wraps an open connection (the caller keeps it open and disposes it). Commands and readers made from it are timed.</summary>
-public sealed class TimedConnection(DbConnection inner, In6Stats stats) : DbConnection
+/// <summary>Wraps an open connection (the caller keeps it open and disposes it). Commands and readers made from it are timed; <paramref name="mode"/> says what is stamped.</summary>
+public sealed class TimedConnection(DbConnection inner, In6Stats stats, TimedReaderMode mode = TimedReaderMode.PerCallStamps) : DbConnection
 {
 	/// <summary>The provider's own connection behind the wrapper (P6 uses it directly).</summary>
 	public DbConnection Inner => inner;
@@ -159,13 +159,13 @@ public sealed class TimedConnection(DbConnection inner, In6Stats stats) : DbConn
 	public override void Open() => inner.Open();
 	public override Task OpenAsync(CancellationToken cancellationToken) => inner.OpenAsync(cancellationToken);
 	protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
-	protected override DbCommand CreateDbCommand() => new TimedCommand(inner.CreateCommand(), this, stats);
+	protected override DbCommand CreateDbCommand() => new TimedCommand(inner.CreateCommand(), this, stats, mode);
 
 	// The probe owns the inner connection.
 	protected override void Dispose(bool disposing) { }
 }
 
-public sealed class TimedCommand(DbCommand inner, TimedConnection connection, In6Stats stats) : DbCommand
+public sealed class TimedCommand(DbCommand inner, TimedConnection connection, In6Stats stats, TimedReaderMode mode = TimedReaderMode.PerCallStamps) : DbCommand
 {
 	[AllowNull]
 	public override string CommandText { get => inner.CommandText; set => inner.CommandText = value; }
@@ -182,17 +182,20 @@ public sealed class TimedCommand(DbCommand inner, TimedConnection connection, In
 	public override void Prepare() => inner.Prepare();
 	protected override DbParameter CreateDbParameter() => inner.CreateParameter();
 
+	DbDataReader Wrap(DbDataReader reader, long start)
+		=> mode == TimedReaderMode.ReaderOpenOnly ? new OpenCloseTimedReader(reader, stats, start) : new TimedReader(reader, stats, start);
+
 	protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
 	{
 		long start = Stopwatch.GetTimestamp();
-		return new TimedReader(inner.ExecuteReader(behavior), stats, start);
+		return Wrap(inner.ExecuteReader(behavior), start);
 	}
 
 	protected override async Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
 	{
 		long start = Stopwatch.GetTimestamp();
 		var reader = await inner.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-		return new TimedReader(reader, stats, start);
+		return Wrap(reader, start);
 	}
 
 	protected override void Dispose(bool disposing)

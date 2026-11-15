@@ -135,7 +135,7 @@ public sealed class RealProviderCase
 		Stats = stats;
 		Recorder = new SyntheticRecorder();
 		stats.Recorder = Recorder;
-		Timed = new TimedConnection(real, stats);
+		Timed = new TimedConnection(real, stats, TimedReaderMode.ReaderOpenOnly);
 	}
 
 	public string Provider { get; }
