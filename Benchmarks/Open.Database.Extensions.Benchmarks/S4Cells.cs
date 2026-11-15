@@ -104,7 +104,7 @@ public sealed class S4Result(S4Counters counters, long totalTicks, long allocByt
 	public string Line(string scenario, string path)
 		=> $"S4RESULT scenario={scenario} path={path} open_ms={Ms(counters.OpenTicks)} total_ms={Ms(totalTicks)} alloc_bytes={allocBytes} peak_ws_bytes={peakWorkingSet}"
 		+ $" async_reads={counters.AsyncReads} async_wait_ms={Ms(counters.AsyncReadTicks)} async_getters={counters.AsyncGetters} async_getter_wait_ms={Ms(counters.AsyncGetterTicks)}"
-		+ $" rows={verify.Rows} bytes={verify.Bytes} wrapper={(counters.Wrapper ? "yes" : "no")} cmd_timeout={counters.CommandTimeout}";
+		+ $" rows={verify.Rows} bytes={verify.Bytes} wrapper={(counters.Wrapper ? "yes" : "no")} cmd_timeout={counters.CommandTimeout} switches={S4Switches.Mode}";
 
 	public string VerifyLine(string scenario, string path) => $"S4VERIFY scenario={scenario} path={path} {verify.Format()}";
 }
@@ -368,7 +368,7 @@ public static partial class S4Cells
 
 	// ---- the self-test: no server; SQLite in memory with the four shapes scaled down to KB -----------------------------------------------------
 
-	[GeneratedRegex(@"^S4RESULT scenario=(V1|V2|N1|N2) path=(R[1-5]|O[1-3]) open_ms=\d+\.\d{3} total_ms=\d+\.\d{3} alloc_bytes=\d+ peak_ws_bytes=\d+ async_reads=\d+ async_wait_ms=\d+\.\d{3} async_getters=\d+ async_getter_wait_ms=\d+\.\d{3} rows=\d+ bytes=\d+ wrapper=(yes|no) cmd_timeout=[0-9]+$", RegexOptions.CultureInvariant)]
+	[GeneratedRegex(@"^S4RESULT scenario=(V1|V2|N1|N2) path=(R[1-5]|O[1-3]) open_ms=\d+\.\d{3} total_ms=\d+\.\d{3} alloc_bytes=\d+ peak_ws_bytes=\d+ async_reads=\d+ async_wait_ms=\d+\.\d{3} async_getters=\d+ async_getter_wait_ms=\d+\.\d{3} rows=\d+ bytes=\d+ wrapper=(yes|no) cmd_timeout=[0-9]+ switches=(new|default)$", RegexOptions.CultureInvariant)]
 	private static partial Regex ResultFormat();
 
 	[GeneratedRegex(@"^S4VERIFY scenario=(V1|V2|N1|N2) path=(R[1-5]|O[1-3]) rows=\d+ bytes=\d+ first_last_checksum=[0-9a-f]{16}$", RegexOptions.CultureInvariant)]
@@ -472,11 +472,25 @@ public static partial class S4Cells
 			spy.Commands.Clear();
 			var result = RunAsync(spy, S4Scenario.Small[1], path, S4Scenario.Small[1].WarmupSqlite, 45).GetAwaiter().GetResult();
 			Check(spy.Commands.Count == 2 && spy.Commands.All(static c => c.CommandTimeout == 45), $"{path}: {spy.Commands.Count} commands, timeouts {string.Join(",", spy.Commands.Select(static c => c.CommandTimeout))}, expected 2 x 45");
-			Check(result.Line("V2", path).EndsWith(" cmd_timeout=45", StringComparison.Ordinal), $"{path}: result line carries cmd_timeout=45");
+			Check(result.Line("V2", path).Contains(" cmd_timeout=45 ", StringComparison.Ordinal), $"{path}: result line carries cmd_timeout=45");
 		}
 
 		var defaults = RunAsync(spy, S4Scenario.Small[1], "O1", S4Scenario.Small[1].WarmupSqlite).GetAwaiter().GetResult();
-		Check(defaults.Line("V2", "O1").EndsWith(" cmd_timeout=30", StringComparison.Ordinal), "the default command timeout is 30");
+		Check(defaults.Line("V2", "O1").Contains(" cmd_timeout=30 ", StringComparison.Ordinal), "the default command timeout is 30");
+
+		// The SqlClient switches helper: `default` leaves both unset (nothing in this process has set them), `new` sets both to false and reads both back.
+		// Last in the test: an AppContext switch cannot be unset again.
+		S4Switches.Apply("default");
+		Check(S4Switches.Line() == "S4SWITCHES UseCompatibilityAsyncBehaviour=unset UseCompatibilityProcessSni=unset", "default leaves both switches unset: " + S4Switches.Line());
+		Check(S4Switches.Mode == "default", "mode default");
+		S4Switches.Apply("new");
+		Check(S4Switches.Line() == "S4SWITCHES UseCompatibilityAsyncBehaviour=false UseCompatibilityProcessSni=false", "new sets both switches to false: " + S4Switches.Line());
+		Check(S4Switches.Mode == "new", "mode new");
+		Check(RunAsync(connection, S4Scenario.Small[0], "R2", S4Scenario.Small[0].WarmupSqlite).GetAwaiter().GetResult().Line("V1", "R2").EndsWith(" switches=new", StringComparison.Ordinal), "the result line carries switches=new");
+		bool rejected = false;
+		try { S4Switches.Apply("old"); }
+		catch (ArgumentException) { rejected = true; }
+		Check(rejected, "an unknown switches mode is rejected");
 
 		Console.WriteLine(failures == 0 ? "S4 self-test: OK (8 paths x 4 scenarios agree on rows, bytes and checksum; line formats match)" : $"S4 self-test: {failures} FAILED");
 		return failures == 0 ? 0 : 1;
@@ -508,4 +522,38 @@ sealed class S4SpyConnection(DbConnection inner) : DbConnection
 
 	// The test owns the inner connection.
 	protected override void Dispose(bool disposing) { }
+}
+
+/// <summary>
+/// SqlClient's opt-in AppContext switches (Microsoft.Data.SqlClient 7.1.1 has both): `new` sets UseCompatibilityAsyncBehaviour and UseCompatibilityProcessSni to false.
+/// SqlClient reads them once on first use, so Apply must run before any SqlClient type is touched.
+/// </summary>
+public static class S4Switches
+{
+	const string AsyncBehaviour = "Switch.Microsoft.Data.SqlClient.UseCompatibilityAsyncBehaviour", ProcessSni = "Switch.Microsoft.Data.SqlClient.UseCompatibilityProcessSni";
+
+	/// <summary>The mode last applied: "default" (nothing set) or "new".</summary>
+	public static string Mode { get; private set; } = "default";
+
+	public static void Apply(string mode)
+	{
+		switch (mode)
+		{
+			case "default":
+				break;
+			case "new":
+				AppContext.SetSwitch(AsyncBehaviour, false);
+				AppContext.SetSwitch(ProcessSni, false);
+				break;
+			default:
+				throw new ArgumentException("--s4-sqlclient-switches takes new or default");
+		}
+
+		Mode = mode;
+	}
+
+	static string Read(string name) => AppContext.TryGetSwitch(name, out bool value) ? (value ? "true" : "false") : "unset";
+
+	/// <summary>The real state of both switches, read back with AppContext.TryGetSwitch.</summary>
+	public static string Line() => $"S4SWITCHES UseCompatibilityAsyncBehaviour={Read(AsyncBehaviour)} UseCompatibilityProcessSni={Read(ProcessSni)}";
 }

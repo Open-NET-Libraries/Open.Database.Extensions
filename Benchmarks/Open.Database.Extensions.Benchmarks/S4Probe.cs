@@ -15,6 +15,8 @@ namespace Open.Database.Extensions.Benchmarks;
 //   --s4-db <name>           the database (for --s4 and --s4-teardown)
 //   --sql-localdb <instance> use integrated security against a LocalDB instance instead of --sql-tcp/--sql-password-file (smoke tests)
 //   --s4-command-timeout <s> --s4 only: the command timeout in seconds of every cell path (default 30, the provider's default; printed as cmd_timeout=)
+//   --s4-sqlclient-switches new|default   --s4 only: `new` sets Switch.Microsoft.Data.SqlClient.UseCompatibilityAsyncBehaviour and ...UseCompatibilityProcessSni to false before any SqlClient use (default: unset);
+//                            every process prints one S4SWITCHES line with the state read back, and S4RESULT ends with switches=new|default
 //   --s4-scale <divisor>     setup only: divide the value sizes (for example 1024) so a smoke test runs in seconds; the same expressions as the full size
 //   --s4-data-dir <folder>   setup only: a folder INSIDE the server's file system for the data and log files (default: the server's own default location)
 public static partial class S4Probe
@@ -42,6 +44,7 @@ public static partial class S4Probe
 		public string? Cell, Db, DataDir, SqlTcp, PasswordFile, LocalDb, Affinity, Priority;
 		public int Scale = 1;
 		public ushort CommandTimeout = 30;
+		public string? SqlClientSwitches;
 		public bool Setup, Teardown, Rtt, SelfTest, CommandTimeoutSet;
 	}
 
@@ -49,7 +52,12 @@ public static partial class S4Probe
 	{
 		try
 		{
+			// First, before any SqlClient type is touched: SqlClient reads its AppContext switches once, on first use.
+			int at = Array.IndexOf(args, "--s4-sqlclient-switches");
+			S4Switches.Apply(at < 0 ? "default" : at + 1 < args.Length ? args[at + 1] : throw new ArgumentException("--s4-sqlclient-switches needs a value"));
+			Console.WriteLine(S4Switches.Line());
 			return RunCore(Parse(args));
+
 		}
 		catch (Exception ex)
 		{
@@ -74,6 +82,7 @@ public static partial class S4Probe
 				case "--s4-db": o.Db = Value(); break;
 				case "--s4-data-dir": o.DataDir = Value(); break;
 				case "--s4-command-timeout": o.CommandTimeout = ushort.TryParse(Value(), NumberStyles.None, CultureInfo.InvariantCulture, out ushort seconds) ? seconds : throw new ArgumentException("--s4-command-timeout takes a number of seconds (0 to 65535; 0 is no limit)"); o.CommandTimeoutSet = true; break;
+				case "--s4-sqlclient-switches": o.SqlClientSwitches = Value(); break;
 				case "--s4-scale": o.Scale = int.TryParse(Value(), NumberStyles.None, CultureInfo.InvariantCulture, out int scale) && scale >= 1 ? scale : throw new ArgumentException("--s4-scale takes an integer divisor of at least 1"); break;
 				case "--sql-localdb": o.LocalDb = Value(); break;
 				case "--sql-tcp": o.SqlTcp = Value(); break;
@@ -93,6 +102,7 @@ public static partial class S4Probe
 		int modes = (o.Cell is null ? 0 : 1) + (o.Setup ? 1 : 0) + (o.Teardown ? 1 : 0) + (o.Rtt ? 1 : 0);
 		if (modes != 1) throw new ArgumentException("exactly one of --s4 <scenario>:<path>, --s4-setup, --s4-teardown, --s4-rtt, --selftest-s4 is needed");
 		if (o.LocalDb is null && (o.SqlTcp is null || o.PasswordFile is null)) throw new ArgumentException("--sql-tcp <host,port> and --sql-password-file <path> are needed (or --sql-localdb <instance>)");
+		if (o.SqlClientSwitches is not null && o.Cell is null) throw new ArgumentException("--s4-sqlclient-switches is only used with --s4");
 		if (o.CommandTimeoutSet && o.Cell is null) throw new ArgumentException("--s4-command-timeout is only used with --s4");
 		if (o.Scale != 1 && !o.Setup) throw new ArgumentException("--s4-scale is only used with --s4-setup");
 		if (o.DataDir is not null && !o.Setup) throw new ArgumentException("--s4-data-dir is only used with --s4-setup");
