@@ -60,7 +60,7 @@ public sealed record S4Scenario(string Id, bool Binary, int Rows, int ValueSize)
 
 	/// <summary>One 1 KB row made by the server itself, read by the same path before the measured read (JIT, first-use costs).</summary>
 	public string WarmupSqlServer => Binary
-		? "select 1 as Id, cast(replicate(cast(0x41 as varbinary(max)), 1024) as varbinary(max)) as Body"
+		? "select 1 as Id, convert(varbinary(max), replicate(convert(varchar(max), 0x41), 1024)) as Body"
 		: "select 1 as Id, replicate(cast(N'a' as nvarchar(max)), 512) as Body";
 
 	public string WarmupSqlite => Binary
