@@ -53,5 +53,22 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, default(ReadOnlySpan<KeyValuePair<string, string>>)));
 			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, new KeyValuePair<string, string>[0]));
 		}
+
+#if NET11_0_OR_GREATER
+		// This target compiles at C# 13: the priority attribute is honoured, so the shipped shapes above still bind the pairs form (without it From(default) and From(null) are CS0121),
+		// and `params ReadOnlySpan` lets the factory form take no pairs, one pair or several.
+		[Fact]
+		public static void AtCSharp13_TheFactoryFormTakesItsPairsAsParams_AndTheShippedShapesStillBind()
+		{
+			Func<int, Item> func = Make;
+
+			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(default));
+			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(null));
+			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func));
+			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(Make));
+			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, new KeyValuePair<string, string>("id", "N")));
+			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, [new KeyValuePair<string, string>("id", "N")]));
+		}
+#endif
 	}
 }

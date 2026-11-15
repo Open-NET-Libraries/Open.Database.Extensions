@@ -2,12 +2,12 @@
 
 	<!--
 		What a consumer on an older compiler gets. Each target compiles this project with the language version that consumers of that target commonly still have:
-		net472 with C# 7.3 (the .NET Framework default), net8.0 with C# 9 (before [CallerArgumentExpression]) and net10.0 with C# 12 (before [OverloadResolutionPriority]).
+		net472 with C# 7.3 (the .NET Framework default), net8.0 with C# 9 (before [CallerArgumentExpression]), net10.0 with C# 12 (before [OverloadResolutionPriority]) and net11.0 with C# 13 (the first version that honours it, and takes a params span).
 		The test code itself is written to compile as C# 7.3: explicit usings, no nullable annotations, no records, no `is not`, no target-typed `new`.
 		The library under test is the build that target selects: netstandard2.0 on net472, netstandard2.1 on net8.0, net10.0 on net10.0.
 	-->
 	<PropertyGroup>
-		<TargetFrameworks>net472;net8.0;net10.0</TargetFrameworks>
+		<TargetFrameworks>net472;net8.0;net10.0;net11.0</TargetFrameworks>
 		<!-- xUnit v3 test projects are executables. -->
 		<OutputType>Exe</OutputType>
 		<IsPackable>false</IsPackable>
@@ -26,6 +26,10 @@
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
 		<LangVersion>12.0</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+		<LangVersion>13.0</LangVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

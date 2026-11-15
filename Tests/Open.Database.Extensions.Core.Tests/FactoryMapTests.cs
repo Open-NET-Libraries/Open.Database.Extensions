@@ -196,6 +196,71 @@ public static class FactoryMapTests
 	}
 
 	[Fact]
+	public static void ARebuiltFactoryMap_Throws_AndItsPairsSpreadIntoAMemberMap()
+	{
+		var factoryMap = RowMap<Post>.From(
+			static (int id) => new Post(id + 100, "from the function"),
+			new KeyValuePair<string, string?>("id", "N"));
+		ImmutableArray<ColumnDef> columns = [("Id", typeof(int)), ("N", typeof(int))];
+
+		// Its pairs do not hold its function: rebuilding a map from them would silently be a map of the members.
+		var ex = Assert.Throws<ArgumentException>(() => new RowMap<Post>(factoryMap));
+		Assert.Equal("mappings", ex.ParamName);
+		Assert.Contains("factory map", ex.Message);
+
+		// The map itself is the factory: parameter `id` reads column N, and the function adds 100.
+		Assert.Equal(107, Assert.Single(Read(Route.Typed, columns, [1, 7], factoryMap)).Id);
+
+		// Spreading the pairs gives a member map (documented on From): the pair names the constructor parameter, the function is gone.
+		RowMap<Post> spread = [.. factoryMap];
+		Post member = Assert.Single(Read(Route.Typed, columns, [1, 7], spread));
+		Assert.Equal((7, (string?)null), (member.Id, member.Title));
+
+		// A map of the model's own members still rebuilds equivalent.
+		var members = new RowMap<Post>([new("Id", "N")]);
+		Assert.Equal(7, Assert.Single(Read(Route.Typed, columns, [1, 7], new RowMap<Post>(members))).Id);
+	}
+
+	static long BytesPerCall(Action call)
+	{
+		for (int i = 0; i < 100; i++) call();
+		long best = long.MaxValue;
+		for (int round = 0; round < 3; round++)
+		{
+			long before = GC.GetAllocatedBytesForCurrentThread();
+			for (int i = 0; i < 1000; i++) call();
+			best = Math.Min(best, (GC.GetAllocatedBytesForCurrentThread() - before) / 1000);
+		}
+
+		return best;
+	}
+
+	// Cost: calling the function allocates nothing. A typed reader (a DataTableReader has typed getters) read through the factory map costs what the same type costs through its constructor map:
+	// the row object and the list are the same, so nothing is allocated per row for the function, its arguments or the delegate call.
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(100)]
+	public static void TheFactoryRoute_AllocatesNothingPerRow_BeyondTheConstructorRoute(int rows)
+	{
+		using DataTable table = new();
+		table.Columns.Add("Id", typeof(int));
+		table.Columns.Add("Title", typeof(string));
+		for (int i = 0; i < rows; i++) table.Rows.Add(i, "x");
+		var command = new PlainReaderCommand(() => new DataTableReader(table));
+
+		RowMap<Post> viaConstructor = RowMap<Post>.Default;
+		RowMap<Post> viaFactory = RowMap<Post>.From(static (int id, string title) => new Post(id, title));
+
+		long theirs = BytesPerCall(() => command.Map(viaConstructor).ToList());
+		long mine = BytesPerCall(() => command.Map(viaFactory).ToList());
+
+		Assert.True(
+			mine <= theirs + 16,
+			$"{rows} rows: {mine} B per call through the factory, {theirs} B through the constructor (allowed 16 more).");
+	}
+
+	[Fact]
 	public static void AMapEnumeratesThePairsItWasDeclaredWith()
 	{
 		var map = RowMap<WithDefaults>.From(DefaultingFactory, new KeyValuePair<string, string?>("views", "v"));

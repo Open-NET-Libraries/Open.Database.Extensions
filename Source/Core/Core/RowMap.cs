@@ -106,6 +106,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		null => default,
 		KeyValuePair<string, string?>[] array => array,
 		ImmutableArray<KeyValuePair<string, string?>> ia => ia.AsSpan(),
+		// The pairs of a factory map do not hold its function: a map rebuilt from them would be a map of the model's own members, silently.
+		RowMap<T> { _factory: not null } => throw new ArgumentException("A factory map cannot be rebuilt from its pairs: its function is not among them. Use the map itself.", nameof(mappings)),
 		_ => mappings.ToArray()
 	};
 
@@ -188,6 +190,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <param name="factory">A delegate returning a <typeparamref name="T"/>; each parameter is matched to a column by name and is the slot a pair names. No member of <typeparamref name="T"/> is set afterwards.</param>
 	/// <param name="pairs">The (parameter name, column name) pairs; a <see langword="null"/> column means "do not map this parameter".</param>
 	/// <returns>The new map.</returns>
+	/// <remarks>The pairs a factory map enumerates are the ones it was declared with, not its function: spreading them into a new map (<c>[.. map]</c>) gives a map of the model's own members, and <c>new RowMap&lt;T&gt;(map)</c> throws <see cref="ArgumentException"/>. Pass the map itself.</remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">The factory does not return a <typeparamref name="T"/>, a parameter is passed by reference or two share a name, or a pair is invalid (see <see cref="RowMap{T}"/>).</exception>
 	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> is a single value such as <see cref="int"/> or <see cref="string"/>.</exception>
@@ -195,7 +198,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		=> new(factory ?? throw new ArgumentNullException(nameof(factory)), pairs);
 
 	// A map enumerates the pairs it was declared with, which also makes it a collection-expression target: each slot a pair named, in slot order,
-	// with the column the pair gave it (null: an ignored slot). A slot no pair named is not yielded, so new RowMap<T>(map) builds an equivalent map.
+	// with the column the pair gave it (null: an ignored slot). A slot no pair named is not yielded, so new RowMap<T>(map) builds an equivalent map for a map of the model's own members;
+	// a factory map's pairs do not hold its function, so that constructor throws for one (GetMappingSpan), and [.. map] gives a member map (see From(factory, pairs)).
 	IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator()
 	{
 		for (int i = 0; i < _columns.Length; i++)
@@ -1099,7 +1103,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		}
 	}
 
-	// The factory is a constant of the expression tree, as a converter's delegate is: held once by the compiled row reader, and calling it allocates nothing.
+	// The factory is a constant of the expression tree, as a converter's delegate is: held once by the compiled row reader, and calling it allocates nothing (FactoryMapTests.TheFactoryRoute_AllocatesNothingPerRow_BeyondTheConstructorRoute).
 	// What it returns is a T, or a type assignable to T (checked when the map is built).
 	static Expression CallFactory(Delegate factory, Expression[] arguments)
 	{
