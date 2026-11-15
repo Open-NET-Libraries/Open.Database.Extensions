@@ -2,6 +2,7 @@ name: Tests
 
 # Runs the Core test suite on every pull request and every push to master, and checks the packages for known vulnerabilities.
 # The suite runs on net10.0 and net11.0 in Release, and on net11.0 in Debug (Debug.Assert is live there).
+# A separate job runs the LegacyCompiler tests, which compile the public call shapes with older C# language versions.
 # SQL Server LocalDB is part of the runner image. ODX_REQUIRE_SQL=1 makes the tests that need it fail, instead of skip, when it is missing.
 
 on:
@@ -80,6 +81,37 @@ jobs:
         with:
           name: trx-${{ matrix.name }}
           path: TestResults/${{ matrix.name }}/*.trx
+
+  legacy-compiler:
+    name: Test older C# language versions
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      # The SDK in global.json builds everything; 8.0.x adds the .NET 8 runtime that the net8.0 target of this project runs on.
+      # net472 runs on the Windows runner itself.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+            11.0.x
+
+      # This project compiles the public call shapes with the older C# language versions that consumers still use, one per target framework
+      # (see its .csproj), so a binding regression on an older compiler fails here. No -f: it runs every target framework the project has.
+      - name: Run the LegacyCompiler tests
+        run: dotnet test Tests/Open.Database.Extensions.LegacyCompiler.Tests -c Release --logger "trx;LogFilePrefix=legacy-compiler" --results-directory TestResults/legacy-compiler
+
+      - name: Upload the TRX files
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: trx-legacy-compiler
+          path: TestResults/legacy-compiler/*.trx
 
   vulnerable-packages:
     name: Vulnerable packages
