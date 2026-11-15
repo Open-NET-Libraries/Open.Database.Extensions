@@ -53,7 +53,7 @@ public sealed class In6LiteRow
 public sealed record In6Summary(
 	string Path, int Ops, double OpenMedianUs, double OpenMinUs, double OpenMaxUs, double TotalMeanUs, double TotalMedianUs,
 	double AllocThreadBytes, double AllocProcessBytes, double ReadAsyncCalls, double ReadAsyncIncomplete, double ResumedOnOtherThread,
-	double OtherAsyncCalls, double OtherAsyncIncomplete, bool OneReaderPerOperation, double WaitSumMedianUs = 0, double WaitMaxUs = 0);
+	double OtherAsyncCalls, double OtherAsyncIncomplete, bool OneReaderPerOperation, double WaitSumMedianUs = 0, double WaitMaxUs = 0, WaitPositions? Positions = null);
 
 sealed class In6Settings
 {
@@ -67,6 +67,8 @@ sealed class In6Settings
 	public ProcessPriorityClass? PriorityClass;
 	public bool DryRun, Help;
 	public int OpsS3 = -1;
+	public string PressureS3 = "both";
+	public bool S3PressureOff => PressureS3 == "off";
 	public HashSet<string> Scenarios = new(["S1", "S2", "S3"], StringComparer.OrdinalIgnoreCase);
 	public int S3Ops => OpsS3 > 0 ? OpsS3 : Ops;
 	public int Processors = Environment.ProcessorCount;
@@ -89,6 +91,7 @@ public static class In6Probe
 		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per cell (per path)
 		  --scenarios S1,S2,S3         which SQL Server scenarios run (default all three; S1 width 5, S2 width 20, S3 about 8 KB per row)
 		  --ops-s3 N                   measured operations for S3 only (default: the value of --ops)
+		  --pressure-s3 both|off       with off, S3 runs only its pressure-off cells (S1 and S2 still run both); default both
 		  --sql-tcp <host,port>        run the SQL Server part against a server over TCP (for example 127.0.0.1,14333) as user sa, TrustServerCertificate, default packet size, instead of LocalDB;
 		                               needs --sql-password-file; the database is created without a FILENAME clause (the server's default location); --scratch is then needed only for SQLite
 		  --sql-password-file <path>   a file that holds only the password of sa; read at run time, never printed, never on a command line
@@ -165,7 +168,7 @@ public static class In6Probe
 		=> OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? (long)process.ProcessorAffinity : 0;
 
 	static string SettingsText(In6Settings s)
-		=> $"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per cell (S3: {s.S3Ops}), SQL Server scenarios {string.Join(",", s.Scenarios.Order())}, pressure K = {s.K} (processors {s.Processors}), parts: {string.Join(",", s.Only.Order())}";
+		=> $"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per cell (S3: {s.S3Ops}), SQL Server scenarios {string.Join(",", s.Scenarios.Order())}, S3 pressure {s.PressureS3}, pressure K = {s.K} (processors {s.Processors}), parts: {string.Join(",", s.Only.Order())}";
 
 	static void ApplyProcessSettings(In6Settings s)
 	{
@@ -204,6 +207,10 @@ public static class In6Probe
 					if (s.Scenarios.Count == 0 || s.Scenarios.Any(static x => !(x.Equals("S1", StringComparison.OrdinalIgnoreCase) || x.Equals("S2", StringComparison.OrdinalIgnoreCase) || x.Equals("S3", StringComparison.OrdinalIgnoreCase))))
 						throw new ArgumentException("--scenarios takes a comma list of S1, S2, S3");
 					s.Scenarios = new(s.Scenarios.Select(static x => x.ToUpperInvariant()), StringComparer.OrdinalIgnoreCase);
+					break;
+				case "--pressure-s3":
+					s.PressureS3 = Value().Trim().ToLowerInvariant();
+					if (s.PressureS3 is not ("both" or "off")) throw new ArgumentException("--pressure-s3 takes both or off");
 					break;
 				case "--ops-s3": s.OpsS3 = int.Parse(Value(), CultureInfo.InvariantCulture); break;
 				case "--sql-tcp": s.SqlTcp = Value(); break;
@@ -298,9 +305,10 @@ public static class In6Probe
 			foreach (var (id, text) in SqlServerScenarios(s.Rows))
 			{
 				if (!s.Scenarios.Contains(id)) continue;
-				Console.WriteLine($"  {id}: {text}, {s.Warmup} warm-up + {(id == "S3" ? s.S3Ops : s.Ops)} measured operations per path");
-				cells += 2;
-				operations += 2L * 3 * (s.Warmup + (id == "S3" ? s.S3Ops : s.Ops));
+				Console.WriteLine($"  {id}: {text}, {s.Warmup} warm-up + {(id == "S3" ? s.S3Ops : s.Ops)} measured operations per path{(id == "S3" && s.S3PressureOff ? ", pressure off only" : "")}");
+				int pressureCells = id == "S3" && s.S3PressureOff ? 1 : 2;
+				cells += pressureCells;
+				operations += pressureCells * 3L * (s.Warmup + (id == "S3" ? s.S3Ops : s.Ops));
 			}
 
 			Console.WriteLine("before S1: rtt = 50 warm-up + 200 timed SELECT 1 round trips (ExecuteScalar) on one open connection, one line: rtt (SELECT 1 round trip, ms): median, min, max (n=200)");
@@ -314,7 +322,7 @@ public static class In6Probe
 			operations += 4L * 3 * perPath;
 		}
 
-		Console.WriteLine($"each scenario runs with pressure off and on (K = {k}); a cell is one scenario x one pressure setting x 3 paths x (warm-up + measured operations, as listed)");
+		Console.WriteLine($"each scenario runs with pressure off and on (K = {k}{(s.S3PressureOff ? "; S3: off only" : "")}); a cell is one scenario x one pressure setting x 3 paths x (warm-up + measured operations, as listed)");
 		Console.WriteLine($"cells: {cells}, operations: {operations}");
 		if (s.Only.Contains("calibration"))
 		{
@@ -324,6 +332,7 @@ public static class In6Probe
 
 		Console.WriteLine("output per path: reader-open median/min/max (ms), total mean (ms), allocated (KB, calling thread and whole process), ReadAsync calls, incomplete ReadAsync, continuations resumed on another thread, wait ms");
 		Console.WriteLine("wait ms: sum = per operation, the time between the return of an incomplete ReadAsync and the completion of its task, summed over the operation; the cell shows the MEDIAN of that sum over the measured operations (the same statistic as the open-time column); max = the longest single wait over all measured operations; n/a = no ReadAsync was called (sync Read). The wait ends when the task completes, before its continuation gets a thread. An incomplete read also allocates the timing object and a continuation (a few hundred bytes), which is inside the allocation fields; a completed read allocates nothing for it");
+		Console.WriteLine("wait rows: for every INCOMPLETE ReadAsync the row index = the number of rows already read in that operation when the call was made (0-based: the call that asks for row 100 has index 100), pooled over the measured operations of the cell; first50 = the 50 smallest distinct indices, smallest first, with (xN) when the same index was seen N times across operations; hist10 = counts per bucket of the rows 0..rows-1 of the scenario (bucket k covers rows from k*rows/10 up to, not including, (k+1)*rows/10); 'over N ops' = the operations pooled; n/a = no ReadAsync was called. Recording uses preallocated arrays: it allocates nothing");
 		Console.WriteLine("IN6 DRY RUN DONE");
 	}
 
@@ -355,12 +364,14 @@ public static class In6Probe
 		var open = new double[ops];
 		var total = new double[ops];
 		var waitSum = new double[ops];
+		var positions = new WaitPositions(expectedRows) { Operations = ops };
 		double waitMax = 0;
 		double allocThread = 0, allocProcess = 0, readAsync = 0, incomplete = 0, resumed = 0, otherAsync = 0, otherIncomplete = 0;
 		bool oneReader = true;
 		for (int i = 0; i < warmup + ops; i++)
 		{
 			stats.Reset();
+			stats.Positions = i < warmup ? null : positions;
 			long thread0 = GC.GetAllocatedBytesForCurrentThread(), process0 = GC.GetTotalAllocatedBytes(false);
 			long t0 = Stopwatch.GetTimestamp();
 			int rows = operation();
@@ -384,7 +395,7 @@ public static class In6Probe
 		}
 
 		return new In6Summary(path, ops, Median(open), open.Min(), open.Max(), total.Average(), Median(total), allocThread / ops, allocProcess / ops,
-			readAsync / ops, incomplete / ops, resumed / ops, otherAsync / ops, otherIncomplete / ops, oneReader, Median(waitSum), waitMax);
+			readAsync / ops, incomplete / ops, resumed / ops, otherAsync / ops, otherIncomplete / ops, oneReader, Median(waitSum), waitMax, positions);
 	}
 
 	// The three paths of one scenario over one (wrapped) connection. T is the row type.
@@ -422,15 +433,16 @@ public static class In6Probe
 	static string Line(string provider, string scenario, string pressure, In6Summary r)
 		=> $"{provider,-9} {scenario,-3} {pressure,-9} {r.Path,-16} open ms med {Ms(r.OpenMedianUs),9} min {Ms(r.OpenMinUs),9} max {Ms(r.OpenMaxUs),9} | total ms mean {Ms(r.TotalMeanUs),9} | alloc KB thread {Kb(r.AllocThreadBytes),7} process {Kb(r.AllocProcessBytes),7} | ReadAsync {N(r.ReadAsyncCalls),7} incomplete {N(r.ReadAsyncIncomplete),6} other-thread {N(r.ResumedOnOtherThread),6}"
 			+ (r.ReadAsyncCalls > 0 ? $" wait ms sum {Ms(r.WaitSumMedianUs)} max {Ms(r.WaitMaxUs)}" : " wait ms n/a")
+			+ (r.ReadAsyncCalls > 0 && r.Positions is { } spots ? " wait rows " + spots.Format() : " wait rows n/a")
 			+ (r.OtherAsyncCalls > 0 ? $" | other async {N(r.OtherAsyncCalls)}/{N(r.OtherAsyncIncomplete)} incomplete" : "")
 			+ (r.OneReaderPerOperation ? "" : " | WARNING: not one closed reader per operation");
 
-	static void RunCell<T>(In6Settings s, string provider, string scenario, DbConnection connection, string sql, int expectedRows, int ops)
+	static void RunCell<T>(In6Settings s, string provider, string scenario, DbConnection connection, string sql, int expectedRows, int ops, int[] pressures)
 		where T : class
 	{
 		var stats = new In6Stats();
 		var timed = new TimedConnection(connection, stats);
-		foreach (int k in new[] { 0, s.K })
+		foreach (int k in pressures)
 		{
 			string label = k == 0 ? "off" : "on K=" + k;
 			try
@@ -691,9 +703,9 @@ public static class In6Probe
 			}
 
 			Console.WriteLine("-- SQL Server, three paths, pressure off and on --");
-			if (s.Scenarios.Contains("S1")) RunCell<SynRow>(s, s.SqlLabel, "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows, s.Ops);
-			if (s.Scenarios.Contains("S2")) RunCell<SynRow>(s, s.SqlLabel, "S2", connection, $"select * from [{T20}]", s.Rows, s.Ops);
-			if (s.Scenarios.Contains("S3")) RunCell<In6BigRow>(s, s.SqlLabel, "S3", connection, $"select Id, Body from [{TBig}]", s.Rows, s.S3Ops);
+			if (s.Scenarios.Contains("S1")) RunCell<SynRow>(s, s.SqlLabel, "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows, s.Ops, [0, s.K]);
+			if (s.Scenarios.Contains("S2")) RunCell<SynRow>(s, s.SqlLabel, "S2", connection, $"select * from [{T20}]", s.Rows, s.Ops, [0, s.K]);
+			if (s.Scenarios.Contains("S3")) RunCell<In6BigRow>(s, s.SqlLabel, "S3", connection, $"select Id, Body from [{TBig}]", s.Rows, s.S3Ops, s.S3PressureOff ? [0] : [0, s.K]);
 		}
 
 		if (s.Only.Contains("calibration")) Calibrate(s, connection, T20);
@@ -807,8 +819,8 @@ public static class In6Probe
 			}
 
 			Console.WriteLine("-- SQLite file, three paths, pressure off and on --");
-			RunCell<In6LiteRow>(s, "Sqlite", "L1", connection, "select Id, Created, Title, Price, Qty from t20", s.Rows, s.Ops);
-			RunCell<In6LiteRow>(s, "Sqlite", "L2", connection, "select * from t20", s.Rows, s.Ops);
+			RunCell<In6LiteRow>(s, "Sqlite", "L1", connection, "select Id, Created, Title, Price, Qty from t20", s.Rows, s.Ops, [0, s.K]);
+			RunCell<In6LiteRow>(s, "Sqlite", "L2", connection, "select * from t20", s.Rows, s.Ops, [0, s.K]);
 			Console.WriteLine("SQLite: ReadAsync is counted by the wrappers: an 'incomplete' count above 0 would mean it can complete asynchronously; 0 means every ReadAsync completed before returning.");
 			return 0;
 		}
@@ -876,6 +888,15 @@ public static class In6Probe
 				double expectedWait = boundaries * (double)RefillUs;
 				Check(r.WaitSumMedianUs >= 0.9 * expectedWait && r.WaitSumMedianUs <= (1.1 * expectedWait) + (boundaries * 300), $"{r.Path}: wait time sum {r.WaitSumMedianUs:F0} us per operation, expected about {expectedWait:F0} (boundaries x refill; tolerance -10% to +10% and 300 us per boundary)");
 				Check(r.WaitMaxUs >= 0.9 * RefillUs && r.WaitMaxUs <= 5000, $"{r.Path}: longest single wait {r.WaitMaxUs:F0} us, expected from {0.9 * RefillUs:F0} us up to a few ms");
+				var spots = r.Positions;
+				Check(spots is { Total: > 0 } && spots.Total == boundaries * Ops && spots.Distinct == boundaries && spots.Operations == Ops, $"{r.Path}: {spots?.Total} incomplete reads recorded over {spots?.Operations} operations, expected {boundaries * Ops} over {Ops}");
+				bool rowsOk = spots is not null;
+				for (int k = 0; rowsOk && k < boundaries; k++) rowsOk = spots!.IndexAt(k) == (k + 1) * Buffer && spots.CountAt(k) == Ops;
+				Check(rowsOk, $"{r.Path}: recorded row indices are not 100, 200, ..., 900 each seen {Ops} times: {spots?.Format()}");
+				bool shape = spots is not null && spots.Bucket(0) == 0;
+				for (int k = 1; shape && k < 10; k++) shape = spots!.Bucket(k) == Ops;
+				Check(shape, $"{r.Path}: histogram shape, expected bucket 0 empty and buckets 1 to 9 each {Ops} (one wait per operation at rows 100 to 900 of 1000): {spots?.Format()}");
+				Console.WriteLine($"  wait rows, {r.Path}: {spots?.Format()} (expected: 100(x{Ops}), 200(x{Ops}), ..., 900(x{Ops}) and a histogram of 0 followed by nine times {Ops})");
 				Console.WriteLine($"  wait time in ReadAsync, {r.Path}: sum {r.WaitSumMedianUs:F0} us (expected about {expectedWait:F0}), max single wait {r.WaitMaxUs:F0} us (refill {RefillUs} us)");
 			}
 			else
@@ -888,7 +909,7 @@ public static class In6Probe
 		var plain = new TimedConnection(new SyntheticConnection(SyntheticTable.Create(5, Rows), new SyntheticOptions()), stats);
 		var plainResults = RunPaths<SynRow>(plain, stats, SyntheticVariants.Sql, Rows, 1, 3);
 		var plainAsync = plainResults.First(static x => x.Path == "EnableAsyncRead");
-		Check(plainAsync.ReadAsyncCalls == Rows + 1 && plainAsync.ReadAsyncIncomplete == 0 && plainAsync.WaitSumMedianUs == 0 && plainAsync.WaitMaxUs == 0,
+		Check(plainAsync.ReadAsyncCalls == Rows + 1 && plainAsync.ReadAsyncIncomplete == 0 && plainAsync.WaitSumMedianUs == 0 && plainAsync.WaitMaxUs == 0 && plainAsync.Positions is { Total: 0, Distinct: 0 },
 			$"no refill: {plainAsync.ReadAsyncCalls} ReadAsync calls, {plainAsync.ReadAsyncIncomplete} incomplete, wait sum {plainAsync.WaitSumMedianUs:F0} us, max {plainAsync.WaitMaxUs:F0} us; expected {Rows + 1}, 0, 0, 0");
 		Console.WriteLine("  " + Line("synthetic", "-", "no refill", plainAsync));
 

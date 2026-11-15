@@ -19,6 +19,8 @@ public sealed class In6Stats
 	public long OpenTicks;
 	// Time spent waiting in incomplete ReadAsync calls: the sum over the operation and the longest single wait (stopwatch ticks).
 	public long WaitTicks, MaxWaitTicks;
+	// Where the incomplete reads happened: set by the measuring loop for the measured operations only (null during warm-up).
+	public WaitPositions? Positions;
 
 	/// <summary>BS-RP: when set, every reader that closes also reports its reader-open time here (the real-provider benchmarks read it as the ReaderOpen column).</summary>
 	public SyntheticRecorder? Recorder;
@@ -44,6 +46,60 @@ public sealed class In6Stats
 			if (before == seen) break;
 			seen = before;
 		}
+	}
+}
+
+/// <summary>
+/// The row indices at which ReadAsync calls were incomplete, pooled over the measured operations of one cell and path. Row index = the number of rows
+/// already read in that operation when the call was made (0-based: the call that asks for row 100 has index 100). Preallocated, so recording allocates nothing:
+/// the 50 smallest distinct indices with their counts, and a 10-bucket histogram over the rows of the scenario (bucket k covers rows from k*rows/10 up to, not including, (k+1)*rows/10).
+/// </summary>
+public sealed class WaitPositions(int rows)
+{
+	public const int FirstCount = 50, Buckets = 10;
+
+	readonly int[] _index = new int[FirstCount], _count = new int[FirstCount], _hist = new int[Buckets];
+
+	/// <summary>The number of operations pooled (set by the measuring loop).</summary>
+	public int Operations { get; set; }
+
+	/// <summary>How many incomplete reads were recorded.</summary>
+	public int Total { get; private set; }
+
+	/// <summary>How many distinct row indices are kept (at most 50).</summary>
+	public int Distinct { get; private set; }
+
+	public int IndexAt(int position) => _index[position];
+	public int CountAt(int position) => _count[position];
+	public int Bucket(int bucket) => _hist[bucket];
+
+	public void Add(int row)
+	{
+		Total++;
+		int bucket = (int)((long)row * Buckets / Math.Max(1, rows));
+		_hist[Math.Clamp(bucket, 0, Buckets - 1)]++;
+		int at = Array.BinarySearch(_index, 0, Distinct, row);
+		if (at >= 0)
+		{
+			_count[at]++;
+			return;
+		}
+
+		at = ~at;
+		if (at >= FirstCount) return; // Larger than the 50 smallest kept: it is in the histogram only.
+		int move = (Distinct < FirstCount ? Distinct : FirstCount - 1) - at;
+		Array.Copy(_index, at, _index, at + 1, move);
+		Array.Copy(_count, at, _count, at + 1, move);
+		_index[at] = row;
+		_count[at] = 1;
+		if (Distinct < FirstCount) Distinct++;
+	}
+
+	public string Format()
+	{
+		var first = new List<string>(Distinct);
+		for (int i = 0; i < Distinct; i++) first.Add(_count[i] > 1 ? $"{_index[i]}(x{_count[i]})" : _index[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
+		return $"first50 [{string.Join(",", first)}] hist10 [{string.Join(",", _hist)}] over {Operations} ops";
 	}
 }
 
@@ -112,12 +168,19 @@ public sealed class TimedCommand(DbCommand inner, TimedConnection connection, In
 
 public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) : DbDataReader
 {
-	int _pendingThread;
+	int _pendingThread, _rows;
 	bool _closed;
+	Task<bool>? _pendingRead; // An incomplete ReadAsync whose result (a row or the end) is counted at the next call.
 
 	// The call after an incomplete async call is the continuation's first move: compare its thread with the one that made the async call.
 	void Resumed()
 	{
+		if (_pendingRead is { } earlier)
+		{
+			_pendingRead = null;
+			if (earlier.IsCompletedSuccessfully && earlier.Result) _rows++;
+		}
+
 		int pending = _pendingThread;
 		if (pending == 0) return;
 		_pendingThread = 0;
@@ -138,7 +201,9 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	public override bool Read()
 	{
 		Resumed();
-		return inner.Read();
+		bool more = inner.Read();
+		if (more) _rows++;
+		return more;
 	}
 
 	public override Task<bool> ReadAsync(CancellationToken cancellationToken)
@@ -150,8 +215,14 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 		{
 			// Only an incomplete read pays for the timing (one small object and a continuation); a completed read costs the flag test above.
 			stats.ReadAsyncIncomplete++;
+			stats.Positions?.Add(_rows);
+			_pendingRead = task;
 			_pendingThread = Environment.CurrentManagedThreadId;
 			task.ContinueWith(static (_, timer) => ((WaitTimer)timer!).Done(), new WaitTimer(stats, Stopwatch.GetTimestamp()), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+		}
+		else if (task.IsCompletedSuccessfully && task.Result)
+		{
+			_rows++;
 		}
 
 		return task;
