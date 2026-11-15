@@ -96,7 +96,7 @@ public static class In6Probe
 		  --pressure auto|N|off|both   auto or N: K busy thread-pool items for the "pressure on" cells (default auto = processor count x 2); off: no pressure cells for any scenario; both (default): pressure off and on
 		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per cell (per path)
 		  --scenarios S1,S2,S3         which SQL Server scenarios run (default all three; S1 width 5, S2 width 20, S3 about 8 KB per row)
-		  --paths <list>               which read paths run (default sync,async+Read,EnableAsyncRead; also P4 = hand-written async getters, P5 = the same with SequentialAccess, P6 = raw provider: ReadAsync + sync getters, no ODX, no wrapper, timed inline), e.g. --paths sync,P4,P5
+		  --paths <list>               which read paths run (default sync,async+Read,EnableAsyncRead; also P4 = hand-written async getters, P5 = the same with SequentialAccess, P6 = raw provider: ReadAsync + sync getters, no ODX, no wrapper, timed inline; selector+Read and selector+EnableAsyncRead = ODX Map(Func<IDataRecord,T>).ToListAsync() with the hand-written selector, rows read with Read or, with the opt-in, with ReadAsync; S2 only), e.g. --paths sync,P4,P5
 		  --ops-s3 N                   measured operations for S3 only (default: the value of --ops)
 		  --pressure-s3 both|off       with off, S3 runs only its pressure-off cells (S1 and S2 still run both); default both
 		  --sql-tcp <host,port>        run the SQL Server part against a server over TCP (for example 127.0.0.1,14333) as user sa, TrustServerCertificate, default packet size, instead of LocalDB;
@@ -307,6 +307,8 @@ public static class In6Probe
 		if (s.Paths.Contains("P4")) Console.WriteLine("P4 (hand-written, not ODX): ExecuteReaderAsync with the default behavior, ReadAsync, and EVERY cell read with await GetFieldValueAsync<T>(i); IsDBNullAsync only for the columns that can be NULL; builds the same row objects (checked on the first 5 rows before measuring)");
 		if (s.Paths.Contains("P6")) Console.WriteLine("P6 (raw, not ODX, NO timing wrapper): the provider's own connection and command, ExecuteReaderAsync (default behavior), await ReadAsync per row, then SYNC typed getters (the same cells and row objects); timed INLINE in the probe loop: 'inline await ReadAsync ms sum/max' = the time from before each ReadAsync call to after its await (a truly async completion and the continuation's wait for a thread are inside it), 'inline getters ms sum' = the time in the typed getters, the ReadAsync incomplete count = calls whose task was not complete when checked, 'wait ms' = the await time of those calls (not the wait until completion), 'wait rows' = the rows read so far at those calls; reader-open is timed inline too");
 		if (s.Paths.Contains("P5")) Console.WriteLine("P5 (hand-written, not ODX): the same as P4 with CommandBehavior.SequentialAccess, cells read strictly in ordinal order");
+		if (s.Paths.Contains("selector+Read")) Console.WriteLine("selector+Read (ODX): Map(hand-written Func<IDataRecord,T> over all 20 columns, typed getters).ToListAsync(), async execute + Read; S2 only (checked against Map<T>() on the first 5 rows before measuring)");
+		if (s.Paths.Contains("selector+EnableAsyncRead")) Console.WriteLine("selector+EnableAsyncRead (ODX): the same with EnableAsyncRead() first, async execute + ReadAsync; S2 only (checked the same way)");
 		if (s.Tcp)
 		{
 			string[] hostPort = s.SqlTcp!.Split(',');
@@ -454,7 +456,7 @@ public static class In6Probe
 	}
 
 	// The three paths of one scenario over one (wrapped) connection. T is the row type.
-	internal static readonly string[] AllPaths = ["sync", "async+Read", "EnableAsyncRead", "P4", "P5", "P6"];
+	internal static readonly string[] AllPaths = ["sync", "async+Read", "EnableAsyncRead", "P4", "P5", "P6", "selector+Read", "selector+EnableAsyncRead"];
 	internal static readonly string[] DefaultPaths = ["sync", "async+Read", "EnableAsyncRead"];
 
 	// The paths of one scenario over one (wrapped) connection: the three ODX paths, and P4 and P5 (hand-written, async getters) when a plan is given. T is the row type.
@@ -469,6 +471,8 @@ public static class In6Probe
 			("P4", () => RequirePlan(plan).ReadAllAsync(timed, sql, CommandBehavior.Default).GetAwaiter().GetResult().Count),
 			("P5", () => RequirePlan(plan).ReadAllAsync(timed, sql, CommandBehavior.SequentialAccess).GetAwaiter().GetResult().Count),
 			("P6", () => RequirePlan(plan).ReadAllRawAsync(timed.Inner, sql, stats).GetAwaiter().GetResult().Count),
+			("selector+Read", () => timed.Command(sql).Map(RequireSelector(plan)).ToListAsync().AsTask().GetAwaiter().GetResult().Count),
+			("selector+EnableAsyncRead", () => timed.Command(sql).EnableAsyncRead().Map(RequireSelector(plan)).ToListAsync().AsTask().GetAwaiter().GetResult().Count),
 		};
 
 		only ??= DefaultPaths;
@@ -491,6 +495,8 @@ public static class In6Probe
 	}
 
 	static AsyncPlan<T> RequirePlan<T>(AsyncPlan<T>? plan) => plan ?? throw new InvalidOperationException("this scenario has no hand-written plan for the async getter paths");
+
+	static Func<IDataRecord, T> RequireSelector<T>(AsyncPlan<T>? plan) => plan?.Selector ?? throw new InvalidOperationException("this scenario has no hand-written selector (S2 only)");
 
 	static string Ms(double us) => (us / 1000d).ToString("F3", CultureInfo.InvariantCulture);
 	static string Kb(double bytes) => (bytes / 1024d).ToString("F0", CultureInfo.InvariantCulture);
@@ -517,6 +523,11 @@ public static class In6Probe
 		if (paths.Contains("P4")) CheckSame("P4", expected, plan.ReadAllAsync(timed, sql, CommandBehavior.Default, 5).GetAwaiter().GetResult());
 		if (paths.Contains("P5")) CheckSame("P5", expected, plan.ReadAllAsync(timed, sql, CommandBehavior.SequentialAccess, 5).GetAwaiter().GetResult());
 		if (paths.Contains("P6")) CheckSame("P6", expected, plan.ReadAllRawAsync(timed.Inner, sql, new In6Stats(), 5).GetAwaiter().GetResult());
+		if (plan.Selector is { } selector)
+		{
+			if (paths.Contains("selector+Read")) CheckSame("selector+Read", expected, timed.Command(sql).Map(selector).Take(5).ToListAsync().AsTask().GetAwaiter().GetResult());
+			if (paths.Contains("selector+EnableAsyncRead")) CheckSame("selector+EnableAsyncRead", expected, timed.Command(sql).EnableAsyncRead().Map(selector).Take(5).ToListAsync().AsTask().GetAwaiter().GetResult());
+		}
 	}
 
 	static void CheckSame<T>(string path, List<T> expected, List<T> actual)
@@ -531,7 +542,7 @@ public static class In6Probe
 	{
 		var stats = new In6Stats();
 		var timed = new TimedConnection(connection, stats);
-		if (plan is not null && (s.Paths.Contains("P4") || s.Paths.Contains("P5") || s.Paths.Contains("P6"))) VerifyAsyncPaths(timed, sql, plan, s.Paths);
+		if (plan is not null && (s.Paths.Contains("P4") || s.Paths.Contains("P5") || s.Paths.Contains("P6") || s.Paths.Contains("selector+Read") || s.Paths.Contains("selector+EnableAsyncRead"))) VerifyAsyncPaths(timed, sql, plan, s.Paths);
 		foreach (int k in pressures)
 		{
 			string label = k == 0 ? "off" : "on K=" + k;
@@ -1079,6 +1090,28 @@ public static class In6Probe
 			bool shapeOk = spots is { Total: > 0 } && spots.Total == boundaries * GetterOps && spots.Distinct == boundaries && spots.Bucket(0) == 0;
 			for (int k = 0; shapeOk && k < boundaries; k++) shapeOk = spots!.IndexAt(k) == (k + 1) * Buffer && spots.CountAt(k) == GetterOps && spots.Bucket(k + 1) == GetterOps;
 			Check(shapeOk, $"{r.Path}: getter wait rows are not 100, 200, ..., 900 each seen {GetterOps} times: {spots?.Format()}");
+		}
+
+		// The two ODX selector paths (width 20, the hand-written selector): checked on the first rows against Map<T>(), then run; Read for the first, ReadAsync for the second.
+		var wideTimed = new TimedConnection(new SyntheticConnection(SyntheticTable.Create(20, Rows), new SyntheticOptions()), stats);
+		var widePlan = In6Plans.SynRowPlan(20);
+		string[] selectorPaths = ["selector+Read", "selector+EnableAsyncRead"];
+		try
+		{
+			VerifyAsyncPaths(wideTimed, SyntheticVariants.Sql, widePlan, selectorPaths);
+		}
+		catch (InvalidOperationException ex)
+		{
+			Check(false, "the selector paths read different values than Map<T>(): " + ex.Message);
+		}
+
+		var selectorResults = RunPaths<SynRow>(wideTimed, stats, SyntheticVariants.Sql, Rows, 1, GetterOps, null, selectorPaths, widePlan);
+		Check(selectorResults.Count == 2, $"{selectorResults.Count} selector paths measured, expected 2");
+		foreach (var r in selectorResults)
+		{
+			Console.WriteLine("  " + Line("synthetic", "-", "selector", r));
+			if (r.Path == "selector+EnableAsyncRead") Check(r.ReadAsyncCalls == Rows + 1 && r.ReadCalls == 0, $"{r.Path}: {r.ReadAsyncCalls} ReadAsync and {r.ReadCalls} Read calls per operation, expected {Rows + 1} and 0");
+			else Check(r.ReadAsyncCalls == 0 && r.ReadCalls == Rows + 1, $"{r.Path}: {r.ReadAsyncCalls} ReadAsync and {r.ReadCalls} Read calls per operation, expected 0 and {Rows + 1}");
 		}
 
 		// The recorder inside the synthetic reader and the wrappers around it time the same readers: the wrapper's window contains the recorder's.
