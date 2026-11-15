@@ -82,12 +82,13 @@ public static class UnmappableTypeTests
 		public string? Built { get; }
 	}
 
-	// A struct with its own public parameterless constructor is built as ever, whatever else it declares: that constructor is not called, as it never was.
+	// A struct with its own public parameterless constructor is built with new(), whatever else it declares: that constructor is called, then the properties are set.
 	public struct StructWithPublicParameterlessConstructor
 	{
-		public StructWithPublicParameterlessConstructor() => Id = -1;
+		public StructWithPublicParameterlessConstructor() { Id = -1; Source = "parameterless constructor"; }
 		public StructWithPublicParameterlessConstructor(int id) => Id = id + 1000;
 		public int Id { get; set; }
+		public string? Source { get; }
 	}
 
 	public sealed class RequiredFieldShape { public required int Id; }
@@ -272,8 +273,14 @@ public static class UnmappableTypeTests
 	}
 
 	[Fact]
-	public static void AStructWithAPublicParameterlessConstructor_IsBuiltAsEver_WithoutCallingIt()
-		=> Assert.Equal(7, new FakeExecuteReader(["Id"], [7]).Map<StructWithPublicParameterlessConstructor>().ToList().Single().Id);
+	public static void AStructWithAPublicParameterlessConstructor_IsBuiltWithIt()
+	{
+		StructWithPublicParameterlessConstructor mapped = new FakeExecuteReader(["Id"], [7]).Map<StructWithPublicParameterlessConstructor>().ToList().Single();
+		Assert.Equal((7, "parameterless constructor"), (mapped.Id, mapped.Source)); // Source is set only by the constructor, so it ran, and the column was set after it.
+
+		StructWithPublicParameterlessConstructor missing = new FakeExecuteReader(["Other"], [7]).Map<StructWithPublicParameterlessConstructor>().ToList().Single();
+		Assert.Equal((-1, "parameterless constructor"), (missing.Id, missing.Source)); // No column feeds Id, so what the constructor gave it stays.
+	}
 
 	[Fact]
 	public static void ARequiredPublicField_IsRejected_AtTheCall_AnInheritedOneToo()

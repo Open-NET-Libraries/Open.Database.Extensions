@@ -44,6 +44,10 @@ Several helpers exist to keep the time a connection is open short:
 
 [!code-csharp[](../samples/Transactions.cs#transaction)]
 
+The async forms (`ExecuteTransactionAsync`, `ExecuteTransactionConditionalAsync`) take the token too. The token is checked once more after your action returns: a token cancelled by then throws `OperationCanceledException` and nothing commits. The commit itself is sent without the token, so cancelling while it runs does not interrupt it (an interrupted commit would leave the outcome unknown).
+
+[!code-csharp[](../samples/Transactions.cs#transaction_async)]
+
 ## Reader and command helpers
 
 The foundation also includes helpers you can use without the expressive syntax: `ForEach` and `ForEachAsync` over a reader, `Select` and `SelectAsync`, `AsEnumerable` and `AsAsyncEnumerable` (rows as `object[]`), `ToList`, `ToArray`, `ToDataTable` and friends on commands. Buffered reads copy the rows out of the reader first, so the connection can be released early: `Retrieve()` copies every row into a queue of `object[]` (raw rows with column names; `DequeueAsMappedDictionaries()` turns them into dictionaries). `DequeueAs<T>()`, which mapped that queue to `T`, is deprecated: use `Map<T>().ToList()`. `ResultsBuffered<T>()` (and `Results<T>()` on an `IDbCommand`, which buffers the rows and stays) buffers and maps in one call; `Results<T>()` on an `IExecuteReader` is deprecated, use `Map<T>().ToList()`. `FirstOrdinalResults<T>()` reads the first column of every row as `T`. On a command, `Map<int>()` (or `ToListAsync<int>()`) reads the first column as `int` with the mapper's conversions, and `FirstOrdinalResults<T>()` is the form for a raw command and a reader (see [One value per row](mapping.md#one-value-per-row)). For typed rows `Map<T>()` is the better route (see [Performance](performance.md#where-it-is-not-faster)).

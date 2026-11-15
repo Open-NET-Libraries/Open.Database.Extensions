@@ -967,9 +967,14 @@ public static class TokenTerminalTests
 	const int Rounds = 7;
 	const int CallsPerRound = 1000;
 
-	// Bytes per call of each of the calls, after a warm-up: the median
-	// of the rounds (as in the heap-growth test), so that a round
-	// with a collection or a busy machine does not decide.
+	// Bytes per call of each of the calls, after a warm-up: the least
+	// of the rounds. What a call costs is a floor; an occasional call
+	// costs more on this thread (blocks of calls of +128 bytes, single calls
+	// of about +900, whatever the cause), and how many calls do shifts
+	// from round to round and from one variant to another; the median of
+	// the rounds follows that, the least does not. A planted
+	// allocation in every call raises every round, so the least of them
+	// still shows it.
 	// The calls take turns, one of each in every step of a round,
 	// and the bytes are counted call by call (the allocated-bytes counter
 	// of this thread is exact). The JIT recompiles the hot code of a process
@@ -1007,7 +1012,7 @@ public static class TokenTerminalTests
 				rounds[c][round] = bytes[c] / CallsPerRound;
 		}
 
-		return [.. rounds.Select(r => r.Order().ElementAt(Rounds / 2))];
+		return [.. rounds.Select(r => r.Min())];
 	}
 
 	const int Slack = 16;
