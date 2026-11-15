@@ -178,6 +178,7 @@ public class SyntheticBenchmarks
 	Func<System.Data.IDataRecord, SynRow> _hand = null!;
 	Func<System.Data.IDataRecord, SynItem> _handM = null!;
 	Hands _hands = null!;
+	FHands _f = null!;
 	Func<SyntheticConnection, System.Collections.IList> _k = null!;
 	string _label = "";
 
@@ -190,6 +191,7 @@ public class SyntheticBenchmarks
 		_hand = SyntheticVariants.Hand(Width);
 		_handM = SyntheticVariantsB.HandMassaged(Width);
 		_hands = Hands.For(Width);
+		_f = FHands.For(Width); // DS1b-F: the trees are compiled and the method emitted here, once per case
 		_k = SyntheticVariantsC.K(Width);
 		SyntheticIterationListener.Attach(Connection.Options.Recorder);
 		ThreadPoolPressure.Start(Pressure); // BS-SA: busy before the first iteration; Cleanup stops it. Pressure 0 does nothing.
@@ -285,6 +287,19 @@ public class SyntheticBenchmarks
 	// ---- BS-C: the DS1a candidates (SyntheticVariantsC). V6b-F, V6b-E, V6b-K, V9a-on, V9b, V9d-M produce the massaged SynItem; V9c, V9d, V9e and V9a-off produce SynRow like V1 ----------------
 	[Benchmark]
 	public List<SynRow> V1_Fresh_Sync() { _label = nameof(V1_Fresh_Sync); return SyntheticVariantsC.V1Fresh(Connection); }
+
+	// ---- DS1b-F (SyntheticVariantsF): V2's selector logic as the simple tier with a row-level try/catch (F0), a compiled tree (F1), a compiled tree over the concrete reader (F2), an emitted static method (F3) ----
+	[Benchmark]
+	public List<SynRow> F0_Sync() { _label = nameof(F0_Sync); return SyntheticVariantsF.F0(Connection, _f); }
+
+	[Benchmark]
+	public List<SynRow> F1_Sync() { _label = nameof(F1_Sync); return SyntheticVariantsF.F1(Connection, _f); }
+
+	[Benchmark]
+	public List<SynRow> F2_Sync() { _label = nameof(F2_Sync); return SyntheticVariantsF.F2(Connection, _f); }
+
+	[Benchmark]
+	public List<SynRow> F3_Sync() { _label = nameof(F3_Sync); return SyntheticVariantsF.F3(Connection, _f); }
 
 	[Benchmark]
 	public List<SynRow> V9c_Db_Sync() { _label = nameof(V9c_Db_Sync); return SyntheticVariantsC.V9cDb(Connection, _hands); }

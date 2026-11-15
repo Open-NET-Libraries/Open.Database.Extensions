@@ -44,6 +44,7 @@ public static partial class SyntheticChecks
 		var report = new Report();
 		Console.WriteLine("== equal final objects: every variant against V1 (and V1 against the table); V3-V7 against the domain oracle ==");
 		VerifyReaderIsSynthetic(report);
+		VerifyF0ColumnNames(report);
 		foreach (int width in VerifyWidths)
 		{
 			foreach (int rows in VerifyRows) VerifyVariants(report, width, rows);

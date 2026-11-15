@@ -32,6 +32,7 @@ public static partial class SyntheticChecks
 	static void VerifyVariantsC(Report report, SyntheticConnection conn, SyntheticTable table, int width, int rows, List<SynRow> v1, string where)
 	{
 		var hands = Hands.For(width);
+		var fHands = FHands.For(width);
 		var fromTable = new List<SynRow>(rows);
 		var massaged = new List<SynItem>(rows);
 		for (int i = 0; i < rows; i++)
@@ -46,6 +47,10 @@ public static partial class SyntheticChecks
 			new("V1-fresh", () => SyntheticVariantsC.V1Fresh(conn)),
 			new("V9c-Db", () => SyntheticVariantsC.V9cDb(conn, hands)),
 			new("V9c-Syn", () => SyntheticVariantsC.V9cSyn(conn, hands)),
+			new("F0", () => SyntheticVariantsF.F0(conn, fHands)),
+			new("F1", () => SyntheticVariantsF.F1(conn, fHands)),
+			new("F2", () => SyntheticVariantsF.F2(conn, fHands)),
+			new("F3", () => SyntheticVariantsF.F3(conn, fHands)),
 			new("V9d", () => SyntheticVariantsC.V9d(conn, hands)),
 			new("V9e", () => SyntheticVariantsC.V9e(conn, hands)),
 			new("V9a off", () => SyntheticVariantsC.V9aOff(conn, hands)),
@@ -79,11 +84,43 @@ public static partial class SyntheticChecks
 		// V9a: every rented array came back (rents equal returns, growth included).
 		report.Check(PoolTally.Rented == PoolTally.Returned && PoolTally.Rented > 0, $"V9a {where}: ArrayPool rented {PoolTally.Rented} arrays, returned {PoolTally.Returned}");
 
-		Console.WriteLine($"  ok  {where}: V9c-Db, V9c-Syn, V9d, V9e, V9a-off equal V1 and the table; V6b-F, V6b-E ({DelegateCallsPerRow(width)} delegate calls per row), V6b-K, V9a-on, V9b, V9d-M equal the massaged oracle; pool rented={PoolTally.Rented} returned={PoolTally.Returned}");
+		Console.WriteLine($"  ok  {where}: V9c-Db, V9c-Syn, F0, F1, F2, F3, V9d, V9e, V9a-off equal V1 and the table; V6b-F, V6b-E ({DelegateCallsPerRow(width)} delegate calls per row), V6b-K, V9a-on, V9b, V9d-M equal the massaged oracle; pool rented={PoolTally.Rented} returned={PoolTally.Returned}");
 	}
 
 	static List<SynItem> HandCounted(SyntheticConnection conn, Hands hands)
 		=> SyntheticVariantsC.HandList(conn, hands.ECounting);
+
+	// F0, planted bad cell: one cell fails (GetInt32 on a string column; the provider throws InvalidCastException) and the exception F0 throws must name that column.
+	static void VerifyF0ColumnNames(Report report)
+	{
+		foreach (var (width, ordinal) in new[] { KeyValuePair.Create(3, 2), KeyValuePair.Create(5, 2), KeyValuePair.Create(10, 2), KeyValuePair.Create(20, 11), KeyValuePair.Create(20, 14) })
+		{
+			var table = SyntheticTable.Create(width, 3);
+			var conn = new SyntheticConnection(table, new SyntheticOptions());
+			var planted = FHands.PlantedBadCell(width, ordinal);
+			ColumnReadException? found = null;
+			string chain = "(nothing thrown)";
+			try
+			{
+				_ = SyntheticVariants.V2(conn, planted);
+			}
+			catch (Exception ex)
+			{
+				chain = string.Join(" <- ", WalkChain(ex).Select(static e => e.GetType().Name));
+				found = WalkChain(ex).OfType<ColumnReadException>().FirstOrDefault();
+			}
+
+			string expected = table.Names[ordinal];
+			bool ok = found is not null && found.Column == expected && found.Ordinal == ordinal && found.InnerException is InvalidCastException;
+			report.Check(ok, $"F0 planted bad cell at width {width}, ordinal {ordinal}: expected a ColumnReadException for column {expected} over an InvalidCastException, got {chain}: {found?.Message}");
+			Console.WriteLine($"  ok  F0 planted bad cell, width {width}, ordinal {ordinal}: {chain}; message: {found?.Message}");
+		}
+	}
+
+	static IEnumerable<Exception> WalkChain(Exception? ex)
+	{
+		for (; ex is not null; ex = ex.InnerException) yield return ex;
+	}
 
 	// Run once for the whole verify: the reader the callback gets is the provider's own (the hand loop casts it; V9c-Syn relies on it).
 	static void VerifyReaderIsSynthetic(Report report)
