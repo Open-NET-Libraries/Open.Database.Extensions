@@ -523,15 +523,17 @@ public static class HoldingAMap
 public static class PostQueries
 {
 	#region map_query_factory
-	// Select is lazy: nothing runs here.
-	// The command runs once for each terminal the caller picks.
-	public static IMappedQuery<PostSummary> ByAuthor(
+	// The factory map shapes each row straight into the result type.
+	// Nothing runs here: the command runs once for each terminal the caller picks.
+	static readonly RowMap<PostSummary> Summary = RowMap<PostSummary>.From(
+		(int id, string title) => new PostSummary(id, title));
+
+	public static MappedQuery<PostSummary> ByAuthor(
 		IDbConnectionFactory<SqliteConnection> factory,
 		int author)
 		=> factory
 			.Command("select * from posts where author = @author order by id desc")
 			.AddParam("author", author)
-			.Map<Post>()
-			.Select(p => new PostSummary(p.Id, p.Title));
+			.Map(Summary);
 	#endregion
 }
