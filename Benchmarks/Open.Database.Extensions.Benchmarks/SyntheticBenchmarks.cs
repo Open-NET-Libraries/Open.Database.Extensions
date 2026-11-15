@@ -179,6 +179,7 @@ public class SyntheticBenchmarks
 	Func<System.Data.IDataRecord, SynItem> _handM = null!;
 	Hands _hands = null!;
 	FHands _f = null!;
+	UnsealedSyntheticConnection _connU = null!;
 	Func<SyntheticConnection, System.Collections.IList> _k = null!;
 	string _label = "";
 
@@ -192,6 +193,7 @@ public class SyntheticBenchmarks
 		_handM = SyntheticVariantsB.HandMassaged(Width);
 		_hands = Hands.For(Width);
 		_f = FHands.For(Width); // DS1b-F: the trees are compiled and the method emitted here, once per case
+		_connU = new UnsealedSyntheticConnection(Connection.Table, Connection.Options); // F2u: the unsealed copy of the provider path over the same table and options (same recorder)
 		_k = SyntheticVariantsC.K(Width);
 		SyntheticIterationListener.Attach(Connection.Options.Recorder);
 		ThreadPoolPressure.Start(Pressure); // BS-SA: busy before the first iteration; Cleanup stops it. Pressure 0 does nothing.
@@ -300,6 +302,12 @@ public class SyntheticBenchmarks
 
 	[Benchmark]
 	public List<SynRow> F3_Sync() { _label = nameof(F3_Sync); return SyntheticVariantsF.F3(Connection, _f); }
+
+	[Benchmark]
+	public List<SynRow> F2u_Sync() { _label = nameof(F2u_Sync); return SyntheticVariantsF.F2u(_connU, _f); }
+
+	[Benchmark]
+	public List<SynRow> F4_Sync() { _label = nameof(F4_Sync); return SyntheticVariantsF.F4(Connection, _f); }
 
 	[Benchmark]
 	public List<SynRow> V9c_Db_Sync() { _label = nameof(V9c_Db_Sync); return SyntheticVariantsC.V9cDb(Connection, _hands); }

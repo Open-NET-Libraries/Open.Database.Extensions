@@ -33,6 +33,7 @@ public static partial class SyntheticChecks
 	{
 		var hands = Hands.For(width);
 		var fHands = FHands.For(width);
+		var connU = new UnsealedSyntheticConnection(table, conn.Options);
 		var fromTable = new List<SynRow>(rows);
 		var massaged = new List<SynItem>(rows);
 		for (int i = 0; i < rows; i++)
@@ -51,6 +52,8 @@ public static partial class SyntheticChecks
 			new("F1", () => SyntheticVariantsF.F1(conn, fHands)),
 			new("F2", () => SyntheticVariantsF.F2(conn, fHands)),
 			new("F3", () => SyntheticVariantsF.F3(conn, fHands)),
+			new("F2u", () => SyntheticVariantsF.F2u(connU, fHands)),
+			new("F4", () => SyntheticVariantsF.F4(conn, fHands)),
 			new("V9d", () => SyntheticVariantsC.V9d(conn, hands)),
 			new("V9e", () => SyntheticVariantsC.V9e(conn, hands)),
 			new("V9a off", () => SyntheticVariantsC.V9aOff(conn, hands)),
@@ -84,11 +87,22 @@ public static partial class SyntheticChecks
 		// V9a: every rented array came back (rents equal returns, growth included).
 		report.Check(PoolTally.Rented == PoolTally.Returned && PoolTally.Rented > 0, $"V9a {where}: ArrayPool rented {PoolTally.Rented} arrays, returned {PoolTally.Returned}");
 
-		Console.WriteLine($"  ok  {where}: V9c-Db, V9c-Syn, F0, F1, F2, F3, V9d, V9e, V9a-off equal V1 and the table; V6b-F, V6b-E ({DelegateCallsPerRow(width)} delegate calls per row), V6b-K, V9a-on, V9b, V9d-M equal the massaged oracle; pool rented={PoolTally.Rented} returned={PoolTally.Returned}");
+		Console.WriteLine($"  ok  {where}: V9c-Db, V9c-Syn, F0, F1, F2, F2u, F3, F4, V9d, V9e, V9a-off equal V1 and the table; V6b-F, V6b-E ({DelegateCallsPerRow(width)} delegate calls per row), V6b-K, V9a-on, V9b, V9d-M equal the massaged oracle; pool rented={PoolTally.Rented} returned={PoolTally.Returned}");
 	}
 
 	static List<SynItem> HandCounted(SyntheticConnection conn, Hands hands)
 		=> SyntheticVariantsC.HandList(conn, hands.ECounting);
+
+	// F2u: the copy of the reader class is not sealed (read from the type itself), is what the ExecuteReader callback of the copied provider path hands out, and reads the same data.
+	static void VerifyUnsealedReader(Report report)
+	{
+		report.Check(!typeof(UnsealedSyntheticReader).IsSealed, "UnsealedSyntheticReader is sealed");
+		report.Check(typeof(SyntheticReader).IsSealed, "SyntheticReader is not sealed");
+		var conn = new UnsealedSyntheticConnection(SyntheticTable.Create(1, 1), new SyntheticOptions());
+		bool own = conn.Command(SyntheticVariants.Sql).ExecuteReader(static reader => reader.GetType() == typeof(UnsealedSyntheticReader), CommandBehavior.SequentialAccess);
+		report.Check(own, "the reader handed to ExecuteReader on the unsealed connection is not the UnsealedSyntheticReader itself");
+		Console.WriteLine($"  ok  UnsealedSyntheticReader.IsSealed={typeof(UnsealedSyntheticReader).IsSealed}, SyntheticReader.IsSealed={typeof(SyntheticReader).IsSealed}; the unsealed connection hands out the UnsealedSyntheticReader itself");
+	}
 
 	// F0, planted bad cell: one cell fails (GetInt32 on a string column; the provider throws InvalidCastException) and the exception F0 throws must name that column.
 	static void VerifyF0ColumnNames(Report report)

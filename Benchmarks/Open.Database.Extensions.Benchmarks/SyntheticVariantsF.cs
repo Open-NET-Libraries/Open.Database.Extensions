@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -15,6 +16,10 @@ namespace Open.Database.Extensions.Benchmarks;
 //   F1  an Expression<Func<IDataRecord, SynRow>> over the IDataRecord interface, Compile()d once in setup; used through V2's terminal (Map(selector).ToList()).
 //   F2  the same tree with the reader parameter typed as the sealed SyntheticReader (direct calls); used through V9c-Syn's terminal (HandListSyn), where the
 //       ONE cast (DbDataReader to SyntheticReader) sits: once per query, in the ExecuteReader callback, before the row loop. Nothing is cast per row or per cell.
+//   F2u the F2 tree over UnsealedSyntheticReader, a copy of the synthetic reader class without `sealed` (SyntheticProviderUnsealed.cs); the same loop as F2, with
+//       the one cast per query (DbDataReader to UnsealedSyntheticReader) in the ExecuteReader callback. F2 minus F2u = what the sealed class is worth.
+//   F4  the F1 tree with the reader parameter typed as DbDataReader (virtual calls on the abstract class instead of interface calls); used through HandList (V9c-Db's
+//       terminal), whose one cast per query sits in its ExecuteReader callback (the reader already is a DbDataReader; the cast is the loop's own, outside the row loop).
 //   F3  the F1 logic as a static method of a real type emitted with Reflection.Emit into a collectible AssemblyBuilder (RunAndCollect), turned into a
 //       delegate with CreateDelegate; used through V2's terminal. A real method on a real type, where Expression.Compile emits a DynamicMethod.
 
@@ -64,6 +69,12 @@ public sealed class FHands
 	/// <summary>F2: the tree over the concrete reader, compiled.</summary>
 	public required Func<SyntheticReader, SynRow> F2 { get; init; }
 
+	/// <summary>F2u: the tree over the unsealed copy of the concrete reader, compiled.</summary>
+	public required Func<UnsealedSyntheticReader, SynRow> F2u { get; init; }
+
+	/// <summary>F4: the tree over DbDataReader, compiled.</summary>
+	public required Func<DbDataReader, SynRow> F4 { get; init; }
+
 	/// <summary>F3: the emitted static method, as a delegate over IDataRecord.</summary>
 	public required Func<IDataRecord, SynRow> F3 { get; init; }
 
@@ -78,6 +89,8 @@ public sealed class FHands
 			F0 = SimpleTree(w, -1).Compile(),
 			F1 =Tree<IDataRecord>(w).Compile(),
 			F2 = Tree<SyntheticReader>(w).Compile(),
+			F2u = Tree<UnsealedSyntheticReader>(w).Compile(),
+			F4 = Tree<DbDataReader>(w).Compile(),
 			F3 = Emit(w),
 		});
 	}
@@ -259,6 +272,25 @@ public static class SyntheticVariantsF
 
 	/// <summary>F2: V9c-Syn's terminal (one cast to SyntheticReader per query, before the row loop) with the compiled tree over the concrete reader.</summary>
 	public static List<SynRow> F2(SyntheticConnection connection, FHands hands) => SyntheticVariantsC.HandListSyn(connection, hands.F2);
+
+	/// <summary>F2u: F2's loop over the unsealed copy of the provider path (one cast per query, before the row loop).</summary>
+	public static List<SynRow> F2u(UnsealedSyntheticConnection connection, FHands hands)
+		=> connection.Command(SyntheticVariants.Sql).ExecuteReader(hands.F2u, static (reader, read) =>
+		{
+			var db = (UnsealedSyntheticReader)reader;
+			var list = new List<SynRow>();
+			if (db.Read())
+			{
+				do list.Add(read(db));
+				while (db.Read());
+			}
+
+			while (db.NextResult()) { }
+			return list;
+		}, CommandBehavior.SequentialAccess);
+
+	/// <summary>F4: V9c-Db's terminal (HandList) with the tree over DbDataReader.</summary>
+	public static List<SynRow> F4(SyntheticConnection connection, FHands hands) => SyntheticVariantsC.HandList(connection, hands.F4);
 
 	/// <summary>F3: V2's terminal with the emitted static method.</summary>
 	public static List<SynRow> F3(SyntheticConnection connection, FHands hands) => SyntheticVariants.V2(connection, hands.F3);
