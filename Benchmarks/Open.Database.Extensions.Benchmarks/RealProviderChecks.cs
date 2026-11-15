@@ -108,6 +108,7 @@ public static partial class SyntheticChecks
 			var recorder = bench.Case.Recorder;
 			int ops = rows switch { <= 1 => 50, <= 100 => 30, _ => 5 };
 			int invoked = 0;
+			List<SynRow>? v2Rows = null, v7aRows = null;
 			foreach (var method in typeof(RealProviderBenchmarks).GetMethods().Where(static m => m.GetCustomAttributes(typeof(BenchmarkAttribute), false).Length > 0))
 			{
 				recorder.Reset();
@@ -124,6 +125,8 @@ public static partial class SyntheticChecks
 				{
 					case List<SynRow> typed:
 						Compare(report, method.Name, where, expectedRows, typed);
+						if (method.Name == "V2_Sync") v2Rows = typed;
+						else if (method.Name == "V7a_Sync") v7aRows = typed;
 						break;
 					case List<SynItem> domain:
 						CompareItems(report, method.Name, where, expectedItems, domain);
@@ -147,6 +150,9 @@ public static partial class SyntheticChecks
 				report.Check(summary.MeanOpenUs > 0 && summary.MeanOpenUs <= wallUs, $"{method.Name} {where}: reader-open {summary.MeanOpenUs:F1} us must be above 0 and not above the operation's wall time {wallUs:F1} us");
 				timings.Add(new RpTiming(provider, width, rows, method.Name, wallUs, summary.MeanOpenUs, bytes, ops));
 			}
+
+			report.Check(v2Rows is not null && v7aRows is not null, $"{where}: V2_Sync and V7a_Sync both ran");
+			if (v2Rows is not null && v7aRows is not null) Compare(report, "V7a_Sync vs V2_Sync", where, v2Rows, v7aRows);
 
 			Console.WriteLine($"  ok  {where}: {invoked} benchmark methods through Setup, output equal to the oracle ({rows} rows); data: {bench.Case.Describe}");
 		}
