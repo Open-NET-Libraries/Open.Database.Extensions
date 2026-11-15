@@ -14,13 +14,20 @@ using Open.Database.Extensions.Benchmarks;
 //   -- --calibrate-spin         how many Spin iterations make one microsecond on this machine
 //   -- --in6 [--help|--dry-run] sync Read against ReadAsync on SQL Server (LocalDB) and SQLite, a console probe (see In6Probe.cs)
 //   -- --selftest-in6           the probe's timing wrappers and engine, against the synthetic provider (no database)
+//   -- --selftest-s4            the large-value probe's cell runner, result line and checksum, on SQLite (--s4, --s4-setup, --s4-teardown: see S4Probe.cs)
 //   -- --verify-rp --scratch <folder> [--sqlite-dir <folder>]   equal final objects from every real-provider variant (LocalDB and a SQLite file), see RealProviderBenchmarks.cs
 // The checks say which runtime and target framework they ran on (the build is multi-targeted).
-if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace" or "--selftest-refill" or "--selftest-in6" or "--verify-rp" or "--calibrate-spin" or "--in6"))
+if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace" or "--selftest-refill" or "--selftest-in6" or "--verify-rp" or "--calibrate-spin" or "--in6") || S4Probe.Handles(args))
 {
 	Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
 		+ ", built for: " + System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false)
 			.Cast<System.Runtime.Versioning.TargetFrameworkAttribute>().First().FrameworkName);
+}
+
+if (S4Probe.Handles(args))
+{
+	Environment.ExitCode = S4Probe.Run(args);
+	return;
 }
 
 if (args.Contains("--verify"))
