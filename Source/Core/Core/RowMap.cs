@@ -76,6 +76,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	{
 		// A model type that cannot be mapped fails here, at the call, not when the first row is read.
 		TypeShape.ThrowIfUnmappable();
+		Slots = ModelSlots;
+		SlotIndex = ModelSlotIndex;
 
 		// slot → column, in slot order; a slot reads the column of its own name unless a pair says otherwise.
 		string?[] columns = new string?[Slots.Length];
@@ -107,12 +109,67 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		_ => mappings.ToArray()
 	};
 
-	// What Convert makes: the validated pairs of the map it was called on, and the converters so far with one more.
+	// What From(factory, pairs) makes. The slots are the factory's parameters, so a type with several constructors, which no constructor map accepts, can be built through one;
+	// a single value is no row model either way.
+	RowMap(Delegate factory, ReadOnlySpan<KeyValuePair<string, string?>> pairs)
+	{
+		if (Shape.IsScalar(typeof(T))) TypeShape.ThrowIfUnmappable();
+
+		_factory = factory;
+		Slots = BuildFactorySlots(factory);
+		SlotIndex = BuildSlotIndex(Slots);
+
+		string?[] columns = new string?[Slots.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = Slots[i].Name;
+
+		bool[] named = Declare(pairs, columns, nameof(pairs));
+		RejectSharedColumns(columns, named, nameof(pairs));
+
+		_columns = columns;
+		_named = named;
+	}
+
+	// One slot per parameter of the factory, read from the method behind the delegate (a lambda's parameters keep their names and their nullable annotations there), as a constructor's are.
+	// A delegate bound to its first argument has one parameter less than its method: the delegate type's own Invoke names them then.
+	static ImmutableArray<Slot> BuildFactorySlots(Delegate factory)
+	{
+		MethodInfo invoke = factory.GetType().GetMethod("Invoke")!;
+		if (invoke.ReturnType == typeof(void) || !typeof(T).IsAssignableFrom(invoke.ReturnType))
+			throw new ArgumentException($"The factory returns {Shape.TypeName(invoke.ReturnType)}, which cannot be assigned to {Shape.TypeName(typeof(T))}.", nameof(factory));
+
+		ParameterInfo[] parameters = invoke.GetParameters();
+		ParameterInfo[] declared = factory.Method.GetParameters();
+		if (declared.Length == parameters.Length) parameters = declared;
+
+		var seen = new HashSet<string>(StringComparer.Ordinal);
+		var list = new List<Slot>(parameters.Length);
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			ParameterInfo parameter = parameters[i];
+			string name = parameter.Name ?? "arg" + i;
+			if (parameter.ParameterType.IsByRef || parameter.ParameterType.IsPointer)
+				throw new ArgumentException($"The factory parameter '{name}' is passed by reference or is a pointer.", nameof(factory));
+			if (!seen.Add(name))
+				throw new ArgumentException($"The factory has two parameters named '{name}'.", nameof(factory));
+
+			list.Add(new Slot(name, parameter.ParameterType, i, name, false, Slot.FallbackOf(parameter), false, NullAnnotations.IsNonNullableReference(parameter)));
+		}
+
+		return [.. list];
+	}
+
+	// What Convert makes: the slots, the factory and the validated pairs of the map it was called on, and the converters so far with one more.
 	RowMap(
+		ImmutableArray<Slot> slots,
+		FrozenDictionary<string, int> slotIndex,
+		Delegate? factory,
 		string?[] columns,
 		bool[] named,
 		Converter?[] converters)
 	{
+		Slots = slots;
+		SlotIndex = slotIndex;
+		_factory = factory;
 		_columns = columns;
 		_named = named;
 		_converters = converters;
@@ -123,8 +180,19 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <returns>The default map, or a new map built from <paramref name="mappings"/>.</returns>
 	/// <exception cref="ArgumentException">A pair is invalid (see <see cref="RowMap{T}"/>).</exception>
 	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
+	[OverloadResolutionPriority(1)]
 	public static RowMap<T> From(ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 		=> mappings.Length == 0 ? Default : new RowMap<T>(mappings);
+
+	/// <summary>Creates a map that builds each <typeparamref name="T"/> by calling <paramref name="factory"/>, each of its parameters fed by the column of its name (a pair renames one) under the rules of a constructor parameter. Declare it once.</summary>
+	/// <param name="factory">A delegate returning a <typeparamref name="T"/>; each parameter is matched to a column by name and is the slot a pair names. No member of <typeparamref name="T"/> is set afterwards.</param>
+	/// <param name="pairs">The (parameter name, column name) pairs; a <see langword="null"/> column means "do not map this parameter".</param>
+	/// <returns>The new map.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">The factory does not return a <typeparamref name="T"/>, a parameter is passed by reference or two share a name, or a pair is invalid (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> is a single value such as <see cref="int"/> or <see cref="string"/>.</exception>
+	public static RowMap<T> From(Delegate factory, params ReadOnlySpan<KeyValuePair<string, string?>> pairs)
+		=> new(factory ?? throw new ArgumentNullException(nameof(factory)), pairs);
 
 	// A map enumerates the pairs it was declared with, which also makes it a collection-expression target: each slot a pair named, in slot order,
 	// with the column the pair gave it (null: an ignored slot). A slot no pair named is not yielded, so new RowMap<T>(map) builds an equivalent map.
@@ -252,7 +320,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			typeof(TColumn),
 			typeof(TMember));
 
-		return new RowMap<T>(columns, named, converters);
+		return new RowMap<T>(Slots, SlotIndex, _factory, columns, named, converters);
 	}
 
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
@@ -275,7 +343,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	// What a column can feed: one slot per parameter of the constructor the model is built through (none for a model built as it always was), then one per settable public
 	// instance property no parameter covers, in declaration order (a property hidden by name keeps the first). Reflection runs once per T.
-	static readonly ImmutableArray<Slot> Slots = BuildSlots();
+	static readonly ImmutableArray<Slot> ModelSlots = BuildSlots();
 
 	static ImmutableArray<Slot> BuildSlots()
 	{
@@ -335,13 +403,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	static bool MustHaveColumn(PropertyInfo property) => !TypeShape.SetsRequiredMembers && Shape.IsRequired(property);
 
 	// NOTE: static initializers run in textual order; each must follow what it uses.
-	static readonly FrozenDictionary<string, int> SlotIndex = BuildSlotIndex().ToFrozenDictionary();
+	static readonly FrozenDictionary<string, int> ModelSlotIndex = BuildSlotIndex(ModelSlots);
 
-	static Dictionary<string, int> BuildSlotIndex()
+	static FrozenDictionary<string, int> BuildSlotIndex(ImmutableArray<Slot> slots)
 	{
-		var index = new Dictionary<string, int>(Slots.Length, StringComparer.Ordinal);
-		for (int i = 0; i < Slots.Length; i++) index.Add(Slots[i].Name, i);
-		return index;
+		var index = new Dictionary<string, int>(slots.Length, StringComparer.Ordinal);
+		for (int i = 0; i < slots.Length; i++) index.Add(slots[i].Name, i);
+		return index.ToFrozenDictionary();
 	}
 
 	/// <summary>The map for the model's default mapping (property name == column name), used when no map is passed.</summary>
@@ -350,11 +418,18 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
 		get => field ?? throw new InvalidOperationException(TypeShape.Error);
-	} = TypeShape.Error is null ? new() : null; // Declared after TypeShape, Slots and SlotIndex: its constructor reads them.
+	} = TypeShape.Error is null ? new() : null; // Declared after TypeShape, ModelSlots and ModelSlotIndex: its constructor reads them.
 
 	// For an entry point that runs a command before it maps a row: checking the type first makes an unmappable T fail at the call, with nothing executed.
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter", Justification = "It checks this T's shape: the type parameter is how a caller names which T to check (RowMap<T>.ThrowIfUnmappable()).")]
 	internal static void ThrowIfUnmappable() => TypeShape.ThrowIfUnmappable();
+
+	// What this map's columns can feed: the model's own slots (ModelSlots), or the parameters of its factory (From(factory, pairs)).
+	readonly ImmutableArray<Slot> Slots;
+	readonly FrozenDictionary<string, int> SlotIndex;
+
+	// The function that builds a T from its parameters in place of the model's constructor, or null for a map of the model's own members.
+	readonly Delegate? _factory;
 
 	// The column each property reads, aligned with Slots; null means the property is not mapped (ignored).
 	// With _named, all the map keeps of the pairs.
@@ -431,7 +506,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	// One pass over the columns that no earlier tier matched: each looks up its property, which it takes unless an earlier column already did. Returns how many it fed.
-	static int Feed(Dictionary<string, int> index, string[] names, Slot?[] feeds, bool[] filled)
+	int Feed(Dictionary<string, int> index, string[] names, Slot?[] feeds, bool[] filled)
 	{
 		int fed = 0;
 		for (int i = 0; i < names.Length; i++)
@@ -511,7 +586,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	ConcurrentDictionary<int, Layout[]>? _layouts;
 
 	// Applies the pairs and reports which slots they named.
-	static bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
+	bool[] Declare(ReadOnlySpan<KeyValuePair<string, string?>> mappings, string?[] columns, string paramName)
 	{
 		bool[] named = new bool[columns.Length];
 		foreach (KeyValuePair<string, string?> pair in mappings)
@@ -537,7 +612,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	// A pair's name is matched to a settable property exactly; failing that, to a constructor parameter ignoring case (nameof reaches the property of the same name, not the parameter).
-	static bool TryFindSlot(string name, out int index)
+	bool TryFindSlot(string name, out int index)
 	{
 		if (SlotIndex.TryGetValue(name, out index)) return true;
 
@@ -552,15 +627,17 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		return false;
 	}
 
-	static string UnknownMember(string name)
-		=> $"'{typeof(T)}' has no settable public property{(TypeShape.Constructor is null ? null : " or constructor parameter")} named '{name}'.";
+	string UnknownMember(string name)
+		=> _factory is not null
+			? $"The factory of '{typeof(T)}' has no parameter named '{name}'."
+			: $"'{typeof(T)}' has no settable public property{(TypeShape.Constructor is null ? null : " or constructor parameter")} named '{name}'.";
 
-	static string Describe(Slot slot) => (slot.IsProperty ? "property '" : "constructor parameter '") + slot.Name + "'";
+	string Describe(Slot slot) => (slot.IsProperty ? "property '" : _factory is null ? "constructor parameter '" : "factory parameter '") + slot.Name + "'";
 
 	// Each mapped slot is compared with the slots before it (the first reader of a column is the one that gets it).
 	// Only what the map names is held to account: the model's own by-name twins are Map<T>()'s business.
 	// The check is quadratic in the slot count and runs once per map.
-	static void RejectSharedColumns(string?[] columns, bool[] named, string paramName)
+	void RejectSharedColumns(string?[] columns, bool[] named, string paramName)
 	{
 		for (int i = 1; i < columns.Length; i++)
 		{
@@ -997,9 +1074,11 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		Slot?[] feeds = Match(names);
 		RequireColumns(feeds);
 
-		List<Expression> statements = TypeShape.Constructor is { } constructor
-			? BindConstructor(constructor, item, index, bindings, names, feeds, readCell, isNull, locals)
-			: CreateThenSet(item, index, bindings, names, feeds, readCell, isNull);
+		List<Expression> statements = _factory is { } factory
+			? BindConstructor(Slots.Length, arguments => CallFactory(factory, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
+			: TypeShape.Constructor is { } constructor
+				? BindConstructor(constructor.GetParameters().Length, arguments => Expression.New(constructor, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
+				: CreateThenSet(item, index, bindings, names, feeds, readCell, isNull);
 
 		return Expression.Lambda<Func<TArg, T>>(Guard(statements, item, index, cell, locals, bindings), arg).Compile();
 	}
@@ -1018,6 +1097,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 				$"No column feeds the required property '{slot.Name}' ({Shape.TypeName(slot.Type)}) of '{Shape.TypeName(typeof(T))}'; expected a column named '{column}'.",
 				slot.Name, column, slot.Type);
 		}
+	}
+
+	// The factory is a constant of the expression tree, as a converter's delegate is: held once by the compiled row reader, and calling it allocates nothing.
+	// What it returns is a T, or a type assignable to T (checked when the map is built).
+	static Expression CallFactory(Delegate factory, Expression[] arguments)
+	{
+		Expression call = Expression.Invoke(Expression.Constant(factory, factory.GetType()), arguments);
+		return call.Type == typeof(T) ? call : Expression.Convert(call, typeof(T));
 	}
 
 	// Today's path, unchanged: `new T()`, then each cell is read and assigned in column order, with no locals.
@@ -1046,10 +1133,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// The constructor path. A constructor needs its arguments before anything can be set, and a SequentialAccess reader allows each cell to be read once, in ascending order:
 	// so every fed cell is read, in column order, into a typed local (nothing is boxed on the typed path), the constructor is called with the locals (the fallback for a parameter no column
 	// feeds, and for a NULL into a member the type declares non-nullable), and then the properties the constructor does not cover are set from their locals, a NULL skipping one the type declares non-nullable.
-	static List<Expression> BindConstructor(ConstructorInfo constructor, ParameterExpression item, ParameterExpression index, Binding?[] bindings, string[] names, Slot?[] feeds,
+	List<Expression> BindConstructor(int parameterCount, Func<Expression[], Expression> create, ParameterExpression item, ParameterExpression index, Binding?[] bindings, string[] names, Slot?[] feeds,
 		Func<int, Slot, Expression> readCell, Func<int, Slot, Expression?> isNull, List<ParameterExpression> locals)
 	{
-		var arguments = new Expression[constructor.GetParameters().Length];
+		var arguments = new Expression[parameterCount];
 		var statements = new List<Expression>(names.Length * 2 + 4);
 		var sets = new List<Expression>();
 
@@ -1096,7 +1183,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 		// A constructor that throws is not the fault of the last column read: the index says no column.
 		statements.Add(Expression.Assign(index, Expression.Constant(-1)));
-		statements.Add(Expression.Assign(item, Expression.New(constructor, arguments)));
+		statements.Add(Expression.Assign(item, create(arguments)));
 		statements.AddRange(sets);
 		statements.Add(item);
 		return statements;
