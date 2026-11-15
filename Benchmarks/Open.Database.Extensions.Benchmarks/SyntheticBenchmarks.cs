@@ -148,6 +148,8 @@ public class SyntheticBenchmarks
 	internal SyntheticConnection Connection { get; private set; } = null!;
 	Func<System.Data.IDataRecord, SynRow> _hand = null!;
 	Func<System.Data.IDataRecord, SynItem> _handM = null!;
+	Hands _hands = null!;
+	Func<SyntheticConnection, System.Collections.IList> _k = null!;
 	string _label = "";
 
 	[GlobalSetup]
@@ -158,6 +160,8 @@ public class SyntheticBenchmarks
 			new SyntheticOptions { RowCostIterations = RowCost, ExtraResultSets = ExtraSets, NextResultCostIterations = NextResultCost });
 		_hand = SyntheticVariants.Hand(Width);
 		_handM = SyntheticVariantsB.HandMassaged(Width);
+		_hands = Hands.For(Width);
+		_k = SyntheticVariantsC.K(Width);
 		SyntheticIterationListener.Attach(Connection.Options.Recorder);
 	}
 
@@ -168,6 +172,8 @@ public class SyntheticBenchmarks
 		if (_label.Length == 0) return;
 		var key = Key(_label, [(nameof(Width), Width), (nameof(Rows), Rows), (nameof(RowCost), RowCost), (nameof(ExtraSets), ExtraSets), (nameof(NextResultCost), NextResultCost), (nameof(Pace), Pace)]);
 		FileResults(key, Connection.Options.Recorder);
+		if (_label.StartsWith("V9a", StringComparison.Ordinal))
+			Console.WriteLine($"// SYNTHETIC {key} BufferBytes={SyntheticVariantsC.LastBufferBytes} per operation (rented array lengths x element size, plus the null bitmaps; ArrayPool memory, so NOT in Allocated); pool tally rented={PoolTally.Rented} returned={PoolTally.Returned}");
 	}
 
 	[Benchmark]
@@ -244,6 +250,43 @@ public class SyntheticBenchmarks
 
 	[Benchmark]
 	public ValueTask<List<SynItem>> V6d_Async() { _label = nameof(V6d_Async); return SyntheticVariantsB.V6dAsync(Connection, Width); }
+
+	// ---- BS-C: the DS1a candidates (SyntheticVariantsC). V6b-F, V6b-E, V6b-K, V9a-on, V9b, V9d-M produce the massaged SynItem; V9c, V9d, V9e and V9a-off produce SynRow like V1 ----------------
+	[Benchmark]
+	public List<SynRow> V1_Fresh_Sync() { _label = nameof(V1_Fresh_Sync); return SyntheticVariantsC.V1Fresh(Connection); }
+
+	[Benchmark]
+	public List<SynRow> V9c_Db_Sync() { _label = nameof(V9c_Db_Sync); return SyntheticVariantsC.V9cDb(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynRow> V9c_Syn_Sync() { _label = nameof(V9c_Syn_Sync); return SyntheticVariantsC.V9cSyn(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynRow> V9d_Sync() { _label = nameof(V9d_Sync); return SyntheticVariantsC.V9d(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynItem> V9d_M_Sync() { _label = nameof(V9d_M_Sync); return SyntheticVariantsC.V9dM(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynRow> V9e_Sync() { _label = nameof(V9e_Sync); return SyntheticVariantsC.V9e(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynItem> V6b_F_Sync() { _label = nameof(V6b_F_Sync); return SyntheticVariantsC.V6bF(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynItem> V6b_E_Sync() { _label = nameof(V6b_E_Sync); return SyntheticVariantsC.V6bE(Connection, _hands); }
+
+	[Benchmark]
+	public System.Collections.IList V6b_K_Sync() { _label = nameof(V6b_K_Sync); return _k(Connection); }
+
+	[Benchmark]
+	public List<SynItem> V9a_On_Sync() { _label = nameof(V9a_On_Sync); return SyntheticVariantsC.V9aOn(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynRow> V9a_Off_Sync() { _label = nameof(V9a_Off_Sync); return SyntheticVariantsC.V9aOff(Connection, _hands); }
+
+	[Benchmark]
+	public List<SynItem> V9b_Sync() { _label = nameof(V9b_Sync); return SyntheticVariantsC.V9b(Connection, Width); }
 
 	// ---- V7: Dapper, the shapes it can do (SyntheticDapper lists the ones it cannot) ----------------------------------------------------------------
 	[Benchmark]
@@ -328,4 +371,89 @@ public class SyntheticScalarBenchmarks
 
 	[Benchmark]
 	public Task<int> V7_V8b_Async() { _label = nameof(V7_V8b_Async); return SyntheticDapper.V8bAsync(_conn); }
+}
+
+/// <summary>
+/// The DateTimeOffset scenario (DS1a 3.1 point 4), outside the width ladder: a three-column table (Id, Title, When), parameter Rows only.
+/// <c>Dto_*</c> read When as a DateTimeOffset (no typed getter exists, so the plan reads it by GetValue, which boxes); <c>Dt_V1</c> is the control with a DateTime.
+/// Run in process for the ReaderOpen and Drain columns, as for <see cref="SyntheticBenchmarks"/>.
+/// </summary>
+[MemoryDiagnoser]
+[Config(typeof(SyntheticConfig))]
+public class SyntheticShapeBenchmarks
+{
+	[ParamsSource(nameof(RowsValues))]
+	public int Rows { get; set; }
+
+	public static IEnumerable<int> RowsValues => SyntheticParams.Rows;
+
+	SyntheticConnection _dto = null!, _dt = null!;
+	string _label = "";
+
+	[GlobalSetup]
+	public void Setup()
+	{
+		_dto = new SyntheticConnection(SyntheticTable.Create(SyntheticCatalog.DateTimeOffsetColumns, Rows), new SyntheticOptions());
+		_dt = new SyntheticConnection(SyntheticTable.Create(SyntheticCatalog.DateTimeColumns, Rows), new SyntheticOptions { Recorder = _dto.Options.Recorder });
+		SyntheticIterationListener.Attach(_dto.Options.Recorder);
+	}
+
+	[GlobalCleanup]
+	public void Cleanup()
+	{
+		if (_label.Length == 0) return;
+		SyntheticBenchmarks.FileResults(SyntheticBenchmarks.Key(_label, [(nameof(Rows), Rows)]), _dto.Options.Recorder);
+	}
+
+	[Benchmark]
+	public List<DtoRow> Dto_V1_Sync() { _label = nameof(Dto_V1_Sync); return SyntheticVariantsC.DtoV1(_dto); }
+
+	[Benchmark]
+	public List<DtRow> Dt_V1_Sync() { _label = nameof(Dt_V1_Sync); return SyntheticVariantsC.DtV1(_dt); }
+
+	[Benchmark]
+	public List<DtoRow> Dto_HandBoxed_Sync() { _label = nameof(Dto_HandBoxed_Sync); return SyntheticVariantsC.DtoHandBoxed(_dto); }
+
+	[Benchmark]
+	public List<DtoRow> Dto_HandTyped_Sync() { _label = nameof(Dto_HandTyped_Sync); return SyntheticVariantsC.DtoHandTyped(_dto); }
+}
+
+/// <summary>
+/// Item 11: the one-off <c>Map&lt;T&gt;(pair)</c> and <c>Map&lt;T&gt;(params pairs)</c> overloads build a map on every call; a declared map is built once.
+/// One row, width 3, no parameters. OneOff_* use the params overload with three pairs; Declared_* use a RowMap field. List and First of each.
+/// </summary>
+[MemoryDiagnoser]
+[Config(typeof(SyntheticConfig))]
+public class OneOffOverloadBenchmarks
+{
+	public const int Width = 3, Rows = 1;
+
+	SyntheticConnection _conn = null!;
+	string _label = "";
+
+	[GlobalSetup]
+	public void Setup()
+	{
+		_conn = new SyntheticConnection(SyntheticTable.Create(Width, Rows), new SyntheticOptions());
+		SyntheticIterationListener.Attach(_conn.Options.Recorder);
+	}
+
+	[GlobalCleanup]
+	public void Cleanup()
+	{
+		if (_label.Length == 0) return;
+		SyntheticBenchmarks.FileResults(SyntheticBenchmarks.Key(_label, []), _conn.Options.Recorder);
+	}
+
+	[Benchmark]
+	public List<SynRow> OneOff_List_Sync() { _label = nameof(OneOff_List_Sync); return SyntheticVariantsC.OneOffList(_conn); }
+
+	[Benchmark]
+	public SynRow OneOff_First_Sync() { _label = nameof(OneOff_First_Sync); return SyntheticVariantsC.OneOffFirst(_conn); }
+
+	[Benchmark]
+	public List<SynRow> Declared_List_Sync() { _label = nameof(Declared_List_Sync); return SyntheticVariantsC.DeclaredList(_conn); }
+
+	[Benchmark]
+	public SynRow Declared_First_Sync() { _label = nameof(Declared_First_Sync); return SyntheticVariantsC.DeclaredFirst(_conn); }
 }

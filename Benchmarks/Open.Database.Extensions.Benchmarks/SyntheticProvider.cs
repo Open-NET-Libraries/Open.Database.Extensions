@@ -230,6 +230,22 @@ public static class SyntheticCatalog
 		C("Summary", static i => LongText(i + 3), nullEvery: 6, nullOffset: 5),                        // 20 long string? (17% NULL)
 	];
 
+	// The DateTimeOffset scenario (DS1a 3.1 point 4), outside the catalog so widths 1/3/5/10/20 stay comparable: Id, Title and When as a DateTimeOffset
+	// (a fixed offset, so no machine time zone enters), and the control with When as the same instant in a DateTime.
+	public static readonly ColumnSpec[] DateTimeOffsetColumns =
+	[
+		Columns[0],
+		Columns[2],
+		C<DateTimeOffset>("When", static i => new DateTimeOffset(Start.AddSeconds(i * 37L)).ToOffset(TimeSpan.FromHours(2))),
+	];
+
+	public static readonly ColumnSpec[] DateTimeColumns =
+	[
+		Columns[0],
+		Columns[2],
+		C("When", static i => Start.AddSeconds(i * 37L)),
+	];
+
 	static byte[] Blob(int i)
 	{
 		var b = new byte[16];
@@ -268,15 +284,22 @@ public sealed class SyntheticTable
 	public static SyntheticTable Create(int width, int rows)
 	{
 		if (width is < 1 or > SyntheticCatalog.MaxWidth) throw new ArgumentOutOfRangeException(nameof(width));
+		return Create(SyntheticCatalog.Columns.AsSpan(0, width), rows);
+	}
+
+	/// <summary>A table of the given column specs (the catalog's first columns, or the DateTimeOffset scenario's).</summary>
+	public static SyntheticTable Create(ReadOnlySpan<ColumnSpec> specs, int rows)
+	{
 		if (rows < 0) throw new ArgumentOutOfRangeException(nameof(rows));
 
+		int width = specs.Length;
 		var names = new string[width];
 		var types = new Type[width];
 		var columns = new Array[width];
 		var nulls = new bool[]?[width];
 		for (int c = 0; c < width; c++)
 		{
-			var spec = SyntheticCatalog.Columns[c];
+			var spec = specs[c];
 			names[c] = spec.Name;
 			types[c] = spec.Type;
 			columns[c] = spec.Fill(rows);
@@ -501,6 +524,7 @@ public sealed class SyntheticReader : DbDataReader
 			double[] a => a[_row],
 			Guid[] a => a[_row],
 			long[] a => a[_row],
+			DateTimeOffset[] a => a[_row],
 			byte[][] a => a[_row],
 			_ => throw new NotSupportedException(),
 		};

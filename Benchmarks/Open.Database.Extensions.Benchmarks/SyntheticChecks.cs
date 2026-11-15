@@ -16,7 +16,7 @@ namespace Open.Database.Extensions.Benchmarks;
 //                            and the ReaderOpen/Drain summary covers the WorkloadActual iterations only (BS-RO)
 //   --selftest-pace          consumer pace grows reader-open for the inline variants (V3, V3s, V4a, V4b, V6c, Dapper twins) and not for V5 and V6d
 //   --selftest-alloc         the typed-getter loop allocates 0 B per row
-public static class SyntheticChecks
+public static partial class SyntheticChecks
 {
 	static readonly int[] VerifyWidths = [1, 3, 5, 10, 20];
 	static readonly int[] VerifyRows = [1, 100];
@@ -43,6 +43,7 @@ public static class SyntheticChecks
 	{
 		var report = new Report();
 		Console.WriteLine("== equal final objects: every variant against V1 (and V1 against the table); V3-V7 against the domain oracle ==");
+		VerifyReaderIsSynthetic(report);
 		foreach (int width in VerifyWidths)
 		{
 			foreach (int rows in VerifyRows) VerifyVariants(report, width, rows);
@@ -53,6 +54,13 @@ public static class SyntheticChecks
 
 		Console.WriteLine("== the benchmark methods through the benchmark class's own Setup ==");
 		VerifyBenchmarkPath(report);
+
+		Console.WriteLine("== BS-C: object sizes, V9a buffers, the DateTimeOffset scenario, the one-off overloads ==");
+		VerifyObjectSizes(report);
+		VerifyBufferBytes(report);
+		VerifyShapeScenario(report);
+		VerifyOverloads(report);
+		VerifyShapeBenchmarkPath(report);
 
 		Console.WriteLine("== provider switches ==");
 		VerifySwitches(report);
@@ -112,6 +120,7 @@ public static class SyntheticChecks
 		}
 
 		VerifyVariantsB(report, conn, table, width, rows, v1, where);
+		VerifyVariantsC(report, conn, table, width, rows, v1, where);
 
 		Console.WriteLine($"  ok  {where}: V0, V0b, V1, V2, V3-V7 (sync and async) equal ({rows} rows)");
 	}
@@ -159,10 +168,13 @@ public static class SyntheticChecks
 							Compare(report, name, where, v1, typed);
 							break;
 						case List<SynItem> domain:
-							CompareItems(report, name, where, method.Name.Contains("V6", StringComparison.Ordinal) ? massaged : plain, domain);
+							CompareItems(report, name, where, method.Name.Contains("V6", StringComparison.Ordinal) || method.Name is "V9a_On_Sync" or "V9b_Sync" or "V9d_M_Sync" ? massaged : plain, domain);
 							break;
 						case List<object[]> boxed:
 							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
+							break;
+						case System.Collections.IList shaped:
+							CompareItems(report, name, where, massaged, Items(shaped));
 							break;
 						default:
 							report.Fail($"{name} {where}: unexpected result {result?.GetType().Name ?? "null"}");
@@ -620,6 +632,7 @@ public static class SyntheticChecks
 
 		Judge("raw", rawBase, rawInside, rawAfter);
 		Judge("library", libBase, libInside, libAfter);
+		CheckV9aWindow(report, DelayUs, Run, Judge);
 
 		// The drain is reported on its own: NextResult cost shows in the drain and inside reader-open time, and nowhere else.
 		var rec = new SyntheticRecorder();
@@ -833,6 +846,8 @@ public static class SyntheticChecks
 		AllocPass(report, conn, "GetValue (boxes value types, inherent)", gate: false, r => GetValuePass(r));
 		AllocPass(report, conn, "GetValues into a reused object[20] (boxes, inherent)", gate: false, r => GetValuesPass(r, values));
 		AllocPass(report, conn, "GetFieldValueAsync<int>(0) (one Task, inherent)", gate: false, r => AsyncPass(r));
+
+		ShapeAllocInfo(report);
 
 		Console.WriteLine(report.Failures == 0 ? $"SELFTEST ALLOC PASS ({report.Checks} checks)" : $"SELFTEST ALLOC FAIL ({report.Failures} of {report.Checks})");
 		return report.Failures == 0 ? 0 : 1;
