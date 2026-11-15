@@ -96,10 +96,10 @@ jobs:
           dotnet-version: 11.0.x
 
       # `dotnet list package --vulnerable` exits 0 even when it finds something, so read what it prints.
-      # Each library project, plus the test project, is listed with its transitive packages.
+      # Each library project, the test project and the benchmark projects are listed with their transitive packages.
       - name: List vulnerable packages (any finding fails the run)
         run: |
-          $projects = @(Get-ChildItem Source -Recurse -Filter *.csproj) + @(Get-Item Tests/Open.Database.Extensions.Core.Tests/*.csproj)
+          $projects = @(Get-ChildItem Source -Recurse -Filter *.csproj) + @(Get-Item Tests/Open.Database.Extensions.Core.Tests/*.csproj) + @(Get-ChildItem Benchmarks -Recurse -Filter *.csproj)
           $failures = @()
           foreach ($project in $projects) {
             $output = (dotnet list $project.FullName package --vulnerable --include-transitive 2>&1 | Out-String)
