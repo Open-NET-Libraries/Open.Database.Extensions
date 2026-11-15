@@ -83,7 +83,7 @@ public static RowMap<Person> PersonMap => field ??= [new(nameof(Person.FirstName
 var people = cmd.Map<Person>(PersonMap).ToList();
 ```
 
-To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. Only `Map<T>` also takes the pairs themselves, but that builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
+To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. A map built at the call site builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
 
 These can change behavior without a compile error, most likely first:
 

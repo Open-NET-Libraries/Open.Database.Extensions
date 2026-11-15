@@ -185,13 +185,13 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_backing)]
 
-**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, an `ImmutableArray` of pairs passed to the constructor, or the pairs passed to `Map<T>` build a new map, and compile the row reader, on every call:
+**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, or an `ImmutableArray` of pairs passed to the constructor build a new map, and compile the row reader, on every call:
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
 The cost is measured in the benchmarks (the [`RowMap<T>` scenario](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently)). Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
 
-`Map<T>` also takes the pairs themselves, with no `RowMap<T>` written; it is the same one-off and costs the same:
+The constructor also takes the pairs as arguments, with no brackets: `Map(new RowMap<T>(pair, pair))`. It is the same one-off and costs the same:
 
 [!code-csharp[](../samples/Mapping.cs#map_pairs)]
 

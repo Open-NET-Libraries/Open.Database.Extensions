@@ -259,12 +259,11 @@ public static class RowMapDeclarationTests
 
 		AssertRenamed(Command().Map(declared).ToList());                                       // a RowMap variable
 		AssertRenamed(Command().Map<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")]).ToList());
-		AssertRenamed(Command().Map<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")).ToList());
+		AssertRenamed(Command().Map(new RowMap<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList());
 		AssertRenamed(Command().Map(new RowMap<Item>([new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")])).ToList());
 		AssertRenamed(Command().Map(RowMapTests.Plain).ToList());
 
 		AssertSeven(OneRow().Map<Item>([new(nameof(Item.Id), "item_id")]).ToList());           // one pair, collection expression
-		AssertSeven(OneRow().Map<Item>(new(nameof(Item.Id), "item_id")).ToList());             // one pair, bare
 		AssertSeven(OneRow().Map(new RowMap<Item>([new(nameof(Item.Id), "item_id")])).ToList());
 		AssertSeven(OneRow().Map(new RowMap<Item>(new(nameof(Item.Id), "item_id"))).ToList());
 

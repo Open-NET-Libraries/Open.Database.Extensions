@@ -76,10 +76,10 @@ public static class Mapping
 	public static Person[] MapPairs(SqliteConnection connection)
 	{
 		#region map_pairs
-		// Map<T> also takes the pairs themselves: the same one-off, a new map built, and the row reader compiled, on every call.
+		// The pairs in a new RowMap<T> at the call: the same one-off, a new map built, and the row reader compiled, on every call.
 		Person[] people = connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))
+			.Map(new RowMap<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")))
 			.ToArray();
 		#endregion
 
