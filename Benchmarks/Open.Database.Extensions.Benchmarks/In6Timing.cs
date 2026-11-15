@@ -22,6 +22,8 @@ public sealed class In6Stats
 	// Time INSIDE the calls (the synchronous part, before the call returns): Read, ReadAsync (sum and longest single call) and every getter (sum), in stopwatch ticks.
 	public long ReadInsideTicks, MaxReadInsideTicks, ReadAsyncInsideTicks, MaxReadAsyncInsideTicks, GetterTicks;
 	public int ReadCalls;
+	// P6 (inline, no wrapper): the time awaiting ReadAsync, summed, and the longest single await.
+	public long AwaitReadTicks, MaxAwaitReadTicks;
 	// The async column reads (IsDBNullAsync, GetFieldValueAsync): calls, calls that returned a task that was not complete, the time from that return until the task completed, and where (row index) they happened.
 	public int GetterAsyncCalls, GetterAsyncIncomplete;
 	public long GetterWaitTicks, MaxGetterWaitTicks;
@@ -40,6 +42,7 @@ public sealed class In6Stats
 		WaitTicks = 0;
 		ReadInsideTicks = MaxReadInsideTicks = ReadAsyncInsideTicks = MaxReadAsyncInsideTicks = GetterTicks = 0;
 		ReadCalls = 0;
+		AwaitReadTicks = MaxAwaitReadTicks = 0;
 		GetterAsyncCalls = GetterAsyncIncomplete = 0;
 		GetterWaitTicks = MaxGetterWaitTicks = 0;
 		MaxWaitTicks = 0;
@@ -142,6 +145,9 @@ sealed class WaitTimer(In6Stats stats, long start)
 /// <summary>Wraps an open connection (the caller keeps it open and disposes it). Commands and readers made from it are timed.</summary>
 public sealed class TimedConnection(DbConnection inner, In6Stats stats) : DbConnection
 {
+	/// <summary>The provider's own connection behind the wrapper (P6 uses it directly).</summary>
+	public DbConnection Inner => inner;
+
 	[AllowNull]
 	public override string ConnectionString { get => inner.ConnectionString; set => inner.ConnectionString = value; }
 	public override string Database => inner.Database;

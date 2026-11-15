@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace Open.Database.Extensions.Benchmarks;
@@ -14,6 +15,9 @@ namespace Open.Database.Extensions.Benchmarks;
 public abstract class AsyncColumn<TRow>
 {
 	public abstract ValueTask ReadAsync(DbDataReader reader, TRow row);
+
+	/// <summary>The same cell with the SYNC typed getter (P6); the time inside the reader calls is added to getterTicks.</summary>
+	public abstract void ReadSync(DbDataReader reader, TRow row, ref long getterTicks);
 }
 
 /// <summary>A column read with GetFieldValueAsync&lt;TValue&gt;; when it can be NULL, IsDBNullAsync is awaited first and setNull is called for NULL.</summary>
@@ -28,6 +32,23 @@ sealed class AsyncColumn<TRow, TValue>(int ordinal, Action<TRow, TValue> set, Ac
 		}
 
 		set(row, await reader.GetFieldValueAsync<TValue>(ordinal).ConfigureAwait(false));
+	}
+
+	static readonly Func<DbDataReader, int, TValue> Get = In6Plans.TypedGetter<TValue>();
+
+	public override void ReadSync(DbDataReader reader, TRow row, ref long getterTicks)
+	{
+		long start = Stopwatch.GetTimestamp();
+		if (setNull is not null && reader.IsDBNull(ordinal))
+		{
+			getterTicks += Stopwatch.GetTimestamp() - start;
+			setNull(row);
+			return;
+		}
+
+		var value = Get(reader, ordinal);
+		getterTicks += Stopwatch.GetTimestamp() - start;
+		set(row, value);
 	}
 }
 
@@ -55,11 +76,87 @@ public sealed class AsyncPlan<TRow>(Func<TRow> create, AsyncColumn<TRow>[] colum
 
 		return list;
 	}
+
+	/// <summary>
+	/// P6: the provider's own connection and command (no ODX, no timing wrapper), ExecuteReaderAsync with the default behavior, <c>await reader.ReadAsync()</c> per row, then SYNC typed getters.
+	/// Timed inline with Stopwatch, written to stats: the time awaiting every ReadAsync (from before the call to after the await, including a truly async completion),
+	/// the time in the getters, and the ReadAsync calls whose task was not complete when checked (nothing else is added to the call). The wait of an incomplete read is that same await time.
+	/// </summary>
+	public async Task<List<TRow>> ReadAllRawAsync(DbConnection connection, string sql, In6Stats stats, int maxRows = int.MaxValue)
+	{
+		using var command = connection.CreateCommand();
+		command.CommandText = sql;
+		long openStart = Stopwatch.GetTimestamp();
+		var reader = await command.ExecuteReaderAsync(CommandBehavior.Default).ConfigureAwait(false);
+		var list = new List<TRow>();
+		long getterTicks = 0;
+		try
+		{
+			while (list.Count < maxRows)
+			{
+				long start = Stopwatch.GetTimestamp();
+				var task = reader.ReadAsync();
+				bool incomplete = !task.IsCompleted;
+				bool more = await task.ConfigureAwait(false);
+				long waited = Stopwatch.GetTimestamp() - start;
+				stats.ReadAsyncCalls++;
+				stats.AwaitReadTicks += waited;
+				if (waited > stats.MaxAwaitReadTicks) stats.MaxAwaitReadTicks = waited;
+				if (incomplete)
+				{
+					stats.ReadAsyncIncomplete++;
+					stats.WaitTicks += waited;
+					if (waited > stats.MaxWaitTicks) stats.MaxWaitTicks = waited;
+					stats.Positions?.Add(list.Count);
+				}
+
+				if (!more) break;
+				var row = create();
+				foreach (var column in columns) column.ReadSync(reader, row, ref getterTicks);
+				list.Add(row);
+			}
+
+			if (maxRows == int.MaxValue)
+			{
+				while (await reader.NextResultAsync().ConfigureAwait(false)) { }
+			}
+		}
+		finally
+		{
+			await reader.DisposeAsync().ConfigureAwait(false);
+		}
+
+		stats.GetterTicks += getterTicks;
+		stats.OpenTicks += Stopwatch.GetTimestamp() - openStart;
+		stats.Readers++;
+		return list;
+	}
 }
 
 /// <summary>The plans of the probe's scenarios.</summary>
 static class In6Plans
 {
+	/// <summary>The sync typed getter for a column type (P6): GetInt32, GetString and so on; byte[] through GetValue.</summary>
+	static object Of<T>(Func<DbDataReader, int, T> getter) => getter;
+
+	internal static Func<DbDataReader, int, TValue> TypedGetter<TValue>()
+	{
+		object getter = default(TValue) switch
+		{
+			int => Of<int>(static (r, o) => r.GetInt32(o)),
+			long => Of<long>(static (r, o) => r.GetInt64(o)),
+			double => Of<double>(static (r, o) => r.GetDouble(o)),
+			bool => Of<bool>(static (r, o) => r.GetBoolean(o)),
+			decimal => Of<decimal>(static (r, o) => r.GetDecimal(o)),
+			DateTime => Of<DateTime>(static (r, o) => r.GetDateTime(o)),
+			Guid => Of<Guid>(static (r, o) => r.GetGuid(o)),
+			_ when typeof(TValue) == typeof(string) => Of<string>(static (r, o) => r.GetString(o)),
+			_ when typeof(TValue) == typeof(byte[]) => Of<byte[]>(static (r, o) => (byte[])r.GetValue(o)),
+			_ => throw new NotSupportedException("no typed getter for " + typeof(TValue)),
+		};
+		return (Func<DbDataReader, int, TValue>)getter;
+	}
+
 	static AsyncColumn<TRow> Col<TRow, TValue>(int ordinal, Action<TRow, TValue> set) => new AsyncColumn<TRow, TValue>(ordinal, set, null);
 	static AsyncColumn<TRow> Null<TRow, TValue>(int ordinal, Action<TRow, TValue> set, Action<TRow> setNull) => new AsyncColumn<TRow, TValue>(ordinal, set, setNull);
 
