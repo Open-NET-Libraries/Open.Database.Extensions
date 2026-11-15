@@ -10,6 +10,15 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.403" PrivateAssets="All" />
 	</ItemGroup>
 
+	<!-- Public API surface tracking, as on Core: enabled on the modern targets only (the public API differs on net472).
+	     The package's own targets add PublicAPI.Shipped.txt and PublicAPI.Unshipped.txt as AdditionalFiles when they sit next to the project. -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net11.0'">
+		<PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
 		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
