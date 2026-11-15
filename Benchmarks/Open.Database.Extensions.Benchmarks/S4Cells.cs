@@ -80,6 +80,8 @@ public sealed class S4Counters
 	public long OpenTicks, AsyncReadTicks, AsyncGetterTicks;
 	public int AsyncReads, AsyncGetters;
 	public bool Wrapper;
+	/// <summary>The command timeout in seconds applied to every command of the cell (not reset between the warm-up and the measured read).</summary>
+	public ushort CommandTimeout = 30;
 
 	public void Reset()
 	{
@@ -102,7 +104,7 @@ public sealed class S4Result(S4Counters counters, long totalTicks, long allocByt
 	public string Line(string scenario, string path)
 		=> $"S4RESULT scenario={scenario} path={path} open_ms={Ms(counters.OpenTicks)} total_ms={Ms(totalTicks)} alloc_bytes={allocBytes} peak_ws_bytes={peakWorkingSet}"
 		+ $" async_reads={counters.AsyncReads} async_wait_ms={Ms(counters.AsyncReadTicks)} async_getters={counters.AsyncGetters} async_getter_wait_ms={Ms(counters.AsyncGetterTicks)}"
-		+ $" rows={verify.Rows} bytes={verify.Bytes} wrapper={(counters.Wrapper ? "yes" : "no")}";
+		+ $" rows={verify.Rows} bytes={verify.Bytes} wrapper={(counters.Wrapper ? "yes" : "no")} cmd_timeout={counters.CommandTimeout}";
 
 	public string VerifyLine(string scenario, string path) => $"S4VERIFY scenario={scenario} path={path} {verify.Format()}";
 }
@@ -220,17 +222,17 @@ public static partial class S4Cells
 	}
 
 	/// <summary>Warm-up read of a tiny row on the same path, then the measured read of the scenario's table.</summary>
-	public static Task<S4Result> RunAsync(DbConnection connection, S4Scenario scenario, string path, string warmupSql)
+	public static Task<S4Result> RunAsync(DbConnection connection, S4Scenario scenario, string path, string warmupSql, ushort commandTimeout = 30)
 		=> scenario.Binary
-			? RunKindAsync(S4BinKind.Instance, connection, scenario, path, warmupSql)
-			: RunKindAsync(S4StrKind.Instance, connection, scenario, path, warmupSql);
+			? RunKindAsync(S4BinKind.Instance, connection, scenario, path, warmupSql, commandTimeout)
+			: RunKindAsync(S4StrKind.Instance, connection, scenario, path, warmupSql, commandTimeout);
 
-	static async Task<S4Result> RunKindAsync<TRow, TBody>(S4Kind<TRow, TBody> kind, DbConnection connection, S4Scenario scenario, string path, string warmupSql)
+	static async Task<S4Result> RunKindAsync<TRow, TBody>(S4Kind<TRow, TBody> kind, DbConnection connection, S4Scenario scenario, string path, string warmupSql, ushort commandTimeout)
 		where TRow : class, new()
 	{
 		var stats = new In6Stats();
 		var timed = new TimedConnection(connection, stats);
-		var counters = new S4Counters();
+		var counters = new S4Counters { CommandTimeout = commandTimeout };
 		await Execute(kind, path, connection, timed, stats, warmupSql, counters).ConfigureAwait(false);
 		stats.Reset();
 		counters.Reset();
@@ -265,6 +267,7 @@ public static partial class S4Cells
 	{
 		using var command = connection.CreateCommand();
 		command.CommandText = sql;
+		command.CommandTimeout = counters.CommandTimeout;
 		long openStart = Stopwatch.GetTimestamp();
 		var reader = asyncRead
 			? await command.ExecuteReaderAsync(behavior).ConfigureAwait(false)
@@ -342,7 +345,7 @@ public static partial class S4Cells
 	static async Task<List<TRow>> OdxSelector<TRow, TBody>(S4Kind<TRow, TBody> kind, TimedConnection timed, In6Stats stats, string sql, S4Counters counters)
 		where TRow : class, new()
 	{
-		var list = await timed.Command(sql).EnableAsyncRead().Map(kind.Selector).ToListAsync().ConfigureAwait(false);
+		var list = await timed.Command(sql).SetTimeout(counters.CommandTimeout).EnableAsyncRead().Map(kind.Selector).ToListAsync().ConfigureAwait(false);
 		CopyStats(stats, counters);
 		return list;
 	}
@@ -350,7 +353,7 @@ public static partial class S4Cells
 	static async Task<List<TRow>> OdxMapAsync<TRow>(TimedConnection timed, In6Stats stats, string sql, S4Counters counters)
 		where TRow : class, new()
 	{
-		var list = await timed.Command(sql).EnableAsyncRead().Map<TRow>().ToListAsync().ConfigureAwait(false);
+		var list = await timed.Command(sql).SetTimeout(counters.CommandTimeout).EnableAsyncRead().Map<TRow>().ToListAsync().ConfigureAwait(false);
 		CopyStats(stats, counters);
 		return list;
 	}
@@ -358,14 +361,14 @@ public static partial class S4Cells
 	static Task<List<TRow>> OdxMapSync<TRow>(TimedConnection timed, In6Stats stats, string sql, S4Counters counters)
 		where TRow : class, new()
 	{
-		var list = timed.Command(sql).Map<TRow>().ToList();
+		var list = timed.Command(sql).SetTimeout(counters.CommandTimeout).Map<TRow>().ToList();
 		CopyStats(stats, counters);
 		return Task.FromResult(list);
 	}
 
 	// ---- the self-test: no server; SQLite in memory with the four shapes scaled down to KB -----------------------------------------------------
 
-	[GeneratedRegex(@"^S4RESULT scenario=(V1|V2|N1|N2) path=(R[1-5]|O[1-3]) open_ms=\d+\.\d{3} total_ms=\d+\.\d{3} alloc_bytes=\d+ peak_ws_bytes=\d+ async_reads=\d+ async_wait_ms=\d+\.\d{3} async_getters=\d+ async_getter_wait_ms=\d+\.\d{3} rows=\d+ bytes=\d+ wrapper=(yes|no)$", RegexOptions.CultureInvariant)]
+	[GeneratedRegex(@"^S4RESULT scenario=(V1|V2|N1|N2) path=(R[1-5]|O[1-3]) open_ms=\d+\.\d{3} total_ms=\d+\.\d{3} alloc_bytes=\d+ peak_ws_bytes=\d+ async_reads=\d+ async_wait_ms=\d+\.\d{3} async_getters=\d+ async_getter_wait_ms=\d+\.\d{3} rows=\d+ bytes=\d+ wrapper=(yes|no) cmd_timeout=[0-9]+$", RegexOptions.CultureInvariant)]
 	private static partial Regex ResultFormat();
 
 	[GeneratedRegex(@"^S4VERIFY scenario=(V1|V2|N1|N2) path=(R[1-5]|O[1-3]) rows=\d+ bytes=\d+ first_last_checksum=[0-9a-f]{16}$", RegexOptions.CultureInvariant)]
@@ -462,7 +465,47 @@ public static partial class S4Cells
 			}
 		}
 
+		// The command timeout reaches the command of every path (warm-up and measured read) and is printed in the result line.
+		var spy = new S4SpyConnection(connection);
+		foreach (string path in Paths)
+		{
+			spy.Commands.Clear();
+			var result = RunAsync(spy, S4Scenario.Small[1], path, S4Scenario.Small[1].WarmupSqlite, 45).GetAwaiter().GetResult();
+			Check(spy.Commands.Count == 2 && spy.Commands.All(static c => c.CommandTimeout == 45), $"{path}: {spy.Commands.Count} commands, timeouts {string.Join(",", spy.Commands.Select(static c => c.CommandTimeout))}, expected 2 x 45");
+			Check(result.Line("V2", path).EndsWith(" cmd_timeout=45", StringComparison.Ordinal), $"{path}: result line carries cmd_timeout=45");
+		}
+
+		var defaults = RunAsync(spy, S4Scenario.Small[1], "O1", S4Scenario.Small[1].WarmupSqlite).GetAwaiter().GetResult();
+		Check(defaults.Line("V2", "O1").EndsWith(" cmd_timeout=30", StringComparison.Ordinal), "the default command timeout is 30");
+
 		Console.WriteLine(failures == 0 ? "S4 self-test: OK (8 paths x 4 scenarios agree on rows, bytes and checksum; line formats match)" : $"S4 self-test: {failures} FAILED");
 		return failures == 0 ? 0 : 1;
 	}
+}
+
+/// <summary>A pass-through connection that remembers the commands it created (the self-test reads their CommandTimeout).</summary>
+sealed class S4SpyConnection(DbConnection inner) : DbConnection
+{
+	public List<DbCommand> Commands { get; } = [];
+
+	[System.Diagnostics.CodeAnalysis.AllowNull]
+	public override string ConnectionString { get => inner.ConnectionString; set => inner.ConnectionString = value; }
+	public override string Database => inner.Database;
+	public override string DataSource => inner.DataSource;
+	public override string ServerVersion => inner.ServerVersion;
+	public override ConnectionState State => inner.State;
+	public override void ChangeDatabase(string databaseName) => inner.ChangeDatabase(databaseName);
+	public override void Close() => inner.Close();
+	public override void Open() => inner.Open();
+	protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
+
+	protected override DbCommand CreateDbCommand()
+	{
+		var command = inner.CreateCommand();
+		Commands.Add(command);
+		return command;
+	}
+
+	// The test owns the inner connection.
+	protected override void Dispose(bool disposing) { }
 }
