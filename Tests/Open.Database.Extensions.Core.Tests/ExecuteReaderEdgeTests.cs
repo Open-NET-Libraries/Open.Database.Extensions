@@ -222,15 +222,14 @@ public static class ExecuteReaderEdgeTests
 		return (tally, tally.NewConnection().Command("select 1"));
 	}
 
-	[Theory]
-	[InlineData(true)]
-	public static async Task IterateReaderAsync_HandlesEveryRow_AndReleasesWhatItOpened(bool useAsyncRead)
+	[Fact]
+	public static async Task IterateReaderAsync_HandlesEveryRow_AndReleasesWhatItOpened()
 	{
 		(DbTally tally, ExpressiveDbCommand command) = Tracked(3);
 		int handled = 0;
 
 		await command
-			.EnableAsyncRead(useAsyncRead)
+			.AsyncReads()
 			.IterateReaderAsync(
 				_ => handled++,
 				cancellationToken: TestContext.Current.CancellationToken);
@@ -255,7 +254,7 @@ public static class ExecuteReaderEdgeTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
 #pragma warning disable xUnit1051 // The command token alone must govern this call: a live call token would link a second one.
-			await command.EnableAsyncRead(true).UseCancellationToken(cts.Token).IterateReaderAsync(_ => handled++));
+			await command.AsyncReads().UseCancellationToken(cts.Token).IterateReaderAsync(_ => handled++));
 #pragma warning restore xUnit1051
 
 		Assert.Equal(cancelAtRead == 0 ? 0 : 2, handled); // the rows read before the cancel were handled, and nothing was read after it
@@ -273,7 +272,7 @@ public static class ExecuteReaderEdgeTests
 		if (valueTaskHandler)
 		{
 			await command
-				.EnableAsyncRead(true)
+				.AsyncReads()
 				.IterateReaderWhileAsync(
 					_ => new ValueTask<bool>(++seen < 3),
 					cancellationToken: TestContext.Current.CancellationToken);
@@ -281,7 +280,7 @@ public static class ExecuteReaderEdgeTests
 		else
 		{
 			await command
-				.EnableAsyncRead(true)
+				.AsyncReads()
 				.IterateReaderWhileAsync(
 					_ => ++seen < 3,
 					cancellationToken: TestContext.Current.CancellationToken);

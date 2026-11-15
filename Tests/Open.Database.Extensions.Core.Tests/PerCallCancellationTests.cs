@@ -131,7 +131,7 @@ public static class PerCallCancellationTests
 		const int id = 5;
 		return new TokenProcCommand(rig, new TokenConnection(rig), "dbo.proc" + Interlocked.Increment(ref _procedures))
 			.AddParam(id)
-			.EnableAsyncRead();
+			.AsyncReads();
 	}
 
 	static ExpressiveDbCommand Text(TokenRig rig, ConnectionState state = ConnectionState.Closed)
@@ -411,7 +411,7 @@ public static class PerCallCancellationTests
 		var rig = new TokenRig();
 		IDbConnectionFactory<DbConnection> factory = DbConnectionFactory.Create<DbConnection>(() => new TokenConnection(rig));
 		const int id = 5;
-		ExpressiveDbCommand command = new TokenProcCommand(rig, factory, "dbo.proc" + Interlocked.Increment(ref _procedures)).AddParam(id).EnableAsyncRead();
+		ExpressiveDbCommand command = new TokenProcCommand(rig, factory, "dbo.proc" + Interlocked.Increment(ref _procedures)).AddParam(id).AsyncReads();
 		using var callSource = new CancellationTokenSource();
 		using var commandSource = new CancellationTokenSource();
 		command.UseCancellationToken(commandSource.Token);

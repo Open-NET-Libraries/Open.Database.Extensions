@@ -467,12 +467,12 @@ public static class In6Probe
 		{
 			("sync", () => timed.Command(sql).Map<T>().ToList().Count),
 			("async+Read", () => timed.Command(sql).Map<T>().ToListAsync().AsTask().GetAwaiter().GetResult().Count),
-			("EnableAsyncRead", () => timed.Command(sql).EnableAsyncRead().Map<T>().ToListAsync().AsTask().GetAwaiter().GetResult().Count),
+			("EnableAsyncRead", () => timed.Command(sql).AsyncReads().Map<T>().ToListAsync().AsTask().GetAwaiter().GetResult().Count),
 			("P4", () => RequirePlan(plan).ReadAllAsync(timed, sql, CommandBehavior.Default).GetAwaiter().GetResult().Count),
 			("P5", () => RequirePlan(plan).ReadAllAsync(timed, sql, CommandBehavior.SequentialAccess).GetAwaiter().GetResult().Count),
 			("P6", () => RequirePlan(plan).ReadAllRawAsync(timed.Inner, sql, stats).GetAwaiter().GetResult().Count),
 			("selector+Read", () => timed.Command(sql).Map(RequireSelector(plan)).ToListAsync().AsTask().GetAwaiter().GetResult().Count),
-			("selector+EnableAsyncRead", () => timed.Command(sql).EnableAsyncRead().Map(RequireSelector(plan)).ToListAsync().AsTask().GetAwaiter().GetResult().Count),
+			("selector+EnableAsyncRead", () => timed.Command(sql).AsyncReads().Map(RequireSelector(plan)).ToListAsync().AsTask().GetAwaiter().GetResult().Count),
 		};
 
 		only ??= DefaultPaths;
@@ -526,7 +526,7 @@ public static class In6Probe
 		if (plan.Selector is { } selector)
 		{
 			if (paths.Contains("selector+Read")) CheckSame("selector+Read", expected, timed.Command(sql).Map(selector).Take(5).ToListAsync().AsTask().GetAwaiter().GetResult());
-			if (paths.Contains("selector+EnableAsyncRead")) CheckSame("selector+EnableAsyncRead", expected, timed.Command(sql).EnableAsyncRead().Map(selector).Take(5).ToListAsync().AsTask().GetAwaiter().GetResult());
+			if (paths.Contains("selector+EnableAsyncRead")) CheckSame("selector+EnableAsyncRead", expected, timed.Command(sql).AsyncReads().Map(selector).Take(5).ToListAsync().AsTask().GetAwaiter().GetResult());
 		}
 	}
 

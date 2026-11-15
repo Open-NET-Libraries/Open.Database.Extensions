@@ -345,7 +345,7 @@ public static partial class S4Cells
 	static async Task<List<TRow>> OdxSelector<TRow, TBody>(S4Kind<TRow, TBody> kind, TimedConnection timed, In6Stats stats, string sql, S4Counters counters)
 		where TRow : class, new()
 	{
-		var list = await timed.Command(sql).SetTimeout(counters.CommandTimeout).EnableAsyncRead().Map(kind.Selector).ToListAsync().ConfigureAwait(false);
+		var list = await timed.Command(sql).SetTimeout(counters.CommandTimeout).AsyncReads().Map(kind.Selector).ToListAsync().ConfigureAwait(false);
 		CopyStats(stats, counters);
 		return list;
 	}
@@ -353,7 +353,7 @@ public static partial class S4Cells
 	static async Task<List<TRow>> OdxMapAsync<TRow>(TimedConnection timed, In6Stats stats, string sql, S4Counters counters)
 		where TRow : class, new()
 	{
-		var list = await timed.Command(sql).SetTimeout(counters.CommandTimeout).EnableAsyncRead().Map<TRow>().ToListAsync().ConfigureAwait(false);
+		var list = await timed.Command(sql).SetTimeout(counters.CommandTimeout).AsyncReads().Map<TRow>().ToListAsync().ConfigureAwait(false);
 		CopyStats(stats, counters);
 		return list;
 	}

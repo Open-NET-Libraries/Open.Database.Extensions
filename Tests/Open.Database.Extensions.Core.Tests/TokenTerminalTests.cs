@@ -591,7 +591,7 @@ public static class TokenTerminalTests
 		await Iterate(
 			shape,
 			Make(rig, ConnectionState.Open)
-				.EnableAsyncRead()
+				.AsyncReads()
 				.UseCancellationToken(commandSource.Token),
 			null,
 			callSource.Token);
@@ -609,7 +609,7 @@ public static class TokenTerminalTests
 			Task task = Iterate(
 				shape,
 				Make(stalled, ConnectionState.Open)
-					.EnableAsyncRead()
+					.AsyncReads()
 					.UseCancellationToken(commandSource2.Token),
 				null,
 				callSource2.Token);

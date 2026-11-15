@@ -1,4 +1,7 @@
 #nullable enable
+*REMOVED*Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.EnableAsyncRead(bool value = true) -> TThis!
+*REMOVED*Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.UseAsyncRead.get -> bool
+*REMOVED*Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.UseAsyncRead.set -> void
 *REMOVED*static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
 *REMOVED*static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.Common.DbConnection! connection, bool configureAwait = true, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
 *REMOVED*static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
@@ -10,8 +13,11 @@ static Open.Database.Extensions.ConnectionExtensions.OpenAsync(this System.Data.
 static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
 static Open.Database.Extensions.ConnectionExtensions.EnsureOpenAsync(this System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.ConnectionState>
 static Open.Database.Extensions.ConnectionExtensions.OpenAsync(this System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Open.Database.Extensions.MappedQuery<T>.AsyncReads() -> Open.Database.Extensions.MappedQuery<T>
 Open.Database.Extensions.MappedQuery<T>.SingleResult() -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedQueryWithSkip<T>.AsyncReads() -> Open.Database.Extensions.MappedQueryWithSkip<T>
 Open.Database.Extensions.MappedQueryWithSkip<T>.SingleResult() -> Open.Database.Extensions.MappedQueryWithSkip<T>
+Open.Database.Extensions.MappedQueryWithTake<T>.AsyncReads() -> Open.Database.Extensions.MappedQueryWithTake<T>
 Open.Database.Extensions.MappedQueryWithTake<T>.SingleResult() -> Open.Database.Extensions.MappedQueryWithTake<T>
 static Open.Database.Extensions.IExecuteReaderExtensions.ToListAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.List<T>!>
 static Open.Database.Extensions.IExecuteReaderExtensions.ToArrayAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T[]!>
@@ -41,6 +47,7 @@ Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, T
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReaderAsync<TState, TResult>(TState state, System.Func<System.Data.IDataReader!, TState, System.Threading.Tasks.ValueTask<TResult>>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReturnAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<object?>
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReturnAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.AsyncReads() -> TThis!
 Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteNonQueryAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
 Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteScalarAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<object?>
 Open.Database.Extensions.ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteScalarAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
@@ -122,6 +129,7 @@ Open.Database.Extensions.MappedCommand<T>.ReadAsync(System.Func<System.Collectio
 Open.Database.Extensions.MappedCommand<T>.ReadAsync<TResult>(System.Func<System.Collections.Generic.IAsyncEnumerable<T>!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResult>
 Open.Database.Extensions.MappedCommand<T>.SingleOrDefault() -> T?
 Open.Database.Extensions.MappedCommand<T>.SingleOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Open.Database.Extensions.MappedCommand<T>.AsyncReads() -> Open.Database.Extensions.MappedCommand<T>
 Open.Database.Extensions.MappedCommand<T>.SingleResult() -> Open.Database.Extensions.MappedCommand<T>
 Open.Database.Extensions.MappedCommand<T>.Skip(int count) -> Open.Database.Extensions.MappedQueryWithSkip<T>
 Open.Database.Extensions.MappedCommand<T>.Take(int count) -> Open.Database.Extensions.MappedQueryWithTake<T>
