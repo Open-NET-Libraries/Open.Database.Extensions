@@ -380,6 +380,31 @@ public class SyntheticBenchmarks
 
 	[Benchmark]
 	public Task<List<SynItem>> V7_V6d_Async() { _label = nameof(V7_V6d_Async); return SyntheticDapper.V6dAsync(Connection, Width); }
+
+	// ---- V10: the code a Map<T>() source generator would emit (GeneratorShaped.cs): ordinals once per result set by name, typed getters ----------------------------------------------------------------
+	// V10 runs inside ODX's loop through Map(Func<IDataRecord,T>), the nearest public entry (not delegate-free); V10r is the raw loop on DbDataReader; V10c the raw loop on the sealed SyntheticReader.
+	[Benchmark]
+	public List<SynRow> V10_Sync() { _label = nameof(V10_Sync); return GeneratorShaped.V10(Connection, GeneratorShaped.Sql); }
+
+	[Benchmark]
+	public List<SynRow> V10r_Sync() { _label = nameof(V10r_Sync); return GeneratorShaped.V10r(Connection, GeneratorShaped.Sql); }
+
+	[Benchmark]
+	public List<SynRow> V10c_Sync() { _label = nameof(V10c_Sync); return GeneratorShaped.V10c(Connection, GeneratorShaped.Sql); }
+
+	// V10i: V10 with the row method AggressiveInlining, called exactly as V10 calls it. V10L: the whole read loop generated for SynRow (ordinals once, the mapping inline in the loop), in ExecuteReader's callback.
+	[Benchmark]
+	public List<SynRow> V10i_Sync() { _label = nameof(V10i_Sync); return GeneratorShaped.V10i(Connection, GeneratorShaped.Sql); }
+
+	[Benchmark]
+	public List<SynRow> V10L_Sync() { _label = nameof(V10L_Sync); return GeneratorShaped.V10L(Connection, GeneratorShaped.Sql); }
+
+	// V10ri / V10rn: the raw loop of V10r calling the AggressiveInlining / the NoInlining row method directly (hand-written: inlined / called, not inlined; V10L is the fused loop).
+	[Benchmark]
+	public List<SynRow> V10ri_Sync() { _label = nameof(V10ri_Sync); return GeneratorShaped.V10ri(Connection, GeneratorShaped.Sql); }
+
+	[Benchmark]
+	public List<SynRow> V10rn_Sync() { _label = nameof(V10rn_Sync); return GeneratorShaped.V10rn(Connection, GeneratorShaped.Sql); }
 }
 
 /// <summary>

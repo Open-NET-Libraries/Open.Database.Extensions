@@ -351,7 +351,7 @@ public class RealProviderBenchmarks
 	internal RealProviderCase Case { get; private set; } = null!;
 
 	Func<System.Data.IDataRecord, SynRow> _hand = null!;
-	Func<List<SynRow>> _v9c = null!;
+	Func<List<SynRow>> _v9c = null!, _v10r = null!, _v10L = null!, _v10ri = null!, _v10rn = null!;
 	Func<DbDataReader, SynRow> _v9cWrapped = null!;
 	string _label = "";
 
@@ -367,12 +367,20 @@ public class RealProviderBenchmarks
 		{
 			var read = RealProviderVariants.SqlReader(Width);
 			_v9c = () => RealProviderVariants.V9cSql(sql, recorder, read);
+			_v10r = () => GeneratorShaped.V10rSql(sql, recorder);
+			_v10L = () => GeneratorShaped.V10LSql(sql, recorder);
+			_v10ri = () => GeneratorShaped.V10riSql(sql, recorder);
+			_v10rn = () => GeneratorShaped.V10rnSql(sql, recorder);
 		}
 		else
 		{
 			var lite = (SqliteConnection)Case.Real;
 			var read = RealProviderVariants.LiteReader(Width);
 			_v9c = () => RealProviderVariants.V9cLite(lite, recorder, read);
+			_v10r = () => GeneratorShaped.V10rLite(lite, recorder);
+			_v10L = () => GeneratorShaped.V10LLite(lite, recorder);
+			_v10ri = () => GeneratorShaped.V10riLite(lite, recorder);
+			_v10rn = () => GeneratorShaped.V10rnLite(lite, recorder);
 		}
 
 		SyntheticIterationListener.Attach(recorder);
@@ -413,4 +421,26 @@ public class RealProviderBenchmarks
 	// forwarding (and the sealed-type devirtualization); its gap to V1_Sync and V2_Sync is what the mapping path costs on equal footing.
 	[Benchmark]
 	public List<SynRow> V9c_Wrapped_Sync() { _label = nameof(V9c_Wrapped_Sync); return RealProviderVariants.V9cWrapped(Case.Timed, _v9cWrapped); }
+
+	// V10: the code a Map<T>() source generator would emit (GeneratorShaped.cs). V10 runs inside ODX's loop through Map(Func<IDataRecord,T>) behind the timing wrapper (as V1 and V2);
+	// V10r is the raw loop on the CONCRETE reader with its own stopwatch (as V9c, outside the wrapper).
+	[Benchmark]
+	public List<SynRow> V10_Sync() { _label = nameof(V10_Sync); return GeneratorShaped.V10(Case.Timed, RealProviderVariants.Sql); }
+
+	[Benchmark]
+	public List<SynRow> V10r_Sync() { _label = nameof(V10r_Sync); return _v10r(); }
+
+	[Benchmark]
+	public List<SynRow> V10i_Sync() { _label = nameof(V10i_Sync); return GeneratorShaped.V10i(Case.Timed, RealProviderVariants.Sql); }
+
+	// V10L: the whole read loop generated for SynRow on the concrete reader, own stopwatch (as V10r).
+	[Benchmark]
+	public List<SynRow> V10L_Sync() { _label = nameof(V10L_Sync); return _v10L(); }
+
+	// V10ri / V10rn: the raw loop of V10r calling the AggressiveInlining / the NoInlining row method directly, on the concrete reader, own stopwatch.
+	[Benchmark]
+	public List<SynRow> V10ri_Sync() { _label = nameof(V10ri_Sync); return _v10ri(); }
+
+	[Benchmark]
+	public List<SynRow> V10rn_Sync() { _label = nameof(V10rn_Sync); return _v10rn(); }
 }
