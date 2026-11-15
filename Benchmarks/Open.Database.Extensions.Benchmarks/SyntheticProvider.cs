@@ -16,7 +16,12 @@ namespace Open.Database.Extensions.Benchmarks;
 //   as the stored instance, where a real provider would allocate a copy.
 // - Under CommandBehavior.SequentialAccess a column may not be read after a later one in the same row, as in SqlClient.
 // - CommandBehavior.SingleResult serves no extra result sets.
-// - There is no packet-boundary model. Sync against async on a real wire is a different study.
+// - Buffer boundary (BS-SA, off by default): with BufferRows = N, every N rows the provider needs a refill. Read() blocks for RefillCostUs
+//   (a spin on the stopwatch); ReadAsync() returns a Task that is truly incomplete and completes from a dedicated timer thread after the same time,
+//   its continuation queued to the thread pool. The first call and every call between boundaries complete synchronously. A boundary is the call that
+//   would serve row N, 2N, ... (0-based) when that row exists, so a result of R rows has (R - 1) / N of them. NextResult, NextResultAsync,
+//   IsDBNullAsync and GetFieldValueAsync have no boundary (a column read inside a row never waits for the wire in this model).
+//   Thread-pool pressure (ThreadPoolPressure) is separate: it keeps the pool busy so that the continuation has to wait for a thread.
 
 /// <summary>A fixed busy-wait, in iterations, so a cost has the same shape on every machine run to run.</summary>
 public static class Spin
@@ -50,6 +55,14 @@ public sealed class SyntheticOptions
 	/// <summary>How many extra empty result sets follow the rows, so a drain loop has something to drain. Ignored under CommandBehavior.SingleResult.</summary>
 	public int ExtraResultSets { get; init; }
 
+	/// <summary>A refill every this many rows (the provider's buffer ran out); 0 = off. See the file header for what a boundary is.</summary>
+	public const int DefaultBufferRows = 0, DefaultRefillCostUs = 0;
+
+	public int BufferRows { get; init; } = DefaultBufferRows;
+
+	/// <summary>Microseconds a refill takes: the sync Read spins for it, the async ReadAsync completes from another thread after it. 0 = no wait (the async path still hands off).</summary>
+	public int RefillCostUs { get; init; } = DefaultRefillCostUs;
+
 	/// <summary>Receives the timestamps. Shared by default so one benchmark case reads one recorder.</summary>
 	public SyntheticRecorder Recorder { get; init; } = new();
 }
@@ -73,7 +86,7 @@ public sealed class SyntheticRecorder
 	const int RingSize = 1024; // The median is over the last RingSize readers, so warm-up does not skew it.
 
 	readonly long[] _open = new long[RingSize], _drain = new long[RingSize];
-	long _readers, _openTicks, _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges, _extraSetsServed;
+	long _readers, _openTicks, _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges, _extraSetsServed, _refillsBlocked, _refillsAsync;
 
 	// The readers that closed inside one WorkloadActual iteration (between BeginMeasuredIteration and EndMeasuredIteration), summed.
 	// Nothing is allocated per reader: a flag read and two Interlocked adds.
@@ -90,6 +103,10 @@ public sealed class SyntheticRecorder
 	/// <summary>How many NextResult calls paid the cost (0 when the cost is off).</summary>
 	public long NextResultCostCharges => Interlocked.Read(ref _nextResultCostCharges);
 	public long ExtraSetsServed => Interlocked.Read(ref _extraSetsServed);
+	/// <summary>Buffer boundaries a sync Read() paid for (it blocked).</summary>
+	public long RefillsBlocked => Interlocked.Read(ref _refillsBlocked);
+	/// <summary>Buffer boundaries a ReadAsync() handed to the timer thread (an incomplete Task was returned).</summary>
+	public long RefillsAsync => Interlocked.Read(ref _refillsAsync);
 
 	public void Reset()
 	{
@@ -101,6 +118,8 @@ public sealed class SyntheticRecorder
 		Interlocked.Exchange(ref _nextResultCalls, 0);
 		Interlocked.Exchange(ref _nextResultCostCharges, 0);
 		Interlocked.Exchange(ref _extraSetsServed, 0);
+		Interlocked.Exchange(ref _refillsBlocked, 0);
+		Interlocked.Exchange(ref _refillsAsync, 0);
 		Array.Clear(_open);
 		Array.Clear(_drain);
 		_measuring = false;
@@ -109,7 +128,7 @@ public sealed class SyntheticRecorder
 		lock (_iterations) _iterations.Clear();
 	}
 
-	internal void ReaderClosed(long openTicks, long drainTicks, long rows, long rowCostCharges, long nextResultCalls, long nextResultCostCharges, long extraSets)
+	internal void ReaderClosed(long openTicks, long drainTicks, long rows, long rowCostCharges, long nextResultCalls, long nextResultCostCharges, long extraSets, long refillsBlocked, long refillsAsync)
 	{
 		int slot = (int)((Interlocked.Increment(ref _readers) - 1) & (RingSize - 1));
 		_open[slot] = openTicks;
@@ -121,6 +140,8 @@ public sealed class SyntheticRecorder
 		Interlocked.Add(ref _nextResultCalls, nextResultCalls);
 		Interlocked.Add(ref _nextResultCostCharges, nextResultCostCharges);
 		Interlocked.Add(ref _extraSetsServed, extraSets);
+		Interlocked.Add(ref _refillsBlocked, refillsBlocked);
+		Interlocked.Add(ref _refillsAsync, refillsAsync);
 		if (!_measuring) return;
 		Interlocked.Add(ref _iterOpenTicks, openTicks);
 		Interlocked.Add(ref _iterDrainTicks, drainTicks);
@@ -378,13 +399,13 @@ public sealed class SyntheticReader : DbDataReader
 
 	readonly SyntheticTable _table;
 	readonly SyntheticRecorder _recorder;
-	readonly int _rowCost, _nextResultCost, _extraSets;
-	readonly long _openStart;
+	readonly int _rowCost, _nextResultCost, _extraSets, _bufferRows;
+	readonly long _openStart, _refillTicks;
 	readonly bool _sequential;
 
 	int _row = -1, _set, _lastOrdinal = -1;
 	bool _closed;
-	long _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges;
+	long _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges, _refillsBlocked, _refillsAsync;
 
 	internal SyntheticReader(SyntheticTable table, SyntheticOptions options, CommandBehavior behavior, long openStart)
 	{
@@ -395,6 +416,8 @@ public sealed class SyntheticReader : DbDataReader
 		_extraSets = (behavior & CommandBehavior.SingleResult) != 0 ? 0 : options.ExtraResultSets;
 		_sequential = (behavior & CommandBehavior.SequentialAccess) != 0;
 		_openStart = openStart;
+		_bufferRows = Math.Max(0, options.BufferRows);
+		_refillTicks = (long)(Math.Max(0, options.RefillCostUs) * Stopwatch.Frequency / 1_000_000d);
 	}
 
 	public override int Depth => 0;
@@ -410,6 +433,24 @@ public sealed class SyntheticReader : DbDataReader
 	{
 		if (_closed) throw new InvalidOperationException("The reader is closed.");
 		if (_set != 0 || _row + 1 >= _table.Rows) return false;
+		if (_bufferRows != 0 && AtBoundary())
+		{
+			// The buffer ran out: the calling thread waits for the refill, holding its thread (and the open reader).
+			_refillsBlocked++;
+			long end = Stopwatch.GetTimestamp() + _refillTicks;
+			while (Stopwatch.GetTimestamp() < end) Thread.SpinWait(4);
+		}
+
+		Advance();
+		return true;
+	}
+
+	// The call that would serve row N, 2N, ... (0-based) while that row exists; the first row never waits.
+	bool AtBoundary() => _row >= 0 && (_row + 1) % _bufferRows == 0;
+
+	// Moves to the next row and pays the per-row cost. Callers have checked that the row exists.
+	void Advance()
+	{
 		_row++;
 		_lastOrdinal = -1;
 		_rows++;
@@ -418,13 +459,23 @@ public sealed class SyntheticReader : DbDataReader
 			Spin.Iterations(_rowCost);
 			_rowCostCharges++;
 		}
-
-		return true;
 	}
+
+	// Called by the timer thread when a refill ends (the boundary row's per-row cost is paid there, on that thread).
+	internal void AdvanceAfterRefill() => Advance();
 
 	public override Task<bool> ReadAsync(CancellationToken cancellationToken)
 	{
 		if (cancellationToken.IsCancellationRequested) return Task.FromCanceled<bool>(cancellationToken);
+		if (_bufferRows != 0 && !_closed && _set == 0 && _row + 1 < _table.Rows && AtBoundary())
+		{
+			// The buffer ran out: return a Task that is not complete and let the timer thread finish it after the refill time.
+			_refillsAsync++;
+			var request = new RefillRequest(this, Stopwatch.GetTimestamp() + _refillTicks, cancellationToken);
+			RefillTimer.Schedule(request);
+			return request.Result;
+		}
+
 		return Read() ? TrueTask : FalseTask;
 	}
 
@@ -457,7 +508,7 @@ public sealed class SyntheticReader : DbDataReader
 	{
 		if (_closed) return;
 		_closed = true;
-		_recorder.ReaderClosed(Stopwatch.GetTimestamp() - _openStart, _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges, _set);
+		_recorder.ReaderClosed(Stopwatch.GetTimestamp() - _openStart, _drainTicks, _rows, _rowCostCharges, _nextResultCalls, _nextResultCostCharges, _set, _refillsBlocked, _refillsAsync);
 	}
 
 	// ---- metadata ----------------------------------------------------------------

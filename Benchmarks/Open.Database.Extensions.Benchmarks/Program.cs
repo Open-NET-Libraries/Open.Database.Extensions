@@ -10,8 +10,12 @@ using Open.Database.Extensions.Benchmarks;
 //   -- --selftest-open-time     a delay inside an open reader shows in reader-open time; after the close it does not
 //   -- --selftest-pace          consumer pace (--pace N) grows reader-open for the inline variants, not for V5 and V6d
 //   -- --selftest-alloc         the typed-getter loop allocates 0 B per row
+//   -- --selftest-refill        the buffer boundary (--buffer-rows, --refill-us) and the thread-pool pressure (--pressure K|auto) behave as designed
+//   -- --calibrate-spin         how many Spin iterations make one microsecond on this machine
+//   -- --in6 [--help|--dry-run] sync Read against ReadAsync on SQL Server (LocalDB) and SQLite, a console probe (see In6Probe.cs)
+//   -- --selftest-in6           the probe's timing wrappers and engine, against the synthetic provider (no database)
 // The checks say which runtime and target framework they ran on (the build is multi-targeted).
-if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace"))
+if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace" or "--selftest-refill" or "--selftest-in6" or "--calibrate-spin" or "--in6"))
 {
 	Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
 		+ ", built for: " + System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false)
@@ -39,6 +43,30 @@ if (args.Contains("--selftest-pace"))
 if (args.Contains("--selftest-alloc"))
 {
 	Environment.ExitCode = SyntheticChecks.SelfTestAlloc();
+	return;
+}
+
+if (args.Contains("--selftest-refill"))
+{
+	Environment.ExitCode = SyntheticChecks.SelfTestRefill();
+	return;
+}
+
+if (args.Contains("--selftest-in6"))
+{
+	Environment.ExitCode = In6Probe.SelfTest();
+	return;
+}
+
+if (args.Contains("--calibrate-spin"))
+{
+	Environment.ExitCode = SpinCalibration.Run();
+	return;
+}
+
+if (args.Contains("--in6"))
+{
+	Environment.ExitCode = In6Probe.Run(args);
 	return;
 }
 

@@ -15,7 +15,8 @@ namespace Open.Database.Extensions.Benchmarks;
 public static class SyntheticParams
 {
 	public const string WidthsVariable = "ODX_SYN_WIDTHS", RowsVariable = "ODX_SYN_ROWS", RowCostVariable = "ODX_SYN_ROWCOST",
-		ExtraSetsVariable = "ODX_SYN_EXTRASETS", NextResultCostVariable = "ODX_SYN_NRCOST", PaceVariable = "ODX_SYN_PACE";
+		ExtraSetsVariable = "ODX_SYN_EXTRASETS", NextResultCostVariable = "ODX_SYN_NRCOST", PaceVariable = "ODX_SYN_PACE",
+		BufferRowsVariable = "ODX_SYN_BUFFER_ROWS", RefillUsVariable = "ODX_SYN_REFILL_US", PressureVariable = "ODX_SYN_PRESSURE";
 
 	public static IEnumerable<int> Widths => Read(WidthsVariable, SyntheticCatalog.Widths);
 	public static IEnumerable<int> Rows => Read(RowsVariable, SyntheticCatalog.RowCounts);
@@ -24,6 +25,10 @@ public static class SyntheticParams
 	public static IEnumerable<int> NextResultCosts => Read(NextResultCostVariable, [SyntheticOptions.DefaultNextResultCostIterations]);
 	// Consumer pace: Spin iterations per item, paid only by the variants that run caller code while the reader is open or stream. 0 = off.
 	public static IEnumerable<int> Paces => Read(PaceVariable, [0]);
+	// BS-SA: a buffer refill every N rows (0 = off), the refill time in microseconds, and K busy thread-pool items (0 = off; the word auto means twice the processor count).
+	public static IEnumerable<int> BufferRows => Read(BufferRowsVariable, [SyntheticOptions.DefaultBufferRows]);
+	public static IEnumerable<int> RefillUs => Read(RefillUsVariable, [SyntheticOptions.DefaultRefillCostUs]);
+	public static IEnumerable<int> Pressures => ReadPressure(Environment.GetEnvironmentVariable(PressureVariable));
 
 	/// <summary>Maps a command-line option to its variable; returns false when the option is not one of ours.</summary>
 	public static bool TryGetVariable(string option, out string variable)
@@ -36,6 +41,9 @@ public static class SyntheticParams
 			"--extra-sets" => ExtraSetsVariable,
 			"--next-result-cost" => NextResultCostVariable,
 			"--pace" => PaceVariable,
+			"--buffer-rows" => BufferRowsVariable,
+			"--refill-us" => RefillUsVariable,
+			"--pressure" => PressureVariable,
 			_ => "",
 		};
 		return variable.Length > 0;
@@ -51,6 +59,12 @@ public static class SyntheticParams
 	}
 
 	static int[] Read(string variable, int[] fallback) => Parse(Environment.GetEnvironmentVariable(variable), fallback);
+
+	static int[] ReadPressure(string? list)
+	{
+		if (string.IsNullOrWhiteSpace(list)) return [0];
+		return [.. list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(ThreadPoolPressure.Parse)];
+	}
 }
 
 /// <summary>
@@ -137,12 +151,27 @@ public class SyntheticBenchmarks
 	[ParamsSource(nameof(PacesValues), Priority = 5)]
 	public int Pace { get; set; }
 
+	/// <summary>BS-SA: the provider needs a refill every this many rows (0 = never). A sync Read blocks for the refill; ReadAsync returns an incomplete Task finished from another thread.</summary>
+	[ParamsSource(nameof(BufferRowsValues), Priority = 6)]
+	public int BufferRows { get; set; }
+
+	/// <summary>BS-SA: microseconds one refill takes.</summary>
+	[ParamsSource(nameof(RefillUsValues), Priority = 7)]
+	public int RefillUs { get; set; }
+
+	/// <summary>BS-SA: busy thread-pool items kept running while the case is measured (0 = none). ODX_SYN_PRESSURE=auto is twice the processor count.</summary>
+	[ParamsSource(nameof(PressuresValues), Priority = 8)]
+	public int Pressure { get; set; }
+
 	public static IEnumerable<int> WidthsValues => SyntheticParams.Widths;
 	public static IEnumerable<int> RowsValues => SyntheticParams.Rows;
 	public static IEnumerable<int> RowCostsValues => SyntheticParams.RowCosts;
 	public static IEnumerable<int> ExtraSetsValues => SyntheticParams.ExtraSets;
 	public static IEnumerable<int> NextResultCostsValues => SyntheticParams.NextResultCosts;
 	public static IEnumerable<int> PacesValues => SyntheticParams.Paces;
+	public static IEnumerable<int> BufferRowsValues => SyntheticParams.BufferRows;
+	public static IEnumerable<int> RefillUsValues => SyntheticParams.RefillUs;
+	public static IEnumerable<int> PressuresValues => SyntheticParams.Pressures;
 
 	// The connection of this case; --verify drives the benchmark methods through Setup and reads its recorder.
 	internal SyntheticConnection Connection { get; private set; } = null!;
@@ -157,20 +186,22 @@ public class SyntheticBenchmarks
 	{
 		Connection = new SyntheticConnection(
 			SyntheticTable.Create(Width, Rows),
-			new SyntheticOptions { RowCostIterations = RowCost, ExtraResultSets = ExtraSets, NextResultCostIterations = NextResultCost });
+			new SyntheticOptions { RowCostIterations = RowCost, ExtraResultSets = ExtraSets, NextResultCostIterations = NextResultCost, BufferRows = BufferRows, RefillCostUs = RefillUs });
 		_hand = SyntheticVariants.Hand(Width);
 		_handM = SyntheticVariantsB.HandMassaged(Width);
 		_hands = Hands.For(Width);
 		_k = SyntheticVariantsC.K(Width);
 		SyntheticIterationListener.Attach(Connection.Options.Recorder);
+		ThreadPoolPressure.Start(Pressure); // BS-SA: busy before the first iteration; Cleanup stops it. Pressure 0 does nothing.
 	}
 
 	// The label is the benchmark method that ran, so the recorder's numbers can be filed under the case the column asks about.
 	[GlobalCleanup]
 	public void Cleanup()
 	{
+		ThreadPoolPressure.Stop();
 		if (_label.Length == 0) return;
-		var key = Key(_label, [(nameof(Width), Width), (nameof(Rows), Rows), (nameof(RowCost), RowCost), (nameof(ExtraSets), ExtraSets), (nameof(NextResultCost), NextResultCost), (nameof(Pace), Pace)]);
+		var key = Key(_label, [(nameof(Width), Width), (nameof(Rows), Rows), (nameof(RowCost), RowCost), (nameof(ExtraSets), ExtraSets), (nameof(NextResultCost), NextResultCost), (nameof(Pace), Pace), (nameof(BufferRows), BufferRows), (nameof(RefillUs), RefillUs), (nameof(Pressure), Pressure)]);
 		FileResults(key, Connection.Options.Recorder);
 		if (_label.StartsWith("V9a", StringComparison.Ordinal))
 			Console.WriteLine($"// SYNTHETIC {key} BufferBytes={SyntheticVariantsC.LastBufferBytes} per operation (rented array lengths x element size, plus the null bitmaps; ArrayPool memory, so NOT in Allocated); pool tally rented={PoolTally.Rented} returned={PoolTally.Returned}");
