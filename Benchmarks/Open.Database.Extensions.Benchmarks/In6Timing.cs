@@ -17,6 +17,8 @@ namespace Open.Database.Extensions.Benchmarks;
 public sealed class In6Stats
 {
 	public long OpenTicks;
+	// Time spent waiting in incomplete ReadAsync calls: the sum over the operation and the longest single wait (stopwatch ticks).
+	public long WaitTicks, MaxWaitTicks;
 
 	/// <summary>BS-RP: when set, every reader that closes also reports its reader-open time here (the real-provider benchmarks read it as the ReaderOpen column).</summary>
 	public SyntheticRecorder? Recorder;
@@ -26,8 +28,29 @@ public sealed class In6Stats
 	public void Reset()
 	{
 		OpenTicks = 0;
+		WaitTicks = 0;
+		MaxWaitTicks = 0;
 		Readers = ReadAsyncCalls = ReadAsyncIncomplete = ResumedOnOtherThread = OtherAsyncCalls = OtherAsyncIncomplete = 0;
 	}
+
+	// Called on the thread that completes a task, so it must be thread safe.
+	internal void AddWait(long ticks)
+	{
+		Interlocked.Add(ref WaitTicks, ticks);
+		long seen = Interlocked.Read(ref MaxWaitTicks);
+		while (ticks > seen)
+		{
+			long before = Interlocked.CompareExchange(ref MaxWaitTicks, ticks, seen);
+			if (before == seen) break;
+			seen = before;
+		}
+	}
+}
+
+/// <summary>Times one incomplete ReadAsync: from the moment the call returned until its task completed (on the completing thread, before any continuation gets a thread).</summary>
+sealed class WaitTimer(In6Stats stats, long start)
+{
+	public void Done() => stats.AddWait(Stopwatch.GetTimestamp() - start);
 }
 
 /// <summary>Wraps an open connection (the caller keeps it open and disposes it). Commands and readers made from it are timed.</summary>
@@ -125,8 +148,10 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 		var task = inner.ReadAsync(cancellationToken);
 		if (!task.IsCompleted)
 		{
+			// Only an incomplete read pays for the timing (one small object and a continuation); a completed read costs the flag test above.
 			stats.ReadAsyncIncomplete++;
 			_pendingThread = Environment.CurrentManagedThreadId;
+			task.ContinueWith(static (_, timer) => ((WaitTimer)timer!).Done(), new WaitTimer(stats, Stopwatch.GetTimestamp()), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 		}
 
 		return task;

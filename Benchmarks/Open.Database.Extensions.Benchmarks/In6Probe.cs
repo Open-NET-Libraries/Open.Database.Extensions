@@ -53,7 +53,7 @@ public sealed class In6LiteRow
 public sealed record In6Summary(
 	string Path, int Ops, double OpenMedianUs, double OpenMinUs, double OpenMaxUs, double TotalMeanUs, double TotalMedianUs,
 	double AllocThreadBytes, double AllocProcessBytes, double ReadAsyncCalls, double ReadAsyncIncomplete, double ResumedOnOtherThread,
-	double OtherAsyncCalls, double OtherAsyncIncomplete, bool OneReaderPerOperation);
+	double OtherAsyncCalls, double OtherAsyncIncomplete, bool OneReaderPerOperation, double WaitSumMedianUs = 0, double WaitMaxUs = 0);
 
 sealed class In6Settings
 {
@@ -66,6 +66,9 @@ sealed class In6Settings
 	public long AffinityMask;
 	public ProcessPriorityClass? PriorityClass;
 	public bool DryRun, Help;
+	public int OpsS3 = -1;
+	public HashSet<string> Scenarios = new(["S1", "S2", "S3"], StringComparer.OrdinalIgnoreCase);
+	public int S3Ops => OpsS3 > 0 ? OpsS3 : Ops;
 	public int Processors = Environment.ProcessorCount;
 	public bool Tcp => SqlTcp is not null;
 	public string SqlLabel => Tcp ? "SqlServerTcp" : "SqlServer";
@@ -83,7 +86,9 @@ public static class In6Probe
 		  --in6 --scratch <folder>     run everything; (LocalDB mode and SQLite) the folder (never on drive C:) holds the probe's SQL Server database files (ode_in6_<guid>.mdf and _log.ldf) and the SQLite file; all deleted afterwards
 		  --only sqlserver,sqlite,calibration   run only these parts (default: all three; every part needs --scratch, except the SQL Server parts with --sql-tcp)
 		  --pressure auto|N            K busy thread-pool items for the "pressure on" cells (default auto = processor count x 2)
-		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per path
+		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per cell (per path)
+		  --scenarios S1,S2,S3         which SQL Server scenarios run (default all three; S1 width 5, S2 width 20, S3 about 8 KB per row)
+		  --ops-s3 N                   measured operations for S3 only (default: the value of --ops)
 		  --sql-tcp <host,port>        run the SQL Server part against a server over TCP (for example 127.0.0.1,14333) as user sa, TrustServerCertificate, default packet size, instead of LocalDB;
 		                               needs --sql-password-file; the database is created without a FILENAME clause (the server's default location); --scratch is then needed only for SQLite
 		  --sql-password-file <path>   a file that holds only the password of sa; read at run time, never printed, never on a command line
@@ -144,6 +149,7 @@ public static class In6Probe
 		ApplyProcessSettings(s);
 		Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", processors " + s.Processors + ", pressure K = " + s.K
 			+ (s.Tcp ? ", SQL Server over TCP " + s.SqlTcp + " as sa" : ", SQL Server on LocalDB"));
+		Console.WriteLine(SettingsText(s));
 		int failures = 0;
 		if (s.Only.Contains("sqlserver") || s.Only.Contains("calibration")) failures += RunSqlServer(s);
 		if (s.Only.Contains("sqlite")) failures += RunSqlite(s);
@@ -157,6 +163,9 @@ public static class In6Probe
 
 	static long GetAffinity(Process process)
 		=> OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? (long)process.ProcessorAffinity : 0;
+
+	static string SettingsText(In6Settings s)
+		=> $"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per cell (S3: {s.S3Ops}), SQL Server scenarios {string.Join(",", s.Scenarios.Order())}, pressure K = {s.K} (processors {s.Processors}), parts: {string.Join(",", s.Only.Order())}";
 
 	static void ApplyProcessSettings(In6Settings s)
 	{
@@ -190,6 +199,13 @@ public static class In6Probe
 				case "--dry-run": s.DryRun = true; break;
 				case "--scratch": s.Scratch = Value(); break;
 				case "--connection": s.SqlServer = Value(); break;
+				case "--scenarios":
+					s.Scenarios = new(Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.OrdinalIgnoreCase);
+					if (s.Scenarios.Count == 0 || s.Scenarios.Any(static x => !(x.Equals("S1", StringComparison.OrdinalIgnoreCase) || x.Equals("S2", StringComparison.OrdinalIgnoreCase) || x.Equals("S3", StringComparison.OrdinalIgnoreCase))))
+						throw new ArgumentException("--scenarios takes a comma list of S1, S2, S3");
+					s.Scenarios = new(s.Scenarios.Select(static x => x.ToUpperInvariant()), StringComparer.OrdinalIgnoreCase);
+					break;
+				case "--ops-s3": s.OpsS3 = int.Parse(Value(), CultureInfo.InvariantCulture); break;
 				case "--sql-tcp": s.SqlTcp = Value(); break;
 				case "--sql-password-file": s.PasswordFile = Value(); break;
 				case "--affinity": s.Affinity = Value(); break;
@@ -239,7 +255,7 @@ public static class In6Probe
 			s.PriorityClass = priority;
 		}
 
-		if (s.Rows < 2 || s.Warmup < 0 || s.Ops < 1) throw new ArgumentException("--rows needs at least 2, --warmup at least 0, --ops at least 1");
+		if (s.Rows < 2 || s.Warmup < 0 || s.Ops < 1 || (s.OpsS3 != -1 && s.OpsS3 < 1)) throw new ArgumentException("--rows needs at least 2, --warmup at least 0, --ops and --ops-s3 at least 1");
 		if (s.Scratch is not null)
 		{
 			string full = Path.GetFullPath(s.Scratch);
@@ -254,7 +270,7 @@ public static class In6Probe
 	{
 		int k = s.K, perPath = s.Warmup + s.Ops;
 		Console.WriteLine("IN6 dry run: nothing is opened or created.");
-		Console.WriteLine($"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per path, pressure K = {k} (processors {s.Processors}), parts: {string.Join(",", s.Only.Order())}");
+		Console.WriteLine(SettingsText(s));
 		Console.WriteLine($"process: affinity {(s.AffinityMask == 0 ? "unchanged" : "0x" + s.AffinityMask.ToString("X", CultureInfo.InvariantCulture) + " (" + System.Numerics.BitOperations.PopCount((ulong)s.AffinityMask) + " processors; K = auto uses that count)")}, priority {(s.PriorityClass?.ToString() ?? "unchanged")} (applied at the start of a real run, not in a dry run)");
 		Console.WriteLine("read paths: sync (sync execute + Read) | async+Read (async execute + Read) | EnableAsyncRead (async execute + ReadAsync); all through Map<T>().ToList[Async]()");
 		if (s.Tcp)
@@ -275,11 +291,19 @@ public static class In6Probe
 		Console.WriteLine("if CREATE DATABASE fails: STOP message, non-zero exit, no fallback to tempdb or the default location (the SQLite part still runs)");
 		Console.WriteLine($"SQLite file: {(s.Scratch is null ? "(--scratch not given; needed for the SQLite part)" : Path.Combine(s.Scratch, "in6-<guid>.db"))}");
 		int cells = 0;
+		long operations = 0;
 		if (s.Only.Contains("sqlserver"))
 		{
 			Console.WriteLine("scenarios, SQL Server (SqlClient, ordinary tables w20 and big in the probe's own database, dropped with it):");
-			foreach (var (id, text) in SqlServerScenarios(s.Rows)) Console.WriteLine($"  {id}: {text}");
-			cells += 3 * 2;
+			foreach (var (id, text) in SqlServerScenarios(s.Rows))
+			{
+				if (!s.Scenarios.Contains(id)) continue;
+				Console.WriteLine($"  {id}: {text}, {s.Warmup} warm-up + {(id == "S3" ? s.S3Ops : s.Ops)} measured operations per path");
+				cells += 2;
+				operations += 2L * 3 * (s.Warmup + (id == "S3" ? s.S3Ops : s.Ops));
+			}
+
+			Console.WriteLine("before S1: rtt = 50 warm-up + 200 timed SELECT 1 round trips (ExecuteScalar) on one open connection, one line: rtt (SELECT 1 round trip, ms): median, min, max (n=200)");
 		}
 
 		if (s.Only.Contains("sqlite"))
@@ -287,17 +311,19 @@ public static class In6Probe
 			Console.WriteLine("scenarios, SQLite (Microsoft.Data.Sqlite, a file database, deleted afterwards):");
 			foreach (var (id, text) in SqliteScenarios(s.Rows)) Console.WriteLine($"  {id}: {text}");
 			cells += 2 * 2;
+			operations += 4L * 3 * perPath;
 		}
 
-		Console.WriteLine($"each scenario runs with pressure off and on (K = {k}); a cell is one scenario x one pressure setting x 3 paths x {perPath} operations");
-		Console.WriteLine($"cells: {cells}, operations: {cells * 3 * perPath}");
+		Console.WriteLine($"each scenario runs with pressure off and on (K = {k}); a cell is one scenario x one pressure setting x 3 paths x (warm-up + measured operations, as listed)");
+		Console.WriteLine($"cells: {cells}, operations: {operations}");
 		if (s.Only.Contains("calibration"))
 		{
 			Console.WriteLine("calibration (SQL Server, sync Read, no pressure): per-row time = (time of the full result - time of 1 row) / (rows - 1), for width 5 and 20; per-NextResult time for k = 0..4 extra empty result sets");
 			Console.WriteLine($"  operations: {2 * 2 * perPath} for the per-row part, {5 * perPath} for the NextResult part");
 		}
 
-		Console.WriteLine("output per path: reader-open median/min/max (ms), total mean (ms), allocated (KB, calling thread and whole process), ReadAsync calls, incomplete ReadAsync, continuations resumed on another thread");
+		Console.WriteLine("output per path: reader-open median/min/max (ms), total mean (ms), allocated (KB, calling thread and whole process), ReadAsync calls, incomplete ReadAsync, continuations resumed on another thread, wait ms");
+		Console.WriteLine("wait ms: sum = per operation, the time between the return of an incomplete ReadAsync and the completion of its task, summed over the operation; the cell shows the MEDIAN of that sum over the measured operations (the same statistic as the open-time column); max = the longest single wait over all measured operations; n/a = no ReadAsync was called (sync Read). The wait ends when the task completes, before its continuation gets a thread. An incomplete read also allocates the timing object and a continuation (a few hundred bytes), which is inside the allocation fields; a completed read allocates nothing for it");
 		Console.WriteLine("IN6 DRY RUN DONE");
 	}
 
@@ -328,6 +354,8 @@ public static class In6Probe
 	{
 		var open = new double[ops];
 		var total = new double[ops];
+		var waitSum = new double[ops];
+		double waitMax = 0;
 		double allocThread = 0, allocProcess = 0, readAsync = 0, incomplete = 0, resumed = 0, otherAsync = 0, otherIncomplete = 0;
 		bool oneReader = true;
 		for (int i = 0; i < warmup + ops; i++)
@@ -343,6 +371,8 @@ public static class In6Probe
 			int j = i - warmup;
 			open[j] = ToUs(stats.OpenTicks);
 			total[j] = ToUs(t1 - t0);
+			waitSum[j] = ToUs(stats.WaitTicks);
+			waitMax = Math.Max(waitMax, ToUs(stats.MaxWaitTicks));
 			allocThread += thread1 - thread0;
 			allocProcess += process1 - process0;
 			readAsync += stats.ReadAsyncCalls;
@@ -354,7 +384,7 @@ public static class In6Probe
 		}
 
 		return new In6Summary(path, ops, Median(open), open.Min(), open.Max(), total.Average(), Median(total), allocThread / ops, allocProcess / ops,
-			readAsync / ops, incomplete / ops, resumed / ops, otherAsync / ops, otherIncomplete / ops, oneReader);
+			readAsync / ops, incomplete / ops, resumed / ops, otherAsync / ops, otherIncomplete / ops, oneReader, Median(waitSum), waitMax);
 	}
 
 	// The three paths of one scenario over one (wrapped) connection. T is the row type.
@@ -391,10 +421,11 @@ public static class In6Probe
 
 	static string Line(string provider, string scenario, string pressure, In6Summary r)
 		=> $"{provider,-9} {scenario,-3} {pressure,-9} {r.Path,-16} open ms med {Ms(r.OpenMedianUs),9} min {Ms(r.OpenMinUs),9} max {Ms(r.OpenMaxUs),9} | total ms mean {Ms(r.TotalMeanUs),9} | alloc KB thread {Kb(r.AllocThreadBytes),7} process {Kb(r.AllocProcessBytes),7} | ReadAsync {N(r.ReadAsyncCalls),7} incomplete {N(r.ReadAsyncIncomplete),6} other-thread {N(r.ResumedOnOtherThread),6}"
+			+ (r.ReadAsyncCalls > 0 ? $" wait ms sum {Ms(r.WaitSumMedianUs)} max {Ms(r.WaitMaxUs)}" : " wait ms n/a")
 			+ (r.OtherAsyncCalls > 0 ? $" | other async {N(r.OtherAsyncCalls)}/{N(r.OtherAsyncIncomplete)} incomplete" : "")
 			+ (r.OneReaderPerOperation ? "" : " | WARNING: not one closed reader per operation");
 
-	static void RunCell<T>(In6Settings s, string provider, string scenario, DbConnection connection, string sql, int expectedRows)
+	static void RunCell<T>(In6Settings s, string provider, string scenario, DbConnection connection, string sql, int expectedRows, int ops)
 		where T : class
 	{
 		var stats = new In6Stats();
@@ -405,7 +436,7 @@ public static class In6Probe
 			try
 			{
 				if (k > 0) ThreadPoolPressure.Start(k);
-				foreach (var r in RunPaths<T>(timed, stats, sql, expectedRows, s.Warmup, s.Ops, (name, ex) => Console.WriteLine($"{provider,-9} {scenario,-3} {label,-9} {name,-16} FAILED: {ex.GetType().Name}: {Scrub(ex.Message)}")))
+				foreach (var r in RunPaths<T>(timed, stats, sql, expectedRows, s.Warmup, ops, (name, ex) => Console.WriteLine($"{provider,-9} {scenario,-3} {label,-9} {name,-16} FAILED: {ex.GetType().Name}: {Scrub(ex.Message)}")))
 					Console.WriteLine(Line(provider, scenario, label, r));
 			}
 			catch (Exception ex)
@@ -582,6 +613,31 @@ public static class In6Probe
 		}
 	}
 
+	// 50 warm-up and 200 timed SELECT 1 round trips on the probe's own open connection, before S1.
+	static void PrintRtt(DbConnection connection)
+	{
+		const int Warm = 50, Timed = 200;
+		try
+		{
+			using var command = connection.CreateCommand();
+			command.CommandText = "select 1";
+			for (int i = 0; i < Warm; i++) command.ExecuteScalar();
+			var times = new double[Timed];
+			for (int i = 0; i < Timed; i++)
+			{
+				long t0 = Stopwatch.GetTimestamp();
+				command.ExecuteScalar();
+				times[i] = ToUs(Stopwatch.GetTimestamp() - t0);
+			}
+
+			Console.WriteLine($"rtt (SELECT 1 round trip, ms): median {Ms(Median(times))} min {Ms(times.Min())} max {Ms(times.Max())} (n={Timed})");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"could not measure the round trip time: {ex.GetType().Name}: {Scrub(ex.Message)}");
+		}
+	}
+
 	static void PrintTransport(SqlConnection connection)
 	{
 		try
@@ -611,6 +667,7 @@ public static class In6Probe
 			? $"SQL Server (TCP): host and port {s.SqlTcp}, user sa, database {connection.Database}, server version {connection.ServerVersion}; ordinary tables {T20} and {TBig}"
 			: $"SQL Server: {connection.DataSource}, database {connection.Database}, server version {connection.ServerVersion}; ordinary tables {T20} and {TBig}");
 		if (s.Tcp) PrintTransport(connection);
+		PrintRtt(connection);
 		Exec(connection, $"""
 			create table [{T20}] (Id int not null primary key, Created datetime2 not null, Title nvarchar(50) not null, Price decimal(18,2) not null,
 				Qty int null, IsActive bit not null, [Key] uniqueidentifier not null, Score float not null, Note nvarchar(50) null,
@@ -622,13 +679,21 @@ public static class In6Probe
 
 		if (s.Only.Contains("sqlserver"))
 		{
-			Exec(connection, $"create table [{TBig}] (Id int not null primary key, Body nvarchar(max) not null)");
-			Exec(connection, $"with n as (select top ({s.Rows}) row_number() over (order by (select null)) as i from sys.all_objects a cross join sys.all_objects b) insert into [{TBig}] (Id, Body) select i, replicate(cast(N'x' as nvarchar(max)), 4000) from n");
-			Console.WriteLine($"data ready: {s.Rows} rows in each table; {ScalarLong(connection, $"select sum(datalength(Body)) from [{TBig}]") / s.Rows} bytes of Body per row in {TBig}");
+			if (s.Scenarios.Contains("S3"))
+			{
+				Exec(connection, $"create table [{TBig}] (Id int not null primary key, Body nvarchar(max) not null)");
+				Exec(connection, $"with n as (select top ({s.Rows}) row_number() over (order by (select null)) as i from sys.all_objects a cross join sys.all_objects b) insert into [{TBig}] (Id, Body) select i, replicate(cast(N'x' as nvarchar(max)), 4000) from n");
+				Console.WriteLine($"data ready: {s.Rows} rows in each table; {ScalarLong(connection, $"select sum(datalength(Body)) from [{TBig}]") / s.Rows} bytes of Body per row in {TBig}");
+			}
+			else
+			{
+				Console.WriteLine($"data ready: {s.Rows} rows in {T20}");
+			}
+
 			Console.WriteLine("-- SQL Server, three paths, pressure off and on --");
-			RunCell<SynRow>(s, s.SqlLabel, "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows);
-			RunCell<SynRow>(s, s.SqlLabel, "S2", connection, $"select * from [{T20}]", s.Rows);
-			RunCell<In6BigRow>(s, s.SqlLabel, "S3", connection, $"select Id, Body from [{TBig}]", s.Rows);
+			if (s.Scenarios.Contains("S1")) RunCell<SynRow>(s, s.SqlLabel, "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows, s.Ops);
+			if (s.Scenarios.Contains("S2")) RunCell<SynRow>(s, s.SqlLabel, "S2", connection, $"select * from [{T20}]", s.Rows, s.Ops);
+			if (s.Scenarios.Contains("S3")) RunCell<In6BigRow>(s, s.SqlLabel, "S3", connection, $"select Id, Body from [{TBig}]", s.Rows, s.S3Ops);
 		}
 
 		if (s.Only.Contains("calibration")) Calibrate(s, connection, T20);
@@ -742,8 +807,8 @@ public static class In6Probe
 			}
 
 			Console.WriteLine("-- SQLite file, three paths, pressure off and on --");
-			RunCell<In6LiteRow>(s, "Sqlite", "L1", connection, "select Id, Created, Title, Price, Qty from t20", s.Rows);
-			RunCell<In6LiteRow>(s, "Sqlite", "L2", connection, "select * from t20", s.Rows);
+			RunCell<In6LiteRow>(s, "Sqlite", "L1", connection, "select Id, Created, Title, Price, Qty from t20", s.Rows, s.Ops);
+			RunCell<In6LiteRow>(s, "Sqlite", "L2", connection, "select * from t20", s.Rows, s.Ops);
 			Console.WriteLine("SQLite: ReadAsync is counted by the wrappers: an 'incomplete' count above 0 would mean it can complete asynchronously; 0 means every ReadAsync completed before returning.");
 			return 0;
 		}
@@ -803,6 +868,29 @@ public static class In6Probe
 				Check(r.ReadAsyncCalls == 0 && r.ReadAsyncIncomplete == 0, $"{r.Path}: {r.ReadAsyncCalls} ReadAsync calls, expected 0");
 			}
 		}
+
+		foreach (var r in results)
+		{
+			if (r.Path == "EnableAsyncRead")
+			{
+				double expectedWait = boundaries * (double)RefillUs;
+				Check(r.WaitSumMedianUs >= 0.9 * expectedWait && r.WaitSumMedianUs <= (1.1 * expectedWait) + (boundaries * 300), $"{r.Path}: wait time sum {r.WaitSumMedianUs:F0} us per operation, expected about {expectedWait:F0} (boundaries x refill; tolerance -10% to +10% and 300 us per boundary)");
+				Check(r.WaitMaxUs >= 0.9 * RefillUs && r.WaitMaxUs <= 5000, $"{r.Path}: longest single wait {r.WaitMaxUs:F0} us, expected from {0.9 * RefillUs:F0} us up to a few ms");
+				Console.WriteLine($"  wait time in ReadAsync, {r.Path}: sum {r.WaitSumMedianUs:F0} us (expected about {expectedWait:F0}), max single wait {r.WaitMaxUs:F0} us (refill {RefillUs} us)");
+			}
+			else
+			{
+				Check(r.WaitSumMedianUs == 0 && r.WaitMaxUs == 0 && r.ReadAsyncCalls == 0, $"{r.Path}: sync path has no ReadAsync waits to time (sum {r.WaitSumMedianUs:F0}, calls {r.ReadAsyncCalls})");
+			}
+		}
+
+		// Completed reads (no refill) record no wait at all.
+		var plain = new TimedConnection(new SyntheticConnection(SyntheticTable.Create(5, Rows), new SyntheticOptions()), stats);
+		var plainResults = RunPaths<SynRow>(plain, stats, SyntheticVariants.Sql, Rows, 1, 3);
+		var plainAsync = plainResults.First(static x => x.Path == "EnableAsyncRead");
+		Check(plainAsync.ReadAsyncCalls == Rows + 1 && plainAsync.ReadAsyncIncomplete == 0 && plainAsync.WaitSumMedianUs == 0 && plainAsync.WaitMaxUs == 0,
+			$"no refill: {plainAsync.ReadAsyncCalls} ReadAsync calls, {plainAsync.ReadAsyncIncomplete} incomplete, wait sum {plainAsync.WaitSumMedianUs:F0} us, max {plainAsync.WaitMaxUs:F0} us; expected {Rows + 1}, 0, 0, 0");
+		Console.WriteLine("  " + Line("synthetic", "-", "no refill", plainAsync));
 
 		// The recorder inside the synthetic reader and the wrappers around it time the same readers: the wrapper's window contains the recorder's.
 		long readers = recorder.Readers;
