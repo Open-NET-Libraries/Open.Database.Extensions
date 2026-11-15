@@ -14,8 +14,9 @@ using Open.Database.Extensions.Benchmarks;
 //   -- --calibrate-spin         how many Spin iterations make one microsecond on this machine
 //   -- --in6 [--help|--dry-run] sync Read against ReadAsync on SQL Server (LocalDB) and SQLite, a console probe (see In6Probe.cs)
 //   -- --selftest-in6           the probe's timing wrappers and engine, against the synthetic provider (no database)
+//   -- --verify-rp --scratch <folder> [--sqlite-dir <folder>]   equal final objects from every real-provider variant (LocalDB and a SQLite file), see RealProviderBenchmarks.cs
 // The checks say which runtime and target framework they ran on (the build is multi-targeted).
-if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace" or "--selftest-refill" or "--selftest-in6" or "--calibrate-spin" or "--in6"))
+if (args.Any(static a => a is "--verify" or "--selftest-open-time" or "--selftest-alloc" or "--selftest-pace" or "--selftest-refill" or "--selftest-in6" or "--verify-rp" or "--calibrate-spin" or "--in6"))
 {
 	Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
 		+ ", built for: " + System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false)
@@ -49,6 +50,13 @@ if (args.Contains("--selftest-alloc"))
 if (args.Contains("--selftest-refill"))
 {
 	Environment.ExitCode = SyntheticChecks.SelfTestRefill();
+	return;
+}
+
+if (args.Contains("--verify-rp"))
+{
+	RealProviderParams.ApplyOptions(args);
+	Environment.ExitCode = SyntheticChecks.VerifyRealProviders();
 	return;
 }
 
@@ -86,7 +94,7 @@ if (args.Contains("--map-memory"))
 var rest = new List<string>();
 for (int i = 0; i < args.Length; i++)
 {
-	if (SyntheticParams.TryGetVariable(args[i], out string variable) && i + 1 < args.Length)
+	if ((SyntheticParams.TryGetVariable(args[i], out string variable) || RealProviderParams.TryGetVariable(args[i], out variable)) && i + 1 < args.Length)
 		Environment.SetEnvironmentVariable(variable, args[++i]);
 	else
 		rest.Add(args[i]);

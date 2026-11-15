@@ -17,6 +17,10 @@ namespace Open.Database.Extensions.Benchmarks;
 public sealed class In6Stats
 {
 	public long OpenTicks;
+
+	/// <summary>BS-RP: when set, every reader that closes also reports its reader-open time here (the real-provider benchmarks read it as the ReaderOpen column).</summary>
+	public SyntheticRecorder? Recorder;
+
 	public int Readers, ReadAsyncCalls, ReadAsyncIncomplete, ResumedOnOtherThread, OtherAsyncCalls, OtherAsyncIncomplete;
 
 	public void Reset()
@@ -101,8 +105,10 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	{
 		if (_closed) return;
 		_closed = true;
-		stats.OpenTicks += Stopwatch.GetTimestamp() - start;
+		long ticks = Stopwatch.GetTimestamp() - start;
+		stats.OpenTicks += ticks;
 		stats.Readers++;
+		stats.Recorder?.ReaderClosed(ticks, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 
 	// ---- moving and closing ----------------------------------------------------------------
