@@ -13,10 +13,10 @@ on:
 permissions:
   contents: read
 
-# Pull requests get their own group per branch so a newer push cancels the older run.
-# Everything else queues per ref and is never cancelled.
+# One group per ref: a pull request's ref (refs/pull/N/merge) never equals master's, so a pull request run can never cancel a master run.
+# A newer push to a pull request cancels the older run; master and manual runs queue and are never cancelled.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('tests-pr-{0}', github.ref) || format('tests-{0}', github.ref) }}
+  group: tests-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:

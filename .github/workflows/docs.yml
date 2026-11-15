@@ -46,7 +46,6 @@ jobs:
         run: dotnet build docsite/samples/Samples.csproj -c Release -p:GeneratePackageOnBuild=false
 
       - name: Run the samples (a failing sample fails the run)
-        id: samples
         run: dotnet docsite/samples/bin/Release/net10.0/Samples.dll
 
       - name: Build the site
@@ -71,11 +70,6 @@ jobs:
           $lines = @()
           $lines += '## Docs build'
           $lines += ''
-          if ('${{ steps.samples.outcome }}' -eq 'failure') {
-            $lines += '> **The samples reported a failure, so this run failed.** The docs may describe behavior that changed. See the "Run the samples" step.'
-            $lines += ''
-            Write-Host '::error title=Docs samples::The samples reported a failure.'
-          }
           if (Test-Path docfx-log.json) {
             # Plain text parsing on purpose: a log line that is not valid JSON must not break the summary.
             $warnings = @(Get-Content docfx-log.json | Where-Object { $_ -match '"severity":"warning"' } | ForEach-Object {
