@@ -19,6 +19,9 @@ public sealed class In6Stats
 	public long OpenTicks;
 	// Time spent waiting in incomplete ReadAsync calls: the sum over the operation and the longest single wait (stopwatch ticks).
 	public long WaitTicks, MaxWaitTicks;
+	// Time INSIDE the calls (the synchronous part, before the call returns): Read, ReadAsync (sum and longest single call) and every getter (sum), in stopwatch ticks.
+	public long ReadInsideTicks, MaxReadInsideTicks, ReadAsyncInsideTicks, MaxReadAsyncInsideTicks, GetterTicks;
+	public int ReadCalls;
 	// Where the incomplete reads happened: set by the measuring loop for the measured operations only (null during warm-up).
 	public WaitPositions? Positions;
 
@@ -31,6 +34,8 @@ public sealed class In6Stats
 	{
 		OpenTicks = 0;
 		WaitTicks = 0;
+		ReadInsideTicks = MaxReadInsideTicks = ReadAsyncInsideTicks = MaxReadAsyncInsideTicks = GetterTicks = 0;
+		ReadCalls = 0;
 		MaxWaitTicks = 0;
 		Readers = ReadAsyncCalls = ReadAsyncIncomplete = ResumedOnOtherThread = OtherAsyncCalls = OtherAsyncIncomplete = 0;
 	}
@@ -201,7 +206,12 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	public override bool Read()
 	{
 		Resumed();
+		stats.ReadCalls++;
+		long start = Stopwatch.GetTimestamp();
 		bool more = inner.Read();
+		long inside = Stopwatch.GetTimestamp() - start;
+		stats.ReadInsideTicks += inside;
+		if (inside > stats.MaxReadInsideTicks) stats.MaxReadInsideTicks = inside;
 		if (more) _rows++;
 		return more;
 	}
@@ -210,7 +220,11 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	{
 		Resumed();
 		stats.ReadAsyncCalls++;
+		long start = Stopwatch.GetTimestamp();
 		var task = inner.ReadAsync(cancellationToken);
+		long inside = Stopwatch.GetTimestamp() - start;
+		stats.ReadAsyncInsideTicks += inside;
+		if (inside > stats.MaxReadAsyncInsideTicks) stats.MaxReadAsyncInsideTicks = inside;
 		if (!task.IsCompleted)
 		{
 			// Only an incomplete read pays for the timing (one small object and a continuation); a completed read costs the flag test above.
@@ -251,7 +265,9 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
 	{
 		stats.OtherAsyncCalls++;
+		long start = Stopwatch.GetTimestamp();
 		var task = inner.IsDBNullAsync(ordinal, cancellationToken);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
 		if (!task.IsCompleted) stats.OtherAsyncIncomplete++;
 		return task;
 	}
@@ -259,7 +275,9 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	public override Task<T> GetFieldValueAsync<T>(int ordinal, CancellationToken cancellationToken)
 	{
 		stats.OtherAsyncCalls++;
+		long start = Stopwatch.GetTimestamp();
 		var task = inner.GetFieldValueAsync<T>(ordinal, cancellationToken);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
 		if (!task.IsCompleted) stats.OtherAsyncIncomplete++;
 		return task;
 	}
@@ -293,7 +311,7 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 		Stamp();
 	}
 
-	// ---- everything else is forwarded ----------------------------------------------------------------
+	// ---- everything else is forwarded; every getter is timed (two timestamps, no allocation) ----------------------------------------------------------------
 	public override int Depth => inner.Depth;
 	public override int FieldCount => inner.FieldCount;
 	public override int VisibleFieldCount => inner.VisibleFieldCount;
@@ -310,25 +328,145 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 	public override object GetProviderSpecificValue(int ordinal) => inner.GetProviderSpecificValue(ordinal);
 	public override int GetProviderSpecificValues(object[] values) => inner.GetProviderSpecificValues(values);
 	public override DataTable? GetSchemaTable() => inner.GetSchemaTable();
-	public override bool IsDBNull(int ordinal) => inner.IsDBNull(ordinal);
-	public override bool GetBoolean(int ordinal) => inner.GetBoolean(ordinal);
-	public override byte GetByte(int ordinal) => inner.GetByte(ordinal);
-	public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length) => inner.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length);
-	public override char GetChar(int ordinal) => inner.GetChar(ordinal);
-	public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length) => inner.GetChars(ordinal, dataOffset, buffer, bufferOffset, length);
-	public override DateTime GetDateTime(int ordinal) => inner.GetDateTime(ordinal);
-	public override decimal GetDecimal(int ordinal) => inner.GetDecimal(ordinal);
-	public override double GetDouble(int ordinal) => inner.GetDouble(ordinal);
-	public override float GetFloat(int ordinal) => inner.GetFloat(ordinal);
-	public override Guid GetGuid(int ordinal) => inner.GetGuid(ordinal);
-	public override short GetInt16(int ordinal) => inner.GetInt16(ordinal);
-	public override int GetInt32(int ordinal) => inner.GetInt32(ordinal);
-	public override long GetInt64(int ordinal) => inner.GetInt64(ordinal);
-	public override string GetString(int ordinal) => inner.GetString(ordinal);
-	public override object GetValue(int ordinal) => inner.GetValue(ordinal);
-	public override int GetValues(object[] values) => inner.GetValues(values);
-	public override T GetFieldValue<T>(int ordinal) => inner.GetFieldValue<T>(ordinal);
-	public override Stream GetStream(int ordinal) => inner.GetStream(ordinal);
-	public override TextReader GetTextReader(int ordinal) => inner.GetTextReader(ordinal);
+	public override bool IsDBNull(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		bool value = inner.IsDBNull(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override bool GetBoolean(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		bool value = inner.GetBoolean(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override byte GetByte(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		byte value = inner.GetByte(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
+	{
+		long start = Stopwatch.GetTimestamp();
+		long value = inner.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override char GetChar(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		char value = inner.GetChar(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
+	{
+		long start = Stopwatch.GetTimestamp();
+		long value = inner.GetChars(ordinal, dataOffset, buffer, bufferOffset, length);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override DateTime GetDateTime(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		DateTime value = inner.GetDateTime(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override decimal GetDecimal(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		decimal value = inner.GetDecimal(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override double GetDouble(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		double value = inner.GetDouble(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override float GetFloat(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		float value = inner.GetFloat(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override Guid GetGuid(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		Guid value = inner.GetGuid(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override short GetInt16(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		short value = inner.GetInt16(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override int GetInt32(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		int value = inner.GetInt32(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override long GetInt64(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		long value = inner.GetInt64(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override string GetString(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		string value = inner.GetString(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override object GetValue(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		object value = inner.GetValue(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override int GetValues(object[] values)
+	{
+		long start = Stopwatch.GetTimestamp();
+		int value = inner.GetValues(values);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override T GetFieldValue<T>(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		T value = inner.GetFieldValue<T>(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override Stream GetStream(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		Stream value = inner.GetStream(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override TextReader GetTextReader(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		TextReader value = inner.GetTextReader(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
 	public override IEnumerator GetEnumerator() => inner.GetEnumerator();
 }
