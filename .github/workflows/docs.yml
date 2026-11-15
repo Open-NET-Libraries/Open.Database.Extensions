@@ -46,7 +46,7 @@ jobs:
         run: dotnet build docsite/samples/Samples.csproj -c Release -p:GeneratePackageOnBuild=false
 
       - name: Run the samples (a failing sample fails the run)
-        run: dotnet docsite/samples/bin/Release/net10.0/Samples.dll
+        run: dotnet run --project docsite/samples/Samples.csproj -c Release --no-build
 
       - name: Build the site
         run: |
