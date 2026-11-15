@@ -62,10 +62,15 @@ sealed class In6Settings
 	public int Rows = 10_000, Warmup = 5, Ops = 20;
 	public string Pressure = "auto";
 	public string SqlServer = DefaultSqlServer;
-	public string? Scratch;
+	public string? Scratch, SqlTcp, PasswordFile, Affinity, Priority;
+	public long AffinityMask;
+	public ProcessPriorityClass? PriorityClass;
 	public bool DryRun, Help;
+	public int Processors = Environment.ProcessorCount;
+	public bool Tcp => SqlTcp is not null;
+	public string SqlLabel => Tcp ? "SqlServerTcp" : "SqlServer";
 	public HashSet<string> Only = new(Parts, StringComparer.OrdinalIgnoreCase);
-	public int K => ThreadPoolPressure.Parse(Pressure);
+	public int K => Pressure.Trim().Equals("auto", StringComparison.OrdinalIgnoreCase) ? Processors * 2 : ThreadPoolPressure.Parse(Pressure);
 }
 
 public static class In6Probe
@@ -75,17 +80,36 @@ public static class In6Probe
 
 		  --in6 --help                 this text
 		  --in6 --dry-run              print the scenarios, the number of operations and the settings; opens no connection, creates nothing
-		  --in6 --scratch <folder>     run everything; the folder (never on drive C:) holds the probe's SQL Server database files (ode_in6_<guid>.mdf and _log.ldf) and the SQLite file; all deleted afterwards
-		  --only sqlserver,sqlite,calibration   run only these parts (default: all three; every part needs --scratch)
+		  --in6 --scratch <folder>     run everything; (LocalDB mode and SQLite) the folder (never on drive C:) holds the probe's SQL Server database files (ode_in6_<guid>.mdf and _log.ldf) and the SQLite file; all deleted afterwards
+		  --only sqlserver,sqlite,calibration   run only these parts (default: all three; every part needs --scratch, except the SQL Server parts with --sql-tcp)
 		  --pressure auto|N            K busy thread-pool items for the "pressure on" cells (default auto = processor count x 2)
 		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per path
+		  --sql-tcp <host,port>        run the SQL Server part against a server over TCP (for example 127.0.0.1,14333) as user sa, TrustServerCertificate, default packet size, instead of LocalDB;
+		                               needs --sql-password-file; the database is created without a FILENAME clause (the server's default location); --scratch is then needed only for SQLite
+		  --sql-password-file <path>   a file that holds only the password of sa; read at run time, never printed, never on a command line
+		  --affinity <hexmask>         set this process's affinity at start (for example 0xF00000), then print the processor count (K = auto uses it)
+		  --priority belownormal       set this process's priority class at start
 		  --connection "<string>"      the SQL Server connection string, without a database (default: LocalDB, integrated security, Encrypt=False); the probe connects to master, creates its own database and drops it
 
-		Test data: a dedicated SQL Server database ode_in6_<guid> with its files under --scratch (128 MB data, growth 64 MB; 64 MB log, growth 64 MB), ordinary tables, dropped at the end (SINGLE_USER, DROP DATABASE, the files are checked);
+		Test data: a dedicated SQL Server database ode_in6_<guid>, ordinary tables, dropped at the end (SINGLE_USER, DROP DATABASE). LocalDB mode: its files are under --scratch (128 MB data, growth 64 MB; 64 MB log, growth 64 MB) and are checked to be gone;
+		with --sql-tcp: no FILENAME clause (the server's default location, inside the container) and sys.master_files must show 0 files after the drop;
 		if CREATE DATABASE fails the SQL Server part stops (no fallback to tempdb or the default location) and the SQLite part still runs. The SQLite file is under --scratch too, deleted afterwards.
 		""";
 
 	public static int Run(string[] args)
+	{
+		try
+		{
+			return RunCore(args);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("--in6 FAILED: " + ex.GetType().Name + ": " + Scrub(ex.Message));
+			return 1;
+		}
+	}
+
+	static int RunCore(string[] args)
 	{
 		In6Settings s;
 		try
@@ -94,7 +118,7 @@ public static class In6Probe
 		}
 		catch (Exception ex) when (ex is ArgumentException or FormatException)
 		{
-			Console.WriteLine("--in6: " + ex.Message);
+			Console.WriteLine("--in6: " + Scrub(ex.Message));
 			Console.WriteLine(Usage);
 			return 2;
 		}
@@ -111,18 +135,46 @@ public static class In6Probe
 			return 0;
 		}
 
-		if (s.Scratch is null)
+		if (s.Scratch is null && (s.Only.Contains("sqlite") || (!s.Tcp && (s.Only.Contains("sqlserver") || s.Only.Contains("calibration")))))
 		{
-			Console.WriteLine("--in6: --scratch <folder> is required (a folder not on drive C:): it holds the SQL Server database files and the SQLite file.");
+			Console.WriteLine("--in6: --scratch <folder> is required (a folder not on drive C:) for the SQLite file and, in LocalDB mode, for the SQL Server database files. Only --sql-tcp with --only sqlserver,calibration can do without it.");
 			return 2;
 		}
 
-		Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", processors " + Environment.ProcessorCount + ", pressure K = " + s.K);
+		ApplyProcessSettings(s);
+		Console.WriteLine("runtime: " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", processors " + s.Processors + ", pressure K = " + s.K
+			+ (s.Tcp ? ", SQL Server over TCP " + s.SqlTcp + " as sa" : ", SQL Server on LocalDB"));
 		int failures = 0;
 		if (s.Only.Contains("sqlserver") || s.Only.Contains("calibration")) failures += RunSqlServer(s);
 		if (s.Only.Contains("sqlite")) failures += RunSqlite(s);
 		Console.WriteLine(failures == 0 ? "IN6 DONE" : $"IN6 DONE WITH {failures} PART(S) SKIPPED OR FAILED (see the lines above)");
 		return failures == 0 ? 0 : 1;
+	}
+
+	[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+	[System.Runtime.Versioning.SupportedOSPlatform("linux")]
+	static void SetAffinity(Process process, long mask) => process.ProcessorAffinity = (IntPtr)mask;
+
+	static long GetAffinity(Process process)
+		=> OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? (long)process.ProcessorAffinity : 0;
+
+	static void ApplyProcessSettings(In6Settings s)
+	{
+		if (s.PriorityClass is null && s.AffinityMask == 0) return;
+		var process = Process.GetCurrentProcess();
+		if (s.PriorityClass is { } priority) process.PriorityClass = priority;
+		if (s.AffinityMask != 0)
+		{
+			if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()) SetAffinity(process, s.AffinityMask);
+			else throw new PlatformNotSupportedException("--affinity needs Windows or Linux");
+			s.Processors = System.Numerics.BitOperations.PopCount((ulong)s.AffinityMask);
+			// The pool's minimum worker count was set at start from the full processor count; bring it in line with the affinity so that pressure K = processors x 2 starves the pool as it would in a process started with that affinity.
+			ThreadPool.GetMinThreads(out _, out int io);
+			ThreadPool.SetMinThreads(s.Processors, io);
+		}
+
+		ThreadPool.GetMinThreads(out int workers, out _);
+		Console.WriteLine($"process: priority {process.PriorityClass}, affinity 0x{GetAffinity(process):X}, processors {s.Processors} (Environment.ProcessorCount reads {Environment.ProcessorCount}), thread-pool minimum worker threads {workers}");
 	}
 
 	static In6Settings Parse(string[] args)
@@ -138,6 +190,10 @@ public static class In6Probe
 				case "--dry-run": s.DryRun = true; break;
 				case "--scratch": s.Scratch = Value(); break;
 				case "--connection": s.SqlServer = Value(); break;
+				case "--sql-tcp": s.SqlTcp = Value(); break;
+				case "--sql-password-file": s.PasswordFile = Value(); break;
+				case "--affinity": s.Affinity = Value(); break;
+				case "--priority": s.Priority = Value(); break;
 				case "--pressure": s.Pressure = Value(); break;
 				case "--rows": s.Rows = int.Parse(Value(), CultureInfo.InvariantCulture); break;
 				case "--warmup": s.Warmup = int.Parse(Value(), CultureInfo.InvariantCulture); break;
@@ -152,6 +208,35 @@ public static class In6Probe
 					break;
 				default: throw new ArgumentException("unknown option " + args[i]);
 			}
+		}
+
+		if (s.SqlTcp is not null)
+		{
+			string[] parts = s.SqlTcp.Split(',', StringSplitOptions.TrimEntries);
+			if (parts.Length != 2 || parts[0].Length == 0 || !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out int port) || port is < 1 or > 65535)
+				throw new ArgumentException("--sql-tcp takes <host,port>, for example 127.0.0.1,14333");
+			if (s.PasswordFile is null) throw new ArgumentException("--sql-tcp needs --sql-password-file <path> (a file that holds only the password)");
+			if (s.SqlServer != In6Settings.DefaultSqlServer) throw new ArgumentException("--sql-tcp and --connection cannot be combined");
+			s.SqlTcp = parts[0] + "," + parts[1];
+		}
+		else if (s.PasswordFile is not null)
+		{
+			throw new ArgumentException("--sql-password-file is only used with --sql-tcp");
+		}
+
+		if (s.Affinity is not null)
+		{
+			string hex = s.Affinity.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? s.Affinity[2..] : s.Affinity;
+			if (!long.TryParse(hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out long mask) || mask <= 0) throw new ArgumentException("--affinity takes a non-zero hexadecimal mask, for example 0xF00000");
+			s.AffinityMask = mask;
+			s.Processors = System.Numerics.BitOperations.PopCount((ulong)mask);
+		}
+
+		if (s.Priority is not null)
+		{
+			if (!Enum.TryParse(s.Priority, ignoreCase: true, out ProcessPriorityClass priority) || priority is ProcessPriorityClass.High or ProcessPriorityClass.RealTime || !Enum.IsDefined(priority))
+				throw new ArgumentException("--priority takes belownormal, normal, abovenormal or idle");
+			s.PriorityClass = priority;
 		}
 
 		if (s.Rows < 2 || s.Warmup < 0 || s.Ops < 1) throw new ArgumentException("--rows needs at least 2, --warmup at least 0, --ops at least 1");
@@ -169,14 +254,26 @@ public static class In6Probe
 	{
 		int k = s.K, perPath = s.Warmup + s.Ops;
 		Console.WriteLine("IN6 dry run: nothing is opened or created.");
-		Console.WriteLine($"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per path, pressure K = {k} (processors {Environment.ProcessorCount}), parts: {string.Join(",", s.Only.Order())}");
+		Console.WriteLine($"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per path, pressure K = {k} (processors {s.Processors}), parts: {string.Join(",", s.Only.Order())}");
+		Console.WriteLine($"process: affinity {(s.AffinityMask == 0 ? "unchanged" : "0x" + s.AffinityMask.ToString("X", CultureInfo.InvariantCulture) + " (" + System.Numerics.BitOperations.PopCount((ulong)s.AffinityMask) + " processors; K = auto uses that count)")}, priority {(s.PriorityClass?.ToString() ?? "unchanged")} (applied at the start of a real run, not in a dry run)");
 		Console.WriteLine("read paths: sync (sync execute + Read) | async+Read (async execute + Read) | EnableAsyncRead (async execute + ReadAsync); all through Map<T>().ToList[Async]()");
-		Console.WriteLine($"SQL Server connection (to master): {s.SqlServer}");
-		Console.WriteLine(s.Scratch is null
-			? "SQL Server database and files: (--scratch not given)"
-			: $"SQL Server database: ode_in6_<guid>, created with CREATE DATABASE; data file {Path.Combine(s.Scratch, "ode_in6_<guid>.mdf")} ({DataSize}), log file {Path.Combine(s.Scratch, "ode_in6_<guid>_log.ldf")} ({LogSize}); at the end SINGLE_USER WITH ROLLBACK IMMEDIATE, DROP DATABASE, and the two files are checked");
+		if (s.Tcp)
+		{
+			string[] hostPort = s.SqlTcp!.Split(',');
+			Console.WriteLine($"SQL Server mode: TCP, host {hostPort[0]}, port {hostPort[1]}, user sa, TrustServerCertificate, default packet size, password read from the --sql-password-file at run time (never printed); the connection string is never printed");
+			Console.WriteLine("SQL Server database: ode_in6_<guid>, created with CREATE DATABASE WITHOUT a FILENAME clause (the server's default data location, inside the container; whoever started the container removes it); ordinary tables w20 and big; at the end SINGLE_USER WITH ROLLBACK IMMEDIATE, DROP DATABASE, and the files are counted in sys.master_files (0 expected after the drop)");
+			Console.WriteLine("the log shows the server version and, for the probe's own connection, net_transport, protocol_type and net_packet_size from sys.dm_exec_connections; lines are labelled SqlServerTcp");
+		}
+		else
+		{
+			Console.WriteLine($"SQL Server connection (to master): {s.SqlServer}");
+			Console.WriteLine(s.Scratch is null
+				? "SQL Server database and files: (--scratch not given)"
+				: $"SQL Server database: ode_in6_<guid>, created with CREATE DATABASE; data file {Path.Combine(s.Scratch, "ode_in6_<guid>.mdf")} ({DataSize}), log file {Path.Combine(s.Scratch, "ode_in6_<guid>_log.ldf")} ({LogSize}); at the end SINGLE_USER WITH ROLLBACK IMMEDIATE, DROP DATABASE, and the two files are checked");
+		}
+
 		Console.WriteLine("if CREATE DATABASE fails: STOP message, non-zero exit, no fallback to tempdb or the default location (the SQLite part still runs)");
-		Console.WriteLine($"SQLite file: {(s.Scratch is null ? "(--scratch not given)" : Path.Combine(s.Scratch, "in6-<guid>.db"))}");
+		Console.WriteLine($"SQLite file: {(s.Scratch is null ? "(--scratch not given; needed for the SQLite part)" : Path.Combine(s.Scratch, "in6-<guid>.db"))}");
 		int cells = 0;
 		if (s.Only.Contains("sqlserver"))
 		{
@@ -308,12 +405,12 @@ public static class In6Probe
 			try
 			{
 				if (k > 0) ThreadPoolPressure.Start(k);
-				foreach (var r in RunPaths<T>(timed, stats, sql, expectedRows, s.Warmup, s.Ops, (name, ex) => Console.WriteLine($"{provider,-9} {scenario,-3} {label,-9} {name,-16} FAILED: {ex.GetType().Name}: {ex.Message}")))
+				foreach (var r in RunPaths<T>(timed, stats, sql, expectedRows, s.Warmup, s.Ops, (name, ex) => Console.WriteLine($"{provider,-9} {scenario,-3} {label,-9} {name,-16} FAILED: {ex.GetType().Name}: {Scrub(ex.Message)}")))
 					Console.WriteLine(Line(provider, scenario, label, r));
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"{provider,-9} {scenario,-3} {label,-9} FAILED: {ex.GetType().Name}: {ex.Message}");
+				Console.WriteLine($"{provider,-9} {scenario,-3} {label,-9} FAILED: {ex.GetType().Name}: {Scrub(ex.Message)}");
 			}
 			finally
 			{
@@ -323,10 +420,10 @@ public static class In6Probe
 	}
 
 	// ---- test data ----------------------------------------------------------------
-	static object CellValue(SyntheticTable table, int column, int row)
+	internal static object CellValue(SyntheticTable table, int column, int row)
 		=> table.Nulls[column] is { } nulls && nulls[row] ? DBNull.Value : table.Columns[column].GetValue(row)!;
 
-	static DataTable ToDataTable(SyntheticTable table)
+	internal static DataTable ToDataTable(SyntheticTable table)
 	{
 		var data = new DataTable();
 		for (int c = 0; c < table.Width; c++) data.Columns.Add(table.Names[c], table.Types[c]);
@@ -340,7 +437,7 @@ public static class In6Probe
 		return data;
 	}
 
-	static void Exec(DbConnection connection, string sql)
+	internal static void Exec(DbConnection connection, string sql)
 	{
 		using var command = connection.CreateCommand();
 		command.CommandText = sql;
@@ -349,20 +446,50 @@ public static class In6Probe
 	}
 
 	// ---- SQL Server ----------------------------------------------------------------
-	// A dedicated database whose data and log files live in the scratch folder (never on drive C:, never tempdb, never the default location):
+	// LocalDB mode: a dedicated database whose data and log files live in the scratch folder (never on drive C:, never tempdb, never the default location):
 	// initial 128 MB data (growth 64 MB) and 64 MB log (growth 64 MB), so the 80 MB big table fits without many growth events.
+	// TCP mode (--sql-tcp): the same database name and ordinary tables, created WITHOUT a FILENAME clause, so its files are in the server's own default
+	// data location (inside the container); the server is removed by whoever started it.
 	const string DataSize = "size = 128MB, filegrowth = 64MB", LogSize = "size = 64MB, filegrowth = 64MB";
 
-	static string Connection(In6Settings s, string database)
-		=> new SqlConnectionStringBuilder(s.SqlServer) { InitialCatalog = database, Pooling = false }.ConnectionString;
+	// Everything that must never be printed: the password and every connection string built from it.
+	static readonly List<string> Secrets = [];
+	static string? _password;
 
-	static string Quote(string path) => path.Replace("'", "''", StringComparison.Ordinal);
+	static string ReadPassword(In6Settings s)
+	{
+		string text = File.ReadAllText(s.PasswordFile!).Trim();
+		if (text.Length == 0) throw new InvalidOperationException("the password file is empty");
+		Secrets.Add(text);
+		return text;
+	}
+
+	/// <summary>Removes the password and the connection strings from a text that is about to be printed.</summary>
+	internal static string Scrub(string text)
+	{
+		foreach (string secret in Secrets)
+		{
+			if (secret.Length > 0) text = text.Replace(secret, "***", StringComparison.Ordinal);
+		}
+
+		return System.Text.RegularExpressions.Regex.Replace(text, @"(?i)\b(password|pwd)\s*=\s*[^;]*", "$1=***");
+	}
+
+	static string Connection(In6Settings s, string database)
+	{
+		if (!s.Tcp) return new SqlConnectionStringBuilder(s.SqlServer) { InitialCatalog = database, Pooling = false }.ConnectionString;
+		_password ??= ReadPassword(s);
+		string text = new SqlConnectionStringBuilder { DataSource = "tcp:" + s.SqlTcp, UserID = "sa", Password = _password, TrustServerCertificate = true, InitialCatalog = database, Pooling = false }.ConnectionString;
+		if (!Secrets.Contains(text)) Secrets.Add(text);
+		return text;
+	}
+
+	internal static string Quote(string path) => path.Replace("'", "''", StringComparison.Ordinal);
 
 	static int RunSqlServer(In6Settings s)
 	{
 		string name = "ode_in6_" + Guid.NewGuid().ToString("N")[..12];
-		string folder = s.Scratch!;
-		string dataFile = Path.Combine(folder, name + ".mdf"), logFile = Path.Combine(folder, name + "_log.ldf");
+		string? dataFile = s.Tcp ? null : Path.Combine(s.Scratch!, name + ".mdf"), logFile = s.Tcp ? null : Path.Combine(s.Scratch!, name + "_log.ldf");
 		SqlConnection master;
 		try
 		{
@@ -371,7 +498,7 @@ public static class In6Probe
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"SQL SERVER SKIPPED: could not open the connection to master: {ex.GetType().Name}: {ex.Message}");
+			Console.WriteLine($"SQL SERVER SKIPPED: could not open the connection to master: {ex.GetType().Name}: {Scrub(ex.Message)}");
 			return 1;
 		}
 
@@ -379,27 +506,47 @@ public static class In6Probe
 		{
 			try
 			{
-				Directory.CreateDirectory(folder);
-				Exec(master, $"create database [{name}] on (name = N'{name}', filename = N'{Quote(dataFile)}', {DataSize}) log on (name = N'{name}_log', filename = N'{Quote(logFile)}', {LogSize})");
+				if (s.Tcp)
+				{
+					Exec(master, $"create database [{name}]");
+				}
+				else
+				{
+					Directory.CreateDirectory(s.Scratch!);
+					Exec(master, $"create database [{name}] on (name = N'{name}', filename = N'{Quote(dataFile!)}', {DataSize}) log on (name = N'{name}_log', filename = N'{Quote(logFile!)}', {LogSize})");
+				}
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"STOP: CREATE DATABASE on the scratch folder failed: {ex.GetType().Name}: {ex.Message}");
-				Console.WriteLine("The SQL Server part (S1 to S3 and the calibration) is not run: there is no fallback to tempdb or to the default location. The SQLite part is independent and still runs.");
+				Console.WriteLine($"STOP: CREATE DATABASE on the {(s.Tcp ? "server's default location" : "scratch folder")} failed: {ex.GetType().Name}: {Scrub(ex.Message)}");
+				Console.WriteLine("The SQL Server part (S1 to S3 and the calibration) is not run: there is no fallback to tempdb or to another location. The SQLite part is independent and still runs.");
 				try { Exec(master, $"if db_id(N'{name}') is not null drop database [{name}]"); }
-				catch (Exception cleanup) { Console.WriteLine($"cleanup after the failed CREATE DATABASE also failed: {cleanup.Message}"); }
+				catch (Exception cleanup) { Console.WriteLine($"cleanup after the failed CREATE DATABASE also failed: {Scrub(cleanup.Message)}"); }
 
 				return 1;
 			}
 
-			Console.WriteLine($"SQL Server: database {name} created; data file {dataFile} ({DataSize}), log file {logFile} ({LogSize})");
+			Console.WriteLine(s.Tcp
+				? $"SQL Server (TCP): database {name} created without a FILENAME clause (the server's default data location, inside the server's host or container)"
+				: $"SQL Server: database {name} created; data file {dataFile} ({DataSize}), log file {logFile} ({LogSize})");
+			int databaseId = 0, filesBefore = 0;
+			try
+			{
+				databaseId = (int)ScalarLong(master, $"select db_id(N'{name}')");
+				filesBefore = (int)ScalarLong(master, $"select count(*) from sys.master_files where database_id = {databaseId}");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"could not read the new database's files from sys.master_files: {ex.GetType().Name}: {Scrub(ex.Message)}");
+			}
+
 			try
 			{
 				return RunInDatabase(s, name);
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"SQL SERVER PART FAILED: {ex.GetType().Name}: {ex.Message}");
+				Console.WriteLine($"SQL SERVER PART FAILED: {ex.GetType().Name}: {Scrub(ex.Message)}");
 				return 1;
 			}
 			finally
@@ -412,11 +559,46 @@ public static class In6Probe
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"could not drop database {name}: {ex.GetType().Name}: {ex.Message}");
+					Console.WriteLine($"could not drop database {name}: {ex.GetType().Name}: {Scrub(ex.Message)}");
 				}
 
-				Console.WriteLine($"SQL Server: database {name} dropped; data file still exists: {File.Exists(dataFile)}, log file still exists: {File.Exists(logFile)} (both must be False)");
+				if (s.Tcp)
+				{
+					try
+					{
+						long after = ScalarLong(master, $"select count(*) from sys.master_files where database_id = {databaseId}");
+						Console.WriteLine($"SQL Server (TCP): database {name} dropped; files in sys.master_files: {filesBefore} before the drop, {after} after (must be 0)");
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine($"could not count the dropped database's files: {ex.GetType().Name}: {Scrub(ex.Message)}");
+					}
+				}
+				else
+				{
+					Console.WriteLine($"SQL Server: database {name} dropped; data file still exists: {File.Exists(dataFile)}, log file still exists: {File.Exists(logFile)} (both must be False)");
+				}
 			}
+		}
+	}
+
+	static void PrintTransport(SqlConnection connection)
+	{
+		try
+		{
+			using var command = connection.CreateCommand();
+			command.CommandText = "select @@version, net_transport, protocol_type, net_packet_size, encrypt_option from sys.dm_exec_connections where session_id = @@spid";
+			using var reader = command.ExecuteReader();
+			if (reader.Read())
+			{
+				string version = Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture)!.Split('\n')[0].Trim();
+				Console.WriteLine($"SQL Server version: {version}");
+				Console.WriteLine($"this connection (sys.dm_exec_connections): net_transport {reader.GetValue(1)}, protocol_type {reader.GetValue(2)}, net_packet_size {reader.GetValue(3)}, encrypt_option {reader.GetValue(4)}; client PacketSize {connection.PacketSize}");
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"could not read sys.dm_exec_connections: {ex.GetType().Name}: {Scrub(ex.Message)}");
 		}
 	}
 
@@ -425,7 +607,10 @@ public static class In6Probe
 		const string T20 = "w20", TBig = "big";
 		using var connection = new SqlConnection(Connection(s, database));
 		connection.Open();
-		Console.WriteLine($"SQL Server: {connection.DataSource}, database {connection.Database}, server version {connection.ServerVersion}; ordinary tables {T20} and {TBig}");
+		Console.WriteLine(s.Tcp
+			? $"SQL Server (TCP): host and port {s.SqlTcp}, user sa, database {connection.Database}, server version {connection.ServerVersion}; ordinary tables {T20} and {TBig}"
+			: $"SQL Server: {connection.DataSource}, database {connection.Database}, server version {connection.ServerVersion}; ordinary tables {T20} and {TBig}");
+		if (s.Tcp) PrintTransport(connection);
 		Exec(connection, $"""
 			create table [{T20}] (Id int not null primary key, Created datetime2 not null, Title nvarchar(50) not null, Price decimal(18,2) not null,
 				Qty int null, IsActive bit not null, [Key] uniqueidentifier not null, Score float not null, Note nvarchar(50) null,
@@ -441,9 +626,9 @@ public static class In6Probe
 			Exec(connection, $"with n as (select top ({s.Rows}) row_number() over (order by (select null)) as i from sys.all_objects a cross join sys.all_objects b) insert into [{TBig}] (Id, Body) select i, replicate(cast(N'x' as nvarchar(max)), 4000) from n");
 			Console.WriteLine($"data ready: {s.Rows} rows in each table; {ScalarLong(connection, $"select sum(datalength(Body)) from [{TBig}]") / s.Rows} bytes of Body per row in {TBig}");
 			Console.WriteLine("-- SQL Server, three paths, pressure off and on --");
-			RunCell<SynRow>(s, "SqlServer", "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows);
-			RunCell<SynRow>(s, "SqlServer", "S2", connection, $"select * from [{T20}]", s.Rows);
-			RunCell<In6BigRow>(s, "SqlServer", "S3", connection, $"select Id, Body from [{TBig}]", s.Rows);
+			RunCell<SynRow>(s, s.SqlLabel, "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows);
+			RunCell<SynRow>(s, s.SqlLabel, "S2", connection, $"select * from [{T20}]", s.Rows);
+			RunCell<In6BigRow>(s, s.SqlLabel, "S3", connection, $"select Id, Body from [{TBig}]", s.Rows);
 		}
 
 		if (s.Only.Contains("calibration")) Calibrate(s, connection, T20);
@@ -564,7 +749,7 @@ public static class In6Probe
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"SQLITE PART FAILED: {ex.GetType().Name}: {ex.Message}");
+			Console.WriteLine($"SQLITE PART FAILED: {ex.GetType().Name}: {Scrub(ex.Message)}");
 			return 1;
 		}
 		finally
@@ -573,7 +758,7 @@ public static class In6Probe
 			foreach (string path in new[] { file, file + "-journal", file + "-wal", file + "-shm" })
 			{
 				try { File.Delete(path); }
-				catch (IOException ex) { Console.WriteLine($"could not delete {Path.GetFileName(path)}: {ex.Message}"); }
+				catch (IOException ex) { Console.WriteLine($"could not delete {Path.GetFileName(path)}: {Scrub(ex.Message)}"); }
 			}
 
 			Console.WriteLine("SQLite: file deleted: " + !File.Exists(file));
