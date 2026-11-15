@@ -353,6 +353,10 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public List<SynRow> V7_V1_Sync() { _label = nameof(V7_V1_Sync); return SyntheticDapper.V1(Connection); }
 
+	// V7a: the V7_V1 call through Dapper.AOT's intercepted path (SyntheticDapperAot.cs)
+	[Benchmark]
+	public List<SynRow> V7a_V1_Sync() { _label = nameof(V7a_V1_Sync); return SyntheticDapperAot.V1(Connection); }
+
 	[Benchmark]
 	public Task<List<SynRow>> V7_V1_Async() { _label = nameof(V7_V1_Async); return SyntheticDapper.V1Async(Connection); }
 

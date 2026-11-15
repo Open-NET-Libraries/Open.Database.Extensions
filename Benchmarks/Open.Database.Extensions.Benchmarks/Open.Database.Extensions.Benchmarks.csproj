@@ -11,12 +11,17 @@
 		<ServerGarbageCollector>false</ServerGarbageCollector>
 		<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
 		<TieredPGO>true</TieredPGO>
-		<NoWarn>$(NoWarn);CS1591</NoWarn>
+		<NoWarn>$(NoWarn);CS1591;DAP219;DAP231;DAP241</NoWarn>
+		<!-- DAP219, DAP231 and DAP241 are Dapper.AOT advisor warnings about the SQL text of the existing benchmark queries (select *, single row without WHERE, interpolated values); they are not defects of the code under test. -->
+		<!-- Dapper.AOT intercepts the calls of the code that carries [DapperAot] (SyntheticDapperAot.cs only); the compiler must allow interceptors in its namespace (each SDK reads one of the two names). -->
+		<InterceptorsNamespaces>$(InterceptorsNamespaces);Dapper.AOT</InterceptorsNamespaces>
+		<InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Dapper.AOT</InterceptorsPreviewNamespaces>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
 		<PackageReference Include="Dapper" Version="2.1.89" />
+		<PackageReference Include="Dapper.AOT" Version="1.1.0" />
 		<PackageReference Include="FastExpressionCompiler" Version="6.0.0" />
 		<PackageReference Include="ZLinq" Version="1.6.1" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />

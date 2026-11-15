@@ -99,9 +99,13 @@ public static partial class SyntheticChecks
 			new("V1 async ReadAsync", () => Wait(SyntheticVariants.V1AsyncRead(conn))),
 			new("V2 sync", () => SyntheticVariants.V2(conn, hand)),
 			new("V2 async", () => Wait(SyntheticVariants.V2Async(conn, hand))),
+			new("V7a Dapper.AOT V1 sync", () => SyntheticDapperAot.V1(conn)),
 		];
 		foreach (var variant in variants)
 			Compare(report, variant.Key, where, v1, variant.Value());
+
+		// V7a (Dapper.AOT) against V2's rows too: the same typed row from a hand-written read.
+		Compare(report, "V7a Dapper.AOT V1 sync vs V2", where, SyntheticVariants.V2(conn, hand), SyntheticDapperAot.V1(conn));
 
 		// V0 produces object[] rows: its final objects are compared as GetValues returns them.
 		foreach (var kv in new KeyValuePair<string, List<object[]>>[] { new("V0 sync", SyntheticVariants.V0(conn)), new("V0 async", Wait(SyntheticVariants.V0Async(conn))) })
