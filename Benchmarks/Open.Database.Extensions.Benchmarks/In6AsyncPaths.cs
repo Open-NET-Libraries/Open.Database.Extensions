@@ -55,6 +55,9 @@ sealed class AsyncColumn<TRow, TValue>(int ordinal, Action<TRow, TValue> set, Ac
 /// <summary>How to read one scenario's rows with the async getters: how to make a row and the columns in ordinal order.</summary>
 public sealed class AsyncPlan<TRow>(Func<TRow> create, AsyncColumn<TRow>[] columns)
 {
+	/// <summary>The hand-written Map(Func&lt;IDataRecord, TRow&gt;) selector for the selector+Read and selector+EnableAsyncRead paths (S2 only), or null.</summary>
+	public Func<IDataRecord, TRow>? Selector { get; init; }
+
 	/// <summary>Reads the rows (at most maxRows) with ExecuteReaderAsync, ReadAsync and the async getters; drains the other result sets when it read them all.</summary>
 	public async Task<List<TRow>> ReadAllAsync(DbConnection connection, string sql, CommandBehavior behavior, int maxRows = int.MaxValue)
 	{
@@ -162,7 +165,7 @@ static class In6Plans
 
 	/// <summary>The catalog row (SynRow) as SQL Server delivers it: the first width columns.</summary>
 	public static AsyncPlan<SynRow> SynRowPlan(int width)
-		=> new(static () => new SynRow(), [.. SynRowColumns().Take(width)]);
+		=> new(static () => new SynRow(), [.. SynRowColumns().Take(width)]) { Selector = width == 20 ? SyntheticVariants.Hand(20) : null };
 
 	static AsyncColumn<SynRow>[] SynRowColumns() =>
 	[
