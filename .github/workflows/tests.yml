@@ -104,7 +104,7 @@ jobs:
       # This project compiles the public call shapes with the older C# language versions that consumers still use, one per target framework
       # (see its .csproj), so a binding regression on an older compiler fails here. No -f: it runs every target framework the project has.
       - name: Run the LegacyCompiler tests
-        run: dotnet test Tests/Open.Database.Extensions.LegacyCompiler.Tests -c Release --logger "trx;LogFileName=legacy-compiler.trx" --results-directory TestResults/legacy-compiler
+        run: dotnet test Tests/Open.Database.Extensions.LegacyCompiler.Tests -c Release --logger "trx;LogFilePrefix=legacy-compiler" --results-directory TestResults/legacy-compiler
 
       - name: Upload the TRX files
         if: always()
