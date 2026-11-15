@@ -135,7 +135,7 @@ public sealed class RealProviderCase
 		Stats = stats;
 		Recorder = new SyntheticRecorder();
 		stats.Recorder = Recorder;
-		Timed = new TimedConnection(real, stats);
+		Timed = new TimedConnection(real, stats, TimedReaderMode.ReaderOpenOnly);
 	}
 
 	public string Provider { get; }
@@ -327,7 +327,7 @@ public sealed class RealProviderConfig : ManualConfig
 }
 
 /// <summary>
-/// V1, V2, V3, V7 and V9c over SQL Server LocalDB and a SQLite file, sync. Run it in process (<c>--inprocess</c>) to get the ReaderOpen column.
+/// V1, V2, V3, V7, V7a (Dapper.AOT) and V9c over SQL Server LocalDB and a SQLite file, sync. Run it in process (<c>--inprocess</c>) to get the ReaderOpen column.
 /// Parameters: Provider, Width (5, 20), Rows (1, 100, 10000).
 /// </summary>
 [MemoryDiagnoser]
@@ -402,6 +402,10 @@ public class RealProviderBenchmarks
 
 	[Benchmark]
 	public List<SynRow> V7_Sync() { _label = nameof(V7_Sync); return RealProviderVariants.V7(Case.Timed); }
+
+	// V7a: the V7 call through Dapper.AOT's intercepted path (RealProviderDapperAot.cs)
+	[Benchmark]
+	public List<SynRow> V7a_Sync() { _label = nameof(V7a_Sync); return RealProviderDapperAot.V7a(Case.Timed); }
 
 	// V_best: the slot for the best BS-C candidate. EMPTY until the planning session names it (nothing is wired, nothing is guessed).
 

@@ -108,6 +108,7 @@ public static partial class SyntheticChecks
 			var recorder = bench.Case.Recorder;
 			int ops = rows switch { <= 1 => 50, <= 100 => 30, _ => 5 };
 			int invoked = 0;
+			List<SynRow>? v2Rows = null, v7aRows = null;
 			foreach (var method in typeof(RealProviderBenchmarks).GetMethods().Where(static m => m.GetCustomAttributes(typeof(BenchmarkAttribute), false).Length > 0))
 			{
 				recorder.Reset();
@@ -124,6 +125,8 @@ public static partial class SyntheticChecks
 				{
 					case List<SynRow> typed:
 						Compare(report, method.Name, where, expectedRows, typed);
+						if (method.Name == "V2_Sync") v2Rows = typed;
+						else if (method.Name == "V7a_Sync") v7aRows = typed;
 						break;
 					case List<SynItem> domain:
 						CompareItems(report, method.Name, where, expectedItems, domain);
@@ -147,6 +150,20 @@ public static partial class SyntheticChecks
 				report.Check(summary.MeanOpenUs > 0 && summary.MeanOpenUs <= wallUs, $"{method.Name} {where}: reader-open {summary.MeanOpenUs:F1} us must be above 0 and not above the operation's wall time {wallUs:F1} us");
 				timings.Add(new RpTiming(provider, width, rows, method.Name, wallUs, summary.MeanOpenUs, bytes, ops));
 			}
+
+			// The benchmark path stamps only the open and close of the reader: after every variant has run (the operations above, the repeats included), the per-call counters of the
+			// case's stats (Read calls, time inside Read, time inside the getters) are still zero while the open/close stamps were recorded. The probe path (a default TimedConnection, as
+			// the IN6 and S4 probes build it) still stamps every call.
+			var benchStats = bench.Case.Stats;
+			report.Check(benchStats.ReadCalls == 0 && benchStats.ReadInsideTicks == 0 && benchStats.GetterTicks == 0, $"{where}: the benchmark path stamped per-call times (Read calls {benchStats.ReadCalls}, inside Read {benchStats.ReadInsideTicks} ticks, getters {benchStats.GetterTicks} ticks)");
+			report.Check(benchStats.Readers > 0 && benchStats.OpenTicks > 0, $"{where}: the benchmark path recorded no open/close stamp (readers {benchStats.Readers}, open {benchStats.OpenTicks} ticks)");
+			var probeStats = new In6Stats();
+			RealProviderVariants.V1(new TimedConnection(bench.Case.Real, probeStats));
+			report.Check(probeStats.Readers == 1 && probeStats.ReadCalls >= rows, $"{where}: the probe path should count Read calls (readers {probeStats.Readers}, Read calls {probeStats.ReadCalls}, rows {rows})");
+			report.Check(rows < 100 || probeStats.ReadInsideTicks + probeStats.GetterTicks > 0, $"{where}: the probe path stamped no time inside Read or the getters");
+
+			report.Check(v2Rows is not null && v7aRows is not null, $"{where}: V2_Sync and V7a_Sync both ran");
+			if (v2Rows is not null && v7aRows is not null) Compare(report, "V7a_Sync vs V2_Sync", where, v2Rows, v7aRows);
 
 			Console.WriteLine($"  ok  {where}: {invoked} benchmark methods through Setup, output equal to the oracle ({rows} rows); data: {bench.Case.Describe}");
 		}

@@ -15,6 +15,7 @@ namespace Open.Database.Extensions.Benchmarks;
 //   V2   Command(sql).Map(Func<IDataRecord,SynRow>).ToList()       the shipped selector recipe (typed getters through IDataRecord)
 //   V3   Command(sql).Map<SynRow>().Select(SynItem.From).ToList()  the consumer's pattern: a row object, then an inline Select (two objects per row)
 //   V7   Dapper 2.1.89  connection.Query<SynRow>(sql).AsList()
+//   V7a  the same call through Dapper.AOT 1.1.0's interceptor (RealProviderDapperAot.cs, the only class with [DapperAot])
 //   V9c  the typed-getter ceiling: a hand loop with typed getters on the CONCRETE reader (SqlDataReader or SqliteDataReader), constant ordinals,
 //        IsDBNull only on the columns that can be NULL, SequentialAccess, the later result sets read through as the library does. Written once per
 //        provider and width (5 and 20) because BS-C's V9c is written against the synthetic reader only.
