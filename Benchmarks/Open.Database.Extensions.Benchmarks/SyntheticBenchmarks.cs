@@ -405,6 +405,16 @@ public class SyntheticBenchmarks
 
 	[Benchmark]
 	public List<SynRow> V10rn_Sync() { _label = nameof(V10rn_Sync); return GeneratorShaped.V10rn(Connection, GeneratorShaped.Sql); }
+
+	// V10k / V10kri / V10kL: the required-members forms (no presence branch per row; a missing column throws at resolve time): NoInlining call like V10rn, AggressiveInlining call like V10ri, the fused loop like V10L.
+	[Benchmark]
+	public List<SynRow> V10k_Sync() { _label = nameof(V10k_Sync); return GeneratorShaped.V10k(Connection, GeneratorShaped.Sql, Width); }
+
+	[Benchmark]
+	public List<SynRow> V10kri_Sync() { _label = nameof(V10kri_Sync); return GeneratorShaped.V10kri(Connection, GeneratorShaped.Sql, Width); }
+
+	[Benchmark]
+	public List<SynRow> V10kL_Sync() { _label = nameof(V10kL_Sync); return GeneratorShaped.V10kL(Connection, GeneratorShaped.Sql, Width); }
 }
 
 /// <summary>

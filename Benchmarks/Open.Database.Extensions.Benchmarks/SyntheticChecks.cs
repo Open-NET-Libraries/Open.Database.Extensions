@@ -111,7 +111,7 @@ public static partial class SyntheticChecks
 		Compare(report, "V7a Dapper.AOT V1 sync vs V2", where, SyntheticVariants.V2(conn, hand), SyntheticDapperAot.V1(conn));
 
 		// V10 (generator-shaped; GeneratorShaped.cs): inside ODX's loop (V10), the raw loop on DbDataReader (V10r) and on the sealed reader (V10c), each against V2's rows (and V1's, the table's).
-		VerifyV10(report, conn, table, rows, v1, hand, where);
+		VerifyV10(report, conn, table, width, rows, v1, hand, where);
 
 		// V0 produces object[] rows: its final objects are compared as GetValues returns them.
 		foreach (var kv in new KeyValuePair<string, List<object[]>>[] { new("V0 sync", SyntheticVariants.V0(conn)), new("V0 async", Wait(SyntheticVariants.V0Async(conn))) })
@@ -139,7 +139,7 @@ public static partial class SyntheticChecks
 
 	// V10, V10r, V10c: the same rows as V2 (and V1 and the table) at every width and row count; the ordinals are resolved once per query (a counter on the resolver, which
 	// runs once per query and not per row); the ordinals of the catalog table ascend (SequentialAccess needs it).
-	static void VerifyV10(Report report, SyntheticConnection conn, SyntheticTable table, int rows, List<SynRow> v1, Func<System.Data.IDataRecord, SynRow> hand, string where)
+	static void VerifyV10(Report report, SyntheticConnection conn, SyntheticTable table, int width, int rows, List<SynRow> v1, Func<System.Data.IDataRecord, SynRow> hand, string where)
 	{
 		var v2 = SyntheticVariants.V2(conn, hand);
 		var fromTable = new List<SynRow>(rows);
@@ -154,6 +154,9 @@ public static partial class SyntheticChecks
 			new("V10L (whole loop generated)", () => GeneratorShaped.V10L(conn, GeneratorShaped.Sql)),
 			new("V10ri (raw loop, AggressiveInlining row method)", () => GeneratorShaped.V10ri(conn, GeneratorShaped.Sql)),
 			new("V10rn (raw loop, NoInlining row method)", () => GeneratorShaped.V10rn(conn, GeneratorShaped.Sql)),
+			new("V10k (required members, NoInlining row method)", () => GeneratorShaped.V10k(conn, GeneratorShaped.Sql, width)),
+			new("V10kri (required members, AggressiveInlining row method)", () => GeneratorShaped.V10kri(conn, GeneratorShaped.Sql, width)),
+			new("V10kL (required members, whole loop generated)", () => GeneratorShaped.V10kL(conn, GeneratorShaped.Sql, width)),
 		];
 		foreach (var variant in variants)
 		{
@@ -212,7 +215,20 @@ public static partial class SyntheticChecks
 		Compare(report, "V10L on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10L(conn, GeneratorShaped.Sql));
 		Compare(report, "V10ri on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10ri(conn, GeneratorShaped.Sql));
 		Compare(report, "V10rn on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10rn(conn, GeneratorShaped.Sql));
-		Console.WriteLine("  ok  V10, V10r, V10c on columns named in another case and with underscores (tiers 2 and 3 of RowMap's match) equal V1 and the table");
+		Compare(report, "V10k on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10k(conn, GeneratorShaped.Sql, 20));
+		Compare(report, "V10kri on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10kri(conn, GeneratorShaped.Sql, 20));
+		Compare(report, "V10kL on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10kL(conn, GeneratorShaped.Sql, 20));
+		// Required members: a column missing from the result set throws at resolve time (width 20 against a width 5 table: IsActive, the first member with no column).
+		var narrow = new SyntheticConnection(SyntheticTable.Create(5, 3), new SyntheticOptions());
+		foreach (var form in new KeyValuePair<string, Func<List<SynRow>>>[] { new("V10k", () => GeneratorShaped.V10k(narrow, GeneratorShaped.Sql, 20)), new("V10kri", () => GeneratorShaped.V10kri(narrow, GeneratorShaped.Sql, 20)), new("V10kL", () => GeneratorShaped.V10kL(narrow, GeneratorShaped.Sql, 20)) })
+		{
+			string thrown = "(nothing thrown)";
+			try { _ = form.Value(); }
+			catch (Exception ex) { thrown = string.Join(" <- ", WalkChain(ex).Select(static e => e.GetType().Name + ": " + e.Message)); }
+			report.Check(thrown.Contains("IsActive", StringComparison.Ordinal) && thrown.Contains("InvalidOperationException", StringComparison.Ordinal), $"{form.Key} with a missing required column: expected an InvalidOperationException naming IsActive, got {thrown}");
+		}
+
+		Console.WriteLine("  ok  V10 forms (V10, V10r, V10c, V10i, V10ri, V10rn, V10L, V10k, V10kri, V10kL) on columns named in another case and with underscores (tiers 2 and 3 of RowMap's match) equal V1, and a missing required column throws at resolve time");
 	}
 
 	// The benchmark methods themselves, through the benchmark class's own Setup (so a field Setup forgets to assign, or a variant wired to the wrong helper,

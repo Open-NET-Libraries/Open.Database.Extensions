@@ -178,6 +178,19 @@ public static partial class SynRowGenerated
 	}
 
 
+	/// <summary>Resolve for a type whose first <paramref name="width"/> members are REQUIRED: the same resolver, then a missing column throws here, once per result set (V10k, V10kri, V10kL).</summary>
+	public static SynRowOrdinals ResolveRequired(DbDataReader reader, int width)
+	{
+		var o = Resolve(reader);
+		ReadOnlySpan<int> all = [o.Id, o.Created, o.Title, o.Price, o.Qty, o.IsActive, o.Key, o.Score, o.Note, o.Blob, o.Big, o.Body, o.Amount, o.Stamp, o.Tag, o.Ratio, o.Flag, o.Link, o.Count, o.Summary];
+		for (int i = 0; i < width; i++)
+		{
+			if (all[i] < 0) throw new InvalidOperationException($"The required member '{Properties[i]}' has no column in the result set.");
+		}
+
+		return o;
+	}
+
 }
 
 /// <summary>The variants V10, V10r, V10c, V10i and V10L over one connection (the synthetic one, or a real provider's).</summary>
@@ -434,4 +447,60 @@ public static class GeneratorShaped
 		recorder.ReaderClosed(Stopwatch.GetTimestamp() - start, 0, 0, 0, 0, 0, 0, 0, 0);
 		return list;
 	}
+
+	// ---- V10k, V10kri, V10kL: every member REQUIRED (GeneratorShapedRowsK.cs): no presence branch per row, a missing column throws at resolve time. Width w = the first w members of SynRow are the required ones. ----
+
+	/// <summary>V10k: required members, the raw loop calling a NoInlining row method (the required-members twin of V10rn).</summary>
+	public static List<SynRow> V10k(DbConnection connection, string sql, int width)
+		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
+		{
+			var db = (DbDataReader)reader;
+			var list = w switch
+			{
+				1 => SynRowGenerated.LoopKn1(db),
+				3 => SynRowGenerated.LoopKn3(db),
+				5 => SynRowGenerated.LoopKn5(db),
+				10 => SynRowGenerated.LoopKn10(db),
+				20 => SynRowGenerated.LoopKn20(db),
+				_ => throw new ArgumentOutOfRangeException(nameof(width), SyntheticVariantsC.WidthMessage),
+			};
+			while (db.NextResult()) { }
+			return list;
+		}, CommandBehavior.SequentialAccess);
+
+	/// <summary>V10kri: required members, the raw loop calling an AggressiveInlining row method (the twin of V10ri).</summary>
+	public static List<SynRow> V10kri(DbConnection connection, string sql, int width)
+		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
+		{
+			var db = (DbDataReader)reader;
+			var list = w switch
+			{
+				1 => SynRowGenerated.LoopKi1(db),
+				3 => SynRowGenerated.LoopKi3(db),
+				5 => SynRowGenerated.LoopKi5(db),
+				10 => SynRowGenerated.LoopKi10(db),
+				20 => SynRowGenerated.LoopKi20(db),
+				_ => throw new ArgumentOutOfRangeException(nameof(width), SyntheticVariantsC.WidthMessage),
+			};
+			while (db.NextResult()) { }
+			return list;
+		}, CommandBehavior.SequentialAccess);
+
+	/// <summary>V10kL: required members, the whole loop generated, the mapping inline in the loop (the twin of V10L).</summary>
+	public static List<SynRow> V10kL(DbConnection connection, string sql, int width)
+		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
+		{
+			var db = (DbDataReader)reader;
+			var list = w switch
+			{
+				1 => SynRowGenerated.ReadAllK1(db),
+				3 => SynRowGenerated.ReadAllK3(db),
+				5 => SynRowGenerated.ReadAllK5(db),
+				10 => SynRowGenerated.ReadAllK10(db),
+				20 => SynRowGenerated.ReadAllK20(db),
+				_ => throw new ArgumentOutOfRangeException(nameof(width), SyntheticVariantsC.WidthMessage),
+			};
+			while (db.NextResult()) { }
+			return list;
+		}, CommandBehavior.SequentialAccess);
 }
