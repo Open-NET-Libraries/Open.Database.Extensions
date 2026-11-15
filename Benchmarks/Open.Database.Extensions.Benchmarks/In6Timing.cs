@@ -1,0 +1,511 @@
+using System.Collections;
+using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Open.Database.Extensions.Benchmarks;
+
+// BS-SA (IN6 probe): thin wrappers that time a REAL provider the way the synthetic recorder times its own reader.
+// The clock starts on entry of ExecuteReader (sync or async) and stops when the reader is closed or disposed (the first of Close, CloseAsync,
+// Dispose, DisposeAsync wins, and the time inside the inner close is included). Every call is forwarded to the inner object, one virtual call each
+// (the same extra call for all three read paths). The wrapper also counts the async calls: ReadAsync calls, how many returned a Task that was not
+// complete (a real wait), and how often the call after an incomplete ReadAsync ran on another thread than the one that made it (the continuation
+// resumed elsewhere; the pool may hand it the same thread again, so this is a lower bound).
+
+/// <summary>What the wrappers collected during one operation.</summary>
+public sealed class In6Stats
+{
+	public long OpenTicks;
+	// Time spent waiting in incomplete ReadAsync calls: the sum over the operation and the longest single wait (stopwatch ticks).
+	public long WaitTicks, MaxWaitTicks;
+	// Time INSIDE the calls (the synchronous part, before the call returns): Read, ReadAsync (sum and longest single call) and every getter (sum), in stopwatch ticks.
+	public long ReadInsideTicks, MaxReadInsideTicks, ReadAsyncInsideTicks, MaxReadAsyncInsideTicks, GetterTicks;
+	public int ReadCalls;
+	// P6 (inline, no wrapper): the time awaiting ReadAsync, summed, and the longest single await.
+	public long AwaitReadTicks, MaxAwaitReadTicks;
+	// The async column reads (IsDBNullAsync, GetFieldValueAsync): calls, calls that returned a task that was not complete, the time from that return until the task completed, and where (row index) they happened.
+	public int GetterAsyncCalls, GetterAsyncIncomplete;
+	public long GetterWaitTicks, MaxGetterWaitTicks;
+	public WaitPositions? GetterPositions;
+	// Where the incomplete reads happened: set by the measuring loop for the measured operations only (null during warm-up).
+	public WaitPositions? Positions;
+
+	/// <summary>BS-RP: when set, every reader that closes also reports its reader-open time here (the real-provider benchmarks read it as the ReaderOpen column).</summary>
+	public SyntheticRecorder? Recorder;
+
+	public int Readers, ReadAsyncCalls, ReadAsyncIncomplete, ResumedOnOtherThread, OtherAsyncCalls, OtherAsyncIncomplete;
+
+	public void Reset()
+	{
+		OpenTicks = 0;
+		WaitTicks = 0;
+		ReadInsideTicks = MaxReadInsideTicks = ReadAsyncInsideTicks = MaxReadAsyncInsideTicks = GetterTicks = 0;
+		ReadCalls = 0;
+		AwaitReadTicks = MaxAwaitReadTicks = 0;
+		GetterAsyncCalls = GetterAsyncIncomplete = 0;
+		GetterWaitTicks = MaxGetterWaitTicks = 0;
+		MaxWaitTicks = 0;
+		Readers = ReadAsyncCalls = ReadAsyncIncomplete = ResumedOnOtherThread = OtherAsyncCalls = OtherAsyncIncomplete = 0;
+	}
+
+	// Called on the thread that completes an async column read, so it must be thread safe.
+	internal void AddGetterWait(long ticks)
+	{
+		Interlocked.Add(ref GetterWaitTicks, ticks);
+		long seen = Interlocked.Read(ref MaxGetterWaitTicks);
+		while (ticks > seen)
+		{
+			long before = Interlocked.CompareExchange(ref MaxGetterWaitTicks, ticks, seen);
+			if (before == seen) break;
+			seen = before;
+		}
+	}
+
+	// Called on the thread that completes a task, so it must be thread safe.
+	internal void AddWait(long ticks)
+	{
+		Interlocked.Add(ref WaitTicks, ticks);
+		long seen = Interlocked.Read(ref MaxWaitTicks);
+		while (ticks > seen)
+		{
+			long before = Interlocked.CompareExchange(ref MaxWaitTicks, ticks, seen);
+			if (before == seen) break;
+			seen = before;
+		}
+	}
+}
+
+/// <summary>
+/// The row indices at which ReadAsync calls were incomplete, pooled over the measured operations of one cell and path. Row index = the number of rows
+/// already read in that operation when the call was made (0-based: the call that asks for row 100 has index 100). Preallocated, so recording allocates nothing:
+/// the 50 smallest distinct indices with their counts, and a 10-bucket histogram over the rows of the scenario (bucket k covers rows from k*rows/10 up to, not including, (k+1)*rows/10).
+/// </summary>
+public sealed class WaitPositions(int rows)
+{
+	public const int FirstCount = 50, Buckets = 10;
+
+	readonly int[] _index = new int[FirstCount], _count = new int[FirstCount], _hist = new int[Buckets];
+
+	/// <summary>The number of operations pooled (set by the measuring loop).</summary>
+	public int Operations { get; set; }
+
+	/// <summary>How many incomplete reads were recorded.</summary>
+	public int Total { get; private set; }
+
+	/// <summary>How many distinct row indices are kept (at most 50).</summary>
+	public int Distinct { get; private set; }
+
+	public int IndexAt(int position) => _index[position];
+	public int CountAt(int position) => _count[position];
+	public int Bucket(int bucket) => _hist[bucket];
+
+	public void Add(int row)
+	{
+		Total++;
+		int bucket = (int)((long)row * Buckets / Math.Max(1, rows));
+		_hist[Math.Clamp(bucket, 0, Buckets - 1)]++;
+		int at = Array.BinarySearch(_index, 0, Distinct, row);
+		if (at >= 0)
+		{
+			_count[at]++;
+			return;
+		}
+
+		at = ~at;
+		if (at >= FirstCount) return; // Larger than the 50 smallest kept: it is in the histogram only.
+		int move = (Distinct < FirstCount ? Distinct : FirstCount - 1) - at;
+		Array.Copy(_index, at, _index, at + 1, move);
+		Array.Copy(_count, at, _count, at + 1, move);
+		_index[at] = row;
+		_count[at] = 1;
+		if (Distinct < FirstCount) Distinct++;
+	}
+
+	public string Format()
+	{
+		var first = new List<string>(Distinct);
+		for (int i = 0; i < Distinct; i++) first.Add(_count[i] > 1 ? $"{_index[i]}(x{_count[i]})" : _index[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
+		return $"first50 [{string.Join(",", first)}] hist10 [{string.Join(",", _hist)}] over {Operations} ops";
+	}
+}
+
+/// <summary>Times one incomplete async column read: from the moment the call returned until its task completed.</summary>
+sealed class GetterWaitTimer(In6Stats stats, long start)
+{
+	public void Done() => stats.AddGetterWait(Stopwatch.GetTimestamp() - start);
+}
+
+/// <summary>Times one incomplete ReadAsync: from the moment the call returned until its task completed (on the completing thread, before any continuation gets a thread).</summary>
+sealed class WaitTimer(In6Stats stats, long start)
+{
+	public void Done() => stats.AddWait(Stopwatch.GetTimestamp() - start);
+}
+
+/// <summary>Wraps an open connection (the caller keeps it open and disposes it). Commands and readers made from it are timed.</summary>
+public sealed class TimedConnection(DbConnection inner, In6Stats stats) : DbConnection
+{
+	/// <summary>The provider's own connection behind the wrapper (P6 uses it directly).</summary>
+	public DbConnection Inner => inner;
+
+	[AllowNull]
+	public override string ConnectionString { get => inner.ConnectionString; set => inner.ConnectionString = value; }
+	public override string Database => inner.Database;
+	public override string DataSource => inner.DataSource;
+	public override string ServerVersion => inner.ServerVersion;
+	public override ConnectionState State => inner.State;
+	public override void ChangeDatabase(string databaseName) => inner.ChangeDatabase(databaseName);
+	public override void Close() => inner.Close();
+	public override void Open() => inner.Open();
+	public override Task OpenAsync(CancellationToken cancellationToken) => inner.OpenAsync(cancellationToken);
+	protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
+	protected override DbCommand CreateDbCommand() => new TimedCommand(inner.CreateCommand(), this, stats);
+
+	// The probe owns the inner connection.
+	protected override void Dispose(bool disposing) { }
+}
+
+public sealed class TimedCommand(DbCommand inner, TimedConnection connection, In6Stats stats) : DbCommand
+{
+	[AllowNull]
+	public override string CommandText { get => inner.CommandText; set => inner.CommandText = value; }
+	public override int CommandTimeout { get => inner.CommandTimeout; set => inner.CommandTimeout = value; }
+	public override CommandType CommandType { get => inner.CommandType; set => inner.CommandType = value; }
+	public override bool DesignTimeVisible { get => inner.DesignTimeVisible; set => inner.DesignTimeVisible = value; }
+	public override UpdateRowSource UpdatedRowSource { get => inner.UpdatedRowSource; set => inner.UpdatedRowSource = value; }
+	protected override DbConnection? DbConnection { get => connection; set { } }
+	protected override DbParameterCollection DbParameterCollection => inner.Parameters;
+	protected override DbTransaction? DbTransaction { get => inner.Transaction; set => inner.Transaction = value; }
+	public override void Cancel() => inner.Cancel();
+	public override int ExecuteNonQuery() => inner.ExecuteNonQuery();
+	public override object? ExecuteScalar() => inner.ExecuteScalar();
+	public override void Prepare() => inner.Prepare();
+	protected override DbParameter CreateDbParameter() => inner.CreateParameter();
+
+	protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+	{
+		long start = Stopwatch.GetTimestamp();
+		return new TimedReader(inner.ExecuteReader(behavior), stats, start);
+	}
+
+	protected override async Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+	{
+		long start = Stopwatch.GetTimestamp();
+		var reader = await inner.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+		return new TimedReader(reader, stats, start);
+	}
+
+	protected override void Dispose(bool disposing)
+	{
+		if (disposing) inner.Dispose();
+		base.Dispose(disposing);
+	}
+}
+
+public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) : DbDataReader
+{
+	int _pendingThread, _rows;
+	bool _closed;
+	Task<bool>? _pendingRead; // An incomplete ReadAsync whose result (a row or the end) is counted at the next call.
+
+	// The call after an incomplete async call is the continuation's first move: compare its thread with the one that made the async call.
+	void Resumed()
+	{
+		if (_pendingRead is { } earlier)
+		{
+			_pendingRead = null;
+			if (earlier.IsCompletedSuccessfully && earlier.Result) _rows++;
+		}
+
+		int pending = _pendingThread;
+		if (pending == 0) return;
+		_pendingThread = 0;
+		if (Environment.CurrentManagedThreadId != pending) stats.ResumedOnOtherThread++;
+	}
+
+	void Stamp()
+	{
+		if (_closed) return;
+		_closed = true;
+		long ticks = Stopwatch.GetTimestamp() - start;
+		stats.OpenTicks += ticks;
+		stats.Readers++;
+		stats.Recorder?.ReaderClosed(ticks, 0, 0, 0, 0, 0, 0, 0, 0);
+	}
+
+	// ---- moving and closing ----------------------------------------------------------------
+	public override bool Read()
+	{
+		Resumed();
+		stats.ReadCalls++;
+		long start = Stopwatch.GetTimestamp();
+		bool more = inner.Read();
+		long inside = Stopwatch.GetTimestamp() - start;
+		stats.ReadInsideTicks += inside;
+		if (inside > stats.MaxReadInsideTicks) stats.MaxReadInsideTicks = inside;
+		if (more) _rows++;
+		return more;
+	}
+
+	public override Task<bool> ReadAsync(CancellationToken cancellationToken)
+	{
+		Resumed();
+		stats.ReadAsyncCalls++;
+		long start = Stopwatch.GetTimestamp();
+		var task = inner.ReadAsync(cancellationToken);
+		long inside = Stopwatch.GetTimestamp() - start;
+		stats.ReadAsyncInsideTicks += inside;
+		if (inside > stats.MaxReadAsyncInsideTicks) stats.MaxReadAsyncInsideTicks = inside;
+		if (!task.IsCompleted)
+		{
+			// Only an incomplete read pays for the timing (one small object and a continuation); a completed read costs the flag test above.
+			stats.ReadAsyncIncomplete++;
+			stats.Positions?.Add(_rows);
+			_pendingRead = task;
+			_pendingThread = Environment.CurrentManagedThreadId;
+			task.ContinueWith(static (_, timer) => ((WaitTimer)timer!).Done(), new WaitTimer(stats, Stopwatch.GetTimestamp()), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+		}
+		else if (task.IsCompletedSuccessfully && task.Result)
+		{
+			_rows++;
+		}
+
+		return task;
+	}
+
+	public override bool NextResult()
+	{
+		Resumed();
+		return inner.NextResult();
+	}
+
+	public override Task<bool> NextResultAsync(CancellationToken cancellationToken)
+	{
+		Resumed();
+		stats.OtherAsyncCalls++;
+		var task = inner.NextResultAsync(cancellationToken);
+		if (!task.IsCompleted)
+		{
+			stats.OtherAsyncIncomplete++;
+			_pendingThread = Environment.CurrentManagedThreadId;
+		}
+
+		return task;
+	}
+
+	// An async column read that is not complete when it returns: count it, note the row (0-based index of the row being read), and time it until it completes.
+	void TrackGetter(Task task)
+	{
+		stats.GetterAsyncIncomplete++;
+		stats.GetterPositions?.Add(Math.Max(0, _rows - 1));
+		task.ContinueWith(static (_, timer) => ((GetterWaitTimer)timer!).Done(), new GetterWaitTimer(stats, Stopwatch.GetTimestamp()), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+	}
+
+	public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
+	{
+		stats.GetterAsyncCalls++;
+		long start = Stopwatch.GetTimestamp();
+		var task = inner.IsDBNullAsync(ordinal, cancellationToken);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		if (!task.IsCompleted) TrackGetter(task);
+		return task;
+	}
+
+	public override Task<T> GetFieldValueAsync<T>(int ordinal, CancellationToken cancellationToken)
+	{
+		stats.GetterAsyncCalls++;
+		long start = Stopwatch.GetTimestamp();
+		var task = inner.GetFieldValueAsync<T>(ordinal, cancellationToken);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		if (!task.IsCompleted) TrackGetter(task);
+		return task;
+	}
+
+	public override void Close()
+	{
+		Resumed();
+		inner.Close();
+		Stamp();
+	}
+
+	public override async Task CloseAsync()
+	{
+		Resumed();
+		await inner.CloseAsync().ConfigureAwait(false);
+		Stamp();
+	}
+
+	public override async ValueTask DisposeAsync()
+	{
+		Resumed();
+		await inner.DisposeAsync().ConfigureAwait(false);
+		Stamp();
+	}
+
+	protected override void Dispose(bool disposing)
+	{
+		if (!disposing) return;
+		Resumed();
+		inner.Dispose();
+		Stamp();
+	}
+
+	// ---- everything else is forwarded; every getter is timed (two timestamps, no allocation) ----------------------------------------------------------------
+	public override int Depth => inner.Depth;
+	public override int FieldCount => inner.FieldCount;
+	public override int VisibleFieldCount => inner.VisibleFieldCount;
+	public override bool HasRows => inner.HasRows;
+	public override bool IsClosed => inner.IsClosed;
+	public override int RecordsAffected => inner.RecordsAffected;
+	public override object this[int ordinal] => inner[ordinal];
+	public override object this[string name] => inner[name];
+	public override string GetName(int ordinal) => inner.GetName(ordinal);
+	public override int GetOrdinal(string name) => inner.GetOrdinal(name);
+	public override Type GetFieldType(int ordinal) => inner.GetFieldType(ordinal);
+	public override string GetDataTypeName(int ordinal) => inner.GetDataTypeName(ordinal);
+	public override Type GetProviderSpecificFieldType(int ordinal) => inner.GetProviderSpecificFieldType(ordinal);
+	public override object GetProviderSpecificValue(int ordinal) => inner.GetProviderSpecificValue(ordinal);
+	public override int GetProviderSpecificValues(object[] values) => inner.GetProviderSpecificValues(values);
+	public override DataTable? GetSchemaTable() => inner.GetSchemaTable();
+	public override bool IsDBNull(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		bool value = inner.IsDBNull(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override bool GetBoolean(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		bool value = inner.GetBoolean(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override byte GetByte(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		byte value = inner.GetByte(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
+	{
+		long start = Stopwatch.GetTimestamp();
+		long value = inner.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override char GetChar(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		char value = inner.GetChar(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
+	{
+		long start = Stopwatch.GetTimestamp();
+		long value = inner.GetChars(ordinal, dataOffset, buffer, bufferOffset, length);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override DateTime GetDateTime(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		DateTime value = inner.GetDateTime(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override decimal GetDecimal(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		decimal value = inner.GetDecimal(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override double GetDouble(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		double value = inner.GetDouble(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override float GetFloat(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		float value = inner.GetFloat(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override Guid GetGuid(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		Guid value = inner.GetGuid(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override short GetInt16(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		short value = inner.GetInt16(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override int GetInt32(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		int value = inner.GetInt32(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override long GetInt64(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		long value = inner.GetInt64(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override string GetString(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		string value = inner.GetString(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override object GetValue(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		object value = inner.GetValue(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override int GetValues(object[] values)
+	{
+		long start = Stopwatch.GetTimestamp();
+		int value = inner.GetValues(values);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override T GetFieldValue<T>(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		T value = inner.GetFieldValue<T>(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override Stream GetStream(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		Stream value = inner.GetStream(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override TextReader GetTextReader(int ordinal)
+	{
+		long start = Stopwatch.GetTimestamp();
+		TextReader value = inner.GetTextReader(ordinal);
+		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
+		return value;
+	}
+	public override IEnumerator GetEnumerator() => inner.GetEnumerator();
+}
