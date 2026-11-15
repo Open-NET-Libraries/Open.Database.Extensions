@@ -108,7 +108,7 @@ public static partial class SyntheticChecks
 			var recorder = bench.Case.Recorder;
 			int ops = rows switch { <= 1 => 50, <= 100 => 30, _ => 5 };
 			int invoked = 0;
-			List<SynRow>? v2Rows = null, v7aRows = null;
+			List<SynRow>? v2Rows = null, v7aRows = null, v10Rows = null, v10rRows = null, v10iRows = null, v10LRows = null, v10riRows = null, v10rnRows = null;
 			foreach (var method in typeof(RealProviderBenchmarks).GetMethods().Where(static m => m.GetCustomAttributes(typeof(BenchmarkAttribute), false).Length > 0))
 			{
 				recorder.Reset();
@@ -127,6 +127,12 @@ public static partial class SyntheticChecks
 						Compare(report, method.Name, where, expectedRows, typed);
 						if (method.Name == "V2_Sync") v2Rows = typed;
 						else if (method.Name == "V7a_Sync") v7aRows = typed;
+						else if (method.Name == "V10_Sync") v10Rows = typed;
+						else if (method.Name == "V10r_Sync") v10rRows = typed;
+						else if (method.Name == "V10i_Sync") v10iRows = typed;
+						else if (method.Name == "V10L_Sync") v10LRows = typed;
+						else if (method.Name == "V10ri_Sync") v10riRows = typed;
+						else if (method.Name == "V10rn_Sync") v10rnRows = typed;
 						break;
 					case List<SynItem> domain:
 						CompareItems(report, method.Name, where, expectedItems, domain);
@@ -164,6 +170,17 @@ public static partial class SyntheticChecks
 
 			report.Check(v2Rows is not null && v7aRows is not null, $"{where}: V2_Sync and V7a_Sync both ran");
 			if (v2Rows is not null && v7aRows is not null) Compare(report, "V7a_Sync vs V2_Sync", where, v2Rows, v7aRows);
+
+			// V10 (generator-shaped, GeneratorShaped.cs): V10 inside ODX's loop and V10r on the concrete reader both give exactly V2's rows.
+			report.Check(v10Rows is not null && v10rRows is not null, $"{where}: V10_Sync and V10r_Sync both ran");
+			if (v2Rows is not null && v10Rows is not null) Compare(report, "V10_Sync vs V2_Sync", where, v2Rows, v10Rows);
+			if (v2Rows is not null && v10rRows is not null) Compare(report, "V10r_Sync vs V2_Sync", where, v2Rows, v10rRows);
+			report.Check(v10iRows is not null && v10LRows is not null, $"{where}: V10i_Sync and V10L_Sync both ran");
+			if (v2Rows is not null && v10iRows is not null) Compare(report, "V10i_Sync vs V2_Sync", where, v2Rows, v10iRows);
+			if (v2Rows is not null && v10LRows is not null) Compare(report, "V10L_Sync vs V2_Sync", where, v2Rows, v10LRows);
+			report.Check(v10riRows is not null && v10rnRows is not null, $"{where}: V10ri_Sync and V10rn_Sync both ran");
+			if (v2Rows is not null && v10riRows is not null) Compare(report, "V10ri_Sync vs V2_Sync", where, v2Rows, v10riRows);
+			if (v2Rows is not null && v10rnRows is not null) Compare(report, "V10rn_Sync vs V2_Sync", where, v2Rows, v10rnRows);
 
 			Console.WriteLine($"  ok  {where}: {invoked} benchmark methods through Setup, output equal to the oracle ({rows} rows); data: {bench.Case.Describe}");
 		}

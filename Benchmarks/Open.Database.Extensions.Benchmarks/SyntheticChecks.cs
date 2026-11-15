@@ -19,7 +19,7 @@ namespace Open.Database.Extensions.Benchmarks;
 public static partial class SyntheticChecks
 {
 	static readonly int[] VerifyWidths = [1, 3, 5, 10, 20];
-	static readonly int[] VerifyRows = [1, 100];
+	static readonly int[] VerifyRows = [1, 5, 100];
 
 	sealed class Report
 	{
@@ -50,6 +50,9 @@ public static partial class SyntheticChecks
 		{
 			foreach (int rows in VerifyRows) VerifyVariants(report, width, rows);
 		}
+
+		Console.WriteLine("== V10: the resolver follows RowMap's column match ==");
+		VerifyV10Names(report);
 
 		Console.WriteLine("== scalar variants V8 and V7 scalars: each against the table value, its own reference ==");
 		VerifyScalars(report);
@@ -107,6 +110,9 @@ public static partial class SyntheticChecks
 		// V7a (Dapper.AOT) against V2's rows too: the same typed row from a hand-written read.
 		Compare(report, "V7a Dapper.AOT V1 sync vs V2", where, SyntheticVariants.V2(conn, hand), SyntheticDapperAot.V1(conn));
 
+		// V10 (generator-shaped; GeneratorShaped.cs): inside ODX's loop (V10), the raw loop on DbDataReader (V10r) and on the sealed reader (V10c), each against V2's rows (and V1's, the table's).
+		VerifyV10(report, conn, table, width, rows, v1, hand, where);
+
 		// V0 produces object[] rows: its final objects are compared as GetValues returns them.
 		foreach (var kv in new KeyValuePair<string, List<object[]>>[] { new("V0 sync", SyntheticVariants.V0(conn)), new("V0 async", Wait(SyntheticVariants.V0Async(conn))) })
 		{
@@ -129,6 +135,100 @@ public static partial class SyntheticChecks
 		VerifyVariantsC(report, conn, table, width, rows, v1, where);
 
 		Console.WriteLine($"  ok  {where}: V0, V0b, V1, V2, V3-V7 (sync and async) equal ({rows} rows)");
+	}
+
+	// V10, V10r, V10c: the same rows as V2 (and V1 and the table) at every width and row count; the ordinals are resolved once per query (a counter on the resolver, which
+	// runs once per query and not per row); the ordinals of the catalog table ascend (SequentialAccess needs it).
+	static void VerifyV10(Report report, SyntheticConnection conn, SyntheticTable table, int width, int rows, List<SynRow> v1, Func<System.Data.IDataRecord, SynRow> hand, string where)
+	{
+		var v2 = SyntheticVariants.V2(conn, hand);
+		var fromTable = new List<SynRow>(rows);
+		for (int i = 0; i < rows; i++) fromTable.Add(SynRow.FromTable(table, i));
+
+		KeyValuePair<string, Func<List<SynRow>>>[] variants =
+		[
+			new("V10 (inside ODX's loop)", () => GeneratorShaped.V10(conn, GeneratorShaped.Sql)),
+			new("V10r (raw loop, DbDataReader)", () => GeneratorShaped.V10r(conn, GeneratorShaped.Sql)),
+			new("V10c (raw loop, SyntheticReader)", () => GeneratorShaped.V10c(conn, GeneratorShaped.Sql)),
+			new("V10i (V10, row method AggressiveInlining)", () => GeneratorShaped.V10i(conn, GeneratorShaped.Sql)),
+			new("V10L (whole loop generated)", () => GeneratorShaped.V10L(conn, GeneratorShaped.Sql)),
+			new("V10ri (raw loop, AggressiveInlining row method)", () => GeneratorShaped.V10ri(conn, GeneratorShaped.Sql)),
+			new("V10rn (raw loop, NoInlining row method)", () => GeneratorShaped.V10rn(conn, GeneratorShaped.Sql)),
+			new("V10k (required members, NoInlining row method)", () => GeneratorShaped.V10k(conn, GeneratorShaped.Sql, width)),
+			new("V10kri (required members, AggressiveInlining row method)", () => GeneratorShaped.V10kri(conn, GeneratorShaped.Sql, width)),
+			new("V10kL (required members, whole loop generated)", () => GeneratorShaped.V10kL(conn, GeneratorShaped.Sql, width)),
+		];
+		foreach (var variant in variants)
+		{
+			long before = SynRowGenerated.Resolves;
+			var result = variant.Value();
+			Compare(report, variant.Key + " vs V2", where, v2, result);
+			Compare(report, variant.Key + " vs V1", where, v1, result);
+			Compare(report, variant.Key + " vs table", where, fromTable, result);
+			report.Check(SynRowGenerated.Resolves - before == (rows == 0 ? 0 : 1), $"{variant.Key} {where}: the ordinals were resolved {SynRowGenerated.Resolves - before} times for one query, expected once per result set");
+		}
+
+		using var probe = new SyntheticReaderProbe(conn);
+		report.Check(SynRowGenerated.Resolve(probe.Reader).Ascend(), $"V10 {where}: the resolved ordinals do not ascend");
+	}
+
+	sealed class SyntheticReaderProbe : IDisposable
+	{
+		readonly System.Data.Common.DbCommand _command;
+
+		public SyntheticReaderProbe(SyntheticConnection conn)
+		{
+			_command = conn.CreateCommand();
+			_command.CommandText = SyntheticVariants.Sql;
+			Reader = _command.ExecuteReader();
+		}
+
+		public System.Data.Common.DbDataReader Reader { get; }
+
+		public void Dispose()
+		{
+			Reader.Dispose();
+			_command.Dispose();
+		}
+	}
+
+	// V10's resolver follows RowMap: columns named in another case, or with underscores, feed the same properties as Map<T>() gives (V1 is the oracle), in tiers.
+	static void VerifyV10Names(Report report)
+	{
+		var plain = SyntheticTable.Create(20, 50);
+		string[] names = [.. plain.Names];
+		names[1] = names[1].ToUpperInvariant();        // Created -> CREATED   (tier 2)
+		names[2] = names[2].ToLowerInvariant();        // Title   -> title     (tier 2)
+		names[5] = "is_active";                        // IsActive            (tier 3)
+		names[12] = "AMOUNT_";                         // Amount              (tier 3)
+		names[19] = "s_u_m_m_a_r_y";                   // Summary             (tier 3)
+		var renamed = new SyntheticTable { Width = plain.Width, Rows = plain.Rows, Names = names, Types = plain.Types, Columns = plain.Columns, Nulls = plain.Nulls };
+		var conn = new SyntheticConnection(renamed, new SyntheticOptions());
+		var v1 = SyntheticVariants.V1(conn);
+		var oracle = new List<SynRow>(renamed.Rows);
+		for (int i = 0; i < renamed.Rows; i++) oracle.Add(SynRow.FromTable(renamed, i));
+		Compare(report, "V1 on renamed columns vs table", "renamed", oracle, v1);
+		Compare(report, "V10 on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10(conn, GeneratorShaped.Sql));
+		Compare(report, "V10r on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10r(conn, GeneratorShaped.Sql));
+		Compare(report, "V10c on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10c(conn, GeneratorShaped.Sql));
+		Compare(report, "V10i on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10i(conn, GeneratorShaped.Sql));
+		Compare(report, "V10L on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10L(conn, GeneratorShaped.Sql));
+		Compare(report, "V10ri on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10ri(conn, GeneratorShaped.Sql));
+		Compare(report, "V10rn on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10rn(conn, GeneratorShaped.Sql));
+		Compare(report, "V10k on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10k(conn, GeneratorShaped.Sql, 20));
+		Compare(report, "V10kri on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10kri(conn, GeneratorShaped.Sql, 20));
+		Compare(report, "V10kL on renamed columns vs V1", "renamed", v1, GeneratorShaped.V10kL(conn, GeneratorShaped.Sql, 20));
+		// Required members: a column missing from the result set throws at resolve time (width 20 against a width 5 table: IsActive, the first member with no column).
+		var narrow = new SyntheticConnection(SyntheticTable.Create(5, 3), new SyntheticOptions());
+		foreach (var form in new KeyValuePair<string, Func<List<SynRow>>>[] { new("V10k", () => GeneratorShaped.V10k(narrow, GeneratorShaped.Sql, 20)), new("V10kri", () => GeneratorShaped.V10kri(narrow, GeneratorShaped.Sql, 20)), new("V10kL", () => GeneratorShaped.V10kL(narrow, GeneratorShaped.Sql, 20)) })
+		{
+			string thrown = "(nothing thrown)";
+			try { _ = form.Value(); }
+			catch (Exception ex) { thrown = string.Join(" <- ", WalkChain(ex).Select(static e => e.GetType().Name + ": " + e.Message)); }
+			report.Check(thrown.Contains("IsActive", StringComparison.Ordinal) && thrown.Contains("InvalidOperationException", StringComparison.Ordinal), $"{form.Key} with a missing required column: expected an InvalidOperationException naming IsActive, got {thrown}");
+		}
+
+		Console.WriteLine("  ok  V10 forms (V10, V10r, V10c, V10i, V10ri, V10rn, V10L, V10k, V10kri, V10kL) on columns named in another case and with underscores (tiers 2 and 3 of RowMap's match) equal V1, and a missing required column throws at resolve time");
 	}
 
 	// The benchmark methods themselves, through the benchmark class's own Setup (so a field Setup forgets to assign, or a variant wired to the wrong helper,
@@ -849,6 +949,10 @@ public static partial class SyntheticChecks
 		AllocPass(report, conn, "typed getters + Read()", gate: true, r => TypedPass(r, kinds, nullable, buffer, async: false));
 		AllocPass(report, conn, "typed getters + ReadAsync()", gate: true, r => TypedPass(r, kinds, nullable, buffer, async: true));
 		AllocPass(report, conn, "GetFieldValue<T> (typed, nullable forms too)", gate: true, r => FieldValuePass(r, kinds, nullable));
+			AllocPass(report, conn, "V10 generated-shape loop (ordinals once, typed getters, SynRow built per row; the row object itself is subtracted)", gate: true, r => V10Pass(r, SynRowGenerated.Read), floor: SynRowBytes());
+			AllocPass(report, conn, "V10L whole generated loop (ordinals once, mapping inline in the loop; the row object itself is subtracted, the List growth is not in the loop of the window)", gate: false, r => V10LPass(r), floor: SynRowBytes());
+			AllocPass(report, conn, "V10rn generated-shape loop, NoInlining row method (the row object itself is subtracted)", gate: true, r => V10Pass(r, SynRowGenerated.ReadNoInline), floor: SynRowBytes());
+			AllocPass(report, conn, "V10ri generated-shape loop, AggressiveInlining row method (the row object itself is subtracted)", gate: true, r => V10Pass(r, SynRowGenerated.ReadInline), floor: SynRowBytes());
 		AllocPass(report, conn, "GetValue (boxes value types, inherent)", gate: false, r => GetValuePass(r));
 		AllocPass(report, conn, "GetValues into a reused object[20] (boxes, inherent)", gate: false, r => GetValuesPass(r, values));
 		AllocPass(report, conn, "GetFieldValueAsync<int>(0) (one Task, inherent)", gate: false, r => AsyncPass(r));
@@ -862,7 +966,7 @@ public static partial class SyntheticChecks
 	// Warm-up makes the tier-up happen first (many calls over more than a second, with pauses so the background tier-1 compile and its 100 ms call-counting delay both run).
 	// Then each attempt is measured with JitInfo.GetCompiledMethodCount around it: an attempt in which the JIT compiled anything is thrown away and repeated,
 	// so the figure comes from a window in which no method changed tier.
-	static void AllocPass(Report report, SyntheticConnection conn, string name, bool gate, Func<DbDataReader, long> body)
+	static void AllocPass(Report report, SyntheticConnection conn, string name, bool gate, Func<DbDataReader, long> body, double floor = 0)
 	{
 		var warm = Stopwatch.StartNew();
 		int passes = 0;
@@ -891,7 +995,7 @@ public static partial class SyntheticChecks
 				continue;
 			}
 
-			double perRow = allocated / (double)((long)AllocRows * AllocWindows);
+			double perRow = allocated / (double)((long)AllocRows * AllocWindows) - floor;
 			bool ok = !gate || perRow <= AllocToleranceBytesPerRow;
 			Console.WriteLine($"  {(gate ? (ok ? "PASS" : "FAIL") : "info"),-4} {name}: {perRow:F3} B per row ({allocated} B over {(long)AllocRows * AllocWindows} rows), no JIT activity in the window (attempt {attempt})");
 			if (gate) report.Check(ok, $"{name}: {perRow:F3} B per row, tolerance {AllocToleranceBytesPerRow}");
@@ -899,6 +1003,35 @@ public static partial class SyntheticChecks
 		}
 
 		report.Fail($"{name}: the JIT was still compiling in every window (8 attempts); no valid measurement");
+	}
+
+	// V10: the generated-shape loop (ordinals once per result set, typed getters, a SynRow built per row). Its floor is the SynRow object itself: the bytes one new SynRow() allocates.
+	delegate SynRow RowMethod(DbDataReader r, in SynRowOrdinals o);
+
+	static long V10Pass(DbDataReader r, RowMethod read)
+	{
+		long sum = 0;
+		var ordinals = SynRowGenerated.Resolve(r);
+		while (r.Read()) sum += read(r, in ordinals).Id;
+		return sum;
+	}
+
+	static long V10LPass(DbDataReader r)
+	{
+		var list = SynRowGenerated.ReadAll(r);
+		return list.Count;
+	}
+
+	static double SynRowBytes()
+	{
+		const int n = 100_000;
+		var keep = new SynRow[n];
+		for (int i = 0; i < n; i++) keep[i] = new SynRow(); // warm up, so nothing is compiled inside the window
+		long before = GC.GetAllocatedBytesForCurrentThread();
+		for (int i = 0; i < n; i++) keep[i] = new SynRow();
+		double bytes = (GC.GetAllocatedBytesForCurrentThread() - before) / (double)n;
+		_sink += keep[n - 1].Id;
+		return bytes;
 	}
 
 	static long TypedPass(DbDataReader r, int[] kinds, bool[] nullable, byte[] buffer, bool async)
