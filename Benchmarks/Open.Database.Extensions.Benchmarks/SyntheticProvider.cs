@@ -315,7 +315,7 @@ public sealed class SyntheticTable
 	/// <summary>A table of the given column specs (the catalog's first columns, or the DateTimeOffset scenario's).</summary>
 	public static SyntheticTable Create(ReadOnlySpan<ColumnSpec> specs, int rows)
 	{
-		if (rows < 0) throw new ArgumentOutOfRangeException(nameof(rows));
+		ArgumentOutOfRangeException.ThrowIfNegative(rows);
 
 		int width = specs.Length;
 		var names = new string[width];
@@ -549,12 +549,12 @@ public sealed class SyntheticReader : DbDataReader
 
 	public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
 	{
-		if (_getterRefillPending) return WaitForGetterRefill(ordinal, cancellationToken, static (reader, column) => reader.IsDBNull(column));
+		if (_getterRefillPending) return WaitForGetterRefill(ordinal, static (reader, column) => reader.IsDBNull(column), cancellationToken);
 		return IsDBNull(ordinal) ? TrueTask : FalseTask;
 	}
 
 	// BoundaryInGetter: the first async column read of the boundary row returns a Task that is not complete and is finished by the timer thread.
-	Task<T> WaitForGetterRefill<T>(int ordinal, CancellationToken cancellationToken, Func<SyntheticReader, int, T> read)
+	Task<T> WaitForGetterRefill<T>(int ordinal, Func<SyntheticReader, int, T> read, CancellationToken cancellationToken)
 	{
 		_getterRefillPending = false;
 		_refillsAsync++;
@@ -638,7 +638,7 @@ public sealed class SyntheticReader : DbDataReader
 	public override Task<T> GetFieldValueAsync<T>(int ordinal, CancellationToken cancellationToken)
 	{
 		if (cancellationToken.IsCancellationRequested) return Task.FromCanceled<T>(cancellationToken);
-		if (_getterRefillPending) return WaitForGetterRefill(ordinal, cancellationToken, static (reader, column) => reader.GetFieldValue<T>(column));
+		if (_getterRefillPending) return WaitForGetterRefill(ordinal, static (reader, column) => reader.GetFieldValue<T>(column), cancellationToken);
 		try { return Task.FromResult(GetFieldValue<T>(ordinal)); }
 		catch (Exception ex) { return Task.FromException<T>(ex); }
 	}

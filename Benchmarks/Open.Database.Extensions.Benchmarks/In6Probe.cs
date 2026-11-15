@@ -169,7 +169,7 @@ public static class In6Probe
 
 	[System.Runtime.Versioning.SupportedOSPlatform("windows")]
 	[System.Runtime.Versioning.SupportedOSPlatform("linux")]
-	static void SetAffinity(Process process, long mask) => process.ProcessorAffinity = (IntPtr)mask;
+	static void SetAffinity(Process process, long mask) => process.ProcessorAffinity = new IntPtr(mask);
 
 	static long GetAffinity(Process process)
 		=> OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? (long)process.ProcessorAffinity : 0;

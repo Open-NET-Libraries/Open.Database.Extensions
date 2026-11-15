@@ -84,9 +84,11 @@ public static class ChannelStudy
 
 		await produce(conn, channel.Writer, () => heldAt = Stopwatch.GetTimestamp());
 		if (heldAt == 0) heldAt = Stopwatch.GetTimestamp();
-		await Task.WhenAny(consumer, Task.Delay(30_000)); // a lossy design may leave rows undelivered but the channel still completes
+		using var delayCts = new CancellationTokenSource();
+		await Task.WhenAny(consumer, Task.Delay(30_000, delayCts.Token)); // a lossy design may leave rows undelivered but the channel still completes
 		double total = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 		double held = (heldAt - start) * 1000.0 / Stopwatch.Frequency;
+		delayCts.Cancel(); // after the measurement: do not leave the 30 s timer running
 		return (held, total, Interlocked.Read(ref n));
 	}
 
