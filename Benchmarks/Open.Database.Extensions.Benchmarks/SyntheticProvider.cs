@@ -20,7 +20,8 @@ namespace Open.Database.Extensions.Benchmarks;
 //   (a spin on the stopwatch); ReadAsync() returns a Task that is truly incomplete and completes from a dedicated timer thread after the same time,
 //   its continuation queued to the thread pool. The first call and every call between boundaries complete synchronously. A boundary is the call that
 //   would serve row N, 2N, ... (0-based) when that row exists, so a result of R rows has (R - 1) / N of them. NextResult, NextResultAsync,
-//   IsDBNullAsync and GetFieldValueAsync have no boundary (a column read inside a row never waits for the wire in this model).
+//   IsDBNullAsync and GetFieldValueAsync have no boundary (a column read inside a row never waits for the wire in this model) unless
+//   SyntheticOptions.BoundaryInGetter is set: then the first async column read of the boundary row is the incomplete one (BS-SA, async getters).
 //   Thread-pool pressure (ThreadPoolPressure) is separate: it keeps the pool busy so that the continuation has to wait for a thread.
 
 /// <summary>A fixed busy-wait, in iterations, so a cost has the same shape on every machine run to run.</summary>
@@ -62,6 +63,9 @@ public sealed class SyntheticOptions
 
 	/// <summary>Microseconds a refill takes: the sync Read spins for it, the async ReadAsync completes from another thread after it. 0 = no wait (the async path still hands off).</summary>
 	public int RefillCostUs { get; init; } = DefaultRefillCostUs;
+
+	/// <summary>With BufferRows &gt; 0: the refill is paid by the first ASYNC column read (IsDBNullAsync or GetFieldValueAsync) of the boundary row instead of by Read or ReadAsync. Read and ReadAsync then never wait, and a sync getter never waits (this models async-getter reading only). Default false.</summary>
+	public bool BoundaryInGetter { get; init; }
 
 	/// <summary>Receives the timestamps. Shared by default so one benchmark case reads one recorder.</summary>
 	public SyntheticRecorder Recorder { get; init; } = new();
@@ -400,6 +404,8 @@ public sealed class SyntheticReader : DbDataReader
 	readonly SyntheticTable _table;
 	readonly SyntheticRecorder _recorder;
 	readonly int _rowCost, _nextResultCost, _extraSets, _bufferRows;
+	readonly bool _boundaryInGetter;
+	bool _getterRefillPending;
 	readonly long _openStart, _refillTicks;
 	readonly bool _sequential;
 
@@ -417,6 +423,7 @@ public sealed class SyntheticReader : DbDataReader
 		_sequential = (behavior & CommandBehavior.SequentialAccess) != 0;
 		_openStart = openStart;
 		_bufferRows = Math.Max(0, options.BufferRows);
+		_boundaryInGetter = options.BoundaryInGetter;
 		_refillTicks = (long)(Math.Max(0, options.RefillCostUs) * Stopwatch.Frequency / 1_000_000d);
 	}
 
@@ -433,7 +440,11 @@ public sealed class SyntheticReader : DbDataReader
 	{
 		if (_closed) throw new InvalidOperationException("The reader is closed.");
 		if (_set != 0 || _row + 1 >= _table.Rows) return false;
-		if (_bufferRows != 0 && AtBoundary())
+		if (_bufferRows != 0 && AtBoundary() && _boundaryInGetter)
+		{
+			_getterRefillPending = true; // The first async column read of this row pays the refill.
+		}
+		else if (_bufferRows != 0 && AtBoundary())
 		{
 			// The buffer ran out: the calling thread waits for the refill, holding its thread (and the open reader).
 			_refillsBlocked++;
@@ -467,11 +478,11 @@ public sealed class SyntheticReader : DbDataReader
 	public override Task<bool> ReadAsync(CancellationToken cancellationToken)
 	{
 		if (cancellationToken.IsCancellationRequested) return Task.FromCanceled<bool>(cancellationToken);
-		if (_bufferRows != 0 && !_closed && _set == 0 && _row + 1 < _table.Rows && AtBoundary())
+		if (_bufferRows != 0 && !_closed && _set == 0 && _row + 1 < _table.Rows && AtBoundary() && !_boundaryInGetter)
 		{
 			// The buffer ran out: return a Task that is not complete and let the timer thread finish it after the refill time.
 			_refillsAsync++;
-			var request = new RefillRequest(this, Stopwatch.GetTimestamp() + _refillTicks, cancellationToken);
+			var request = new ReadRefillRequest(this, Stopwatch.GetTimestamp() + _refillTicks, cancellationToken);
 			RefillTimer.Schedule(request);
 			return request.Result;
 		}
@@ -537,7 +548,20 @@ public sealed class SyntheticReader : DbDataReader
 	}
 
 	public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
-		=> IsDBNull(ordinal) ? TrueTask : FalseTask;
+	{
+		if (_getterRefillPending) return WaitForGetterRefill(ordinal, cancellationToken, static (reader, column) => reader.IsDBNull(column));
+		return IsDBNull(ordinal) ? TrueTask : FalseTask;
+	}
+
+	// BoundaryInGetter: the first async column read of the boundary row returns a Task that is not complete and is finished by the timer thread.
+	Task<T> WaitForGetterRefill<T>(int ordinal, CancellationToken cancellationToken, Func<SyntheticReader, int, T> read)
+	{
+		_getterRefillPending = false;
+		_refillsAsync++;
+		var request = new GetterRefillRequest<T>(this, ordinal, read, Stopwatch.GetTimestamp() + _refillTicks, cancellationToken);
+		RefillTimer.Schedule(request);
+		return request.Result;
+	}
 
 	public override bool GetBoolean(int ordinal) { Touch(ordinal); return ((bool[])_table.Columns[ordinal])[_row]; }
 	public override DateTime GetDateTime(int ordinal) { Touch(ordinal); return ((DateTime[])_table.Columns[ordinal])[_row]; }
@@ -614,6 +638,7 @@ public sealed class SyntheticReader : DbDataReader
 	public override Task<T> GetFieldValueAsync<T>(int ordinal, CancellationToken cancellationToken)
 	{
 		if (cancellationToken.IsCancellationRequested) return Task.FromCanceled<T>(cancellationToken);
+		if (_getterRefillPending) return WaitForGetterRefill(ordinal, cancellationToken, static (reader, column) => reader.GetFieldValue<T>(column));
 		try { return Task.FromResult(GetFieldValue<T>(ordinal)); }
 		catch (Exception ex) { return Task.FromException<T>(ex); }
 	}

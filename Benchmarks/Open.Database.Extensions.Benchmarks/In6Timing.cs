@@ -22,6 +22,10 @@ public sealed class In6Stats
 	// Time INSIDE the calls (the synchronous part, before the call returns): Read, ReadAsync (sum and longest single call) and every getter (sum), in stopwatch ticks.
 	public long ReadInsideTicks, MaxReadInsideTicks, ReadAsyncInsideTicks, MaxReadAsyncInsideTicks, GetterTicks;
 	public int ReadCalls;
+	// The async column reads (IsDBNullAsync, GetFieldValueAsync): calls, calls that returned a task that was not complete, the time from that return until the task completed, and where (row index) they happened.
+	public int GetterAsyncCalls, GetterAsyncIncomplete;
+	public long GetterWaitTicks, MaxGetterWaitTicks;
+	public WaitPositions? GetterPositions;
 	// Where the incomplete reads happened: set by the measuring loop for the measured operations only (null during warm-up).
 	public WaitPositions? Positions;
 
@@ -36,8 +40,23 @@ public sealed class In6Stats
 		WaitTicks = 0;
 		ReadInsideTicks = MaxReadInsideTicks = ReadAsyncInsideTicks = MaxReadAsyncInsideTicks = GetterTicks = 0;
 		ReadCalls = 0;
+		GetterAsyncCalls = GetterAsyncIncomplete = 0;
+		GetterWaitTicks = MaxGetterWaitTicks = 0;
 		MaxWaitTicks = 0;
 		Readers = ReadAsyncCalls = ReadAsyncIncomplete = ResumedOnOtherThread = OtherAsyncCalls = OtherAsyncIncomplete = 0;
+	}
+
+	// Called on the thread that completes an async column read, so it must be thread safe.
+	internal void AddGetterWait(long ticks)
+	{
+		Interlocked.Add(ref GetterWaitTicks, ticks);
+		long seen = Interlocked.Read(ref MaxGetterWaitTicks);
+		while (ticks > seen)
+		{
+			long before = Interlocked.CompareExchange(ref MaxGetterWaitTicks, ticks, seen);
+			if (before == seen) break;
+			seen = before;
+		}
 	}
 
 	// Called on the thread that completes a task, so it must be thread safe.
@@ -106,6 +125,12 @@ public sealed class WaitPositions(int rows)
 		for (int i = 0; i < Distinct; i++) first.Add(_count[i] > 1 ? $"{_index[i]}(x{_count[i]})" : _index[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
 		return $"first50 [{string.Join(",", first)}] hist10 [{string.Join(",", _hist)}] over {Operations} ops";
 	}
+}
+
+/// <summary>Times one incomplete async column read: from the moment the call returned until its task completed.</summary>
+sealed class GetterWaitTimer(In6Stats stats, long start)
+{
+	public void Done() => stats.AddGetterWait(Stopwatch.GetTimestamp() - start);
 }
 
 /// <summary>Times one incomplete ReadAsync: from the moment the call returned until its task completed (on the completing thread, before any continuation gets a thread).</summary>
@@ -262,23 +287,31 @@ public sealed class TimedReader(DbDataReader inner, In6Stats stats, long start) 
 		return task;
 	}
 
+	// An async column read that is not complete when it returns: count it, note the row (0-based index of the row being read), and time it until it completes.
+	void TrackGetter(Task task)
+	{
+		stats.GetterAsyncIncomplete++;
+		stats.GetterPositions?.Add(Math.Max(0, _rows - 1));
+		task.ContinueWith(static (_, timer) => ((GetterWaitTimer)timer!).Done(), new GetterWaitTimer(stats, Stopwatch.GetTimestamp()), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+	}
+
 	public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
 	{
-		stats.OtherAsyncCalls++;
+		stats.GetterAsyncCalls++;
 		long start = Stopwatch.GetTimestamp();
 		var task = inner.IsDBNullAsync(ordinal, cancellationToken);
 		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
-		if (!task.IsCompleted) stats.OtherAsyncIncomplete++;
+		if (!task.IsCompleted) TrackGetter(task);
 		return task;
 	}
 
 	public override Task<T> GetFieldValueAsync<T>(int ordinal, CancellationToken cancellationToken)
 	{
-		stats.OtherAsyncCalls++;
+		stats.GetterAsyncCalls++;
 		long start = Stopwatch.GetTimestamp();
 		var task = inner.GetFieldValueAsync<T>(ordinal, cancellationToken);
 		stats.GetterTicks += Stopwatch.GetTimestamp() - start;
-		if (!task.IsCompleted) stats.OtherAsyncIncomplete++;
+		if (!task.IsCompleted) TrackGetter(task);
 		return task;
 	}
 

@@ -8,8 +8,20 @@ namespace Open.Database.Extensions.Benchmarks;
 //  - ThreadPoolPressure: busy work items that keep the thread pool occupied, so a continuation has to wait for a thread.
 //  - SpinCalibration: how many Spin iterations make one microsecond on this machine (to turn a measured time into RowCostIterations).
 
+/// <summary>One refill handed to the timer thread: finished after its deadline, on the timer thread.</summary>
+internal abstract class RefillRequest(long deadline)
+{
+	/// <summary>The stopwatch timestamp at which the refill ends.</summary>
+	internal long Deadline { get; } = deadline;
+
+	/// <summary>Called on the timer thread once the deadline has passed. A request canceled meanwhile is left alone.</summary>
+	internal abstract void Complete();
+
+	internal abstract void Fail(Exception exception);
+}
+
 /// <summary>One buffer refill that <see cref="SyntheticReader.ReadAsync"/> hands to the timer thread. Its Task completes after the deadline.</summary>
-internal sealed class RefillRequest
+internal sealed class ReadRefillRequest : RefillRequest
 {
 	// The continuation of the awaiting code is queued to the thread pool (never run inline on the timer thread), so the reader stays open
 	// until the pool gives that continuation a thread: the situation the study asks about.
@@ -17,22 +29,18 @@ internal sealed class RefillRequest
 	readonly SyntheticReader _reader;
 	readonly CancellationTokenRegistration _registration;
 
-	internal RefillRequest(SyntheticReader reader, long deadline, CancellationToken cancellationToken)
+	internal ReadRefillRequest(SyntheticReader reader, long deadline, CancellationToken cancellationToken)
+		: base(deadline)
 	{
 		_reader = reader;
-		Deadline = deadline;
 		if (cancellationToken.CanBeCanceled)
-			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((RefillRequest)state!)._source.TrySetCanceled(token), this);
+			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((ReadRefillRequest)state!)._source.TrySetCanceled(token), this);
 	}
-
-	/// <summary>The stopwatch timestamp at which the refill ends.</summary>
-	internal long Deadline { get; }
 
 	/// <summary>The task ReadAsync returns: incomplete until the refill ends or the token is canceled.</summary>
 	internal Task<bool> Result => _source.Task;
 
-	/// <summary>Called on the timer thread once the deadline has passed. A request canceled meanwhile is left alone (its row is not served).</summary>
-	internal void Complete()
+	internal override void Complete()
 	{
 		if (_source.Task.IsCompleted) return;
 		_reader.AdvanceAfterRefill();
@@ -40,7 +48,39 @@ internal sealed class RefillRequest
 		_source.TrySetResult(true);
 	}
 
-	internal void Fail(Exception exception) => _source.TrySetException(exception);
+	internal override void Fail(Exception exception) => _source.TrySetException(exception);
+}
+
+/// <summary>One refill paid by an async column read (BoundaryInGetter): the task completes with the value read once the refill has ended.</summary>
+internal sealed class GetterRefillRequest<T> : RefillRequest
+{
+	readonly TaskCompletionSource<T> _source = new(TaskCreationOptions.RunContinuationsAsynchronously);
+	readonly SyntheticReader _reader;
+	readonly int _ordinal;
+	readonly Func<SyntheticReader, int, T> _read;
+	readonly CancellationTokenRegistration _registration;
+
+	internal GetterRefillRequest(SyntheticReader reader, int ordinal, Func<SyntheticReader, int, T> read, long deadline, CancellationToken cancellationToken)
+		: base(deadline)
+	{
+		_reader = reader;
+		_ordinal = ordinal;
+		_read = read;
+		if (cancellationToken.CanBeCanceled)
+			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((GetterRefillRequest<T>)state!)._source.TrySetCanceled(token), this);
+	}
+
+	internal Task<T> Result => _source.Task;
+
+	internal override void Complete()
+	{
+		if (_source.Task.IsCompleted) return;
+		_registration.Dispose();
+		try { _source.TrySetResult(_read(_reader, _ordinal)); }
+		catch (Exception ex) { _source.TrySetException(ex); }
+	}
+
+	internal override void Fail(Exception exception) => _source.TrySetException(exception);
 }
 
 /// <summary>
