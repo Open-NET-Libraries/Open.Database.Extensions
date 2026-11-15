@@ -57,7 +57,7 @@ public sealed record In6Summary(
 
 sealed class In6Settings
 {
-	public const string DefaultSqlServer = @"Server=(localdb)\MSSQLLocalDB;Database=tempdb;Integrated Security=true;Encrypt=False";
+	public const string DefaultSqlServer = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Encrypt=False";
 	public static readonly string[] Parts = ["sqlserver", "sqlite", "calibration"];
 	public int Rows = 10_000, Warmup = 5, Ops = 20;
 	public string Pressure = "auto";
@@ -75,13 +75,14 @@ public static class In6Probe
 
 		  --in6 --help                 this text
 		  --in6 --dry-run              print the scenarios, the number of operations and the settings; opens no connection, creates nothing
-		  --in6 --scratch <folder>     run everything; the SQLite file is created in <folder> (never on drive C:) and deleted afterwards
-		  --only sqlserver,sqlite,calibration   run only these parts (default: all three; sqlite needs --scratch)
+		  --in6 --scratch <folder>     run everything; the folder (never on drive C:) holds the probe's SQL Server database files (ode_in6_<guid>.mdf and _log.ldf) and the SQLite file; all deleted afterwards
+		  --only sqlserver,sqlite,calibration   run only these parts (default: all three; every part needs --scratch)
 		  --pressure auto|N            K busy thread-pool items for the "pressure on" cells (default auto = processor count x 2)
 		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per path
-		  --connection "<string>"      the SQL Server connection string (default: LocalDB, tempdb, integrated security, Encrypt=False)
+		  --connection "<string>"      the SQL Server connection string, without a database (default: LocalDB, integrated security, Encrypt=False); the probe connects to master, creates its own database and drops it
 
-		Test data: SQL Server tables with a unique name in tempdb, dropped afterwards; the SQLite file under --scratch, deleted afterwards.
+		Test data: a dedicated SQL Server database ode_in6_<guid> with its files under --scratch (128 MB data, growth 64 MB; 64 MB log, growth 64 MB), ordinary tables, dropped at the end (SINGLE_USER, DROP DATABASE, the files are checked);
+		if CREATE DATABASE fails the SQL Server part stops (no fallback to tempdb or the default location) and the SQLite part still runs. The SQLite file is under --scratch too, deleted afterwards.
 		""";
 
 	public static int Run(string[] args)
@@ -110,9 +111,9 @@ public static class In6Probe
 			return 0;
 		}
 
-		if (s.Only.Contains("sqlite") && s.Scratch is null)
+		if (s.Scratch is null)
 		{
-			Console.WriteLine("--in6: the SQLite part needs --scratch <folder> (a folder not on drive C:). Pass it, or --only sqlserver,calibration.");
+			Console.WriteLine("--in6: --scratch <folder> is required (a folder not on drive C:): it holds the SQL Server database files and the SQLite file.");
 			return 2;
 		}
 
@@ -170,12 +171,16 @@ public static class In6Probe
 		Console.WriteLine("IN6 dry run: nothing is opened or created.");
 		Console.WriteLine($"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per path, pressure K = {k} (processors {Environment.ProcessorCount}), parts: {string.Join(",", s.Only.Order())}");
 		Console.WriteLine("read paths: sync (sync execute + Read) | async+Read (async execute + Read) | EnableAsyncRead (async execute + ReadAsync); all through Map<T>().ToList[Async]()");
-		Console.WriteLine($"SQL Server connection: {s.SqlServer}");
+		Console.WriteLine($"SQL Server connection (to master): {s.SqlServer}");
+		Console.WriteLine(s.Scratch is null
+			? "SQL Server database and files: (--scratch not given)"
+			: $"SQL Server database: ode_in6_<guid>, created with CREATE DATABASE; data file {Path.Combine(s.Scratch, "ode_in6_<guid>.mdf")} ({DataSize}), log file {Path.Combine(s.Scratch, "ode_in6_<guid>_log.ldf")} ({LogSize}); at the end SINGLE_USER WITH ROLLBACK IMMEDIATE, DROP DATABASE, and the two files are checked");
+		Console.WriteLine("if CREATE DATABASE fails: STOP message, non-zero exit, no fallback to tempdb or the default location (the SQLite part still runs)");
 		Console.WriteLine($"SQLite file: {(s.Scratch is null ? "(--scratch not given)" : Path.Combine(s.Scratch, "in6-<guid>.db"))}");
 		int cells = 0;
 		if (s.Only.Contains("sqlserver"))
 		{
-			Console.WriteLine("scenarios, SQL Server (SqlClient, tables in tempdb under a unique name, dropped afterwards):");
+			Console.WriteLine("scenarios, SQL Server (SqlClient, ordinary tables w20 and big in the probe's own database, dropped with it):");
 			foreach (var (id, text) in SqlServerScenarios(s.Rows)) Console.WriteLine($"  {id}: {text}");
 			cells += 3 * 2;
 		}
@@ -344,52 +349,53 @@ public static class In6Probe
 	}
 
 	// ---- SQL Server ----------------------------------------------------------------
+	// A dedicated database whose data and log files live in the scratch folder (never on drive C:, never tempdb, never the default location):
+	// initial 128 MB data (growth 64 MB) and 64 MB log (growth 64 MB), so the 80 MB big table fits without many growth events.
+	const string DataSize = "size = 128MB, filegrowth = 64MB", LogSize = "size = 64MB, filegrowth = 64MB";
+
+	static string Connection(In6Settings s, string database)
+		=> new SqlConnectionStringBuilder(s.SqlServer) { InitialCatalog = database, Pooling = false }.ConnectionString;
+
+	static string Quote(string path) => path.Replace("'", "''", StringComparison.Ordinal);
+
 	static int RunSqlServer(In6Settings s)
 	{
-		string suffix = Guid.NewGuid().ToString("N")[..12];
-		string t20 = "ode_in6_w20_" + suffix, tBig = "ode_in6_big_" + suffix;
-		SqlConnection connection;
-		var created = new List<string>();
+		string name = "ode_in6_" + Guid.NewGuid().ToString("N")[..12];
+		string folder = s.Scratch!;
+		string dataFile = Path.Combine(folder, name + ".mdf"), logFile = Path.Combine(folder, name + "_log.ldf");
+		SqlConnection master;
 		try
 		{
-			connection = new SqlConnection(s.SqlServer);
-			connection.Open();
+			master = new SqlConnection(Connection(s, "master"));
+			master.Open();
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"SQL SERVER SKIPPED: could not open the connection: {ex.GetType().Name}: {ex.Message}");
+			Console.WriteLine($"SQL SERVER SKIPPED: could not open the connection to master: {ex.GetType().Name}: {ex.Message}");
 			return 1;
 		}
 
-		using (connection)
+		using (master)
 		{
 			try
 			{
-				Console.WriteLine($"SQL Server: {connection.DataSource}, database {connection.Database}, server version {connection.ServerVersion}; tables {t20} and {tBig} (dropped at the end)");
-				Exec(connection, $"""
-					create table [{t20}] (Id int not null primary key, Created datetime2 not null, Title nvarchar(50) not null, Price decimal(18,2) not null,
-						Qty int null, IsActive bit not null, [Key] uniqueidentifier not null, Score float not null, Note nvarchar(50) null,
-						Blob varbinary(16) not null, Big bigint not null, Body nvarchar(200) not null, Amount decimal(18,3) null, Stamp datetime2 null,
-						Tag nvarchar(20) not null, Ratio float not null, Flag bit null, Link uniqueidentifier null, [Count] bigint not null, Summary nvarchar(200) null)
-					""");
-				created.Add(t20);
-				using (var bulk = new SqlBulkCopy(connection) { DestinationTableName = $"[{t20}]", BulkCopyTimeout = 300, BatchSize = 5000 })
-					bulk.WriteToServer(ToDataTable(SyntheticTable.Create(20, s.Rows)));
+				Directory.CreateDirectory(folder);
+				Exec(master, $"create database [{name}] on (name = N'{name}', filename = N'{Quote(dataFile)}', {DataSize}) log on (name = N'{name}_log', filename = N'{Quote(logFile)}', {LogSize})");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"STOP: CREATE DATABASE on the scratch folder failed: {ex.GetType().Name}: {ex.Message}");
+				Console.WriteLine("The SQL Server part (S1 to S3 and the calibration) is not run: there is no fallback to tempdb or to the default location. The SQLite part is independent and still runs.");
+				try { Exec(master, $"if db_id(N'{name}') is not null drop database [{name}]"); }
+				catch (Exception cleanup) { Console.WriteLine($"cleanup after the failed CREATE DATABASE also failed: {cleanup.Message}"); }
 
-				if (s.Only.Contains("sqlserver"))
-				{
-					Exec(connection, $"create table [{tBig}] (Id int not null primary key, Body nvarchar(max) not null)");
-					created.Add(tBig);
-					Exec(connection, $"with n as (select top ({s.Rows}) row_number() over (order by (select null)) as i from sys.all_objects a cross join sys.all_objects b) insert into [{tBig}] (Id, Body) select i, replicate(cast(N'x' as nvarchar(max)), 4000) from n");
-					Console.WriteLine($"data ready: {s.Rows} rows in each table; {ScalarLong(connection, $"select sum(datalength(Body)) from [{tBig}]") / s.Rows} bytes of Body per row in {tBig}");
-					Console.WriteLine("-- SQL Server, three paths, pressure off and on --");
-					RunCell<SynRow>(s, "SqlServer", "S1", connection, $"select Id, Created, Title, Price, Qty from [{t20}]", s.Rows);
-					RunCell<SynRow>(s, "SqlServer", "S2", connection, $"select * from [{t20}]", s.Rows);
-					RunCell<In6BigRow>(s, "SqlServer", "S3", connection, $"select Id, Body from [{tBig}]", s.Rows);
-				}
+				return 1;
+			}
 
-				if (s.Only.Contains("calibration")) Calibrate(s, connection, t20);
-				return 0;
+			Console.WriteLine($"SQL Server: database {name} created; data file {dataFile} ({DataSize}), log file {logFile} ({LogSize})");
+			try
+			{
+				return RunInDatabase(s, name);
 			}
 			catch (Exception ex)
 			{
@@ -398,15 +404,50 @@ public static class In6Probe
 			}
 			finally
 			{
-				foreach (string table in created)
+				SqlConnection.ClearAllPools();
+				try
 				{
-					try { Exec(connection, $"drop table if exists [{table}]"); }
-					catch (Exception ex) { Console.WriteLine($"could not drop {table}: {ex.Message}"); }
+					Exec(master, $"alter database [{name}] set single_user with rollback immediate");
+					Exec(master, $"drop database [{name}]");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"could not drop database {name}: {ex.GetType().Name}: {ex.Message}");
 				}
 
-				Console.WriteLine("SQL Server: tables dropped: " + string.Join(", ", created));
+				Console.WriteLine($"SQL Server: database {name} dropped; data file still exists: {File.Exists(dataFile)}, log file still exists: {File.Exists(logFile)} (both must be False)");
 			}
 		}
+	}
+
+	static int RunInDatabase(In6Settings s, string database)
+	{
+		const string T20 = "w20", TBig = "big";
+		using var connection = new SqlConnection(Connection(s, database));
+		connection.Open();
+		Console.WriteLine($"SQL Server: {connection.DataSource}, database {connection.Database}, server version {connection.ServerVersion}; ordinary tables {T20} and {TBig}");
+		Exec(connection, $"""
+			create table [{T20}] (Id int not null primary key, Created datetime2 not null, Title nvarchar(50) not null, Price decimal(18,2) not null,
+				Qty int null, IsActive bit not null, [Key] uniqueidentifier not null, Score float not null, Note nvarchar(50) null,
+				Blob varbinary(16) not null, Big bigint not null, Body nvarchar(200) not null, Amount decimal(18,3) null, Stamp datetime2 null,
+				Tag nvarchar(20) not null, Ratio float not null, Flag bit null, Link uniqueidentifier null, [Count] bigint not null, Summary nvarchar(200) null)
+			""");
+		using (var bulk = new SqlBulkCopy(connection) { DestinationTableName = $"[{T20}]", BulkCopyTimeout = 300, BatchSize = 5000 })
+			bulk.WriteToServer(ToDataTable(SyntheticTable.Create(20, s.Rows)));
+
+		if (s.Only.Contains("sqlserver"))
+		{
+			Exec(connection, $"create table [{TBig}] (Id int not null primary key, Body nvarchar(max) not null)");
+			Exec(connection, $"with n as (select top ({s.Rows}) row_number() over (order by (select null)) as i from sys.all_objects a cross join sys.all_objects b) insert into [{TBig}] (Id, Body) select i, replicate(cast(N'x' as nvarchar(max)), 4000) from n");
+			Console.WriteLine($"data ready: {s.Rows} rows in each table; {ScalarLong(connection, $"select sum(datalength(Body)) from [{TBig}]") / s.Rows} bytes of Body per row in {TBig}");
+			Console.WriteLine("-- SQL Server, three paths, pressure off and on --");
+			RunCell<SynRow>(s, "SqlServer", "S1", connection, $"select Id, Created, Title, Price, Qty from [{T20}]", s.Rows);
+			RunCell<SynRow>(s, "SqlServer", "S2", connection, $"select * from [{T20}]", s.Rows);
+			RunCell<In6BigRow>(s, "SqlServer", "S3", connection, $"select Id, Body from [{TBig}]", s.Rows);
+		}
+
+		if (s.Only.Contains("calibration")) Calibrate(s, connection, T20);
+		return 0;
 	}
 
 	static long ScalarLong(DbConnection connection, string sql)
