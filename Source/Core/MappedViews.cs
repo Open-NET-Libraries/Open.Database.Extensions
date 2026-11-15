@@ -335,8 +335,12 @@ static class Views
 		IExecuteReader command,
 		IRowSource<T> source)
 		=> command is SingleResultReader single
-			? new(single.Command, source, 0, -1, true)
-			: new(command, source, 0, -1, false);
+			? new(single.Command, source, 0, -1, true, AsyncReads(single.Command))
+			: new(command, source, 0, -1, false, AsyncReads(command));
+
+	// The command's own choice, made by cmd.AsyncReads() before Map: staged into the view.
+	static bool AsyncReads(IExecuteReader command)
+		=> command is IExecuteReaderAsync { UseAsyncRead: true };
 
 	internal static MappedQueryCore<T> ReaderCore<T>(
 		IDataReader reader,
@@ -797,6 +801,10 @@ public readonly record struct MappedCommand<T>
 	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
 	public MappedCommand<T> SingleResult()
 		=> new(_core.WithSingleResult());
+
+	/// <inheritdoc cref="MappedQuery{T}.AsyncReads"/>
+	public MappedCommand<T> AsyncReads()
+		=> new(_core.WithAsyncReads());
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler)

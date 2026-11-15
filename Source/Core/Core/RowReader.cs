@@ -34,12 +34,12 @@ internal static class RowReader
 {
 	#region Synchronous
 
-	public static void Fill<T, TSink>(IRowSource<T> source, IDataReader reader, int skip, int take, ref TSink sink)
+	public static void Fill<T, TSink>(IRowSource<T> source, IDataReader reader, int skip, int take, ref TSink sink, CancellationToken token = default)
 		where TSink : struct, IRowSink<T>
 	{
 		if (reader is not DbDataReader db)
 		{
-			foreach (T item in Stream(source, reader, skip, take))
+			foreach (T item in Stream(source, reader, skip, take, false, token))
 				sink.Add(item);
 			return;
 		}
@@ -58,10 +58,10 @@ internal static class RowReader
 
 	// The two hottest terminals keep their own loops: with a tiny per-row projection the extra sink
 	// indirection of Fill is measurable (benchmarked), so List and array are written out directly.
-	public static List<T> ToList<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
+	public static List<T> ToList<T>(IRowSource<T> source, IDataReader reader, int skip, int take, CancellationToken token = default)
 	{
 		if (reader is not DbDataReader db)
-			return [.. Stream(source, reader, skip, take)];
+			return [.. Stream(source, reader, skip, take, false, token)];
 
 		var list = new List<T>();
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return list;
@@ -85,10 +85,10 @@ internal static class RowReader
 		return sink.Queue;
 	}
 
-	public static T[] ToArray<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
+	public static T[] ToArray<T>(IRowSource<T> source, IDataReader reader, int skip, int take, CancellationToken token = default)
 	{
 		if (reader is not DbDataReader db)
-			return Stream(source, reader, skip, take).ToArray();
+			return Stream(source, reader, skip, take, false, token).ToArray();
 
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return [];
 
@@ -111,7 +111,7 @@ internal static class RowReader
 		}
 	}
 
-	public static bool TryFirst<T>(IRowSource<T> source, IDataReader reader, int skip, int take, out T? item)
+	public static bool TryFirst<T>(IRowSource<T> source, IDataReader reader, int skip, int take, out T? item, CancellationToken token = default)
 	{
 		if (reader is DbDataReader db)
 		{
@@ -125,7 +125,7 @@ internal static class RowReader
 			return false;
 		}
 
-		foreach (T i in Stream(source, reader, skip, take))
+		foreach (T i in Stream(source, reader, skip, take, false, token))
 		{
 			item = i;
 			return true;
@@ -135,7 +135,7 @@ internal static class RowReader
 		return false;
 	}
 
-	public static bool TrySingle<T>(IRowSource<T> source, IDataReader reader, int skip, int take, out T? item)
+	public static bool TrySingle<T>(IRowSource<T> source, IDataReader reader, int skip, int take, out T? item, CancellationToken token = default)
 	{
 		if (reader is DbDataReader db)
 		{
@@ -152,7 +152,7 @@ internal static class RowReader
 
 		item = default;
 		bool found = false;
-		foreach (T i in Stream(source, reader, skip, take))
+		foreach (T i in Stream(source, reader, skip, take, false, token))
 		{
 			if (found) throw MoreThanOne();
 			item = i;
@@ -167,7 +167,7 @@ internal static class RowReader
 	/// With <paramref name="readThrough"/>, once the rows end (including no rows, a take limit or a skip past the end) the later result sets are read through,
 	/// so a failure in one is thrown. An enumeration the caller abandons, or whose consumer throws, never reaches that point.
 	/// </summary>
-	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take, bool readThrough = false)
+	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take, bool readThrough = false, CancellationToken token = default)
 	{
 		bool skipped = take != 0;
 		if (skipped)
@@ -199,6 +199,7 @@ internal static class RowReader
 				Func<IDataRecord, T>? map = null;
 				while (reader.Read())
 				{
+					token.ThrowIfCancellationRequested();
 					map ??= source.Mapper(reader);
 					yield return map(reader);
 					if (++n == take) break;

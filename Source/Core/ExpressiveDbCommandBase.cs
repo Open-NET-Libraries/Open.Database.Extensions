@@ -105,28 +105,25 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
-	/// By default (false), for async methods, the underlying iteration operation for a reader will be .Read() whenever possible.  If set to true, .ReadAsync() will be used.
-	/// Using .ReadAsync() can introduce unexpected latency and additional CPU overhead.
-	/// This should only be set to true if there is a clear reason why and should be profiled before and after.
+	/// Reads the rows of an async terminal with <c>ReadAsync</c> instead of <c>Read</c>, for this command.
 	/// </summary>
-	public bool UseAsyncRead
+	/// <remarks>
+	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>.
+	/// <c>ReadAsync</c> can add latency and CPU overhead, so choose it only for a clear reason and profile before and after.
+	/// It changes nothing on a synchronous terminal.
+	/// </remarks>
+	/// <returns>The same command.</returns>
+	public TThis AsyncReads()
 	{
-		get => _options?.UseAsyncRead ?? false;
-		set
-		{
-			if (!value && _options is null) return;
-			EnsureOptions().UseAsyncRead = value;
-		}
-	}
-
-	/// <summary>
-	/// Sets the UseAsyncRead value.
-	/// </summary>
-	public TThis EnableAsyncRead(bool value = true)
-	{
-		UseAsyncRead = value;
+		EnsureOptions().AsyncReads = true;
 		return (TThis)this;
 	}
+
+	// What AsyncReads() set; the interface member is read by the views and by Channel (removed with the interface in part 2).
+	bool UsesAsyncReads => _options?.AsyncReads ?? false;
+
+	/// <inheritdoc />
+	bool IExecuteReaderAsync.UseAsyncRead => UsesAsyncReads;
 
 	/// <summary>
 	/// Calls ExecuteNonQueryAsync on the underlying command.
@@ -263,7 +260,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <returns>The list of transformed records.</returns>
 	public ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync()
-		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(UseAsyncRead, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(UsesAsyncReads, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
 	/// <summary>
 	/// Reads the first column from every record..
@@ -271,7 +268,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <returns>The enumerable of casted values.</returns>
 	public ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
-		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(UseAsyncRead, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(UsesAsyncReads, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
 
 	/// <summary>
 	/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -339,7 +336,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync(map, useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync(map, useReadAsync: UsesAsyncReads));
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
@@ -349,7 +346,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		// An unmappable T fails here, before the command runs.
 		RowMap<T>.ThrowIfUnmappable();
 
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UseAsyncRead));
+		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UsesAsyncReads));
 	}
 
 	/// <summary>
@@ -364,7 +361,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		CancellationToken cancellationToken = default)
 		=> ExecuteReaderAsync(
 			reader => reader.RetrieveAsync(
-				UseAsyncRead,
+				UsesAsyncReads,
 				cancellationToken),
 			CommandBehavior.SingleResult,
 			cancellationToken);
@@ -384,7 +381,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		=> ExecuteReaderAsync(
 			reader => reader.RetrieveAsync(
 				ordinals,
-				UseAsyncRead,
+				UsesAsyncReads,
 				cancellationToken),
 			CommandBehavior.SingleResult,
 			cancellationToken);
@@ -407,7 +404,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 			reader => reader.RetrieveAsync(
 				columnNames,
 				normalizeColumnOrder,
-				UseAsyncRead,
+				UsesAsyncReads,
 				cancellationToken),
 			CommandBehavior.Default,
 			cancellationToken);

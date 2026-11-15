@@ -219,7 +219,7 @@ public static class SyntheticVariants
 
 	/// <summary>Rows pulled with ReadAsync().</summary>
 	public static ValueTask<List<SynRow>> V1AsyncRead(SyntheticConnection connection)
-		=> connection.Command(Sql).EnableAsyncRead().Map<SynRow>().ToListAsync();
+		=> connection.Command(Sql).AsyncReads().Map<SynRow>().ToListAsync();
 
 // ---- V2: Map with a hand-written static delegate using the typed getters ----------------------------------------------------------------
 	// What a caller writes today with the shipped Map(Func<IDataRecord, T>): a static selector over IDataRecord, as the library exposes it.

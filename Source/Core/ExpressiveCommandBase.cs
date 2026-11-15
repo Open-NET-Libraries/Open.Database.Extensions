@@ -51,7 +51,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		public IDbConnectionPool<TConnection>? Provider;
 		public CancellationToken CancellationToken;
 		public ushort Timeout = CommandTimeout.DEFAULT_SECONDS;
-		public bool UseAsyncRead;
+		public bool AsyncReads;
 	}
 
 	private protected CommandOptions? _options;
