@@ -137,12 +137,11 @@ public static class MappedTableTests
 
 		Assert.Equal(
 			"1/n1,2/n2",
-			Show(table.Map<Person>(new KeyValuePair<string, string?>("Name", "Label")).ToList()));
+			Show(table.Map(new RowMap<Person>(new KeyValuePair<string, string?>("Name", "Label"))).ToList()));
 		Assert.Equal(
 			"1/n1,2/n2",
-			Show(table.Map<Person>(
-				new KeyValuePair<string, string?>("Id", "Id"),
-				new KeyValuePair<string, string?>("Name", "Label")).ToList()));
+			Show(table.Map(new RowMap<Person>(new KeyValuePair<string, string?>("Id", "Id"),
+				new KeyValuePair<string, string?>("Name", "Label"))).ToList()));
 		Assert.Equal(
 			"10,20",
 			string.Join(",", table.Map(r => r.GetInt32(0) * 10).ToList()));
@@ -207,7 +206,7 @@ public static class MappedTableTests
 		Assert.Throws<ArgumentNullException>(() => table!.Map((RowMap<Person>?)null));
 		Assert.Throws<ArgumentNullException>(() => table!.Map<Person>([]));
 		Assert.Throws<ArgumentNullException>(
-			() => table!.Map<Person>(new KeyValuePair<string, string?>("Id", "Id")));
+			() => table!.Map(new RowMap<Person>(new KeyValuePair<string, string?>("Id", "Id"))));
 		Assert.Throws<ArgumentNullException>(() => table!.Map(r => r.GetInt32(0)));
 		Assert.Throws<ArgumentNullException>(
 			() => new DataTable().Map((Func<IDataRecord, int>)null!));

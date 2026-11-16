@@ -440,8 +440,8 @@ public static class SingleResultBeforeMapTests
 		MappedQuery<IdName> model = command.SingleResult().Map<IdName>();
 		MappedQuery<IdName> withMap = command.SingleResult().Map(RowMap<IdName>.Default);
 		MappedQuery<IdName> withNull = command.SingleResult().Map((RowMap<IdName>?)null);
-		MappedQuery<IdRow> withPair = command.SingleResult().Map<IdRow>(id);
-		MappedQuery<IdName> withPairs = command.SingleResult().Map<IdName>(id, name);
+		MappedQuery<IdRow> withPair = command.SingleResult().Map(new RowMap<IdRow>(id));
+		MappedQuery<IdName> withPairs = command.SingleResult().Map(new RowMap<IdName>(id, name));
 		MappedQuery<int> column = command.SingleResult().Map<int>();
 		MappedQuery<int> selector = command.SingleResult().Map(r => r.GetInt32(0));
 
@@ -468,8 +468,8 @@ public static class SingleResultBeforeMapTests
 		MappedCommand<IdName> model = command.SingleResult().Map<IdName>();
 		MappedCommand<IdName> withMap = command.SingleResult().Map(RowMap<IdName>.Default);
 		MappedCommand<IdName> withNull = command.SingleResult().Map((RowMap<IdName>?)null);
-		MappedCommand<IdRow> withPair = command.SingleResult().Map<IdRow>(id);
-		MappedCommand<IdName> withPairs = command.SingleResult().Map<IdName>(id, name);
+		MappedCommand<IdRow> withPair = command.SingleResult().Map(new RowMap<IdRow>(id));
+		MappedCommand<IdName> withPairs = command.SingleResult().Map(new RowMap<IdName>(id, name));
 		MappedCommand<int> column = command.SingleResult().Map<int>();
 		MappedCommand<int> selector = command.SingleResult().Map(r => r.GetInt32(0));
 

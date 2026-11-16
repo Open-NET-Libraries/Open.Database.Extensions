@@ -1,17 +1,36 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.5`, a release candidate. The API is settled. Please try it and report what you find.
+> This is `11.0.0-rc.6`, a release candidate. The API is settled. Please try it and report what you find.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.5
+
+- **Rows are read with `Read()` by default, on async terminals too.** `ToListAsync`, `FirstOrDefaultAsync` and the other async terminals still execute the command and open the connection asynchronously, but they read the rows with `Read()`. On the measured runs a synchronous row read costs less CPU, and about 40% less memory on the `Map(Func)` path, for the same wall time over a real network link. To read the rows with `ReadAsync()`, for a caller whose thread must not block while rows arrive, call `AsyncReads()`: `cmd.AsyncReads().Map<T>()`, or `dbCommand.Map<T>().AsyncReads()`. **Removed, with no bridge:** `EnableAsyncRead(bool)` and the `UseAsyncRead` property. Replace `EnableAsyncRead()` with `AsyncReads()`. A plain `IDataReader` read by an async terminal now checks the cancellation token on every row.
+- **`RowMap<T>.From(factory, pairs)` builds a map from a delegate**, such as a lambda, a method group or a constructor wrapper. Its parameters bind to columns by the rules a constructor already uses: a pair renames a parameter to a column, then columns match by name, ignoring case. A missing or `NULL` value in a non-nullable parameter gets the parameter's declared default, else `default`. Declare the map once:
+
+  ```cs
+  static readonly RowMap<PostSummary> Summary = RowMap<PostSummary>.From(
+  	static (int id, string title) => new PostSummary(id, title));
+
+  List<PostSummary> posts = await cmd
+  	.Map(Summary)
+  	.ToListAsync(cancellationToken);
+  ```
+
+  On C# 12 the pairs argument must be written out. A single target-typed `new(...)` as the only pair does not compile: write the element type.
+- **The `Map<T>(pair...)` overloads are removed.** There is one way to pass pairs: a `RowMap<T>`, declared once and passed to `Map`. A one-off is `Map(new RowMap<T>(pair, pair))`. `Map<T>([...])`, with a collection expression, still compiles: it converts to a `RowMap<T>`. One behavior change comes with it, with no compile error: `Map<int>([])` now throws (item 15 of "Upgrading from 10.x").
+- **`Select(selector)` on an `IMappedQuery<T>`, added in rc.5, is removed:** it built a second object for every row while the reader was open. Shape each row into the result type with `Map(RowMap<TResult>.From(factory))` instead. A data class can return that mapped query and let each caller choose the terminal. The reader-level `Select` is unchanged.
+- **Fix:** the async terminals on an `IMappedQuery<T>` that this library did not build (your own implementation) no longer resume on the caller's synchronization context.
+- **Fix:** an `AddParams` member that the procedure, or the command text, does not declare is no longer sent under a stale name left in a shared pool.
+- A package built in a Release build no longer carries the build machine's folder names: the SDK's `DeterministicSourcePaths` maps the repository folder to a neutral prefix in the dll, the debug symbols and the Source Link mapping.
+
 ## Changes since rc.4
 
-- A package built in a Release build no longer carries the build machine's folder names: the SDK's `DeterministicSourcePaths` maps the repository folder to a neutral prefix in the dll, the debug symbols and the Source Link mapping.
 - Version 11 targets .NET 11: every package adds `net11.0` next to `net10.0` (LTS), `netstandard2.0` and `netstandard2.1` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Each major version of the library targets the matching .NET. Building the repository needs the .NET 11 SDK (`global.json`).
 - `.SingleResult()` can be written before `Map`, so a query reads as behavior first, then shape: `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)`. It works on an expressive command (`IExecuteReader`) and on a raw `IDbCommand` or `DbCommand`, with the same `Map` overloads as before, and it is the same as `command.Map<Post>().SingleResult()`, which still works. There is none on `IDataReader` or `DataTable`: their views never read through, so there is nothing to opt out of. Nothing changes by default: without it a `Map` terminal still reads through the later result sets.
 - **`ExecuteScalar<T>()` and `ExecuteScalarAsync<T>()` convert the way `Map<T>()` does.** They cast the provider's value exactly, so a `bigint` read as `int`, or a `numeric` read as `long`, threw `InvalidCastException`, which a port from Dapper met only on a real database. Now a value that is already a `T` is returned as it is, an integer converts to another integer type with a range check, and any other value is converted by the same code `Map<T>()` uses. `NULL` and no row still give `default(T)`. A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's error inside. **Behavior change:** a call that threw `InvalidCastException` now converts, or throws that exception. `ExecuteReturn<T>()` and `ExecuteReturnAsync<T>()` convert the same way. The overloads that take a `Func<object?, T>` are unchanged.
-- `Select(selector)` on an `IMappedQuery<T>` (what `Map<T>()` returns at every level) is a lazy projection that returns an `IMappedQuery<TResult>`: building it runs nothing, and each terminal you pick runs the command once and the selector once per row. A data class can return the query and let the caller choose `ToListAsync`, `FirstOrDefaultAsync` or any other terminal. See [Query factories](mapping.md#query-factories-select).
 - A `RowMap<T>` takes a converter for a column that needs a trim, a parse or a format on its way to a member: `map.Convert<long, string>(nameof(Order.OrderNum), n => n.ToString("D6"))`, or `Convert<TColumn, TMember>(member, column, convert)` to name the column as well. It returns a new map, and the delegate runs inside the compiled row reader, so a result maps straight into the type you want, with no row type to copy from. A converter is not called for a NULL cell (the member follows the NULL rules); a `Nullable<>` `TColumn` is called with null. See [Converting a column](mapping.md#converting-a-column).
 - `First()` and `Single()` (and `FirstAsync(cancellationToken)`, `SingleAsync(cancellationToken)`) on `Map<T>()` throw `InvalidOperationException` when the query returns no row, and `Single` also when it returns more than one. An insert that returns its new id is one `await command.Map<long>().SingleAsync(cancellationToken)`, with no handler to check the row count. The commands have the shortcuts too: `command.SingleAsync<long>(cancellationToken)`. A `NULL` value is still a row. The error for no rows is thrown after the connection is released and the later result sets are read, so a failure in one of them comes first. See [Terminals](mapping.md#terminals).
 - `ToDictionary` and `ToDictionaryAsync` on `Map<T>()` take a value selector: `ToDictionaryAsync(post => post.Id, post => post.Body ?? "")` builds the lookup in one pass, without keeping the rows. A duplicate key throws, as it does without the value selector.
@@ -76,14 +95,20 @@ The common case, and its fix: declare the map once and pass it.
 
 ```cs
 // 10.x
-var people = cmd.Results<Person>(new("FirstName", "first_name"), new("LastName", "last_name"));
+var people = await cmd.ResultsAsync<Person>(
+	cancellationToken,
+	("FirstName", "first_name"),
+	("LastName", "last_name"));
 
 // 11
-public static RowMap<Person> PersonMap => field ??= [new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")];
-var people = cmd.Map<Person>(PersonMap).ToList();
+public static RowMap<Person> PersonMap => field ??= [
+	new(nameof(Person.FirstName), "first_name"),
+	new(nameof(Person.LastName), "last_name"),
+];
+var people = await cmd.Map<Person>(PersonMap).ToListAsync(cancellationToken);
 ```
 
-To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. Only `Map<T>` also takes the pairs themselves, but that builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
+To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. A map built at the call site builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
 
 These can change behavior without a compile error, most likely first:
 
@@ -101,6 +126,8 @@ These can change behavior without a compile error, most likely first:
 12. **Async calls pass the command's `CancellationToken` to the connection open.**
 13. **`EnsureOpenAsync` and `OpenAsync` have an obsolete `bool configureAwait` overload.** The library always awaits with `ConfigureAwait(false)`; returning to your context is your call. The `bool` overloads still compile with a warning and ignore the argument.
 14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
+15. **`Map<int>([])` throws.** An empty collection expression is a `RowMap<int>` now (the removed `Map<T>(params pairs)` read it as no pairs, so it read the first column), and an `int` is not a row model: it fails with `InvalidOperationException` at run time, not at compile time. Use `Map<int>()`.
+16. **Async terminals read the rows with `Read()`.** The command still executes, and the connection still opens, asynchronously. Call `AsyncReads()` before or after `Map` to read the rows with `ReadAsync()`: see "Changes since rc.5" above.
 
 ## Deprecated in 11.0
 

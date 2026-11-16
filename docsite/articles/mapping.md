@@ -185,13 +185,13 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_backing)]
 
-**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, an `ImmutableArray` of pairs passed to the constructor, or the pairs passed to `Map<T>` build a new map, and compile the row reader, on every call:
+**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, or an `ImmutableArray` of pairs passed to the constructor builds a new map, and compiles the row reader, on every call:
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
 The cost is measured in the benchmarks (the [`RowMap<T>` scenario](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently)). Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
 
-`Map<T>` also takes the pairs themselves, with no `RowMap<T>` written; it is the same one-off and costs the same:
+The constructor also takes the pairs as arguments, with no brackets: `Map(new RowMap<T>(pair, pair))`. It is the same one-off and costs the same:
 
 [!code-csharp[](../samples/Mapping.cs#map_pairs)]
 
@@ -289,17 +289,11 @@ When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function fo
 
 [!code-csharp[](../samples/Mapping.cs#map_selector)]
 
-## Query factories: `Select`
+A mapped query has no `Select`: to shape each row into another type, give `Map` a factory map (`Map(RowMap<TResult>.From(factory))`), or project the list a terminal returns.
 
-A data class can return the query and let the caller pick the terminal. `Select(selector)` on a mapped query returns an `IMappedQuery<TResult>` that projects each row, and it is lazy: building it runs nothing and does not call the selector. Each terminal the caller then picks (`ToListAsync`, `FirstOrDefaultAsync`, `Read`, any of the terminals above) runs the command once, and the selector runs once per row, in row order, while the rows are read.
+A data class can return the mapped query and let each caller pick the terminal:
 
 [!code-csharp[](../samples/Mapping.cs#map_query_factory)]
-
-Each caller picks the terminal it needs:
-
-[!code-csharp[](../samples/Mapping.cs#map_query_factory_use)]
-
-`Select` is on `IMappedQuery<T>`, so it works after `Map<T>()` on an expressive command, a reader, a command or a table, and it chains: a projection of a projection still reads through one reader. It projects the mapped object; it is not `Map(selector)`, which reads the columns of a row. Call `Skip`, `Take` and `SingleResult()` before `Select`: they belong to the mapped query and apply to its rows, before the selector runs. A terminal that stops early, such as `FirstOrDefault`, runs the selector only for the rows it reads. An exception in the selector reaches the caller of the terminal, and the reader and the connection are released as they are when a handler throws. A query that two terminals read runs the command twice (a reader view can be read once, because the reader is yours).
 
 ## Results, and a failure after the first one
 

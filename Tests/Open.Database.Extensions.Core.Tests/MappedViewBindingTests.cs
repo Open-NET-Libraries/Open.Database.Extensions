@@ -42,11 +42,10 @@ public static class MappedViewBindingTests
 		Pin(reader.Map(Id));
 		Pin(reader.Map(r => r.GetInt32(0)));
 		Pin(
-			reader.Map<Item>(new KeyValuePair<string, string?>("Id", "N")));
+			reader.Map(new RowMap<Item>(new KeyValuePair<string, string?>("Id", "N"))));
 		Pin(
-			reader.Map<Item>(
-				new KeyValuePair<string, string?>("Id", "N"),
-				new KeyValuePair<string, string?>("Id", "M")));
+			reader.Map(new RowMap<Item>(new KeyValuePair<string, string?>("Id", "N"),
+				new KeyValuePair<string, string?>("Id", "M"))));
 		Pin(reader.Map<Item>([]));
 
 		// The command, and a DbCommand, which is also an IDbCommand.
@@ -57,11 +56,10 @@ public static class MappedViewBindingTests
 		Pin(command.Map<int>());
 		Pin(command.Map(Id));
 		Pin(
-			command.Map<Item>(new KeyValuePair<string, string?>("Id", "N")));
+			command.Map(new RowMap<Item>(new KeyValuePair<string, string?>("Id", "N"))));
 		Pin(
-			command.Map<Item>(
-				new KeyValuePair<string, string?>("Id", "N"),
-				new KeyValuePair<string, string?>("Id", "M")));
+			command.Map(new RowMap<Item>(new KeyValuePair<string, string?>("Id", "N"),
+				new KeyValuePair<string, string?>("Id", "M"))));
 		Pin(dbCommand.Map<Item>());
 		Pin(dbCommand.Map(Id));
 

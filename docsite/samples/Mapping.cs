@@ -60,27 +60,38 @@ public static class Mapping
 		}
 	}
 
-	public static Person[] MapCallSite(SqliteConnection connection)
+	public static async Task<Person[]> MapCallSiteAsync(SqliteConnection connection, CancellationToken cancellationToken)
 	{
 		#region map_call_site
-		// A one-off: the pairs are written at the call site, so a new map is built, and the row reader compiled, on every call.
-		Person[] people = connection
+		// A one-off: the pairs are written at the call site,
+		// so a new map is built, and the row reader compiled,
+		// on every call.
+		Person[] people = await connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(new RowMap<Person>([new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")]))
-			.ToArray();
+			.Map(new RowMap<Person>([
+				new(nameof(Person.Id), "person_id"),
+				new(nameof(Person.FirstName), "first_name"),
+				new(nameof(Person.LastName), "last_name"),
+			]))
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return people;
 	}
 
-	public static Person[] MapPairs(SqliteConnection connection)
+	public static async Task<Person[]> MapPairsAsync(SqliteConnection connection, CancellationToken cancellationToken)
 	{
 		#region map_pairs
-		// Map<T> also takes the pairs themselves: the same one-off, a new map built, and the row reader compiled, on every call.
-		Person[] people = connection
+		// The pairs in a new RowMap<T> at the call:
+		// the same one-off, a new map built,
+		// and the row reader compiled, on every call.
+		Person[] people = await connection
 			.Command("select person_id, first_name, last_name from people order by person_id")
-			.Map<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name"))
-			.ToArray();
+			.Map(new RowMap<Person>(
+				new(nameof(Person.Id), "person_id"),
+				new(nameof(Person.FirstName), "first_name"),
+				new(nameof(Person.LastName), "last_name")))
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return people;
@@ -523,15 +534,19 @@ public static class HoldingAMap
 public static class PostQueries
 {
 	#region map_query_factory
-	// Select is lazy: nothing runs here.
-	// The command runs once for each terminal the caller picks.
-	public static IMappedQuery<PostSummary> ByAuthor(
+	// The factory map shapes each row
+	// straight into the result type.
+	// Nothing runs here: the command runs once
+	// for each terminal the caller picks.
+	static readonly RowMap<PostSummary> Summary = RowMap<PostSummary>.From(
+		static (int id, string title) => new PostSummary(id, title));
+
+	public static MappedQuery<PostSummary> ByAuthor(
 		IDbConnectionFactory<SqliteConnection> factory,
 		int author)
 		=> factory
 			.Command("select * from posts where author = @author order by id desc")
 			.AddParam("author", author)
-			.Map<Post>()
-			.Select(p => new PostSummary(p.Id, p.Title));
+			.Map(Summary);
 	#endregion
 }

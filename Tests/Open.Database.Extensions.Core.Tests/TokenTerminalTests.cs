@@ -62,6 +62,11 @@ public enum DataflowShape { Plain, Pool, Transform, Mapped, MappedMap }
 // when the call ends),
 // and no token is no allocation.
 #pragma warning disable xUnit1051 // These tests are about which token a call is given: no token, one, or two.
+// The allocation tests count the bytes of the thread that calls, and what else
+// the process does (the JIT, the GC, other tests on the thread pool) moves what a
+// call costs: no other test class runs while they do (the collection is defined
+// in LeakRetentionTests).
+[Collection("Heap measurements")]
 [ExcludeFromCodeCoverage]
 public static class TokenTerminalTests
 {
@@ -963,26 +968,38 @@ public static class TokenTerminalTests
 	// ---- allocation: a call with no token, or one token,
 	// or the same token twice, costs what the call with no token costs ----
 
-	const int Rounds = 7;
+	const int Rounds = 41;
 	const int CallsPerRound = 1000;
 
-	// Bytes per call of each of the calls, after a warm-up: the least
-	// of the rounds. What a call costs is a floor; an occasional call
-	// costs more on this thread (blocks of calls of +128 bytes, single calls
-	// of about +900, whatever the cause), and how many calls do shifts
-	// from round to round and from one variant to another; the median of
-	// the rounds follows that, the least does not. A planted
-	// allocation in every call raises every round, so the least of them
-	// still shows it.
-	// The calls take turns, one of each in every step of a round,
-	// and the bytes are counted call by call (the allocated-bytes counter
-	// of this thread is exact). The JIT recompiles the hot code of a process
-	// while it runs, and the new code allocates less (tens of bytes a call):
-	// calls measured one after the other, each for its own while,
-	// are measured against different states of the same code, and one
-	// can cost more than another only because it ran before the recompile.
-	// Calls that take turns meet the same state, whenever it changes.
-	static long[] BytesPerCall(Action[] calls)
+	// One round: CallsPerRound calls of each of the calls, bytes counted call
+	// by call (the allocated-bytes counter of this thread is exact). The calls
+	// take turns, one of each in every step; the first one of a step moves on
+	// by one every step and by one more every round, so that no call is always
+	// the one that follows the same other, or always the one that goes first.
+	static void MeasureRound(Action[] calls, long[] bytes, int round)
+	{
+		Array.Clear(bytes);
+		for (int i = 0; i < CallsPerRound; i++)
+		{
+			for (int j = 0; j < calls.Length; j++)
+			{
+				int c = (i + j + round) % calls.Length;
+				long before = GC.GetAllocatedBytesForCurrentThread();
+				calls[c]();
+				bytes[c] += GC.GetAllocatedBytesForCurrentThread() - before;
+			}
+		}
+	}
+
+	// Bytes of each round, in total for CallsPerRound calls, of each call,
+	// after a warm-up. What a call costs is not one figure of a process: some
+	// calls and some rounds cost more (async state machine boxes that depend on
+	// how the work was scheduled, a collection, a compile), and they do so
+	// for all the calls together. So the rounds are not reduced to a figure of
+	// their own for each call, which would compare each call at its own best
+	// moment; they are kept, to be compared round by round, where the calls
+	// that took turns meet the same state, whenever it changes.
+	static long[][] BytesPerRound(Action[] calls)
 	{
 		foreach (Action call in calls)
 		{
@@ -993,28 +1010,48 @@ public static class TokenTerminalTests
 		long[] bytes = new long[calls.Length];
 		for (int round = 0; round < Rounds; round++)
 		{
-			Array.Clear(bytes);
-			for (int i = 0; i < CallsPerRound; i++)
-			{
-				// The first call of the step moves on by one each time,
-				// so that no call is always the one that follows the same other.
-				for (int j = 0; j < calls.Length; j++)
-				{
-					int c = (i + j) % calls.Length;
-					long before = GC.GetAllocatedBytesForCurrentThread();
-					calls[c]();
-					bytes[c] += GC.GetAllocatedBytesForCurrentThread() - before;
-				}
-			}
-
+			MeasureRound(calls, bytes, round);
 			for (int c = 0; c < calls.Length; c++)
-				rounds[c][round] = bytes[c] / CallsPerRound;
+				rounds[c][round] = bytes[c];
 		}
 
-		return [.. rounds.Select(r => r.Min())];
+		return rounds;
 	}
 
-	const int Slack = 16;
+	// How much more a call allocated than the reference call, in every round,
+	// in bytes per call.
+	static double[] PairedDifferences(long[] call, long[] reference)
+	{
+		double[] differences = new double[call.Length];
+		for (int round = 0; round < differences.Length; round++)
+		{
+			differences[round]
+				= (call[round] - reference[round]) / (double)CallsPerRound;
+		}
+
+		return differences;
+	}
+
+	static double Median(double[] values)
+	{
+		double[] sorted = [.. values];
+		Array.Sort(sorted);
+		return sorted[sorted.Length / 2];
+	}
+
+	// Of the paired differences of a round (the same round, the same state of
+	// the process, so what moves for all the calls cancels), the median is what
+	// the call costs more than the reference: a round that met a pause or a
+	// collection is one of the Rounds and does not decide, and an allocation
+	// planted in every call raises every difference and shows.
+	// Derivation: the paired differences of one round have a standard deviation
+	// of 14.5 bytes per call on CI (artifact of CI run 43774021188); the median
+	// of N = 41 of them has 1.2533 * 14.5 / sqrt(41) = 2.84 bytes. The slack is
+	// 16 bytes, two thirds of 24 bytes, the smallest object a call can add (x64):
+	// a false failure is 5.6 standard deviations away, and one extra object per
+	// call (24 bytes) is 2.8 standard deviations above the slack.
+	// The test detects one extra object per call (24 B on x64).
+	const double Slack = 16;
 
 	// Compares the variants of one call, in the same run,
 	// so the budget follows the runtime and the configuration. (The calls
@@ -1029,27 +1066,37 @@ public static class TokenTerminalTests
 		// A call token alone must cost what the command's token alone always
 		// cost (a live token costs a little inside the channel wait, whatever
 		// passes it).
-		// The four variants are measured together (see BytesPerCall).
-		long[] measured = BytesPerCall(
+		// The four variants are measured together (see BytesPerRound).
+		long[][] rounds = BytesPerRound(
 		[
 			make(default, default),
 			make(default, cts.Token),
 			make(cts.Token, default),
 			make(cts.Token, cts.Token),
 		]);
-		long none = measured[0];
-		long callOnly = measured[1];
-		long commandOnly = measured[2];
-		long same = measured[3];
-		Assert.True(
-			none <= commandOnly + Slack,
-			$"{what}: no token allocates {none}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
-		Assert.True(
-			callOnly <= commandOnly + Slack,
-			$"{what}: one call token allocates {callOnly}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
-		Assert.True(
-			same <= commandOnly + Slack,
-			$"{what}: the same token twice allocates {same}, one command token {commandOnly}, bytes per call: no token {none}, call token only {callOnly}, command token only {commandOnly}, both {same}, slack {Slack}");
+		AssertNoMoreThanTheCommandToken(what, "no token", rounds, 0);
+		AssertNoMoreThanTheCommandToken(what, "one call token", rounds, 1);
+		AssertNoMoreThanTheCommandToken(what, "the same token twice", rounds, 3);
+	}
+
+	// The variants are, in this order: no token, a call token only,
+	// a command token only (the reference), both.
+	static void AssertNoMoreThanTheCommandToken(
+		string what,
+		string name,
+		long[][] rounds,
+		int variant)
+	{
+		double[] differences = PairedDifferences(rounds[variant], rounds[2]);
+		double median = Median(differences);
+		if (median > Slack)
+		{
+			string levels = string.Join(
+				", ",
+				rounds.Select(r => Median([.. r.Select(b => b / (double)CallsPerRound)])));
+			Assert.Fail(
+				$"{what}: {name} allocates {median:0.##} bytes per call more than one command token (median of {Rounds} paired differences, slack {Slack}); per round: {string.Join(", ", differences.Select(d => d.ToString("0.##")))}; bytes per call (median of the rounds): no token, call token only, command token only, both: {levels}");
+		}
 	}
 
 	[Theory]

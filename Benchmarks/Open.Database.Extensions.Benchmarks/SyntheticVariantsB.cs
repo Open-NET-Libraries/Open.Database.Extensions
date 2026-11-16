@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Data;
 using Open.Database.Extensions.Core;
 
@@ -126,16 +127,97 @@ public static class SyntheticVariantsB
 			return SynItem.Massage(SynItem.From(row), width);
 		};
 
-	// ---- V3: Map<Row>() then Select to a domain object, inline while the reader is open (two objects per row) ----------------
+	// ---- the Select replacement (route a of the A2 migration line) ----
+	// IMappedQuery<T>.Select is removed. A consumer who shaped each row
+	// with a Select now gives Map a factory map: the row is built
+	// straight into the result type, with ONE object per row and no
+	// intermediate row object. The factory runs inside the read loop,
+	// like the Select selector did (so it pays the pace).
+	// A consumer holds the map in a static field, so the maps are
+	// cached here (per pace, and per width for the massaged form) and
+	// the plan is built once.
+	// Every parameter has a default: at a narrow catalog width the
+	// missing columns keep the member's default, as a SynRow member did.
+	static readonly ConcurrentDictionary<long, RowMap<SynItem>> ItemMaps = new();
+
+	/// <summary>
+	/// The factory map to <see cref="SynItem"/>: the V3 shape (the
+	/// conversion runs while the reader is open, one object per row).
+	/// </summary>
+	public static RowMap<SynItem> ItemMap(int pace) => ItemMaps.GetOrAdd(pace, static key => BuildItemMap((int)key, 0, false));
+
+	/// <summary>
+	/// The same with the V6 massage applied for
+	/// <paramref name="width"/> (the V6c shape).
+	/// </summary>
+	public static RowMap<SynItem> MassagedItemMap(int width, int pace)
+		=> ItemMaps.GetOrAdd(((long)(width + 1) << 32) | (uint)pace, static key => BuildItemMap((int)(uint)key, (int)(key >> 32) - 1, true));
+
+	static RowMap<SynItem> BuildItemMap(int pace, int width, bool massage)
+		=> RowMap<SynItem>.From((
+			int id = 0,
+			DateTime created = default,
+			string? title = null,
+			decimal price = 0,
+			int? qty = null,
+			bool isActive = false,
+			Guid key = default,
+			double score = 0,
+			string? note = null,
+			byte[]? blob = null,
+			long big = 0,
+			string? body = null,
+			decimal? amount = null,
+			DateTime? stamp = null,
+			string? tag = null,
+			double ratio = 0,
+			bool? flag = null,
+			Guid? link = null,
+			long count = 0,
+			string? summary = null) =>
+		{
+			if (pace > 0) Spin.Iterations(pace);
+			var item = new SynItem
+			{
+				Id = id,
+				Created = created,
+				Title = title,
+				Price = price,
+				Qty = qty,
+				IsActive = isActive,
+				Key = key,
+				Score = score,
+				Note = note,
+				Blob = blob,
+				Big = big,
+				Body = body,
+				Amount = amount,
+				Stamp = stamp,
+				Tag = tag,
+				Ratio = ratio,
+				Flag = flag,
+				Link = link,
+				Count = count,
+				Summary = summary,
+			};
+			return massage ? SynItem.Massage(item, width) : item;
+		});
+
+	// ---- V3: a factory map straight to the domain object ----
+	// Built while the reader is open: the Select migration target,
+	// one object per row.
 	public static List<SynItem> V3(SyntheticConnection connection, int pace)
-		=> connection.Command(Sql).Map<SynRow>().Select(Inline(pace)).ToList();
+		=> connection.Command(Sql).Map(ItemMap(pace)).ToList();
 
 	public static ValueTask<List<SynItem>> V3Async(SyntheticConnection connection, int pace)
-		=> connection.Command(Sql).Map<SynRow>().Select(Inline(pace)).ToListAsync();
+		=> connection.Command(Sql).Map(ItemMap(pace)).ToListAsync();
 
-	/// <summary>V3s: the same shape streamed through the library's IAsyncEnumerable terminal; the pace is paid in the consumer's loop.</summary>
+	/// <summary>
+	/// V3s: the same factory map streamed through the library's
+	/// IAsyncEnumerable terminal; the pace is paid in the consumer's loop.
+	/// </summary>
 	public static ValueTask<List<SynItem>> V3s(SyntheticConnection connection, int pace)
-		=> connection.Command(Sql).Map<SynRow>().Select(Inline(0)).ReadAsync<SynItem, List<SynItem>>(async rows =>
+		=> connection.Command(Sql).Map(ItemMap(0)).ReadAsync<SynItem, List<SynItem>>(async rows =>
 		{
 			var list = new List<SynItem>();
 			await foreach (var item in rows.ConfigureAwait(false))
@@ -147,9 +229,12 @@ public static class SyntheticVariantsB
 			return list;
 		});
 
-	// ---- V4: V3 with the intermediate row reused or pooled ----------------------------------------------------------------
+	// ---- V4: the intermediate row reused or pooled ----------------------------------------------------------------
 	// Map<Row>() always allocates a new Row (there is no overload that fills a given instance), so the reuse is built where a caller can build it:
-	// the Map(Func<IDataRecord, T>) selector fills a held instance and returns it, and the Select consumes it before the next row is read.
+	// the Map(Func<IDataRecord, T>) selector fills a held instance and
+	// returns it, and the conversion consumes it in the same selector,
+	// before the next row is read (the Select migration target for
+	// Map(selector).Select(f): Map(record => f(selector(record)))).
 	sealed class Reuse(Action<IDataRecord, SynRow> fill)
 	{
 		readonly SynRow _row = new();
@@ -189,28 +274,35 @@ public static class SyntheticVariantsB
 	public static List<SynItem> V4a(SyntheticConnection connection, int width, int pace)
 	{
 		Func<IDataRecord, SynRow> selector = new Reuse(Filler(width)).Next;
-		return connection.Command(Sql).Map(selector).Select(Inline(pace)).ToList();
+		var inline = Inline(pace);
+		return connection.Command(Sql).Map(record => inline(selector(record))).ToList();
 	}
 
 	public static ValueTask<List<SynItem>> V4aAsync(SyntheticConnection connection, int width, int pace)
 	{
 		Func<IDataRecord, SynRow> selector = new Reuse(Filler(width)).Next;
-		return connection.Command(Sql).Map(selector).Select(Inline(pace)).ToListAsync();
+		var inline = Inline(pace);
+		return connection.Command(Sql).Map(record => inline(selector(record))).ToListAsync();
 	}
 
-	/// <summary>V4b: a small pool; the Select returns the row to the pool once it has converted it.</summary>
+	/// <summary>
+	/// V4b: a small pool; the conversion returns the row to the pool
+	/// once it has converted it.
+	/// </summary>
 	public static List<SynItem> V4b(SyntheticConnection connection, int width, int pace)
 	{
 		var pool = new RowPool();
 		Func<IDataRecord, SynRow> selector = new Pooled(Filler(width), pool).Next;
-		return connection.Command(Sql).Map(selector).Select(Returning(pool, pace)).ToList();
+		var returning = Returning(pool, pace);
+		return connection.Command(Sql).Map(record => returning(selector(record))).ToList();
 	}
 
 	public static ValueTask<List<SynItem>> V4bAsync(SyntheticConnection connection, int width, int pace)
 	{
 		var pool = new RowPool();
 		Func<IDataRecord, SynRow> selector = new Pooled(Filler(width), pool).Next;
-		return connection.Command(Sql).Map(selector).Select(Returning(pool, pace)).ToListAsync();
+		var returning = Returning(pool, pace);
+		return connection.Command(Sql).Map(record => returning(selector(record))).ToListAsync();
 	}
 
 	static Func<SynRow, SynItem> Returning(RowPool pool, int pace)
@@ -239,12 +331,15 @@ public static class SyntheticVariantsB
 
 	// V6b: RESERVED for DS1a (the spike's candidate). Intentionally empty: no code until DS1a delivers it.
 
-	/// <summary>V6c: inline in the Select, while the reader is open (the V3 shape).</summary>
+	/// <summary>
+	/// V6c: the massage inside the factory map, while the reader is open
+	/// (the V3 shape).
+	/// </summary>
 	public static List<SynItem> V6c(SyntheticConnection connection, int width, int pace)
-		=> connection.Command(Sql).Map<SynRow>().Select(InlineMassaged(width, pace)).ToList();
+		=> connection.Command(Sql).Map(MassagedItemMap(width, pace)).ToList();
 
 	public static ValueTask<List<SynItem>> V6cAsync(SyntheticConnection connection, int width, int pace)
-		=> connection.Command(Sql).Map<SynRow>().Select(InlineMassaged(width, pace)).ToListAsync();
+		=> connection.Command(Sql).Map(MassagedItemMap(width, pace)).ToListAsync();
 
 	/// <summary>V6d: after the close (the V5 shape).</summary>
 	public static List<SynItem> V6d(SyntheticConnection connection, int width)

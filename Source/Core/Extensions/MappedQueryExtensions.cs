@@ -1,7 +1,10 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Terminal operations for <see cref="IMappedQuery{T}"/>: they materialize the mapped rows into a collection or take a single row, and <see cref="Select{T, TResult}(IMappedQuery{T}, Func{T, TResult})"/> projects them lazily. <see cref="MappedQuery{T}"/> and its skip and take variants expose the same operations directly.
+/// Terminal operations for <see cref="IMappedQuery{T}"/>: they
+/// materialize the mapped rows into a collection or take a single row.
+/// <see cref="MappedQuery{T}"/> and its skip and take variants expose
+/// the same operations directly.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -151,7 +154,7 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(
-			async (items, token) => await items.ToListAsync(token).ConfigureAwait(false),
+			(items, token) => CollectListAsync(items, token),
 			cancellationToken);
 
 	/// <summary>
@@ -183,7 +186,7 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(
-			async (items, token) => await items.ToArrayAsync(token).ConfigureAwait(false),
+			(items, token) => CollectArrayAsync(items, token),
 			cancellationToken);
 
 	/// <summary>
@@ -282,7 +285,7 @@ public static class MappedQueryExtensions
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 		return query.ReadAsync(
-			async (items, token) => await items.ToDictionaryAsync(keySelector, comparer, token).ConfigureAwait(false),
+			(items, token) => CollectDictionaryAsync(items, keySelector, comparer, token),
 			cancellationToken);
 	}
 
@@ -369,7 +372,7 @@ public static class MappedQueryExtensions
 		Contract.EndContractBlock();
 
 		return query.ReadAsync(
-			async (items, token) => await items.ToDictionaryAsync(keySelector, valueSelector, comparer, token).ConfigureAwait(false),
+			(items, token) => CollectDictionaryAsync(items, keySelector, valueSelector, comparer, token),
 			cancellationToken);
 	}
 
@@ -418,26 +421,9 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
-	{
-#if NETSTANDARD2_0
-		var result = new HashSet<T>(comparer);
-		return query.ReadAsync(
-			async (items, token) =>
-			{
-				await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
-				{
-					result.Add(item);
-				}
-
-				return result;
-			},
+		=> query.ReadAsync(
+			(items, token) => CollectHashSetAsync(items, comparer, token),
 			cancellationToken);
-#else
-		return query.ReadAsync(
-			(items, token) => items.ToHashSetAsync(comparer, token),
-			cancellationToken);
-#endif
-	}
 
 	/// <summary>
 	/// Reads the first mapped row.
@@ -497,7 +483,7 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.FirstOrDefaultAsync(token).ConfigureAwait(false),
+			(items, token) => FirstOrDefaultOfAsync(items, token),
 			cancellationToken);
 	}
 
@@ -555,7 +541,7 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false),
+			(items, token) => SingleOrDefaultOfAsync(items, token),
 			cancellationToken);
 	}
 
@@ -631,7 +617,7 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.FirstAsync(token).ConfigureAwait(false),
+			(items, token) => FirstOfAsync(items, token),
 			cancellationToken);
 	}
 
@@ -709,51 +695,136 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.SingleAsync(token).ConfigureAwait(false),
+			(items, token) => SingleOfAsync(items, token),
 			cancellationToken);
 	}
 
-	/// <summary>
-	/// Projects each mapped row with <paramref name="selector"/>, lazily: nothing runs until a terminal of the returned query runs.
-	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <typeparam name="TResult">The type <paramref name="selector"/> returns.</typeparam>
-	/// <param name="query">The query to project.</param>
-	/// <param name="selector">Produces the projected value for each mapped row. It runs once per row, in row order, only while a terminal is reading the rows.</param>
-	/// <returns>A deferred query of the projected rows. Every terminal in <see cref="MappedQueryExtensions"/> works on it, and so does <c>Select</c> again.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
-	/// <remarks>
-	/// <para>
-	/// This call executes nothing and does not run <paramref name="selector"/>. The command runs once for each terminal called on the returned query, exactly as it does on <paramref name="query"/>, so a method can return the projected query and let each caller pick the terminal (<c>ToListAsync</c> or <c>FirstOrDefaultAsync</c>, for example). A query read by two terminals executes the command twice.
-	/// </para>
-	/// <para>
-	/// The projection is built on <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> and <see cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>, so how <paramref name="query"/> opens and releases the connection, reads through later result sets and honors <c>SingleResult()</c> and cancellation is unchanged. <c>Skip</c> and <c>Take</c> apply to the rows of <paramref name="query"/>, before the selector runs: call them before <c>Select</c>. A terminal that stops early, such as <c>FirstOrDefault</c>, runs <paramref name="selector"/> only for the rows it reads.
-	/// </para>
-	/// <para>
-	/// An exception thrown by <paramref name="selector"/> propagates to the caller of the terminal, and the reader and the connection are released as they are when a handler throws. A projection of a projection reads through one reader.
-	/// </para>
-	/// </remarks>
-	/// <example>
-	/// <code>
-	/// static IMappedQuery&lt;CustomerName&gt; Names(IDbConnectionFactory&lt;SqlConnection&gt; factory)
-	///     => factory
-	///         .Command("SELECT Id, Name FROM Customers")
-	///         .Map&lt;Customer&gt;()
-	///         .Select(c => new CustomerName(c.Id, c.Name));
-	///
-	/// List&lt;CustomerName&gt; all = await Names(factory).ToListAsync(cancellationToken);
-	/// CustomerName? first = await Names(factory).FirstOrDefaultAsync(cancellationToken);
-	/// </code>
-	/// </example>
-	/// <seealso cref="IMappedQuery{T}"/>
-	public static IMappedQuery<TResult> Select<T, TResult>(
-		this IMappedQuery<T> query,
-		Func<T, TResult> selector)
+	// The terminals below read a foreign IMappedQuery<T> through its handler. Each one enumerates with
+	// WithCancellation(token).ConfigureAwait(false): the in-box System.Linq.AsyncEnumerable methods await
+	// MoveNextAsync and DisposeAsync without ConfigureAwait(false), so they would resume on the caller's
+	// SynchronizationContext. The messages are those of LINQ.
+	static async ValueTask<List<T>> CollectListAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
 	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		if (selector is null) throw new ArgumentNullException(nameof(selector));
-		Contract.EndContractBlock();
+		var list = new List<T>();
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			list.Add(item);
+		}
 
-		return new ProjectedQuery<T, TResult>(query, selector);
+		return list;
+	}
+
+	static async ValueTask<T[]> CollectArrayAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		// A struct that owns a rented buffer: it goes back to the pool however the call ends.
+		var sink = new ArraySink<T>();
+		try
+		{
+			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+			{
+				sink.Add(item);
+			}
+
+			return sink.ToArray();
+		}
+		finally
+		{
+			sink.Dispose();
+		}
+	}
+
+	static async ValueTask<Dictionary<TKey, T>> CollectDictionaryAsync<T, TKey>(
+		IAsyncEnumerable<T> items,
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer,
+		CancellationToken token)
+		where TKey : notnull
+	{
+		var result = new Dictionary<TKey, T>(comparer);
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			result.Add(keySelector(item), item);
+		}
+
+		return result;
+	}
+
+	static async ValueTask<Dictionary<TKey, TValue>> CollectDictionaryAsync<T, TKey, TValue>(
+		IAsyncEnumerable<T> items,
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer,
+		CancellationToken token)
+		where TKey : notnull
+	{
+		var result = new Dictionary<TKey, TValue>(comparer);
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			result.Add(keySelector(item), valueSelector(item));
+		}
+
+		return result;
+	}
+
+	static async ValueTask<HashSet<T>> CollectHashSetAsync<T>(
+		IAsyncEnumerable<T> items,
+		IEqualityComparer<T>? comparer,
+		CancellationToken token)
+	{
+		var result = new HashSet<T>(comparer);
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			result.Add(item);
+		}
+
+		return result;
+	}
+
+	static async ValueTask<T?> FirstOrDefaultOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			return item;
+		}
+
+		return default;
+	}
+
+	static async ValueTask<T> FirstOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			return item;
+		}
+
+		throw new InvalidOperationException("Sequence contains no elements");
+	}
+
+	static async ValueTask<T?> SingleOrDefaultOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		T? found = default;
+		bool any = false;
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			if (any) throw new InvalidOperationException("Sequence contains more than one element");
+			found = item;
+			any = true;
+		}
+
+		return found;
+	}
+
+	static async ValueTask<T> SingleOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		T? found = default;
+		bool any = false;
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			if (any) throw new InvalidOperationException("Sequence contains more than one element");
+			found = item;
+			any = true;
+		}
+
+		return any ? found! : throw new InvalidOperationException("Sequence contains no elements");
 	}
 }
