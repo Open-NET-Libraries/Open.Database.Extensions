@@ -220,7 +220,7 @@ readonly struct MappedQueryCore<T>
 	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool singleResult, bool useAsync, CancellationToken token)
 		=> reader is DbDataReader db
 			? RowReader.StreamAsync(source, db, skip, take, useAsync, !singleResult, token)
-			: RowReader.Stream(source, reader, skip, take, !singleResult).ToAsyncEnumerable();
+			: RowReader.Stream(source, reader, skip, take, !singleResult, token).ToAsyncEnumerable();
 
 	#endregion
 

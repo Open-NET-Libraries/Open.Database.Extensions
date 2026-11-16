@@ -699,11 +699,16 @@ public static class MappedQueryExtensions
 			cancellationToken);
 	}
 
-	// The terminals below read a foreign IMappedQuery<T> through its handler. Each one enumerates with
-	// WithCancellation(token).ConfigureAwait(false): the in-box System.Linq.AsyncEnumerable methods await
-	// MoveNextAsync and DisposeAsync without ConfigureAwait(false), so they would resume on the caller's
-	// SynchronizationContext. The messages are those of LINQ.
-	static async ValueTask<List<T>> CollectListAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	// The terminals below read a foreign IMappedQuery<T> through its
+	// handler. Each one enumerates with
+	// WithCancellation(token).ConfigureAwait(false): the in-box
+	// System.Linq.AsyncEnumerable methods await MoveNextAsync and
+	// DisposeAsync without ConfigureAwait(false), so they would resume
+	// on the caller's SynchronizationContext.
+	// The messages are those of LINQ.
+	static async ValueTask<List<T>> CollectListAsync<T>(
+		IAsyncEnumerable<T> items,
+		CancellationToken token)
 	{
 		var list = new List<T>();
 		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
@@ -714,7 +719,9 @@ public static class MappedQueryExtensions
 		return list;
 	}
 
-	static async ValueTask<T[]> CollectArrayAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	static async ValueTask<T[]> CollectArrayAsync<T>(
+		IAsyncEnumerable<T> items,
+		CancellationToken token)
 	{
 		// A struct that owns a rented buffer: it goes back to the pool however the call ends.
 		var sink = new ArraySink<T>();
@@ -780,7 +787,9 @@ public static class MappedQueryExtensions
 		return result;
 	}
 
-	static async ValueTask<T?> FirstOrDefaultOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	static async ValueTask<T?> FirstOrDefaultOfAsync<T>(
+		IAsyncEnumerable<T> items,
+		CancellationToken token)
 	{
 		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
 		{
@@ -790,7 +799,9 @@ public static class MappedQueryExtensions
 		return default;
 	}
 
-	static async ValueTask<T> FirstOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	static async ValueTask<T> FirstOfAsync<T>(
+		IAsyncEnumerable<T> items,
+		CancellationToken token)
 	{
 		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
 		{
@@ -800,7 +811,9 @@ public static class MappedQueryExtensions
 		throw new InvalidOperationException("Sequence contains no elements");
 	}
 
-	static async ValueTask<T?> SingleOrDefaultOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	static async ValueTask<T?> SingleOrDefaultOfAsync<T>(
+		IAsyncEnumerable<T> items,
+		CancellationToken token)
 	{
 		T? found = default;
 		bool any = false;
@@ -814,7 +827,9 @@ public static class MappedQueryExtensions
 		return found;
 	}
 
-	static async ValueTask<T> SingleOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	static async ValueTask<T> SingleOfAsync<T>(
+		IAsyncEnumerable<T> items,
+		CancellationToken token)
 	{
 		T? found = default;
 		bool any = false;
