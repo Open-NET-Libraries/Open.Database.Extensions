@@ -49,10 +49,20 @@ public static class ParameterBindingMatrixTests
 		return [.. paths.Select(static p => (MetadataReference)MetadataReference.CreateFromFile(p))];
 	});
 
-	// The same, plus the Microsoft.Data.SqlClient package (the other
-	// package defines a type of the same name, so it is not referenced).
+	// The same, without the legacy System.Data.SqlClient adapter, which
+	// defines a type of the same name (CS0433), and with the
+	// Microsoft.Data.SqlClient package.
 	static readonly Lazy<MetadataReference[]> SqlReferences = new(static () =>
-		[.. References.Value, MetadataReference.CreateFromFile(typeof(mssql::Open.Database.Extensions.ExpressiveSqlCommand).Assembly.Location)]);
+		[
+			.. References.Value.Where(static r => !IsLegacySqlClient(r)),
+			MetadataReference.CreateFromFile(typeof(mssql::Open.Database.Extensions.ExpressiveSqlCommand).Assembly.Location),
+		]);
+
+	static bool IsLegacySqlClient(MetadataReference reference)
+		=> reference is PortableExecutableReference { FilePath: { } path }
+		&& Path.GetFileName(path).Equals(
+			"Open.Database.Extensions.SqlClient.dll",
+			StringComparison.OrdinalIgnoreCase);
 
 	// Each statement is compiled in a method with: c (ExpressiveCommand),
 	// q (the SQL Server command, when sql is true), s (string), i (int),
