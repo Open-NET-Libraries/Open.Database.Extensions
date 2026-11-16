@@ -19,14 +19,26 @@ public static class DataReaderExtensions
 	/// <summary>
 	/// Iterates all records from an <see cref="IDataReader"/>.
 	/// </summary>
+	/// <remarks>
+	/// The token is checked before each read:
+	/// a cancel throws, and the read is not made.
+	/// A cancel during the handler of a row lets that row finish,
+	/// then throws at the next check, even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// Rows already handed out stay handed out.
+	/// To stop early without an exception,
+	/// use <c>IterateWhile</c> and return <see langword="false"/>.
+	/// </remarks>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="throwOnCancellation">If true, when canceled, may exit the iteration via an exception. Otherwise when canceled will simply stop iterating and return without exception.</param>
 	/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled.
+	/// </exception>
 	public static void ForEach(
 		this IDataReader reader,
 		Action<IDataRecord> handler,
-		bool throwOnCancellation,
 		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -35,29 +47,8 @@ public static class DataReaderExtensions
 
 		if (cancellationToken.CanBeCanceled)
 		{
-			if (throwOnCancellation)
-				cancellationToken.ThrowIfCancellationRequested();
-			else if (cancellationToken.IsCancellationRequested)
-				return;
-
-			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			bool cancelled = false;
-			while (reader.Read())
-			{
-				if (cancelled)
-				{
-					handler(reader); // we recieved the results, might as well use them.
-					if (throwOnCancellation)
-						cancellationToken.ThrowIfCancellationRequested();
-
-					break;
-				}
-				else
-				{
-					cancelled = cancellationToken.IsCancellationRequested;
-					handler(reader);
-				}
-			}
+			while (ReadNext(reader, cancellationToken))
+				handler(reader);
 		}
 		else
 		{
@@ -66,16 +57,34 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="ForEach(IDataReader, Action{IDataRecord}, bool, CancellationToken)"/>
-	public static void ForEach(
-		this IDataReader reader,
-		Action<IDataRecord> handler,
-		CancellationToken cancellationToken = default)
-		=> ForEach(reader, handler, false, cancellationToken);
+	// Checks the token at the top of a loop, then reads.
+	// A canceled token throws before the read is made.
+	// Once a read has returned no row the result is complete,
+	// and the token is not looked at again.
+	static bool ReadNext(
+		IDataReader reader,
+		CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+		return reader.Read();
+	}
 
 	/// <summary>
 	/// Iterates all records from an <see cref="DbDataReader"/>.
 	/// </summary>
+	/// <remarks>
+	/// The token is passed to <c>ReadAsync</c>, so the provider
+	/// cancels the read itself. Without <paramref name="useReadAsync"/>
+	/// it is checked before each <c>Read</c> instead.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the handler of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// </remarks>
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled and cut the read short.
+	/// </exception>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
@@ -91,12 +100,16 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false))
+			{
 				handler(reader);
+			}
 		}
 		else
 		{
-			ForEach(reader, handler, true, cancellationToken);
+			ForEach(reader, handler, cancellationToken);
 		}
 	}
 
@@ -113,32 +126,16 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-				await handler(reader).ConfigureAwait(false);
-		}
-		else if (cancellationToken.CanBeCanceled)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			bool cancelled = false;
-			while (reader.Read())
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false))
 			{
-				if (cancelled)
-				{
-					await handler(reader).ConfigureAwait(false); // we recieved the results, might as well use them.
-					cancellationToken.ThrowIfCancellationRequested();
-				}
-				else
-				{
-					cancelled = cancellationToken.IsCancellationRequested;
-					await handler(reader).ConfigureAwait(false);
-				}
+				await handler(reader).ConfigureAwait(false);
 			}
 		}
 		else
 		{
-			while (reader.Read())
+			while (ReadNext(reader, cancellationToken))
 				await handler(reader).ConfigureAwait(false);
 		}
 	}
@@ -304,7 +301,8 @@ public static class DataReaderExtensions
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
 		=> AsEnumerable(reader, others.Prepend(n), arrayPool);
 
-	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
+	/// <inheritdoc
+	/// cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken)"/>
 	public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 	{
 		return reader is null
@@ -323,47 +321,48 @@ public static class DataReaderExtensions
 	/// <summary>
 	/// Iterates records from an <see cref="IDataReader"/> and passes the IDataRecord to a transform function.
 	/// </summary>
+	/// <remarks>
+	/// The iteration is deferred: nothing is read,
+	/// and a canceled token does not throw,
+	/// until the result is enumerated.
+	/// The token is checked before each read:
+	/// a cancel throws from the enumeration, and the read is not made.
+	/// A cancel while a row is being yielded or transformed
+	/// lets that row finish, then throws at the next check,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// Rows already handed out stay handed out.
+	/// To stop early without an exception, stop enumerating.
+	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The reader to iterate.</param>
 	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
 	/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-	/// <param name="throwOnCancellation">If true, when canceled, may exit the iteration via an exception. Otherwise when canceled will simply stop iterating and return without exception.</param>
 	/// <returns>An enumerable used to iterate the results.</returns>
-	public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation = false)
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled (thrown by the enumeration).
+	/// </exception>
+	public static IEnumerable<T> Select<T>(
+		this IDataReader reader,
+		Func<IDataRecord, T> transform,
+		CancellationToken cancellationToken)
 	{
 		return reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: transform is null
 			? throw new ArgumentNullException(nameof(transform))
-			: SelectCore(reader, transform, cancellationToken, throwOnCancellation);
+			: SelectCore(reader, transform, cancellationToken);
 
-		static IEnumerable<T> SelectCore(IDataReader reader, Func<IDataRecord, T> transform, CancellationToken cancellationToken, bool throwOnCancellation)
+		static IEnumerable<T> SelectCore(
+			IDataReader reader,
+			Func<IDataRecord, T> transform,
+			CancellationToken cancellationToken)
 		{
 			if (cancellationToken.CanBeCanceled)
 			{
-				if (throwOnCancellation)
-					cancellationToken.ThrowIfCancellationRequested();
-				else if (cancellationToken.IsCancellationRequested)
-					yield break;
-
-				// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-				bool cancelled = false;
-				while (reader.Read())
-				{
-					if (cancelled)
-					{
-						yield return transform(reader); // we recieved the results, might as well use them.
-						if (throwOnCancellation)
-							cancellationToken.ThrowIfCancellationRequested();
-
-						break;
-					}
-					else
-					{
-						cancelled = cancellationToken.IsCancellationRequested;
-						yield return transform(reader);
-					}
-				}
+				while (ReadNext(reader, cancellationToken))
+					yield return transform(reader);
 			}
 			else
 			{
@@ -373,9 +372,13 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken, bool)"/>
-	public static IEnumerable<T> Select<T>(this IDataReader reader, CancellationToken cancellationToken, Func<IDataRecord, T> transform, bool throwOnCancellation = false)
-		=> Select(reader, transform, cancellationToken, throwOnCancellation);
+	/// <inheritdoc
+	/// cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken)"/>
+	public static IEnumerable<T> Select<T>(
+		this IDataReader reader,
+		CancellationToken cancellationToken,
+		Func<IDataRecord, T> transform)
+		=> Select(reader, transform, cancellationToken);
 
 	static async IAsyncEnumerable<object[]> AsAsyncEnumerableCore(DbDataReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
@@ -566,106 +569,84 @@ public static class DataReaderExtensions
 	/// <summary>
 	/// Asyncronously iterates all records from a data reader..]
 	/// </summary>
+	/// <remarks>
+	/// The iteration is deferred until the result is enumerated.
+	/// The token is passed to <c>ReadAsync</c>,
+	/// so the provider cancels the read itself
+	/// (a plain <see cref="IDataReader"/> is checked before each <c>Read</c>).
+	/// A cancel throws from the enumeration.
+	/// A cancel while a row is being yielded or transformed
+	/// throws at the next read, even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// Rows already handed out stay handed out.
+	/// To stop early without an exception, leave the loop.
+	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The DbDataReader to iterate.</param>
 	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="throwOnCancellation">If true, when canceled, may exit the iteration via an exception. Otherwise when canceled will simply stop iterating and return without exception.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <returns>An enumerable used to iterate the results.</returns>
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled (thrown by the enumeration).
+	/// </exception>
 	public static IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
 		Func<IDataRecord, T> transform,
-		bool throwOnCancellation,
 		CancellationToken cancellationToken = default)
 	{
 		return reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: transform is null
 			? throw new ArgumentNullException(nameof(transform))
-			: SelectAsyncCore(reader, transform, throwOnCancellation, cancellationToken);
+			: SelectAsyncCore(reader, transform, cancellationToken);
 
 		static async IAsyncEnumerable<T> SelectAsyncCore(
 			DbDataReader reader,
 			Func<IDataRecord, T> transform,
-			bool throwOnCancellation,
 			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			if (throwOnCancellation)
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false))
 			{
-				cancellationToken.ThrowIfCancellationRequested();
-				while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-					yield return transform(reader);
-			}
-			else
-			{
-				if (cancellationToken.IsCancellationRequested) yield break;
-				while (!cancellationToken.IsCancellationRequested
-					&& await reader.ReadAsync(cancellationToken).CancelledAsFalse().ConfigureAwait(false))
-				{
-					yield return transform(reader);
-				}
+				yield return transform(reader);
 			}
 		}
 	}
 
-	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
-	public static IAsyncEnumerable<T> SelectAsync<T>(this DbDataReader reader,
-		Func<IDataRecord, T> transform,
-		CancellationToken cancellationToken = default)
-		=> SelectAsync(reader, transform, false, cancellationToken);
-
-	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	/// <inheritdoc
+	/// cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)"/>
 	public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
 		Func<IDataRecord, ValueTask<T>> transform,
-		bool throwOnCancellation,
 		CancellationToken cancellationToken = default)
 	{
 		return reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: transform is null
 			? throw new ArgumentNullException(nameof(transform))
-			: SelectAsyncCore(reader, transform, throwOnCancellation, cancellationToken);
+			: SelectAsyncCore(reader, transform, cancellationToken);
 
-		static async IAsyncEnumerable<T> SelectAsyncCore(IDataReader reader, Func<IDataRecord, ValueTask<T>> transform, bool throwOnCancellation, [EnumeratorCancellation] CancellationToken cancellationToken)
+		static async IAsyncEnumerable<T> SelectAsyncCore(
+			IDataReader reader,
+			Func<IDataRecord, ValueTask<T>> transform,
+			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			if (throwOnCancellation)
+			if (reader is DbDataReader r)
 			{
-				cancellationToken.ThrowIfCancellationRequested();
-				if (reader is DbDataReader r)
+				while (await r
+					.ReadAsync(cancellationToken)
+					.ConfigureAwait(false))
 				{
-					while (await r.ReadAsync(cancellationToken).ConfigureAwait(false))
-						yield return await transform(r).ConfigureAwait(false);
-				}
-				else
-				{
-					while (reader.Read())
-					{
-						cancellationToken.ThrowIfCancellationRequested();
-						yield return await transform(reader).ConfigureAwait(false);
-					}
+					yield return await transform(r).ConfigureAwait(false);
 				}
 			}
 			else
 			{
-				if (cancellationToken.IsCancellationRequested) yield break;
-				if (reader is DbDataReader r)
-				{
-					while (!cancellationToken.IsCancellationRequested && await r.ReadAsync().ConfigureAwait(false))
-						yield return await transform(r).ConfigureAwait(false);
-				}
-				else
-				{
-					while (!cancellationToken.IsCancellationRequested && reader.Read())
-						yield return await transform(reader).ConfigureAwait(false);
-				}
+				while (ReadNext(reader, cancellationToken))
+					yield return await transform(reader).ConfigureAwait(false);
 			}
 		}
 	}
-
-	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, bool, CancellationToken)"/>
-	public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
-		Func<IDataRecord, ValueTask<T>> transform,
-		CancellationToken cancellationToken = default)
-		=> SelectAsync(reader, transform, false, cancellationToken);
 
 	/// <summary>
 	/// Obsolete: use reader.Map(transform).ToList().
@@ -830,11 +811,27 @@ public static class DataReaderExtensions
 	/// <summary>
 	/// Iterates an <see cref="IDataReader"/> while the predicate returns true.
 	/// </summary>
+	/// <remarks>
+	/// The token is checked before each read:
+	/// a cancel throws, and the read is not made.
+	/// A cancel during the predicate of a row lets that row finish,
+	/// then throws at the next check, even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// Rows already handed out stay handed out.
+	/// To stop early, return <see langword="false"/> from the predicate:
+	/// that ends the iteration without an exception.
+	/// </remarks>
 	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
-	/// <param name="throwOnCancellation">If true, when canceled, may exit the iteration via an exception. Otherwise when canceled will simply stop iterating and return without exception.</param>
 	/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
-	public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, bool throwOnCancellation, CancellationToken cancellationToken = default)
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled.
+	/// </exception>
+	public static void IterateWhile(
+		this IDataReader reader,
+		Func<IDataRecord, bool> predicate,
+		CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
@@ -842,26 +839,9 @@ public static class DataReaderExtensions
 
 		if (cancellationToken.CanBeCanceled)
 		{
-			if (throwOnCancellation)
-				cancellationToken.ThrowIfCancellationRequested();
-			else if (cancellationToken.IsCancellationRequested)
-				return;
-
-			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			bool cancelled = false;
-			while (reader.Read() && predicate(reader))
+			while (ReadNext(reader, cancellationToken))
 			{
-				if (cancelled)
-				{
-					if (throwOnCancellation)
-						cancellationToken.ThrowIfCancellationRequested();
-
-					break;
-				}
-				else
-				{
-					cancelled = cancellationToken.IsCancellationRequested;
-				}
+				if (!predicate(reader)) break;
 			}
 		}
 		else
@@ -870,11 +850,8 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
-	public static void IterateWhile(this IDataReader reader, Func<IDataRecord, bool> predicate, CancellationToken cancellationToken = default)
-		=> IterateWhile(reader, predicate, false, cancellationToken);
-
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	/// <inheritdoc
+	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
 	public static async ValueTask IterateWhileAsync(
 		this DbDataReader reader,
 		Func<IDataRecord, bool> predicate,
@@ -884,14 +861,19 @@ public static class DataReaderExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
+		while (await reader
+			.ReadAsync(cancellationToken)
+			.ConfigureAwait(false)
+			&& predicate(reader)) { }
 	}
 
 	/// <param name="reader">The DbDataReader to load data from.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
 	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <inheritdoc
+	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"
+	/// path="/*[not(self::param)]"/>
 	public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -900,17 +882,17 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
-		}
-		else if (cancellationToken.CanBeCanceled)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-			while (reader.Read() && predicate(reader))
-				cancellationToken.ThrowIfCancellationRequested();
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false)
+				&& predicate(reader)) { }
 		}
 		else
 		{
-			while (reader.Read() && predicate(reader)) { }
+			while (ReadNext(reader, cancellationToken))
+			{
+				if (!predicate(reader)) break;
+			}
 		}
 	}
 
@@ -920,32 +902,14 @@ public static class DataReaderExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		if (cancellationToken.CanBeCanceled)
+		while (ReadNext(reader, cancellationToken))
 		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			bool cancelled = false;
-			while (reader.Read() && await predicate(reader).ConfigureAwait(false))
-			{
-				if (cancelled)
-				{
-					cancellationToken.ThrowIfCancellationRequested();
-					break;
-				}
-				else
-				{
-					cancelled = cancellationToken.IsCancellationRequested;
-				}
-			}
-		}
-		else
-		{
-			while (reader.Read() && await predicate(reader).ConfigureAwait(false)) { }
+			if (!await predicate(reader).ConfigureAwait(false)) break;
 		}
 	}
 
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)"/>
+	/// <inheritdoc
+	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
 	public static async ValueTask IterateWhileAsync(
 		this IDataReader reader,
 		Func<IDataRecord, ValueTask<bool>> predicate,
@@ -957,7 +921,10 @@ public static class DataReaderExtensions
 
 		if (reader is DbDataReader r)
 		{
-			while (await r.ReadAsync(cancellationToken).ConfigureAwait(false) && await predicate(reader).ConfigureAwait(false)) { }
+			while (await r
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false)
+				&& await predicate(reader).ConfigureAwait(false)) { }
 		}
 		else
 		{
@@ -970,7 +937,9 @@ public static class DataReaderExtensions
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
 	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
 	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <inheritdoc
+	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"
+	/// path="/*[not(self::param)]"/>
 	public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
