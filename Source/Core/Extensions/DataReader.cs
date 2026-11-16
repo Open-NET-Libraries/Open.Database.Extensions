@@ -100,8 +100,12 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false))
+			{
 				handler(reader);
+			}
 		}
 		else
 		{
@@ -122,8 +126,12 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false))
+			{
 				await handler(reader).ConfigureAwait(false);
+			}
 		}
 		else
 		{
@@ -853,7 +861,10 @@ public static class DataReaderExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
+		while (await reader
+			.ReadAsync(cancellationToken)
+			.ConfigureAwait(false)
+			&& predicate(reader)) { }
 	}
 
 	/// <param name="reader">The DbDataReader to load data from.</param>
@@ -871,7 +882,10 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false)
+				&& predicate(reader)) { }
 		}
 		else
 		{
@@ -907,7 +921,10 @@ public static class DataReaderExtensions
 
 		if (reader is DbDataReader r)
 		{
-			while (await r.ReadAsync(cancellationToken).ConfigureAwait(false) && await predicate(reader).ConfigureAwait(false)) { }
+			while (await r
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false)
+				&& await predicate(reader).ConfigureAwait(false)) { }
 		}
 		else
 		{
