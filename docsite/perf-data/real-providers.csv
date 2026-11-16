@@ -1,0 +1,21 @@
+provider,variant_id,variant,family,description,columns,rows,total_us,allocated_kb,source_run
+"SQLite file",V1,"Map<T>(), the RowMap plan",odx-one,"The cached, compiled typed plan",5,10000,7425.35,4373.67,rp-lite-w5
+"SQLite file",V2,"Map(selector), hand-written",odx-one,"A static Func<IDataRecord,T> with typed getters",5,10000,5975.55,3826.52,rp-lite-w5
+"SQLite file",V3,"Row class, inline Select",odx-select,"Two objects per row: a row class, then Select while the reader is open",5,10000,8412.85,6483.38,rp-lite-w5
+"SQLite file",V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",5,10000,7582.62,4795.77,rp-lite-w5
+"SQLite file",V9c,"Hand loop (reference)",reference,"Typed getters written directly on the provider reader",5,10000,5962.72,3826.31,rp-lite-w5
+"SQLite file",V1,"Map<T>(), the RowMap plan",odx-one,"The cached, compiled typed plan",20,10000,31300.98,14448.46,rp-lite-w20
+"SQLite file",V2,"Map(selector), hand-written",odx-one,"A static Func<IDataRecord,T> with typed getters",20,10000,25898.64,12250.66,rp-lite-w20
+"SQLite file",V3,"Row class, inline Select",odx-select,"Two objects per row: a row class, then Select while the reader is open",20,10000,30899.16,16558.28,rp-lite-w20
+"SQLite file",V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,29780.11,15144.24,rp-lite-w20
+"SQLite file",V9c,"Hand loop (reference)",reference,"Typed getters written directly on the provider reader",20,10000,25920.88,12250.33,rp-lite-w20
+"SQL Server LocalDB",V1,"Map<T>(), the RowMap plan",odx-one,"The cached, compiled typed plan",5,10000,3076.88,2830.94,rp-sql-w5
+"SQL Server LocalDB",V2,"Map(selector), hand-written",odx-one,"A static Func<IDataRecord,T> with typed getters",5,10000,3157.9,2830.96,rp-sql-w5
+"SQL Server LocalDB",V3,"Row class, inline Select",odx-select,"Two objects per row: a row class, then Select while the reader is open",5,10000,3748.27,4940.69,rp-sql-w5
+"SQL Server LocalDB",V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",5,10000,3188.24,3799.97,rp-sql-w5
+"SQL Server LocalDB",V9c,"Hand loop (reference)",reference,"Typed getters written directly on the provider reader",5,10000,2942.05,2830.77,rp-sql-w5
+"SQL Server LocalDB",V1,"Map<T>(), the RowMap plan",odx-one,"The cached, compiled typed plan",20,10000,25903.05,9708.42,rp-sql-w20
+"SQL Server LocalDB",V2,"Map(selector), hand-written",odx-one,"A static Func<IDataRecord,T> with typed getters",20,10000,25177.33,9708.44,rp-sql-w20
+"SQL Server LocalDB",V3,"Row class, inline Select",odx-select,"Two objects per row: a row class, then Select while the reader is open",20,10000,27239.67,11818.14,rp-sql-w20
+"SQL Server LocalDB",V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,27572.23,12561.54,rp-sql-w20
+"SQL Server LocalDB",V9c,"Hand loop (reference)",reference,"Typed getters written directly on the provider reader",20,10000,25594,9708.21,rp-sql-w20
