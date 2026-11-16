@@ -38,6 +38,34 @@ Post[] posts = await connectionFactory
 - [Coming from Dapper](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html): the same jobs side by side
 - [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html)
 
+## Trimming and native AOT
+
+Open.Database.Extensions is not marked trimmable, and native AOT is not supported in 11.0. `Map<T>()` and `AddParams(...)` read your types and the provider's data reader type by reflection, and build row readers as expression trees.
+
+If you publish with `PublishTrimmed=true`, keep what ODX reads: the public constructors, properties and fields of every type you pass to `Map<T>()` and of every object you pass to `AddParams`, and the public methods of the provider's data reader type. A model type that is not kept fails at the first query with `'Post' cannot be mapped: it has no public constructor.` A reader type that is not kept fails with `Value cannot be null. (Parameter 'method')`.
+
+This keeps all three. Call `TrimRoots.Keep()` once at startup. `Post` and `Args` stand for your own model type and your own `AddParams` object type:
+
+```cs
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Data.Sqlite;
+using static System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
+
+static class TrimRoots
+{
+    [DynamicDependency(
+        PublicConstructors | PublicProperties | PublicFields,
+        typeof(Post))]
+    [DynamicDependency(
+        PublicConstructors | PublicProperties | PublicFields,
+        typeof(Args))]
+    [DynamicDependency(PublicMethods, typeof(SqliteDataReader))]
+    public static void Keep() { }
+}
+```
+
+It was measured with a trimmed, self-contained publish on .NET 10 (win-x64) and `Microsoft.Data.Sqlite` 10.0.14, whose reader type is `SqliteDataReader`. Other providers and .NET 11 were not run.
+
 ## The packages
 
 | Package | What it adds | Targets |
