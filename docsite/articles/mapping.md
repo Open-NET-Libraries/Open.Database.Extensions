@@ -267,6 +267,8 @@ Every terminal has an `Async` twin that takes a `CancellationToken`:
 
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_async)]
 
+An async terminal executes and opens asynchronously but reads the rows with `Read()`; [`AsyncReads()`](async-reads.md) opts one call in to `ReadAsync`.
+
 ## Mapping a reader or a command you already have
 
 `Map<T>()` also works on a plain `IDataReader` and on a plain `IDbCommand`. `reader.Map<T>()` returns a `MappedReader<T>` and `command.Map<T>()` returns a `MappedCommand<T>`. Both have the same overloads as the expressive command's `Map` (no argument, a `RowMap<T>`, pairs, a selector) and the same terminals, synchronous and asynchronous, including `Skip`, `Take` and `Read`. The rules for mapping `T` are the ones above.
