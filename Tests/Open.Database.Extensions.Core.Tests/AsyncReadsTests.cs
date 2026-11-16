@@ -1,5 +1,3 @@
-using System.Data.Common;
-
 namespace Open.Database.Extensions.Tests;
 
 #nullable enable
@@ -57,48 +55,48 @@ public static class AsyncReadsTests
 			case Path.FluentCommand:
 			case Path.FluentCommandViewOptIn:
 			case Path.FluentSingleResultFirst:
-			{
-				var rig = new TokenRig { Rows = Rows };
-				int syncReads = 0;
-				rig.BeforeRead = _ => syncReads++;
-				var command = new ExpressiveDbCommand(
-					new TokenConnection(rig, ConnectionState.Open), CommandType.Text, "SELECT Id");
-				return new Probe(async () =>
 				{
-					MappedQuery<int> view = path switch
+					var rig = new TokenRig { Rows = Rows };
+					int syncReads = 0;
+					rig.BeforeRead = _ => syncReads++;
+					var command = new ExpressiveDbCommand(
+						new TokenConnection(rig, ConnectionState.Open), CommandType.Text, "SELECT Id");
+					return new Probe(async () =>
 					{
-						Path.FluentCommand => (optIn ? command.AsyncReads() : command).Map<int>(),
-						Path.FluentCommandViewOptIn => optIn ? command.Map<int>().AsyncReads() : command.Map<int>(),
-						_ => optIn ? command.SingleResult().Map<int>().AsyncReads() : command.SingleResult().Map<int>(),
-					};
-					return await view.ToListAsync(token);
-				}, () => syncReads - rig.Read.Count, () => rig.Read.Count); // TokenReader.ReadAsync calls Read, so those are subtracted
-			}
+						MappedQuery<int> view = path switch
+						{
+							Path.FluentCommand => (optIn ? command.AsyncReads() : command).Map<int>(),
+							Path.FluentCommandViewOptIn => optIn ? command.Map<int>().AsyncReads() : command.Map<int>(),
+							_ => optIn ? command.SingleResult().Map<int>().AsyncReads() : command.SingleResult().Map<int>(),
+						};
+						return await view.ToListAsync(token);
+					}, () => syncReads - rig.Read.Count, () => rig.Read.Count); // TokenReader.ReadAsync calls Read, so those are subtracted
+				}
 
 			case Path.DbCommandAsIDbCommand:
 			case Path.DbCommandSingleResultFirst:
-			{
-				var reader = new CountingReader(Rows);
-				var connection = new FakeDbConnection();
-				connection.SetState(ConnectionState.Open);
-				IDbCommand command = new FakeDbCommand(connection, () => reader);
-				return new Probe(() =>
 				{
-					MappedCommand<int> view = path == Path.DbCommandSingleResultFirst
-						? command.SingleResult().Map<int>()
-						: command.Map<int>();
-					if (optIn) view = view.AsyncReads();
-					return view.ToListAsync(token).AsTask();
-				}, () => reader.Reads, () => reader.ReadAsyncs);
-			}
+					var reader = new CountingReader(Rows);
+					var connection = new FakeDbConnection();
+					connection.SetState(ConnectionState.Open);
+					IDbCommand command = new FakeDbCommand(connection, () => reader);
+					return new Probe(() =>
+					{
+						MappedCommand<int> view = path == Path.DbCommandSingleResultFirst
+							? command.SingleResult().Map<int>()
+							: command.Map<int>();
+						if (optIn) view = view.AsyncReads();
+						return view.ToListAsync(token).AsTask();
+					}, () => reader.Reads, () => reader.ReadAsyncs);
+				}
 
 			case Path.DataReader:
-			{
-				var reader = new CountingReader(Rows);
-				return new Probe(
-					() => reader.Map<int>().ToListAsync(token).AsTask(),
-					() => reader.Reads, () => reader.ReadAsyncs);
-			}
+				{
+					var reader = new CountingReader(Rows);
+					return new Probe(
+						() => reader.Map<int>().ToListAsync(token).AsTask(),
+						() => reader.Reads, () => reader.ReadAsyncs);
+				}
 
 			default:
 				throw new ArgumentOutOfRangeException(nameof(path));
@@ -149,7 +147,7 @@ public static class AsyncReadsTests
 		connection.SetState(ConnectionState.Open);
 		IDbCommand command = new FakeDbCommand(connection, () => reader);
 
-		List<int> rows = command.Map<int>().AsyncReads().ToList();
+		var rows = command.Map<int>().AsyncReads().ToList();
 
 		Assert.Equal(Rows, rows.Count);
 		Assert.Equal(0, reader.ReadAsyncs);
@@ -263,7 +261,7 @@ public static class AsyncReadsTests
 		using var cts = new CancellationTokenSource();
 		int mapped = 0;
 		var command = new PlainReaderCommand(() => FakeReader.Create(["id"], [.. Enumerable.Range(1, 20).Select(i => (object?[])[i])]));
-		MappedQuery<int> query = command.Map(r =>
+		MappedQuery<int> query = command.Map(_ =>
 		{
 			if (++mapped == 10) cts.Cancel();
 			return mapped;

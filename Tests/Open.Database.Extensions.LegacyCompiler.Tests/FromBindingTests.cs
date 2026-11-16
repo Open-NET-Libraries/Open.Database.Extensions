@@ -12,12 +12,12 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 	{
 		sealed class Item
 		{
-			public Item(int id) { Id = id; }
+			public Item(int id) => Id = id;
 
 			public int Id { get; }
 		}
 
-		static Item Make(int id) { return new Item(id); }
+		static Item Make(int id) => new Item(id);
 
 		static readonly KeyValuePair<string, string>[] Pairs = { new KeyValuePair<string, string>("Id", "N") };
 
@@ -26,7 +26,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		{
 			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(default));
 			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(null));
-			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(new KeyValuePair<string, string>[0]));
+			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(Array.Empty<KeyValuePair<string, string>>()));
 			Assert.Same(RowMap<Item>.Default, RowMap<Item>.From(default(ReadOnlySpan<KeyValuePair<string, string>>)));
 
 			ReadOnlySpan<KeyValuePair<string, string>> span = Pairs;
@@ -51,7 +51,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(asDelegate, Pairs));
 			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, span));
 			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, default(ReadOnlySpan<KeyValuePair<string, string>>)));
-			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, new KeyValuePair<string, string>[0]));
+			Assert.NotSame(RowMap<Item>.Default, RowMap<Item>.From(func, Array.Empty<KeyValuePair<string, string>>()));
 		}
 
 #if NET11_0_OR_GREATER

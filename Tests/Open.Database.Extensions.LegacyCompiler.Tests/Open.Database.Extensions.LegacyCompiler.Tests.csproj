@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<!--
 		What a consumer on an older compiler gets. Each target compiles this project with the language version that consumers of that target commonly still have:
@@ -13,7 +13,7 @@
 		<IsPackable>false</IsPackable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
-		<NoWarn>$(NoWarn);IDE0161;IDE0090</NoWarn>
+		<NoWarn>$(NoWarn);IDE0161;IDE0090;IDE0290;IDE0078;IDE0300</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net472'">

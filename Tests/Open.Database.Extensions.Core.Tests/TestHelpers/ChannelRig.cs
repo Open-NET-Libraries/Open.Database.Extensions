@@ -68,11 +68,11 @@ internal sealed class ChannelTestReader(
 		return base.Read();
 	}
 
-	public override Task<bool> ReadAsync(CancellationToken cancellationToken)
+	public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
 	{
 		AsyncReads++;
 		_inAsync = true;
-		try { return base.ReadAsync(cancellationToken); }
+		try { return await base.ReadAsync(cancellationToken); }
 		finally { _inAsync = false; }
 	}
 
@@ -209,54 +209,54 @@ internal sealed class ChannelRig
 		switch (view)
 		{
 			case "Query":
-			{
-				var q = new FakeExecuteReader(Make).Map<ChannelRow>();
-				if (asyncReads) q = q.AsyncReads();
-				rig.ToReader = (o, s, t) => q.ToChannelReader(o, s, t);
-				rig.ToChannel = (o, s, t) => q.ToChannel(o, s, t);
-				rig.ToCounted = (out n, o, s, t)
-					=> q.ToChannel(out n, o, s, t);
-				break;
-			}
+				{
+					var q = new FakeExecuteReader(Make).Map<ChannelRow>();
+					if (asyncReads) q = q.AsyncReads();
+					rig.ToReader = (o, s, t) => q.ToChannelReader(o, s, t);
+					rig.ToChannel = (o, s, t) => q.ToChannel(o, s, t);
+					rig.ToCounted = (out n, o, s, t)
+						=> q.ToChannel(out n, o, s, t);
+					break;
+				}
 
 			case "Skip":
-			{
-				var q = new FakeExecuteReader(Make).Map<ChannelRow>();
-				if (asyncReads) q = q.AsyncReads();
-				var v = q.Skip(0);
-				rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
-				rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
-				rig.ToCounted = (out n, o, s, t)
-					=> v.ToChannel(out n, o, s, t);
-				break;
-			}
+				{
+					var q = new FakeExecuteReader(Make).Map<ChannelRow>();
+					if (asyncReads) q = q.AsyncReads();
+					var v = q.Skip(0);
+					rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
+					rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
+					rig.ToCounted = (out n, o, s, t)
+						=> v.ToChannel(out n, o, s, t);
+					break;
+				}
 
 			case "Take":
-			{
-				var q = new FakeExecuteReader(Make).Map<ChannelRow>();
-				if (asyncReads) q = q.AsyncReads();
-				var v = q.Take(1000);
-				rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
-				rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
-				rig.ToCounted = (out n, o, s, t)
-					=> v.ToChannel(out n, o, s, t);
-				break;
-			}
+				{
+					var q = new FakeExecuteReader(Make).Map<ChannelRow>();
+					if (asyncReads) q = q.AsyncReads();
+					var v = q.Take(1000);
+					rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
+					rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
+					rig.ToCounted = (out n, o, s, t)
+						=> v.ToChannel(out n, o, s, t);
+					break;
+				}
 
 			case "Command":
-			{
-				var connection = new FakeDbConnection();
-				connection.SetState(state);
-				rig.Connection = connection;
-				var command = new FakeDbCommand(connection, Make);
-				var v = command.Map<ChannelRow>();
-				if (asyncReads) v = v.AsyncReads();
-				rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
-				rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
-				rig.ToCounted = (out n, o, s, t)
-					=> v.ToChannel(out n, o, s, t);
-				break;
-			}
+				{
+					var connection = new FakeDbConnection();
+					connection.SetState(state);
+					rig.Connection = connection;
+					var command = new FakeDbCommand(connection, Make);
+					var v = command.Map<ChannelRow>();
+					if (asyncReads) v = v.AsyncReads();
+					rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
+					rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
+					rig.ToCounted = (out n, o, s, t)
+						=> v.ToChannel(out n, o, s, t);
+					break;
+				}
 
 			default:
 				throw new ArgumentOutOfRangeException(nameof(view));

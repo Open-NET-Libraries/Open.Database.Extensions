@@ -806,6 +806,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			{
 				// A member of an object that the procedure does not take is simply not sent; an argument named by the caller must match.
 				if (p.FromObject) { names[i] = null; continue; } // the pooled slot holds whatever an earlier renter left: write it before it is read
+
 				throw NoMatch(expression, real!.Names);
 			}
 

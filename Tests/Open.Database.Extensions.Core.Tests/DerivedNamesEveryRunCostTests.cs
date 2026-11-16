@@ -67,6 +67,7 @@ public static class DerivedNamesEveryRunCostTests
 				_db.Sent.Clear();
 			};
 
+		[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
 		public Action Async(ExpressiveDbCommand command)
 			=> () =>
 			{
@@ -78,8 +79,8 @@ public static class DerivedNamesEveryRunCostTests
 	static NamedCommand Derived(Rig rig)
 	{
 		var command = new NamedCommand(rig.Connection, Real);
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		var startDate = new DateTime(2026, 1, 2);
 		command
 			.AddParam(orderId)

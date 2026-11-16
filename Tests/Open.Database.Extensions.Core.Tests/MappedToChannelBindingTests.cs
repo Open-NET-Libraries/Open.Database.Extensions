@@ -41,7 +41,7 @@ public static class MappedToChannelBindingTests
 		for (int i = 0; i + 4 < il.Length; i++)
 		{
 			// call, callvirt
-			if (il[i] != 0x28 && il[i] != 0x6F) continue;
+			if (il[i] is not 0x28 and not 0x6F) continue;
 			try
 			{
 				int token = BitConverter.ToInt32(il, i + 1);
@@ -83,8 +83,8 @@ public static class MappedToChannelBindingTests
 		X1, X1, X3, X4,
 	];
 
-	static string[] Query() =>
-	[
+	static string[] Query()
+	=> [
 		Bound((MappedQuery<Item> q) => q.ToChannelReader()),
 		Bound((MappedQuery<Item> q) => q.ToChannelReader(Ct)),
 		Bound((MappedQuery<Item> q) => q.ToChannelReader(Options)),
@@ -112,8 +112,8 @@ public static class MappedToChannelBindingTests
 		Bound((MappedQuery<Item> q) => q.ToChannel(out _, Options, true, Ct)),
 	];
 
-	static string[] WithSkip() =>
-	[
+	static string[] WithSkip()
+	=> [
 		Bound((MappedQueryWithSkip<Item> q) => q.ToChannelReader()),
 		Bound((MappedQueryWithSkip<Item> q) => q.ToChannelReader(Ct)),
 		Bound((MappedQueryWithSkip<Item> q) => q.ToChannelReader(Options)),
@@ -145,8 +145,8 @@ public static class MappedToChannelBindingTests
 			=> q.ToChannel(out _, Options, true, Ct)),
 	];
 
-	static string[] WithTake() =>
-	[
+	static string[] WithTake()
+	=> [
 		Bound((MappedQueryWithTake<Item> q) => q.ToChannelReader()),
 		Bound((MappedQueryWithTake<Item> q) => q.ToChannelReader(Ct)),
 		Bound((MappedQueryWithTake<Item> q) => q.ToChannelReader(Options)),
@@ -178,8 +178,8 @@ public static class MappedToChannelBindingTests
 			=> q.ToChannel(out _, Options, true, Ct)),
 	];
 
-	static string[] Command() =>
-	[
+	static string[] Command()
+	=> [
 		Bound((MappedCommand<Item> q) => q.ToChannelReader()),
 		Bound((MappedCommand<Item> q) => q.ToChannelReader(Ct)),
 		Bound((MappedCommand<Item> q) => q.ToChannelReader(Options)),

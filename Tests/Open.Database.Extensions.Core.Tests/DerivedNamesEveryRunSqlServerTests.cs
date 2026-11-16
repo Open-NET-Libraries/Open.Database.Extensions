@@ -87,7 +87,7 @@ public static class DerivedNamesEveryRunSqlServerTests
 			() => new SqlConnection(ConnectionString(database)),
 			CommandType.StoredProcedure,
 			procedures.Qualified);
-		int orderId = 5;
+		const int orderId = 5;
 		command.AddParam(orderId);
 
 		Assert.Equal(5, Value(command.ExecuteScalar()));
@@ -109,7 +109,7 @@ public static class DerivedNamesEveryRunSqlServerTests
 			() => new SqlConnection(ConnectionString(database)),
 			CommandType.StoredProcedure,
 			procedures.Qualified);
-		int orderId = 5;
+		const int orderId = 5;
 		command.AddParam(orderId);
 
 		Assert.Equal(5, Value(await command.ExecuteScalarAsync(Token)));
@@ -128,7 +128,7 @@ public static class DerivedNamesEveryRunSqlServerTests
 			connection,
 			CommandType.StoredProcedure,
 			procedures.Qualified);
-		int orderId = 5;
+		const int orderId = 5;
 		command.AddParam(orderId);
 
 		Assert.Equal(5, Value(command.ExecuteScalar()));

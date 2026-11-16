@@ -541,7 +541,7 @@ public static class MappedToChannelReaderTests
 		var received = new List<int>();
 		var query = Posts();
 
-		ChannelReader<ChannelRow> reader = query
+		var reader = query
 			.Map<ChannelRow>()
 			.ToChannelReader(Ct);
 
@@ -595,7 +595,7 @@ public static class MappedToChannelReaderTests
 	{
 		var received = new List<int>();
 
-		ChannelReader<ChannelRow> reader = Posts()
+		var reader = Posts()
 			.Map<ChannelRow>()
 			.ToChannelReader(
 				new BoundedChannelOptions(2) { SingleReader = true },

@@ -159,8 +159,8 @@ public static class DerivedNamesEveryRunTests
 	{
 		var rig = new Rig();
 		var command = new DeclaredCommand(rig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		command
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -185,8 +185,8 @@ public static class DerivedNamesEveryRunTests
 	{
 		var rig = new Rig();
 		var command = new DeclaredCommand(rig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		command
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -258,8 +258,8 @@ public static class DerivedNamesEveryRunTests
 	{
 		var rig = new Rig();
 		var command = new DeclaredCommand(rig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		command
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -280,8 +280,8 @@ public static class DerivedNamesEveryRunTests
 	{
 		var rig = new Rig();
 		var command = new DeclaredCommand(rig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		command
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -310,8 +310,8 @@ public static class DerivedNamesEveryRunTests
 		{
 			var rig = new Rig();
 			var command = new DeclaredCommand(rig, Twice());
-			int orderId = 5;
-			int customerId = 7;
+			const int orderId = 5;
+			const int customerId = 7;
 			command
 				.AddParam(orderId)
 				.AddParam(customerId);
@@ -362,8 +362,8 @@ public static class DerivedNamesEveryRunTests
 		var failures = new ConcurrentQueue<string>();
 		var rig = new Rig();
 		var command = new DeclaredCommand(rig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		command
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -440,8 +440,8 @@ public static class DerivedNamesEveryRunTests
 	static DeclaredCommand InnerCommand(Rig rig)
 	{
 		var inner = new DeclaredCommand(rig, Twice());
-		int orderId = 50;
-		int customerId = 70;
+		const int orderId = 50;
+		const int customerId = 70;
 		inner
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -456,8 +456,8 @@ public static class DerivedNamesEveryRunTests
 		DeclaredCommand inner = InnerCommand(innerRig);
 
 		var outer = new HookCommand(outerRig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		outer
 			.AddParam(orderId)
 			.AddParam(customerId);
@@ -525,7 +525,7 @@ public static class DerivedNamesEveryRunTests
 	{
 		var rig = new Rig();
 		var command = new HookCommand(rig, Twice());
-		int orderId = 5;
+		const int orderId = 5;
 		var other = new Args();
 		command
 			.AddParam(orderId)
@@ -558,7 +558,7 @@ public static class DerivedNamesEveryRunTests
 			["a"] = ["@order_id"],
 		};
 		var command = new DeclaredCommand(rig, declared);
-		int orderId = 5;
+		const int orderId = 5;
 		command.AddParam(orderId);
 
 		Slot first = rig.Use("a");
@@ -568,7 +568,7 @@ public static class DerivedNamesEveryRunTests
 
 		// The procedure changed: it now takes @customer_id as well.
 		declared["a"] = ["@order_id", "@customer_id"];
-		int customerId = 7;
+		const int customerId = 7;
 		command.AddParam(customerId);
 
 		Slot second = rig.Use("a");
@@ -588,14 +588,14 @@ public static class DerivedNamesEveryRunTests
 			["a"] = ["@order_id"],
 		};
 		var command = new DeclaredCommand(rig, declared);
-		int orderId = 5;
+		const int orderId = 5;
 		command.AddParam(orderId);
 
 		rig.Use("a");
 		await command.ExecuteNonQueryAsync(Token);
 
 		declared["a"] = ["@order_id", "@customer_id"];
-		int customerId = 7;
+		const int customerId = 7;
 		command.AddParam(customerId);
 
 		Slot second = rig.Use("a");
@@ -610,8 +610,8 @@ public static class DerivedNamesEveryRunTests
 	{
 		var rig = new Rig();
 		var command = new HookCommand(rig, Twice());
-		int orderId = 5;
-		int customerId = 7;
+		const int orderId = 5;
+		const int customerId = 7;
 		command
 			.AddParam(orderId)
 			.AddParam(customerId);

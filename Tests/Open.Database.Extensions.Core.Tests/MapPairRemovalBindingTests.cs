@@ -89,9 +89,9 @@ public static class MapPairRemovalBindingTests
 		Assert.Equal("", Bound((IDbCommand r) => r.Map<Item>()));
 		Assert.Equal("", Bound((DataTable r) => r.Map<Item>()));
 
-		Assert.Equal("Func`2", Bound((IExecuteReader r) => r.Map(x => new Item())));
-		Assert.Equal("Func`2", Bound((IDataReader r) => r.Map(x => new Item())));
-		Assert.Equal("Func`2", Bound((IDbCommand r) => r.Map(x => new Item())));
-		Assert.Equal("Func`2", Bound((DataTable r) => r.Map(x => new Item())));
+		Assert.Equal("Func`2", Bound((IExecuteReader r) => r.Map(_ => new Item())));
+		Assert.Equal("Func`2", Bound((IDataReader r) => r.Map(_ => new Item())));
+		Assert.Equal("Func`2", Bound((IDbCommand r) => r.Map(_ => new Item())));
+		Assert.Equal("Func`2", Bound((DataTable r) => r.Map(_ => new Item())));
 	}
 }

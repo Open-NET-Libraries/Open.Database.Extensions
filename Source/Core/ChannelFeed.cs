@@ -137,6 +137,7 @@ internal sealed class ChannelFeed<T>
 	/// The row count of a feed made with a count:
 	/// the task stays incomplete until the producer ends.
 	/// </summary>
+	[SuppressMessage("Roslynator", "RCS1210:Return completed task instead of returning null")]
 	internal Task<long>? Count
 		=> _count?.Task;
 

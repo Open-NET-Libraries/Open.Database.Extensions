@@ -250,7 +250,7 @@ public static class FactoryMapTests
 		var command = new PlainReaderCommand(() => new DataTableReader(table));
 
 		RowMap<Post> viaConstructor = RowMap<Post>.Default;
-		RowMap<Post> viaFactory = RowMap<Post>.From(static (int id, string title) => new Post(id, title));
+		var viaFactory = RowMap<Post>.From(static (int id, string title) => new Post(id, title));
 
 		long theirs = BytesPerCall(() => command.Map(viaConstructor).ToList());
 		long mine = BytesPerCall(() => command.Map(viaFactory).ToList());
@@ -274,7 +274,7 @@ public static class FactoryMapTests
 		Assert.Equal("factory", wrong.ParamName);
 		Assert.Contains("cannot be assigned", wrong.Message);
 
-		var none = Assert.Throws<ArgumentException>(() => RowMap<WeightEntry>.From(static (int a) => { }));
+		var none = Assert.Throws<ArgumentException>(() => RowMap<WeightEntry>.From(static (int _) => { }));
 		Assert.Equal("factory", none.ParamName);
 
 		// A type the function returns that is assignable to T is fine.
@@ -346,7 +346,7 @@ public static class FactoryMapTests
 		var group = RowMap<Post>.From(MakePost);
 		Assert.Equal(new Post(1, "one"), Assert.Single(Read(route, [("Id", typeof(int)), ("Title", typeof(string))], [1, "one"], group)));
 
-		int offset = 100;
+		const int offset = 100;
 		var closure = RowMap<Post>.From((int id, string title) => new Post(id + offset, title));
 		Assert.Equal(new Post(101, "one"), Assert.Single(Read(route, [("Id", typeof(int)), ("Title", typeof(string))], [1, "one"], closure)));
 	}

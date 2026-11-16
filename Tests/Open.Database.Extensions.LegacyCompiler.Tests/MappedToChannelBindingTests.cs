@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Open.Database.Extensions.LegacyCompiler.Tests
@@ -29,19 +28,13 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			public int Id { get; set; }
 		}
 
-		static bool IsRung(MethodBase method)
-		{
-			return method.Name.StartsWith("ToChannel", StringComparison.Ordinal);
-		}
+		static bool IsRung(MethodBase method) => method.Name.StartsWith("ToChannel", StringComparison.Ordinal);
 
-		static string Names(MethodBase method)
-		{
-			return string.Join(
+		static string Names(MethodBase method) => string.Join(
 				",",
 				method.GetParameters()
 					.Select(p => p.ParameterType.Name)
 					.ToArray());
-		}
 
 		static string Bound<TView>(Func<TView, object> lambda)
 		{
@@ -66,7 +59,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		}
 
 		static readonly ChannelOptions Options = new BoundedChannelOptions(2);
-		static readonly CancellationToken Ct = default(CancellationToken);
+		static readonly CancellationToken Ct;
 
 		const string R1 = "CancellationToken";
 		const string R2 = "ChannelOptions,CancellationToken";
@@ -83,9 +76,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			X1, X1, X3, X4,
 		};
 
-		static string[] Query()
-		{
-			return new[]
+		static string[] Query() => new[]
 			{
 				Bound((MappedQuery<Item> q) => q.ToChannelReader()),
 				Bound((MappedQuery<Item> q) => q.ToChannelReader(Ct)),
@@ -117,11 +108,8 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				Bound((MappedQuery<Item> q)
 					=> q.ToChannel(out _, Options, true, Ct)),
 			};
-		}
 
-		static string[] WithSkip()
-		{
-			return new[]
+		static string[] WithSkip() => new[]
 			{
 				Bound((MappedQueryWithSkip<Item> q) => q.ToChannelReader()),
 				Bound((MappedQueryWithSkip<Item> q) => q.ToChannelReader(Ct)),
@@ -157,11 +145,8 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				Bound((MappedQueryWithSkip<Item> q)
 					=> q.ToChannel(out _, Options, true, Ct)),
 			};
-		}
 
-		static string[] WithTake()
-		{
-			return new[]
+		static string[] WithTake() => new[]
 			{
 				Bound((MappedQueryWithTake<Item> q) => q.ToChannelReader()),
 				Bound((MappedQueryWithTake<Item> q) => q.ToChannelReader(Ct)),
@@ -197,11 +182,8 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				Bound((MappedQueryWithTake<Item> q)
 					=> q.ToChannel(out _, Options, true, Ct)),
 			};
-		}
 
-		static string[] Command()
-		{
-			return new[]
+		static string[] Command() => new[]
 			{
 				Bound((MappedCommand<Item> q) => q.ToChannelReader()),
 				Bound((MappedCommand<Item> q) => q.ToChannelReader(Ct)),
@@ -235,34 +217,21 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				Bound((MappedCommand<Item> q)
 					=> q.ToChannel(out _, Options, true, Ct)),
 			};
-		}
 
 		[Fact]
 		public static void Query_EveryCallBindsThePredictedRung(
-			)
-		{
-			Assert.Equal(Expected, Query());
-		}
+			) => Assert.Equal(Expected, Query());
 
 		[Fact]
 		public static void Skip_EveryCallBindsThePredictedRung(
-			)
-		{
-			Assert.Equal(Expected, WithSkip());
-		}
+			) => Assert.Equal(Expected, WithSkip());
 
 		[Fact]
 		public static void Take_EveryCallBindsThePredictedRung(
-			)
-		{
-			Assert.Equal(Expected, WithTake());
-		}
+			) => Assert.Equal(Expected, WithTake());
 
 		[Fact]
 		public static void Command_EveryCallBindsThePredictedRung(
-			)
-		{
-			Assert.Equal(Expected, Command());
-		}
+			) => Assert.Equal(Expected, Command());
 	}
 }
