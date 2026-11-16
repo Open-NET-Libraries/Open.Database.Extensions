@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 304" role="img" aria-labelledby="summary-title summary-desc">
+  <title id="summary-title">The RowMap plan against Dapper and hand-written code</title>
+  <desc id="summary-desc">Four headline ratios from the RowMap plan, in the synthetic runs. 2.48× less reader-open time than Dapper, for the RowMap plan. 2.41× fewer bytes allocated than Dapper. 2.19× faster than dumping every row into object[]. 1.74× how much slower the plan is than a hand-written selector.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="303" rx="8"/>
+  <text class="title" x="16" y="28">The RowMap plan against Dapper and hand-written code</text>
+  <text class="muted" x="16" y="48">20 columns, 1,000 rows, synthetic reader. Reader-open time and allocation.</text>
+  <g>
+    <title>Dapper 202.4 µs against the RowMap plan 81.6 µs</title>
+    <rect class="tile" x="16" y="64" width="260" height="96" rx="8"/>
+    <text class="big" x="30" y="106">2.48×</text>
+    <text class="muted" x="30" y="128">less reader-open time than Dapper,</text>
+    <text class="muted" x="30" y="145">for the RowMap plan</text>
+  </g>
+  <g>
+    <title>Dapper 548.1 KB against the RowMap plan 227.4 KB</title>
+    <rect class="tile" x="284" y="64" width="260" height="96" rx="8"/>
+    <text class="big" x="298" y="106">2.41×</text>
+    <text class="muted" x="298" y="128">fewer bytes allocated than Dapper</text>
+  </g>
+  <g>
+    <title>object[] rows 178.4 µs against the RowMap plan 81.6 µs</title>
+    <rect class="tile" x="16" y="168" width="260" height="96" rx="8"/>
+    <text class="big" x="30" y="210">2.19×</text>
+    <text class="muted" x="30" y="232">faster than dumping every row into</text>
+    <text class="muted" x="30" y="249">object[]</text>
+  </g>
+  <g>
+    <title>RowMap plan 81.6 µs against the hand-written selector 46.8 µs</title>
+    <rect class="tile" x="284" y="168" width="260" height="96" rx="8"/>
+    <text class="big" x="298" y="210">1.74×</text>
+    <text class="muted" x="298" y="232">how much slower the plan is than a</text>
+    <text class="muted" x="298" y="249">hand-written selector</text>
+  </g>
+  <text class="muted small" x="16" y="286">Build b27a02f, 2026-11-14, one run per case. Numbers: synthetic-overhead.csv</text>
+</svg>

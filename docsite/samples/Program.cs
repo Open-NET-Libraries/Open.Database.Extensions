@@ -381,6 +381,22 @@ Check(
 			.Map<Post>()
 			.ToList()) == readDefault,
 	"a synchronous terminal after AsyncReads() returns the same rows");
+// Reader cancellation: the token is checked before each read,
+// and a cancel throws.
+Db.Seed();
+(int[] canceledSeen, bool canceledThrew)
+	= await ReaderCancellation.SelectAsyncCanceled(connection);
+Check(
+	canceledThrew && canceledSeen.SequenceEqual([1, 2]),
+	"a canceled SelectAsync throws OperationCanceledException, "
+	+ "and the rows before the cancel were seen");
+(canceledSeen, canceledThrew)
+	= ReaderCancellation.ForEachCanceled(connection);
+Check(
+	canceledThrew && canceledSeen.SequenceEqual([1, 2]),
+	"the sync form: a canceled ForEach throws "
+	+ "OperationCanceledException, "
+	+ "and the rows before the cancel were seen");
 
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;

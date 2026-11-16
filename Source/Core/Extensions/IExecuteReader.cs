@@ -95,7 +95,7 @@ public static class IExecuteReaderExtensions
 						}
 						else
 						{
-							reader.ForEach(x.handler, true, x.token);
+							reader.ForEach(x.handler, x.token);
 						}
 
 						return false;
@@ -147,7 +147,7 @@ public static class IExecuteReaderExtensions
 						}
 						else
 						{
-							reader.IterateWhile(x.handler, true, x.token);
+							reader.IterateWhile(x.handler, x.token);
 						}
 
 						return false;

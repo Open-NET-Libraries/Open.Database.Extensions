@@ -122,8 +122,12 @@ internal sealed class ChannelRig
 
 	/// <summary>
 	/// How many readers were created: how often the command ran.
+	/// Counted atomically: feeds that start at once run on
+	/// different threads.
 	/// </summary>
-	public int Executes { get; private set; }
+	public int Executes => Volatile.Read(ref _executes);
+
+	int _executes;
 
 	/// <summary>Only the Command view has a connection.</summary>
 	public FakeDbConnection? Connection { get; private set; }
@@ -198,7 +202,7 @@ internal sealed class ChannelRig
 		var rig = new ChannelRig();
 		DbDataReader Make()
 		{
-			rig.Executes++;
+			Interlocked.Increment(ref rig._executes);
 			return rig.Reader = make();
 		}
 

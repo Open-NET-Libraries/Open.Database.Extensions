@@ -174,6 +174,7 @@ internal static class RowReader
 		{
 			for (; skip > 0; skip--)
 			{
+				token.ThrowIfCancellationRequested();
 				if (reader.Read()) continue;
 				skipped = false;
 				break;
@@ -197,9 +198,10 @@ internal static class RowReader
 			else
 			{
 				Func<IDataRecord, T>? map = null;
-				while (reader.Read())
+				while (true)
 				{
 					token.ThrowIfCancellationRequested();
+					if (!reader.Read()) break;
 					map ??= source.Mapper(reader);
 					yield return map(reader);
 					if (++n == take) break;
@@ -207,13 +209,21 @@ internal static class RowReader
 			}
 		}
 
-		if (readThrough) ReadThrough(reader);
+		if (readThrough) ReadThrough(reader, token);
 	}
 
 	// Moves past every later result set without reading its rows; the provider raises a failure in one of them here.
-	internal static void ReadThrough(IDataReader reader)
+	// A canceled token throws before each NextResult;
+	// once one returns false the read is done.
+	internal static void ReadThrough(
+		IDataReader reader,
+		CancellationToken token = default)
 	{
-		while (reader.NextResult()) { }
+		while (true)
+		{
+			token.ThrowIfCancellationRequested();
+			if (!reader.NextResult()) break;
+		}
 	}
 
 	static bool SkipRows(DbDataReader reader, int skip)
@@ -345,7 +355,7 @@ internal static class RowReader
 	{
 		if (reader is not DbDataReader db)
 		{
-			ReadThrough(reader);
+			ReadThrough(reader, token);
 			return default;
 		}
 

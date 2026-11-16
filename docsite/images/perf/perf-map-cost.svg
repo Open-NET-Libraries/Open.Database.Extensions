@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 218" role="img" aria-labelledby="map-cost-title map-cost-desc">
+  <title id="map-cost-title">What building a map costs, once</title>
+  <desc id="map-cost-desc">Ranked horizontal bars of the one-time cost of building and compiling a map, for 1, 5 and 20 columns; one row per call. Every bar starts at zero. 1 column 0.19 ms; 5 columns 0.33 ms; 20 columns 0.87 ms.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="217" rx="8"/>
+  <text class="title" x="16" y="28">What building a map costs, once</text>
+  <text class="muted" x="16" y="48">Shorter is better. A reused map costs 0.17 to 0.27 µs for a one-row call.</text>
+  <line class="grid" x1="100" y1="66" x2="100" y2="144"/>
+  <text class="muted small mid" x="100" y="160">0.0</text>
+  <line class="grid" x1="177.6" y1="66" x2="177.6" y2="144"/>
+  <text class="muted small mid" x="177.6" y="160">0.2</text>
+  <line class="grid" x1="255.2" y1="66" x2="255.2" y2="144"/>
+  <text class="muted small mid" x="255.2" y="160">0.4</text>
+  <line class="grid" x1="332.8" y1="66" x2="332.8" y2="144"/>
+  <text class="muted small mid" x="332.8" y="160">0.6</text>
+  <line class="grid" x1="410.4" y1="66" x2="410.4" y2="144"/>
+  <text class="muted small mid" x="410.4" y="160">0.8</text>
+  <line class="grid" x1="488" y1="66" x2="488" y2="144"/>
+  <text class="muted small mid" x="488" y="160">1.0</text>
+  <g>
+    <title>1 columns: a map built on every call took 0.19 ms and allocated 15.6 KB; a reused map took 0.17 µs and allocated 0.55 KB. The difference, 0.19 ms and 15.1 KB, is the one-time cost.</title>
+    <rect class="hit" x="0" y="66" width="560" height="26"/>
+    <text class="name" x="90" y="83">1 column</text>
+    <path class="one" d="M100,71 h70.58 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-70.58 z"/>
+    <text class="val" x="180.58" y="83">0.19 ms</text>
+  </g>
+  <g>
+    <title>5 columns: a map built on every call took 0.33 ms and allocated 22.9 KB; a reused map took 0.19 µs and allocated 0.55 KB. The difference, 0.33 ms and 22.4 KB, is the one-time cost.</title>
+    <rect class="hit" x="0" y="92" width="560" height="26"/>
+    <text class="name" x="90" y="109">5 columns</text>
+    <path class="one" d="M100,97 h125.13 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-125.13 z"/>
+    <text class="val" x="235.13" y="109">0.33 ms</text>
+  </g>
+  <g>
+    <title>20 columns: a map built on every call took 0.88 ms and allocated 52.0 KB; a reused map took 0.27 µs and allocated 0.55 KB. The difference, 0.87 ms and 51.5 KB, is the one-time cost.</title>
+    <rect class="hit" x="0" y="118" width="560" height="26"/>
+    <text class="name" x="90" y="135">20 columns</text>
+    <path class="one" d="M100,123 h335.41 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-335.41 z"/>
+    <text class="val" x="445.41" y="135">0.87 ms</text>
+  </g>
+  <line class="axis" x1="100" y1="66" x2="100" y2="144"/>
+  <text class="muted small mid" x="294" y="176">milliseconds to build and compile one map (the extra time of a call that builds it)</text>
+  <text class="muted small" x="16" y="204">Build 544cc01, 2026-11-14, one run per case. Numbers: map-cost.csv</text>
+</svg>

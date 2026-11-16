@@ -1,0 +1,4 @@
+columns,rows,reused_total_us,reused_allocated_kb,built_every_call_total_us,built_every_call_allocated_kb,source_run
+1,1,0.166,0.547,192.394,15.637,stageC-C3a
+5,1,0.187,0.547,332.991,22.933,stageC-C3a
+20,1,0.265,0.547,875.029,52.05,stageC-C3a

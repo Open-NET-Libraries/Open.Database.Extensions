@@ -88,6 +88,8 @@ dotnet add package Microsoft.Data.Sqlite
 
 Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate (`11.0.0-rc.6`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
 
+Publishing trimmed or native AOT? See [Trimming and native AOT](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Source/Core/README.md#trimming-and-native-aot).
+
 ## How it fits together
 
 [![Four layers: a foundation of best-practice ADO.NET extensions, expressive commands, row mapping, all resting on performance.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/architecture.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/articles/foundation.html)

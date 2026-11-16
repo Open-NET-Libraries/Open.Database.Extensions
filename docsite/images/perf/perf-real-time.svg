@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 534" role="img" aria-labelledby="real-time-title real-time-desc">
+  <title id="real-time-title">Real databases: time per call</title>
+  <desc id="real-time-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; bars are ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Map(selector), hand-written 25.2 ms; Hand loop (reference) 25.6 ms; Map&lt;T&gt;(), the RowMap plan 25.9 ms; Row class, inline Select 27.2 ms; Dapper Query&lt;T&gt; 27.6 ms. SQLite file: Map(selector), hand-written 25.9 ms; Hand loop (reference) 25.9 ms; Dapper Query&lt;T&gt; 29.8 ms; Row class, inline Select 30.9 ms; Map&lt;T&gt;(), the RowMap plan 31.3 ms.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="533" rx="8"/>
+  <text class="title" x="16" y="28">Real databases: time per call</text>
+  <text class="muted" x="16" y="48">Shorter is better. 20 columns, 10,000 rows, one scale for both panels.</text>
+  <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">ODX: one object per row</text>
+  <rect class="select" x="200" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="218" y="72">ODX: row class, then Select</text>
+  <rect class="grey" x="16" y="82" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="92">Hand loop on the provider reader (reference)</text>
+  <rect class="dapper" x="339" y="82" width="12" height="12" rx="3"/>
+  <text class="small" x="357" y="92">Dapper 2.1.89</text>
+  <text class="head" x="16" y="128">SQL Server LocalDB</text>
+  <line class="grid" x1="196" y1="138" x2="196" y2="268"/>
+  <text class="muted small mid" x="196" y="284">0</text>
+  <line class="grid" x1="269" y1="138" x2="269" y2="268"/>
+  <text class="muted small mid" x="269" y="284">10</text>
+  <line class="grid" x1="342" y1="138" x2="342" y2="268"/>
+  <text class="muted small mid" x="342" y="284">20</text>
+  <line class="grid" x1="415" y1="138" x2="415" y2="268"/>
+  <text class="muted small mid" x="415" y="284">30</text>
+  <line class="grid" x1="488" y1="138" x2="488" y2="268"/>
+  <text class="muted small mid" x="488" y="284">40</text>
+  <g>
+    <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQL Server LocalDB, 20 columns, 10,000 rows: 25.2 ms per call, 9.48 MB allocated.</title>
+    <rect class="hit" x="0" y="138" width="560" height="26"/>
+    <text class="name" x="186" y="155">Map(selector), hand-written</text>
+    <path class="one" d="M196,143 h179.79 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-179.79 z"/>
+    <text class="val" x="385.79" y="155">25.2 ms</text>
+  </g>
+  <g>
+    <title>Hand loop (reference): Typed getters written directly on the provider reader. SQL Server LocalDB, 20 columns, 10,000 rows: 25.6 ms per call, 9.48 MB allocated.</title>
+    <rect class="hit" x="0" y="164" width="560" height="26"/>
+    <text class="name" x="186" y="181">Hand loop (reference)</text>
+    <path class="grey" d="M196,169 h182.84 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-182.84 z"/>
+    <text class="val" x="388.84" y="181">25.6 ms</text>
+  </g>
+  <g>
+    <title>Map&lt;T&gt;(), the RowMap plan: The cached, compiled typed plan. SQL Server LocalDB, 20 columns, 10,000 rows: 25.9 ms per call, 9.48 MB allocated.</title>
+    <rect class="hit" x="0" y="190" width="560" height="26"/>
+    <text class="name" x="186" y="207">Map&lt;T&gt;(), the RowMap plan</text>
+    <path class="one" d="M196,195 h185.09 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-185.09 z"/>
+    <text class="val" x="391.09" y="207">25.9 ms</text>
+  </g>
+  <g>
+    <title>Row class, inline Select: Two objects per row: a row class, then Select while the reader is open. SQL Server LocalDB, 20 columns, 10,000 rows: 27.2 ms per call, 11.54 MB allocated.</title>
+    <rect class="hit" x="0" y="216" width="560" height="26"/>
+    <text class="name" x="186" y="233">Row class, inline Select</text>
+    <path class="select" d="M196,221 h194.85 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-194.85 z"/>
+    <text class="val" x="400.85" y="233">27.2 ms</text>
+  </g>
+  <g>
+    <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQL Server LocalDB, 20 columns, 10,000 rows: 27.6 ms per call, 12.27 MB allocated.</title>
+    <rect class="hit" x="0" y="242" width="560" height="26"/>
+    <text class="name" x="186" y="259">Dapper Query&lt;T&gt;</text>
+    <path class="dapper" d="M196,247 h197.28 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-197.28 z"/>
+    <text class="val" x="403.28" y="259">27.6 ms</text>
+  </g>
+  <line class="axis" x1="196" y1="138" x2="196" y2="268"/>
+  <text class="head" x="16" y="320">SQLite file</text>
+  <line class="grid" x1="196" y1="330" x2="196" y2="460"/>
+  <text class="muted small mid" x="196" y="476">0</text>
+  <line class="grid" x1="269" y1="330" x2="269" y2="460"/>
+  <text class="muted small mid" x="269" y="476">10</text>
+  <line class="grid" x1="342" y1="330" x2="342" y2="460"/>
+  <text class="muted small mid" x="342" y="476">20</text>
+  <line class="grid" x1="415" y1="330" x2="415" y2="460"/>
+  <text class="muted small mid" x="415" y="476">30</text>
+  <line class="grid" x1="488" y1="330" x2="488" y2="460"/>
+  <text class="muted small mid" x="488" y="476">40</text>
+  <g>
+    <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQLite file, 20 columns, 10,000 rows: 25.9 ms per call, 11.96 MB allocated.</title>
+    <rect class="hit" x="0" y="330" width="560" height="26"/>
+    <text class="name" x="186" y="347">Map(selector), hand-written</text>
+    <path class="one" d="M196,335 h185.06 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-185.06 z"/>
+    <text class="val" x="391.06" y="347">25.9 ms</text>
+  </g>
+  <g>
+    <title>Hand loop (reference): Typed getters written directly on the provider reader. SQLite file, 20 columns, 10,000 rows: 25.9 ms per call, 11.96 MB allocated.</title>
+    <rect class="hit" x="0" y="356" width="560" height="26"/>
+    <text class="name" x="186" y="373">Hand loop (reference)</text>
+    <path class="grey" d="M196,361 h185.22 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-185.22 z"/>
+    <text class="val" x="391.22" y="373">25.9 ms</text>
+  </g>
+  <g>
+    <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQLite file, 20 columns, 10,000 rows: 29.8 ms per call, 14.79 MB allocated.</title>
+    <rect class="hit" x="0" y="382" width="560" height="26"/>
+    <text class="name" x="186" y="399">Dapper Query&lt;T&gt;</text>
+    <path class="dapper" d="M196,387 h213.39 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-213.39 z"/>
+    <text class="val" x="419.39" y="399">29.8 ms</text>
+  </g>
+  <g>
+    <title>Row class, inline Select: Two objects per row: a row class, then Select while the reader is open. SQLite file, 20 columns, 10,000 rows: 30.9 ms per call, 16.17 MB allocated.</title>
+    <rect class="hit" x="0" y="408" width="560" height="26"/>
+    <text class="name" x="186" y="425">Row class, inline Select</text>
+    <path class="select" d="M196,413 h221.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-221.56 z"/>
+    <text class="val" x="427.56" y="425">30.9 ms</text>
+  </g>
+  <g>
+    <title>Map&lt;T&gt;(), the RowMap plan: The cached, compiled typed plan. SQLite file, 20 columns, 10,000 rows: 31.3 ms per call, 14.11 MB allocated.</title>
+    <rect class="hit" x="0" y="434" width="560" height="26"/>
+    <text class="name" x="186" y="451">Map&lt;T&gt;(), the RowMap plan</text>
+    <path class="one" d="M196,439 h224.5 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-224.5 z"/>
+    <text class="val" x="430.5" y="451">31.3 ms</text>
+  </g>
+  <line class="axis" x1="196" y1="330" x2="196" y2="460"/>
+  <text class="muted small mid" x="342" y="492">milliseconds per call</text>
+  <text class="muted small" x="16" y="520">Build fbb13d7, 2026-11-14, one run per case. Numbers: real-providers.csv</text>
+</svg>
