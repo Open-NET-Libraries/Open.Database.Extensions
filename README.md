@@ -18,18 +18,18 @@ Fetch one author's posts, with plain ADO.NET:
 int author = 42;
 var posts = new List<Post>();
 
-using var connection = new SqliteConnection(connectionString);
-connection.Open();
+await using var connection = new SqliteConnection(connectionString);
+await connection.OpenAsync(cancellationToken);
 
-using var command = connection.CreateCommand();
+await using var command = connection.CreateCommand();
 command.CommandText = "select id, author, title, body from posts where author = @author order by id";
 var parameter = command.CreateParameter();
 parameter.ParameterName = "@author";
 parameter.Value = author;
 command.Parameters.Add(parameter);
 
-using var reader = command.ExecuteReader();
-while (reader.Read())
+await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+while (await reader.ReadAsync(cancellationToken))
 {
     posts.Add(new Post
     {
@@ -50,7 +50,7 @@ Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author order by id")
     .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
-    .ToArrayAsync();
+    .ToArrayAsync(cancellationToken);
 ```
 
 `AddParam(author)` names the parameter `author` after the variable. To name it yourself, write `.AddParam("author", 42)`. `connectionFactory` is created once per application, for example `new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString))`: see [Registering the factory once](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html#registering-the-factory-once).
@@ -92,19 +92,22 @@ Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClie
 
 ## The foundation: best practice by default
 
-Most of the library is extension methods on the ADO.NET types you already use (`DbConnection`, `DbCommand`, `DbDataReader`, `DbTransaction`). They apply the usual good practice for you: open late, close early, close only what you opened, roll back unless you say commit. A transaction in one expression (`Using` gives your action a connection from the factory and disposes it afterwards):
+Most of the library is extension methods on the ADO.NET types you already use (`DbConnection`, `DbCommand`, `DbDataReader`, `DbTransaction`). They apply the usual good practice for you: open late, close early, close only what you opened, roll back unless you say commit. A transaction in one expression (`UsingAsync` gives your action a connection from the factory and disposes it afterwards):
 
 ```cs
-// The factory creates the connection; ExecuteTransactionConditional opens it if it is closed and starts the transaction. Returning true commits; false (or a throw) rolls back.
-bool committed = connectionFactory.Using(connection =>
-    connection.ExecuteTransactionConditional(transaction =>
+// The factory creates the connection;
+// ExecuteTransactionConditionalAsync opens it if it is closed
+// and starts the transaction.
+// Returning true commits; false (or a throw) rolls back.
+bool committed = await connectionFactory.UsingAsync(connection =>
+    connection.ExecuteTransactionConditionalAsync(async transaction =>
     {
-        int inserted = transaction
+        int inserted = await transaction
             .Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
-            .ExecuteNonQuery();
+            .ExecuteNonQueryAsync(cancellationToken);
 
         return inserted == 1;
-    }));
+    }, cancellationToken));
 ```
 
 See [The foundation](https://open-net-libraries.github.io/Open.Database.Extensions/articles/foundation.html).
@@ -116,12 +119,13 @@ On top of the foundation, start from a connection factory and the command opens,
 ```cs
 int author = 42;
 
-// The command takes a connection from the factory when a terminal runs, opens it, and disposes it afterwards.
+// The command takes a connection from the factory
+// when a terminal runs, opens it, and disposes it afterwards.
 Post[] posts = await connectionFactory
     .Command("select * from posts where author = @author order by id")
     .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
-    .ToArrayAsync();
+    .ToArrayAsync(cancellationToken);
 ```
 
 Or start from a connection you already have. You own it; the command opens it only if it is closed and closes only what it opened:
@@ -129,12 +133,14 @@ Or start from a connection you already have. You own it; the command opens it on
 ```cs
 int author = 42;
 
-// You own the connection. The command opens it only if it is closed, and closes only what it opened.
-Post[] posts = connection
+// You own the connection.
+// The command opens it only if it is closed,
+// and closes only what it opened.
+Post[] posts = await connection
     .Command("select * from posts where author = @author order by id")
     .AddParam(author) // name and type inferred from the variable
     .Map<Post>()
-    .ToArray();
+    .ToArrayAsync(cancellationToken);
 ```
 
 Stored procedures are `StoredProcedure(name)`. Terminals include `ExecuteNonQuery`, `ExecuteScalar` and, after `Map<T>()`, `ToArray`, `ToList` and `FirstOrDefault`. On a `DbConnection` or an `IDbConnectionFactory<TConnection>` each has an `Async` twin. See [Expressive commands](https://open-net-libraries.github.io/Open.Database.Extensions/articles/expressive-commands.html).
@@ -144,12 +150,13 @@ Stored procedures are `StoredProcedure(name)`. Terminals include `ExecuteNonQuer
 On top of that, `Map<T>()` matches columns to the public settable properties and constructor parameters of your type by name, ignoring case and underscores (`first_name` feeds `FirstName`), and ignores the rest:
 
 ```cs
-// Columns are matched to public settable properties by name, ignoring case and underscores.
+// Columns are matched to public settable properties by name,
+// ignoring case and underscores.
 // The extra "views" column has no property, so it is ignored.
-Post[] posts = connection
+Post[] posts = await connection
     .Command("select * from posts order by id")
     .Map<Post>()
-    .ToArray();
+    .ToArrayAsync(cancellationToken);
 ```
 
 Positional records and classes with one public constructor are built through it, so `Map<PostRecord>()` works. `init` properties are set, and a property marked `required` must have a column. See [Mapping rows to objects](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html) for the rules and limits.
@@ -168,10 +175,10 @@ static class PersonMaps
     ];
 }
 
-Person[] people = connection
+Person[] people = await connection
     .Command("select person_id, first_name, last_name from people order by person_id")
     .Map<Person>(PersonMaps.PersonMap)
-    .ToArray();
+    .ToArrayAsync(cancellationToken);
 ```
 
 `field ??=` (C# 14) builds the map on first use; older compilers use an explicit backing field. Declare a map once and reuse it: a map built at the call site is rebuilt on every call. More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).

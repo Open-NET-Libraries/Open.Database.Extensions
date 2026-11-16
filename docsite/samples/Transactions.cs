@@ -7,30 +7,39 @@ namespace Samples;
 
 public static class Transactions
 {
-	public static (bool Committed, long RowsAfter) Conditional(IDbConnectionFactory<SqliteConnection> connectionFactory, bool shouldCommit)
+	public static async Task<(bool Committed, long RowsAfter)> ConditionalAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		bool shouldCommit,
+		CancellationToken cancellationToken)
 	{
 		#region transaction
-		// The factory creates the connection; ExecuteTransactionConditional opens it if it is closed and starts the transaction. Returning true commits; false (or a throw) rolls back. Here the caller decides: shouldCommit is a bool passed in.
-		bool committed = connectionFactory.Using(connection =>
-			connection.ExecuteTransactionConditional(transaction =>
+		// The factory creates the connection;
+		// ExecuteTransactionConditionalAsync opens it if it is closed
+		// and starts the transaction.
+		// Returning true commits; false (or a throw) rolls back.
+		// Here the caller decides: shouldCommit is a bool passed in.
+		bool committed = await connectionFactory.UsingAsync(connection =>
+			connection.ExecuteTransactionConditionalAsync(async transaction =>
 			{
-				transaction
+				await transaction
 					.Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
-					.ExecuteNonQuery();
+					.ExecuteNonQueryAsync(cancellationToken);
 
 				return shouldCommit;
-			}));
+			}, cancellationToken));
 		#endregion
 
-		long rows = connectionFactory.Command("select count(*) from posts where id = 100").ExecuteScalar<long>();
-		connectionFactory.Command("delete from posts where id = 100").ExecuteNonQuery();
+		long rows = await connectionFactory.Command("select count(*) from posts where id = 100").ExecuteScalarAsync<long>(cancellationToken);
+		await connectionFactory.Command("delete from posts where id = 100").ExecuteNonQueryAsync(cancellationToken);
 		return (committed, rows);
 	}
 
 	public static async Task<long> Async(IDbConnectionFactory<SqliteConnection> connectionFactory, CancellationToken cancellationToken)
 	{
 		#region transaction_async
-		// The token is checked after the action returns: a token cancelled by then never commits. The commit itself is sent without the token.
+		// The token is checked after the action returns:
+		// a token cancelled by then never commits.
+		// The commit itself is sent without the token.
 		await connectionFactory.UsingAsync(connection =>
 			connection.ExecuteTransactionAsync(async transaction =>
 			{
@@ -40,8 +49,8 @@ public static class Transactions
 			}, cancellationToken));
 		#endregion
 
-		long rows = connectionFactory.Command("select count(*) from posts where id = 100").ExecuteScalar<long>();
-		connectionFactory.Command("delete from posts where id = 100").ExecuteNonQuery();
+		long rows = await connectionFactory.Command("select count(*) from posts where id = 100").ExecuteScalarAsync<long>(cancellationToken);
+		await connectionFactory.Command("delete from posts where id = 100").ExecuteNonQueryAsync(cancellationToken);
 		return rows;
 	}
 }
