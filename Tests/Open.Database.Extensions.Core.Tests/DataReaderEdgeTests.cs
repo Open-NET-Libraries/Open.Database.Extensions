@@ -468,6 +468,23 @@ public static class DataReaderEdgeTests
 				=> ((IDataReader)reader).IterateWhileAsync(
 					r => new ValueTask<bool>(Visit(each, r)),
 					token),
+			"ForEachAsync(Func, no ReadAsync)" => reader.ForEachAsync(
+				r =>
+				{
+					each(r);
+					return default;
+				},
+				false,
+				token),
+			"IterateWhileAsync(Db, no ReadAsync)" => reader.IterateWhileAsync(
+				r => Visit(each, r),
+				false,
+				token),
+			"IterateWhileAsync(IDataReader, no ReadAsync)"
+				=> ((IDataReader)reader).IterateWhileAsync(
+					r => new ValueTask<bool>(Visit(each, r)),
+					false,
+					token),
 			_ => ((IDataReader)reader).IterateWhileAsync(
 				r => new ValueTask<bool>(Visit(each, r)),
 				true,
@@ -481,6 +498,9 @@ public static class DataReaderEdgeTests
 	[InlineData("IterateWhileAsync(Db, useReadAsync)")]
 	[InlineData("IterateWhileAsync(IDataReader)")]
 	[InlineData("IterateWhileAsync(IDataReader, useReadAsync)")]
+	[InlineData("ForEachAsync(Func, no ReadAsync)")]
+	[InlineData("IterateWhileAsync(Db, no ReadAsync)")]
+	[InlineData("IterateWhileAsync(IDataReader, no ReadAsync)")]
 	public static async Task AsyncLoops_CancelledMidRead_ThrowBeforeTheNext(
 		string variant)
 	{
@@ -509,6 +529,9 @@ public static class DataReaderEdgeTests
 	[InlineData("IterateWhileAsync(Db, useReadAsync)")]
 	[InlineData("IterateWhileAsync(IDataReader)")]
 	[InlineData("IterateWhileAsync(IDataReader, useReadAsync)")]
+	[InlineData("ForEachAsync(Func, no ReadAsync)")]
+	[InlineData("IterateWhileAsync(Db, no ReadAsync)")]
+	[InlineData("IterateWhileAsync(IDataReader, no ReadAsync)")]
 	public static async Task AsyncLoops_CancelledAfterTheLastRow_Return(
 		string variant)
 	{

@@ -67,6 +67,20 @@ public static class DataReaderExtensions
 		}
 	}
 
+	// The synchronous twin of ReadNextAsync.
+	// A token canceled before the read: the read is still made.
+	// No row: the result is complete, so return false.
+	// A row: the cancel cut the read short, so throw (the row is not handled).
+	static bool ReadNext(
+		IDataReader reader,
+		CancellationToken cancellationToken)
+	{
+		bool canceled = cancellationToken.IsCancellationRequested;
+		if (!reader.Read()) return false;
+		if (canceled) cancellationToken.ThrowIfCancellationRequested();
+		return true;
+	}
+
 	// Reads the next row for a loop that checks the token before each read.
 	// A token canceled before the read: the read is made without it,
 	// so a provider does not throw before it can say there are no more rows.
@@ -150,29 +164,9 @@ public static class DataReaderExtensions
 				await handler(reader).ConfigureAwait(false);
 			}
 		}
-		else if (cancellationToken.CanBeCanceled)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			bool cancelled = false;
-			while (reader.Read())
-			{
-				if (cancelled)
-				{
-					await handler(reader).ConfigureAwait(false); // we recieved the results, might as well use them.
-					cancellationToken.ThrowIfCancellationRequested();
-				}
-				else
-				{
-					cancelled = cancellationToken.IsCancellationRequested;
-					await handler(reader).ConfigureAwait(false);
-				}
-			}
-		}
 		else
 		{
-			while (reader.Read())
+			while (ReadNext(reader, cancellationToken))
 				await handler(reader).ConfigureAwait(false);
 		}
 	}
@@ -975,15 +969,12 @@ public static class DataReaderExtensions
 				if (!more || !predicate(reader)) break;
 			}
 		}
-		else if (cancellationToken.CanBeCanceled)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-			while (reader.Read() && predicate(reader))
-				cancellationToken.ThrowIfCancellationRequested();
-		}
 		else
 		{
-			while (reader.Read() && predicate(reader)) { }
+			while (ReadNext(reader, cancellationToken))
+			{
+				if (!predicate(reader)) break;
+			}
 		}
 	}
 
@@ -993,28 +984,9 @@ public static class DataReaderExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		if (cancellationToken.CanBeCanceled)
+		while (ReadNext(reader, cancellationToken))
 		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			// The following pattern allows for the reader to complete if it actually reached the end before cancellation.
-			bool cancelled = false;
-			while (reader.Read() && await predicate(reader).ConfigureAwait(false))
-			{
-				if (cancelled)
-				{
-					cancellationToken.ThrowIfCancellationRequested();
-					break;
-				}
-				else
-				{
-					cancelled = cancellationToken.IsCancellationRequested;
-				}
-			}
-		}
-		else
-		{
-			while (reader.Read() && await predicate(reader).ConfigureAwait(false)) { }
+			if (!await predicate(reader).ConfigureAwait(false)) break;
 		}
 	}
 
