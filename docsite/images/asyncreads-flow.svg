@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 336" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">Where a thread waits: Read() against ReadAsync</title>
+  <desc id="flow-desc">Two lanes read left to right, the default on top and the opt-in below, with the same stages in the same places. In both lanes the command executes and the connection opens asynchronously, so the thread is released while each awaits. Then the rows. Default lane: the thread reads two rows with Read, then waits for a row that is still on the network; the thread is blocked there; then it reads the next row. Opt-in lane, AsyncReads: ReadAsync is called for two rows, then for a row still on the network it returns an incomplete task; the thread is released and the continuation resumes when the row arrives. A caption says the sync default holds the thread while a row is on the wire; the opt-in releases it, and pays for the state machine. The figure has no numbers.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --muted: #4b5563;
+      --run-fill: #ddf4ff;
+      --run-line: #0969da;
+      --block-fill: #ffebe9;
+      --block-line: #cf222e;
+      --free-fill: #f6f8fa;
+      --free-line: #57606a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --muted: #b1bac4;
+        --run-fill: #0c2d6b;
+        --run-line: #58a6ff;
+        --block-fill: #4c1d1d;
+        --block-line: #ff7b72;
+        --free-fill: #21262d;
+        --free-line: #8b949e;
+      }
+    }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 18px; font-weight: 600; }
+    .lane { font-size: 15px; font-weight: 600; }
+    .mid { text-anchor: middle; }
+    .run { fill: var(--run-fill); stroke: var(--run-line); stroke-width: 2; }
+    .free { fill: var(--free-fill); stroke: var(--free-line); stroke-width: 2; stroke-dasharray: 6 4; }
+    .block { fill: url(#hatch); stroke: var(--block-line); stroke-width: 2; }
+    .hatch-bg { fill: var(--block-fill); }
+    .hatch-line { stroke: var(--block-line); stroke-width: 3; opacity: 0.35; }
+  </style>
+
+  <rect class="frame" x="0.5" y="0.5" width="599" height="335" rx="8"/>
+  <defs>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect class="hatch-bg" width="8" height="8"/>
+      <line class="hatch-line" x1="0" y1="0" x2="0" y2="8"/>
+    </pattern>
+  </defs>
+
+  <text class="title" x="20" y="28">Where a thread waits</text>
+
+  <!-- Default lane -->
+  <text class="lane" x="20" y="62">Default: Read()</text>
+  <rect class="free" x="20" y="72" width="84" height="46" rx="6"/>
+  <text class="mid" x="62" y="91">execute</text>
+  <text class="mid" x="62" y="108">async</text>
+  <rect class="free" x="110" y="72" width="72" height="46" rx="6"/>
+  <text class="mid" x="146" y="91">open</text>
+  <text class="mid" x="146" y="108">async</text>
+  <rect class="run" x="188" y="72" width="72" height="46" rx="6"/>
+  <text class="mid" x="224" y="100">Read()</text>
+  <rect class="run" x="266" y="72" width="72" height="46" rx="6"/>
+  <text class="mid" x="302" y="100">Read()</text>
+  <rect class="block" x="344" y="72" width="150" height="46" rx="6"/>
+  <text class="mid" x="419" y="91">thread blocked</text>
+  <text class="mid" x="419" y="108">row on the wire</text>
+  <rect class="run" x="500" y="72" width="72" height="46" rx="6"/>
+  <text class="mid" x="536" y="100">Read()</text>
+
+  <!-- Opt-in lane -->
+  <text class="lane" x="20" y="170">Opt-in: AsyncReads(), ReadAsync(token)</text>
+  <rect class="free" x="20" y="180" width="84" height="46" rx="6"/>
+  <text class="mid" x="62" y="199">execute</text>
+  <text class="mid" x="62" y="216">async</text>
+  <rect class="free" x="110" y="180" width="72" height="46" rx="6"/>
+  <text class="mid" x="146" y="199">open</text>
+  <text class="mid" x="146" y="216">async</text>
+  <rect class="run" x="188" y="180" width="72" height="46" rx="6"/>
+  <text class="mid" x="224" y="208">ReadAsync</text>
+  <rect class="run" x="266" y="180" width="72" height="46" rx="6"/>
+  <text class="mid" x="302" y="208">ReadAsync</text>
+  <rect class="free" x="344" y="180" width="150" height="46" rx="6"/>
+  <text class="mid" x="419" y="199">thread released</text>
+  <text class="mid" x="419" y="216">resumes on arrival</text>
+  <rect class="run" x="500" y="180" width="72" height="46" rx="6"/>
+  <text class="mid" x="536" y="208">ReadAsync</text>
+
+  <!-- Legend -->
+  <rect class="run" x="20" y="252" width="22" height="14" rx="3"/>
+  <text x="48" y="264">thread running code</text>
+  <rect class="block" x="200" y="252" width="22" height="14" rx="3"/>
+  <text x="228" y="264">thread blocked</text>
+  <rect class="free" x="350" y="252" width="22" height="14" rx="3"/>
+  <text x="378" y="264">thread released (awaiting)</text>
+
+  <text x="20" y="298">The sync default holds the thread while a row is on the wire;</text>
+  <text x="20" y="316">the opt-in releases it, and pays for the state machine.</text>
+</svg>

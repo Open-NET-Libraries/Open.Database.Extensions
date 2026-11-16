@@ -1,0 +1,18 @@
+Benchmark build: b27a02f
+Run date: 2026-11-14
+BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.6466/22H2/2022Update)
+AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores
+.NET SDK 11.0.100
+  [Host] : .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4
+Benchmark: SyntheticBenchmarks (the library over an in-memory ADO.NET reader, no I/O, no per-row cost)
+Conditions: 1,000 rows per call, widths 1, 3, 5, 10 and 20 typed columns, synchronous terminals, one run per case
+Columns: total_us = mean time of the whole call (BenchmarkDotNet Mean)
+Toolchain=InProcessEmitToolchain  IterationCount=12  LaunchCount=1
+WarmupCount=5
+Source files (BenchmarkDotNet report CSVs, one per run; the run folders are not in the repository):
+  stage1r-1a/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stage1r-1b/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stage1r-1c/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stage2-2a/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stage2-2b/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stage2-2c/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv

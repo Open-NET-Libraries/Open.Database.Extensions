@@ -3,8 +3,13 @@
 - href: foundation.md
 - href: expressive-commands.md
 - href: mapping.md
+- href: async-reads.md
 - href: channels-and-dataflow.md
 - href: performance.md
+  items:
+  - href: performance-data.md
+  - name: Interactive ranking (snapshot)
+    href: ../benchmarks/ranking.html
 - href: coming-from-dapper.md
 - href: whats-new-11.md
 - href: release-notes.md
