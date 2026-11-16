@@ -272,6 +272,23 @@ Check(dictBefore.Length > 0 && dictBefore == dictAfter && dictBeforeAsync == dic
 (resultsBefore, resultsAfter) = Deprecated.DequeueAs(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Retrieve().DequeueAs<T>() and Map<T>().ToList() return the same rows");
 
+// Reader cancellation: the token is checked before each read,
+// and a cancel throws.
+Db.Seed();
+(int[] canceledSeen, bool canceledThrew)
+	= await ReaderCancellation.SelectAsyncCanceled(connection);
+Check(
+	canceledThrew && canceledSeen.SequenceEqual([1, 2]),
+	"a canceled SelectAsync throws OperationCanceledException, "
+	+ "and the rows before the cancel were seen");
+(canceledSeen, canceledThrew)
+	= ReaderCancellation.ForEachCanceled(connection);
+Check(
+	canceledThrew && canceledSeen.SequenceEqual([1, 2]),
+	"the sync form: a canceled ForEach throws "
+	+ "OperationCanceledException, "
+	+ "and the rows before the cancel were seen");
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
