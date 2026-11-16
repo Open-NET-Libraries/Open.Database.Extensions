@@ -19,9 +19,9 @@ public static class ReaderCancellation
 		// Once a read has returned no row, a cancel is not an error.
 		// To stop early without an exception, break out of the loop.
 		using var cts = new CancellationTokenSource();
-		using SqliteCommand command = connection.CreateCommand();
+		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select id from posts order by id";
-		using SqliteDataReader reader = await command.ExecuteReaderAsync();
+		await using SqliteDataReader reader = await command.ExecuteReaderAsync();
 		try
 		{
 			await foreach (int id in reader.SelectAsync(
