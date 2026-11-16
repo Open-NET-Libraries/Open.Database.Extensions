@@ -22,26 +22,26 @@ using SqliteConnection connection = factory.Create();
 connection.Open();
 
 // Expressive commands: factory form and connection form.
-Post[] fromFactory = await ExpressiveCommands.FactoryForm(factory);
+Post[] fromFactory = await ExpressiveCommands.FactoryForm(factory, CancellationToken.None);
 Check(fromFactory.Select(p => p.Id).SequenceEqual([1, 2, 3]), "factory form returns posts 1-3");
 Check(fromFactory[0].Title == "Post 1" && fromFactory[0].Body == "Body 1" && fromFactory[1].Body is null, "factory form maps strings and NULL");
 
-Post[] fromConnection = ExpressiveCommands.ConnectionForm(connection);
+Post[] fromConnection = await ExpressiveCommands.ConnectionFormAsync(connection, CancellationToken.None);
 Check(fromConnection.Select(p => p.Id).SequenceEqual([1, 2, 3]), "connection form returns posts 1-3");
 Check(connection.State == ConnectionState.Open, "connection form leaves an open connection open");
 
-Check(ExpressiveCommands.FirstPost(factory)?.Title == "Post 3", "FirstOrDefault by id");
-Check(ExpressiveCommands.ConditionalParam(factory, null).Length == 5, "AddParamIf skipped: all rows");
-Check(ExpressiveCommands.ConditionalParam(factory, 7).Length == 2, "AddParamIf applied: author 7 has 2 posts");
-Check(ExpressiveCommands.ParamNamedFromTheArgument(factory).Length == 2, "AddParam(search.Author) names the parameter from the argument");
+Check((await ExpressiveCommands.FirstPostAsync(factory, CancellationToken.None))?.Title == "Post 3", "FirstOrDefault by id");
+Check((await ExpressiveCommands.ConditionalParamAsync(factory, null, CancellationToken.None)).Length == 5, "AddParamIf skipped: all rows");
+Check((await ExpressiveCommands.ConditionalParamAsync(factory, 7, CancellationToken.None)).Length == 2, "AddParamIf applied: author 7 has 2 posts");
+Check((await ExpressiveCommands.ParamNamedFromTheArgumentAsync(factory, CancellationToken.None)).Length == 2, "AddParam(search.Author) names the parameter from the argument");
 
-(ConnectionState closedBefore, ConnectionState closedAfter, ConnectionState openBefore, ConnectionState openAfter) = ExpressiveCommands.Ownership(connection);
+(ConnectionState closedBefore, ConnectionState closedAfter, ConnectionState openBefore, ConnectionState openAfter) = await ExpressiveCommands.OwnershipAsync(connection, CancellationToken.None);
 Check(closedBefore == ConnectionState.Closed && closedAfter == ConnectionState.Closed, "a closed connection is closed again after the call");
 Check(openBefore == ConnectionState.Open && openAfter == ConnectionState.Open, "an open connection stays open");
 
-(long count, int updated) = ExpressiveCommands.ScalarAndNonQuery(factory);
+(long count, int updated) = await ExpressiveCommands.ScalarAndNonQueryAsync(factory, CancellationToken.None);
 Check(count == 3 && updated == 3, "scalar and non-query");
-Check(ExpressiveCommands.ConvertedScalar(factory) == 5, "ExecuteScalar with a conversion");
+Check(await ExpressiveCommands.ConvertedScalarAsync(factory, CancellationToken.None) == 5, "ExecuteScalar with a conversion");
 Check(await ExpressiveCommands.ScalarReadAsInt(factory, CancellationToken.None) == 5, "ExecuteScalarAsync<int> reads a SQLite bigint as int");
 Check(factory.Command("select count(*) from posts").ExecuteScalar<int>() == 5, "ExecuteScalar<int> over a SQLite integer converts, as Map<int>() does");
 Check(Throws<ValueMappingException>(() => factory.Command("select 5000000000").ExecuteScalar<int>()), "ExecuteScalar<int> over a value that does not fit throws ValueMappingException");
@@ -54,11 +54,11 @@ Check(factory.Command(Sql.CountSql).AddParam("author", 42).ExecuteScalar<long>()
 
 // Mapping.
 Db.Seed();
-Post[] all = Mapping.MapDefault(connection);
+Post[] all = await Mapping.MapDefaultAsync(connection, CancellationToken.None);
 Check(all.Length == 5 && all[0].Title == "Post 1" && all[0].Author == 42 && all[4].Author == 7, "default mapping, long to int");
-Person[] declared = Mapping.MapDeclared(connection);
+Person[] declared = await Mapping.MapDeclaredAsync(connection, CancellationToken.None);
 Check(declared.Length == 2 && declared[0].Id == 1 && declared[0].FirstName == "Ada" && declared[1].LastName == "Turing", "a declared RowMap maps the renamed columns");
-Person[] namesOnly = Mapping.MapNamesOnly(connection);
+Person[] namesOnly = await Mapping.MapNamesOnlyAsync(connection, CancellationToken.None);
 Check(namesOnly[0].FirstName == "Ada" && namesOnly[0].LastName is "", "a null column in a RowMap means do not map the property, even by name");
 Person[] callSite = await Mapping.MapCallSiteAsync(connection, CancellationToken.None);
 Check(callSite.Length == 2 && callSite[1].FirstName == "Alan" && callSite[1].LastName == "Turing", "a new RowMap at the call site maps the renamed columns");
@@ -72,18 +72,18 @@ Order[] converted = await Mapping.MapConverted(connection, CancellationToken.Non
 Check(converted is [{ Id: 1, OrderNum: "000042", FirstLoad: "14:05", Customer: "Ada" }, { Id: 2, OrderNum: "000007", FirstLoad: "", Customer: "" }] && converted[0].Summary == "000042 at 14:05", "converters turn order_num into text, the timestamp into HH:mm and trim the customer, a NULL cell is not converted and keeps the property's initial value, and the rest maps by name");
 Order[] convertedNull = await Mapping.MapConvertedNull(connection, CancellationToken.None);
 Check(convertedNull is [{ OrderNum: "42", FirstLoad: "14:05", Customer: "  Ada  " }, { OrderNum: "7", FirstLoad: "--:--" }], "a converter whose TColumn is nullable is called with null and what it returns is the value of the property; the other columns map without a converter");
-Person[] snake = Mapping.MapSnakeCase(connection);
+Person[] snake = await Mapping.MapSnakeCaseAsync(connection, CancellationToken.None);
 Check(snake[0] is { Id: 0, FirstName: "Ada", LastName: "Lovelace" }, "snake_case columns feed PascalCase properties with no map");
-Post[] readerView = await Mapping.MapReaderView(connection);
+Post[] readerView = await Mapping.MapReaderView(connection, CancellationToken.None);
 Check(readerView.Length == 5 && readerView[0].Title == "Post 1", "reader.Map<T>() maps the rows of the caller's reader");
-Post[] tableView = await Mapping.MapTableView(connection);
+Post[] tableView = await Mapping.MapTableView(connection, CancellationToken.None);
 Check(tableView.Length == 5 && tableView[0].Title == "Post 1", "table.Map<T>() maps the rows of a DataTable");
-Post[] commandView = await Mapping.MapCommandView(connection);
+Post[] commandView = await Mapping.MapCommandView(connection, CancellationToken.None);
 Check(commandView.Length == 3 && connection.State == ConnectionState.Open, "command.Map<T>() on an open connection leaves it open");
 using (SqliteConnection closedConnection = factory.Create())
 {
 	Check(closedConnection.State == ConnectionState.Closed, "a new connection is closed");
-	Post[] viaClosed = await Mapping.MapCommandView(closedConnection);
+	Post[] viaClosed = await Mapping.MapCommandView(closedConnection, CancellationToken.None);
 	Check(viaClosed.Length == 3 && closedConnection.State == ConnectionState.Closed, "command.Map<T>() opens a closed connection and closes it again");
 }
 Person? exactFirst = connection.Command("select 'Alan' as first_name, 'Ada' as FirstName").Map<Person>().FirstOrDefault();
@@ -93,28 +93,28 @@ RowMap<Person> nullPair = new([new(nameof(Person.FirstName), null)]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).FirstOrDefault()?.FirstName is "", "a null pair stops the underscore match");
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName is "", "a property named by a pair is not matched by an underscore column");
-Check(Mapping.MapNulls(connection) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
+Check((await Mapping.MapNullsAsync(connection, CancellationToken.None)) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
 Check(connection.Command("select null").Map<int>().Single() == 0 && connection.Command("select null").Map<int?>().Single() is null && connection.Command("select null").Map<string>().Single() is null, "a single value: NULL into int is 0, into int? and string is null");
 Check(Throws<Exception>(() => Dapper.SqlMapper.QuerySingle<int>(connection, "select null")), "Dapper QuerySingle<int> over NULL throws");
 Check(connection.Command("select 1 as Id, 'Ada' as FirstName, 'Lovelace' as LastName").Map<Person>(new RowMap<Person>([new(nameof(Person.LastName), null)])).Single() is { Id: 1, FirstName: "Ada", LastName: "" }
 	&& connection.Command("select 1 as Id, 'Ada' as FirstName, 'Lovelace' as LastName").Map<Person>().Single() is { LastName: "Lovelace" }, "new(nameof(Person.LastName), null) needs no null!: the member stays unmapped although a column of that name exists, and the other members still map");
 Check(Throws<InvalidOperationException>(() => connection.Command("select 1 as Id, 'Ada' as Name").Map<PairRecord>()) && Throws<InvalidOperationException>(() => connection.Command("select 1 as Id, 'Ada' as Name").Map<AllOptional>()), "a record with a second public constructor, and a constructor with only optional parameters next to another one, are the two-or-more-public-constructors case");
 Check(connection.Command("select 1 as Id, 'Ada' as Name").Map<ParameterlessRecord>().Single() is { Id: 1, Name: "Ada" }, "a record with a second, parameterless public constructor is built with new(), then its properties are set");
-PostRecord[] records = Mapping.MapRecord(connection);
+PostRecord[] records = await Mapping.MapRecordAsync(connection, CancellationToken.None);
 Check(records.Length == 5 && records[0] == new PostRecord(1, 42, "Post 1", "Body 1") && records[1] == new PostRecord(2, 42, "Post 2", null), "a positional record is built through its constructor, NULL included");
-Check(Mapping.MapRecordExtra(connection)[0] == new PostSummary(1, "Post 1") { Views = 10 }, "a record with an init property: the constructor, then the init property from its column, unmatched columns ignored, an init property with no column keeps its initializer");
-Check(Mapping.MapRecordDeclared(connection) is [{ Title: "Post 1" }, ..], "a pair that names a positional property feeds its constructor parameter from the column");
-(PostInput[] inputs, ValueMappingException? missingTitle) = Mapping.MapRequired(connection);
+Check((await Mapping.MapRecordExtraAsync(connection, CancellationToken.None))[0] == new PostSummary(1, "Post 1") { Views = 10 }, "a record with an init property: the constructor, then the init property from its column, unmatched columns ignored, an init property with no column keeps its initializer");
+Check((await Mapping.MapRecordDeclaredAsync(connection, CancellationToken.None)) is [{ Title: "Post 1" }, ..], "a pair that names a positional property feeds its constructor parameter from the column");
+(PostInput[] inputs, ValueMappingException? missingTitle) = await Mapping.MapRequiredAsync(connection, CancellationToken.None);
 Check(inputs is [{ Title: "Post 1", Body: "Body 1" }, { Title: "Post 2", Body: null }, ..] && inputs.Length == 5, "a required property is mapped when a column feeds it");
 Check(missingTitle is { PropertyName: "Title", ColumnName: "Title", InnerException: null }, "a result shape with no column for a required property throws ValueMappingException at its first row");
 Check(missingTitle?.Message == "No column feeds the required property 'Title' (String) of 'PostInput'; expected a column named 'Title'.", "the missing required column message names the property, its type, the model and the column looked for");
 Check(connection.Command("select body from posts where id = 999").Map<PostInput>().ToArray().Length == 0, "an empty result does not report a missing required column");
 Check(connection.Command("select null as Title, 'x' as Body").Map<PostInput>().FirstOrDefault() is { Title: null, Body: "x" }, "a NULL in the column that feeds a required property is not an error: the property keeps what it had");
-(Review? withNulls, Review? withoutColumns) = Mapping.MapCtorNullColumn(connection);
+(Review? withNulls, Review? withoutColumns) = await Mapping.MapCtorNullColumnAsync(connection, CancellationToken.None);
 Check(withNulls == new Review(7, "untitled", 3, null), "a NULL into a non-nullable parameter takes its declared default, and a NULL into a nullable one is null");
 Check(withoutColumns == new Review(7), "a parameter with no column takes its declared default, a nullable one included");
 Check(Mapping.MapUnmappable(connection) == "'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).", "a type with two public constructors and none without parameters throws at the call");
-ValueMappingException? bad = Mapping.MapValueError(connection);
+ValueMappingException? bad = await Mapping.MapValueErrorAsync(connection, CancellationToken.None);
 Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
 Check(bad?.Message == "Unable to set value of property 'Id' (Int32) from column 'id'.", "the ValueMappingException message names the property, its type and the column");
 Exception? badException = bad;
@@ -122,18 +122,18 @@ Check(badException is DataException && badException is not InvalidOperationExcep
 Check(ReferenceEquals(PersonMaps.PersonMap, PersonMaps.PersonMap), "a map held with field ??= is built once and shared");
 Check(ReferenceEquals(HoldingAMap.BackingMap, HoldingAMap.BackingMap), "a map held in a backing field is built once and shared");
 Check(Mapping.MapUnknownProperty().Contains("'Headline'", StringComparison.Ordinal), "a RowMap with an unknown property throws when it is created");
-Check(Mapping.MapPaging(connection).Select(p => p.Id).SequenceEqual([2, 3]), "Skip(1).Take(2)");
-(Post? first, Post? single) = Mapping.FirstAndSingle(connection);
+Check((await Mapping.MapPagingAsync(connection, CancellationToken.None)).Select(p => p.Id).SequenceEqual([2, 3]), "Skip(1).Take(2)");
+(Post? first, Post? single) = await Mapping.FirstAndSingleAsync(connection, CancellationToken.None);
 Check(first?.Id == 1 && single?.Id == 2, "first and single");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().SingleOrDefault()), "SingleOrDefault throws for more than one row");
-Check(Mapping.MapSelector(connection)[0] == "Post 1 (10 views)", "Map(selector)");
+Check((await Mapping.MapSelectorAsync(connection, CancellationToken.None))[0] == "Post 1 (10 views)", "Map(selector)");
 Check(
-	Mapping.MapSingleValue(connection).SequenceEqual(
+	(await Mapping.MapSingleValueAsync(connection, CancellationToken.None)).SequenceEqual(
 		connection
 			.Command("select id from posts order by id")
 			.Map(static r => (int)r.GetInt64(0))
 			.ToList())
-	&& Mapping.MapSingleValue(connection).Length == 5,
+	&& (await Mapping.MapSingleValueAsync(connection, CancellationToken.None)).Length == 5,
 	"Map<int>() reads the first column, a SQLite long converted to int");
 Check(
 	(await ExpressiveCommands.ColumnOfIds(factory, CancellationToken.None))
@@ -141,7 +141,7 @@ Check(
 	"ToArrayAsync<int>(token) on a command");
 Check(Mapping.StreamRows(connection) == 15, "Read streams rows inside the handler");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
-(List<PostSummary> summaries, PostSummary? newest) = await Mapping.QueryFactoryCallers(factory);
+(List<PostSummary> summaries, PostSummary? newest) = await Mapping.QueryFactoryCallers(factory, CancellationToken.None);
 Check(summaries.Select(s => s.Id).SequenceEqual([3, 2, 1]) && newest == new PostSummary(3, "Post 3"), "a query factory returns a MappedQuery<PostSummary> (a factory map) and each caller picks the terminal");
 int projected = 0;
 var lazyIds = connection.Command("select * from posts order by id").Map(record =>
@@ -160,9 +160,9 @@ Check(Throws<InvalidOperationException>(() => connection.Command("select * from 
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts where id = 999").Map<Post>().Single()), "Single throws for no rows");
 
 // Channels and Dataflow.
-List<Post> viaChannel = await ChannelsAndDataflow.ToChannelSample(factory);
+List<Post> viaChannel = await ChannelsAndDataflow.ToChannelSample(factory, CancellationToken.None);
 Check(viaChannel.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannel delivers every row in order");
-(long delivered, List<Post> viaBlock) = await ChannelsAndDataflow.ToTargetBlockSample(factory);
+(long delivered, List<Post> viaBlock) = await ChannelsAndDataflow.ToTargetBlockSample(factory, CancellationToken.None);
 Check(delivered == 5 && viaBlock.Count == 5, "ToTargetBlockAsync delivers every row");
 
 // Streaming from a mapped query: the query is the producer, and the
@@ -225,47 +225,47 @@ Check(
 	"buffering with ToListAsync returns the same rows as the channel");
 
 // Transactions.
-Check(Transactions.Conditional(factory, true) is (true, 1), "returning true commits");
-Check(Transactions.Conditional(factory, false) is (false, 0), "returning false rolls back");
+Check((await Transactions.ConditionalAsync(factory, true, CancellationToken.None)) is (true, 1), "returning true commits");
+Check((await Transactions.ConditionalAsync(factory, false, CancellationToken.None)) is (false, 0), "returning false rolls back");
 
 // Dapper side by side.
-Check(DapperComparison.DapperList(connection).Select(p => p.Id).SequenceEqual(DapperComparison.OdeList(connection).Select(p => p.Id)), "same list");
-Check(DapperComparison.DapperFirst(connection)?.Title == DapperComparison.OdeFirst(connection)?.Title, "same first");
-Check(DapperComparison.DapperScalar(connection) == DapperComparison.OdeScalar(connection), "same scalar");
-Check(DapperComparison.DapperExecute(connection) == DapperComparison.OdeExecute(connection), "same execute");
-Check(DapperComparison.DapperRecords(connection).Count == 5, "Dapper binds a positional record");
-Check(DapperComparison.OdeRecords(connection).SequenceEqual(DapperComparison.DapperRecords(connection)), "Map<PostRecord>() builds the same positional records as Dapper");
+Check((await DapperComparison.DapperListAsync(connection)).Select(p => p.Id).SequenceEqual((await DapperComparison.OdeListAsync(connection, CancellationToken.None)).Select(p => p.Id)), "same list");
+Check((await DapperComparison.DapperFirstAsync(connection))?.Title == (await DapperComparison.OdeFirstAsync(connection, CancellationToken.None))?.Title, "same first");
+Check(await DapperComparison.DapperScalarAsync(connection) == await DapperComparison.OdeScalarAsync(connection, CancellationToken.None), "same scalar");
+Check(await DapperComparison.DapperExecuteAsync(connection) == await DapperComparison.OdeExecuteAsync(connection, CancellationToken.None), "same execute");
+Check((await DapperComparison.DapperRecordsAsync(connection)).Count == 5, "Dapper binds a positional record");
+Check((await DapperComparison.OdeRecordsAsync(connection, CancellationToken.None)).SequenceEqual(await DapperComparison.DapperRecordsAsync(connection)), "Map<PostRecord>() builds the same positional records as Dapper");
 
 // Before and after: plain ADO.NET and the extensions return the same data.
 Db.Seed();
-List<Post> plainList = BeforeAfter.PlainList(Db.ConnectionString);
-Post[] odeList = await BeforeAfter.OdeList(factory);
+List<Post> plainList = await BeforeAfter.PlainListAsync(Db.ConnectionString, CancellationToken.None);
+Post[] odeList = await BeforeAfter.OdeList(factory, CancellationToken.None);
 Check(plainList.Count == 3 && plainList.Select(p => (p.Id, p.Author, p.Title, p.Body)).SequenceEqual(odeList.Select(p => (p.Id, p.Author, p.Title, p.Body))), "plain ADO.NET list equals the extension list");
-Post? plainFirst = BeforeAfter.PlainFirst(Db.ConnectionString);
-Post? odeFirst = BeforeAfter.OdeFirst(factory);
+Post? plainFirst = await BeforeAfter.PlainFirstAsync(Db.ConnectionString, CancellationToken.None);
+Post? odeFirst = await BeforeAfter.OdeFirstAsync(factory, CancellationToken.None);
 Check(plainFirst is not null && odeFirst is not null && (plainFirst.Id, plainFirst.Title, plainFirst.Body) == (odeFirst.Id, odeFirst.Title, odeFirst.Body), "plain ADO.NET first row equals the extension first row");
-Check(BeforeAfter.PlainScalar(Db.ConnectionString) == 3 && BeforeAfter.OdeScalar(factory) == 3, "plain and extension scalar agree");
-Check(BeforeAfter.PlainNonQuery(Db.ConnectionString) == 3 && BeforeAfter.OdeNonQuery(factory) == 3, "plain and extension non-query agree");
+Check(await BeforeAfter.PlainScalarAsync(Db.ConnectionString, CancellationToken.None) == 3 && await BeforeAfter.OdeScalarAsync(factory, CancellationToken.None) == 3, "plain and extension scalar agree");
+Check(await BeforeAfter.PlainNonQueryAsync(Db.ConnectionString, CancellationToken.None) == 3 && await BeforeAfter.OdeNonQueryAsync(factory, CancellationToken.None) == 3, "plain and extension non-query agree");
 // The comparisons in the docs: both sides return the same data.
 Db.Seed();
 string connectionString = Db.ConnectionString;
 Check((await ConnectionPattern.DapperList(connectionString)).Select(p => p.Id).SequenceEqual((await ConnectionPattern.OdeList(factory, CancellationToken.None)).Select(p => p.Id)), "Dapper and factory list agree");
 Check((await ConnectionPattern.OdeListOwn(connectionString, CancellationToken.None)).Select(p => p.Id).SequenceEqual([1, 2, 3]), "own-connection list");
 Check((await ConnectionPattern.PlainListAligned(connectionString, CancellationToken.None)).Select(p => p.Id).SequenceEqual((await ConnectionPattern.OdeListAligned(factory, CancellationToken.None)).Select(p => p.Id)), "plain ADO.NET and factory aligned list agree");
-Check(ConnectionPattern.DapperFirst(connectionString)?.Title == ConnectionPattern.OdeFirst(factory)?.Title, "Dapper and factory first row agree");
-Check(ConnectionPattern.DapperScalar(connectionString) == 3 && ConnectionPattern.OdeScalar(factory) == 3, "Dapper and factory scalar agree");
-Check(ConnectionPattern.DapperNonQuery(connectionString) == 3 && ConnectionPattern.OdeNonQuery(factory) == 3, "Dapper and factory non-query agree");
-Check(DependencyInjectionSample.ResolveAndUse().Count == 3, "a factory registered once is injected");
-Check(ConnectionPattern.RenamedColumns(connection) is [{ FirstName: "Ada" }, { FirstName: "Alan" }], "renamed columns with nameof");
+Check((await ConnectionPattern.DapperFirstAsync(connectionString))?.Title == (await ConnectionPattern.OdeFirstAsync(factory, CancellationToken.None))?.Title, "Dapper and factory first row agree");
+Check(await ConnectionPattern.DapperScalarAsync(connectionString) == 3 && await ConnectionPattern.OdeScalarAsync(factory, CancellationToken.None) == 3, "Dapper and factory scalar agree");
+Check(await ConnectionPattern.DapperNonQueryAsync(connectionString) == 3 && await ConnectionPattern.OdeNonQueryAsync(factory, CancellationToken.None) == 3, "Dapper and factory non-query agree");
+Check((await DependencyInjectionSample.ResolveAndUseAsync(CancellationToken.None)).Count == 3, "a factory registered once is injected");
+Check((await ConnectionPattern.RenamedColumnsAsync(connection, CancellationToken.None)) is [{ FirstName: "Ada" }, { FirstName: "Alan" }], "renamed columns with nameof");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().SingleOrDefault()), "SingleOrDefault throws for more than one row (again)");
 Check(factory.Command("select * from posts where id = 999").Map<Post>().FirstOrDefault() is null, "FirstOrDefault is null for no rows");
 // Transactions: ADO.NET needs an open connection to begin one; Dapper begins nothing itself.
 long RowsFrom100() => factory.Command("select count(*) from posts where id >= 100").ExecuteScalar<long>();
 void ClearFrom100() => factory.Command("delete from posts where id >= 100").ExecuteNonQuery();
-ConnectionPattern.DapperTransaction(connectionString);
+await ConnectionPattern.DapperTransactionAsync(connectionString);
 Check(RowsFrom100() == 2, "the Dapper transaction committed two rows");
 ClearFrom100();
-ConnectionPattern.OdeTransaction(factory);
+await ConnectionPattern.OdeTransactionAsync(factory, CancellationToken.None);
 Check(RowsFrom100() == 2, "ExecuteTransaction committed two rows");
 ClearFrom100();
 Check(Throws<InvalidOperationException>(() => factory.Using(c => c.ExecuteTransaction(tx =>
@@ -305,7 +305,7 @@ using (CommitTokenConnection recording = new(connectionString))
 	await recording.ExecuteTransactionAsync(_ => ValueTask.CompletedTask, liveToken.Token);
 	Check(recording.CommitTokens is [{ CanBeCanceled: false }], "ExecuteTransactionAsync sends the commit without the caller's token (CancellationToken.None), though the token was passed and live");
 }
-long newId = ExpressiveCommands.InsertAndReadId(factory);
+long newId = await ExpressiveCommands.InsertAndReadIdAsync(factory, CancellationToken.None);
 Check(newId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "New", "an insert and select last_insert_rowid() in one command return the generated id to ExecuteScalar<long>()");
 factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 long draftId = await Mapping.InsertReturningIdAsync(factory, CancellationToken.None);
@@ -315,7 +315,7 @@ factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 Db.Seed();
 (string resultsBefore, string resultsAfter) = Deprecated.Results(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Results<T>() and Map<T>().ToList() return the same rows");
-(resultsBefore, resultsAfter) = await Deprecated.ResultsAsync(connection);
+(resultsBefore, resultsAfter) = await Deprecated.ResultsAsync(connection, CancellationToken.None);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsAsync<T>() and Map<T>().ToListAsync() return the same rows");
 (resultsBefore, resultsAfter) = Deprecated.ResultsFromDataTable(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable() read with ToDataTable().Map(map).ToList() return the same rows");
@@ -323,9 +323,9 @@ Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDat
 Check(resultsBefore == "1|1,2|4,5|2,3" && resultsBefore == resultsAfter, "FirstOrDefault, Take, Skip and SkipThenTake with a selector match their Map forms");
 Check(Deprecated.SkippedRowSelector(connection) == (true, false), "a selector that throws on a skipped row failed Skip, and does not fail Map(...).Skip");
 Check(Deprecated.TakeOfZero(connection) == (false, true), "Take(0) did not run the command; Map(...).Take(0) does");
-(resultsBefore, resultsAfter) = await Deprecated.TakeAsyncAndToListAsync(connection);
+(resultsBefore, resultsAfter) = await Deprecated.TakeAsyncAndToListAsync(connection, CancellationToken.None);
 Check(resultsBefore == "1,2|1,2,3,4,5" && resultsBefore == resultsAfter, "TakeAsync and ToListAsync with a selector match their Map forms");
-Check(Deprecated.Collection(connection) == 10, "QueryResultCollection holds rows; a List<T> from Map holds the same");
+Check(await Deprecated.CollectionAsync(connection, CancellationToken.None) == 10, "QueryResultCollection holds rows; a List<T> from Map holds the same");
 (string dictBefore, string dictAfter, string dictBeforeAsync, string dictAfterAsync) = await Deprecated.MappedDictionaries(connection);
 Check(dictBefore.Length > 0 && dictBefore == dictAfter && dictBeforeAsync == dictAfterAsync && dictBefore == dictBeforeAsync, "AsMappedDictionaries and Retrieve().DequeueAsMappedDictionaries() (awaited too) return the same dictionaries");
 (resultsBefore, resultsAfter) = Deprecated.DequeueAs(connection);

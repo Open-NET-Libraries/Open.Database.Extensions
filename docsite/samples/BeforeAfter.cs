@@ -7,24 +7,28 @@ namespace Samples;
 // The README counts the lines inside these regions. The values (author is 42, id is 3) are declared above each region, so the counts cover only the call.
 public static class BeforeAfter
 {
-	public static List<Post> PlainList(string connectionString)
+	public static async Task<List<Post>> PlainListAsync(
+		string connectionString,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region plain_list
 		var posts = new List<Post>();
 
-		using var connection = new SqliteConnection(connectionString);
-		connection.Open();
+		await using var connection = new SqliteConnection(connectionString);
+		await connection.OpenAsync(cancellationToken);
 
-		using var command = connection.CreateCommand();
-		command.CommandText = "select id, author, title, body from posts where author = @author order by id";
+		await using var command = connection.CreateCommand();
+		command.CommandText =
+			"select id, author, title, body from posts "
+			+ "where author = @author order by id";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
 		parameter.Value = author;
 		command.Parameters.Add(parameter);
 
-		using var reader = command.ExecuteReader();
-		while (reader.Read())
+		await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+		while (await reader.ReadAsync(cancellationToken))
 		{
 			posts.Add(new Post
 			{
@@ -39,7 +43,9 @@ public static class BeforeAfter
 		return posts;
 	}
 
-	public static async Task<Post[]> OdeList(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<Post[]> OdeList(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_list_factory
@@ -47,30 +53,33 @@ public static class BeforeAfter
 			.Command("select * from posts where author = @author order by id")
 			.AddParam(author) // name and type inferred from the variable
 			.Map<Post>()
-			.ToArrayAsync();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static Post? PlainFirst(string connectionString)
+	public static async Task<Post?> PlainFirstAsync(
+		string connectionString,
+		CancellationToken cancellationToken)
 	{
 		const int id = 3;
 		#region plain_first
 		Post? post = null;
 
-		using var connection = new SqliteConnection(connectionString);
-		connection.Open();
+		await using var connection = new SqliteConnection(connectionString);
+		await connection.OpenAsync(cancellationToken);
 
-		using var command = connection.CreateCommand();
-		command.CommandText = "select id, author, title, body from posts where id = @id";
+		await using var command = connection.CreateCommand();
+		command.CommandText =
+			"select id, author, title, body from posts where id = @id";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@id";
 		parameter.Value = id;
 		command.Parameters.Add(parameter);
 
-		using var reader = command.ExecuteReader();
-		if (reader.Read())
+		await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+		if (await reader.ReadAsync(cancellationToken))
 		{
 			post = new Post
 			{
@@ -85,81 +94,92 @@ public static class BeforeAfter
 		return post;
 	}
 
-	public static Post? OdeFirst(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<Post?> OdeFirstAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int id = 3;
 		#region ode_first_factory
-		Post? post = connectionFactory
+		Post? post = await connectionFactory
 			.Command("select * from posts where id = @id")
 			.AddParam(id) // name and type inferred from the variable
 			.Map<Post>()
-			.FirstOrDefault();
+			.FirstOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return post;
 	}
 
-	public static long PlainScalar(string connectionString)
+	public static async Task<long> PlainScalarAsync(
+		string connectionString,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region plain_scalar
-		using var connection = new SqliteConnection(connectionString);
-		connection.Open();
+		await using var connection = new SqliteConnection(connectionString);
+		await connection.OpenAsync(cancellationToken);
 
-		using var command = connection.CreateCommand();
+		await using var command = connection.CreateCommand();
 		command.CommandText = "select count(*) from posts where author = @author";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
 		parameter.Value = author;
 		command.Parameters.Add(parameter);
 
-		long count = (long)command.ExecuteScalar()!;
+		long count = (long)(await command.ExecuteScalarAsync(cancellationToken))!;
 		#endregion
 
 		return count;
 	}
 
-	public static long OdeScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<long> OdeScalarAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_scalar_factory
-		long count = connectionFactory
+		long count = await connectionFactory
 			.Command("select count(*) from posts where author = @author")
 			.AddParam(author) // name and type inferred from the variable
-			.ExecuteScalar<long>();
+			.ExecuteScalarAsync<long>(cancellationToken);
 		#endregion
 
 		return count;
 	}
 
-	public static int PlainNonQuery(string connectionString)
+	public static async Task<int> PlainNonQueryAsync(
+		string connectionString,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region plain_nonquery
-		using var connection = new SqliteConnection(connectionString);
-		connection.Open();
+		await using var connection = new SqliteConnection(connectionString);
+		await connection.OpenAsync(cancellationToken);
 
-		using var command = connection.CreateCommand();
-		command.CommandText = "update posts set views = views + 1 where author = @author";
+		await using var command = connection.CreateCommand();
+		command.CommandText =
+			"update posts set views = views + 1 where author = @author";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
 		parameter.Value = author;
 		command.Parameters.Add(parameter);
 
-		int updated = command.ExecuteNonQuery();
+		int updated = await command.ExecuteNonQueryAsync(cancellationToken);
 		#endregion
 
 		return updated;
 	}
 
-	public static int OdeNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<int> OdeNonQueryAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_nonquery
-		int updated = connectionFactory
+		int updated = await connectionFactory
 			.Command("update posts set views = views + 1 where author = @author")
 			.AddParam(author) // name and type inferred from the variable
-			.ExecuteNonQuery();
+			.ExecuteNonQueryAsync(cancellationToken);
 		#endregion
 
 		return updated;

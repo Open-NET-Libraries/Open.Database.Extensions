@@ -76,12 +76,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	{
 		// A model type that cannot be mapped fails here, at the call, not when the first row is read.
 		TypeShape.ThrowIfUnmappable();
-		Slots = ModelSlots;
-		SlotIndex = ModelSlotIndex;
+		_slots = ModelSlots;
+		_slotIndex = ModelSlotIndex;
 
 		// slot → column, in slot order; a slot reads the column of its own name unless a pair says otherwise.
-		string?[] columns = new string?[Slots.Length];
-		for (int i = 0; i < columns.Length; i++) columns[i] = Slots[i].Name;
+		string?[] columns = new string?[_slots.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = _slots[i].Name;
 
 		bool[] named = Declare(mappings, columns, nameof(mappings));
 		RejectSharedColumns(columns, named, nameof(mappings));
@@ -118,11 +118,11 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		if (Shape.IsScalar(typeof(T))) TypeShape.ThrowIfUnmappable();
 
 		_factory = factory;
-		Slots = BuildFactorySlots(factory);
-		SlotIndex = BuildSlotIndex(Slots);
+		_slots = BuildFactorySlots(factory);
+		_slotIndex = BuildSlotIndex(_slots);
 
-		string?[] columns = new string?[Slots.Length];
-		for (int i = 0; i < columns.Length; i++) columns[i] = Slots[i].Name;
+		string?[] columns = new string?[_slots.Length];
+		for (int i = 0; i < columns.Length; i++) columns[i] = _slots[i].Name;
 
 		bool[] named = Declare(pairs, columns, nameof(pairs));
 		RejectSharedColumns(columns, named, nameof(pairs));
@@ -169,8 +169,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		bool[] named,
 		Converter?[] converters)
 	{
-		Slots = slots;
-		SlotIndex = slotIndex;
+		_slots = slots;
+		_slotIndex = slotIndex;
 		_factory = factory;
 		_columns = columns;
 		_named = named;
@@ -203,7 +203,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator()
 	{
 		for (int i = 0; i < _columns.Length; i++)
-			if (_named[i]) yield return new(Slots[i].Name, _columns[i]);
+			if (_named[i]) yield return new(_slots[i].Name, _columns[i]);
 	}
 
 	IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<KeyValuePair<string, string?>>)this).GetEnumerator();
@@ -286,7 +286,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		if (!TryFindSlot(member, out int index))
 			throw new ArgumentException(UnknownMember(member), nameof(member));
 
-		Slot slot = Slots[index];
+		Slot slot = _slots[index];
 		if (_converters?[index] is not null)
 			throw new ArgumentException($"The {Describe(slot)} has a converter already.", nameof(member));
 
@@ -317,14 +317,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			RejectSharedColumns(columns, named, nameof(column));
 		}
 
-		Converter?[] converters = _converters is null ? new Converter?[Slots.Length] : [.. _converters];
+		Converter?[] converters = _converters is null ? new Converter?[_slots.Length] : [.. _converters];
 		converters[index] = new Converter(
 			convert,
 			typeof(Func<TColumn, TMember>),
 			typeof(TColumn),
 			typeof(TMember));
 
-		return new RowMap<T>(Slots, SlotIndex, _factory, columns, named, converters);
+		return new RowMap<T>(_slots, _slotIndex, _factory, columns, named, converters);
 	}
 
 	// The validated column table and the compiled, cached, typed row readers (one per result-set layout: column names + column types),
@@ -339,7 +339,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
 
-	// The per-model-type statics below (TypeShape, Slots, SlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
+	// The per-model-type statics below (TypeShape, ModelSlots, ModelSlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
 	// lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it. Nothing that does not depend on T belongs here.
 
 	// Whether T can be mapped at all, judged from its shape; never throws (an unmappable T holds its error), so no static initializer here can fail with it.
@@ -429,21 +429,21 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	internal static void ThrowIfUnmappable() => TypeShape.ThrowIfUnmappable();
 
 	// What this map's columns can feed: the model's own slots (ModelSlots), or the parameters of its factory (From(factory, pairs)).
-	readonly ImmutableArray<Slot> Slots;
-	readonly FrozenDictionary<string, int> SlotIndex;
+	readonly ImmutableArray<Slot> _slots;
+	readonly FrozenDictionary<string, int> _slotIndex;
 
 	// The function that builds a T from its parameters in place of the model's constructor, or null for a map of the model's own members.
 	readonly Delegate? _factory;
 
-	// The column each property reads, aligned with Slots; null means the property is not mapped (ignored).
+	// The column each property reads, aligned with _slots; null means the property is not mapped (ignored).
 	// With _named, all the map keeps of the pairs.
 	readonly string?[] _columns;
 
-	// Aligned with Slots: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
+	// Aligned with _slots: true when a pair named the property, so what the pair says is exact and final (a pair whose column equals the property's own name included);
 	// only a property no pair named is eligible for the underscore tier.
 	readonly bool[] _named;
 
-	// Aligned with Slots: the converter the value of a slot goes through on its way from its column (Convert), or null for a slot with none.
+	// Aligned with _slots: the converter the value of a slot goes through on its way from its column (Convert), or null for a slot with none.
 	// The array itself is null for a map nothing was converted in, so such a map pays nothing for it.
 	readonly Converter?[]? _converters;
 
@@ -453,7 +453,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		get
 		{
 			for (int i = 0; i < _columns.Length; i++)
-				if (_columns[i] is not null) yield return Slots[i].Name;
+				if (_columns[i] is not null) yield return _slots[i].Name;
 		}
 	}
 
@@ -518,7 +518,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			if (feeds[i] is not null || names[i] is null || !index.TryGetValue(names[i], out int p) || filled[p]) continue;
 
 			filled[p] = true;
-			feeds[i] = Slots[p];
+			feeds[i] = _slots[p];
 			fed++;
 		}
 
@@ -542,7 +542,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		Dictionary<string, int>? index = null;
 		for (int p = 0; p < _columns.Length; p++)
 		{
-			string name = Slots[p].Name;
+			string name = _slots[p].Name;
 			if (filled[p] || _named[p]) continue;
 
 			index ??= new(_columns.Length, new IgnoreCaseAndUnderscores());
@@ -600,14 +600,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			bool known = TryFindSlot(pair.Key, out int index);
 			if (known)
 			{
-				if (named[index]) throw new ArgumentException($"The {Describe(Slots[index])} is mapped more than once.", paramName);
+				if (named[index]) throw new ArgumentException($"The {Describe(_slots[index])} is mapped more than once.", paramName);
 				named[index] = true;
 			}
 
 			if (pair.Value is { Length: 0 }) throw new ArgumentException($"The property '{pair.Key}' is mapped to an empty column name. Use null to ignore it.", paramName);
 			if (!known) throw new ArgumentException(UnknownMember(pair.Key), paramName);
 
-			if (pair.Value is null && Slots[index].Required) throw new ArgumentException($"The property '{Slots[index].Name}' is required, so it cannot be mapped to null. Map it to a column.", paramName);
+			if (pair.Value is null && _slots[index].Required) throw new ArgumentException($"The property '{_slots[index].Name}' is required, so it cannot be mapped to null. Map it to a column.", paramName);
 
 			columns[index] = pair.Value; // A null column means 'do not map this slot'.
 		}
@@ -618,11 +618,11 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// A pair's name is matched to a settable property exactly; failing that, to a constructor parameter ignoring case (nameof reaches the property of the same name, not the parameter).
 	bool TryFindSlot(string name, out int index)
 	{
-		if (SlotIndex.TryGetValue(name, out index)) return true;
+		if (_slotIndex.TryGetValue(name, out index)) return true;
 
-		for (int i = 0; i < Slots.Length; i++)
+		for (int i = 0; i < _slots.Length; i++)
 		{
-			if (Slots[i].Parameter is not { } parameter || !string.Equals(parameter, name, StringComparison.OrdinalIgnoreCase)) continue;
+			if (_slots[i].Parameter is not { } parameter || !string.Equals(parameter, name, StringComparison.OrdinalIgnoreCase)) continue;
 
 			index = i;
 			return true;
@@ -653,9 +653,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 				if (named[i] || named[j])
 				{
-					string who = Slots[j].IsProperty && Slots[i].IsProperty
-						? $"properties '{Slots[j].Name}' and '{Slots[i].Name}'"
-						: $"{Describe(Slots[j])} and the {Describe(Slots[i])}";
+					string who = _slots[j].IsProperty && _slots[i].IsProperty
+						? $"properties '{_slots[j].Name}' and '{_slots[i].Name}'"
+						: $"{Describe(_slots[j])} and the {Describe(_slots[i])}";
 
 					throw new ArgumentException($"The {who} both read column '{column}'. Map one of them to another column, or to null to ignore it.", paramName);
 				}
@@ -891,7 +891,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	// The slot's converter, or null for a slot without one (every slot of a map nothing was converted in).
-	Converter? ConverterOf(Slot slot) => _converters?[Slots.IndexOf(slot)];
+	Converter? ConverterOf(Slot slot) => _converters?[_slots.IndexOf(slot)];
 
 	// What a slot with a converter reads: the delegate applied to the column read as the delegate's own parameter type.
 	// The column is a slot of that type (Converter.Column), so it is read, and its NULL judged, as a member of that type is:
@@ -1079,7 +1079,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		RequireColumns(feeds);
 
 		List<Expression> statements = _factory is { } factory
-			? BindConstructor(Slots.Length, arguments => CallFactory(factory, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
+			? BindConstructor(_slots.Length, arguments => CallFactory(factory, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
 			: TypeShape.Constructor is { } constructor
 				? BindConstructor(constructor.GetParameters().Length, arguments => Expression.New(constructor, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
 				: CreateThenSet(item, index, bindings, names, feeds, readCell, isNull);
@@ -1091,9 +1091,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// It is raised when the plan is built: when the first row of a shape is mapped for a reader (so a query with no rows never reports it), and as soon as the columns are known for the buffered, Channel and Dataflow routes. The column named is the one looked for: a pair's, else the property's own name.
 	void RequireColumns(Slot?[] feeds)
 	{
-		for (int s = 0; s < Slots.Length; s++)
+		for (int s = 0; s < _slots.Length; s++)
 		{
-			Slot slot = Slots[s];
+			Slot slot = _slots[s];
 			if (!slot.Required || Array.IndexOf(feeds, slot) >= 0) continue;
 
 			string column = _columns[s]!; // A required slot is never mapped to null: the pairs are validated.
@@ -1180,7 +1180,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			}
 		}
 
-		foreach (Slot slot in Slots)
+		foreach (Slot slot in _slots)
 		{
 			if (slot.Setter is null && arguments[slot.Position] is null) arguments[slot.Position] = slot.Fallback!; // No column feeds it.
 		}

@@ -12,11 +12,16 @@ namespace Samples;
 public static class Sql
 {
 	#region shared_sql
-	public const string ListSql = "select * from posts where author = @author order by id";
+	public const string ListSql =
+		"select * from posts where author = @author order by id";
 	public const string OneSql = "select * from posts where id = @id";
-	public const string CountSql = "select count(*) from posts where author = @author";
-	public const string TouchSql = "update posts set views = views where author = @author";
-	public const string InsertSql = "insert into posts (id, author, title, body, views) values (@id, 1, 'Temporary', null, 0)";
+	public const string CountSql =
+		"select count(*) from posts where author = @author";
+	public const string TouchSql =
+		"update posts set views = views where author = @author";
+	public const string InsertSql =
+		"insert into posts (id, author, title, body, views) "
+		+ "values (@id, 1, 'Temporary', null, 0)";
 	#endregion
 }
 
@@ -25,7 +30,9 @@ public static class ConnectionPattern
 	public static DbConnectionFactory<SqliteConnection> Setup(string connectionString)
 	{
 		#region ode_setup_once
-		var connectionFactory = new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString));
+		var connectionFactory = new DbConnectionFactory<SqliteConnection>(
+			()
+				=> new SqliteConnection(connectionString));
 		#endregion
 
 		return connectionFactory;
@@ -51,9 +58,11 @@ public static class ConnectionPattern
 		const int author = 42;
 		#region ode_list_call
 		// nothing: the factory creates, opens and disposes the connection
-		List<Post> posts = await connectionFactory.Command(ListSql)
+		List<Post> posts = await connectionFactory
+			.Command(ListSql)
 			.AddParam(author) // name and type inferred from the variable
-			.Map<Post>().ToListAsync(cancellationToken);
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -66,20 +75,22 @@ public static class ConnectionPattern
 		const int author = 42;
 		#region ode_list_own
 		await using var connection = new SqliteConnection(connectionString);
-		List<Post> posts = await connection.Command(ListSql)
+		List<Post> posts = await connection
+			.Command(ListSql)
 			.AddParam(author) // name and type inferred from the variable
-			.Map<Post>().ToListAsync(cancellationToken);
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static Post? DapperFirst(string connectionString)
+	public static async Task<Post?> DapperFirstAsync(string connectionString)
 	{
 		const int id = 3;
 		#region dapper_first_call
-		using var connection = new SqliteConnection(connectionString);
-		Post? post = connection.QueryFirstOrDefault<Post>(OneSql,
+		await using var connection = new SqliteConnection(connectionString);
+		Post? post = await connection.QueryFirstOrDefaultAsync<Post>(OneSql,
 			new { id });
 		// nothing: "first or default" and Post are in the method name above
 		#endregion
@@ -87,25 +98,29 @@ public static class ConnectionPattern
 		return post;
 	}
 
-	public static Post? OdeFirst(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<Post?> OdeFirstAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int id = 3;
 		#region ode_first_call
 		// nothing: the factory creates, opens and disposes the connection
-		Post? post = connectionFactory.Command(OneSql)
+		Post? post = await connectionFactory
+			.Command(OneSql)
 			.AddParam(id) // name and type inferred from the variable
-			.Map<Post>().FirstOrDefault();
+			.Map<Post>()
+			.FirstOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return post;
 	}
 
-	public static long DapperScalar(string connectionString)
+	public static async Task<long> DapperScalarAsync(string connectionString)
 	{
 		const int author = 42;
 		#region dapper_scalar_call
-		using var connection = new SqliteConnection(connectionString);
-		long count = connection.ExecuteScalar<long>(CountSql,
+		await using var connection = new SqliteConnection(connectionString);
+		long count = await connection.ExecuteScalarAsync<long>(CountSql,
 			new { author });
 		// nothing: the terminal is the method name above
 		#endregion
@@ -113,25 +128,28 @@ public static class ConnectionPattern
 		return count;
 	}
 
-	public static long OdeScalar(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<long> OdeScalarAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_scalar_call
 		// nothing: the factory creates, opens and disposes the connection
-		long count = connectionFactory.Command(CountSql)
+		long count = await connectionFactory
+			.Command(CountSql)
 			.AddParam(author) // name and type inferred from the variable
-			.ExecuteScalar<long>();
+			.ExecuteScalarAsync<long>(cancellationToken);
 		#endregion
 
 		return count;
 	}
 
-	public static int DapperNonQuery(string connectionString)
+	public static async Task<int> DapperNonQueryAsync(string connectionString)
 	{
 		const int author = 42;
 		#region dapper_nonquery_call
-		using var connection = new SqliteConnection(connectionString);
-		int updated = connection.Execute(TouchSql,
+		await using var connection = new SqliteConnection(connectionString);
+		int updated = await connection.ExecuteAsync(TouchSql,
 			new { author });
 		// nothing: the terminal is the method name above
 		#endregion
@@ -139,53 +157,65 @@ public static class ConnectionPattern
 		return updated;
 	}
 
-	public static int OdeNonQuery(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static async Task<int> OdeNonQueryAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 	{
 		const int author = 42;
 		#region ode_nonquery_call
 		// nothing: the factory creates, opens and disposes the connection
-		int updated = connectionFactory.Command(TouchSql)
+		int updated = await connectionFactory
+			.Command(TouchSql)
 			.AddParam(author) // name and type inferred from the variable
-			.ExecuteNonQuery();
+			.ExecuteNonQueryAsync(cancellationToken);
 		#endregion
 
 		return updated;
 	}
 
-	public static void DapperTransaction(string connectionString)
+	public static async Task DapperTransactionAsync(string connectionString)
 	{
 		#region dapper_transaction_call
-		using var connection = new SqliteConnection(connectionString);
-		connection.Open();
-		using var transaction = connection.BeginTransaction();
+		await using var connection = new SqliteConnection(connectionString);
+		await connection.OpenAsync();
+		await using var transaction = await connection.BeginTransactionAsync();
 		try
 		{
-			connection.Execute(InsertSql, new { id = 100 }, transaction);
-			connection.Execute(InsertSql, new { id = 101 }, transaction);
-			transaction.Commit();
+			await connection.ExecuteAsync(InsertSql, new { id = 100 }, transaction);
+			await connection.ExecuteAsync(InsertSql, new { id = 101 }, transaction);
+			await transaction.CommitAsync();
 		}
 		catch
 		{
-			transaction.Rollback();
+			await transaction.RollbackAsync();
 			throw;
 		}
 		#endregion
 	}
 
-	public static void OdeTransaction(IDbConnectionFactory<SqliteConnection> connectionFactory)
+	public static ValueTask OdeTransactionAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
 		#region ode_transaction_call
-		=> connectionFactory.Using(connection =>
-			// nothing: ExecuteTransaction opens the connection if it is closed
-			// nothing: ExecuteTransaction begins the transaction
-			connection.ExecuteTransaction(transaction =>
+		=> connectionFactory.UsingAsync(connection
+			// nothing: ExecuteTransactionAsync opens a closed connection
+			// nothing: ExecuteTransactionAsync begins the transaction
+			=> connection.ExecuteTransactionAsync(async transaction =>
 			{
-				transaction.Command(InsertSql).AddParam("id", 100).ExecuteNonQuery();
-				transaction.Command(InsertSql).AddParam("id", 101).ExecuteNonQuery();
+				await transaction
+					.Command(InsertSql)
+					.AddParam("id", 100)
+					.ExecuteNonQueryAsync(cancellationToken);
+				await transaction
+					.Command(InsertSql)
+					.AddParam("id", 101)
+					.ExecuteNonQueryAsync(cancellationToken);
 				// nothing: it commits when the action returns
-			}));
+			}, cancellationToken));
 		// nothing: it rolls back if the action throws
-		// nothing: Using disposes the connection
+		// nothing: UsingAsync disposes the connection
 		#endregion
+
 	public static async Task<List<Post>> PlainListAligned(
 		string connectionString,
 		CancellationToken cancellationToken)
@@ -238,14 +268,21 @@ public static class ConnectionPattern
 		return posts;
 	}
 
-	public static Person[] RenamedColumns(SqliteConnection connection)
+	public static async Task<Person[]> RenamedColumnsAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region ode_renamed_columns
-		// PersonMaps.PersonMap is the RowMap<Person> declared once in the map_declared sample (Mapping.cs).
-		Person[] people = connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+		// PersonMaps.PersonMap is the RowMap<Person>
+		// declared once in the map_declared sample (Mapping.cs).
+		Person[] people = await connection
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>(PersonMaps.PersonMap)
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return people;
@@ -255,7 +292,8 @@ public static class ConnectionPattern
 	public static IServiceCollection RegisterSqlServer(IServiceCollection services, string connectionString)
 	{
 		#region sql_server_registration
-		services.AddSingleton<IDbConnectionFactory<SqlConnection>>(new SqlConnectionFactory(connectionString));
+		services.AddSingleton<IDbConnectionFactory<SqlConnection>>(
+			new SqlConnectionFactory(connectionString));
 		#endregion
 
 		return services;
@@ -263,30 +301,39 @@ public static class ConnectionPattern
 }
 
 #region di_consumer
-public class PostService(IDbConnectionFactory<SqliteConnection> connectionFactory)
+public class PostService(
+	IDbConnectionFactory<SqliteConnection> connectionFactory)
 {
-	public List<Post> ByAuthor(int author) => connectionFactory.Command(ListSql)
-		.AddParam(author) // name and type inferred from the variable
-		.Map<Post>().ToList();
+	public ValueTask<List<Post>> ByAuthorAsync(
+		int author,
+		CancellationToken cancellationToken)
+		=> connectionFactory
+			.Command(ListSql)
+			.AddParam(author) // name and type inferred from the variable
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 }
 #endregion
 
 public static class DependencyInjectionSample
 {
-	public static List<Post> ResolveAndUse()
+	public static async Task<List<Post>> ResolveAndUseAsync(CancellationToken cancellationToken)
 	{
 		#region di_registration
 		var services = new ServiceCollection();
 
-		// A singleton is fine: the factory holds no connection, it only creates them.
+		// A singleton is fine: the factory holds no connection,
+		// it only creates them.
 		services.AddSingleton<IDbConnectionFactory<SqliteConnection>>(
-			new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(Db.ConnectionString)));
+			new DbConnectionFactory<SqliteConnection>(
+				static ()
+					=> new SqliteConnection(Db.ConnectionString)));
 		services.AddTransient<PostService>();
 
 		using ServiceProvider provider = services.BuildServiceProvider();
 		var service = provider.GetRequiredService<PostService>();
 		#endregion
 
-		return service.ByAuthor(42);
+		return await service.ByAuthorAsync(42, cancellationToken);
 	}
 }

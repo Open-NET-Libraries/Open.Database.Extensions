@@ -8,39 +8,57 @@ namespace Samples;
 
 public static class Mapping
 {
-	public static Post[] MapDefault(SqliteConnection connection)
+	public static async Task<Post[]> MapDefaultAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_default
-		// Columns are matched to public settable properties by name, ignoring case and underscores.
+		// Columns are matched to public settable properties by name,
+		// ignoring case and underscores.
 		// The extra "views" column has no property, so it is ignored.
-		Post[] posts = connection
+		Post[] posts = await connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static Person[] MapDeclared(SqliteConnection connection)
+	public static async Task<Person[]> MapDeclaredAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_declared_use
-		// Pass the declared map. It is built once; each call only checks that the result-set layout matches the one its reader was compiled for.
-		Person[] people = connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+		// Pass the declared map. It is built once;
+		// each call only checks that the result-set layout
+		// matches the one its reader was compiled for.
+		Person[] people = await connection
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>(PersonMaps.PersonMap)
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return people;
 	}
 
-	public static Person[] MapNamesOnly(SqliteConnection connection)
-		// LastName is not read at all, so it keeps its initial value although the result set has a last_name column.
-		=> connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+	public static async Task<Person[]> MapNamesOnlyAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+		// LastName is not read at all, so it keeps its initial value
+		// although the result set has a last_name column.
+		=> await connection
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 
 
 	public static string MapUnknownProperty()
@@ -48,8 +66,11 @@ public static class Mapping
 		try
 		{
 			#region map_declared_unknown
-			// "Headline" is deliberately not a property of Post, so creating the map throws ArgumentException.
-			RowMap<Post> map = new([new("Headline", "title")]);
+			// "Headline" is deliberately not a property of Post,
+			// so creating the map throws ArgumentException.
+			RowMap<Post> map = new([
+				new("Headline", "title"),
+			]);
 			#endregion
 
 			return "no exception: " + map.GetType().Name;
@@ -67,7 +88,11 @@ public static class Mapping
 		// so a new map is built, and the row reader compiled,
 		// on every call.
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map(new RowMap<Person>([
 				new(nameof(Person.Id), "person_id"),
 				new(nameof(Person.FirstName), "first_name"),
@@ -86,11 +111,16 @@ public static class Mapping
 		// the same one-off, a new map built,
 		// and the row reader compiled, on every call.
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map(new RowMap<Person>(
 				new(nameof(Person.Id), "person_id"),
 				new(nameof(Person.FirstName), "first_name"),
-				new(nameof(Person.LastName), "last_name")))
+				new(nameof(Person.LastName), "last_name")
+			))
 			.ToArrayAsync(cancellationToken);
 		#endregion
 
@@ -100,100 +130,149 @@ public static class Mapping
 	public static RowMap<Person>[] DeclarationForms()
 	{
 		#region map_declaration_forms
-		// The collection syntax: one pair or several. The other properties still match by name (first_name feeds FirstName).
-		RowMap<Person> collection = [new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name")];
-		RowMap<Person> onePair = [new(nameof(Person.Id), "person_id")];
+		// The collection syntax: one pair or several.
+		// The other properties still match by name
+		// (first_name feeds FirstName).
+		RowMap<Person> collection = [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+		];
+		RowMap<Person> onePair = [
+			new(nameof(Person.Id), "person_id"),
+		];
 
 		// The constructor: one pair needs no brackets.
-		var singlePair = new RowMap<Person>(new(nameof(Person.Id), "person_id"));
-		var severalPairs = new RowMap<Person>(new(nameof(Person.Id), "person_id"), new(nameof(Person.FirstName), "first_name"));
+		var singlePair = new RowMap<Person>(
+			new(nameof(Person.Id), "person_id")
+		);
+		var severalPairs = new RowMap<Person>(
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name")
+		);
 
 		// An ImmutableArray of pairs, or any IEnumerable of pairs.
-		ImmutableArray<KeyValuePair<string, string?>> array = [new(nameof(Person.Id), "person_id")];
+		ImmutableArray<KeyValuePair<string, string?>> array = [
+			new(nameof(Person.Id), "person_id"),
+		];
 		var fromArray = new RowMap<Person>(array);
 
-		// A map enumerates the pairs it was declared with, so it is itself an IEnumerable of pairs: this copy maps like the original.
+		// A map enumerates the pairs it was declared with,
+		// so it is itself an IEnumerable of pairs:
+		// this copy maps like the original.
 		var copy = new RowMap<Person>(collection);
 		#endregion
 
 		return [collection, onePair, singlePair, severalPairs, fromArray, copy];
 	}
 
-	public static Person[] MapSnakeCase(SqliteConnection connection)
+	public static async Task<Person[]> MapSnakeCaseAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_snake_case
-		// No RowMap<T>: first_name feeds FirstName and last_name feeds LastName (case and underscores ignored).
+		// No RowMap<T>: first_name feeds FirstName
+		// and last_name feeds LastName (case and underscores ignored).
 		// person_id matches no property, so Id keeps its default.
-		Person[] people = connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+		Person[] people = await connection
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>()
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return people;
 	}
 
-	public static OrderLine? MapNulls(SqliteConnection connection)
-		=> connection
+	public static async Task<OrderLine?> MapNullsAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+		=> await connection
 			.Command("select null as quantity, null as discount, null as note, null as title")
 			.Map<OrderLine>()
-			.FirstOrDefault();
+			.FirstOrDefaultAsync(cancellationToken);
 
-	public static PostRecord[] MapRecord(SqliteConnection connection)
+	public static async Task<PostRecord[]> MapRecordAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_record
-		// PostRecord is a positional record: Map<T>() builds it through its constructor, each column feeding the parameter of the same name.
-		PostRecord[] posts = connection
+		// PostRecord is a positional record:
+		// Map<T>() builds it through its constructor,
+		// each column feeding the parameter of the same name.
+		PostRecord[] posts = await connection
 			.Command("select id, author, title, body from posts order by id")
 			.Map<PostRecord>()
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static PostSummary[] MapRecordExtra(SqliteConnection connection)
+	public static async Task<PostSummary[]> MapRecordExtraAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_record_extra
-		// Id and Title feed the constructor; views feeds the init property Views, set after the constructor ran.
-		// author and body match nothing and are ignored; no column is called section, so Section keeps "general".
-		PostSummary[] posts = connection
+		// Id and Title feed the constructor;
+		// views feeds the init property Views, set after the constructor ran.
+		// author and body match nothing and are ignored;
+		// no column is called section, so Section keeps "general".
+		PostSummary[] posts = await connection
 			.Command("select * from posts order by id")
 			.Map<PostSummary>()
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static PostRecord[] MapRecordDeclared(SqliteConnection connection)
+	public static async Task<PostRecord[]> MapRecordDeclaredAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_record_declared_use
-		// The pair names the property Title; it feeds the constructor parameter Title, from the column post_title.
-		PostRecord[] posts = connection
-			.Command("select id, author, title as post_title, body from posts order by id")
+		// The pair names the property Title;
+		// it feeds the constructor parameter Title,
+		// from the column post_title.
+		PostRecord[] posts = await connection
+			.Command("""
+				select id, author, title as post_title, body
+				from posts
+				order by id
+				""")
 			.Map<PostRecord>(RecordMaps.PostRecordMap)
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static (PostInput[] Posts, ValueMappingException? Missing) MapRequired(SqliteConnection connection)
+	public static async Task<(PostInput[] Posts, ValueMappingException? Missing)> MapRequiredAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_required
-		// Title is required: a column must feed it. Here the title column does.
-		PostInput[] posts = connection
+		// Title is required: a column must feed it.
+		// Here the title column does.
+		PostInput[] posts = await connection
 			.Command("select title, body from posts order by id")
 			.Map<PostInput>()
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 
 		ValueMappingException? missing = null;
 		try
 		{
 			// No column feeds Title, so the first row throws ValueMappingException.
-			// The message: No column feeds the required property 'Title' (String) of 'PostInput'; expected a column named 'Title'.
-			_ = connection.Command("select body from posts order by id").Map<PostInput>().ToArray();
+			// The message: No column feeds the required property
+			// 'Title' (String) of 'PostInput';
+			// expected a column named 'Title'.
+			_ = await connection
+				.Command("select body from posts order by id")
+				.Map<PostInput>()
+				.ToArrayAsync(cancellationToken);
 		}
 		catch (ValueMappingException ex)
 		{
@@ -204,20 +283,25 @@ public static class Mapping
 		return (posts, missing);
 	}
 
-	public static (Review? WithNulls, Review? WithoutColumns) MapCtorNullColumn(SqliteConnection connection)
+	public static async Task<(Review? WithNulls, Review? WithoutColumns)> MapCtorNullColumnAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_ctor_null_column
-		// A NULL into the non-nullable title and stars takes their declared defaults ("untitled", 3); a NULL into the nullable rating is null.
-		Review? withNulls = connection
+		// A NULL into the non-nullable title and stars
+		// takes their declared defaults ("untitled", 3);
+		// a NULL into the nullable rating is null.
+		Review? withNulls = await connection
 			.Command("select 7 as id, null as title, null as stars, null as rating")
 			.Map<Review>()
-			.FirstOrDefault();
+			.FirstOrDefaultAsync(cancellationToken);
 
-		// No column feeds title, stars or rating: each takes its declared default, so rating is 4 here.
-		Review? withoutColumns = connection
+		// No column feeds title, stars or rating:
+		// each takes its declared default, so rating is 4 here.
+		Review? withoutColumns = await connection
 			.Command("select 7 as id")
 			.Map<Review>()
-			.FirstOrDefault();
+			.FirstOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return (withNulls, withoutColumns);
@@ -228,9 +312,14 @@ public static class Mapping
 		try
 		{
 			#region map_unmappable
-			// PostCard has two public constructors and none without parameters. Map<PostCard>() throws InvalidOperationException right here,
-			// at the call and before the query runs, whatever the data: 'PostCard' cannot be mapped: it has 2 public constructors, ...
-			_ = connection.Command("select title from posts").Map<PostCard>();
+			// PostCard has two public constructors
+			// and none without parameters.
+			// Map<PostCard>() throws InvalidOperationException right here,
+			// at the call and before the query runs, whatever the data:
+			// 'PostCard' cannot be mapped: it has 2 public constructors, ...
+			_ = connection
+				.Command("select title from posts")
+				.Map<PostCard>();
 			#endregion
 
 			return "no exception";
@@ -241,46 +330,67 @@ public static class Mapping
 		}
 	}
 
-	public static ValueMappingException? MapValueError(SqliteConnection connection)
+	public static async Task<ValueMappingException?> MapValueErrorAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_value_error
 		try
 		{
 			// 3000000000 does not fit the int property Post.Id.
-			_ = connection.Command("select 3000000000 as id").Map<Post>().ToArray();
+			_ = await connection
+				.Command("select 3000000000 as id")
+				.Map<Post>()
+				.ToArrayAsync(cancellationToken);
 			return null;
 		}
 		catch (ValueMappingException ex)
 		{
-			// ex.PropertyName is "Id", ex.ColumnName is "id", ex.TargetType is typeof(int); the overflow is ex.InnerException.
-			// The message names all three: Unable to set value of property 'Id' (Int32) from column 'id'.
+			// ex.PropertyName is "Id", ex.ColumnName is "id",
+			// ex.TargetType is typeof(int);
+			// the overflow is ex.InnerException.
+			// The message names all three:
+			// Unable to set value of property 'Id' (Int32) from column 'id'.
 			return ex;
 		}
 		#endregion
 	}
 
-	public static Post[] MapPaging(SqliteConnection connection)
+	public static async Task<Post[]> MapPagingAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_paging
-		// Skipped rows are advanced without being mapped, and reading stops once the take is satisfied.
-		Post[] page = connection
+		// Skipped rows are advanced without being mapped,
+		// and reading stops once the take is satisfied.
+		Post[] page = await connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
 			.Skip(1)
 			.Take(2)
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return page;
 	}
 
-	public static (Post? First, Post? Single) FirstAndSingle(SqliteConnection connection)
+	public static async Task<(Post? First, Post? Single)> FirstAndSingleAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_first_single
-		Post? first = connection.Command("select * from posts order by id").Map<Post>().FirstOrDefault();
+		Post? first = await connection
+			.Command("select * from posts order by id")
+			.Map<Post>()
+			.FirstOrDefaultAsync(cancellationToken);
 
-		// SingleOrDefault returns null for no rows and throws if there is more than one row.
-		Post? single = connection.Command("select * from posts where id = @id").AddParam("id", 2).Map<Post>().SingleOrDefault();
+		// SingleOrDefaultAsync returns null for no rows
+		// and throws if there is more than one row.
+		Post? single = await connection
+			.Command("select * from posts where id = @id")
+			.AddParam("id", 2)
+			.Map<Post>()
+			.SingleOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return (first, single);
@@ -291,10 +401,16 @@ public static class Mapping
 		CancellationToken cancellationToken)
 	{
 		#region map_single_insert
-		// The insert and a select of the new id in one command (SQLite: last_insert_rowid()).
-		// SingleAsync throws unless exactly one row comes back, so there is no handler and no check.
+		// The insert and a select of the new id in one command
+		// (SQLite: last_insert_rowid()).
+		// SingleAsync throws unless exactly one row comes back,
+		// so there is no handler and no check.
 		long newId = await connectionFactory
-			.Command("insert into posts (author, title, body, views) values (@author, 'Draft', null, 0); select last_insert_rowid()")
+			.Command("""
+				insert into posts (author, title, body, views)
+				values (@author, 'Draft', null, 0);
+				select last_insert_rowid()
+				""")
 			.AddParam("author", 42)
 			.Map<long>()
 			.SingleAsync(cancellationToken);
@@ -304,95 +420,114 @@ public static class Mapping
 	}
 
 	public static async Task<Post[]> MapReaderView(
-		SqliteConnection connection)
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_reader_view
 		// The reader is yours: Map never closes or disposes it,
 		// and never moves it to the next result set.
-		using SqliteCommand command = connection.CreateCommand();
+		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts order by id";
-		using SqliteDataReader reader = await command.ExecuteReaderAsync();
+		await using SqliteDataReader reader = await command
+			.ExecuteReaderAsync(cancellationToken);
 
-		Post[] posts = await reader.Map<Post>().ToArrayAsync();
+		Post[] posts = await reader
+			.Map<Post>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
 	public static async Task<Post[]> MapCommandView(
-		SqliteConnection connection)
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_command_view
 		// The connection is opened if it is closed,
 		// and closed again only if this call opened it.
 		// The command is yours and is never disposed here.
-		using SqliteCommand command = connection.CreateCommand();
+		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts where author = 42 order by id";
 
-		Post[] posts = await command.Map<Post>().ToArrayAsync();
+		Post[] posts = await command
+			.Map<Post>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
 	public static async Task<Post[]> MapTableView(
-		SqliteConnection connection)
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_table_view
 		// The table is yours and is left as it is:
 		// each terminal reads it through its own DataTableReader.
-		using SqliteCommand command = connection.CreateCommand();
+		// ToDataTable has no async form: it fills the table in memory.
+		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts order by id";
-		using SqliteDataReader reader = await command.ExecuteReaderAsync();
+		await using SqliteDataReader reader = await command
+			.ExecuteReaderAsync(cancellationToken);
 		using DataTable table = reader.ToDataTable();
 
-		Post[] posts = table.Map<Post>().ToArray();
+		Post[] posts = await table
+			.Map<Post>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
 	}
 
-	public static string[] MapSelector(SqliteConnection connection)
+	public static async Task<string[]> MapSelectorAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_selector
 		// Map(selector) is the escape hatch: you read the columns yourself.
-		string[] titles = connection
+		string[] titles = await connection
 			.Command("select title, views from posts order by id")
-			.Map(record => $"{record.GetString(0)} ({record.GetInt64(1)} views)")
-			.ToArray();
+			.Map(static record
+				=> $"{record.GetString(0)} ({record.GetInt64(1)} views)")
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return titles;
 	}
 
 	public static async Task<(List<PostSummary> All, PostSummary? Newest)> QueryFactoryCallers(
-		IDbConnectionFactory<SqliteConnection> factory)
+		IDbConnectionFactory<SqliteConnection> factory,
+		CancellationToken cancellationToken)
 	{
 		#region map_query_factory_use
 		// Each caller picks the terminal.
-		// Building the query ran nothing; each terminal runs the command once.
+		// Building the query ran nothing;
+		// each terminal runs the command once.
 		List<PostSummary> all = await PostQueries
 			.ByAuthor(factory, 42)
-			.ToListAsync();
+			.ToListAsync(cancellationToken);
 
 		PostSummary? newest = await PostQueries
 			.ByAuthor(factory, 42)
-			.FirstOrDefaultAsync();
+			.FirstOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return (all, newest);
 	}
 
-	public static int[] MapSingleValue(SqliteConnection connection)
+	public static async Task<int[]> MapSingleValueAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region map_single_value
 		// One column of every row as an int.
 		// A SQLite integer is a long; it converts to int with a range check,
 		// as a property would.
-		int[] ids = connection
+		int[] ids = await connection
 			.Command("select id from posts order by id")
 			.Map<int>()
-			.ToArray();
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return ids;
@@ -401,11 +536,14 @@ public static class Mapping
 	public static int StreamRows(SqliteConnection connection)
 	{
 		#region map_stream
-		// Read hands you a lazy sequence that is only valid inside the handler, while the reader is open.
+		// The synchronous handler form (ReadAsync takes an async sequence).
+		// Read hands you a lazy sequence
+		// that is only valid inside the handler, while the reader is open.
 		int total = connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Read(posts => posts.Sum(post => post.Id));
+			.Read(static posts
+				=> posts.Sum(static post => post.Id));
 		#endregion
 
 		return total;
@@ -417,7 +555,9 @@ public static class Mapping
 		Dictionary<int, Post> byId = await connection
 			.Command("select * from posts")
 			.Map<Post>()
-			.ToDictionaryAsync(post => post.Id, cancellationToken: cancellationToken);
+			.ToDictionaryAsync(
+				static post => post.Id,
+				cancellationToken: cancellationToken);
 		#endregion
 
 		return byId;
@@ -426,13 +566,15 @@ public static class Mapping
 	public static async Task<Dictionary<int, string>> BodiesByIdAsync(SqliteConnection connection, CancellationToken cancellationToken)
 	{
 		#region map_dictionary_values
-		// A key selector and a value selector build the lookup in one pass: no Post is kept, only the text.
+		// A key selector and a value selector build the lookup in one pass:
+		// no Post is kept, only the text.
 		Dictionary<int, string> bodies = await connection
 			.Command("select * from posts")
 			.Map<Post>()
 			.ToDictionaryAsync(
-				post => post.Id,
-				post => post.Body ?? "",
+				static post => post.Id,
+				static post
+					=> post.Body ?? "",
 				cancellationToken: cancellationToken);
 		#endregion
 
@@ -444,10 +586,16 @@ public static class Mapping
 		CancellationToken cancellationToken)
 	{
 		#region map_converted_use
-		// order_num (an integer column) becomes text, first_load_datetime (a timestamp) becomes "HH:mm" and customer is trimmed:
+		// order_num (an integer column) becomes text,
+		// first_load_datetime (a timestamp) becomes "HH:mm"
+		// and customer is trimmed:
 		// the rows map straight into Order, with no row type to copy from.
 		Order[] orders = await connection
-			.Command("select id, order_num, first_load_datetime, customer from orders order by id")
+			.Command("""
+				select id, order_num, first_load_datetime, customer
+				from orders
+				order by id
+				""")
 			.Map<Order>(OrderMaps.OrderMap)
 			.ToArrayAsync(cancellationToken);
 		#endregion
@@ -459,7 +607,11 @@ public static class Mapping
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 		=> await connection
-			.Command("select id, order_num, first_load_datetime, customer from orders order by id")
+			.Command("""
+				select id, order_num, first_load_datetime, customer
+				from orders
+				order by id
+				""")
 			.Map<Order>(OrderMaps.NullAwareOrderMap)
 			.ToArrayAsync(cancellationToken);
 }
@@ -469,49 +621,81 @@ public static class Mapping
 public static class PersonMaps
 {
 	#region map_declared
-	public static RowMap<Person> PersonMap => field ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), "last_name"),
-	];
+	public static RowMap<Person> PersonMap
+		=> field ??= [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+			new(nameof(Person.LastName), "last_name"),
+		];
 	#endregion
 
 	#region map_declared_ignore
-	// A null column means "do not map this property": LastName is not read at all, not even by name,
-	// so it keeps its initial value even if the result set has a column called LastName.
-	public static RowMap<Person> PersonNamesOnlyMap => field ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), null),
-	];
+	// A null column means "do not map this property":
+	// LastName is not read at all, not even by name,
+	// so it keeps its initial value
+	// even if the result set has a column called LastName.
+	public static RowMap<Person> PersonNamesOnlyMap
+		=> field ??= [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+			new(nameof(Person.LastName), null),
+		];
 	#endregion
 }
 
 public static class OrderMaps
 {
 	#region map_converted
-	// Convert<TColumn, TMember>(member, convert): the column is the one the member matches by name (order_num feeds OrderNum, ignoring underscores).
-	// Convert<TColumn, TMember>(member, column, convert) names the column too, for first_load_datetime, which matches no property.
-	// The delegate runs inside the compiled row reader, once per row, and is never called for a NULL cell: that property keeps its initial value.
-	public static RowMap<Order> OrderMap => field ??= RowMap<Order>.Default
-		.Convert<long, string>(nameof(Order.OrderNum), number => number.ToString("D6", CultureInfo.InvariantCulture))
-		.Convert<DateTime, string>(nameof(Order.FirstLoad), "first_load_datetime", loaded => loaded.ToString("HH:mm", CultureInfo.InvariantCulture))
-		.Convert<string, string>(nameof(Order.Customer), customer => customer.Trim());
+	// Convert<TColumn, TMember>(member, convert):
+	// the column is the one the member matches by name
+	// (order_num feeds OrderNum, ignoring underscores).
+	// Convert<TColumn, TMember>(member, column, convert)
+	// names the column too, for first_load_datetime,
+	// which matches no property.
+	// The delegate runs inside the compiled row reader, once per row,
+	// and is never called for a NULL cell:
+	// that property keeps its initial value.
+	public static RowMap<Order> OrderMap
+		=> field ??= RowMap<Order>.Default
+			.Convert<long, string>(
+				nameof(Order.OrderNum),
+				static number
+					=> number.ToString("D6", CultureInfo.InvariantCulture))
+			.Convert<DateTime, string>(
+				nameof(Order.FirstLoad),
+				"first_load_datetime",
+				static loaded
+					=> loaded.ToString("HH:mm", CultureInfo.InvariantCulture))
+			.Convert<string, string>(
+				nameof(Order.Customer),
+				static customer => customer.Trim());
 	#endregion
 
 	#region map_converted_null
-	// A converter that must see NULL asks for a nullable TColumn: it is called with null,
+	// A converter that must see NULL asks for a nullable TColumn:
+	// it is called with null,
 	// and what it returns is the value of the property.
-	public static RowMap<Order> NullAwareOrderMap => field ??= RowMap<Order>.Default
-		.Convert<DateTime?, string>(nameof(Order.FirstLoad), "first_load_datetime", loaded => loaded?.ToString("HH:mm", CultureInfo.InvariantCulture) ?? "--:--");
+	public static RowMap<Order> NullAwareOrderMap
+		=> field ??= RowMap<Order>.Default
+			.Convert<DateTime?, string>(
+				nameof(Order.FirstLoad),
+				"first_load_datetime",
+				static loaded
+					=> loaded?.ToString("HH:mm", CultureInfo.InvariantCulture)
+						?? "--:--");
 	#endregion
 }
 
 public static class RecordMaps
 {
 	#region map_record_declared
-	// A positional record's property and its constructor parameter are one member: the pair names it by the property, and it feeds the parameter.
-	public static RowMap<PostRecord> PostRecordMap => field ??= [new(nameof(PostRecord.Title), "post_title")];
+	// A positional record's property and its constructor parameter
+	// are one member: the pair names it by the property,
+	// and it feeds the parameter.
+	public static RowMap<PostRecord> PostRecordMap
+		=> field ??= [
+			new(nameof(PostRecord.Title), "post_title"),
+		];
 	#endregion
 }
 
@@ -522,11 +706,12 @@ public static class HoldingAMap
 	// Before C# 14 there is no field keyword: write the backing field yourself.
 	internal static RowMap<Person>? _backingMap;
 
-	public static RowMap<Person> BackingMap => _backingMap ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), "last_name"),
-	];
+	public static RowMap<Person> BackingMap
+		=> _backingMap ??= [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+			new(nameof(Person.LastName), "last_name"),
+		];
 	#endregion
 }
 
@@ -539,7 +724,8 @@ public static class PostQueries
 	// Nothing runs here: the command runs once
 	// for each terminal the caller picks.
 	static readonly RowMap<PostSummary> Summary = RowMap<PostSummary>.From(
-		static (int id, string title) => new PostSummary(id, title));
+		static (int id, string title)
+			=> new PostSummary(id, title));
 
 	public static MappedQuery<PostSummary> ByAuthor(
 		IDbConnectionFactory<SqliteConnection> factory,
