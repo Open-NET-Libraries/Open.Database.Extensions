@@ -2,13 +2,15 @@
 
 namespace Open.Database.Extensions.Tests;
 
-// The Map<T>(pair) and Map<T>(params pairs) overloads are removed (K26):
-// a pair is declared in a RowMap<T> and passed to Map(RowMap<T>?).
+// The Map<T>(pair) and Map<T>(params pairs) overloads are removed
+// (K26): a pair is declared in a RowMap<T>
+// and passed to Map(RowMap<T>?).
 // The binding is read from the IL of each call (the method it calls),
 // not from whether it compiles, so a change of binding fails here.
 // A call shape that must not compile after the removal
-// (Map<T>(new KeyValuePair<string, string?>("a", "b")), Map<T>(pair, pair))
-// cannot be a test; the compiler matrix is in the A3 notes of the GA briefs.
+// (Map<T>(new KeyValuePair<string, string?>("a", "b")),
+// Map<T>(pair, pair)) cannot be a test;
+// the compiler matrix is in the A3 notes of the GA briefs.
 [ExcludeFromCodeCoverage]
 public static class MapPairRemovalBindingTests
 {
@@ -54,8 +56,9 @@ public static class MapPairRemovalBindingTests
 		Assert.Equal(map, Bound((IDbCommand r) => r.Map<Item>(default)));
 		Assert.Equal(map, Bound((DataTable r) => r.Map<Item>(default)));
 
-		// A collection expression converts to a RowMap<T> (its CollectionBuilder),
-		// so the shipped call shape Map<T>([...]) still compiles, and binds here.
+		// A collection expression converts to a RowMap<T>
+		// (its CollectionBuilder), so the shipped call shape
+		// Map<T>([...]) still compiles, and binds here.
 		Assert.Equal(map, Bound((IExecuteReader r) => r.Map<Item>([])));
 		Assert.Equal(map, Bound((IDataReader r) => r.Map<Item>([new("Id", "a")])));
 		Assert.Equal(map, Bound((IDbCommand r) => r.Map<Item>([new("Id", "a")])));

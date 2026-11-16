@@ -372,7 +372,9 @@ public static class MappedViewParityTests
 
 		// A single value reads column 0.
 		Assert.Equal([1, 2], Ints(ints).Map<int>(null).ToList());
-		// An empty collection expression is a RowMap<int> now (it was "no pairs" of the removed params overload), and an int is not a row model.
+		// An empty collection expression is a RowMap<int> now
+		// (it was "no pairs" of the removed params overload),
+		// and an int is not a row model.
 		Assert.Throws<InvalidOperationException>(() => Ints(ints).Map<int>([]));
 		Assert.Equal([1, 2], Ints(ints).Map((RowMap<int>?)null).ToList());
 		Assert.Equal([1, 2], Cmd(() => Ints(ints)).Map<int>(null).ToList());
