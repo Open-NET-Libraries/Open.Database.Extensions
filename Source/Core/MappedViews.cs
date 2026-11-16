@@ -43,26 +43,6 @@ public static partial class CoreExtensions
 			: new MappedReader<T>(Views.ReaderCore(reader, map));
 	}
 
-	/// <inheritdoc cref="Map{T}(IDataReader, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="reader">The reader to read from, positioned on the result set to map.</param>
-	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
-	[OverloadResolutionPriority(2)]
-	public static MappedReader<T> Map<T>(
-		this IDataReader reader,
-		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		=> mappings.IsEmpty
-			? Map<T>(reader)
-			: Map(reader, RowMap<T>.From(mappings));
-
-	/// <inheritdoc cref="Map{T}(IDataReader, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="reader">The reader to read from, positioned on the result set to map.</param>
-	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
-	[OverloadResolutionPriority(3)]
-	public static MappedReader<T> Map<T>(
-		this IDataReader reader,
-		KeyValuePair<string, string?> mapping)
-		=> Map(reader, new RowMap<T>(mapping));
-
 	/// <inheritdoc cref="Map{T}(IDataReader, RowMap{T}?)"/>
 	[OverloadResolutionPriority(4)]
 	public static MappedReader<T> Map<T>(
@@ -148,26 +128,6 @@ public static partial class CoreExtensions
 			? Map<T>(command)
 			: new MappedCommand<T>(Views.CommandCore(command, map));
 	}
-
-	/// <inheritdoc cref="Map{T}(IDbCommand, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="command">The command to execute.</param>
-	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
-	[OverloadResolutionPriority(2)]
-	public static MappedCommand<T> Map<T>(
-		this IDbCommand command,
-		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		=> mappings.IsEmpty
-			? Map<T>(command)
-			: Map(command, RowMap<T>.From(mappings));
-
-	/// <inheritdoc cref="Map{T}(IDbCommand, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="command">The command to execute.</param>
-	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
-	[OverloadResolutionPriority(3)]
-	public static MappedCommand<T> Map<T>(
-		this IDbCommand command,
-		KeyValuePair<string, string?> mapping)
-		=> Map(command, new RowMap<T>(mapping));
 
 	/// <inheritdoc cref="Map{T}(IDbCommand, RowMap{T}?)"/>
 	[OverloadResolutionPriority(4)]
@@ -255,26 +215,6 @@ public static partial class CoreExtensions
 			? Map<T>(table)
 			: new MappedTable<T>(Views.TableCore(table, map));
 	}
-
-	/// <inheritdoc cref="Map{T}(DataTable, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="table">The table whose rows are mapped.</param>
-	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
-	[OverloadResolutionPriority(2)]
-	public static MappedTable<T> Map<T>(
-		this DataTable table,
-		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		=> mappings.IsEmpty
-			? Map<T>(table)
-			: Map(table, RowMap<T>.From(mappings));
-
-	/// <inheritdoc cref="Map{T}(DataTable, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="table">The table whose rows are mapped.</param>
-	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
-	[OverloadResolutionPriority(3)]
-	public static MappedTable<T> Map<T>(
-		this DataTable table,
-		KeyValuePair<string, string?> mapping)
-		=> Map(table, new RowMap<T>(mapping));
 
 	/// <inheritdoc cref="Map{T}(DataTable, RowMap{T}?)"/>
 	[OverloadResolutionPriority(4)]

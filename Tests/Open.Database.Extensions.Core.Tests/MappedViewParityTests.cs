@@ -195,14 +195,13 @@ public static class MappedViewParityTests
 		Assert.Equal("n1", Cmd().Map(map).FirstOrDefault()!.Note);
 		Assert.Equal(
 			"n2",
-			Rd().Map<Person>(new KeyValuePair<string, string?>("Note", null))
+			Rd().Map(new RowMap<Person>(new KeyValuePair<string, string?>("Note", null)))
 				.Skip(1)
 				.FirstOrDefault()!.Name);
 		Assert.Equal(
 			"n1",
-			Cmd().Map<Person>(
-				new KeyValuePair<string, string?>("Note", "Name"),
-				new KeyValuePair<string, string?>("Name", "Note"))
+			Cmd().Map(new RowMap<Person>(new KeyValuePair<string, string?>("Note", "Name"),
+				new KeyValuePair<string, string?>("Name", "Note")))
 				.FirstOrDefault()!.Note);
 
 		// A null map reads like the default one.
@@ -225,7 +224,7 @@ public static class MappedViewParityTests
 		Assert.Throws<ArgumentNullException>(() => reader!.Map<Person>());
 		Assert.Throws<ArgumentNullException>(() => reader!.Map(map));
 		Assert.Throws<ArgumentNullException>(
-			() => reader!.Map<Person>(new KeyValuePair<string, string?>("Id", "Id")));
+			() => reader!.Map(new RowMap<Person>(new KeyValuePair<string, string?>("Id", "Id"))));
 		Assert.Throws<ArgumentNullException>(() => reader!.Map(_ => 1));
 		Assert.Throws<ArgumentNullException>(() => command!.Map<Person>());
 		Assert.Throws<ArgumentNullException>(() => command!.Map(map));
@@ -373,19 +372,18 @@ public static class MappedViewParityTests
 
 		// A single value reads column 0.
 		Assert.Equal([1, 2], Ints(ints).Map<int>(null).ToList());
-		Assert.Equal([1, 2], Ints(ints).Map<int>([]).ToList());
+		// An empty collection expression is a RowMap<int> now
+		// (it was "no pairs" of the removed params overload),
+		// and an int is not a row model.
+		Assert.Throws<InvalidOperationException>(() => Ints(ints).Map<int>([]));
 		Assert.Equal([1, 2], Ints(ints).Map((RowMap<int>?)null).ToList());
 		Assert.Equal([1, 2], Cmd(() => Ints(ints)).Map<int>(null).ToList());
-		Assert.Equal([1, 2], Cmd(() => Ints(ints)).Map<int>([]).ToList());
 		Assert.Equal(
 			[1, 2],
 			Cmd(() => Ints(ints)).Map((RowMap<int>?)null).ToList());
 		Assert.Equal(
 			[1, 2],
 			new FakeExecuteReader(() => Ints(ints)).Map<int>(null).ToList());
-		Assert.Equal(
-			[1, 2],
-			new FakeExecuteReader(() => Ints(ints)).Map<int>([]).ToList());
 		Assert.Equal(
 			[1, 2],
 			new FakeExecuteReader(() => Ints(ints))

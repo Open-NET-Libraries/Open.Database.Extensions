@@ -76,14 +76,20 @@ The common case, and its fix: declare the map once and pass it.
 
 ```cs
 // 10.x
-var people = cmd.Results<Person>(new("FirstName", "first_name"), new("LastName", "last_name"));
+var people = await cmd.ResultsAsync<Person>(
+	cancellationToken,
+	("FirstName", "first_name"),
+	("LastName", "last_name"));
 
 // 11
-public static RowMap<Person> PersonMap => field ??= [new(nameof(Person.FirstName), "first_name"), new(nameof(Person.LastName), "last_name")];
-var people = cmd.Map<Person>(PersonMap).ToList();
+public static RowMap<Person> PersonMap => field ??= [
+	new(nameof(Person.FirstName), "first_name"),
+	new(nameof(Person.LastName), "last_name"),
+];
+var people = await cmd.Map<Person>(PersonMap).ToListAsync(cancellationToken);
 ```
 
-To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. Only `Map<T>` also takes the pairs themselves, but that builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
+To keep a dictionary, build the map from it: `new RowMap<T>(dictionary)`. A map built at the call site builds a new map on every call (about 0.43 ms and 29.5 KB for 12 properties): declare a map for anything that runs more than occasionally.
 
 These can change behavior without a compile error, most likely first:
 
@@ -101,6 +107,7 @@ These can change behavior without a compile error, most likely first:
 12. **Async calls pass the command's `CancellationToken` to the connection open.**
 13. **`EnsureOpenAsync` and `OpenAsync` have an obsolete `bool configureAwait` overload.** The library always awaits with `ConfigureAwait(false)`; returning to your context is your call. The `bool` overloads still compile with a warning and ignore the argument.
 14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
+15. **`Map<int>([])` throws.** An empty collection expression is a `RowMap<int>` now (the removed `Map<T>(params pairs)` read it as no pairs, so it read the first column), and an `int` is not a row model: it fails with `InvalidOperationException` at run time, not at compile time. Use `Map<int>()`.
 
 ## Deprecated in 11.0
 
