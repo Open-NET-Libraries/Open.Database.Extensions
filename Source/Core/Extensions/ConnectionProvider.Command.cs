@@ -30,6 +30,8 @@ public static partial class ConnectionExtensions
 	/// </remarks>
 	/// <example>
 	/// <code>
+	/// // Synchronous: an ExpressiveCommand on an IDbConnection
+	/// // has synchronous terminals only.
 	/// int rows = connection
 	///     .Command("UPDATE Customers SET Region = @region WHERE Id = @id")
 	///     .AddParam("region", "West")
@@ -289,10 +291,11 @@ public static partial class ConnectionExtensions
 	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	/// <example>
 	/// <code>
-	/// // A new connection is created, opened, and disposed for every execution.
-	/// int count = createConnection
+	/// // A new connection is created, opened, and disposed
+	/// // for every execution.
+	/// int count = await createConnection
 	///     .Command("SELECT COUNT(*) FROM Customers")
-	///     .ExecuteScalar&lt;int&gt;();
+	///     .ExecuteScalarAsync&lt;int&gt;(cancellationToken);
 	/// </code>
 	/// </example>
 	public static ExpressiveDbCommand Command<TConnection>(
