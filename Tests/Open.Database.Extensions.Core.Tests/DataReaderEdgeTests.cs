@@ -8,8 +8,9 @@ namespace Open.Database.Extensions.Tests;
 
 // Edge cases of the reader extensions:
 // cancellation before and in the middle of an iteration
-// (a cancel that cuts a read short throws; one that finds it finished
-// returns the complete result),
+// (the token is checked at the top of each loop, before each read,
+// and a cancel throws; once a read has returned no row the result is
+// complete and a cancel after that is not an error),
 // early stop, pooled rows, deferred execution,
 // a result set loaded into a DataTable, NULLs,
 // and the argument guards that are eager.
@@ -48,14 +49,16 @@ public static class DataReaderEdgeTests
 
 	// ---- ForEach / ForEachAsync ----
 
-	// The token is checked before each read.
-	// A cancel that cuts the read short throws:
-	// a row is still to come, and it is not handled.
-	// A cancel that finds the read finished returns the complete result.
+	// The token is checked at the top of the loop, before each read.
+	// A cancel throws and the read is not made:
+	// a cancel during row N lets row N finish, then throws,
+	// even when row N was the last.
+	// Once a read has returned no row the result is complete,
+	// and a cancel after that is not an error.
 	[Theory]
 	[InlineData(3)]
-	[InlineData(9)] // the last row has not been read yet
-	public static void ForEach_CancelledDuringARow_ThrowsBeforeTheNext(
+	[InlineData(10)] // during the last row's handler
+	public static void ForEach_CancelledDuringARow_ThrowsBeforeTheNextRead(
 		int cancelAtRead)
 	{
 		using var cts = new CancellationTokenSource();
@@ -69,19 +72,16 @@ public static class DataReaderEdgeTests
 			reader.ForEach(_ => handled++, cts.Token));
 
 		Assert.Equal(cancelAtRead, handled);
-		Assert.Equal(cancelAtRead + 1, reader.Reads); // the row not handled
+		Assert.Equal(cancelAtRead, reader.Reads); // no read after the cancel
 	}
 
-	[Theory]
-	[InlineData(10)] // during the last row's handler
-	[InlineData(11)] // as the read that ends the result is made
-	public static void ForEach_CancelledAfterTheLastRow_ReturnsAllRows(
-		int cancelAtRead)
+	[Fact]
+	public static void ForEach_CancelledAsTheEndingReadIsMade_Returns()
 	{
 		using var cts = new CancellationTokenSource();
 		TrackedReader reader = TrackedRows(10, n =>
 		{
-			if (n == cancelAtRead) cts.Cancel();
+			if (n == 11) cts.Cancel(); // the read that returns no row
 		});
 		int handled = 0;
 
@@ -91,30 +91,21 @@ public static class DataReaderEdgeTests
 		Assert.Equal(11, reader.Reads);
 	}
 
-	[Fact]
-	public static void ForEach_CancelledBeforeTheCall_ThrowsHandlingNothing()
+	[Theory]
+	[InlineData(10)]
+	[InlineData(0)] // an empty result is still a read that was not made
+	public static void ForEach_CancelledBeforeTheCall_ThrowsWithoutReading(
+		int rows)
 	{
 		using CancellationTokenSource cts = CancelledSource();
-		TrackedReader reader = TrackedRows(10);
+		TrackedReader reader = TrackedRows(rows);
 		int handled = 0;
 
 		Assert.Throws<OperationCanceledException>(() =>
 			reader.ForEach(_ => handled++, cts.Token));
 
 		Assert.Equal(0, handled);
-		Assert.Equal(1, reader.Reads); // the read that found a row
-	}
-
-	[Fact]
-	public static void ForEach_CancelledBeforeTheCall_ReturnsAnEmptyResult()
-	{
-		using CancellationTokenSource cts = CancelledSource();
-		TrackedReader reader = TrackedRows(0);
-		int handled = 0;
-
-		reader.ForEach(_ => handled++, cts.Token); // does not throw
-
-		Assert.Equal(0, handled);
+		Assert.Equal(0, reader.Reads);
 	}
 
 #pragma warning disable xUnit1051 // The shape under test takes no token.
@@ -167,7 +158,7 @@ public static class DataReaderEdgeTests
 			}, cts.Token));
 
 		Assert.False(called);
-		Assert.Equal(1, reader.Reads); // the one read that found a row
+		Assert.Equal(0, reader.Reads);
 	}
 
 	// ---- Select / SelectAsync ----
@@ -236,7 +227,7 @@ public static class DataReaderEdgeTests
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)] // the token-first overload behaves the same
-	public static void Select_CancelledDuringARow_ThrowsBeforeTheNext(
+	public static void Select_CancelledDuringARow_ThrowsBeforeTheNextRead(
 		bool tokenFirst)
 	{
 		using var cts = new CancellationTokenSource();
@@ -255,16 +246,15 @@ public static class DataReaderEdgeTests
 			while (e.MoveNext()) seen.Add(e.Current);
 		});
 
-		// The rows read before the cancel was seen,
-		// and one read to learn that a row was still to come.
+		// The rows read before the cancel was seen, and no read after it.
 		Assert.Equal([1, 2, 3], seen);
-		Assert.Equal(4, reader.Reads);
+		Assert.Equal(3, reader.Reads);
 	}
 
 	[Theory]
-	[InlineData(10)] // while the last row is yielded
-	[InlineData(11)] // as the read that ends the result is made
-	public static void Select_CancelledAfterTheLastRow_YieldsAllRows(
+	[InlineData(10)] // while the last row is yielded: throws
+	[InlineData(11)] // as the read that ends the result is made: returns
+	public static void Select_CancelledAtTheEnd_ThrowsOnlyBeforeTheEndingRead(
 		int cancelAtRead)
 	{
 		using var cts = new CancellationTokenSource();
@@ -272,13 +262,19 @@ public static class DataReaderEdgeTests
 		{
 			if (n == cancelAtRead) cts.Cancel();
 		});
+		IEnumerable<int> ids = reader
+			.Select(static r => r.GetInt32(0), cts.Token);
 
-		int[] ids = reader
-			.Select(static r => r.GetInt32(0), cts.Token)
-			.ToArray(); // does not throw
-
-		Assert.Equal(Enumerable.Range(1, 10), ids);
-		Assert.Equal(11, reader.Reads);
+		if (cancelAtRead == 10)
+		{
+			Assert.Throws<OperationCanceledException>(() => ids.ToArray());
+			Assert.Equal(10, reader.Reads);
+		}
+		else
+		{
+			Assert.Equal(Enumerable.Range(1, 10), ids.ToArray());
+			Assert.Equal(11, reader.Reads);
+		}
 	}
 
 	[Theory]
@@ -300,7 +296,7 @@ public static class DataReaderEdgeTests
 		{
 			e.MoveNext();
 		});
-		Assert.Equal(1, reader.Reads); // the read that found a row
+		Assert.Equal(0, reader.Reads);
 	}
 
 	[Fact]
@@ -325,7 +321,7 @@ public static class DataReaderEdgeTests
 	[InlineData("DbDataReader, transform")]
 	[InlineData("IDataReader, ValueTask, over a DbDataReader")]
 	[InlineData("IDataReader, ValueTask, over a plain reader")]
-	public static async Task SelectAsync_CancelledMidRow_ThrowsBeforeTheNext(
+	public static async Task SelectAsync_CancelMidRow_ThrowsBeforeNextRead(
 		string variant)
 	{
 		using var cts = new CancellationTokenSource();
@@ -345,26 +341,37 @@ public static class DataReaderEdgeTests
 			});
 
 		Assert.Equal([1, 2, 3], seen);
-		Assert.Equal(4, reads());
+		Assert.Equal(3, reads());
 	}
 
 	[Theory]
 	[InlineData("DbDataReader, transform")]
 	[InlineData("IDataReader, ValueTask, over a DbDataReader")]
 	[InlineData("IDataReader, ValueTask, over a plain reader")]
-	public static async Task SelectAsync_CancelledAfterTheLastRow_YieldsAllRows(
+	public static async Task SelectAsync_CancelAtTheEnd_Cases(
 		string variant)
 	{
-		using var cts = new CancellationTokenSource();
-		void Cancel(int n)
-		{
-			if (n == 10) cts.Cancel();
-		}
+		// During the last row (10): throws at the next read.
+		using var during = new CancellationTokenSource();
+		(IDataReader reader, Func<int> reads) = ReaderFor(
+			variant,
+			n =>
+			{
+				if (n == 10) during.Cancel();
+			});
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await Collect(Ids(variant, reader, during.Token)));
+		Assert.Equal(10, reads());
 
-		(IDataReader reader, Func<int> reads) = ReaderFor(variant, Cancel);
-
-		List<int> seen = await Collect(Ids(variant, reader, cts.Token));
-
+		// As the read that ends the result is made (11): returns.
+		using var ending = new CancellationTokenSource();
+		(reader, reads) = ReaderFor(
+			variant,
+			n =>
+			{
+				if (n == 11) ending.Cancel();
+			});
+		List<int> seen = await Collect(Ids(variant, reader, ending.Token));
 		Assert.Equal(Enumerable.Range(1, 10), seen);
 		Assert.Equal(11, reads());
 	}
@@ -389,7 +396,7 @@ public static class DataReaderEdgeTests
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			async () => await e.MoveNextAsync());
 
-		Assert.Equal(1, reads()); // the read that found a row
+		Assert.Equal(0, reads());
 	}
 
 	// DEFECT-3b: these already throw, and keep doing so.
@@ -440,7 +447,7 @@ public static class DataReaderEdgeTests
 		return true;
 	}
 
-	// The async loops that read with ReadAsync(token).
+	// The nine async loop forms.
 	static ValueTask RunLoop(
 		string variant,
 		DbDataReader reader,
@@ -501,7 +508,7 @@ public static class DataReaderEdgeTests
 	[InlineData("ForEachAsync(Func, no ReadAsync)")]
 	[InlineData("IterateWhileAsync(Db, no ReadAsync)")]
 	[InlineData("IterateWhileAsync(IDataReader, no ReadAsync)")]
-	public static async Task AsyncLoops_CancelledMidRead_ThrowBeforeTheNext(
+	public static async Task AsyncLoops_CancelMidRead_ThrowBeforeNextRead(
 		string variant)
 	{
 		using var cts = new CancellationTokenSource();
@@ -519,7 +526,7 @@ public static class DataReaderEdgeTests
 				cts.Token));
 
 		Assert.Equal(3, handled);
-		Assert.Equal(4, reader.Reads); // the row not handled
+		Assert.Equal(3, reader.Reads); // no read after the cancel
 	}
 
 	[Theory]
@@ -532,37 +539,92 @@ public static class DataReaderEdgeTests
 	[InlineData("ForEachAsync(Func, no ReadAsync)")]
 	[InlineData("IterateWhileAsync(Db, no ReadAsync)")]
 	[InlineData("IterateWhileAsync(IDataReader, no ReadAsync)")]
-	public static async Task AsyncLoops_CancelledAfterTheLastRow_Return(
+	public static async Task AsyncLoops_CancelAtTheEnd_Cases(
 		string variant)
 	{
-		// During the last row's handler (10),
-		// and as the read that ends the result is made (11).
-		foreach (int cancelAtRead in new[] { 10, 11 })
+		// During the last row's handler (10): throws at the next read.
+		using var during = new CancellationTokenSource();
+		TrackedReader reader = TrackedRows(10, n =>
 		{
-			using var cts = new CancellationTokenSource();
-			TrackedReader reader = TrackedRows(10, n =>
+			if (n == 10) during.Cancel();
+		});
+		int handled = 0;
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await RunLoop(
+				variant,
+				reader,
+				_ => handled++,
+				during.Token));
+		Assert.Equal(10, handled);
+
+		// As the read that ends the result is made (11): returns.
+		using var ending = new CancellationTokenSource();
+		reader = TrackedRows(10, n =>
+		{
+			if (n == 11) ending.Cancel();
+		});
+		handled = 0;
+		await RunLoop(variant, reader, _ => handled++, ending.Token);
+		Assert.Equal(10, handled);
+		Assert.Equal(11, reader.Reads);
+	}
+
+	// The token goes to ReadAsync, so a cancel during a slow read
+	// takes effect at once, without waiting for the server.
+	[Theory]
+	[InlineData("SelectAsync")]
+	[InlineData("ForEachAsync")]
+	[InlineData("IterateWhileAsync")]
+	public static async Task AsyncLoops_CancelDuringSlowRead_TakesEffect(
+		string variant)
+	{
+		using var cts = new CancellationTokenSource();
+		var rig = new TokenRig { Stall = TokenStage.Read }; // never answers
+		using var reader = new TokenReader(rig);
+		Task run = Task.Run(
+			async () =>
 			{
-				if (n == cancelAtRead) cts.Cancel();
-			});
-			int handled = 0;
+				switch (variant)
+				{
+					case "SelectAsync":
+						await foreach (int _ in reader.SelectAsync(
+							static r => r.GetInt32(0),
+							cts.Token)) { }
 
-			await RunLoop(variant, reader, _ => handled++, cts.Token);
+						break;
+					case "ForEachAsync":
+						await reader.ForEachAsync(
+							static _ => { },
+							true,
+							cts.Token);
+						break;
+					default:
+						await reader.IterateWhileAsync(
+							static _ => true,
+							cts.Token);
+						break;
+				}
+			},
+			TestContext.Current.CancellationToken);
 
-			Assert.Equal(10, handled);
-			Assert.Equal(11, reader.Reads);
-		}
+		await rig.Entered.Task.WaitAsync(
+			TimeSpan.FromSeconds(10),
+			TestContext.Current.CancellationToken);
+		cts.Cancel();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await run.WaitAsync(
+				TimeSpan.FromSeconds(10),
+				TestContext.Current.CancellationToken));
 	}
 
 	// The command-level helpers hand a plain (non-Db) reader
 	// to ForEach and IterateWhile.
 	[Theory]
-	[InlineData(false, 3)]
-	[InlineData(true, 3)]
-	[InlineData(false, 10)]
-	[InlineData(true, 10)]
-	public static async Task IterateReaderAsync_OverAPlainReader_Cancel(
-		bool whileForm,
-		int cancelAtHandled)
+	[InlineData(false)]
+	[InlineData(true)]
+	public static async Task IterateReaderAsync_OverAPlainReader_CancelThrows(
+		bool whileForm)
 	{
 		using var cts = new CancellationTokenSource();
 		var command = new PlainAsyncReaderCommand(static () =>
@@ -570,35 +632,31 @@ public static class DataReaderEdgeTests
 		int handled = 0;
 		void Handle(IDataRecord _)
 		{
-			if (++handled == cancelAtHandled) cts.Cancel();
+			if (++handled == 3) cts.Cancel();
 		}
 
-		async Task Run()
-		{
-			if (whileForm)
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () =>
 			{
-				await command.IterateReaderWhileAsync(
-					r =>
-					{
-						Handle(r);
-						return true;
-					},
-					cancellationToken: cts.Token);
-			}
-			else
-			{
-				await command.IterateReaderAsync(
-					Handle,
-					cancellationToken: cts.Token);
-			}
-		}
+				if (whileForm)
+				{
+					await command.IterateReaderWhileAsync(
+						r =>
+						{
+							Handle(r);
+							return true;
+						},
+						cancellationToken: cts.Token);
+				}
+				else
+				{
+					await command.IterateReaderAsync(
+						Handle,
+						cancellationToken: cts.Token);
+				}
+			});
 
-		if (cancelAtHandled == 3)
-			await Assert.ThrowsAnyAsync<OperationCanceledException>(Run);
-		else
-			await Run(); // the last row: the read finished, so it returns
-
-		Assert.Equal(cancelAtHandled, handled);
+		Assert.Equal(3, handled);
 	}
 
 	// A stream over a plain IDataReader forwards the token,
@@ -716,7 +774,7 @@ public static class DataReaderEdgeTests
 	}
 
 	[Fact]
-	public static void IterateWhile_CancelledDuringARow_ThrowsBeforeTheNext()
+	public static void IterateWhile_CancelMidRow_ThrowsBeforeNextRead()
 	{
 		using var cts = new CancellationTokenSource();
 		TrackedReader reader = TrackedRows(10, n =>
@@ -729,13 +787,13 @@ public static class DataReaderEdgeTests
 			reader.IterateWhile(_ => ++seen > 0, cts.Token));
 
 		Assert.Equal(3, seen);
-		Assert.Equal(4, reader.Reads); // the row not handled
+		Assert.Equal(3, reader.Reads);
 	}
 
 	[Theory]
-	[InlineData(10)] // during the last row's predicate
-	[InlineData(11)] // as the read that ends the result is made
-	public static void IterateWhile_CancelledAfterTheLastRow_Returns(
+	[InlineData(10)] // during the last row's predicate: throws
+	[InlineData(11)] // as the read that ends the result is made: returns
+	public static void IterateWhile_CancelAtTheEnd_Cases(
 		int cancelAtRead)
 	{
 		using var cts = new CancellationTokenSource();
@@ -745,10 +803,17 @@ public static class DataReaderEdgeTests
 		});
 		int seen = 0;
 
-		reader.IterateWhile(_ => ++seen > 0, cts.Token); // does not throw
+		if (cancelAtRead == 10)
+		{
+			Assert.Throws<OperationCanceledException>(() =>
+				reader.IterateWhile(_ => ++seen > 0, cts.Token));
+		}
+		else
+		{
+			reader.IterateWhile(_ => ++seen > 0, cts.Token);
+		}
 
 		Assert.Equal(10, seen);
-		Assert.Equal(11, reader.Reads);
 	}
 
 	// ---- a result set into a DataTable ----

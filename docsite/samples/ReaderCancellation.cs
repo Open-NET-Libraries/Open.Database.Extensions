@@ -13,10 +13,10 @@ public static class ReaderCancellation
 
 		#region reader_cancellation
 		// The token is checked before each read.
-		// A cancel that cuts the read short throws
-		// OperationCanceledException,
-		// and the rows already handed out stay handed out.
-		// A cancel that finds the read finished returns the result.
+		// The token goes to ReadAsync; a cancel throws
+		// OperationCanceledException and the read is not made.
+		// The rows already handed out stay handed out.
+		// Once a read has returned no row, a cancel is not an error.
 		// To stop early without an exception, break out of the loop.
 		using var cts = new CancellationTokenSource();
 		using SqliteCommand command = connection.CreateCommand();

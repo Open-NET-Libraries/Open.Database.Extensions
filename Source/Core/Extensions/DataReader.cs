@@ -20,19 +20,15 @@ public static class DataReaderExtensions
 	/// Iterates all records from an <see cref="IDataReader"/>.
 	/// </summary>
 	/// <remarks>
-	/// The token is checked before each read.
-	/// A cancel that cuts the read short throws:
-	/// a row was still to come, and it is not handled.
-	/// A cancel that finds the read finished
-	/// (no further row) is not an error:
-	/// the complete result has been handled, so the call returns.
-	/// A cancel during the handler of a row lets that row finish.
+	/// The token is checked before each read:
+	/// a cancel throws, and the read is not made.
+	/// A cancel during the handler of a row lets that row finish,
+	/// then throws at the next check, even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception,
 	/// use <c>IterateWhile</c> and return <see langword="false"/>.
-	/// After a cancel, one more read decides:
-	/// no more rows, and the complete result is returned;
-	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
@@ -51,14 +47,8 @@ public static class DataReaderExtensions
 
 		if (cancellationToken.CanBeCanceled)
 		{
-			while (true)
-			{
-				// A cancel is only an error if a row was still to come.
-				bool canceled = cancellationToken.IsCancellationRequested;
-				if (!reader.Read()) break;
-				if (canceled) cancellationToken.ThrowIfCancellationRequested();
+			while (ReadNext(reader, cancellationToken))
 				handler(reader);
-			}
 		}
 		else
 		{
@@ -67,53 +57,30 @@ public static class DataReaderExtensions
 		}
 	}
 
-	// The synchronous twin of ReadNextAsync.
-	// A token canceled before the read: the read is still made.
-	// No row: the result is complete, so return false.
-	// A row: the cancel cut the read short, so throw (the row is not handled).
+	// Checks the token at the top of a loop, then reads.
+	// A canceled token throws before the read is made.
+	// Once a read has returned no row the result is complete,
+	// and the token is not looked at again.
 	static bool ReadNext(
 		IDataReader reader,
 		CancellationToken cancellationToken)
 	{
-		bool canceled = cancellationToken.IsCancellationRequested;
-		if (!reader.Read()) return false;
-		if (canceled) cancellationToken.ThrowIfCancellationRequested();
-		return true;
-	}
-
-	// Reads the next row for a loop that checks the token before each read.
-	// A token canceled before the read: the read is made without it,
-	// so a provider does not throw before it can say there are no more rows.
-	// No row: the result is complete, so return false.
-	// A row: the cancel cut the read short, so throw (the row is not handled).
-	static async ValueTask<bool> ReadNextAsync(
-		DbDataReader reader,
-		CancellationToken cancellationToken)
-	{
-		if (!cancellationToken.IsCancellationRequested)
-		{
-			return await reader
-				.ReadAsync(cancellationToken)
-				.ConfigureAwait(false);
-		}
-
-		bool more = await reader
-			.ReadAsync(CancellationToken.None)
-			.ConfigureAwait(false);
-		if (more) cancellationToken.ThrowIfCancellationRequested();
-		return more;
+		cancellationToken.ThrowIfCancellationRequested();
+		return reader.Read();
 	}
 
 	/// <summary>
 	/// Iterates all records from an <see cref="DbDataReader"/>.
 	/// </summary>
 	/// <remarks>
-	/// The token is checked before each read.
-	/// A cancel that cuts the read short throws;
-	/// one that finds the read finished returns the complete result.
-	/// After a cancel, one more read decides:
-	/// no more rows, and the complete result is returned;
-	/// another row, and <see cref="OperationCanceledException"/>.
+	/// The token is passed to <c>ReadAsync</c>, so the provider
+	/// cancels the read itself. Without <paramref name="useReadAsync"/>
+	/// it is checked before each <c>Read</c> instead.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the handler of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
 	/// </remarks>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled and cut the read short.
@@ -133,11 +100,8 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await ReadNextAsync(reader, cancellationToken)
-				.ConfigureAwait(false))
-			{
+			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
 				handler(reader);
-			}
 		}
 		else
 		{
@@ -158,11 +122,8 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await ReadNextAsync(reader, cancellationToken)
-				.ConfigureAwait(false))
-			{
+			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
 				await handler(reader).ConfigureAwait(false);
-			}
 		}
 		else
 		{
@@ -356,17 +317,15 @@ public static class DataReaderExtensions
 	/// The iteration is deferred: nothing is read,
 	/// and a canceled token does not throw,
 	/// until the result is enumerated.
-	/// The token is checked before each read.
-	/// A cancel that cuts the read short throws from the enumeration:
-	/// a row was still to come, and it is not yielded.
-	/// A cancel that finds the read finished
-	/// (no further row) is not an error:
-	/// the complete result has been yielded.
+	/// The token is checked before each read:
+	/// a cancel throws from the enumeration, and the read is not made.
+	/// A cancel while a row is being yielded or transformed
+	/// lets that row finish, then throws at the next check,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, stop enumerating.
-	/// After a cancel, one more read decides:
-	/// no more rows, and the complete result is returned;
-	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The reader to iterate.</param>
@@ -394,16 +353,8 @@ public static class DataReaderExtensions
 		{
 			if (cancellationToken.CanBeCanceled)
 			{
-				while (true)
-				{
-					// A cancel is only an error if a row was still to come.
-					bool canceled = cancellationToken.IsCancellationRequested;
-					if (!reader.Read()) break;
-					if (canceled)
-						cancellationToken.ThrowIfCancellationRequested();
-
+				while (ReadNext(reader, cancellationToken))
 					yield return transform(reader);
-				}
 			}
 			else
 			{
@@ -612,17 +563,16 @@ public static class DataReaderExtensions
 	/// </summary>
 	/// <remarks>
 	/// The iteration is deferred until the result is enumerated.
-	/// The token is checked before each read.
-	/// A cancel that cuts the read short throws from the enumeration:
-	/// a row was still to come, and it is not yielded.
-	/// A cancel that finds the read finished
-	/// (no further row) is not an error:
-	/// the complete result has been yielded.
+	/// The token is passed to <c>ReadAsync</c>,
+	/// so the provider cancels the read itself
+	/// (a plain <see cref="IDataReader"/> is checked before each <c>Read</c>).
+	/// A cancel throws from the enumeration.
+	/// A cancel while a row is being yielded or transformed
+	/// throws at the next read, even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, leave the loop.
-	/// After a cancel, one more read decides:
-	/// no more rows, and the complete result is returned;
-	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The DbDataReader to iterate.</param>
@@ -647,20 +597,10 @@ public static class DataReaderExtensions
 			Func<IDataRecord, T> transform,
 			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			while (true)
+			while (await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false))
 			{
-				// A cancel is only an error if a row was still to come:
-				// read once more to find out, without the canceled token.
-				bool canceled = cancellationToken.IsCancellationRequested;
-				CancellationToken readToken = canceled
-					? CancellationToken.None
-					: cancellationToken;
-				bool more = await reader
-					.ReadAsync(readToken)
-					.ConfigureAwait(false);
-				if (!more) break;
-
-				if (canceled) cancellationToken.ThrowIfCancellationRequested();
 				yield return transform(reader);
 			}
 		}
@@ -683,38 +623,19 @@ public static class DataReaderExtensions
 			Func<IDataRecord, ValueTask<T>> transform,
 			[EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			// A cancel is only an error if a row was still to come:
-			// read once more to find out, without the canceled token.
 			if (reader is DbDataReader r)
 			{
-				while (true)
+				while (await r
+					.ReadAsync(cancellationToken)
+					.ConfigureAwait(false))
 				{
-					bool canceled = cancellationToken.IsCancellationRequested;
-					CancellationToken readToken = canceled
-						? CancellationToken.None
-						: cancellationToken;
-					bool more = await r
-						.ReadAsync(readToken)
-						.ConfigureAwait(false);
-					if (!more) break;
-
-					if (canceled)
-						cancellationToken.ThrowIfCancellationRequested();
-
 					yield return await transform(r).ConfigureAwait(false);
 				}
 			}
 			else
 			{
-				while (true)
-				{
-					bool canceled = cancellationToken.IsCancellationRequested;
-					if (!reader.Read()) break;
-					if (canceled)
-						cancellationToken.ThrowIfCancellationRequested();
-
+				while (ReadNext(reader, cancellationToken))
 					yield return await transform(reader).ConfigureAwait(false);
-				}
 			}
 		}
 	}
@@ -883,18 +804,15 @@ public static class DataReaderExtensions
 	/// Iterates an <see cref="IDataReader"/> while the predicate returns true.
 	/// </summary>
 	/// <remarks>
-	/// The token is checked before each read.
-	/// A cancel that cuts the read short throws:
-	/// a row was still to come, and it is not passed to the predicate.
-	/// A cancel that finds the read finished
-	/// (no further row) is not an error:
-	/// the complete result has been visited, so the call returns.
+	/// The token is checked before each read:
+	/// a cancel throws, and the read is not made.
+	/// A cancel during the predicate of a row lets that row finish,
+	/// then throws at the next check, even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early, return <see langword="false"/> from the predicate:
 	/// that ends the iteration without an exception.
-	/// After a cancel, one more read decides:
-	/// no more rows, and the complete result is returned;
-	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
@@ -913,12 +831,8 @@ public static class DataReaderExtensions
 
 		if (cancellationToken.CanBeCanceled)
 		{
-			while (true)
+			while (ReadNext(reader, cancellationToken))
 			{
-				// A cancel is only an error if a row was still to come.
-				bool canceled = cancellationToken.IsCancellationRequested;
-				if (!reader.Read()) break;
-				if (canceled) cancellationToken.ThrowIfCancellationRequested();
 				if (!predicate(reader)) break;
 			}
 		}
@@ -939,12 +853,7 @@ public static class DataReaderExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		while (true)
-		{
-			bool more = await ReadNextAsync(reader, cancellationToken)
-				.ConfigureAwait(false);
-			if (!more || !predicate(reader)) break;
-		}
+		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
 	}
 
 	/// <param name="reader">The DbDataReader to load data from.</param>
@@ -962,12 +871,7 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (true)
-			{
-				bool more = await ReadNextAsync(reader, cancellationToken)
-					.ConfigureAwait(false);
-				if (!more || !predicate(reader)) break;
-			}
+			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
 		}
 		else
 		{
@@ -1003,13 +907,7 @@ public static class DataReaderExtensions
 
 		if (reader is DbDataReader r)
 		{
-			while (true)
-			{
-				bool more = await ReadNextAsync(r, cancellationToken)
-					.ConfigureAwait(false);
-				if (!more) break;
-				if (!await predicate(reader).ConfigureAwait(false)) break;
-			}
+			while (await r.ReadAsync(cancellationToken).ConfigureAwait(false) && await predicate(reader).ConfigureAwait(false)) { }
 		}
 		else
 		{
