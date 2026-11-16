@@ -1,9 +1,29 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.6`, a release candidate. The API is settled. Please try it and report what you find.
+> This is `11.0.0-rc.7`, a release candidate. The API is settled. Please try it and report what you find.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
+
+## Changes since rc.6
+
+- **A cancel that cuts a reader-level read short now throws `OperationCanceledException`.** `ForEach`, `IterateWhile`, `Select` and `SelectAsync` on a reader, their async forms, and the reader-level `ToChannel` overloads that take a transform used to end quietly by default and return a partial result that looked complete. They now check the token at the top of the loop, before each read, and the async forms hand it to `ReadAsync` and `NextResultAsync`, so the provider cancels the read itself. A read that already returned its last row is complete: a cancel after that is not an error. **Removed:** the `throwOnCancellation` parameter on `ForEach`, `IterateWhile`, `Select` and `SelectAsync`, six signatures in all. A call that passed it no longer compiles (CS1503 or CS1501): delete the argument, as in `Select(reader, transform, cancellationToken)`. To stop early without an exception, return `false` from the predicate or leave the loop. A mapped query over a plain `IDataReader` now forwards the token, so a cancel between rows throws.
+- **`AddParam` and `AddParamIf` take an `object?` value** in the `(name, value, type, direction)` forms, so a typed NULL such as `AddParam(name, (byte[]?)null, SqlDbType.VarBinary)` compiles without a nullability warning and sends `DBNull`. No existing call changes.
+- **A stored procedure's parameter names are resolved on every run.** A command that gets its names from the database (`AddParam(value)` with no name) used to resolve them once and write them into `Params`, so a second run of the same command object, after a change of connection, database or procedure, could send the first run's names. The names are now resolved on every run into a list of their own, and `Params` keeps what you added. No API changes. One visible change: after a run, `Params` shows what you added, not the resolved names. To see what was sent, read the provider command's `Parameters` in `Execute(command => ...)`.
+- **`ToChannelReader` and `ToChannel` on the typed views** (`Map<T>()` of a command, with `Skip` and `Take`), in Core with no new package. The rows go into a channel and post-processing runs on another thread, so the reader is released as soon as the rows are read:
+
+  ```cs
+  await foreach (Post post in cmd
+  	.Map<Post>()
+  	.ToChannelReader(cancellationToken)
+  	.ReadAllAsync(cancellationToken))
+  {
+  	await HandleAsync(post, cancellationToken);
+  }
+  ```
+
+  `ToChannelReader` returns the reader of a channel the library makes and always completes. `ToChannel` returns the `Channel<T>`, and `ToChannel(out Task<long> readCount, ...)` also gives the count of rows handed to the writer. The channel is unbounded unless you pass a `BoundedChannelOptions`, and the read starts at the first read, or at the call with `startImmediately: true`. A failure or a cancel completes the channel with it. Every form takes the token as its last parameter, so it can be passed positionally. This is the route for a projection after the map, where `IMappedQuery<T>.Select` used to be: `ToChannelReader()` then `Transform(...)` from Open.ChannelExtensions.
+- **Documentation:** a new [AsyncReads()](async-reads.md) page says why rows are read with `Read()` by default, what the opt-in costs and when to use it. The [Performance](performance.md) page now leads with ranked charts, with their data tables and CSVs in [Performance data](performance-data.md), and the same charts are on a [benchmark charts](../benchmarks/ranking.html) page. The Core README has a section on trimming and native AOT, with a recipe for a trimmed app (see "Known limitations"). The examples in the README, the mapping article, the samples and the XML documentation use async terminals with a real `CancellationToken`, `static` lambdas and one pair per line.
 
 ## Changes since rc.5
 
@@ -128,6 +148,8 @@ These can change behavior without a compile error, most likely first:
 14. **Smaller items.** A static property is no longer mapped. `ResultsBuffered*` and `FirstOrdinalResults<T>` still buffer into a queue and return a dequeuing enumerable.
 15. **`Map<int>([])` throws.** An empty collection expression is a `RowMap<int>` now (the removed `Map<T>(params pairs)` read it as no pairs, so it read the first column), and an `int` is not a row model: it fails with `InvalidOperationException` at run time, not at compile time. Use `Map<int>()`.
 16. **Async terminals read the rows with `Read()`.** The command still executes, and the connection still opens, asynchronously. Call `AsyncReads()` before or after `Map` to read the rows with `ReadAsync()`: see "Changes since rc.5" above.
+17. **A cancelled reader-level read throws.** `ForEach`, `IterateWhile`, `Select`, `SelectAsync` and their async forms used to stop quietly and return the rows read so far; they now throw `OperationCanceledException`. The `throwOnCancellation` parameter is removed: delete the argument. See "Changes since rc.6" above.
+18. **After a run, `Params` shows what you added.** A command that names its stored-procedure parameters from the database no longer rewrites `Params` to the resolved names; read `Execute(command => ...)` to see what was sent. See "Changes since rc.6" above.
 
 ## Deprecated in 11.0
 
@@ -215,6 +237,7 @@ The old calls read only the first result set. `Map` reads through the later ones
 
 ## Known limitations
 
+- The library is not marked trimmable and does not support native AOT in 11.0. A trimmed app must keep its model types and the provider's reader type: the recipe is in the [Core README](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Source/Core/README.md#trimming-and-native-aot).
 - `Retrieve()` followed by `DequeueAs<T>()` is deprecated in 11.0 (a two-pass route, slower than `Map<T>()`): use `Map<T>().ToList()`. See [Deprecated in 11.0](#deprecated-in-110).
 - The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. The cause is in the underlying channel library.
 - Output parameters can be sent, but their values cannot be read back after the call. Providers other than SQL Server supply no real parameter names, so `AddParam(search.Author)` uses the last member as written there.
