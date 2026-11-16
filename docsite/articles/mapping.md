@@ -185,7 +185,7 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_backing)]
 
-**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, or an `ImmutableArray` of pairs passed to the constructor build a new map, and compile the row reader, on every call:
+**One-off queries.** A collection expression or a `new RowMap<T>([...])` written at the call site, or an `ImmutableArray` of pairs passed to the constructor builds a new map, and compile the row reader, on every call:
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 

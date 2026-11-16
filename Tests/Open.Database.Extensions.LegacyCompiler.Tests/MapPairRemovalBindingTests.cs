@@ -1,4 +1,3 @@
-#if NET10_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,6 +7,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 {
 	// The Map<T>(pair) and Map<T>(params pairs) overloads are removed (K26): a pair is declared in a RowMap<T> and passed to Map(RowMap<T>).
 	// The binding is read from the IL of each call, so a change of binding fails here, and a call that becomes ambiguous (CS0121) fails the build.
+	// Every target runs the calls that must compile at its language version: C# 7.3 (net472), 9 (net8.0), 12 (net10.0) and 13 (net11.0); Map<T>(null), Map<T>(default) and Map<T>([]) are written for C# 13 only (below it null and default are ambiguous, and there are no collection expressions before C# 12).
 	// C# 12 (net10.0) ignores [OverloadResolutionPriority], so Map<T>(null) is CS0121 there, before and after the removal: it is not written here.
 	// C# 13 (net11.0) honours it: null, default and an empty collection expression bind the RowMap<T> overload.
 	public static class MapPairRemovalBindingTests
@@ -97,4 +97,3 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 #endif
 	}
 }
-#endif

@@ -360,7 +360,7 @@ public static class RowMapTests
 		// An ImmutableArray of pairs passed to the constructor at the call site is the same.
 		AssertItems(Cmd(Renamed, 2).Map(new RowMap<Item>(ItemPairs)).ToList(), 2);
 
-		// Pairs passed to Map<T> build a strict map too, and the exception names the `mappings` parameter.
+		// The constructor's pairs-as-arguments form builds a strict map too, and the exception names the `mappings` parameter.
 		AssertItems(Cmd(Renamed, 2).Map(new RowMap<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList(), 2);
 		var pairDuplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b"))));
 		Assert.Equal("mappings", pairDuplicate.ParamName);
