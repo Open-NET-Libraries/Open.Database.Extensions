@@ -261,7 +261,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <returns>This instance for use in method chaining.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
 	/// <exception cref="ArgumentException"><paramref name="name"/> is blank.</exception>
-	public TThis AddParam(string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+	public TThis AddParam(string name, object? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
 
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
@@ -464,7 +464,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="type">The database type of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)" path="/*[not(self::param)]"/>
-	public TThis AddParamIf(bool condition, string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+	public TThis AddParamIf(bool condition, string name, object? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
