@@ -223,7 +223,7 @@ public static class ParameterNameAddParamsTests
 	// ---- what a caller can see of the names that were sent ----
 
 	[Fact]
-	public static void BeforeATerminalTheNamesAreAsWritten_TheProviderCommandHasTheRealOnes_AndAfterwardsParamsHoldsThem()
+	public static void BeforeATerminalTheNamesAreAsWritten_TheProviderCommandHasTheRealOnes_AndAfterwardsParamsIsStillWhatWasAdded()
 	{
 		var probe = new ConnectionProbe(ConnectionState.Open);
 		var command = new DerivedParameterNameTests.ProcCommand(probe.Connection, CommandType.StoredProcedure, "dbo.what_was_sent", "@company_serial_num");
@@ -240,7 +240,7 @@ public static class ParameterNameAddParamsTests
 
 		Assert.NotNull(seen);
 		Assert.Equal(["@company_serial_num"], seen);
-		Assert.Equal(["@company_serial_num"], command.Params.Select(p => p.Name));
+		Assert.Equal(["CompanySerialNum"], command.Params.Select(p => p.Name)); // a run does not rewrite it
 		Assert.Equal([42], command.Params.Select(p => p.Value));
 	}
 
