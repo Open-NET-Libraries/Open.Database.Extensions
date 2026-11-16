@@ -1,13 +1,60 @@
 # Channels and Dataflow
 
-Two companion packages read query results straight into a pipeline instead of a collection.
+Query results can be read straight into a pipeline instead of a collection. The core package does it for a mapped query, and two companion packages do it for commands and readers.
 
 | Package | Entry points | Pipeline type |
 |---|---|---|
+| `Open.Database.Extensions.Core` (the views behind `Map<T>()`) | `ToChannelReader()`, `ToChannel()`, `ToChannel(out var rows)` | `System.Threading.Channels` |
 | `Open.Database.Extensions.Channel` | `ToChannel<T>()`, `ToChannelAsync<T>()` | `System.Threading.Channels` |
 | `Open.Database.Extensions.Dataflow` | `ToTargetBlock<T>()`, `ToTargetBlockAsync<T>()`, `AsSourceBlock<T>()` | `System.Threading.Tasks.Dataflow` |
 
-They work on expressive commands, on `IDbCommand` and on readers, and map rows the same way as [`Map<T>()`](mapping.md).
+The packages work on expressive commands, on `IDbCommand` and on readers, and map rows the same way as [`Map<T>()`](mapping.md).
+
+## Streaming from a mapped query
+
+After `Map<T>()`, a query can stream its rows into a channel that ODX makes and completes. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`. There is nothing more to install: this is in the core package.
+
+Which one to use:
+- `ToChannelReader()` is for streaming. It returns the `ChannelReader<T>`; consume it with `await foreach` over `ReadAllAsync(cancellationToken)`.
+- `ToChannel()` hands you both ends of a channel that ODX still completes.
+- `ToChannel(out var rows)` does the same and also gives the row count as a `Task<long>`, completed after the read-through. It is a `Task`, so it can be awaited more than once.
+
+The default is an unbounded channel with a deferred start:
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_default)]
+
+The chain reads as one expression. Here it is next to iterating the query directly, which gives the same rows:
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_chained)]
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_direct)]
+
+Every rung takes the cancellation token last, so it can be passed positionally after the options: `ToChannelReader(ct)`, `ToChannelReader(options, ct)`, `ToChannelReader(startImmediately: true, ct)`. A token that is already cancelled does not throw at the call; the channel ends with the cancel, and the consumer's read throws it.
+
+A bound, and the start, are arguments of the same call:
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_bounded)]
+
+`ToChannel(out var rows)` returns the channel and the count:
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_count)]
+
+### What each choice costs
+
+- **Unbounded** (the default): the read finishes at full speed and frees the connection, while memory grows with the backlog.
+- **Bounded:** memory is capped, but the write waits for room, so the reader, and with it the connection, stays open for as long as the consumer takes. A `Drop*` `FullMode` is allowed, and it loses rows when the channel is full.
+- **Deferred** (the default) **against `startImmediately: true`:** a deferred feed opens the connection and runs the command at the first read; an immediate one at the call. Either way the read itself runs on a thread-pool thread, so the call returns at once.
+
+### Things to know
+
+- A deferred feed that is never read never runs the command. Awaiting `Completion` alone does not start it, so a consumer that only awaits `Completion` waits forever: read, or use `startImmediately: true`. For `ToChannel(out var rows)` the same holds for `rows`.
+- With a connection you opened, a deferred feed runs on it later, at the first read, so do not use that connection until the feed ends. A connection ODX opened is closed when the feed ends.
+- With `ToChannel()` and `ToChannel(out var rows)`, writes you make through the returned writer interleave with ODX's rows, and fail once ODX has completed the channel. A write does not start a deferred feed; only a read does.
+- If you complete the channel yourself, the read stops and the rows written so far stand. If you complete it with an error, that error is the one the feed reports.
+- Continuations that run synchronously (`AllowSynchronousContinuations`) run on the producer's thread, which holds the connection.
+- The options are the BCL's `BoundedChannelOptions` and `UnboundedChannelOptions` (or `null`); anything else throws `ArgumentException` at the call.
+
+The Channel package's own `ToChannel<T>()` (below) works on a command or a reader rather than on a mapped query.
 
 ## Channels
 

@@ -165,6 +165,42 @@ Check(viaChannel.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannel de
 (long delivered, List<Post> viaBlock) = await ChannelsAndDataflow.ToTargetBlockSample(factory);
 Check(delivered == 5 && viaBlock.Count == 5, "ToTargetBlockAsync delivers every row");
 
+// Streaming from a mapped query: ToChannelReader and ToChannel on the views.
+// Each loop ends only when ODX has completed the channel, so a result that
+// has every row, in order, is also a channel that completed.
+int[] streamIds = [1, 2, 3, 4, 5];
+
+List<Post> streamDefault = await ChannelsAndDataflow
+	.StreamDefaultSample(connection, CancellationToken.None);
+Check(
+	streamDefault.Select(p => p.Id).SequenceEqual(streamIds),
+	"ToChannelReader() delivers every row in order, and the channel completes");
+
+List<Post> streamChained = await ChannelsAndDataflow
+	.StreamChainedSample(connection, CancellationToken.None);
+Check(
+	streamChained.Select(p => p.Id).SequenceEqual(streamIds),
+	"query.Map<T>().ToChannelReader().ReadAllAsync(ct) delivers every row in order, and the channel completes");
+
+List<Post> streamDirect = await ChannelsAndDataflow
+	.StreamDirectSample(connection, CancellationToken.None);
+Check(
+	streamDirect.Select(p => p.Id).SequenceEqual(streamIds),
+	"iterating the query directly returns the same rows as the channel");
+
+List<Post> streamBounded = await ChannelsAndDataflow
+	.StreamBoundedSample(connection, CancellationToken.None);
+Check(
+	streamBounded.Select(p => p.Id).SequenceEqual(streamIds),
+	"ToChannelReader(new BoundedChannelOptions(2), startImmediately: true) delivers every row in order, and the channel completes");
+
+(long streamCount, List<Post> streamCounted) = await ChannelsAndDataflow
+	.StreamCountSample(connection, CancellationToken.None);
+Check(
+	streamCounted.Select(p => p.Id).SequenceEqual(streamIds)
+		&& streamCount == streamCounted.Count,
+	"ToChannel(out var rows) delivers every row in order, the channel completes, and the count equals the rows");
+
 // Transactions.
 Check(Transactions.Conditional(factory, true) is (true, 1), "returning true commits");
 Check(Transactions.Conditional(factory, false) is (false, 0), "returning false rolls back");
