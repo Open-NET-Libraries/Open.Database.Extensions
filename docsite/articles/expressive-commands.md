@@ -88,7 +88,7 @@ A procedure that changes can show its old names for up to five minutes. Only one
 
 #### What was sent?
 
-Before a terminal runs, `command.Params` lists what you added: a name you wrote as written, an argument-derived name as its last member (nothing has been matched yet), and the members of an `AddParams` object under their member names. After a terminal has run, `command.Params` holds the names that were sent. To see what reached the provider, give `Execute(command => ...)` a function that reads the provider's command: its `CommandText`, `CommandType` and `Parameters` (name and value of each) already have the real names. The library keeps no log of the statement and has no other hook.
+`command.Params` always lists what you added: a name you wrote as written, an argument-derived name as its last member, and the members of an `AddParams` object under their member names. A run never changes it. The real names are worked out in every run, for the connection that run uses, so one command object can run against two databases that name the parameters of a procedure differently. To see what the run sent, give `Execute(command => ...)` a function that reads the provider's command: its `CommandText`, `CommandType` and `Parameters` (name and value of each) already have the real names. The library keeps no log of the statement and has no other hook.
 
 A derived name stays as written when no real names were read: a text command, another provider, a procedure name with a database part (`otherdb.dbo.proc`), a procedure the login cannot see or that does not exist, or one that declares no parameters. Name the parameters yourself when you call a procedure in another database.
 
