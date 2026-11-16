@@ -165,41 +165,64 @@ Check(viaChannel.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannel de
 (long delivered, List<Post> viaBlock) = await ChannelsAndDataflow.ToTargetBlockSample(factory);
 Check(delivered == 5 && viaBlock.Count == 5, "ToTargetBlockAsync delivers every row");
 
-// Streaming from a mapped query: ToChannelReader and ToChannel on the views.
-// Each loop ends only when ODX has completed the channel, so a result that
-// has every row, in order, is also a channel that completed.
-int[] streamIds = [1, 2, 3, 4, 5];
+// Streaming from a mapped query: the query is the producer, and the
+// consumers do the slow work while it is still being read.
+List<string> expectedLines =
+[
+	.. Enumerable
+		.Range(1, 5)
+		.Select(static i => $"#{i} Post {i}"),
+];
 
-List<Post> streamDefault = await ChannelsAndDataflow
-	.StreamDefaultSample(connection, CancellationToken.None);
+List<string> pcLines = await ChannelsAndDataflow
+	.ProducerConsumerSample(connection, CancellationToken.None);
 Check(
-	streamDefault.Select(p => p.Id).SequenceEqual(streamIds),
-	"ToChannelReader() delivers every row in order, and the channel completes");
+	pcLines.SequenceEqual(expectedLines),
+	"a producer/consumer over ToChannelReader() handles every row, in order, and the channel completes");
 
-List<Post> streamChained = await ChannelsAndDataflow
-	.StreamChainedSample(connection, CancellationToken.None);
+(
+	int handledWhenReadEnded,
+	long readCount,
+	int handledCount,
+	long meanwhile) = await ChannelsAndDataflow
+		.ProducerReleasesTheConnectionSample(
+			connection,
+			CancellationToken.None);
 Check(
-	streamChained.Select(p => p.Id).SequenceEqual(streamIds),
-	"query.Map<T>().ToChannelReader(ct).ReadAllAsync(ct) delivers every row in order, and the channel completes");
+	handledWhenReadEnded == 0 && readCount == 5,
+	"rowCount completes when the query has been read, while the slow consumer has handled nothing");
+Check(
+	meanwhile == 5 && handledCount == 5,
+	"the connection is free for other work before the consumer is done, and every row is handled after the gate opens");
 
-List<Post> streamDirect = await ChannelsAndDataflow
+List<int>[] shares = await ChannelsAndDataflow
+	.FanOutSample(connection, CancellationToken.None);
+Check(
+	shares
+		.SelectMany(static share => share)
+		.Order()
+		.SequenceEqual([1, 2, 3, 4, 5])
+		&& shares.All(static share => share.Count >= 1),
+	"three consumers on the same reader handle every row exactly once, and each handles at least one");
+
+(int readWhileHeld, List<int> bounded) = await ChannelsAndDataflow
+	.BackPressureSample(connection, CancellationToken.None);
+Check(
+	readWhileHeld <= 4
+		&& bounded.SequenceEqual(Enumerable.Range(1, 100)),
+	"a bound of two rows keeps the query at most four rows ahead of a stuck consumer, and every row still arrives in order");
+
+List<string> pipelineLines = await ChannelsAndDataflow
+	.PipelineSample(connection, CancellationToken.None);
+Check(
+	pipelineLines.SequenceEqual(expectedLines),
+	"query -> ToChannelReader() -> transform -> second channel -> final consumer delivers every row in order");
+
+List<string> directLines = await ChannelsAndDataflow
 	.StreamDirectSample(connection, CancellationToken.None);
 Check(
-	streamDirect.Select(p => p.Id).SequenceEqual(streamIds),
+	directLines.SequenceEqual(expectedLines),
 	"iterating the query directly returns the same rows as the channel");
-
-List<Post> streamBounded = await ChannelsAndDataflow
-	.StreamBoundedSample(connection, CancellationToken.None);
-Check(
-	streamBounded.Select(p => p.Id).SequenceEqual(streamIds),
-	"ToChannelReader(new BoundedChannelOptions(2), startImmediately: true) delivers every row in order, and the channel completes");
-
-(long streamCount, List<Post> streamCounted) = await ChannelsAndDataflow
-	.StreamCountSample(connection, CancellationToken.None);
-Check(
-	streamCounted.Select(p => p.Id).SequenceEqual(streamIds)
-		&& streamCount == streamCounted.Count,
-	"ToChannel(out var rowCount) delivers every row in order, the channel completes, and the count equals the rows");
 
 // Transactions.
 Check(Transactions.Conditional(factory, true) is (true, 1), "returning true commits");

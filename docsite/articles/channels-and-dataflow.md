@@ -12,37 +12,55 @@ The packages work on expressive commands, on `IDbCommand` and on readers, and ma
 
 ## Streaming from a mapped query
 
-After `Map<T>()`, a query can stream its rows into a channel that ODX makes and completes. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`. There is nothing more to install: this is in the core package.
+A channel earns its place when a producer and its consumers run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed, writes them into a channel that ODX makes and completes, and is finished with the connection as soon as the last row is read. One or more consumers do the slow work (a web call, a file write, a transform) on other tasks, while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`. There is nothing more to install: this is in the core package.
 
 Which one to use:
-- `ToChannelReader()` is for streaming. It returns the `ChannelReader<T>`; consume it with `await foreach` over `ReadAllAsync(cancellationToken)`.
+- `ToChannelReader()` is for streaming. It returns the `ChannelReader<T>`; hand it to the consumers, which read it with `await foreach` over `ReadAllAsync(cancellationToken)`.
 - `ToChannel()` hands you both ends of a channel that ODX still completes.
-- `ToChannel(out var rowCount)` does the same and also gives the row count as a `Task<long>`, completed after the read-through. It is a `Task`, so it can be awaited more than once.
+- `ToChannel(out var rowCount)` does the same and also gives the number of rows read as a `Task<long>`, completed after the read-through. It is a `Task`, so it can be awaited more than once.
 
-The default is an unbounded channel with a deferred start:
+Every rung takes the cancellation token last, so it can be passed positionally after the options: `ToChannelReader(ct)`, `ToChannelReader(options, ct)`, `ToChannelReader(startImmediately: true, ct)`. Pass the same token to `ReadAllAsync`. A token that is already cancelled does not throw at the call; the channel ends with the cancel, and the consumer's read throws it.
 
-[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_default)]
+### One producer, one consumer
 
-The chain reads as one expression. Here it is next to iterating the query directly, which gives the same rows:
+The query reads ahead into the channel, and the consumer does its slow work row by row. The default is an unbounded channel with a deferred start, so nothing runs until the first read:
 
-[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_chained)]
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_producer_consumer)]
+
+### The connection is free before the consumer is done
+
+`rowCount` completes when the query has been read to the end. In this sample the consumer is held at its first row, so the read ends with nothing handled, and the connection is free for other work while the consumer is still busy. A connection that ODX opened is closed at that point; a connection you opened is yours to use again.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_release)]
+
+### Several consumers on one reader
+
+Consumers can share one `ChannelReader<T>`: each row goes to exactly one of them, so the slow work is shared out and no row is handled twice.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_fan_out)]
+
+### Back-pressure with a bound
+
+An unbounded channel lets the query finish at full speed, and memory grows with the backlog. A bound caps the memory: when the channel is full, the query waits for room, so it does not run away from a slow consumer. `startImmediately: true` runs the query at the call instead of at the first read.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_back_pressure)]
+
+### A pipeline
+
+A stage can consume one channel and produce another. Here the query feeds a transform, which feeds the final consumer, and each stage runs on its own task.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_pipeline)]
+
+### When you do not need a channel
+
+If there is one consumer, its work is as fast as the read, and there is nothing else to overlap, iterate the query directly. It is simpler, and a channel would only add a copy of each row.
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_direct)]
-
-Every rung takes the cancellation token last, so it can be passed positionally after the options: `ToChannelReader(ct)`, `ToChannelReader(options, ct)`, `ToChannelReader(startImmediately: true, ct)`. A token that is already cancelled does not throw at the call; the channel ends with the cancel, and the consumer's read throws it.
-
-A bound, and the start, are arguments of the same call:
-
-[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_bounded)]
-
-`ToChannel(out var rowCount)` returns the channel and the count:
-
-[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_count)]
 
 ### What each choice costs
 
 - **Unbounded** (the default): the read finishes at full speed and frees the connection, while memory grows with the backlog.
-- **Bounded:** memory is capped, but the write waits for room, so the reader, and with it the connection, stays open for as long as the consumer takes. A `Drop*` `FullMode` is allowed, and it loses rows when the channel is full.
+- **Bounded:** memory is capped, but the write waits for room, so the reader, and with it the connection, stays open for as long as the consumers take. A `Drop*` `FullMode` is allowed, and it loses rows when the channel is full.
 - **Deferred** (the default) **against `startImmediately: true`:** a deferred feed opens the connection and runs the command at the first read; an immediate one at the call. Either way the read itself runs on a thread-pool thread, so the call returns at once.
 
 ### Things to know
