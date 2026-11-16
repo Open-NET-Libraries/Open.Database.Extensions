@@ -293,7 +293,9 @@ public static class Mapping
 			// Map<PostCard>() throws InvalidOperationException right here,
 			// at the call and before the query runs, whatever the data:
 			// 'PostCard' cannot be mapped: it has 2 public constructors, ...
-			_ = connection.Command("select title from posts").Map<PostCard>();
+			_ = connection
+				.Command("select title from posts")
+				.Map<PostCard>();
 			#endregion
 
 			return "no exception";
@@ -400,7 +402,9 @@ public static class Mapping
 		command.CommandText = "select * from posts order by id";
 		await using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
 
-		Post[] posts = await reader.Map<Post>().ToArrayAsync(cancellationToken);
+		Post[] posts = await reader
+			.Map<Post>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -417,7 +421,9 @@ public static class Mapping
 		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts where author = 42 order by id";
 
-		Post[] posts = await command.Map<Post>().ToArrayAsync(cancellationToken);
+		Post[] posts = await command
+			.Map<Post>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -436,7 +442,9 @@ public static class Mapping
 		await using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
 		using DataTable table = reader.ToDataTable();
 
-		Post[] posts = await table.Map<Post>().ToArrayAsync(cancellationToken);
+		Post[] posts = await table
+			.Map<Post>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return posts;

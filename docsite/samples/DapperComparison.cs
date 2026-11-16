@@ -46,7 +46,11 @@ public static class DapperComparison
 		CancellationToken cancellationToken)
 	{
 		#region ode_first
-		Post? post = await connection.Command("select * from posts where id = @id").AddParam("id", 3).Map<Post>().FirstOrDefaultAsync(cancellationToken);
+		Post? post = await connection
+			.Command("select * from posts where id = @id")
+			.AddParam("id", 3)
+			.Map<Post>()
+			.FirstOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return post;
@@ -66,7 +70,9 @@ public static class DapperComparison
 		CancellationToken cancellationToken)
 	{
 		#region ode_scalar
-		long count = await connection.Command("select count(*) from posts").ExecuteScalarAsync<long>(cancellationToken);
+		long count = await connection
+			.Command("select count(*) from posts")
+			.ExecuteScalarAsync<long>(cancellationToken);
 		#endregion
 
 		return count;
@@ -86,7 +92,10 @@ public static class DapperComparison
 		CancellationToken cancellationToken)
 	{
 		#region ode_execute
-		int updated = await connection.Command("update posts set views = views where author = @author").AddParam("author", 42).ExecuteNonQueryAsync(cancellationToken);
+		int updated = await connection
+			.Command("update posts set views = views where author = @author")
+			.AddParam("author", 42)
+			.ExecuteNonQueryAsync(cancellationToken);
 		#endregion
 
 		return updated;
@@ -96,7 +105,9 @@ public static class DapperComparison
 	{
 		#region dapper_record
 		// Dapper binds constructor parameters, so a positional record works.
-		List<PostRecord> posts = (await connection.QueryAsync<PostRecord>("select id, author, title, body from posts order by id")).AsList();
+		List<PostRecord> posts = (await connection
+			.QueryAsync<PostRecord>("select id, author, title, body from posts order by id"))
+			.AsList();
 		#endregion
 
 		return posts;
@@ -108,7 +119,10 @@ public static class DapperComparison
 	{
 		#region ode_record
 		// Map<T>() binds the one public constructor, so the same record works.
-		List<PostRecord> posts = await connection.Command("select id, author, title, body from posts order by id").Map<PostRecord>().ToListAsync(cancellationToken);
+		List<PostRecord> posts = await connection
+			.Command("select id, author, title, body from posts order by id")
+			.Map<PostRecord>()
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;

@@ -308,7 +308,10 @@ The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault
 `.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 
 ```csharp
-var ids = await command.SingleResult().Map<int>().ToListAsync(cancellationToken);
+var ids = await command
+    .SingleResult()
+    .Map<int>()
+    .ToListAsync(cancellationToken);
 ```
 
 A reader and a `DataTable` have no `.SingleResult()` before `Map`: their views never read through, so there is nothing to opt out of.

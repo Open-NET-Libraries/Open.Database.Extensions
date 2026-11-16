@@ -199,13 +199,17 @@ public static class ExpressiveCommands
 		// and closed again afterwards.
 		await connection.CloseAsync();
 		ConnectionState closedBefore = connection.State;
-		await connection.Command("select 1").ExecuteScalarAsync(cancellationToken);
+		await connection
+			.Command("select 1")
+			.ExecuteScalarAsync(cancellationToken);
 		ConnectionState closedAfter = connection.State;
 
 		// A connection that was already open stays open.
 		await connection.OpenAsync(cancellationToken);
 		ConnectionState openBefore = connection.State;
-		await connection.Command("select 1").ExecuteScalarAsync(cancellationToken);
+		await connection
+			.Command("select 1")
+			.ExecuteScalarAsync(cancellationToken);
 		ConnectionState openAfter = connection.State;
 		#endregion
 

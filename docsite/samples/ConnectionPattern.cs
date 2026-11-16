@@ -51,9 +51,11 @@ public static class ConnectionPattern
 		const int author = 42;
 		#region ode_list_call
 		// nothing: the factory creates, opens and disposes the connection
-		List<Post> posts = await connectionFactory.Command(ListSql)
+		List<Post> posts = await connectionFactory
+			.Command(ListSql)
 			.AddParam(author) // name and type inferred from the variable
-			.Map<Post>().ToListAsync(cancellationToken);
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -66,9 +68,11 @@ public static class ConnectionPattern
 		const int author = 42;
 		#region ode_list_own
 		await using var connection = new SqliteConnection(connectionString);
-		List<Post> posts = await connection.Command(ListSql)
+		List<Post> posts = await connection
+			.Command(ListSql)
 			.AddParam(author) // name and type inferred from the variable
-			.Map<Post>().ToListAsync(cancellationToken);
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return posts;
@@ -94,9 +98,11 @@ public static class ConnectionPattern
 		const int id = 3;
 		#region ode_first_call
 		// nothing: the factory creates, opens and disposes the connection
-		Post? post = await connectionFactory.Command(OneSql)
+		Post? post = await connectionFactory
+			.Command(OneSql)
 			.AddParam(id) // name and type inferred from the variable
-			.Map<Post>().FirstOrDefaultAsync(cancellationToken);
+			.Map<Post>()
+			.FirstOrDefaultAsync(cancellationToken);
 		#endregion
 
 		return post;
@@ -122,7 +128,8 @@ public static class ConnectionPattern
 		const int author = 42;
 		#region ode_scalar_call
 		// nothing: the factory creates, opens and disposes the connection
-		long count = await connectionFactory.Command(CountSql)
+		long count = await connectionFactory
+			.Command(CountSql)
 			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalarAsync<long>(cancellationToken);
 		#endregion
@@ -150,7 +157,8 @@ public static class ConnectionPattern
 		const int author = 42;
 		#region ode_nonquery_call
 		// nothing: the factory creates, opens and disposes the connection
-		int updated = await connectionFactory.Command(TouchSql)
+		int updated = await connectionFactory
+			.Command(TouchSql)
 			.AddParam(author) // name and type inferred from the variable
 			.ExecuteNonQueryAsync(cancellationToken);
 		#endregion
@@ -187,8 +195,14 @@ public static class ConnectionPattern
 			// nothing: ExecuteTransactionAsync begins the transaction
 			connection.ExecuteTransactionAsync(async transaction =>
 			{
-				await transaction.Command(InsertSql).AddParam("id", 100).ExecuteNonQueryAsync(cancellationToken);
-				await transaction.Command(InsertSql).AddParam("id", 101).ExecuteNonQueryAsync(cancellationToken);
+				await transaction
+					.Command(InsertSql)
+					.AddParam("id", 100)
+					.ExecuteNonQueryAsync(cancellationToken);
+				await transaction
+					.Command(InsertSql)
+					.AddParam("id", 101)
+					.ExecuteNonQueryAsync(cancellationToken);
 				// nothing: it commits when the action returns
 			}, cancellationToken));
 		// nothing: it rolls back if the action throws
@@ -278,9 +292,11 @@ public static class ConnectionPattern
 public class PostService(IDbConnectionFactory<SqliteConnection> connectionFactory)
 {
 	public ValueTask<List<Post>> ByAuthorAsync(int author, CancellationToken cancellationToken)
-		=> connectionFactory.Command(ListSql)
+		=> connectionFactory
+			.Command(ListSql)
 			.AddParam(author) // name and type inferred from the variable
-			.Map<Post>().ToListAsync(cancellationToken);
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 }
 #endregion
 

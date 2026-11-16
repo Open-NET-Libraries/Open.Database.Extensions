@@ -29,8 +29,12 @@ public static class Transactions
 			}, cancellationToken));
 		#endregion
 
-		long rows = await connectionFactory.Command("select count(*) from posts where id = 100").ExecuteScalarAsync<long>(cancellationToken);
-		await connectionFactory.Command("delete from posts where id = 100").ExecuteNonQueryAsync(cancellationToken);
+		long rows = await connectionFactory
+			.Command("select count(*) from posts where id = 100")
+			.ExecuteScalarAsync<long>(cancellationToken);
+		await connectionFactory
+			.Command("delete from posts where id = 100")
+			.ExecuteNonQueryAsync(cancellationToken);
 		return (committed, rows);
 	}
 
@@ -49,8 +53,12 @@ public static class Transactions
 			}, cancellationToken));
 		#endregion
 
-		long rows = await connectionFactory.Command("select count(*) from posts where id = 100").ExecuteScalarAsync<long>(cancellationToken);
-		await connectionFactory.Command("delete from posts where id = 100").ExecuteNonQueryAsync(cancellationToken);
+		long rows = await connectionFactory
+			.Command("select count(*) from posts where id = 100")
+			.ExecuteScalarAsync<long>(cancellationToken);
+		await connectionFactory
+			.Command("delete from posts where id = 100")
+			.ExecuteNonQueryAsync(cancellationToken);
 		return rows;
 	}
 }

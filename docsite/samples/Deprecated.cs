@@ -29,13 +29,19 @@ public static class Deprecated
 	{
 		#region deprecated_results_before
 		// The obsolete call, synchronous.
-		List<Post> before = connection.Command(PostsSql).Results<Post>().ToList();
+		List<Post> before = connection
+			.Command(PostsSql)
+			.Results<Post>()
+			.ToList();
 		#endregion
 
 		#region deprecated_results_after
 		// Synchronous, like the call it replaces;
 		// the async form is ToListAsync(cancellationToken).
-		List<Post> after = connection.Command(PostsSql).Map<Post>().ToList();
+		List<Post> after = connection
+			.Command(PostsSql)
+			.Map<Post>()
+			.ToList();
 		#endregion
 
 		return (Key(before), Key(after));
@@ -46,11 +52,17 @@ public static class Deprecated
 		CancellationToken cancellationToken)
 	{
 		#region deprecated_resultsasync_before
-		List<Post> before = (await connection.Command(PostsSql).ResultsAsync<Post>()).ToList();
+		List<Post> before = (await connection
+			.Command(PostsSql)
+			.ResultsAsync<Post>())
+			.ToList();
 		#endregion
 
 		#region deprecated_resultsasync_after
-		List<Post> after = await connection.Command(PostsSql).Map<Post>().ToListAsync(cancellationToken);
+		List<Post> after = await connection
+			.Command(PostsSql)
+			.Map<Post>()
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return (Key(before), Key(after));
@@ -68,7 +80,9 @@ public static class Deprecated
 		using SqliteCommand oldCommand = Create(connection);
 		#region deprecated_resultsfromdatatable_before
 		// The obsolete call, synchronous.
-		List<Post> before = oldCommand.ResultsFromDataTable<Post>().ToList();
+		List<Post> before = oldCommand
+			.ResultsFromDataTable<Post>()
+			.ToList();
 		#endregion
 
 		using SqliteCommand newCommand = Create(connection);
@@ -79,7 +93,9 @@ public static class Deprecated
 		// before the command runs for a type that cannot be mapped.
 		RowMap<Post> map = RowMap<Post>.Default;
 		using var table = newCommand.ToDataTable();
-		List<Post> after = table.Map(map).ToList();
+		List<Post> after = table
+			.Map(map)
+			.ToList();
 		#endregion
 
 		return (Key(before), Key(after));
@@ -100,10 +116,22 @@ public static class Deprecated
 		#region deprecated_selector_after
 		// Synchronous, like the calls they replace;
 		// each terminal has an async form that takes a token.
-		long? firstAfter = command.Map(Id).FirstOrDefault();
-		List<long> takenAfter = command.Map(Id).Take(2).ToList();
-		List<long> skippedAfter = command.Map(Id).Skip(3).ToList();
-		List<long> slicedAfter = command.Map(Id).Skip(1).Take(2).ToList();
+		long? firstAfter = command
+			.Map(Id)
+			.FirstOrDefault();
+		List<long> takenAfter = command
+			.Map(Id)
+			.Take(2)
+			.ToList();
+		List<long> skippedAfter = command
+			.Map(Id)
+			.Skip(3)
+			.ToList();
+		List<long> slicedAfter = command
+			.Map(Id)
+			.Skip(1)
+			.Take(2)
+			.ToList();
 		#endregion
 
 		return (
@@ -131,7 +159,10 @@ public static class Deprecated
 		bool newThrew;
 		try
 		{
-			command.Map(ThrowsOnTheFirstRow).Skip(1).ToList();
+			command
+				.Map(ThrowsOnTheFirstRow)
+				.Skip(1)
+				.ToList();
 			newThrew = false;
 		}
 		catch (InvalidOperationException)
@@ -161,7 +192,10 @@ public static class Deprecated
 		bool newFailed;
 		try
 		{
-			command.Map(Id).Take(0).ToList();
+			command
+				.Map(Id)
+				.Take(0)
+				.ToList();
 			newFailed = false;
 		}
 		catch (SqliteException)
@@ -177,13 +211,24 @@ public static class Deprecated
 		CancellationToken cancellationToken)
 	{
 		#region deprecated_takeasync_before
-		IList<long> taken = await connection.Command(IdsSql).TakeAsync(Id, 2);
-		List<long> all = await connection.Command(IdsSql).ToListAsync(Id);
+		IList<long> taken = await connection
+			.Command(IdsSql)
+			.TakeAsync(Id, 2);
+		List<long> all = await connection
+			.Command(IdsSql)
+			.ToListAsync(Id);
 		#endregion
 
 		#region deprecated_takeasync_after
-		List<long> takenAfter = await connection.Command(IdsSql).Map(Id).Take(2).ToListAsync(cancellationToken);
-		List<long> allAfter = await connection.Command(IdsSql).Map(Id).ToListAsync(cancellationToken);
+		List<long> takenAfter = await connection
+			.Command(IdsSql)
+			.Map(Id)
+			.Take(2)
+			.ToListAsync(cancellationToken);
+		List<long> allAfter = await connection
+			.Command(IdsSql)
+			.Map(Id)
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return ($"{Key(taken)}|{Key(all)}", $"{Key(takenAfter)}|{Key(allAfter)}");
@@ -195,11 +240,20 @@ public static class Deprecated
 		CancellationToken cancellationToken)
 	{
 		#region deprecated_collection_before
-		var rows = new QueryResultCollection<long>([0], ["id"], await connection.Command(IdsSql).Map(Id).ToListAsync(cancellationToken));
+		var rows = new QueryResultCollection<long>(
+			[0],
+			["id"],
+			await connection
+				.Command(IdsSql)
+				.Map(Id)
+				.ToListAsync(cancellationToken));
 		#endregion
 
 		#region deprecated_collection_after
-		List<long> ids = await connection.Command(IdsSql).Map(Id).ToListAsync(cancellationToken);
+		List<long> ids = await connection
+			.Command(IdsSql)
+			.Map(Id)
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return rows.Count() + ids.Count;
@@ -208,7 +262,9 @@ public static class Deprecated
 	public static async Task<(string Before, string After, string BeforeAsync, string AfterAsync)> MappedDictionaries(SqliteConnection connection)
 	{
 		// Nothing returns the QueryResult<IEnumerable<object?[]>> that AsMappedDictionaries takes, so the sample builds one from a Retrieve.
-		QueryResult<Queue<object[]>> retrieved = connection.Command(IdsSql).Retrieve();
+		QueryResult<Queue<object[]>> retrieved = connection
+			.Command(IdsSql)
+			.Retrieve();
 		var source = new QueryResult<IEnumerable<object?[]>>(retrieved.Ordinals, retrieved.Names, retrieved.Result.ToArray());
 
 		#region deprecated_mappeddictionaries_before
@@ -219,8 +275,14 @@ public static class Deprecated
 		#region deprecated_mappeddictionaries_after
 		// The first line is synchronous, like the call it replaces;
 		// the second is its async form.
-		IEnumerable<Dictionary<string, object?>> after = connection.Command(IdsSql).Retrieve().DequeueAsMappedDictionaries();
-		IEnumerable<Dictionary<string, object?>> afterAsync = (await connection.Command(IdsSql).RetrieveAsync()).DequeueAsMappedDictionaries();
+		IEnumerable<Dictionary<string, object?>> after = connection
+			.Command(IdsSql)
+			.Retrieve()
+			.DequeueAsMappedDictionaries();
+		IEnumerable<Dictionary<string, object?>> afterAsync = (await connection
+			.Command(IdsSql)
+			.RetrieveAsync())
+			.DequeueAsMappedDictionaries();
 		#endregion
 
 		var beforeAsync = await Task.FromResult(new QueryResult<IEnumerable<object?[]>>(retrieved.Ordinals, retrieved.Names, source.Result)).AsMappedDictionaries();
@@ -231,13 +293,20 @@ public static class Deprecated
 	{
 		#region deprecated_dequeueas_before
 		// The obsolete call, synchronous.
-		List<Post> before = connection.Command(PostsSql).Retrieve().DequeueAs<Post>().ToList();
+		List<Post> before = connection
+			.Command(PostsSql)
+			.Retrieve()
+			.DequeueAs<Post>()
+			.ToList();
 		#endregion
 
 		#region deprecated_dequeueas_after
 		// Synchronous, like the call it replaces;
 		// the async form is ToListAsync(cancellationToken).
-		List<Post> after = connection.Command(PostsSql).Map<Post>().ToList();
+		List<Post> after = connection
+			.Command(PostsSql)
+			.Map<Post>()
+			.ToList();
 		#endregion
 
 		return (Key(before), Key(after));
