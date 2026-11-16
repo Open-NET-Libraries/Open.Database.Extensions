@@ -1,0 +1,456 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ODX 11 Benchmark Ranking</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column; each chart is a ranked horizontal bar list keyed by approach family, then a width line chart, then the raw table. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --line: #dde1e7;
+  --grid: #eceef2;
+  --fg: #16191d;
+  --fg-2: #4a515b;
+  --fg-3: #737b86;
+  --s1: #2a78d6; /* ODX one object per row */
+  --s2: #eb6834; /* Dapper */
+  --s3: #1baf7a; /* ODX row class + Select */
+  --s4: #8b929c; /* ODX object[] rows: neutral baseline */
+  --tip-bg: #16191d;
+  --tip-fg: #f6f7f9;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121417; --surface: #1a1d21; --line: #2c3138; --grid: #23272d;
+    --fg: #eef0f3; --fg-2: #b9c0c9; --fg-3: #8a929d;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #7a828c;
+    --tip-bg: #eef0f3; --tip-fg: #121417;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121417; --surface: #1a1d21; --line: #2c3138; --grid: #23272d;
+  --fg: #eef0f3; --fg-2: #b9c0c9; --fg-3: #8a929d;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #7a828c;
+  --tip-bg: #eef0f3; --tip-fg: #121417;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+main { max-width: 920px; margin: 0 auto; display: grid; gap: 36px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 2rem; line-height: 1.15; }
+h2 { font-size: 1.25rem; }
+p { margin: 0; max-width: 68ch; color: var(--fg-2); }
+.back a { color: var(--fg-2); font-size: 0.86rem; text-decoration: none; }
+.back a:hover { text-decoration: underline; }
+.eyebrow { font-family: var(--font-data); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+header { display: grid; gap: 12px; }
+.conditions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.chip { font-family: var(--font-data); font-size: 0.78rem; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--fg-2); background: var(--surface); }
+.chip.warn { border-style: dashed; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; }
+.stat b { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--fg-2); font-size: 0.86rem; }
+section { display: grid; gap: 14px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; color: var(--fg-2); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.legend .dash { width: 18px; height: 0; border-top: 2px dashed var(--s1); border-radius: 0; vertical-align: 3px; }
+.legend .solid { width: 18px; height: 0; border-top: 2px solid var(--s1); border-radius: 0; vertical-align: 3px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 8px; overflow-x: auto; position: relative; }
+.chart svg { display: block; width: 100%; min-width: 560px; height: auto; font-family: var(--font-body); }
+.chart svg text { fill: var(--fg-2); font-size: 12px; }
+.chart svg .val { fill: var(--fg); font-family: var(--font-data); font-size: 11.5px; }
+.chart svg .tick { fill: var(--fg-3); font-family: var(--font-data); font-size: 11px; }
+.chart svg .grid { stroke: var(--grid); stroke-width: 1; }
+.chart svg .axis { stroke: var(--line); stroke-width: 1; }
+.chart svg .hit { fill: transparent; cursor: default; }
+.chart svg .row:hover .bar { filter: brightness(1.08); }
+.chart svg .row:hover text.name { fill: var(--fg); }
+.note { font-size: 0.86rem; color: var(--fg-3); max-width: 72ch; }
+.tip { position: fixed; pointer-events: none; background: var(--tip-bg); color: var(--tip-fg); font-size: 0.8rem; padding: 7px 10px; border-radius: 6px; max-width: 280px; line-height: 1.4; z-index: 5; }
+.tip b { font-weight: 600; }
+.tip code { font-family: var(--font-data); }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+th { font-weight: 600; color: var(--fg-2); font-size: 0.78rem; }
+td.mono { font-family: var(--font-data); }
+td .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.chart.panel { padding: 12px 12px 6px; }
+.chart.panel svg { min-width: 0; }
+.panelhead { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: var(--fg); }
+.pending { display: grid; gap: 6px; padding-left: 18px; margin: 0; color: var(--fg-2); }
+details summary { cursor: pointer; font-weight: 600; font-family: var(--font-display); }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+</style>
+
+<main>
+  <nav class="back"><a href="../articles/performance.html">&larr; Back to the documentation</a></nav>
+  <header>
+    <div class="eyebrow">Open.Database.Extensions 11.0 · benchmark snapshot · 2026-11-14</div>
+    <h1>How each way of reading rows ranks</h1>
+    <p>Twenty columns, 1,000 rows, the same synthetic reader for every variant. Reader-open time is the time from <code>ExecuteReader</code> until the reader closes, and it is the number that matters most: it is how long the connection is held. Total time and allocations come second.</p>
+    <div class="conditions">
+      <span class="chip">.NET 11.0, Release, x64</span>
+      <span class="chip">BenchmarkDotNet 0.15.8, in-process</span>
+      <span class="chip">synthetic provider, 20 typed columns</span>
+      <span class="chip warn">wire and per-row cost set to 0</span>
+      <span class="chip warn">measured 2026-11-14, before 11.0.0-rc.6; a fresh run on the current build will replace these numbers</span>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <section>
+    <h2>Reader-open time</h2>
+    <p>Shorter is better. Lower bars hold the connection for less time.</p>
+    <div class="legend" id="legend1"></div>
+    <div class="chart" id="chartOpen"></div>
+  </section>
+
+  <section>
+    <h2>Total time per call</h2>
+    <p>Where this is much longer than reader-open time, work happens after the reader closes (the "after close" variants).</p>
+    <div class="chart" id="chartMean"></div>
+  </section>
+
+  <section>
+    <h2>Memory allocated per call</h2>
+    <p>The RowMap plan and the hand-written selector allocate the same bytes: the list and one object per row. A row class plus <code>Select</code> allocates about twice that.</p>
+    <div class="chart" id="chartAlloc"></div>
+  </section>
+
+  <section>
+    <h2>Cost grows with the number of columns</h2>
+    <p>Total time at 1,000 rows across widths 1, 3, 5, 10 and 20. Every approach grows close to a straight line, so the slope is its cost per cell.</p>
+    <div class="legend" id="legend2"></div>
+    <div class="chart" id="chartWidth"></div>
+    <p class="note">Cost per cell, width 1 to 20: hand-written selector 1.91 ns, RowMap plan 3.65 ns, row class plus <code>Select</code> 4.12 ns, <code>object[]</code> dump 8.90 ns, Dapper 9.70 ns.</p>
+  </section>
+
+  <section>
+    <h2>A reused map against a fresh one</h2>
+    <p>Every number above uses a map that ODX builds once and caches. Building and compiling a map costs this much, once per map and result shape (one row per call):</p>
+    <div class="tablewrap">
+      <table id="freshTable">
+        <thead><tr><th>Columns</th><th>Reused map</th><th>Built every call</th><th>One-time cost</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>On real databases</h2>
+    <p>The same mapping paths on SQL Server LocalDB (SqlClient) and on a SQLite file, at 20 columns and 10,000 rows. A real provider spends its own time on every row, so mapping gaps that look large on the synthetic reader shrink to a few percent. Memory differences do not shrink.</p>
+    <div class="legend" id="legendRp"></div>
+    <div class="panels" id="rpPanels"></div>
+    <p class="note">On SQL Server the RowMap plan, the hand-written selector and the leanest hand loop are within 3% of each other, which is within run-to-run noise, while Dapper is 6% slower and allocates 29% more. On SQLite, which costs less per row, the plan is 21% slower than hand-written code and allocates 18% more. One run per cell; differences under about 5% cannot be told apart.</p>
+    <div class="tablewrap">
+      <table id="rpTable">
+        <thead><tr><th>Provider</th><th>Variant</th><th>5 columns (ms)</th><th>20 columns (ms)</th><th>5 columns (MB)</th><th>20 columns (MB)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sync reads against async reads</h2>
+    <p>The same RowMap plan, read three ways, at 20 columns and 1,000 rows. Each panel is one condition: a buffer refill every 100 rows (20 µs each), a thread pool kept busy (8 work items), both, or neither. Shorter bars hold the connection for less time.</p>
+    <div class="legend"><span><b>Sync</b>: <code>ExecuteReader</code>, then <code>Read()</code></span><span><b>Async execute</b>: <code>ExecuteReaderAsync</code>, then <code>Read()</code> (the default)</span><span><b>Async read</b>: <code>ReadAsync()</code> for every row (<code>AsyncReads()</code>)</span></div>
+    <div class="panels" id="saPanels"></div>
+    <p class="note">Each panel has its own scale; compare bars within a panel. With a refill and a busy pool, every refill makes <code>ReadAsync()</code> wait about 1.2 ms for a free thread while the reader stays open: 11.2 ms against 0.28 ms for sync, 40 times longer (51 times at 5 columns). Sync and async execute do not move. Allocations are the same for all three (233 KB; async read adds 2.5 KB with refills). At one row no refill is reached and the three differ by under 0.1 µs.</p>
+    <p class="note">This shows the mechanism in the synthetic model. A first probe on real providers (10,000 rows each) found that <code>ReadAsync()</code> almost never waits on local connections: 0 to 4 asynchronous completions in 10,000 reads on SQL Server LocalDB, including 8 KB rows, and none on a SQLite file. SQL Server 2022 over TCP (in Docker, on the same machine) behaved the same: 0 to 4 in 10,000, and the three paths were within the run's noise of each other. Without real network delay the rows arrive before <code>ReadAsync()</code> asks for them, so these setups cannot show the effect either way.</p>
+    <p class="note">Over a shaped link (SQL Server in Docker, 5 ms delay, 100 Mbit), the link sets the total and every path takes the same time, with or without a busy pool (within 3 ms). Where the wait happens depends on the access mode. In SqlClient&rsquo;s default mode, <code>ReadAsync()</code> reads the whole row and truly waits without blocking: 7.8% of calls for rows of 20 small columns, about 98% for 8 KB rows. With <code>SequentialAccess</code>, which ODX&rsquo;s <code>Map&lt;T&gt;()</code> uses today, <code>ReadAsync()</code> returns early and the synchronous column reads wait on the network instead, blocking the thread. Async reads also allocate more: 16.6 MB against 9.7 MB for sync over the small rows, and about 3 times as much for the 8 KB rows.</p>
+  </section>
+
+  <section>
+    <details>
+      <summary>Every number in a table</summary>
+      <div class="tablewrap" style="margin-top:12px">
+        <table id="dataTable">
+          <thead><tr><th>Variant</th><th>Approach</th><th>Reader open (µs)</th><th>Total (µs)</th><th>Allocated (KB)</th><th>vs Dapper</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+</main>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const FAM = {
+  one:   { name: "ODX: one object per row", color: "var(--s1)" },
+  two:   { name: "ODX: row class, then Select", color: "var(--s3)" },
+  raw:   { name: "ODX: raw object[] rows", color: "var(--s4)" },
+  dap:   { name: "Dapper 2.1.89", color: "var(--s2)" },
+};
+// Width 20, rows 1000, net11.0 (stage 1 re-run, build b27a02f). open/mean in µs, alloc in bytes.
+const ROWS = [
+  { id: "V2",    fam: "one", name: "Map(selector), hand-written",          open: 46.8,  mean: 47.0,  alloc: 232880, how: "A static Func<IDataRecord,T> with typed getters" },
+  { id: "V4a",   fam: "one", name: "Selector into one reused row, Select",  open: 58.8,  mean: 59.0,  alloc: 233560, how: "Caller recipe: fill one held row, project it" },
+  { id: "V4b",   fam: "one", name: "Selector into a pooled row, Select",    open: 62.8,  mean: 63.1,  alloc: 233713, how: "Caller recipe: rent a row, project it, return it" },
+  { id: "V6a",   fam: "one", name: "Shaping inside the selector",           open: 67.6,  mean: 67.8,  alloc: 304889, how: "Computed members built in the selector" },
+  { id: "V1",    fam: "one", name: "Map<T>(), the RowMap plan",             open: 81.6,  mean: 81.7,  alloc: 232857, how: "The cached, compiled typed plan" },
+  { id: "V5",    fam: "two", name: "Row class, close, then Select",         open: 82.1,  mean: 97.8,  alloc: 456984, how: "Map<Row>().ToList(), then Select after the close" },
+  { id: "V6d",   fam: "two", name: "Row class, shaping after close",        open: 82.3,  mean: 134.5, alloc: 529073, how: "Computed members built after the close" },
+  { id: "V3",    fam: "two", name: "Row class plus inline Select",          open: 106.4, mean: 106.7, alloc: 449233, how: "Select runs with the reader open" },
+  { id: "V6c",   fam: "two", name: "Row class, shaping in inline Select",   open: 138.9, mean: 139.2, alloc: 521296, how: "Computed members in a Select, reader open" },
+  { id: "V0b",   fam: "raw", name: "object[] rows, transformed later",      open: 170.1, mean: 221.0, alloc: 753024, how: "GetValues into object[], typed objects built later" },
+  { id: "V0",    fam: "raw", name: "object[] dump (GetValues)",             open: 178.4, mean: 178.5, alloc: 528969, how: "The baseline: every cell boxed into object[]" },
+  { id: "V7_V5", fam: "dap", name: "Dapper, then Select after",             open: 197.5, mean: 217.1, alloc: 785369, how: "Query<Row>, then Select" },
+  { id: "V7_V6d",fam: "dap", name: "Dapper, shaping after",                 open: 200.5, mean: 256.2, alloc: 857458, how: "Query<Row>, computed members afterwards" },
+  { id: "V7_V1", fam: "dap", name: "Dapper Query<T>",                       open: 202.4, mean: 202.7, alloc: 561240, how: "Dapper's buffered Query<T>, the plain map" },
+  { id: "V7_V3", fam: "dap", name: "Dapper plus inline Select",             open: 214.0, mean: 214.3, alloc: 777240, how: "Query<Row>(buffered: false) with Select" },
+  { id: "V7_V6c",fam: "dap", name: "Dapper, shaping in inline Select",      open: 257.6, mean: 257.9, alloc: 849249, how: "Unbuffered Query<Row>, computed members in Select" },
+];
+const WIDTHS = [1, 3, 5, 10, 20];
+const LINES = [
+  { id: "V2",    fam: "one", dash: true,  name: "Hand-written selector", ns: [10674, 11920, 16821, 31240, 46956] },
+  { id: "V1",    fam: "one", dash: false, name: "RowMap plan",           ns: [12399, 18280, 25154, 49070, 81728] },
+  { id: "V3",    fam: "two", dash: false, name: "Row class + Select",    ns: [28286, 32370, 41387, 67160, 106659] },
+  { id: "V0",    fam: "raw", dash: false, name: "object[] dump",         ns: [9476, 20020, 35872, 75730, 178496] },
+  { id: "V7_V1", fam: "dap", dash: false, name: "Dapper Query<T>",       ns: [18456, 31070, 44562, 96220, 202663] },
+];
+// BS-RP, rows 10,000 (frozen build fbb13d7, net11.0): mean µs and allocated KB at widths 5 and 20.
+const RP_V = [
+  { id: "V1",  name: "Map<T>(), the RowMap plan", color: "var(--s1)" },
+  { id: "V2",  name: "Map(selector), hand-written", color: "var(--s1)" },
+  { id: "V9c", name: "Leanest hand loop (reference)", color: "var(--s4)" },
+  { id: "V3",  name: "Row class, then Select", color: "var(--s3)" },
+  { id: "V7",  name: "Dapper Query<T>", color: "var(--s2)" },
+];
+const RP = {
+  "SQL Server LocalDB": { V1: [3076.88, 25903.05, 2830.94, 9708.42], V2: [3157.90, 25177.33, 2830.96, 9708.44], V9c: [2942.05, 25594.00, 2830.77, 9708.21], V3: [3748.27, 27239.67, 4940.69, 11818.14], V7: [3188.24, 27572.23, 3799.97, 12561.54] },
+  "SQLite file":        { V1: [7425.35, 31300.98, 4373.67, 14448.46], V2: [5975.55, 25898.64, 3826.52, 12250.66], V9c: [5962.72, 25920.88, 3826.31, 12250.33], V3: [8412.85, 30899.16, 6483.38, 16558.28], V7: [7582.62, 29780.11, 4795.77, 15144.24] },
+};
+function rpPanels() {
+  document.getElementById("legendRp").innerHTML =
+    `<span><i style="background:var(--s1)"></i>ODX: one object per row</span><span><i style="background:var(--s3)"></i>ODX: row class, then Select</span><span><i style="background:var(--s2)"></i>Dapper 2.1.89</span><span><i style="background:var(--s4)"></i>Hand loop on the provider's reader (reference)</span>`;
+  const box = document.getElementById("rpPanels");
+  const panels = [];
+  for (const prov of Object.keys(RP)) {
+    panels.push({ title: `${prov}: time, 20 columns`, prov, idx: 1, fmtv: v => `${fmt(v / 1000, 1)} ms`, tip: v => `${fmt(v / 1000, 2)} ms per call` });
+  }
+  for (const prov of Object.keys(RP)) {
+    panels.push({ title: `${prov}: memory, 20 columns`, prov, idx: 3, fmtv: v => `${fmt(v / 1024, 1)} MB`, tip: v => `${fmt(v / 1024, 2)} MB allocated per call` });
+  }
+  for (const p of panels) {
+    const rows = RP_V.map(v => ({ ...v, val: RP[p.prov][v.id][p.idx] })).sort((a, b) => a.val - b.val);
+    const div = document.createElement("div"); div.className = "chart panel";
+    const h = document.createElement("div"); h.className = "panelhead"; h.textContent = p.title; div.appendChild(h);
+    const W = 460, rowH = 26, top = 4, left = 190, right = 70, bottom = 4;
+    const H = top + rows.length * rowH + bottom, max = Math.max(...rows.map(r => r.val));
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": p.title });
+    rows.forEach((r, i) => {
+      const y = top + i * rowH, bw = Math.max(2, (r.val / max) * (W - left - right));
+      const g = el("g", { class: "row" }, svg);
+      const n = el("text", { x: left - 8, y: y + rowH / 2 + 4, "text-anchor": "end", class: "name" }, g); n.textContent = r.name;
+      const y0 = y + 6, bh = rowH - 12, rr = Math.min(4, bw / 2);
+      el("path", { class: "bar", fill: r.color, d: `M${left},${y0} h${bw - rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${bh - 2 * rr} a${rr},${rr} 0 0 1 -${rr},${rr} h-${bw - rr} z` }, g);
+      const lab = el("text", { x: left + bw + 6, y: y + rowH / 2 + 4, class: "val" }, g); lab.textContent = p.fmtv(r.val);
+      const hit = el("rect", { x: 0, y, width: W, height: rowH, class: "hit" }, g);
+      hit.addEventListener("mousemove", e => showTip(e, `<b>${r.name}</b> · ${p.prov}<br>${p.tip(r.val)} · 10,000 rows`));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+    el("line", { x1: left, x2: left, y1: top, y2: H - bottom, class: "axis" }, svg);
+    div.appendChild(svg); box.appendChild(div);
+  }
+  const tb = document.querySelector("#rpTable tbody");
+  for (const prov of Object.keys(RP)) for (const v of RP_V) {
+    const d = RP[prov][v.id], tr = document.createElement("tr");
+    tr.innerHTML = `<td>${prov}</td><td><span class="sw" style="background:${v.color}"></span>${v.name}</td><td class="mono">${fmt(d[0] / 1000, 2)}</td><td class="mono">${fmt(d[1] / 1000, 2)}</td><td class="mono">${fmt(d[2] / 1024, 2)}</td><td class="mono">${fmt(d[3] / 1024, 2)}</td>`;
+    tb.appendChild(tr);
+  }
+}
+// BS-SA matrix, width 20, rows 1000, reader-open µs (frozen build ea5f096, net11.0).
+const SA = [
+  { cond: "Neither",              vals: [77.3, 80.9, 82.3] },
+  { cond: "Busy thread pool",     vals: [94.4, 97.4, 102.4] },
+  { cond: "Buffer refills",       vals: [257.9, 261.2, 314.3] },
+  { cond: "Refills and busy pool", vals: [279.3, 279.0, 11175.0] },
+];
+const SA_PATHS = ["Sync", "Async execute", "Async read"];
+function saPanels() {
+  const box = document.getElementById("saPanels");
+  for (const p of SA) {
+    const div = document.createElement("div"); div.className = "chart panel";
+    const h = document.createElement("div"); h.className = "panelhead"; h.textContent = p.cond; div.appendChild(h);
+    const W = 420, rowH = 28, top = 4, left = 104, right = 92, bottom = 4;
+    const H = top + 3 * rowH + bottom, max = Math.max(...p.vals);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${p.cond}: reader-open time by read path` });
+    p.vals.forEach((v, i) => {
+      const y = top + i * rowH, bw = Math.max(2, (v / max) * (W - left - right));
+      const g = el("g", { class: "row" }, svg);
+      const n = el("text", { x: left - 8, y: y + rowH / 2 + 4, "text-anchor": "end", class: "name" }, g); n.textContent = SA_PATHS[i];
+      const y0 = y + 7, bh = rowH - 14, rr = Math.min(4, bw / 2);
+      el("path", { class: "bar", fill: "var(--s1)", d: `M${left},${y0} h${bw - rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${bh - 2 * rr} a${rr},${rr} 0 0 1 -${rr},${rr} h-${bw - rr} z` }, g);
+      const lab = el("text", { x: left + bw + 6, y: y + rowH / 2 + 4, class: "val" }, g);
+      lab.textContent = v >= 1000 ? `${fmt(v / 1000, 1)} ms` : `${fmt(v, 0)} µs`;
+      const hit = el("rect", { x: 0, y, width: W, height: rowH, class: "hit" }, g);
+      hit.addEventListener("mousemove", e => showTip(e, `<b>${SA_PATHS[i]}</b> · ${p.cond}<br>Reader open ${fmt(v)} µs · ${fmt(v / p.vals[0], 2)}× sync`));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+    el("line", { x1: left, x2: left, y1: top, y2: H - bottom, class: "axis" }, svg);
+    div.appendChild(svg); box.appendChild(div);
+  }
+}
+const FRESH = [
+  { w: 1,  reused: [166.4, 560],  fresh: [192393.9, 16012] },
+  { w: 5,  reused: [186.9, 560],  fresh: [332991.3, 23483] },
+  { w: 20, reused: [264.9, 560],  fresh: [875028.9, 53299] },
+];
+const NS = "http://www.w3.org/2000/svg";
+const el = (n, a = {}, parent) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (parent) parent.appendChild(e); return e; };
+const fmt = (v, d = 1) => v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kb = b => b / 1024;
+const dapper = ROWS.find(r => r.id === "V7_V1");
+const tip = document.getElementById("tip");
+function showTip(ev, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.hidden = true; }
+function tipHtml(r) {
+  return `<b>${r.name}</b> <code>${r.id}</code><br>${r.how}<br>Reader open ${fmt(r.open)} µs · total ${fmt(r.mean)} µs · ${fmt(kb(r.alloc))} KB`;
+}
+
+function legend(target, fams) {
+  const box = document.getElementById(target);
+  for (const f of fams) {
+    const s = document.createElement("span");
+    s.innerHTML = `<i style="background:${FAM[f].color}"></i>${FAM[f].name}`;
+    box.appendChild(s);
+  }
+}
+
+function barChart(target, key, unit, toVal, decimals) {
+  const rows = [...ROWS].sort((a, b) => toVal(a) - toVal(b));
+  const W = 900, rowH = 26, top = 8, left = 280, right = 84, bottom = 28;
+  const H = top + rows.length * rowH + bottom;
+  const max = Math.max(...rows.map(toVal));
+  const step = niceStep(max);
+  const axisMax = Math.ceil(max / step) * step;
+  const x = v => left + (v / axisMax) * (W - left - right);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${key} by variant, shorter is better` });
+  for (let t = 0; t <= axisMax + 1e-9; t += step) {
+    el("line", { x1: x(t), x2: x(t), y1: top, y2: H - bottom, class: "grid" }, svg);
+    const last = t + step > axisMax + 1e-9;
+    const tx = el("text", { x: x(t), y: H - 8, "text-anchor": last ? "start" : "middle", dx: last ? -10 : 0, class: "tick" }, svg);
+    tx.textContent = last ? `${fmt(t, 0)} ${unit}` : fmt(t, 0);
+  }
+  rows.forEach((r, i) => {
+    const y = top + i * rowH;
+    const g = el("g", { class: "row" }, svg);
+    const name = el("text", { x: left - 10, y: y + rowH / 2 + 4, "text-anchor": "end", class: "name" }, g); name.textContent = r.name;
+    const v = toVal(r), bw = Math.max(2, x(v) - left);
+    // Data-end rounded, anchored flat to the baseline: a rect with a rounded right end drawn as a path.
+    const y0 = y + 6, bh = rowH - 12, rr = Math.min(4, bw / 2);
+    el("path", { class: "bar", fill: FAM[r.fam].color, d: `M${left},${y0} h${bw - rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${bh - 2 * rr} a${rr},${rr} 0 0 1 -${rr},${rr} h-${bw - rr} z` }, g);
+    const lab = el("text", { x: left + bw + 6, y: y + rowH / 2 + 4, class: "val" }, g); lab.textContent = fmt(v, decimals);
+    const hit = el("rect", { x: 0, y, width: W, height: rowH, class: "hit" }, g);
+    hit.addEventListener("mousemove", e => showTip(e, tipHtml(r)));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+  el("line", { x1: left, x2: left, y1: top, y2: H - bottom, class: "axis" }, svg);
+  document.getElementById(target).appendChild(svg);
+}
+function niceStep(max) {
+  const raw = max / 5, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (raw <= m * mag) return m * mag;
+  return 10 * mag;
+}
+
+function widthChart() {
+  const W = 900, H = 340, left = 64, right = 150, top = 14, bottom = 36;
+  const maxNs = 210000, step = 50000;
+  const x = w => left + ((w - 1) / 19) * (W - left - right);
+  const y = v => top + (1 - v / maxNs) * (H - top - bottom);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Total time against number of columns" });
+  for (let t = 0; t <= maxNs; t += step) {
+    el("line", { x1: left, x2: W - right, y1: y(t), y2: y(t), class: "grid" }, svg);
+    const tx = el("text", { x: left - 8, y: y(t) + 4, "text-anchor": "end", class: "tick" }, svg); tx.textContent = fmt(t / 1000, 0) + " µs";
+  }
+  for (const w of WIDTHS) {
+    const tx = el("text", { x: x(w), y: H - 12, "text-anchor": "middle", class: "tick" }, svg); tx.textContent = w;
+  }
+  const xl = el("text", { x: (left + W - right) / 2, y: H - 0, "text-anchor": "middle", class: "tick" }, svg); xl.textContent = "columns";
+  const ends = [];
+  for (const s of LINES) {
+    const pts = s.ns.map((v, i) => [x(WIDTHS[i]), y(v)]);
+    el("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: FAM[s.fam].color, "stroke-width": 2, "stroke-dasharray": s.dash ? "6 4" : "none", "stroke-linejoin": "round" }, svg);
+    s.ns.forEach((v, i) => {
+      const [cx, cy] = pts[i];
+      const c = el("circle", { cx, cy, r: 4.5, fill: FAM[s.fam].color, stroke: "var(--surface)", "stroke-width": 2 }, svg);
+      const hit = el("circle", { cx, cy, r: 12, class: "hit" }, svg);
+      hit.addEventListener("mousemove", e => showTip(e, `<b>${s.name}</b><br>${WIDTHS[i]} columns · ${fmt(v / 1000)} µs per call`));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+    ends.push({ s, y: pts[pts.length - 1][1] });
+  }
+  // Direct labels at the line ends, nudged apart so they never overlap.
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 16) ends[i].y = ends[i - 1].y + 16;
+  for (const e of ends) { const t = el("text", { x: W - right + 10, y: e.y + 4 }, svg); t.textContent = e.s.name; }
+  document.getElementById("chartWidth").appendChild(svg);
+}
+
+function stats() {
+  const v1 = ROWS.find(r => r.id === "V1"), v2 = ROWS.find(r => r.id === "V2"), v3 = ROWS.find(r => r.id === "V3"), v0 = ROWS.find(r => r.id === "V0");
+  const items = [
+    [`${fmt(dapper.open / v1.open)}×`, "less reader-open time than Dapper for the RowMap plan"],
+    [`${fmt(dapper.alloc / v1.alloc)}×`, "fewer bytes allocated than Dapper"],
+    [`${fmt(v0.open / v1.open)}×`, "faster than dumping rows into object[]"],
+    [`${fmt(v1.open / v2.open, 2)}×`, "how much slower the plan is than hand-written code: the gap to close"],
+  ];
+  const box = document.getElementById("stats");
+  for (const [b, s] of items) { const d = document.createElement("div"); d.className = "stat"; d.innerHTML = `<b>${b}</b><span>${s}</span>`; box.appendChild(d); }
+}
+
+function tables() {
+  const tb = document.querySelector("#dataTable tbody");
+  for (const r of [...ROWS].sort((a, b) => a.open - b.open)) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><span class="sw" style="background:${FAM[r.fam].color}"></span>${r.name} <span style="color:var(--fg-3)">${r.id}</span></td><td>${FAM[r.fam].name}</td><td class="mono">${fmt(r.open)}</td><td class="mono">${fmt(r.mean)}</td><td class="mono">${fmt(kb(r.alloc))}</td><td class="mono">${fmt(dapper.open / r.open, 2)}×</td>`;
+    tb.appendChild(tr);
+  }
+  const fb = document.querySelector("#freshTable tbody");
+  for (const f of FRESH) {
+    const tr = document.createElement("tr");
+    const cost = f.fresh[0] - f.reused[0], bytes = f.fresh[1] - f.reused[1];
+    tr.innerHTML = `<td>${f.w}</td><td class="mono">${fmt(f.reused[0] / 1000, 2)} µs · ${f.reused[1]} B</td><td class="mono">${fmt(f.fresh[0] / 1000, 0)} µs · ${fmt(kb(f.fresh[1]))} KB</td><td class="mono">${fmt(cost / 1000000, 2)} ms · ${fmt(kb(bytes))} KB</td>`;
+    fb.appendChild(tr);
+  }
+}
+
+legend("legend1", ["one", "two", "raw", "dap"]);
+(() => {
+  const box = document.getElementById("legend2");
+  box.innerHTML = `<span><i class="dash"></i>Hand-written selector</span><span><i class="solid"></i>RowMap plan</span><span><i style="background:var(--s3)"></i>Row class + Select</span><span><i style="background:var(--s4)"></i>object[] dump</span><span><i style="background:var(--s2)"></i>Dapper</span>`;
+})();
+stats();
+barChart("chartOpen", "Reader-open time", "µs", r => r.open, 1);
+barChart("chartMean", "Total time", "µs", r => r.mean, 1);
+barChart("chartAlloc", "Allocated", "KB", r => kb(r.alloc), 0);
+widthChart();
+tables();
+rpPanels();
+saPanels();
+</script>
+
+</body></html>

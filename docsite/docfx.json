@@ -37,7 +37,7 @@
     ],
     "resource": [
       {
-        "files": [ "images/**", "perf-data/**" ]
+        "files": [ "images/**", "perf-data/**", "benchmarks/**" ]
       }
     ],
     "overwrite": [

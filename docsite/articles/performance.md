@@ -98,6 +98,8 @@ On SQLite, Dapper maps text to `Guid` through the usual `SqlMapper.TypeHandler` 
 
 The charts and the tables are generated from CSV files. Each CSV has a source file beside it that names the benchmark, the build, the date, the machine and the result file of every number. The build and the date of each data set are listed on the [data page](performance-data.md#how-fresh-the-data-is). To refresh the charts after a new run, see the [README next to the generator](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/tools/perf).
 
+The same ranking as one interactive page, with hover details, is kept as a snapshot: [Interactive ranking (snapshot)](../benchmarks/ranking.html), measured 2026-11-14, before 11.0.0-rc.6. It is replaced when a fresh run replaces the data on this page.
+
 ## Limits of these numbers
 
 - The synthetic reader has no network or server time, so do not read its ratios as end-to-end gains.

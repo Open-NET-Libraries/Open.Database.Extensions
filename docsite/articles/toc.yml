@@ -7,6 +7,8 @@
 - href: performance.md
   items:
   - href: performance-data.md
+  - name: Interactive ranking (snapshot)
+    href: ../benchmarks/ranking.html
 - href: coming-from-dapper.md
 - href: whats-new-11.md
 - href: release-notes.md
