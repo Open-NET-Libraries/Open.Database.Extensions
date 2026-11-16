@@ -52,15 +52,15 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// Params returns the list to the command's own hook (AddParams)
 	// and to nobody else.
 	[ThreadStatic]
-	static object? Preparing;
+	static object? _preparing;
 
 	[ThreadStatic]
-	static List<Param>? SendList;
+	static List<Param>? _sendList;
 
 	// The list kept for the next run on this thread
 	// (empty, so it holds no values).
 	[ThreadStatic]
-	static List<Param>? SpareList;
+	static List<Param>? _spareList;
 
 	// The rarely-set members live in a block that is only allocated when one is set, so the usual
 	// conn.Command(sql) object stays small (it is allocated on every call).
@@ -204,8 +204,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// on this thread; otherwise null.
 	// A command with no derived names pays one field read.
 	List<Param>? ActiveSendList
-		=> _hasDerivedParams && ReferenceEquals(Preparing, this)
-			? SendList
+		=> _hasDerivedParams && ReferenceEquals(_preparing, this)
+			? _sendList
 			: null;
 
 	// Most commands have no params, so the list is only created when one is added.
@@ -630,7 +630,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				key,
 				out NameSet? remembered)
 				&& Fits(remembered))
+			{
 				return remembered;
+			}
 
 			// Nothing is remembered, or the remembered names did not fit:
 			// the procedure may have changed since they were read.
@@ -697,23 +699,23 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		// Taken out of the spare slot, so a hook that sets up another
 		// command on this thread builds its own list.
-		List<Param> send = SpareList ?? new(_params!.Count);
-		SpareList = null;
-		object? outerCommand = Preparing;
-		List<Param>? outerList = SendList;
+		List<Param> send = _spareList ?? new(_params!.Count);
+		_spareList = null;
+		object? outerCommand = _preparing;
+		List<Param>? outerList = _sendList;
 		try
 		{
 			BuildSendList(send, names);
-			Preparing = this;
-			SendList = send;
+			_preparing = this;
+			_sendList = send;
 			return PrepareCommand(connection);
 		}
 		finally
 		{
-			Preparing = outerCommand;
-			SendList = outerList;
+			_preparing = outerCommand;
+			_sendList = outerList;
 			send.Clear();
-			SpareList = send;
+			_spareList = send;
 		}
 	}
 
@@ -751,7 +753,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			if (p.Expression is { } expression
 				&& !p.FromObject
 				&& real.Match(expression, Command) is null)
+			{
 				return false;
+			}
 		}
 
 		return true;
@@ -923,10 +927,12 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				ConnectionState prior = await OpenIfNeededAsync(single, cancellationToken).ConfigureAwait(false);
 				NameSet? names = null;
 				if (_hasDerivedParams)
+				{
 					names = await ResolveDerivedNamesAsync(
 							single,
 							cancellationToken)
 						.ConfigureAwait(false);
+				}
 
 				using TCommand cmd = _hasDerivedParams
 					? PrepareDerived(single, names)
@@ -946,8 +952,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			ConnectionState prior = await OpenIfNeededAsync(conn, cancellationToken).ConfigureAwait(false);
 			NameSet? names = null;
 			if (_hasDerivedParams)
+			{
 				names = await ResolveDerivedNamesAsync(conn, cancellationToken)
 					.ConfigureAwait(false);
+			}
 
 			using TCommand cmd = _hasDerivedParams
 				? PrepareDerived(conn, names)
