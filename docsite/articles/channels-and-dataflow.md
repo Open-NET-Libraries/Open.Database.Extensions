@@ -53,14 +53,16 @@ A stage can consume one channel and produce another. Here the query feeds a tran
 
 ### When you do not need a channel
 
-If there is one consumer, its work is as fast as the read, and there is nothing else to overlap, iterate the query directly. It is simpler, and a channel would only add a copy of each row.
+If there is one consumer, only a few rows, and nothing else to overlap, you do not need a channel: buffer the rows with `ToListAsync(cancellationToken)`. The connection is released as soon as the list is built, and the slow work happens after that.
 
-[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_direct)]
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_buffer)]
+
+Iterating the query directly (the `ReadAsync` handler) holds the connection for the whole loop, so it is not the way to do slow work per row. The caution about streaming is documented separately.
 
 ### What each choice costs
 
 - **Unbounded** (the default): the read finishes at full speed and frees the connection, while memory grows with the backlog.
-- **Bounded:** memory is capped, but the write waits for room, so the reader, and with it the connection, stays open for as long as the consumers take. A `Drop*` `FullMode` is allowed, and it loses rows when the channel is full.
+- **Bounded:** memory is capped, but the write waits for room, so the reader, and with it the connection, stays open for as long as the consumers take. A `Drop*` `FullMode` is allowed, and it loses rows when the channel is full (`rowCount` still counts every row handed to the writer).
 - **Deferred** (the default) **against `startImmediately: true`:** a deferred feed opens the connection and runs the command at the first read; an immediate one at the call. Either way the read itself runs on a thread-pool thread, so the call returns at once.
 
 ### Things to know
@@ -68,7 +70,7 @@ If there is one consumer, its work is as fast as the read, and there is nothing 
 - A deferred feed that is never read never runs the command. Awaiting `Completion` alone does not start it, so a consumer that only awaits `Completion` waits forever: read, or use `startImmediately: true`. For `ToChannel(out var rowCount)` the same holds for `rowCount`.
 - With a connection you opened, a deferred feed runs on it later, at the first read, so do not use that connection until the feed ends. A connection ODX opened is closed when the feed ends.
 - With `ToChannel()` and `ToChannel(out var rowCount)`, writes you make through the returned writer interleave with ODX's rows, and fail once ODX has completed the channel. A write does not start a deferred feed; only a read does.
-- If you complete the channel yourself, the read stops and the rows written so far stand. If you complete it with an error, that error is the one the feed reports.
+- If you complete the channel yourself, the read stops and the rows handed to the writer so far stand. If you complete it with an error, that error is the one the feed reports.
 - Continuations that run synchronously (`AllowSynchronousContinuations`) run on the producer's thread, which holds the connection.
 - The options are the BCL's `BoundedChannelOptions` and `UnboundedChannelOptions` (or `null`); anything else throws `ArgumentException` at the call.
 

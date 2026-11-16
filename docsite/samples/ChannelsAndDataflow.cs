@@ -118,10 +118,24 @@ public static class ChannelsAndDataflow
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		const int workers = 3;
+		// Slow stands for the slow per-row work. In this sample the
+		// first three rows also wait for each other, so that the three
+		// consumers below each hold a row at the same time and the
+		// split between them does not depend on timing.
 		int holding = 0;
-		var everyoneHasARow = new TaskCompletionSource(
+		var allHolding = new TaskCompletionSource(
 			TaskCreationOptions.RunContinuationsAsynchronously);
+
+		async Task Slow(Post post)
+		{
+			if (post.Id <= 3 && Interlocked.Increment(ref holding) == 3)
+				allHolding.SetResult();
+
+			if (post.Id <= 3)
+				await allHolding.Task;
+
+			await Enrich(post, cancellationToken);
+		}
 
 		#region stream_fan_out
 		ChannelReader<Post> reader = connection
@@ -137,16 +151,7 @@ public static class ChannelsAndDataflow
 			var rows = reader.ReadAllAsync(cancellationToken);
 			await foreach (Post post in rows)
 			{
-				// For this sample only: hold the first row until each
-				// consumer has one, so the split is not left to timing.
-				if (mine.Count == 0
-					&& Interlocked.Increment(ref holding) == workers)
-				{
-					everyoneHasARow.SetResult();
-				}
-
-				await everyoneHasARow.Task;
-				await Enrich(post, cancellationToken);
+				await Slow(post);
 				mine.Add(post.Id);
 			}
 
@@ -271,26 +276,23 @@ public static class ChannelsAndDataflow
 		return lines;
 	}
 
-	public static async Task<List<string>> StreamDirectSample(
+	public static async Task<List<string>> BufferSample(
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		#region stream_direct
-		// No channel needed: one consumer, and its work is as fast as
-		// the read. Iterating the query directly is simpler.
-		List<string> lines = await connection
+		var lines = new List<string>();
+
+		#region stream_buffer
+		// Few rows, one consumer, nothing to overlap: buffer them.
+		// The connection is released as soon as the list is built,
+		// and the slow work happens after that.
+		List<Post> posts = await connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ReadAsync(
-				static async (rows, token) =>
-				{
-					var list = new List<string>();
-					await foreach (Post post in rows.WithCancellation(token))
-						list.Add($"#{post.Id} {post.Title}");
+			.ToListAsync(cancellationToken);
 
-					return list;
-				},
-				cancellationToken);
+		foreach (Post post in posts)
+			lines.Add(await Enrich(post, cancellationToken));
 		#endregion
 
 		return lines;

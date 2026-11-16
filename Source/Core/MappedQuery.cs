@@ -845,8 +845,8 @@ public readonly record struct MappedQuery<T>
 	/// Writes through it interleave with ODX's rows, and fail once ODX
 	/// has completed the channel.
 	/// A write does not start a deferred feed: only a read does.
-	/// When the caller completes the channel, the read stops, and the
-	/// rows written so far stand.
+	/// A channel the caller completes early ends the read quietly, and the
+	/// rows handed to the writer so far stand.
 	/// </para>
 	/// </remarks>
 	/// <param name="options">
@@ -877,7 +877,8 @@ public readonly record struct MappedQuery<T>
 	/// <inheritdoc
 	/// cref="ToChannel(out Task{long}, ChannelOptions, bool, CancellationToken)" path="/remarks"/>
 	/// <param name="readCount">
-	/// Receives a task that completes with the number of rows written,
+	/// Receives a task that completes with the number of rows
+	/// handed to the writer,
 	/// after the later result sets are read through.
 	/// It faults or is cancelled the way the channel ends.
 	/// </param>
@@ -898,7 +899,8 @@ public readonly record struct MappedQuery<T>
 	/// <inheritdoc
 	/// cref="ToChannel(out Task{long}, ChannelOptions, bool, CancellationToken)" path="/remarks"/>
 	/// <param name="readCount">
-	/// Receives a task that completes with the number of rows written,
+	/// Receives a task that completes with the number of rows
+	/// handed to the writer,
 	/// after the later result sets are read through.
 	/// It faults or is cancelled the way the channel ends.
 	/// </param>
@@ -926,7 +928,8 @@ public readonly record struct MappedQuery<T>
 	/// <inheritdoc
 	/// cref="ToChannel(out Task{long}, ChannelOptions, bool, CancellationToken)" path="/remarks"/>
 	/// <param name="readCount">
-	/// Receives a task that completes with the number of rows written,
+	/// Receives a task that completes with the number of rows
+	/// handed to the writer,
 	/// after the later result sets are read through.
 	/// It faults or is cancelled the way the channel ends.
 	/// </param>
@@ -956,10 +959,12 @@ public readonly record struct MappedQuery<T>
 	/// The channel is the one
 	/// <see cref="ToChannel(ChannelOptions, bool, CancellationToken)"/>
 	/// returns, with the same options, start and completion.
+	/// A channel the caller completes early ends the read quietly,
+	/// and the count is the rows handed to the writer so far.
 	/// </para>
 	/// <para>
-	/// <paramref name="readCount"/> completes with the number of rows
-	/// written, after the later result sets are read through.
+	/// <paramref name="readCount"/> completes with the number of rows handed
+	/// to the writer, after the later result sets are read through.
 	/// With a deferred start it stays incomplete until the first read
 	/// starts the feed, so awaiting it without reading waits forever.
 	/// It is a <see cref="Task{TResult}"/>, not a
@@ -968,7 +973,8 @@ public readonly record struct MappedQuery<T>
 	/// </para>
 	/// </remarks>
 	/// <param name="readCount">
-	/// Receives a task that completes with the number of rows written,
+	/// Receives a task that completes with the number of rows
+	/// handed to the writer,
 	/// after the later result sets are read through.
 	/// It faults or is cancelled the way the channel ends.
 	/// </param>

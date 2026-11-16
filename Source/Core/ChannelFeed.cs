@@ -21,8 +21,8 @@ internal static class ChannelFeed
 	/// (<c>WaitToWriteAsync</c>) and tries again, so no row is lost
 	/// to a bound (a <c>Drop*</c> mode drops inside the channel itself).
 	/// When the channel was closed, the loop stops and returns the rows
-	/// written so far; leaving the loop disposes the stream, so nothing
-	/// more is read, and no exception is raised.
+	/// handed to the writer so far; leaving the loop disposes the
+	/// stream, so nothing more is read, and no exception is raised.
 	/// When the channel was completed with an error by its owner,
 	/// that error is thrown from the wait, so it propagates unchanged.
 	/// It never completes the writer: the caller decides that.
@@ -32,7 +32,7 @@ internal static class ChannelFeed
 	/// <param name="cancellationToken">
 	/// Stops the loop: the cancel is thrown, not swallowed.
 	/// </param>
-	/// <returns>The number of rows written.</returns>
+	/// <returns>The number of rows handed to the writer.</returns>
 	internal static async ValueTask<long> WriteAsync<T>(
 		IAsyncEnumerable<T> rows,
 		ChannelWriter<T> writer,

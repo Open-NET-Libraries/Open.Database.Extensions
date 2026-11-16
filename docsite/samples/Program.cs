@@ -218,11 +218,11 @@ Check(
 	pipelineLines.SequenceEqual(expectedLines),
 	"query -> ToChannelReader() -> transform -> second channel -> final consumer delivers every row in order");
 
-List<string> directLines = await ChannelsAndDataflow
-	.StreamDirectSample(connection, CancellationToken.None);
+List<string> bufferLines = await ChannelsAndDataflow
+	.BufferSample(connection, CancellationToken.None);
 Check(
-	directLines.SequenceEqual(expectedLines),
-	"iterating the query directly returns the same rows as the channel");
+	bufferLines.SequenceEqual(expectedLines),
+	"buffering with ToListAsync returns the same rows as the channel");
 
 // Transactions.
 Check(Transactions.Conditional(factory, true) is (true, 1), "returning true commits");
