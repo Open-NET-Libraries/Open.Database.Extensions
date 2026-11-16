@@ -18,7 +18,9 @@ public static class ChannelsAndDataflow
 		// and the channel completes when they are all written.
 		ChannelReader<Post> reader = connectionFactory
 			.Command("select * from posts order by id")
-			.ToChannel<Post>(singleReader: true, cancellationToken: cancellationToken);
+			.ToChannel<Post>(
+				singleReader: true,
+				cancellationToken: cancellationToken);
 
 		await foreach (Post post in reader.ReadAllAsync(cancellationToken))
 			received.Add(post);

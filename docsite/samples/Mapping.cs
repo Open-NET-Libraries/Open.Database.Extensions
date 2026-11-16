@@ -630,8 +630,10 @@ public static class PersonMaps
 	#endregion
 
 	#region map_declared_ignore
-	// A null column means "do not map this property": LastName is not read at all, not even by name,
-	// so it keeps its initial value even if the result set has a column called LastName.
+	// A null column means "do not map this property":
+	// LastName is not read at all, not even by name,
+	// so it keeps its initial value
+	// even if the result set has a column called LastName.
 	public static RowMap<Person> PersonNamesOnlyMap
 		=> field ??= [
 			new(nameof(Person.Id), "person_id"),

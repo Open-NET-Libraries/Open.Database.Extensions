@@ -19,17 +19,19 @@ public static class Transactions
 		// Returning true commits; false (or a throw) rolls back.
 		// Here the caller decides: shouldCommit is a bool passed in.
 		bool committed = await connectionFactory.UsingAsync(connection
-			=> connection.ExecuteTransactionConditionalAsync(async transaction =>
-			{
-				await transaction
-					.Command("""
-						insert into posts (id, author, title, body, views)
-						values (100, 1, 'Temporary', null, 0)
-						""")
-					.ExecuteNonQueryAsync(cancellationToken);
+			=> connection.ExecuteTransactionConditionalAsync(
+				async transaction =>
+				{
+					await transaction
+						.Command("""
+							insert into posts (id, author, title, body, views)
+							values (100, 1, 'Temporary', null, 0)
+							""")
+						.ExecuteNonQueryAsync(cancellationToken);
 
-				return shouldCommit;
-			}, cancellationToken));
+					return shouldCommit;
+				},
+				cancellationToken));
 		#endregion
 
 		long rows = await connectionFactory
