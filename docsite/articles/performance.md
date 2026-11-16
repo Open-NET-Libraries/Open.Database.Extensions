@@ -1,5 +1,11 @@
 # Performance
 
+> [!TIP]
+> **[See every approach ranked in charts](../benchmarks/ranking.html)**:
+> reader-open time, total time and memory per call,
+> cost per column, real databases, and sync against async reads.
+> Measured 2026-11-14, before 11.0.0-rc.6.
+
 The library rests on one idea: keep a connection open for as short a time as possible and allocate as little as possible while it is. This page says what is measured, what the numbers mean, and where the library is not faster.
 
 > [!NOTE]
