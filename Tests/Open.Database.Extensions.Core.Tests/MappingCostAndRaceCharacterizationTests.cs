@@ -89,12 +89,12 @@ public static class MappingCostAndRaceCharacterizationTests
 		long byName = BytesPerRead(() => matching.Map<Gadget>().ToList());
 		long declaredOwnNames = BytesPerRead(() => matching.Map(DeclaredOwnNames).ToList());
 		long declaredRenamed = BytesPerRead(() => renamed.Map(Declared).ToList());
-		long perCall = BytesPerRead(() => renamed.Map<Gadget>(
+		long perCall = BytesPerRead(() => renamed.Map(new RowMap<Gadget>(
 			new(nameof(Gadget.Id), "gadget_id"),
 			new(nameof(Gadget.Name), "gadget_name"),
 			new(nameof(Gadget.Total), "gadget_total"),
 			new(nameof(Gadget.Note), "gadget_note")
-		).ToList());
+		)).ToList());
 
 		Assert.InRange(declaredOwnNames - byName, -16, 16);
 		Assert.InRange(declaredRenamed - byName, -16, 16);
@@ -364,12 +364,12 @@ public static class MappingCostAndRaceCharacterizationTests
 		long byName = BytesPerReadOf(() => matching.Map<GadgetRecord>().ToList());
 		long declaredOwnNames = BytesPerReadOf(() => matching.Map(DeclaredRecordOwnNames).ToList());
 		long declaredRenamed = BytesPerReadOf(() => renamed.Map(DeclaredRecord).ToList());
-		long perCall = BytesPerReadOf(() => renamed.Map<GadgetRecord>(
+		long perCall = BytesPerReadOf(() => renamed.Map(new RowMap<GadgetRecord>(
 			new(nameof(GadgetRecord.Id), "gadget_id"),
 			new(nameof(GadgetRecord.Name), "gadget_name"),
 			new(nameof(GadgetRecord.Total), "gadget_total"),
 			new(nameof(GadgetRecord.Note), "gadget_note")
-		).ToList());
+		)).ToList());
 
 		Assert.InRange(declaredOwnNames - byName, -16, 16);
 		Assert.InRange(declaredRenamed - byName, -16, 16);

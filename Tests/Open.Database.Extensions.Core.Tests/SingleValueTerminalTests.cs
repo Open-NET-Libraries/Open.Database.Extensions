@@ -431,7 +431,7 @@ public static class SingleValueTerminalTests
 		Assert.Equal([2], cmd.Map<int>().Skip(1).Take(1).ToList());
 		Assert.Equal(1, cmd.Map<int>().SingleResult().FirstOrDefault());
 		Assert.Throws<InvalidOperationException>(
-			() => cmd.Map<int>(new KeyValuePair<string, string?>("Id", "Id")));
+			() => cmd.Map(new RowMap<int>(new KeyValuePair<string, string?>("Id", "Id"))));
 	}
 
 	// ---- 9. read-through ----

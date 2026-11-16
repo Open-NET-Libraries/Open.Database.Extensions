@@ -154,7 +154,7 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(
-			async (items, token) => await items.ToListAsync(token).ConfigureAwait(false),
+			(items, token) => CollectListAsync(items, token),
 			cancellationToken);
 
 	/// <summary>
@@ -186,7 +186,7 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(
-			async (items, token) => await items.ToArrayAsync(token).ConfigureAwait(false),
+			(items, token) => CollectArrayAsync(items, token),
 			cancellationToken);
 
 	/// <summary>
@@ -285,7 +285,7 @@ public static class MappedQueryExtensions
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 		return query.ReadAsync(
-			async (items, token) => await items.ToDictionaryAsync(keySelector, comparer, token).ConfigureAwait(false),
+			(items, token) => CollectDictionaryAsync(items, keySelector, comparer, token),
 			cancellationToken);
 	}
 
@@ -372,7 +372,7 @@ public static class MappedQueryExtensions
 		Contract.EndContractBlock();
 
 		return query.ReadAsync(
-			async (items, token) => await items.ToDictionaryAsync(keySelector, valueSelector, comparer, token).ConfigureAwait(false),
+			(items, token) => CollectDictionaryAsync(items, keySelector, valueSelector, comparer, token),
 			cancellationToken);
 	}
 
@@ -421,26 +421,9 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
-	{
-#if NETSTANDARD2_0
-		var result = new HashSet<T>(comparer);
-		return query.ReadAsync(
-			async (items, token) =>
-			{
-				await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
-				{
-					result.Add(item);
-				}
-
-				return result;
-			},
+		=> query.ReadAsync(
+			(items, token) => CollectHashSetAsync(items, comparer, token),
 			cancellationToken);
-#else
-		return query.ReadAsync(
-			(items, token) => items.ToHashSetAsync(comparer, token),
-			cancellationToken);
-#endif
-	}
 
 	/// <summary>
 	/// Reads the first mapped row.
@@ -500,7 +483,7 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.FirstOrDefaultAsync(token).ConfigureAwait(false),
+			(items, token) => FirstOrDefaultOfAsync(items, token),
 			cancellationToken);
 	}
 
@@ -558,7 +541,7 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.SingleOrDefaultAsync(token).ConfigureAwait(false),
+			(items, token) => SingleOrDefaultOfAsync(items, token),
 			cancellationToken);
 	}
 
@@ -634,7 +617,7 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.FirstAsync(token).ConfigureAwait(false),
+			(items, token) => FirstOfAsync(items, token),
 			cancellationToken);
 	}
 
@@ -712,7 +695,136 @@ public static class MappedQueryExtensions
 		}
 
 		return query.ReadAsync(
-			async (items, token) => await items.SingleAsync(token).ConfigureAwait(false),
+			(items, token) => SingleOfAsync(items, token),
 			cancellationToken);
+	}
+
+	// The terminals below read a foreign IMappedQuery<T> through its handler. Each one enumerates with
+	// WithCancellation(token).ConfigureAwait(false): the in-box System.Linq.AsyncEnumerable methods await
+	// MoveNextAsync and DisposeAsync without ConfigureAwait(false), so they would resume on the caller's
+	// SynchronizationContext. The messages are those of LINQ.
+	static async ValueTask<List<T>> CollectListAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		var list = new List<T>();
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			list.Add(item);
+		}
+
+		return list;
+	}
+
+	static async ValueTask<T[]> CollectArrayAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		// A struct that owns a rented buffer: it goes back to the pool however the call ends.
+		var sink = new ArraySink<T>();
+		try
+		{
+			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+			{
+				sink.Add(item);
+			}
+
+			return sink.ToArray();
+		}
+		finally
+		{
+			sink.Dispose();
+		}
+	}
+
+	static async ValueTask<Dictionary<TKey, T>> CollectDictionaryAsync<T, TKey>(
+		IAsyncEnumerable<T> items,
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer,
+		CancellationToken token)
+		where TKey : notnull
+	{
+		var result = new Dictionary<TKey, T>(comparer);
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			result.Add(keySelector(item), item);
+		}
+
+		return result;
+	}
+
+	static async ValueTask<Dictionary<TKey, TValue>> CollectDictionaryAsync<T, TKey, TValue>(
+		IAsyncEnumerable<T> items,
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer,
+		CancellationToken token)
+		where TKey : notnull
+	{
+		var result = new Dictionary<TKey, TValue>(comparer);
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			result.Add(keySelector(item), valueSelector(item));
+		}
+
+		return result;
+	}
+
+	static async ValueTask<HashSet<T>> CollectHashSetAsync<T>(
+		IAsyncEnumerable<T> items,
+		IEqualityComparer<T>? comparer,
+		CancellationToken token)
+	{
+		var result = new HashSet<T>(comparer);
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			result.Add(item);
+		}
+
+		return result;
+	}
+
+	static async ValueTask<T?> FirstOrDefaultOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			return item;
+		}
+
+		return default;
+	}
+
+	static async ValueTask<T> FirstOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			return item;
+		}
+
+		throw new InvalidOperationException("Sequence contains no elements");
+	}
+
+	static async ValueTask<T?> SingleOrDefaultOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		T? found = default;
+		bool any = false;
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			if (any) throw new InvalidOperationException("Sequence contains more than one element");
+			found = item;
+			any = true;
+		}
+
+		return found;
+	}
+
+	static async ValueTask<T> SingleOfAsync<T>(IAsyncEnumerable<T> items, CancellationToken token)
+	{
+		T? found = default;
+		bool any = false;
+		await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
+		{
+			if (any) throw new InvalidOperationException("Sequence contains more than one element");
+			found = item;
+			any = true;
+		}
+
+		return any ? found! : throw new InvalidOperationException("Sequence contains no elements");
 	}
 }

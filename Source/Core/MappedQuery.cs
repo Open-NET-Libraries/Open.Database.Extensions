@@ -63,26 +63,6 @@ public static partial class CoreExtensions
 			: new MappedQuery<T>(Views.QueryCore(command, map));
 	}
 
-	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="mappings">The (property name, column name) pairs of a new <see cref="RowMap{T}"/>, built on every call; none reads by column name.</param>
-	[OverloadResolutionPriority(2)]
-	public static MappedQuery<T> Map<T>(
-		this IExecuteReader command,
-		params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
-		=> mappings.IsEmpty
-			? Map<T>(command)
-			: Map(command, RowMap<T>.From(mappings));
-
-	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)" path="/*[not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="mapping">The one (property name, column name) pair of a new <see cref="RowMap{T}"/>, built on every call.</param>
-	[OverloadResolutionPriority(3)]
-	public static MappedQuery<T> Map<T>(
-		this IExecuteReader command,
-		KeyValuePair<string, string?> mapping)
-		=> Map(command, new RowMap<T>(mapping));
-
 	/// <inheritdoc cref="Map{T}(IExecuteReader, RowMap{T}?)"/>
 	[OverloadResolutionPriority(4)]
 	public static MappedQuery<T> Map<T>(

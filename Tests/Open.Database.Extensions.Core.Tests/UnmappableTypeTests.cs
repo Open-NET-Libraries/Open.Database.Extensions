@@ -417,8 +417,8 @@ public static class UnmappableTypeTests
 		["SingleOrDefaultAsync<T>()"]
 			= async () => await Exec().SingleOrDefaultAsync<T>(),
 		["ToHashSetAsync<T>()"] = async () => await Exec().ToHashSetAsync<T>(),
-		["Map<T>(pair)"] = () => Run(() => Exec().Map<T>(new KeyValuePair<string, string?>("Id", "Id")).ToList()),
-		["Map<T>(pairs)"] = () => Run(() => Exec().Map<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name")).ToList()),
+		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
+		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
 
 		// Core: Results
 		["Results<T>(IDataReader)"] = () => Run(() => Reader().Results<T>()),

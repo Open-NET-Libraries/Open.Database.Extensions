@@ -38,7 +38,7 @@ public static class MappedQueryTests
 	public static void Map_PairsOverride_MapsRenamedColumns()
 	{
 		var cmd = new FakeExecuteReader(["first", "last"], ["Ada", "Lovelace"]);
-		Person p = cmd.Map<Person>(new("FirstName", "first"), new("LastName", "last")).ToList().Single();
+		Person p = cmd.Map(new RowMap<Person>(new("FirstName", "first"), new("LastName", "last"))).ToList().Single();
 		Assert.Equal("Ada", p.FirstName);
 		Assert.Equal("Lovelace", p.LastName);
 	}

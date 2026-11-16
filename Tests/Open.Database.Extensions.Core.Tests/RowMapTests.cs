@@ -284,12 +284,12 @@ public static class RowMapTests
 
 		long viaRowMap = BytesPerRead(() => renamed.Map(Plain).ToList());
 		long byName = BytesPerRead(() => matching.Map<Item>().ToList());
-		long perCall = BytesPerRead(() => renamed.Map<Item>(
+		long perCall = BytesPerRead(() => renamed.Map(new RowMap<Item>(
 			new(nameof(Item.Id), "item_id"),
 			new(nameof(Item.Name), "item_name"),
 			new(nameof(Item.Total), "item_total"),
 			new(nameof(Item.Note), "item_note")
-		).ToList());
+		)).ToList());
 
 		Assert.InRange(viaRowMap - byName, -16, 16);
 		Assert.True(perCall - byName > 100, $"Per-call overrides were expected to cost visibly more ({perCall} vs {byName} B); otherwise this test cannot tell the difference."); // the control
@@ -333,7 +333,7 @@ public static class RowMapTests
 		long declared = BytesPerRead(() => renamed.Map(Plain).ToList());
 		long callSite = BytesPerRead(() => renamed.Map(new RowMap<Item>(
 			new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList());
-		long pairs = BytesPerRead(() => renamed.Map<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")).ToList());
+		long pairs = BytesPerRead(() => renamed.Map(new RowMap<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList());
 
 		// If either form cached its map, it would cost about what the declared map costs.
 		Assert.True(callSite - declared > 5_000, $"A map written at the call site was expected to build a map and compile a reader on every call ({callSite} B against {declared} B through a declared map).");
@@ -360,10 +360,10 @@ public static class RowMapTests
 		// An ImmutableArray of pairs passed to the constructor at the call site is the same.
 		AssertItems(Cmd(Renamed, 2).Map(new RowMap<Item>(ItemPairs)).ToList(), 2);
 
-		// Pairs passed to Map<T> build a strict map too, and the exception names the `mappings` parameter.
-		AssertItems(Cmd(Renamed, 2).Map<Item>(
-			new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")).ToList(), 2);
-		var pairDuplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b")));
+		// The constructor's pairs-as-arguments form builds a strict map
+		// too, and the exception names the `mappings` parameter.
+		AssertItems(Cmd(Renamed, 2).Map(new RowMap<Item>(new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note"))).ToList(), 2);
+		var pairDuplicate = Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b"))));
 		Assert.Equal("mappings", pairDuplicate.ParamName);
 	}
 
@@ -372,10 +372,10 @@ public static class RowMapTests
 	{
 		// An unknown property is an error even with a null column ("Nope" is deliberately not a property), and so are a repeated property,
 		// an empty column name and two properties on one column.
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new("Nope", null)));
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b")));
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), ""), new(nameof(Item.Id), "x")));
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "X")));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new("Nope", null))));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b"))));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), ""), new(nameof(Item.Id), "x"))));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "X"))));
 	}
 
 	// The property side of a pair is matched exactly (ordinal); column names are matched ignoring case.
@@ -400,7 +400,7 @@ public static class RowMapTests
 	{
 		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => new RowMap<Item>([new("Nope", "x")])).ParamName);               // "Nope" is deliberately not a property
 		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => new RowMap<Item>([new(nameof(Item.Name), ""), new(nameof(Item.Id), "x")])).ParamName);
-		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "x"))).ParamName);
+		Assert.Equal("mappings", Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "x")))).ParamName);
 	}
 
 	// A default (uninitialized) ImmutableArray, like an empty span, just means no mappings: the map reads by column name.
