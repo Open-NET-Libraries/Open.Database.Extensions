@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 462" role="img" aria-labelledby="large-title large-desc">
+  <title id="large-title">Reading one 100 MB value: sync Read against ReadAsync</title>
+  <desc id="large-desc">Horizontal bars that start at zero, in seconds, for one row holding one 100 MB value over a 5 ms and 100 Mbit link, SQL Server, one run each. Sync Read on raw SqlClient with the Default behavior: 8.86 seconds. ReadAsync with Default on raw SqlClient: 48.0 seconds, 5.4 times the sync read. ReadAsync with SequentialAccess on raw SqlClient: 8.86 seconds. ODX Map of T with AsyncReads, which uses SequentialAccess: 8.86 seconds. ReadAsync with Default on raw SqlClient with both SqlClient compatibility switches off: 8.87 seconds. ODX Map of Func with AsyncReads, which uses Default, was not measured; it is inferred from the raw 48.0 second bar and is not drawn. The ODX Map of T bar was measured with the rc.5 name EnableAsyncRead(true).</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --def-fill: #ddf4ff;
+      --def-line: #0969da;
+      --opt-fill: #fbefff;
+      --opt-line: #8250df;
+      --cap-line: #8c959f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --def-fill: #0c2d6b;
+        --def-line: #58a6ff;
+        --opt-fill: #2d1b4e;
+        --opt-line: #bc8cff;
+        --cap-line: #8b949e;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 18px; font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .mid { text-anchor: middle; }
+    .def { fill: var(--def-fill); stroke: var(--def-line); stroke-width: 2; }
+    .opt { fill: var(--opt-fill); stroke: var(--opt-line); stroke-width: 2; }
+    .none { fill: none; stroke: var(--cap-line); stroke-width: 2; stroke-dasharray: 6 4; }
+    .axis { stroke: var(--cap-line); stroke-width: 1.5; }
+  </style>
+
+  <text class="title" x="12" y="26">Reading one 100 MB value</text>
+  <text class="muted" x="12" y="46">1 row, 1 value, seconds; every bar starts at zero</text>
+  <line class="axis" x1="270" y1="78" x2="270" y2="364"/>
+  <text class="mid muted" x="270" y="72">0 s</text>
+
+  <!-- Scale: 230 px = 48.015 s. -->
+  <text x="12" y="98">sync Read()</text>
+  <text class="muted" x="12" y="114">raw SqlClient, Default</text>
+  <rect class="def" x="270" y="82" width="42.5" height="28"/>
+  <text x="318.5" y="101">8.86 s</text>
+
+  <text x="12" y="148">ReadAsync, Default</text>
+  <text class="muted" x="12" y="164">raw SqlClient</text>
+  <rect class="opt" x="270" y="132" width="230" height="28"/>
+  <text x="506" y="151">48.0 s</text>
+
+  <text x="12" y="198">ReadAsync, SequentialAccess</text>
+  <text class="muted" x="12" y="214">raw SqlClient</text>
+  <rect class="opt" x="270" y="182" width="42.4" height="28"/>
+  <text x="318.4" y="201">8.86 s</text>
+
+  <text x="12" y="248">Map&lt;T&gt;() + AsyncReads()</text>
+  <text class="muted" x="12" y="264">ODX, SequentialAccess</text>
+  <rect class="opt" x="270" y="232" width="42.5" height="28"/>
+  <text x="318.5" y="251">8.86 s</text>
+
+  <text x="12" y="298">ReadAsync, Default, switches off</text>
+  <text class="muted" x="12" y="314">raw SqlClient, both switches off</text>
+  <rect class="opt" x="270" y="282" width="42.5" height="28"/>
+  <text x="318.5" y="301">8.87 s</text>
+
+  <text x="12" y="348">Map(Func) + AsyncReads()</text>
+  <text class="muted" x="12" y="364">ODX, Default</text>
+  <rect class="none" x="270" y="332" width="230" height="28"/>
+  <text class="mid" x="385" y="351">NOT MEASURED</text>
+
+  <text x="12" y="394">The 48.0 s bar is 5.4 times the 8.86 s bar.</text>
+  <text class="muted" x="12" y="416">Source: S4 run, SQL Server, 5 ms + 100 Mbit link; one run per bar, after a warm-up.</text>
+  <text class="muted" x="12" y="432">Raw SqlClient except the Map&lt;T&gt;() bar. ODX Map(Func) was not measured; it is</text>
+  <text class="muted" x="12" y="448">inferred from the raw 48.0 s bar. Map&lt;T&gt;() used the rc.5 name EnableAsyncRead(true).</text>
+</svg>

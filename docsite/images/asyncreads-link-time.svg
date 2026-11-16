@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 440" role="img" aria-labelledby="link-title link-desc">
+  <title id="link-title">Wall time on a real link: the link is the bottleneck</title>
+  <desc id="link-desc">Two panels, each a pair of bars that start at zero, in milliseconds per operation over a 5 ms and 100 Mbit link to SQL Server, 10,000 rows, one run. Left bar: the synchronous read, ODX Map of T ToList. Right bar: raw SqlClient with Default and ReadAsync and synchronous getters, no ODX. Scenario S2: 537.5 against 540.7 milliseconds, 0.6 percent apart. Scenario S3, the larger scenario in the same run: 6,759.7 against 6,757.4 milliseconds, 0.03 percent apart. The two bars of each pair are the same height to within the line width: the link, not the way the rows are read, sets the time.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --def-fill: #ddf4ff;
+      --def-line: #0969da;
+      --opt-fill: #fbefff;
+      --opt-line: #8250df;
+      --cap-line: #8c959f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --def-fill: #0c2d6b;
+        --def-line: #58a6ff;
+        --opt-fill: #2d1b4e;
+        --opt-line: #bc8cff;
+        --cap-line: #8b949e;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 18px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .mid { text-anchor: middle; }
+    .delta { font-size: 15px; font-weight: 600; }
+    .panel { fill: none; stroke: var(--cap-line); stroke-width: 1; }
+    .base { stroke: var(--cap-line); stroke-width: 1.5; }
+    .def { fill: var(--def-fill); stroke: var(--def-line); stroke-width: 2; }
+    .opt { fill: var(--opt-fill); stroke: var(--opt-line); stroke-width: 2; }
+  </style>
+
+  <text class="title" x="16" y="28">Wall time on a real link</text>
+
+  <!-- Panel S2: scale 140 = 540.7 ms. -->
+  <rect class="panel" x="16" y="42" width="270" height="290" rx="8"/>
+  <text class="head mid" x="151" y="64">S2, 10,000 rows</text>
+  <text class="mid muted" x="151" y="81">ms per operation</text>
+  <rect class="def" x="46" y="130.8" width="80" height="139.2"/>
+  <rect class="opt" x="176" y="130" width="80" height="140"/>
+  <text class="mid" x="86" y="124.8">537.5</text>
+  <text class="mid" x="216" y="124">540.7</text>
+  <line class="base" x1="26" y1="270" x2="276" y2="270"/>
+  <text class="mid" x="86" y="288">sync, ODX</text>
+  <text class="mid" x="86" y="304">Map&lt;T&gt;().ToList()</text>
+  <text class="mid" x="216" y="288">raw SqlClient</text>
+  <text class="mid" x="216" y="304">Default + ReadAsync</text>
+  <text class="delta mid" x="151" y="324">0.6% apart</text>
+
+  <!-- Panel S3: scale 140 = 6,759.7 ms. -->
+  <rect class="panel" x="314" y="42" width="270" height="290" rx="8"/>
+  <text class="head mid" x="449" y="64">S3, 10,000 rows, larger</text>
+  <text class="mid muted" x="449" y="81">ms per operation</text>
+  <rect class="def" x="344" y="130" width="80" height="140"/>
+  <rect class="opt" x="474" y="130.1" width="80" height="139.9"/>
+  <text class="mid" x="384" y="124">6,759.7</text>
+  <text class="mid" x="514" y="124.1">6,757.4</text>
+  <line class="base" x1="324" y1="270" x2="574" y2="270"/>
+  <text class="mid" x="384" y="288">sync, ODX</text>
+  <text class="mid" x="384" y="304">Map&lt;T&gt;().ToList()</text>
+  <text class="mid" x="514" y="288">raw SqlClient</text>
+  <text class="mid" x="514" y="304">Default + ReadAsync</text>
+  <text class="delta mid" x="449" y="324">0.03% apart</text>
+
+  <text x="16" y="358">Left bar: the synchronous read. Right bar: raw SqlClient, ReadAsync, no ODX.</text>
+  <text x="16" y="376">Every bar starts at zero; each panel has its own scale. Over this link the</text>
+  <text x="16" y="394">link, not the read, sets the time.</text>
+  <text class="muted" x="16" y="418">Source: P4-P6 run, SQL Server, 5 ms + 100 Mbit link, 3 operations after a warm-up; one run.</text>
+  <text class="muted" x="16" y="434">S3 is the larger scenario in the same run. The right bar is not an ODX opt-in.</text>
+</svg>

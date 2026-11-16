@@ -331,6 +331,57 @@ Check(dictBefore.Length > 0 && dictBefore == dictAfter && dictBeforeAsync == dic
 (resultsBefore, resultsAfter) = Deprecated.DequeueAs(connection);
 Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Retrieve().DequeueAs<T>() and Map<T>().ToList() return the same rows");
 
+// AsyncReads(): the rows are the same as with the default.
+// SQLite cannot show which read was used;
+// AsyncReadsTests in the Core tests pins that.
+Db.Seed();
+string readDefault = Describe(
+	await AsyncReads.DefaultAsync(connection, CancellationToken.None));
+string readOptIn = Describe(
+	await AsyncReads.OptInAsync(connection, CancellationToken.None));
+Check(
+	readDefault == "1:Post 1|2:Post 2|3:Post 3|4:Post 4|5:Post 5"
+		&& readDefault == readOptIn,
+	"the default and AsyncReads() return the same five posts");
+Check(
+	Describe(
+		await AsyncReads.ViewAsync(connection, CancellationToken.None))
+		== readOptIn,
+	"AsyncReads() after Map<T>() returns the rows the command form does");
+Check(
+	Describe(
+		await AsyncReads.DbCommandAsync(connection, CancellationToken.None))
+		== readOptIn,
+	"AsyncReads() on a plain IDbCommand's mapped view returns the same rows");
+string titlesOptIn = string.Join(
+	"|",
+	await AsyncReads.FuncAsync(connection, CancellationToken.None));
+string titlesDefault = string.Join(
+	"|",
+	await connection
+		.Command("select title from posts order by id")
+		.Map(static record
+			=> record.GetString(0))
+		.ToListAsync(CancellationToken.None));
+Check(
+	titlesDefault == "Post 1|Post 2|Post 3|Post 4|Post 5"
+		&& titlesDefault == titlesOptIn,
+	"Map(Func) with and without AsyncReads() return the same titles");
+(List<Post> skipBefore, List<Post> skipAfter)
+	= await AsyncReads.OrderAsync(connection, CancellationToken.None);
+Check(
+	Describe(skipBefore) == "2:Post 2|3:Post 3"
+		&& Describe(skipAfter) == Describe(skipBefore),
+	"AsyncReads() before or after Skip(1).Take(2) returns posts 2 and 3");
+Check(
+	Describe(
+		connection
+			.Command("select * from posts order by id")
+			.AsyncReads()
+			.Map<Post>()
+			.ToList()) == readDefault,
+	"a synchronous terminal after AsyncReads() returns the same rows");
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
@@ -346,3 +397,8 @@ static bool Throws<TException>(Action action) where TException : Exception
 		return true;
 	}
 }
+
+static string Describe(IEnumerable<Post> posts)
+	=> string.Join(
+		"|",
+		posts.Select(static p => $"{p.Id}:{p.Title}"));

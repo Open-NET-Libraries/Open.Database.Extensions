@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-labelledby="cost-title cost-desc">
+  <title id="cost-title">What AsyncReads() costs, next to the default</title>
+  <desc id="cost-desc">Four panels, each a pair of bars that start at zero: the default, which reads rows with Read, on the left, and AsyncReads, which reads them with ReadAsync, on the right. Panel a, CPU of Map of T over a synthetic provider at width 5: 28.92 against 32.30 microseconds per 1,000 rows, 11.7 percent more. Panel b, the same at width 20: 80.92 against 82.34 microseconds, 1.8 percent more; in a and b every ReadAsync completes at once, so the figure is the async state machine alone. Panel c, memory of Map of Func over SQL Server, 10,000 rows, width 20: 9,713 against 16,812 KB, 73.1 percent more, with equal time of 538.3 against 538.2 milliseconds. Panel d, memory of Map of T in the same run: 9,709 against 9,743 KB, 0.35 percent more, equal. Panels c and d share one scale. Every number is from one run; the runs used the rc.5 name EnableAsyncRead(true), the same read as AsyncReads().</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --def-fill: #ddf4ff;
+      --def-line: #0969da;
+      --opt-fill: #fbefff;
+      --opt-line: #8250df;
+      --cap-line: #8c959f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --def-fill: #0c2d6b;
+        --def-line: #58a6ff;
+        --opt-fill: #2d1b4e;
+        --opt-line: #bc8cff;
+        --cap-line: #8b949e;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 18px; font-weight: 600; }
+    .head { font-size: 13px; font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .delta { font-size: 15px; font-weight: 600; }
+    .panel { fill: none; stroke: var(--cap-line); stroke-width: 1; }
+    .base { stroke: var(--cap-line); stroke-width: 1.5; }
+    .def { fill: var(--def-fill); stroke: var(--def-line); stroke-width: 2; }
+    .opt { fill: var(--opt-fill); stroke: var(--opt-line); stroke-width: 2; }
+    .mid { text-anchor: middle; }
+  </style>
+
+  <text class="title" x="16" y="28">What AsyncReads() costs, next to the default</text>
+
+  <!-- Panel a: x 16..146. Scale 140 = 32.30 us. -->
+  <rect class="panel" x="16" y="42" width="130" height="320" rx="8"/>
+  <text class="head mid" x="81" y="62">(a) Map&lt;T&gt;()</text>
+  <text class="mid muted" x="81" y="79">CPU, width 5</text>
+  <text class="mid muted" x="81" y="96">us per 1,000 rows</text>
+  <rect class="def" x="24" y="144.7" width="50" height="125.3"/>
+  <rect class="opt" x="88" y="130" width="50" height="140"/>
+  <text class="mid" x="49" y="138.7">28.92</text>
+  <text class="mid" x="113" y="124">32.30</text>
+  <line class="base" x1="20" y1="270" x2="142" y2="270"/>
+  <text class="mid" x="49" y="288">default</text>
+  <text class="mid" x="113" y="288">opt-in</text>
+  <text class="delta mid" x="81" y="314">+11.7%</text>
+  <text class="mid muted" x="81" y="334">every ReadAsync</text>
+  <text class="mid muted" x="81" y="350">completes at once</text>
+
+  <!-- Panel b: x 162..292. Scale 140 = 82.34 us. -->
+  <rect class="panel" x="162" y="42" width="130" height="320" rx="8"/>
+  <text class="head mid" x="227" y="62">(b) Map&lt;T&gt;()</text>
+  <text class="mid muted" x="227" y="79">CPU, width 20</text>
+  <text class="mid muted" x="227" y="96">us per 1,000 rows</text>
+  <rect class="def" x="170" y="132.4" width="50" height="137.6"/>
+  <rect class="opt" x="234" y="130" width="50" height="140"/>
+  <text class="mid" x="195" y="126.4">80.92</text>
+  <text class="mid" x="259" y="124">82.34</text>
+  <line class="base" x1="166" y1="270" x2="288" y2="270"/>
+  <text class="mid" x="195" y="288">default</text>
+  <text class="mid" x="259" y="288">opt-in</text>
+  <text class="delta mid" x="227" y="314">+1.8%</text>
+  <text class="mid muted" x="227" y="334">every ReadAsync</text>
+  <text class="mid muted" x="227" y="350">completes at once</text>
+
+  <!-- Panels c and d: one scale, 140 = 16,812 KB. -->
+  <rect class="panel" x="308" y="42" width="130" height="320" rx="8"/>
+  <text class="head mid" x="373" y="62">(c) Map(Func)</text>
+  <text class="mid muted" x="373" y="79">memory, width 20</text>
+  <text class="mid muted" x="373" y="96">KB per operation</text>
+  <rect class="def" x="316" y="189.1" width="50" height="80.9"/>
+  <rect class="opt" x="380" y="130" width="50" height="140"/>
+  <text class="mid" x="341" y="183.1">9,713</text>
+  <text class="mid" x="405" y="124">16,812</text>
+  <line class="base" x1="312" y1="270" x2="434" y2="270"/>
+  <text class="mid" x="341" y="288">default</text>
+  <text class="mid" x="405" y="288">opt-in</text>
+  <text class="delta mid" x="373" y="314">+73.1%</text>
+  <text class="mid muted" x="373" y="334">time 538.3 vs</text>
+  <text class="mid muted" x="373" y="350">538.2 ms: equal</text>
+
+  <rect class="panel" x="454" y="42" width="130" height="320" rx="8"/>
+  <text class="head mid" x="519" y="62">(d) Map&lt;T&gt;()</text>
+  <text class="mid muted" x="519" y="79">memory, width 20</text>
+  <text class="mid muted" x="519" y="96">KB per operation</text>
+  <rect class="def" x="462" y="189.1" width="50" height="80.9"/>
+  <rect class="opt" x="526" y="188.9" width="50" height="81.1"/>
+  <text class="mid" x="487" y="183.1">9,709</text>
+  <text class="mid" x="551" y="182.9">9,743</text>
+  <line class="base" x1="458" y1="270" x2="580" y2="270"/>
+  <text class="mid" x="487" y="288">default</text>
+  <text class="mid" x="551" y="288">opt-in</text>
+  <text class="delta mid" x="519" y="314">+0.35%</text>
+  <text class="mid muted" x="519" y="334">time 538.3 vs</text>
+  <text class="mid muted" x="519" y="350">538.2 ms: equal</text>
+
+  <text x="16" y="386">Left bar: the default, Read(). Right bar, opt-in: AsyncReads() (ReadAsync).</text>
+  <text x="16" y="404">Every bar starts at zero. Panels a and b have their own scales; c and d share one.</text>
+  <text class="muted" x="16" y="424">Source: (a), (b) synthetic provider, no refill; (c), (d) SQL Server, 5 ms + 100 Mbit link,</text>
+  <text class="muted" x="16" y="440">10,000 rows. One run each, taken with the rc.5 name EnableAsyncRead(true).</text>
+</svg>
