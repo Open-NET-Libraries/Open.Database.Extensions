@@ -4,33 +4,36 @@
   <style>
     :root {
       --ink: #1f2328;
+      --bg: #ffffff;
+      --frame: #d0d7de;
       --muted: #4b5563;
-      --def-fill: #ddf4ff;
       --def-line: #0969da;
-      --opt-fill: #fbefff;
       --opt-line: #8250df;
       --cap-line: #8c959f;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --ink: #e6edf3;
+        --bg: #0d1117;
+        --frame: #30363d;
         --muted: #b1bac4;
-        --def-fill: #0c2d6b;
         --def-line: #58a6ff;
-        --opt-fill: #2d1b4e;
         --opt-line: #bc8cff;
         --cap-line: #8b949e;
       }
     }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
     .title { font-size: 18px; font-weight: 600; }
     .muted { fill: var(--muted); }
     .mid { text-anchor: middle; }
-    .def { fill: var(--def-fill); stroke: var(--def-line); stroke-width: 2; }
-    .opt { fill: var(--opt-fill); stroke: var(--opt-line); stroke-width: 2; }
+    .def { fill: var(--def-line); }
+    .opt { fill: var(--opt-line); }
     .none { fill: none; stroke: var(--cap-line); stroke-width: 2; stroke-dasharray: 6 4; }
     .axis { stroke: var(--cap-line); stroke-width: 1.5; }
   </style>
+
+  <rect class="frame" x="0.5" y="0.5" width="599" height="461" rx="8"/>
 
   <text class="title" x="12" y="26">Reading one 100 MB value</text>
   <text class="muted" x="12" y="46">1 row, 1 value, seconds; every bar starts at zero</text>
@@ -40,27 +43,27 @@
   <!-- Scale: 230 px = 48.015 s. -->
   <text x="12" y="98">sync Read()</text>
   <text class="muted" x="12" y="114">raw SqlClient, Default</text>
-  <rect class="def" x="270" y="82" width="42.5" height="28"/>
+  <rect class="def" x="270" y="82" width="42.5" height="28" rx="4"/>
   <text x="318.5" y="101">8.86 s</text>
 
   <text x="12" y="148">ReadAsync, Default</text>
   <text class="muted" x="12" y="164">raw SqlClient</text>
-  <rect class="opt" x="270" y="132" width="230" height="28"/>
+  <rect class="opt" x="270" y="132" width="230" height="28" rx="4"/>
   <text x="506" y="151">48.0 s</text>
 
   <text x="12" y="198">ReadAsync, SequentialAccess</text>
   <text class="muted" x="12" y="214">raw SqlClient</text>
-  <rect class="opt" x="270" y="182" width="42.4" height="28"/>
+  <rect class="opt" x="270" y="182" width="42.4" height="28" rx="4"/>
   <text x="318.4" y="201">8.86 s</text>
 
   <text x="12" y="248">Map&lt;T&gt;() + AsyncReads()</text>
   <text class="muted" x="12" y="264">ODX, SequentialAccess</text>
-  <rect class="opt" x="270" y="232" width="42.5" height="28"/>
+  <rect class="opt" x="270" y="232" width="42.5" height="28" rx="4"/>
   <text x="318.5" y="251">8.86 s</text>
 
   <text x="12" y="298">ReadAsync, Default, switches off</text>
   <text class="muted" x="12" y="314">raw SqlClient, both switches off</text>
-  <rect class="opt" x="270" y="282" width="42.5" height="28"/>
+  <rect class="opt" x="270" y="282" width="42.5" height="28" rx="4"/>
   <text x="318.5" y="301">8.87 s</text>
 
   <text x="12" y="348">Map(Func) + AsyncReads()</text>

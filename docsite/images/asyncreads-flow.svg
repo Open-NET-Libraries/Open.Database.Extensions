@@ -4,6 +4,8 @@
   <style>
     :root {
       --ink: #1f2328;
+      --bg: #ffffff;
+      --frame: #d0d7de;
       --muted: #4b5563;
       --run-fill: #ddf4ff;
       --run-line: #0969da;
@@ -15,6 +17,8 @@
     @media (prefers-color-scheme: dark) {
       :root {
         --ink: #e6edf3;
+        --bg: #0d1117;
+        --frame: #30363d;
         --muted: #b1bac4;
         --run-fill: #0c2d6b;
         --run-line: #58a6ff;
@@ -24,6 +28,7 @@
         --free-line: #8b949e;
       }
     }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
     .title { font-size: 18px; font-weight: 600; }
     .lane { font-size: 15px; font-weight: 600; }
@@ -34,6 +39,8 @@
     .hatch-bg { fill: var(--block-fill); }
     .hatch-line { stroke: var(--block-line); stroke-width: 3; opacity: 0.35; }
   </style>
+
+  <rect class="frame" x="0.5" y="0.5" width="599" height="335" rx="8"/>
   <defs>
     <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect class="hatch-bg" width="8" height="8"/>

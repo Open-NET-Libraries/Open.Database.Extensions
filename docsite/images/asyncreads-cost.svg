@@ -4,24 +4,25 @@
   <style>
     :root {
       --ink: #1f2328;
+      --bg: #ffffff;
+      --frame: #d0d7de;
       --muted: #4b5563;
-      --def-fill: #ddf4ff;
       --def-line: #0969da;
-      --opt-fill: #fbefff;
       --opt-line: #8250df;
       --cap-line: #8c959f;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --ink: #e6edf3;
+        --bg: #0d1117;
+        --frame: #30363d;
         --muted: #b1bac4;
-        --def-fill: #0c2d6b;
         --def-line: #58a6ff;
-        --opt-fill: #2d1b4e;
         --opt-line: #bc8cff;
         --cap-line: #8b949e;
       }
     }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
     .title { font-size: 18px; font-weight: 600; }
     .head { font-size: 13px; font-weight: 600; }
@@ -29,10 +30,12 @@
     .delta { font-size: 15px; font-weight: 600; }
     .panel { fill: none; stroke: var(--cap-line); stroke-width: 1; }
     .base { stroke: var(--cap-line); stroke-width: 1.5; }
-    .def { fill: var(--def-fill); stroke: var(--def-line); stroke-width: 2; }
-    .opt { fill: var(--opt-fill); stroke: var(--opt-line); stroke-width: 2; }
+    .def { fill: var(--def-line); }
+    .opt { fill: var(--opt-line); }
     .mid { text-anchor: middle; }
   </style>
+
+  <rect class="frame" x="0.5" y="0.5" width="599" height="449" rx="8"/>
 
   <text class="title" x="16" y="28">What AsyncReads() costs, next to the default</text>
 
@@ -41,8 +44,8 @@
   <text class="head mid" x="81" y="62">(a) Map&lt;T&gt;()</text>
   <text class="mid muted" x="81" y="79">CPU, width 5</text>
   <text class="mid muted" x="81" y="96">us per 1,000 rows</text>
-  <rect class="def" x="24" y="144.7" width="50" height="125.3"/>
-  <rect class="opt" x="88" y="130" width="50" height="140"/>
+  <rect class="def" x="24" y="144.7" width="50" height="125.3" rx="4"/>
+  <rect class="opt" x="88" y="130" width="50" height="140" rx="4"/>
   <text class="mid" x="49" y="138.7">28.92</text>
   <text class="mid" x="113" y="124">32.30</text>
   <line class="base" x1="20" y1="270" x2="142" y2="270"/>
@@ -57,8 +60,8 @@
   <text class="head mid" x="227" y="62">(b) Map&lt;T&gt;()</text>
   <text class="mid muted" x="227" y="79">CPU, width 20</text>
   <text class="mid muted" x="227" y="96">us per 1,000 rows</text>
-  <rect class="def" x="170" y="132.4" width="50" height="137.6"/>
-  <rect class="opt" x="234" y="130" width="50" height="140"/>
+  <rect class="def" x="170" y="132.4" width="50" height="137.6" rx="4"/>
+  <rect class="opt" x="234" y="130" width="50" height="140" rx="4"/>
   <text class="mid" x="195" y="126.4">80.92</text>
   <text class="mid" x="259" y="124">82.34</text>
   <line class="base" x1="166" y1="270" x2="288" y2="270"/>
@@ -73,8 +76,8 @@
   <text class="head mid" x="373" y="62">(c) Map(Func)</text>
   <text class="mid muted" x="373" y="79">memory, width 20</text>
   <text class="mid muted" x="373" y="96">KB per operation</text>
-  <rect class="def" x="316" y="189.1" width="50" height="80.9"/>
-  <rect class="opt" x="380" y="130" width="50" height="140"/>
+  <rect class="def" x="316" y="189.1" width="50" height="80.9" rx="4"/>
+  <rect class="opt" x="380" y="130" width="50" height="140" rx="4"/>
   <text class="mid" x="341" y="183.1">9,713</text>
   <text class="mid" x="405" y="124">16,812</text>
   <line class="base" x1="312" y1="270" x2="434" y2="270"/>
@@ -88,8 +91,8 @@
   <text class="head mid" x="519" y="62">(d) Map&lt;T&gt;()</text>
   <text class="mid muted" x="519" y="79">memory, width 20</text>
   <text class="mid muted" x="519" y="96">KB per operation</text>
-  <rect class="def" x="462" y="189.1" width="50" height="80.9"/>
-  <rect class="opt" x="526" y="188.9" width="50" height="81.1"/>
+  <rect class="def" x="462" y="189.1" width="50" height="80.9" rx="4"/>
+  <rect class="opt" x="526" y="188.9" width="50" height="81.1" rx="4"/>
   <text class="mid" x="487" y="183.1">9,709</text>
   <text class="mid" x="551" y="182.9">9,743</text>
   <line class="base" x1="458" y1="270" x2="580" y2="270"/>
