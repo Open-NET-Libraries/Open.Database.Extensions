@@ -150,8 +150,8 @@ var lazyIds = connection.Command("select * from posts order by id").Map(record =
 	return record.GetInt32(0);
 });
 Check(projected == 0, "Map(selector) runs nothing until a terminal runs");
-Check(lazyIds.ToList().Count == 5 && projected == 5, "the selector runs once per row");
-Check(lazyIds.FirstOrDefault() == 1 && projected == 6, "a terminal that stops early maps only the rows it reads, and runs the command again");
+Check((await lazyIds.ToListAsync(CancellationToken.None)).Count == 5 && projected == 5, "the selector runs once per row");
+Check(await lazyIds.FirstOrDefaultAsync(CancellationToken.None) == 1 && projected == 6, "a terminal that stops early maps only the rows it reads, and runs the command again");
 Dictionary<int, string> bodiesById = await Mapping.BodiesByIdAsync(connection, CancellationToken.None);
 Check(bodiesById.Count == 5 && bodiesById[1] == "Body 1" && bodiesById[2] == "", "ToDictionaryAsync with a value selector keeps only the value (NULL as empty text)");
 Check(connection.Command("select * from posts order by id").Map<Post>().First().Id == 1, "First returns the first of several rows");

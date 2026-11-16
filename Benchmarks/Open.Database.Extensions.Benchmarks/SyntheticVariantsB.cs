@@ -127,17 +127,29 @@ public static class SyntheticVariantsB
 			return SynItem.Massage(SynItem.From(row), width);
 		};
 
-	// ---- the Select replacement (route a of the A2 migration line) ----------------------------------------------------------------
-	// IMappedQuery<T>.Select is removed. A consumer who shaped each row with a Select now gives Map a factory map: the row is built straight into the result
-	// type, with ONE object per row and no intermediate row object. The factory runs inside the read loop, like the Select selector did (so it pays the pace).
-	// A consumer holds the map in a static field, so the maps are cached here (per pace, and per width for the massaged form) and the plan is built once.
-	// Every parameter has a default: at a narrow catalog width the missing columns keep the member's default, as a SynRow member did.
+	// ---- the Select replacement (route a of the A2 migration line) ----
+	// IMappedQuery<T>.Select is removed. A consumer who shaped each row
+	// with a Select now gives Map a factory map: the row is built
+	// straight into the result type, with ONE object per row and no
+	// intermediate row object. The factory runs inside the read loop,
+	// like the Select selector did (so it pays the pace).
+	// A consumer holds the map in a static field, so the maps are
+	// cached here (per pace, and per width for the massaged form) and
+	// the plan is built once.
+	// Every parameter has a default: at a narrow catalog width the
+	// missing columns keep the member's default, as a SynRow member did.
 	static readonly ConcurrentDictionary<long, RowMap<SynItem>> ItemMaps = new();
 
-	/// <summary>The factory map to <see cref="SynItem"/>: the V3 shape (the conversion runs while the reader is open, one object per row).</summary>
+	/// <summary>
+	/// The factory map to <see cref="SynItem"/>: the V3 shape (the
+	/// conversion runs while the reader is open, one object per row).
+	/// </summary>
 	public static RowMap<SynItem> ItemMap(int pace) => ItemMaps.GetOrAdd(pace, static key => BuildItemMap((int)key, 0, false));
 
-	/// <summary>The same with the V6 massage applied for <paramref name="width"/> (the V6c shape).</summary>
+	/// <summary>
+	/// The same with the V6 massage applied for
+	/// <paramref name="width"/> (the V6c shape).
+	/// </summary>
 	public static RowMap<SynItem> MassagedItemMap(int width, int pace)
 		=> ItemMaps.GetOrAdd(((long)(width + 1) << 32) | (uint)pace, static key => BuildItemMap((int)(uint)key, (int)(key >> 32) - 1, true));
 
@@ -191,14 +203,19 @@ public static class SyntheticVariantsB
 			return massage ? SynItem.Massage(item, width) : item;
 		});
 
-	// ---- V3: a factory map straight to the domain object, built while the reader is open (the Select migration target; one object per row) ----------------------------------------------------------------
+	// ---- V3: a factory map straight to the domain object ----
+	// Built while the reader is open: the Select migration target,
+	// one object per row.
 	public static List<SynItem> V3(SyntheticConnection connection, int pace)
 		=> connection.Command(Sql).Map(ItemMap(pace)).ToList();
 
 	public static ValueTask<List<SynItem>> V3Async(SyntheticConnection connection, int pace)
 		=> connection.Command(Sql).Map(ItemMap(pace)).ToListAsync();
 
-	/// <summary>V3s: the same factory map streamed through the library's IAsyncEnumerable terminal; the pace is paid in the consumer's loop.</summary>
+	/// <summary>
+	/// V3s: the same factory map streamed through the library's
+	/// IAsyncEnumerable terminal; the pace is paid in the consumer's loop.
+	/// </summary>
 	public static ValueTask<List<SynItem>> V3s(SyntheticConnection connection, int pace)
 		=> connection.Command(Sql).Map(ItemMap(0)).ReadAsync<SynItem, List<SynItem>>(async rows =>
 		{
@@ -214,7 +231,10 @@ public static class SyntheticVariantsB
 
 	// ---- V4: the intermediate row reused or pooled ----------------------------------------------------------------
 	// Map<Row>() always allocates a new Row (there is no overload that fills a given instance), so the reuse is built where a caller can build it:
-	// the Map(Func<IDataRecord, T>) selector fills a held instance and returns it, and the conversion consumes it in the same selector, before the next row is read (the Select migration target for Map(selector).Select(f): Map(record => f(selector(record)))).
+	// the Map(Func<IDataRecord, T>) selector fills a held instance and
+	// returns it, and the conversion consumes it in the same selector,
+	// before the next row is read (the Select migration target for
+	// Map(selector).Select(f): Map(record => f(selector(record)))).
 	sealed class Reuse(Action<IDataRecord, SynRow> fill)
 	{
 		readonly SynRow _row = new();
@@ -265,7 +285,10 @@ public static class SyntheticVariantsB
 		return connection.Command(Sql).Map(record => inline(selector(record))).ToListAsync();
 	}
 
-	/// <summary>V4b: a small pool; the conversion returns the row to the pool once it has converted it.</summary>
+	/// <summary>
+	/// V4b: a small pool; the conversion returns the row to the pool
+	/// once it has converted it.
+	/// </summary>
 	public static List<SynItem> V4b(SyntheticConnection connection, int width, int pace)
 	{
 		var pool = new RowPool();
@@ -308,7 +331,10 @@ public static class SyntheticVariantsB
 
 	// V6b: RESERVED for DS1a (the spike's candidate). Intentionally empty: no code until DS1a delivers it.
 
-	/// <summary>V6c: the massage inside the factory map, while the reader is open (the V3 shape).</summary>
+	/// <summary>
+	/// V6c: the massage inside the factory map, while the reader is open
+	/// (the V3 shape).
+	/// </summary>
 	public static List<SynItem> V6c(SyntheticConnection connection, int width, int pace)
 		=> connection.Command(Sql).Map(MassagedItemMap(width, pace)).ToList();
 

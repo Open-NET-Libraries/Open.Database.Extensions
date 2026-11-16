@@ -523,10 +523,12 @@ public static class HoldingAMap
 public static class PostQueries
 {
 	#region map_query_factory
-	// The factory map shapes each row straight into the result type.
-	// Nothing runs here: the command runs once for each terminal the caller picks.
+	// The factory map shapes each row
+	// straight into the result type.
+	// Nothing runs here: the command runs once
+	// for each terminal the caller picks.
 	static readonly RowMap<PostSummary> Summary = RowMap<PostSummary>.From(
-		(int id, string title) => new PostSummary(id, title));
+		static (int id, string title) => new PostSummary(id, title));
 
 	public static MappedQuery<PostSummary> ByAuthor(
 		IDbConnectionFactory<SqliteConnection> factory,

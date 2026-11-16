@@ -291,6 +291,10 @@ When the rules are not enough, `Map(Func<IDataRecord, T>)` runs your function fo
 
 A mapped query has no `Select`: to shape each row into another type, give `Map` a factory map (`Map(RowMap<TResult>.From(factory))`), or project the list a terminal returns.
 
+A data class can return the mapped query and let each caller pick the terminal:
+
+[!code-csharp[](../samples/Mapping.cs#map_query_factory)]
+
 ## Results, and a failure after the first one
 
 A *result* here is one whole result set: what `NextResult` moves between. It is never a row (this library's `Results<T>()` means rows).

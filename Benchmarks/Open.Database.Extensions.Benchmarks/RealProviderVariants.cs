@@ -13,7 +13,11 @@ namespace Open.Database.Extensions.Benchmarks;
 //
 //   V1   Command(sql).Map<SynRow>().ToList()                       the compiled plan
 //   V2   Command(sql).Map(Func<IDataRecord,SynRow>).ToList()       the shipped selector recipe (typed getters through IDataRecord)
-//   V3   Command(sql).Map(SyntheticVariantsB.ItemMap(0)).ToList()  the consumer's pattern AFTER A2 (IMappedQuery<T>.Select is removed): a factory map straight to the domain object, one object per row; this is what the A2 migration line tells a consumer who shaped rows with Select to write
+//   V3   Command(sql).Map(SyntheticVariantsB.ItemMap(0)).ToList()
+//        the consumer's pattern after A2 (Select is removed): a
+//        factory map straight to the domain object, one object
+//        per row; the A2 migration line tells a consumer who
+//        shaped rows with Select to write this
 //   V7   Dapper 2.1.89  connection.Query<SynRow>(sql).AsList()
 //   V7a  the same call through Dapper.AOT 1.1.0's interceptor (RealProviderDapperAot.cs, the only class with [DapperAot])
 //   V9c  the typed-getter ceiling: a hand loop with typed getters on the CONCRETE reader (SqlDataReader or SqliteDataReader), constant ordinals,
@@ -37,7 +41,12 @@ public static class RealProviderVariants
 
 	public static List<SynRow> V2(DbConnection connection, Func<IDataRecord, SynRow> selector) => connection.Command(Sql).Map(selector).ToList();
 
-	/// <summary>V3, the consumer's pattern after A2: <c>Select</c> on a mapped query is removed, so the consumer shapes the row with a factory map (one object per row, built while the reader is open). The old two-object form is the V5 shape (project after the close).</summary>
+	/// <summary>
+	/// V3, the consumer's pattern after A2: <c>Select</c> on a mapped
+	/// query is removed, so the consumer shapes the row with a factory
+	/// map (one object per row, built while the reader is open).
+	/// The old two-object form is the V5 shape (project after the close).
+	/// </summary>
 	public static List<SynItem> V3(DbConnection connection) => connection.Command(Sql).Map(SyntheticVariantsB.ItemMap(0)).ToList();
 
 	public static List<SynRow> V7(DbConnection connection) => connection.Query<SynRow>(Sql).AsList();

@@ -1,7 +1,10 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Terminal operations for <see cref="IMappedQuery{T}"/>: they materialize the mapped rows into a collection or take a single row. <see cref="MappedQuery{T}"/> and its skip and take variants expose the same operations directly.
+/// Terminal operations for <see cref="IMappedQuery{T}"/>: they
+/// materialize the mapped rows into a collection or take a single row.
+/// <see cref="MappedQuery{T}"/> and its skip and take variants expose
+/// the same operations directly.
 /// </summary>
 /// <remarks>
 /// <para>
