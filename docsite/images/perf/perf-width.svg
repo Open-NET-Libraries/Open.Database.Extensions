@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 380" role="img" aria-labelledby="width-title width-desc">
+  <title id="width-title">Cost grows with the number of columns</title>
+  <desc id="width-desc">A line chart of total time per call, in microseconds, against 1 to 20 columns, 1,000 rows, five approaches with labels at the line ends; the axis starts at zero. Hand-written selector: 1 columns 10.7 µs, 3 columns 11.9 µs, 5 columns 16.8 µs, 10 columns 31.2 µs, 20 columns 47.0 µs. RowMap plan: 1 columns 12.4 µs, 3 columns 18.3 µs, 5 columns 25.2 µs, 10 columns 49.1 µs, 20 columns 81.7 µs. Row class + Select: 1 columns 28.3 µs, 3 columns 32.4 µs, 5 columns 41.4 µs, 10 columns 67.2 µs, 20 columns 106.7 µs. object[] rows: 1 columns 9.5 µs, 3 columns 20.0 µs, 5 columns 35.9 µs, 10 columns 75.7 µs, 20 columns 178.5 µs. Dapper: 1 columns 18.5 µs, 3 columns 31.1 µs, 5 columns 44.6 µs, 10 columns 96.2 µs, 20 columns 202.7 µs.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-fill: #ddf4ff;
+      --one-line: #0969da;
+      --select-fill: #dafbe1;
+      --select-line: #1a7f37;
+      --dapper-fill: #ffe8d1;
+      --dapper-line: #bc4c00;
+      --grey-fill: #eaeef2;
+      --grey-line: #6e7781;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-fill: #0c2d6b;
+        --one-line: #58a6ff;
+        --select-fill: #0f3d1f;
+        --select-line: #3fb950;
+        --dapper-fill: #4a2a0e;
+        --dapper-line: #f0883e;
+        --grey-fill: #2d333b;
+        --grey-line: #8b949e;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-fill); stroke: var(--one-line); stroke-width: 1.5; }
+    .select { fill: var(--select-fill); stroke: var(--select-line); stroke-width: 1.5; }
+    .dapper { fill: var(--dapper-fill); stroke: var(--dapper-line); stroke-width: 1.5; }
+    .grey { fill: var(--grey-fill); stroke: var(--grey-line); stroke-width: 1.5; }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="379" rx="8"/>
+  <text class="title" x="16" y="28">Cost grows with the number of columns</text>
+  <text class="muted" x="16" y="48">Total time per call at 1,000 rows. Lower is better; the slope is the cost per cell.</text>
+  <line class="grid" x1="54" y1="322" x2="410" y2="322"/>
+  <text class="muted small" x="46" y="326" text-anchor="end">0</text>
+  <line class="grid" x1="54" y1="271.6" x2="410" y2="271.6"/>
+  <text class="muted small" x="46" y="275.6" text-anchor="end">50</text>
+  <line class="grid" x1="54" y1="221.2" x2="410" y2="221.2"/>
+  <text class="muted small" x="46" y="225.2" text-anchor="end">100</text>
+  <line class="grid" x1="54" y1="170.8" x2="410" y2="170.8"/>
+  <text class="muted small" x="46" y="174.8" text-anchor="end">150</text>
+  <line class="grid" x1="54" y1="120.4" x2="410" y2="120.4"/>
+  <text class="muted small" x="46" y="124.4" text-anchor="end">200</text>
+  <line class="grid" x1="54" y1="70" x2="410" y2="70"/>
+  <text class="muted small" x="46" y="74" text-anchor="end">250</text>
+  <text class="muted small" x="16" y="60">µs per call</text>
+  <text class="muted small mid" x="54" y="340">1</text>
+  <text class="muted small mid" x="91.47" y="340">3</text>
+  <text class="muted small mid" x="128.95" y="340">5</text>
+  <text class="muted small mid" x="222.63" y="340">10</text>
+  <text class="muted small mid" x="410" y="340">20</text>
+  <line class="axis" x1="54" y1="322" x2="410" y2="322"/>
+  <text class="muted small mid" x="232" y="358">columns</text>
+  <polyline class="l-one dash" points="54,311.24 91.47,309.98 128.95,305.04 222.63,290.51 410,274.67"/>
+  <circle class="m-one" cx="54" cy="311.24" r="4.5"><title>Hand-written selector, 1 columns: 10.7 µs per call</title></circle>
+  <circle class="m-one" cx="91.47" cy="309.98" r="4.5"><title>Hand-written selector, 3 columns: 11.9 µs per call</title></circle>
+  <circle class="m-one" cx="128.95" cy="305.04" r="4.5"><title>Hand-written selector, 5 columns: 16.8 µs per call</title></circle>
+  <circle class="m-one" cx="222.63" cy="290.51" r="4.5"><title>Hand-written selector, 10 columns: 31.2 µs per call</title></circle>
+  <circle class="m-one" cx="410" cy="274.67" r="4.5"><title>Hand-written selector, 20 columns: 47.0 µs per call</title></circle>
+  <polyline class="l-one" points="54,309.5 91.47,303.57 128.95,296.64 222.63,272.54 410,239.62"/>
+  <circle class="m-one" cx="54" cy="309.5" r="4.5"><title>RowMap plan, 1 columns: 12.4 µs per call</title></circle>
+  <circle class="m-one" cx="91.47" cy="303.57" r="4.5"><title>RowMap plan, 3 columns: 18.3 µs per call</title></circle>
+  <circle class="m-one" cx="128.95" cy="296.64" r="4.5"><title>RowMap plan, 5 columns: 25.2 µs per call</title></circle>
+  <circle class="m-one" cx="222.63" cy="272.54" r="4.5"><title>RowMap plan, 10 columns: 49.1 µs per call</title></circle>
+  <circle class="m-one" cx="410" cy="239.62" r="4.5"><title>RowMap plan, 20 columns: 81.7 µs per call</title></circle>
+  <polyline class="l-select" points="54,293.49 91.47,289.37 128.95,280.28 222.63,254.3 410,214.49"/>
+  <circle class="m-select" cx="54" cy="293.49" r="4.5"><title>Row class + Select, 1 columns: 28.3 µs per call</title></circle>
+  <circle class="m-select" cx="91.47" cy="289.37" r="4.5"><title>Row class + Select, 3 columns: 32.4 µs per call</title></circle>
+  <circle class="m-select" cx="128.95" cy="280.28" r="4.5"><title>Row class + Select, 5 columns: 41.4 µs per call</title></circle>
+  <circle class="m-select" cx="222.63" cy="254.3" r="4.5"><title>Row class + Select, 10 columns: 67.2 µs per call</title></circle>
+  <circle class="m-select" cx="410" cy="214.49" r="4.5"><title>Row class + Select, 20 columns: 106.7 µs per call</title></circle>
+  <polyline class="l-grey" points="54,312.45 91.47,301.82 128.95,285.84 222.63,245.66 410,142.08"/>
+  <circle class="m-grey" cx="54" cy="312.45" r="4.5"><title>object[] rows, 1 columns: 9.5 µs per call</title></circle>
+  <circle class="m-grey" cx="91.47" cy="301.82" r="4.5"><title>object[] rows, 3 columns: 20.0 µs per call</title></circle>
+  <circle class="m-grey" cx="128.95" cy="285.84" r="4.5"><title>object[] rows, 5 columns: 35.9 µs per call</title></circle>
+  <circle class="m-grey" cx="222.63" cy="245.66" r="4.5"><title>object[] rows, 10 columns: 75.7 µs per call</title></circle>
+  <circle class="m-grey" cx="410" cy="142.08" r="4.5"><title>object[] rows, 20 columns: 178.5 µs per call</title></circle>
+  <polyline class="l-dapper" points="54,303.4 91.47,290.68 128.95,277.08 222.63,225.01 410,117.72"/>
+  <circle class="m-dapper" cx="54" cy="303.4" r="4.5"><title>Dapper, 1 columns: 18.5 µs per call</title></circle>
+  <circle class="m-dapper" cx="91.47" cy="290.68" r="4.5"><title>Dapper, 3 columns: 31.1 µs per call</title></circle>
+  <circle class="m-dapper" cx="128.95" cy="277.08" r="4.5"><title>Dapper, 5 columns: 44.6 µs per call</title></circle>
+  <circle class="m-dapper" cx="222.63" cy="225.01" r="4.5"><title>Dapper, 10 columns: 96.2 µs per call</title></circle>
+  <circle class="m-dapper" cx="410" cy="117.72" r="4.5"><title>Dapper, 20 columns: 202.7 µs per call</title></circle>
+  <text x="420" y="121.72">Dapper</text>
+  <text x="420" y="146.08">object[] rows</text>
+  <text x="420" y="218.49">Row class + Select</text>
+  <text x="420" y="243.62">RowMap plan</text>
+  <text x="420" y="278.67">Hand-written selector</text>
+  <text class="muted small" x="16" y="368">Build b27a02f, 2026-11-14, one run per case. Numbers: width-sweep.csv</text>
+</svg>

@@ -1,0 +1,17 @@
+Benchmark build: fbb13d7
+Run date: 2026-11-14
+BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.6466/22H2/2022Update)
+AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores
+.NET SDK 11.0.100
+  [Host] : .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4
+Benchmark: RealProviderBenchmarks (the library against SQL Server LocalDB through Microsoft.Data.SqlClient, and against a SQLite file through Microsoft.Data.Sqlite)
+Conditions: 10,000 rows per call, widths 5 and 20 typed columns, synchronous terminals, one run per case; the LocalDB database and the SQLite file are created for the run and removed after it
+SQLite: Dapper maps text to Guid through the usual SqlMapper.TypeHandler recipe; it does not convert it on its own
+Columns: total_us = mean time of the whole call (BenchmarkDotNet Mean); allocated_kb = allocated per call (BenchmarkDotNet, KB = 1024 bytes)
+Toolchain=InProcessEmitToolchain  IterationCount=12  LaunchCount=1
+WarmupCount=5
+Source files (BenchmarkDotNet report CSVs, one per run; the run folders are not in the repository):
+  rp-sql-w5/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.RealProviderBenchmarks-report.csv
+  rp-sql-w20/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.RealProviderBenchmarks-report.csv
+  rp-lite-w5/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.RealProviderBenchmarks-report.csv
+  rp-lite-w20/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.RealProviderBenchmarks-report.csv

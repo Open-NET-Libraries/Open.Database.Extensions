@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 604" role="img" aria-labelledby="syn-memory-title syn-memory-desc">
+  <title id="syn-memory-title">Memory allocated per call</title>
+  <desc id="syn-memory-desc">Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family. Every bar starts at zero. Map&lt;T&gt;(), the RowMap plan 227.4 KB; Map(selector), hand-written 227.4 KB; Selector, reused row, Select 228.1 KB; Selector, pooled row, Select 228.2 KB; Shaping inside the selector 297.7 KB; Row class, inline Select 438.7 KB; Row class, close, then Select 446.3 KB; Row class, shaping in Select 509.1 KB; object[] rows (baseline) 516.6 KB; Row class, shaping after close 516.7 KB; Dapper Query&lt;T&gt; 548.1 KB; object[] rows, objects later 735.4 KB; Dapper, inline Select 759.0 KB; Dapper, then Select after 767.0 KB; Dapper, shaping in Select 829.3 KB; Dapper, shaping after 837.4 KB.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-fill: #ddf4ff;
+      --one-line: #0969da;
+      --select-fill: #dafbe1;
+      --select-line: #1a7f37;
+      --dapper-fill: #ffe8d1;
+      --dapper-line: #bc4c00;
+      --grey-fill: #eaeef2;
+      --grey-line: #6e7781;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-fill: #0c2d6b;
+        --one-line: #58a6ff;
+        --select-fill: #0f3d1f;
+        --select-line: #3fb950;
+        --dapper-fill: #4a2a0e;
+        --dapper-line: #f0883e;
+        --grey-fill: #2d333b;
+        --grey-line: #8b949e;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-fill); stroke: var(--one-line); stroke-width: 1.5; }
+    .select { fill: var(--select-fill); stroke: var(--select-line); stroke-width: 1.5; }
+    .dapper { fill: var(--dapper-fill); stroke: var(--dapper-line); stroke-width: 1.5; }
+    .grey { fill: var(--grey-fill); stroke: var(--grey-line); stroke-width: 1.5; }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="603" rx="8"/>
+  <text class="title" x="16" y="28">Memory allocated per call</text>
+  <text class="muted" x="16" y="48">Smaller is better.</text>
+  <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">ODX: one object per row</text>
+  <rect class="select" x="200" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="218" y="72">ODX: row class, then Select</text>
+  <rect class="grey" x="16" y="82" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="92">ODX: raw object[] rows</text>
+  <rect class="dapper" x="194" y="82" width="12" height="12" rx="3"/>
+  <text class="small" x="212" y="92">Dapper 2.1.89</text>
+  <line class="grid" x1="232" y1="114" x2="232" y2="530"/>
+  <text class="muted small mid" x="232" y="546">0</text>
+  <line class="grid" x1="283.2" y1="114" x2="283.2" y2="530"/>
+  <text class="muted small mid" x="283.2" y="546">200</text>
+  <line class="grid" x1="334.4" y1="114" x2="334.4" y2="530"/>
+  <text class="muted small mid" x="334.4" y="546">400</text>
+  <line class="grid" x1="385.6" y1="114" x2="385.6" y2="530"/>
+  <text class="muted small mid" x="385.6" y="546">600</text>
+  <line class="grid" x1="436.8" y1="114" x2="436.8" y2="530"/>
+  <text class="muted small mid" x="436.8" y="546">800</text>
+  <line class="grid" x1="488" y1="114" x2="488" y2="530"/>
+  <text class="muted small mid" x="488" y="546">1,000</text>
+  <g>
+    <title>Map&lt;T&gt;(), the RowMap plan (V1): The cached, compiled typed plan. Reader open 81.6 µs, total 81.7 µs, 227.4 KB allocated.</title>
+    <rect class="hit" x="0" y="114" width="560" height="26"/>
+    <text class="name" x="222" y="131">Map&lt;T&gt;(), the RowMap plan</text>
+    <rect class="one" x="232.75" y="119" width="56.71" height="16" rx="4"/>
+    <text class="val" x="296.21" y="131">227.4 KB</text>
+  </g>
+  <g>
+    <title>Map(selector), hand-written (V2): A static Func&lt;IDataRecord,T&gt; with typed getters. Reader open 46.8 µs, total 47.0 µs, 227.4 KB allocated.</title>
+    <rect class="hit" x="0" y="140" width="560" height="26"/>
+    <text class="name" x="222" y="157">Map(selector), hand-written</text>
+    <rect class="one" x="232.75" y="145" width="56.72" height="16" rx="4"/>
+    <text class="val" x="296.22" y="157">227.4 KB</text>
+  </g>
+  <g>
+    <title>Selector, reused row, Select (V4a): Caller recipe: fill one held row, project it. Reader open 58.8 µs, total 59.0 µs, 228.1 KB allocated.</title>
+    <rect class="hit" x="0" y="166" width="560" height="26"/>
+    <text class="name" x="222" y="183">Selector, reused row, Select</text>
+    <rect class="one" x="232.75" y="171" width="56.89" height="16" rx="4"/>
+    <text class="val" x="296.39" y="183">228.1 KB</text>
+  </g>
+  <g>
+    <title>Selector, pooled row, Select (V4b): Caller recipe: rent a row, project it, return it. Reader open 62.8 µs, total 63.1 µs, 228.2 KB allocated.</title>
+    <rect class="hit" x="0" y="192" width="560" height="26"/>
+    <text class="name" x="222" y="209">Selector, pooled row, Select</text>
+    <rect class="one" x="232.75" y="197" width="56.93" height="16" rx="4"/>
+    <text class="val" x="296.43" y="209">228.2 KB</text>
+  </g>
+  <g>
+    <title>Shaping inside the selector (V6a): Computed members built in the selector. Reader open 67.6 µs, total 67.8 µs, 297.7 KB allocated.</title>
+    <rect class="hit" x="0" y="218" width="560" height="26"/>
+    <text class="name" x="222" y="235">Shaping inside the selector</text>
+    <rect class="one" x="232.75" y="223" width="74.72" height="16" rx="4"/>
+    <text class="val" x="314.22" y="235">297.7 KB</text>
+  </g>
+  <g>
+    <title>Row class, inline Select (V3): Two objects per row: a row class, then Select while the reader is open. Reader open 106.4 µs, total 106.7 µs, 438.7 KB allocated.</title>
+    <rect class="hit" x="0" y="244" width="560" height="26"/>
+    <text class="name" x="222" y="261">Row class, inline Select</text>
+    <rect class="select" x="232.75" y="249" width="110.81" height="16" rx="4"/>
+    <text class="val" x="350.31" y="261">438.7 KB</text>
+  </g>
+  <g>
+    <title>Row class, close, then Select (V5): Map&lt;Row&gt;().ToList(), then Select after the reader closes. Reader open 82.1 µs, total 97.8 µs, 446.3 KB allocated.</title>
+    <rect class="hit" x="0" y="270" width="560" height="26"/>
+    <text class="name" x="222" y="287">Row class, close, then Select</text>
+    <rect class="select" x="232.75" y="275" width="112.75" height="16" rx="4"/>
+    <text class="val" x="352.25" y="287">446.3 KB</text>
+  </g>
+  <g>
+    <title>Row class, shaping in Select (V6c): Computed members built in an inline Select, reader open. Reader open 138.9 µs, total 139.2 µs, 509.1 KB allocated.</title>
+    <rect class="hit" x="0" y="296" width="560" height="26"/>
+    <text class="name" x="222" y="313">Row class, shaping in Select</text>
+    <rect class="select" x="232.75" y="301" width="128.82" height="16" rx="4"/>
+    <text class="val" x="368.32" y="313">509.1 KB</text>
+  </g>
+  <g>
+    <title>object[] rows (baseline) (V0): Every cell boxed into an object[] with GetValues; the baseline. Reader open 178.4 µs, total 178.5 µs, 516.6 KB allocated.</title>
+    <rect class="hit" x="0" y="322" width="560" height="26"/>
+    <text class="name" x="222" y="339">object[] rows (baseline)</text>
+    <rect class="grey" x="232.75" y="327" width="130.74" height="16" rx="4"/>
+    <text class="val" x="370.24" y="339">516.6 KB</text>
+  </g>
+  <g>
+    <title>Row class, shaping after close (V6d): Computed members built after the reader closes. Reader open 82.3 µs, total 134.5 µs, 516.7 KB allocated.</title>
+    <rect class="hit" x="0" y="348" width="560" height="26"/>
+    <text class="name" x="222" y="365">Row class, shaping after close</text>
+    <rect class="select" x="232.75" y="353" width="130.77" height="16" rx="4"/>
+    <text class="val" x="370.27" y="365">516.7 KB</text>
+  </g>
+  <g>
+    <title>Dapper Query&lt;T&gt; (V7_V1): Dapper 2.1.89, buffered Query&lt;T&gt;, the plain map. Reader open 202.4 µs, total 202.7 µs, 548.1 KB allocated.</title>
+    <rect class="hit" x="0" y="374" width="560" height="26"/>
+    <text class="name" x="222" y="391">Dapper Query&lt;T&gt;</text>
+    <rect class="dapper" x="232.75" y="379" width="138.81" height="16" rx="4"/>
+    <text class="val" x="378.31" y="391">548.1 KB</text>
+  </g>
+  <g>
+    <title>object[] rows, objects later (V0b): GetValues into object[], typed objects built afterwards. Reader open 170.1 µs, total 221.0 µs, 735.4 KB allocated.</title>
+    <rect class="hit" x="0" y="400" width="560" height="26"/>
+    <text class="name" x="222" y="417">object[] rows, objects later</text>
+    <rect class="grey" x="232.75" y="405" width="186.76" height="16" rx="4"/>
+    <text class="val" x="426.26" y="417">735.4 KB</text>
+  </g>
+  <g>
+    <title>Dapper, inline Select (V7_V3): Query&lt;Row&gt;(buffered: false) with Select. Reader open 214.0 µs, total 214.3 µs, 759.0 KB allocated.</title>
+    <rect class="hit" x="0" y="426" width="560" height="26"/>
+    <text class="name" x="222" y="443">Dapper, inline Select</text>
+    <rect class="dapper" x="232.75" y="431" width="192.81" height="16" rx="4"/>
+    <text class="val" x="432.31" y="443">759.0 KB</text>
+  </g>
+  <g>
+    <title>Dapper, then Select after (V7_V5): Query&lt;Row&gt;, then Select after. Reader open 197.5 µs, total 217.1 µs, 767.0 KB allocated.</title>
+    <rect class="hit" x="0" y="452" width="560" height="26"/>
+    <text class="name" x="222" y="469">Dapper, then Select after</text>
+    <rect class="dapper" x="232.75" y="457" width="194.84" height="16" rx="4"/>
+    <text class="val" x="434.34" y="469">767.0 KB</text>
+  </g>
+  <g>
+    <title>Dapper, shaping in Select (V7_V6c): Unbuffered Query&lt;Row&gt;, computed members in Select. Reader open 257.6 µs, total 257.9 µs, 829.3 KB allocated.</title>
+    <rect class="hit" x="0" y="478" width="560" height="26"/>
+    <text class="name" x="222" y="495">Dapper, shaping in Select</text>
+    <rect class="dapper" x="232.75" y="483" width="210.81" height="16" rx="4"/>
+    <text class="val" x="450.31" y="495">829.3 KB</text>
+  </g>
+  <g>
+    <title>Dapper, shaping after (V7_V6d): Query&lt;Row&gt;, computed members afterwards. Reader open 200.5 µs, total 256.2 µs, 837.4 KB allocated.</title>
+    <rect class="hit" x="0" y="504" width="560" height="26"/>
+    <text class="name" x="222" y="521">Dapper, shaping after</text>
+    <rect class="dapper" x="232.75" y="509" width="212.86" height="16" rx="4"/>
+    <text class="val" x="452.36" y="521">837.4 KB</text>
+  </g>
+  <line class="axis" x1="232" y1="114" x2="232" y2="530"/>
+  <text class="muted small mid" x="360" y="562">kilobytes allocated per call</text>
+  <text class="muted small" x="16" y="590">Build b27a02f, 2026-11-14, one run per case. Numbers: synthetic-overhead.csv</text>
+</svg>

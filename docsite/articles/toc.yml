@@ -5,6 +5,8 @@
 - href: mapping.md
 - href: channels-and-dataflow.md
 - href: performance.md
+  items:
+  - href: performance-data.md
 - href: coming-from-dapper.md
 - href: whats-new-11.md
 - href: release-notes.md

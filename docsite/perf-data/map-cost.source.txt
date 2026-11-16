@@ -1,0 +1,13 @@
+Benchmark build: 544cc01
+Run date: 2026-11-14
+BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.6466/22H2/2022Update)
+AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores
+.NET SDK 11.0.100
+  [Host] : .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4
+Benchmark: SyntheticBenchmarks, V1_Sync (a map ODX builds once and caches) and V1_Fresh_Sync (a new map built and compiled on every call)
+Conditions: one row per call, widths 1, 5 and 20 typed columns, synchronous terminals, one run per case
+Columns: *_total_us = mean time of the whole call (BenchmarkDotNet Mean); *_allocated_kb = bytes allocated per call / 1024
+Toolchain=InProcessEmitToolchain  IterationCount=12  LaunchCount=1
+WarmupCount=5
+Source files (BenchmarkDotNet report CSVs, one per run; the run folders are not in the repository):
+  stageC-C3a/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
