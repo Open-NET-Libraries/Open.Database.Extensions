@@ -16,7 +16,7 @@ Each comparison lists the same four steps in the same order, row against row: (1
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-After that, no call site writes any connection code. Each count below names the sample it counts (in `ConnectionPattern.cs`), without the one line of one-time setup, the `// nothing` comments and the `author` and `id` declarations. These compact samples put `Command(sql)` on the declaration line, so they count one or two lines fewer for the extensions than the README and Getting started samples, which give each call its own line: compare the two sides on this page, not across pages.
+After that, no call site writes any connection code. Each count below names the sample it counts (in `ConnectionPattern.cs`), without the three lines of one-time setup, the `// nothing` comments and the `author` and `id` declarations. Every call of a chain is on its own line, as in the README and Getting started samples.
 
 ### A list of rows
 
@@ -37,7 +37,7 @@ After that, no call site writes any connection code. Each count below names the 
 </div>
 </div>
 
-Lines you write, counted from `dapper_list_call` and `ode_list_call`: Dapper 4, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_list_call` and `ode_list_call`: Dapper 4, Open.Database.Extensions 5 (plus the one-time setup).
 
 What is different:
 
@@ -67,7 +67,7 @@ What is different:
 </div>
 </div>
 
-Lines you write, counted from `dapper_first_call` and `ode_first_call`: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_first_call` and `ode_first_call`: Dapper 3, Open.Database.Extensions 5 (plus the one-time setup).
 
 What is different:
 
@@ -92,7 +92,7 @@ What is different:
 </div>
 </div>
 
-Lines you write, counted from `dapper_scalar_call` and `ode_scalar_call`: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_scalar_call` and `ode_scalar_call`: Dapper 3, Open.Database.Extensions 4 (plus the one-time setup).
 
 What is different:
 
@@ -117,7 +117,7 @@ What is different:
 </div>
 </div>
 
-Lines you write, counted from `dapper_nonquery_call` and `ode_nonquery_call`: Dapper 3, Open.Database.Extensions 3 (plus the one-time setup).
+Lines you write, counted from `dapper_nonquery_call` and `ode_nonquery_call`: Dapper 3, Open.Database.Extensions 4 (plus the one-time setup).
 
 What is different:
 
@@ -144,7 +144,7 @@ Dapper opens a closed connection for plain queries and closes it again afterward
 </div>
 </div>
 
-Lines you write, counted from `dapper_transaction_call` and `ode_transaction_call`: Dapper 14, Open.Database.Extensions 6 (plus the one-time setup).
+Lines you write, counted from `dapper_transaction_call` and `ode_transaction_call`: Dapper 14, Open.Database.Extensions 12 (plus the one-time setup).
 
 What is different:
 
@@ -174,7 +174,7 @@ If you would rather own the connection, the extensions work on a connection the 
 </div>
 </div>
 
-Lines you write, counted from `dapper_list_call` and `ode_list_own`: Dapper 4, Open.Database.Extensions 4.
+Lines you write, counted from `dapper_list_call` and `ode_list_own`: Dapper 4, Open.Database.Extensions 6.
 
 What is different:
 
@@ -183,7 +183,7 @@ What is different:
 
 ### The total
 
-Across the list, one row, scalar and no-result-set calls above, Dapper takes 13 lines and the extensions 12, plus one line of one-time setup. The counts are close: the difference is what the lines are. None of the extensions' per-call lines creates, owns or disposes a connection, so there is nothing to forget, to leak or to keep open too long, and connection handling lives in one place instead of at every call site.
+Across the list, one row, scalar and no-result-set calls above, Dapper takes 13 lines and the extensions 18, plus three lines of one-time setup. The extensions take more lines because each call of a chain is on its own line: the difference is what the lines are. None of the extensions' per-call lines creates, owns or disposes a connection, so there is nothing to forget, to leak or to keep open too long, and connection handling lives in one place instead of at every call site.
 
 ## Who owns what
 
