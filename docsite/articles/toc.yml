@@ -6,6 +6,8 @@
 - href: async-reads.md
 - href: channels-and-dataflow.md
 - href: performance.md
+- name: Benchmark charts
+  href: ../benchmarks/ranking.html
 - href: coming-from-dapper.md
 - href: whats-new-11.md
 - href: release-notes.md
