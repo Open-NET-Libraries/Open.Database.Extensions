@@ -89,7 +89,7 @@ public static class MappedToChannelReaderTests
 		cts.Cancel();
 		var (rows, error) = await Collect(reader);
 
-		Assert.IsAssignableFrom<OperationCanceledException>(error);
+		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		Assert.True(rows.Count < 10);
 		await Until(
 			() => reader.Completion.IsCompleted,
@@ -117,7 +117,7 @@ public static class MappedToChannelReaderTests
 		var reader = rig.ToReader(null, startImmediately, cts.Token);
 		var (rows, error) = await Collect(reader);
 
-		Assert.IsAssignableFrom<OperationCanceledException>(error);
+		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		Assert.Empty(rows);
 		Assert.Equal(0, rig.Executes);
 		Assert.True(rig.Connection is null || rig.Connection.OpenCalls == 0);

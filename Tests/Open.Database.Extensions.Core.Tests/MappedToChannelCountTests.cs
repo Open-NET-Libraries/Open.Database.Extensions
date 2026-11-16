@@ -75,7 +75,7 @@ public static class MappedToChannelCountTests
 		cts.Cancel();
 		var (_, error) = await Collect(channel.Reader);
 
-		Assert.IsAssignableFrom<OperationCanceledException>(error);
+		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => rows.Within());
 		Assert.True(rows.IsCanceled);
@@ -95,7 +95,7 @@ public static class MappedToChannelCountTests
 			() => rows.Within());
 		Assert.True(rows.IsCanceled);
 		var (_, error) = await Collect(channel.Reader);
-		Assert.IsAssignableFrom<OperationCanceledException>(error);
+		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		Assert.Equal(0, rig.Executes);
 	}
 

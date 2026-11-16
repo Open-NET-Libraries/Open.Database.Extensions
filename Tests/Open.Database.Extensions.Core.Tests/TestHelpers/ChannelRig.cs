@@ -160,8 +160,12 @@ internal sealed class ChannelRig
 		{
 			var data = new TheoryData<string, string>();
 			foreach (string view in Views)
+			{
 				foreach (string form in Forms)
+				{
 					data.Add(view, form);
+				}
+			}
 
 			return data;
 		}
@@ -206,11 +210,7 @@ internal sealed class ChannelRig
 				if (asyncReads) q = q.AsyncReads();
 				rig.ToReader = (o, s, t) => q.ToChannelReader(o, s, t);
 				rig.ToChannel = (o, s, t) => q.ToChannel(o, s, t);
-				rig.ToCounted = (
-						out Task<long> n,
-						ChannelOptions? o,
-						bool s,
-						CancellationToken t)
+				rig.ToCounted = (out n, o, s, t)
 					=> q.ToChannel(out n, o, s, t);
 				break;
 			}
@@ -222,11 +222,7 @@ internal sealed class ChannelRig
 				var v = q.Skip(0);
 				rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
 				rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
-				rig.ToCounted = (
-						out Task<long> n,
-						ChannelOptions? o,
-						bool s,
-						CancellationToken t)
+				rig.ToCounted = (out n, o, s, t)
 					=> v.ToChannel(out n, o, s, t);
 				break;
 			}
@@ -238,11 +234,7 @@ internal sealed class ChannelRig
 				var v = q.Take(1000);
 				rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
 				rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
-				rig.ToCounted = (
-						out Task<long> n,
-						ChannelOptions? o,
-						bool s,
-						CancellationToken t)
+				rig.ToCounted = (out n, o, s, t)
 					=> v.ToChannel(out n, o, s, t);
 				break;
 			}
@@ -257,11 +249,7 @@ internal sealed class ChannelRig
 				if (asyncReads) v = v.AsyncReads();
 				rig.ToReader = (o, s, t) => v.ToChannelReader(o, s, t);
 				rig.ToChannel = (o, s, t) => v.ToChannel(o, s, t);
-				rig.ToCounted = (
-						out Task<long> n,
-						ChannelOptions? o,
-						bool s,
-						CancellationToken t)
+				rig.ToCounted = (out n, o, s, t)
 					=> v.ToChannel(out n, o, s, t);
 				break;
 			}
@@ -319,6 +307,13 @@ internal static class ChannelWait
 				rows.Add(row.Id);
 
 			return (rows, null);
+		}
+		catch (OperationCanceledException ex)
+			when (ex.CancellationToken == cts.Token && !Ct.IsCancellationRequested)
+		{
+			// The wait here ran out: that is a failure of the test,
+			// not a cancel the feed reported.
+			throw new TimeoutException("the channel never ended", ex);
 		}
 		catch (Exception ex)
 		{
