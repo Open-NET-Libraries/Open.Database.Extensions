@@ -30,8 +30,8 @@ public static partial class ConnectionExtensions
 	/// </remarks>
 	/// <example>
 	/// <code>
-	/// // Synchronous: an ExpressiveCommand on an IDbConnection
-	/// // has synchronous terminals only.
+	/// // Synchronous: a command on an IDbConnection has no
+	/// // ExecuteNonQueryAsync; use a DbConnection for the async form.
 	/// int rows = connection
 	///     .Command("UPDATE Customers SET Region = @region WHERE Id = @id")
 	///     .AddParam("region", "West")
