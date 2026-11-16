@@ -38,7 +38,10 @@ public static class ChannelsAndDataflow
 		// has been delivered (or faults it if reading fails).
 		long count = await connectionFactory
 			.Command("select * from posts order by id")
-			.ToTargetBlockAsync<Post>(block, complete: true, cancellationToken: cancellationToken);
+			.ToTargetBlockAsync<Post>(
+				block,
+				complete: true,
+				cancellationToken: cancellationToken);
 
 		// The block completes once every row has been delivered and received.
 		var received = new List<Post>();

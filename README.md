@@ -22,7 +22,9 @@ await using var connection = new SqliteConnection(connectionString);
 await connection.OpenAsync(cancellationToken);
 
 await using var command = connection.CreateCommand();
-command.CommandText = "select id, author, title, body from posts where author = @author order by id";
+command.CommandText =
+    "select id, author, title, body from posts "
+    + "where author = @author order by id";
 var parameter = command.CreateParameter();
 parameter.ParameterName = "@author";
 parameter.Value = author;
@@ -59,10 +61,10 @@ Each job is one complete call: open the connection, run the SQL with one paramet
 
 | The job | Lines you write: plain ADO.NET | Lines you write: Open.Database.Extensions |
 |---|---:|---:|
-| A list of mapped objects | 20 | 5 |
-| One mapped object (one row) | 20 | 5 |
+| A list of mapped objects | 22 | 5 |
+| One mapped object (one row) | 21 | 5 |
 | A scalar (`count(*)`) | 9 | 4 |
-| A command with no result set (`update`) | 9 | 4 |
+| A command with no result set (`update`) | 10 | 4 |
 
 What you no longer write: opening and closing the connection, creating the command and setting its text, creating and adding every parameter, the read loop, copying columns into properties (ordinals, `IsDBNull`), and disposing all of it.
 
@@ -99,11 +101,14 @@ Most of the library is extension methods on the ADO.NET types you already use (`
 // ExecuteTransactionConditionalAsync opens it if it is closed
 // and starts the transaction.
 // Returning true commits; false (or a throw) rolls back.
-bool committed = await connectionFactory.UsingAsync(connection =>
-    connection.ExecuteTransactionConditionalAsync(async transaction =>
+bool committed = await connectionFactory.UsingAsync(connection
+    => connection.ExecuteTransactionConditionalAsync(async transaction =>
     {
         int inserted = await transaction
-            .Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
+            .Command("""
+                insert into posts (id, author, title, body, views)
+                values (100, 1, 'Temporary', null, 0)
+                """)
             .ExecuteNonQueryAsync(cancellationToken);
 
         return inserted == 1;
@@ -168,15 +173,20 @@ When your columns are named differently from your properties, declare the mappin
 ```cs
 static class PersonMaps
 {
-    public static RowMap<Person> PersonMap => field ??= [
-        new(nameof(Person.Id), "person_id"),
-        new(nameof(Person.FirstName), "first_name"),
-        new(nameof(Person.LastName), "last_name"),
-    ];
+    public static RowMap<Person> PersonMap
+        => field ??= [
+            new(nameof(Person.Id), "person_id"),
+            new(nameof(Person.FirstName), "first_name"),
+            new(nameof(Person.LastName), "last_name"),
+        ];
 }
 
 Person[] people = await connection
-    .Command("select person_id, first_name, last_name from people order by person_id")
+    .Command("""
+        select person_id, first_name, last_name
+        from people
+        order by person_id
+        """)
     .Map<Person>(PersonMaps.PersonMap)
     .ToArrayAsync(cancellationToken);
 ```

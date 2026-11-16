@@ -10,7 +10,9 @@ public static class DapperComparison
 	{
 		#region dapper_list
 		List<Post> posts = (await connection
-			.QueryAsync<Post>("select * from posts where author = @author order by id", new { author = 42 }))
+			.QueryAsync<Post>(
+				"select * from posts where author = @author order by id",
+				new { author = 42 }))
 			.AsList();
 		#endregion
 
@@ -35,7 +37,9 @@ public static class DapperComparison
 	public static async Task<Post?> DapperFirstAsync(SqliteConnection connection)
 	{
 		#region dapper_first
-		Post? post = await connection.QueryFirstOrDefaultAsync<Post>("select * from posts where id = @id", new { id = 3 });
+		Post? post = await connection.QueryFirstOrDefaultAsync<Post>(
+			"select * from posts where id = @id",
+			new { id = 3 });
 		#endregion
 
 		return post;
@@ -59,7 +63,8 @@ public static class DapperComparison
 	public static async Task<long> DapperScalarAsync(SqliteConnection connection)
 	{
 		#region dapper_scalar
-		long count = await connection.ExecuteScalarAsync<long>("select count(*) from posts");
+		long count = await connection.ExecuteScalarAsync<long>(
+			"select count(*) from posts");
 		#endregion
 
 		return count;
@@ -81,7 +86,9 @@ public static class DapperComparison
 	public static async Task<int> DapperExecuteAsync(SqliteConnection connection)
 	{
 		#region dapper_execute
-		int updated = await connection.ExecuteAsync("update posts set views = views where author = @author", new { author = 42 });
+		int updated = await connection.ExecuteAsync(
+			"update posts set views = views where author = @author",
+			new { author = 42 });
 		#endregion
 
 		return updated;
@@ -106,7 +113,8 @@ public static class DapperComparison
 		#region dapper_record
 		// Dapper binds constructor parameters, so a positional record works.
 		List<PostRecord> posts = (await connection
-			.QueryAsync<PostRecord>("select id, author, title, body from posts order by id"))
+			.QueryAsync<PostRecord>(
+				"select id, author, title, body from posts order by id"))
 			.AsList();
 		#endregion
 

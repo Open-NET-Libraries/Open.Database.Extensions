@@ -12,11 +12,16 @@ namespace Samples;
 public static class Sql
 {
 	#region shared_sql
-	public const string ListSql = "select * from posts where author = @author order by id";
+	public const string ListSql =
+		"select * from posts where author = @author order by id";
 	public const string OneSql = "select * from posts where id = @id";
-	public const string CountSql = "select count(*) from posts where author = @author";
-	public const string TouchSql = "update posts set views = views where author = @author";
-	public const string InsertSql = "insert into posts (id, author, title, body, views) values (@id, 1, 'Temporary', null, 0)";
+	public const string CountSql =
+		"select count(*) from posts where author = @author";
+	public const string TouchSql =
+		"update posts set views = views where author = @author";
+	public const string InsertSql =
+		"insert into posts (id, author, title, body, views) "
+		+ "values (@id, 1, 'Temporary', null, 0)";
 	#endregion
 }
 
@@ -25,7 +30,9 @@ public static class ConnectionPattern
 	public static DbConnectionFactory<SqliteConnection> Setup(string connectionString)
 	{
 		#region ode_setup_once
-		var connectionFactory = new DbConnectionFactory<SqliteConnection>(() => new SqliteConnection(connectionString));
+		var connectionFactory = new DbConnectionFactory<SqliteConnection>(
+			()
+				=> new SqliteConnection(connectionString));
 		#endregion
 
 		return connectionFactory;
@@ -190,10 +197,10 @@ public static class ConnectionPattern
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
 		CancellationToken cancellationToken)
 		#region ode_transaction_call
-		=> connectionFactory.UsingAsync(connection =>
+		=> connectionFactory.UsingAsync(connection
 			// nothing: ExecuteTransactionAsync opens a closed connection
 			// nothing: ExecuteTransactionAsync begins the transaction
-			connection.ExecuteTransactionAsync(async transaction =>
+			=> connection.ExecuteTransactionAsync(async transaction =>
 			{
 				await transaction
 					.Command(InsertSql)
@@ -269,7 +276,11 @@ public static class ConnectionPattern
 		// PersonMaps.PersonMap is the RowMap<Person>
 		// declared once in the map_declared sample (Mapping.cs).
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>(PersonMaps.PersonMap)
 			.ToArrayAsync(cancellationToken);
 		#endregion
@@ -281,7 +292,8 @@ public static class ConnectionPattern
 	public static IServiceCollection RegisterSqlServer(IServiceCollection services, string connectionString)
 	{
 		#region sql_server_registration
-		services.AddSingleton<IDbConnectionFactory<SqlConnection>>(new SqlConnectionFactory(connectionString));
+		services.AddSingleton<IDbConnectionFactory<SqlConnection>>(
+			new SqlConnectionFactory(connectionString));
 		#endregion
 
 		return services;
@@ -289,9 +301,12 @@ public static class ConnectionPattern
 }
 
 #region di_consumer
-public class PostService(IDbConnectionFactory<SqliteConnection> connectionFactory)
+public class PostService(
+	IDbConnectionFactory<SqliteConnection> connectionFactory)
 {
-	public ValueTask<List<Post>> ByAuthorAsync(int author, CancellationToken cancellationToken)
+	public ValueTask<List<Post>> ByAuthorAsync(
+		int author,
+		CancellationToken cancellationToken)
 		=> connectionFactory
 			.Command(ListSql)
 			.AddParam(author) // name and type inferred from the variable
@@ -310,7 +325,9 @@ public static class DependencyInjectionSample
 		// A singleton is fine: the factory holds no connection,
 		// it only creates them.
 		services.AddSingleton<IDbConnectionFactory<SqliteConnection>>(
-			new DbConnectionFactory<SqliteConnection>(static () => new SqliteConnection(Db.ConnectionString)));
+			new DbConnectionFactory<SqliteConnection>(
+				static ()
+					=> new SqliteConnection(Db.ConnectionString)));
 		services.AddTransient<PostService>();
 
 		using ServiceProvider provider = services.BuildServiceProvider();

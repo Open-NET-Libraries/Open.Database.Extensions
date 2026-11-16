@@ -14,7 +14,10 @@ public static class Db
 	// connection and disposes it afterwards.
 	// Held in a lazily created field (the C# 14 `field` keyword).
 	// The factory is stateless, so a benign race costs nothing.
-	public static IDbConnectionFactory<SqliteConnection> Factory => field ??= new DbConnectionFactory<SqliteConnection>(static () => new SqliteConnection(ConnectionString));
+	public static IDbConnectionFactory<SqliteConnection> Factory
+		=> field ??= new DbConnectionFactory<SqliteConnection>(
+			static ()
+				=> new SqliteConnection(ConnectionString));
 	#endregion
 
 	/// <summary>Opens the connection that keeps the in-memory database alive between factory-built commands.</summary>

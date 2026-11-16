@@ -19,7 +19,9 @@ public static class BeforeAfter
 		await connection.OpenAsync(cancellationToken);
 
 		await using var command = connection.CreateCommand();
-		command.CommandText = "select id, author, title, body from posts where author = @author order by id";
+		command.CommandText =
+			"select id, author, title, body from posts "
+			+ "where author = @author order by id";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
 		parameter.Value = author;
@@ -69,7 +71,8 @@ public static class BeforeAfter
 		await connection.OpenAsync(cancellationToken);
 
 		await using var command = connection.CreateCommand();
-		command.CommandText = "select id, author, title, body from posts where id = @id";
+		command.CommandText =
+			"select id, author, title, body from posts where id = @id";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@id";
 		parameter.Value = id;
@@ -154,7 +157,8 @@ public static class BeforeAfter
 		await connection.OpenAsync(cancellationToken);
 
 		await using var command = connection.CreateCommand();
-		command.CommandText = "update posts set views = views + 1 where author = @author";
+		command.CommandText =
+			"update posts set views = views + 1 where author = @author";
 		var parameter = command.CreateParameter();
 		parameter.ParameterName = "@author";
 		parameter.Value = author;

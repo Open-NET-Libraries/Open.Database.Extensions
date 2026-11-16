@@ -11,7 +11,8 @@ public static class SqlServer
 		const int author = 42;
 		#region sql_server_factory
 		// Open.Database.Extensions.MSSqlClient wraps Microsoft.Data.SqlClient.
-		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
+		var connectionFactory = new SqlConnectionFactory(
+			@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
 
 		Post[] posts = await connectionFactory
 			.Command("select * from posts where author = @author")
@@ -87,7 +88,10 @@ public static class SqlServer
 		// By name a NULL has no type to use, so pass one.
 		Post[] posts = await connectionFactory
 			.StoredProcedure("[dbo].[SearchPosts]")
-			.AddParam("title_contains", titleContains ?? (object)DBNull.Value, SqlDbType.NVarChar)
+			.AddParam(
+				"title_contains",
+				titleContains ?? (object)DBNull.Value,
+				SqlDbType.NVarChar)
 			.Map<Post>()
 			.ToArrayAsync(cancellationToken);
 		#endregion

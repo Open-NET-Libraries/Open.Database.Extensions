@@ -16,7 +16,7 @@ Each comparison lists the same four steps in the same order, row against row: (1
 
 [!code-csharp[](../samples/ConnectionPattern.cs#ode_setup_once)]
 
-After that, no call site writes any connection code. Each count below names the sample it counts (in `ConnectionPattern.cs`), without the one line of one-time setup, the `// nothing` comments and the `author` and `id` declarations. Every call of a chain is on its own line, as in the README and Getting started samples.
+After that, no call site writes any connection code. Each count below names the sample it counts (in `ConnectionPattern.cs`), without the three lines of one-time setup, the `// nothing` comments and the `author` and `id` declarations. Every call of a chain is on its own line, as in the README and Getting started samples.
 
 ### A list of rows
 
@@ -183,7 +183,7 @@ What is different:
 
 ### The total
 
-Across the list, one row, scalar and no-result-set calls above, Dapper takes 13 lines and the extensions 18, plus one line of one-time setup. The extensions take more lines because each call of a chain is on its own line: the difference is what the lines are. None of the extensions' per-call lines creates, owns or disposes a connection, so there is nothing to forget, to leak or to keep open too long, and connection handling lives in one place instead of at every call site.
+Across the list, one row, scalar and no-result-set calls above, Dapper takes 13 lines and the extensions 18, plus three lines of one-time setup. The extensions take more lines because each call of a chain is on its own line: the difference is what the lines are. None of the extensions' per-call lines creates, owns or disposes a connection, so there is nothing to forget, to leak or to keep open too long, and connection handling lives in one place instead of at every call site.
 
 ## Who owns what
 

@@ -34,7 +34,11 @@ public static class Mapping
 		// each call only checks that the result-set layout
 		// matches the one its reader was compiled for.
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>(PersonMaps.PersonMap)
 			.ToArrayAsync(cancellationToken);
 		#endregion
@@ -48,7 +52,11 @@ public static class Mapping
 		// LastName is not read at all, so it keeps its initial value
 		// although the result set has a last_name column.
 		=> await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
 			.ToArrayAsync(cancellationToken);
 
@@ -80,7 +88,11 @@ public static class Mapping
 		// so a new map is built, and the row reader compiled,
 		// on every call.
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map(new RowMap<Person>([
 				new(nameof(Person.Id), "person_id"),
 				new(nameof(Person.FirstName), "first_name"),
@@ -99,7 +111,11 @@ public static class Mapping
 		// the same one-off, a new map built,
 		// and the row reader compiled, on every call.
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map(new RowMap<Person>(
 				new(nameof(Person.Id), "person_id"),
 				new(nameof(Person.FirstName), "first_name"),
@@ -158,7 +174,11 @@ public static class Mapping
 		// and last_name feeds LastName (case and underscores ignored).
 		// person_id matches no property, so Id keeps its default.
 		Person[] people = await connection
-			.Command("select person_id, first_name, last_name from people order by person_id")
+			.Command("""
+				select person_id, first_name, last_name
+				from people
+				order by person_id
+				""")
 			.Map<Person>()
 			.ToArrayAsync(cancellationToken);
 		#endregion
@@ -218,7 +238,11 @@ public static class Mapping
 		// it feeds the constructor parameter Title,
 		// from the column post_title.
 		PostRecord[] posts = await connection
-			.Command("select id, author, title as post_title, body from posts order by id")
+			.Command("""
+				select id, author, title as post_title, body
+				from posts
+				order by id
+				""")
 			.Map<PostRecord>(RecordMaps.PostRecordMap)
 			.ToArrayAsync(cancellationToken);
 		#endregion
@@ -382,7 +406,11 @@ public static class Mapping
 		// SingleAsync throws unless exactly one row comes back,
 		// so there is no handler and no check.
 		long newId = await connectionFactory
-			.Command("insert into posts (author, title, body, views) values (@author, 'Draft', null, 0); select last_insert_rowid()")
+			.Command("""
+				insert into posts (author, title, body, views)
+				values (@author, 'Draft', null, 0);
+				select last_insert_rowid()
+				""")
 			.AddParam("author", 42)
 			.Map<long>()
 			.SingleAsync(cancellationToken);
@@ -400,7 +428,8 @@ public static class Mapping
 		// and never moves it to the next result set.
 		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts order by id";
-		await using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+		await using SqliteDataReader reader = await command
+			.ExecuteReaderAsync(cancellationToken);
 
 		Post[] posts = await reader
 			.Map<Post>()
@@ -439,7 +468,8 @@ public static class Mapping
 		// ToDataTable has no async form: it fills the table in memory.
 		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts order by id";
-		await using SqliteDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+		await using SqliteDataReader reader = await command
+			.ExecuteReaderAsync(cancellationToken);
 		using DataTable table = reader.ToDataTable();
 
 		Post[] posts = await table
@@ -458,7 +488,8 @@ public static class Mapping
 		// Map(selector) is the escape hatch: you read the columns yourself.
 		string[] titles = await connection
 			.Command("select title, views from posts order by id")
-			.Map(static record => $"{record.GetString(0)} ({record.GetInt64(1)} views)")
+			.Map(static record
+				=> $"{record.GetString(0)} ({record.GetInt64(1)} views)")
 			.ToArrayAsync(cancellationToken);
 		#endregion
 
@@ -511,7 +542,8 @@ public static class Mapping
 		int total = connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Read(static posts => posts.Sum(static post => post.Id));
+			.Read(static posts
+				=> posts.Sum(static post => post.Id));
 		#endregion
 
 		return total;
@@ -523,7 +555,9 @@ public static class Mapping
 		Dictionary<int, Post> byId = await connection
 			.Command("select * from posts")
 			.Map<Post>()
-			.ToDictionaryAsync(static post => post.Id, cancellationToken: cancellationToken);
+			.ToDictionaryAsync(
+				static post => post.Id,
+				cancellationToken: cancellationToken);
 		#endregion
 
 		return byId;
@@ -539,7 +573,8 @@ public static class Mapping
 			.Map<Post>()
 			.ToDictionaryAsync(
 				static post => post.Id,
-				static post => post.Body ?? "",
+				static post
+					=> post.Body ?? "",
 				cancellationToken: cancellationToken);
 		#endregion
 
@@ -556,7 +591,11 @@ public static class Mapping
 		// and customer is trimmed:
 		// the rows map straight into Order, with no row type to copy from.
 		Order[] orders = await connection
-			.Command("select id, order_num, first_load_datetime, customer from orders order by id")
+			.Command("""
+				select id, order_num, first_load_datetime, customer
+				from orders
+				order by id
+				""")
 			.Map<Order>(OrderMaps.OrderMap)
 			.ToArrayAsync(cancellationToken);
 		#endregion
@@ -568,7 +607,11 @@ public static class Mapping
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 		=> await connection
-			.Command("select id, order_num, first_load_datetime, customer from orders order by id")
+			.Command("""
+				select id, order_num, first_load_datetime, customer
+				from orders
+				order by id
+				""")
 			.Map<Order>(OrderMaps.NullAwareOrderMap)
 			.ToArrayAsync(cancellationToken);
 }
@@ -578,21 +621,23 @@ public static class Mapping
 public static class PersonMaps
 {
 	#region map_declared
-	public static RowMap<Person> PersonMap => field ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), "last_name"),
-	];
+	public static RowMap<Person> PersonMap
+		=> field ??= [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+			new(nameof(Person.LastName), "last_name"),
+		];
 	#endregion
 
 	#region map_declared_ignore
 	// A null column means "do not map this property": LastName is not read at all, not even by name,
 	// so it keeps its initial value even if the result set has a column called LastName.
-	public static RowMap<Person> PersonNamesOnlyMap => field ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), null),
-	];
+	public static RowMap<Person> PersonNamesOnlyMap
+		=> field ??= [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+			new(nameof(Person.LastName), null),
+		];
 	#endregion
 }
 
@@ -608,18 +653,34 @@ public static class OrderMaps
 	// The delegate runs inside the compiled row reader, once per row,
 	// and is never called for a NULL cell:
 	// that property keeps its initial value.
-	public static RowMap<Order> OrderMap => field ??= RowMap<Order>.Default
-		.Convert<long, string>(nameof(Order.OrderNum), static number => number.ToString("D6", CultureInfo.InvariantCulture))
-		.Convert<DateTime, string>(nameof(Order.FirstLoad), "first_load_datetime", static loaded => loaded.ToString("HH:mm", CultureInfo.InvariantCulture))
-		.Convert<string, string>(nameof(Order.Customer), static customer => customer.Trim());
+	public static RowMap<Order> OrderMap
+		=> field ??= RowMap<Order>.Default
+			.Convert<long, string>(
+				nameof(Order.OrderNum),
+				static number
+					=> number.ToString("D6", CultureInfo.InvariantCulture))
+			.Convert<DateTime, string>(
+				nameof(Order.FirstLoad),
+				"first_load_datetime",
+				static loaded
+					=> loaded.ToString("HH:mm", CultureInfo.InvariantCulture))
+			.Convert<string, string>(
+				nameof(Order.Customer),
+				static customer => customer.Trim());
 	#endregion
 
 	#region map_converted_null
 	// A converter that must see NULL asks for a nullable TColumn:
 	// it is called with null,
 	// and what it returns is the value of the property.
-	public static RowMap<Order> NullAwareOrderMap => field ??= RowMap<Order>.Default
-		.Convert<DateTime?, string>(nameof(Order.FirstLoad), "first_load_datetime", static loaded => loaded?.ToString("HH:mm", CultureInfo.InvariantCulture) ?? "--:--");
+	public static RowMap<Order> NullAwareOrderMap
+		=> field ??= RowMap<Order>.Default
+			.Convert<DateTime?, string>(
+				nameof(Order.FirstLoad),
+				"first_load_datetime",
+				static loaded
+					=> loaded?.ToString("HH:mm", CultureInfo.InvariantCulture)
+						?? "--:--");
 	#endregion
 }
 
@@ -629,9 +690,10 @@ public static class RecordMaps
 	// A positional record's property and its constructor parameter
 	// are one member: the pair names it by the property,
 	// and it feeds the parameter.
-	public static RowMap<PostRecord> PostRecordMap => field ??= [
-		new(nameof(PostRecord.Title), "post_title"),
-	];
+	public static RowMap<PostRecord> PostRecordMap
+		=> field ??= [
+			new(nameof(PostRecord.Title), "post_title"),
+		];
 	#endregion
 }
 
@@ -642,11 +704,12 @@ public static class HoldingAMap
 	// Before C# 14 there is no field keyword: write the backing field yourself.
 	internal static RowMap<Person>? _backingMap;
 
-	public static RowMap<Person> BackingMap => _backingMap ??= [
-		new(nameof(Person.Id), "person_id"),
-		new(nameof(Person.FirstName), "first_name"),
-		new(nameof(Person.LastName), "last_name"),
-	];
+	public static RowMap<Person> BackingMap
+		=> _backingMap ??= [
+			new(nameof(Person.Id), "person_id"),
+			new(nameof(Person.FirstName), "first_name"),
+			new(nameof(Person.LastName), "last_name"),
+		];
 	#endregion
 }
 
@@ -659,7 +722,8 @@ public static class PostQueries
 	// Nothing runs here: the command runs once
 	// for each terminal the caller picks.
 	static readonly RowMap<PostSummary> Summary = RowMap<PostSummary>.From(
-		static (int id, string title) => new PostSummary(id, title));
+		static (int id, string title)
+			=> new PostSummary(id, title));
 
 	public static MappedQuery<PostSummary> ByAuthor(
 		IDbConnectionFactory<SqliteConnection> factory,

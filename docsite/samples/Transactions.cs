@@ -18,11 +18,14 @@ public static class Transactions
 		// and starts the transaction.
 		// Returning true commits; false (or a throw) rolls back.
 		// Here the caller decides: shouldCommit is a bool passed in.
-		bool committed = await connectionFactory.UsingAsync(connection =>
-			connection.ExecuteTransactionConditionalAsync(async transaction =>
+		bool committed = await connectionFactory.UsingAsync(connection
+			=> connection.ExecuteTransactionConditionalAsync(async transaction =>
 			{
 				await transaction
-					.Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
+					.Command("""
+						insert into posts (id, author, title, body, views)
+						values (100, 1, 'Temporary', null, 0)
+						""")
 					.ExecuteNonQueryAsync(cancellationToken);
 
 				return shouldCommit;
@@ -44,11 +47,14 @@ public static class Transactions
 		// The token is checked after the action returns:
 		// a token cancelled by then never commits.
 		// The commit itself is sent without the token.
-		await connectionFactory.UsingAsync(connection =>
-			connection.ExecuteTransactionAsync(async transaction =>
+		await connectionFactory.UsingAsync(connection
+			=> connection.ExecuteTransactionAsync(async transaction =>
 			{
 				await transaction
-					.Command("insert into posts (id, author, title, body, views) values (100, 1, 'Temporary', null, 0)")
+					.Command("""
+						insert into posts (id, author, title, body, views)
+						values (100, 1, 'Temporary', null, 0)
+						""")
 					.ExecuteNonQueryAsync(cancellationToken);
 			}, cancellationToken));
 		#endregion

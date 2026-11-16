@@ -110,7 +110,11 @@ public static class ExpressiveCommands
 		// ExecuteScalarAsync<T>() reads the id
 		// (SQLite: last_insert_rowid()).
 		long newId = await connectionFactory
-			.Command("insert into posts (author, title, body, views) values (@author, 'New', null, 0); select last_insert_rowid()")
+			.Command("""
+				insert into posts (author, title, body, views)
+				values (@author, 'New', null, 0);
+				select last_insert_rowid()
+				""")
 			.AddParam(author) // name and type inferred from the variable
 			.ExecuteScalarAsync<long>(cancellationToken);
 		#endregion
@@ -125,7 +129,10 @@ public static class ExpressiveCommands
 		#region scalar_convert
 		int count = await connectionFactory
 			.Command("select count(*) from posts")
-			.ExecuteScalarAsync(static value => Convert.ToInt32(value), cancellationToken);
+			.ExecuteScalarAsync(
+				static value
+					=> Convert.ToInt32(value),
+				cancellationToken);
 		#endregion
 
 		return count;
