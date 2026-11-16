@@ -24,13 +24,15 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <param name="connectionPool">The pool to take connections from. Each execution takes one and gives it back when finished.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
+	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public ExpressiveSqlCommand(
 		IDbConnectionPool<SqlConnection> connectionPool,
 		CommandType type,
-		string command)
-		: base(connectionPool, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connectionPool, type, command, @params)
 	{
 	}
 
@@ -40,13 +42,15 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <param name="connFactory">The factory that creates the connections. Each execution creates a connection, opens it if needed, and disposes it when finished.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
+	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="connFactory"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public ExpressiveSqlCommand(
 		IDbConnectionFactory<SqlConnection> connFactory,
 		CommandType type,
-		string command)
-		: base(connFactory, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connFactory, type, command, @params)
 	{
 	}
 
@@ -57,14 +61,16 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <param name="transaction">The optional transaction to execute the command in.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
+	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public ExpressiveSqlCommand(
 		SqlConnection connection,
 		IDbTransaction? transaction,
 		CommandType type,
-		string command)
-		: base(connection, transaction, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connection, transaction, type, command, @params)
 	{
 	}
 
@@ -74,13 +80,15 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <param name="connection">The connection to execute on. It is opened only if it is closed, closed again afterwards if the command opened it, and never disposed.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
+	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public ExpressiveSqlCommand(
 		SqlConnection connection,
 		CommandType type,
-		string command)
-		: base(connection, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connection, type, command, @params)
 	{
 	}
 
@@ -90,13 +98,15 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	/// <param name="transaction">The transaction to execute the command in. Its <see cref="IDbTransaction.Connection"/> is used for execution.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
+	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public ExpressiveSqlCommand(
 		IDbTransaction transaction,
 		CommandType type,
-		string command)
-		: base(transaction, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(transaction, type, command, @params)
 	{
 	}
 

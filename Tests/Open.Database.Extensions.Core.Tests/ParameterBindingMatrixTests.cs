@@ -14,16 +14,13 @@ namespace Open.Database.Extensions.Tests;
 // compilers of the older targets (C# 7.3, 9, 12, 13) and checks the
 // values and database types.
 //
-// A5 keeps `direction`, the no-value forms and the untyped int and long
-// forms. It removes only the dead parts (the Param constructor, the
-// IEnumerable<Param> constructors, the untyped ExecuteReturn) and makes
-// the typed-NULL form take `object? value`. This pins that:
+// A5 changes only `object? value` of the typed-NULL form; everything else
+// is kept (owner, 2026-11-16). This pins that:
 // - an int or long value, with and without a database type, binds to
 //   the int and long forms: ("x", i), ("x", i, null),
 //   ("x", i, nullableType), ("x", 0), ("x", 0L);
 // - a user enum binds to a value form;
-// - a typed NULL byte array compiles warning-free;
-// - the removed members no longer compile.
+// - a typed NULL byte array compiles warning-free.
 [ExcludeFromCodeCoverage]
 public static class ParameterBindingMatrixTests
 {
@@ -166,26 +163,6 @@ public static class ParameterBindingMatrixTests
 			"AddParam(string, object, ParameterDirection)",
 		];
 		Assert.Contains(Bound(version, "c.AddParam(\"x\", Mode.A);"), valueForms);
-	}
-
-	// ---- the removed members no longer compile ----
-
-	[Theory]
-	[MemberData(nameof(Versions))]
-	public static void TheRemovedMembers_NoLongerCompile(LanguageVersion version)
-	{
-		string[] removed =
-		[
-			// the untyped ExecuteReturn
-			"c.ExecuteReturn();",
-			"c.ExecuteReturnAsync();",
-			// the Param constructor and the IEnumerable<Param> constructors
-			"var p = new ExpressiveCommandBase<IDbConnection, IDbCommand, IDataReader, DbType, ExpressiveCommand>.Param(\"x\", 1);",
-			"var d = new ExpressiveCommand((IDbConnection)null!, CommandType.Text, \"x\", (IEnumerable<ExpressiveCommandBase<IDbConnection, IDbCommand, IDataReader, DbType, ExpressiveCommand>.Param>?)null);",
-		];
-
-		foreach (string statement in removed)
-			Assert.True(Bound(version, statement).StartsWith("ERROR", StringComparison.Ordinal), $"{version}: {statement}");
 	}
 
 	// ---- a typed NULL (DS2 #8): object? value ----

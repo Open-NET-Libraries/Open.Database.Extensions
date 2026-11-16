@@ -85,7 +85,7 @@ public static class LeakMatrixTests
 		Sync<ExpressiveDbCommand, QueryResultQueue<object[]>>("Retrieve", Traits.Reader, c => c.Retrieve()),
 		Sync<ExpressiveDbCommand, object?>("ExecuteScalar", Traits.None, c => c.ExecuteScalar()),
 		Sync<ExpressiveDbCommand, int>("ExecuteNonQuery", Traits.None, c => c.ExecuteNonQuery()),
-		Sync<ExpressiveDbCommand, object?>("ExecuteReturn", Traits.None, c => c.ExecuteReturn<object?>()),
+		Sync<ExpressiveDbCommand, object?>("ExecuteReturn", Traits.None, c => c.ExecuteReturn()),
 
 		Async<ExpressiveDbCommand, List<Row>>("Map.ToListAsync", RM, (c, ct) => c.Map<Row>().ToListAsync(ct)),
 		Async<ExpressiveDbCommand, Row[]>("Map.ToArrayAsync", RM, (c, ct) => c.Map<Row>().ToArrayAsync(ct)),
@@ -106,7 +106,7 @@ public static class LeakMatrixTests
 		Async<ExpressiveDbCommand, QueryResultQueue<object[]>>("RetrieveAsync", Traits.Reader, (c, ct) => c.UseCancellationToken(ct).RetrieveAsync()),
 		Async<ExpressiveDbCommand, object?>("ExecuteScalarAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteScalarAsync()),
 		Async<ExpressiveDbCommand, int>("ExecuteNonQueryAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteNonQueryAsync()),
-		Async<ExpressiveDbCommand, object?>("ExecuteReturnAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteReturnAsync<object?>()),
+		Async<ExpressiveDbCommand, object?>("ExecuteReturnAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteReturnAsync()),
 	];
 
 	// The same commands made from the interface-typed entry points (IDbConnection, IDbConnectionFactory, IDbConnectionPool): ExpressiveCommand.

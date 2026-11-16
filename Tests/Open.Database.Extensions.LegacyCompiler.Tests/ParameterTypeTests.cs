@@ -15,7 +15,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		// A command typed by SqlDbType, as the SQL Server packages are, without needing a connection.
 		sealed class SqlTyped : ExpressiveCommandBase<IDbConnection, IDbCommand, IDataReader, SqlDbType, SqlTyped>
 		{
-			public SqlTyped() : base(NoConnection, CommandType.Text, "select 1") { }
+			public SqlTyped() : base(NoConnection, CommandType.Text, "select 1", null) { }
 
 			static IDbConnection NoConnection() => throw new NotSupportedException();
 

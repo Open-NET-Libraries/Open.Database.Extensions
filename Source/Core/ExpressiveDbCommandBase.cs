@@ -26,11 +26,13 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="connectionPool">The pool to acquire connections from.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
+	/// <param name="params">The list of params</param>
 	protected ExpressiveDbCommandBase(
 		IDbConnectionPool<TConnection> connectionPool,
 		CommandType type,
-		string command)
-		: base(connectionPool, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connectionPool, type, command, @params)
 	{
 	}
 
@@ -38,20 +40,23 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="connFactory">The factory to generate connections from.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
+	/// <param name="params">The list of params</param>
 	protected ExpressiveDbCommandBase(
 		IDbConnectionFactory<TConnection> connFactory,
 		CommandType type,
-		string command)
-		: base(connFactory, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connFactory, type, command, @params)
 	{
 	}
 
-	/// <inheritdoc cref="ExpressiveDbCommandBase(IDbConnectionFactory{TConnection}, CommandType, string)"/>
+	/// <inheritdoc cref="ExpressiveDbCommandBase(IDbConnectionFactory{TConnection}, CommandType, string, IEnumerable{ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.Param}?)"/>
 	protected ExpressiveDbCommandBase(
 		Func<TConnection> connFactory,
 		CommandType type,
-		string command)
-		: base(connFactory, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connFactory, type, command, @params)
 	{
 	}
 
@@ -60,12 +65,14 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="transaction">The optional transaction to execute the command on.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
+	/// <param name="params">The list of params</param>
 	protected ExpressiveDbCommandBase(
 		TConnection connection,
 		IDbTransaction? transaction,
 		CommandType type,
-		string command)
-		: base(connection, transaction, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connection, transaction, type, command, @params)
 	{
 	}
 
@@ -73,11 +80,13 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="connection">The connection to execute the command on.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
+	/// <param name="params">The list of params</param>
 	protected ExpressiveDbCommandBase(
 		TConnection connection,
 		CommandType type,
-		string command)
-		: base(connection, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(connection, type, command, @params)
 	{
 	}
 
@@ -85,11 +94,13 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <param name="transaction">The transaction to execute the command on.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
+	/// <param name="params">The list of params</param>
 	protected ExpressiveDbCommandBase(
 		IDbTransaction transaction,
 		CommandType type,
-		string command)
-		: base(transaction, type, command)
+		string command,
+		IEnumerable<Param>? @params = null)
+		: base(transaction, type, command, @params)
 	{
 	}
 

@@ -26,7 +26,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		/// <param name="direction">The direction of the parameter.</param>
 		/// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
 		/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
-		internal Param(
+		public Param(
 			string name,
 			object? value,
 			TDbType? type = null,
