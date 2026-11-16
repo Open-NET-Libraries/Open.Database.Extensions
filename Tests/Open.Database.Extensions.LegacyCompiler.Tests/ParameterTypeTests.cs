@@ -15,7 +15,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		// A command typed by SqlDbType, as the SQL Server packages are, without needing a connection.
 		sealed class SqlTyped : ExpressiveCommandBase<IDbConnection, IDbCommand, IDataReader, SqlDbType, SqlTyped>
 		{
-			public SqlTyped() : base(NoConnection, CommandType.Text, "select 1", null) { }
+			public SqlTyped() : base(NoConnection, CommandType.Text, "select 1") { }
 
 			static IDbConnection NoConnection() => throw new NotSupportedException();
 
@@ -300,6 +300,32 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal("x=6 Int64 Input", SentDb(NewDb().AddParamIf(true, "x", l, DbType.Int64)));
 			Assert.Equal("x=9 Int32 Input", SentDb(NewDb().AddParamIf(true, "x", ni, DbType.Int32)));
 			Assert.Equal("", SentDb(NewDb().AddParamIf(false, "x", i, DbType.Int32)));
+		}
+
+		// The untyped int and long forms stay (DS2 #7, planning session): a literal 0 or 0L, and an int or long with a null or nullable database type, bind to them on this target's compiler.
+		[Fact]
+		public static void AddParam_ALiteralZero_IsAValue_WithNoDatabaseType()
+		{
+			Assert.Equal("id=0 - Input", SentDb(NewDb().AddParam("id", 0)));
+			Assert.Equal("id=0 - Input", SentDb(NewDb().AddParam("id", 0L)));
+			Assert.Equal("id=0 - Input", SentDb(NewDb().AddParamIf(true, "id", 0)));
+			Assert.Equal("id=0 - Input", SentDb(NewDb().AddParamIf(true, "id", 0L)));
+			Assert.Equal("id=0 - Input", Sent(New().AddParam("id", 0)));
+			Assert.Equal("id=0 - Input", Sent(New().AddParam("id", 0L)));
+			Assert.Equal("id=5 - Input", Sent(New().AddParam("id", 5)));
+			int five = 5;
+			long six = 6;
+			DbType? noType = null;
+			SqlDbType? sqlNoType = null;
+			Assert.Equal("id=5 - Input", SentDb(NewDb().AddParam("id", five, null)));
+			Assert.Equal("id=5 - Input", SentDb(NewDb().AddParam("id", five, noType)));
+			Assert.Equal("id=5 Int32 Input", SentDb(NewDb().AddParam("id", five, (DbType?)DbType.Int32)));
+			Assert.Equal("id=6 - Input", SentDb(NewDb().AddParam("id", six, noType)));
+			Assert.Equal("id=5 - Input", Sent(New().AddParam("id", five, sqlNoType)));
+			Assert.Equal("id=5 - Input", SentDb(NewDb().AddParamIf(true, "id", five, null)));
+
+			// A typed NULL byte array: object value with a database type (DS2 #8).
+			Assert.Equal("b=DBNull Binary Input", SentDb(NewDb().AddParam("b", (byte[])null, DbType.Binary)));
 		}
 	}
 }

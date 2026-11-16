@@ -66,12 +66,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="connectionPool">The pool to acquire connections from.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
-	/// <param name="params">The list of params</param>
 	protected ExpressiveCommandBase(
 		IDbConnectionPool<TConnection> connectionPool,
 		CommandType type,
-		string command,
-		IEnumerable<Param>? @params)
+		string command)
 	{
 		_poolOrConnection = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
 		Command = command ?? throw new ArgumentNullException(nameof(command));
@@ -79,30 +77,26 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		Contract.EndContractBlock();
 
 		Type = type;
-		if (@params is not null) _params = @params.ToList();
 	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connFactory">The factory to generate connections from.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
-	/// <param name="params">The list of params</param>
 	protected ExpressiveCommandBase(
 		IDbConnectionFactory<TConnection> connFactory,
 		CommandType type,
-		string command,
-		IEnumerable<Param>? @params)
-		: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command, @params)
+		string command)
+		: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command)
 	{
 	}
 
-	/// <inheritdoc cref="ExpressiveCommandBase(IDbConnectionFactory{TConnection}, CommandType, string, IEnumerable{Param}?)"/>
+	/// <inheritdoc cref="ExpressiveCommandBase(IDbConnectionFactory{TConnection}, CommandType, string)"/>
 	protected ExpressiveCommandBase(
 		Func<TConnection> connFactory,
 		CommandType type,
-		string command,
-		IEnumerable<Param>? @params)
-		: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command, @params)
+		string command)
+		: this((connFactory ?? throw new ArgumentNullException(nameof(connFactory))).AsPool(), type, command)
 	{
 	}
 
@@ -111,13 +105,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="transaction">The optional transaction to execute the command on.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
-	/// <param name="params">The list of params</param>
 	protected ExpressiveCommandBase(
 		TConnection connection,
 		IDbTransaction? transaction,
 		CommandType type,
-		string command,
-		IEnumerable<Param>? @params)
+		string command)
 	{
 		_poolOrConnection = connection ?? throw new ArgumentNullException(nameof(connection));
 		if (transaction is not null) EnsureOptions().Transaction = transaction;
@@ -126,20 +118,17 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		Contract.EndContractBlock();
 
 		Type = type;
-		if (@params is not null) _params = @params.ToList();
 	}
 
 	/// <summary>Constructs a <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}"/>.</summary>
 	/// <param name="connection">The connection to execute the command on.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
-	/// <param name="params">The list of params</param>
 	protected ExpressiveCommandBase(
 		TConnection connection,
 		CommandType type,
-		string command,
-		IEnumerable<Param>? @params)
-		: this(connection, null, type, command, @params)
+		string command)
+		: this(connection, null, type, command)
 	{
 	}
 
@@ -147,15 +136,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="transaction">The optional transaction to execute the command on.</param>
 	/// <param name="type">The command type.</param>
 	/// <param name="command">The SQL command.</param>
-	/// <param name="params">The list of params</param>
 	protected ExpressiveCommandBase(
 		IDbTransaction transaction,
 		CommandType type,
-		string command,
-		IEnumerable<Param>? @params)
+		string command)
 		: this(
 			(TConnection)(transaction ?? throw new ArgumentNullException(nameof(transaction))).Connection!,
-			transaction, type, command, @params)
+			transaction, type, command)
 	{
 	}
 
@@ -242,10 +229,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	#region AddParam
 
-	/// <summary>
-	/// Shortcut to add a parameter to the params list.
-	/// </summary>
-	protected TThis AddParam(Param param)
+	TThis AddParam(Param param)
 	{
 		Params.Add(param);
 		return (TThis)this;
@@ -261,7 +245,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <returns>This instance for use in method chaining.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
 	/// <exception cref="ArgumentException"><paramref name="name"/> is blank.</exception>
-	public TThis AddParam(string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+	public TThis AddParam(string name, object? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> AddParam(new(name, value, type, direction));
 
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
@@ -464,7 +448,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="type">The database type of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)" path="/*[not(self::param)]"/>
-	public TThis AddParamIf(bool condition, string name, object value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
+	public TThis AddParamIf(bool condition, string name, object? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		=> condition ? AddParam(name, value, type, direction) : (TThis)this;
 
 	/// <inheritdoc cref="AddParamIf(bool, string, object, TDbType, ParameterDirection)"/>
@@ -1308,11 +1292,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return ExecuteReaderAsync(transform, static (reader, f) => f(reader), behavior);
 	}
 
-	/// <summary>
-	/// Calls ExecuteNonQuery on the underlying command but sets up a return parameter and returns that value.
-	/// </summary>
-	/// <returns>The value from the return parameter.</returns>
-	public object? ExecuteReturn()
+	// The raw value of the return parameter: DBNull.Value when it is NULL. ExecuteReturn<T> converts it (a NULL gives default).
+	object? ExecuteReturnRaw()
 		// Open MUST occur before command creation as some DbCommands require it.
 		=> ExecuteCore(0, static (cmd, _, _) =>
 		{
@@ -1331,17 +1312,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </returns>
 	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range.</exception>
 	public T ExecuteReturn<T>()
-		=> RowMap<T>.ConvertScalar(ExecuteReturn());
+		=> RowMap<T>.ConvertScalar(ExecuteReturnRaw());
 
-	/// <summary>
-	/// Calls ExecuteNonQueryAsync on the underlying command but sets up a return parameter and returns that value.
-	/// </summary>
-	/// <inheritdoc cref="ExecuteReturn()"/>
-	/// <param name="cancellationToken">
-	/// A token that can cancel the call.
-	/// It is used together with the command's own token; either one cancels.
-	/// </param>
-	public ValueTask<object?> ExecuteReturnAsync(
+	ValueTask<object?> ExecuteReturnRawAsync(
 		CancellationToken cancellationToken = default)
 	{
 		// Thrown synchronously, as before:
@@ -1373,7 +1346,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	public async ValueTask<T> ExecuteReturnAsync<T>(
 		CancellationToken cancellationToken = default)
 		=> RowMap<T>.ConvertScalar(
-			await ExecuteReturnAsync(cancellationToken).ConfigureAwait(false));
+			await ExecuteReturnRawAsync(cancellationToken).ConfigureAwait(false));
 
 	/// <summary>
 	/// Calls ExecuteNonQuery on the underlying command.

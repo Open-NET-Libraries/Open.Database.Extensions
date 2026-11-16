@@ -112,7 +112,7 @@ public static class TokenTerminalTests
 				await cmd.ExecuteScalarAsync<int>(token).ConfigureAwait(false);
 				break;
 			case TokenTerminal.Return:
-				await cmd.ExecuteReturnAsync(token).ConfigureAwait(false);
+				await cmd.ExecuteReturnAsync<object?>(token).ConfigureAwait(false);
 				break;
 			case TokenTerminal.ReturnT:
 				await cmd.ExecuteReturnAsync<int>(token).ConfigureAwait(false);
@@ -310,20 +310,19 @@ public static class TokenTerminalTests
 		await Cancels(task);
 	}
 
+	// The untyped ExecuteReturnAsync threw synchronously for a cancelled token; it was removed (A5). The generic form is an async method, so a cancelled token faults the returned task, before anything runs.
 	[Fact]
-	public static void ExecuteReturnAsync_ThrowsSynchronously_ForEitherCancelledToken()
+	public static async Task ExecuteReturnAsync_FaultsTheTaskWithNothingRun_ForEitherCancelledToken()
 	{
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
 		var rig = new TokenRig();
-#pragma warning disable CA2012 // The call throws before it returns a ValueTask.
-		Assert.Throws<OperationCanceledException>(
-			() => _ = Make(rig).ExecuteReturnAsync(cts.Token));
-		Assert.Throws<OperationCanceledException>(
-			() => _ = Make(rig)
+		await Assert.ThrowsAsync<OperationCanceledException>(
+			async () => await Make(rig).ExecuteReturnAsync<object?>(cts.Token));
+		await Assert.ThrowsAsync<OperationCanceledException>(
+			async () => await Make(rig)
 				.UseCancellationToken(cts.Token)
-				.ExecuteReturnAsync());
-#pragma warning restore CA2012
+				.ExecuteReturnAsync<object?>());
 		Assert.Empty(rig.Log);
 	}
 
@@ -390,8 +389,8 @@ public static class TokenTerminalTests
 		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(ct));
 		Assert.Equal(
 			0, await cmd.ExecuteScalarAsync<int>(CancellationToken.None));
-		await cmd.ExecuteReturnAsync();
-		await cmd.ExecuteReturnAsync(ct);
+		await cmd.ExecuteReturnAsync<object?>();
+		await cmd.ExecuteReturnAsync<object?>(ct);
 		await cmd.ExecuteReturnAsync<int>(ct);
 
 		// the reader terminals with 1, 2, 3 and 4 arguments,
