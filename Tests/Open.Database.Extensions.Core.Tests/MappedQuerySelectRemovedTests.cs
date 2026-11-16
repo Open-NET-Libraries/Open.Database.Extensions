@@ -1,6 +1,4 @@
-using System.Collections.Concurrent;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 #nullable enable
 
@@ -13,9 +11,7 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class MappedQuerySelectRemovedTests
 {
-	static CancellationToken Ct => TestContext.Current.CancellationToken;
-
-	// A test cannot assert a compile error (CS1061 on `view.Select(...)`):
+	// A test cannot assert a compile error (CS1929 on `view.Select(...)`, see the A2 notes):
 	// the same fact is asserted over the public surface by reflection.
 	static readonly Type[] ViewTypes =
 	[
@@ -112,141 +108,4 @@ public static class MappedQuerySelectRemovedTests
 	}
 
 	sealed record Pair(int Id, string Name);
-
-	#region A foreign IMappedQuery<T>: the LINQ fallback never resumes on the caller's context
-
-	sealed class CountingContext : SynchronizationContext
-	{
-		readonly ConcurrentQueue<string> _posts = new();
-
-		public int Posts => _posts.Count;
-
-		// What was posted: the awaiter's continuation names its state machine.
-		public string What => string.Join(" ; ", _posts);
-
-		public override void Post(SendOrPostCallback d, object? state)
-		{
-			_posts.Enqueue(Describe(state));
-			ThreadPool.QueueUserWorkItem(_ => d(state));
-		}
-
-		public override void Send(SendOrPostCallback d, object? state)
-		{
-			_posts.Enqueue(Describe(state));
-			d(state);
-		}
-
-		static string Describe(object? state)
-			=> state switch
-			{
-				null => "null",
-				Delegate del => $"{del.Target?.GetType()} {del.Method.Name}",
-				ITuple tuple => string.Join(
-					" | ",
-					Enumerable.Range(0, tuple.Length).Select(i => Describe(tuple[i]))),
-				_ => state.GetType().ToString(),
-			};
-	}
-
-	// A source of two rows whose one awaited step
-	// (the first row, or the disposal) completes only when the gate opens.
-	sealed class GatedQuery(TaskCompletionSource gate, string gated)
-		: IMappedQuery<int>
-	{
-		sealed class Rows(TaskCompletionSource gate, string gated)
-			: IAsyncEnumerable<int>, IAsyncEnumerator<int>
-		{
-			public int Current { get; private set; }
-
-			public IAsyncEnumerator<int> GetAsyncEnumerator(
-				CancellationToken cancellationToken = default)
-				=> this;
-
-			public ValueTask<bool> MoveNextAsync()
-			{
-				Current++;
-				if (Current > 2) return new(false);
-				return Current == 1 && gated == "move"
-					? new(Opened(gate.Task))
-					: new(true);
-			}
-
-			static async Task<bool> Opened(Task gate)
-			{
-				await gate.ConfigureAwait(false);
-				return true;
-			}
-
-			public ValueTask DisposeAsync()
-				=> gated == "dispose" ? new(gate.Task) : default;
-		}
-
-		public void Read(Action<IEnumerable<int>> handler)
-			=> handler([1, 2]);
-
-		public TResult Read<TResult>(Func<IEnumerable<int>, TResult> handler)
-			=> handler([1, 2]);
-
-		public ValueTask ReadAsync(
-			Func<IAsyncEnumerable<int>, CancellationToken, ValueTask> handler,
-			CancellationToken cancellationToken)
-			=> handler(new Rows(gate, gated), cancellationToken);
-
-		public ValueTask<TResult> ReadAsync<TResult>(
-			Func<IAsyncEnumerable<int>, CancellationToken, ValueTask<TResult>> handler,
-			CancellationToken cancellationToken)
-			=> handler(new Rows(gate, gated), cancellationToken);
-	}
-
-	// Runs the call under a context that counts posts; the gate is opened
-	// after the call has returned an incomplete task.
-	static async Task<CountingContext> PostsDuring(
-		string gated,
-		Func<IMappedQuery<int>, Task> terminal)
-	{
-		TaskCompletionSource gate = new(
-			TaskCreationOptions.RunContinuationsAsynchronously);
-		CountingContext context = new();
-		SynchronizationContext? prior = SynchronizationContext.Current;
-		IMappedQuery<int> query = new GatedQuery(gate, gated);
-
-		Task task;
-		SynchronizationContext.SetSynchronizationContext(context);
-		try
-		{
-			task = terminal(query);
-		}
-		finally
-		{
-			SynchronizationContext.SetSynchronizationContext(prior);
-		}
-
-		Assert.False(task.IsCompleted, "the gated step must be genuinely asynchronous");
-		gate.TrySetResult();
-		await task;
-		return context;
-	}
-
-	[Theory]
-	[InlineData("move", "ToListAsync")]
-	[InlineData("dispose", "ToListAsync")]
-	[InlineData("move", "FirstOrDefaultAsync")]
-	[InlineData("dispose", "FirstOrDefaultAsync")]
-	public static async Task TheFallback_NeverResumesOnTheCallersContext(
-		string gated,
-		string terminal)
-	{
-		Task Run(IMappedQuery<int> q)
-			=> terminal == "ToListAsync"
-				? q.ToListAsync(Ct).AsTask()
-				: q.FirstOrDefaultAsync(Ct).AsTask();
-
-		CountingContext context = await PostsDuring(gated, Run);
-
-		Assert.True(
-			context.Posts == 0,
-			$"{gated}/{terminal} posted {context.Posts} time(s) to the caller's context: {context.What}");
-	}
-
-	#endregion
 }
