@@ -1,0 +1,17 @@
+Benchmark build: ea5f096
+Run date: 2026-11-14
+BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.6466/22H2/2022Update)
+AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores
+.NET SDK 11.0.100
+  [Host] : .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4
+Benchmark: SyntheticBenchmarks V1_Sync, V1_Async, V1_AsyncRead (the RowMap plan read three ways; the in-memory reader models a buffer refill and a busy thread pool)
+Conditions: 20 typed columns, 1,000 rows per call, one run per case; buffer_refill_rows = rows between refills (0 = none), refill_us = the wait of each refill, busy_pool_work_items = thread-pool work items kept queued (0 = none)
+Paths: Sync = ExecuteReader then Read(); Async execute = ExecuteReaderAsync then Read() (what the async terminals do by default); Async read = ReadAsync() for every row (the opt-in now named AsyncReads(); these runs used its rc.5 name EnableAsyncRead(true))
+Columns: reader_open_us = mean time from ExecuteReader until the reader closes; allocated_kb = bytes allocated per call / 1024
+Toolchain=InProcessEmitToolchain  IterationCount=12  LaunchCount=1
+WarmupCount=5
+Source files (BenchmarkDotNet report CSVs, one per run; the run folders are not in the repository):
+  stageSA-SA1/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stageSA-SA2/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stageSA-SA3/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv
+  stageSA-SA4/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.SyntheticBenchmarks-report.csv

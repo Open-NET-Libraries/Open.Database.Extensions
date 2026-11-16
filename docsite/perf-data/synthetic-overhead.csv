@@ -1,0 +1,17 @@
+variant_id,variant,family,description,columns,rows,reader_open_us,total_us,allocated_kb,source_run
+V0,"object[] rows (baseline)",odx-raw,"Every cell boxed into an object[] with GetValues; the baseline",20,1000,178.362,178.496,516.571,stage1r-1a
+V1,"Map<T>(), the RowMap plan",odx-one,"The cached, compiled typed plan",20,1000,81.586,81.728,227.399,stage1r-1a
+V2,"Map(selector), hand-written",odx-one,"A static Func<IDataRecord,T> with typed getters",20,1000,46.818,46.956,227.422,stage1r-1a
+V3,"Row class, inline Select",odx-select,"Two objects per row: a row class, then Select while the reader is open",20,1000,106.401,106.659,438.704,stage1r-1a
+V5,"Row class, close, then Select",odx-select,"Map<Row>().ToList(), then Select after the reader closes",20,1000,82.149,97.803,446.273,stage1r-1a
+V0b,"object[] rows, objects later",odx-raw,"GetValues into object[], typed objects built afterwards",20,1000,170.124,221.034,735.375,stage1r-1b
+V4a,"Selector, reused row, Select",odx-one,"Caller recipe: fill one held row, project it",20,1000,58.802,59.012,228.086,stage1r-1b
+V4b,"Selector, pooled row, Select",odx-one,"Caller recipe: rent a row, project it, return it",20,1000,62.809,63.054,228.235,stage1r-1b
+V6a,"Shaping inside the selector",odx-one,"Computed members built in the selector",20,1000,67.613,67.765,297.743,stage1r-1b
+V6c,"Row class, shaping in Select",odx-select,"Computed members built in an inline Select, reader open",20,1000,138.902,139.172,509.078,stage1r-1b
+V6d,"Row class, shaping after close",odx-select,"Computed members built after the reader closes",20,1000,82.274,134.489,516.673,stage1r-1b
+V7_V1,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<T>, the plain map",20,1000,202.377,202.663,548.086,stage1r-1c
+V7_V3,"Dapper, inline Select",dapper,"Query<Row>(buffered: false) with Select",20,1000,213.958,214.255,759.023,stage1r-1c
+V7_V5,"Dapper, then Select after",dapper,"Query<Row>, then Select after",20,1000,197.489,217.121,766.962,stage1r-1c
+V7_V6c,"Dapper, shaping in Select",dapper,"Unbuffered Query<Row>, computed members in Select",20,1000,257.574,257.872,829.345,stage1r-1c
+V7_V6d,"Dapper, shaping after",dapper,"Query<Row>, computed members afterwards",20,1000,200.464,256.209,837.361,stage1r-1c

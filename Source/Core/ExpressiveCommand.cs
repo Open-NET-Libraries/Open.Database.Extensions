@@ -13,13 +13,17 @@
 /// <para>
 /// A command built on a single connection supports one execution at a time; overlapping executions throw <see cref="InvalidOperationException"/>. Commands built on a factory or pool use a separate connection for each execution.
 /// </para>
+/// <para>
+/// <c>ExecuteScalarAsync</c> and <c>ExecuteNonQueryAsync</c> are on <see cref="ExpressiveDbCommand"/> (a <see cref="System.Data.Common.DbConnection"/>).
+/// </para>
 /// </remarks>
 /// <example>
 /// <code>
-/// int west = connection
-///     .Command("SELECT COUNT(*) FROM Customers WHERE Region = @region")
+/// List&lt;Customer&gt; west = await connection
+///     .Command("SELECT Id, Name FROM Customers WHERE Region = @region")
 ///     .AddParam("region", "West")
-///     .ExecuteScalar&lt;int&gt;();
+///     .Map&lt;Customer&gt;()
+///     .ToListAsync(cancellationToken);
 /// </code>
 /// </example>
 /// <seealso cref="ExpressiveDbCommand"/>

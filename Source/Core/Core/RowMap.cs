@@ -52,9 +52,17 @@ namespace Open.Database.Extensions;
 /// </remarks>
 /// <example>
 /// <code>
-/// public static RowMap&lt;Post&gt; PostMap =&gt; field ??= [new(nameof(Post.Id), "post_id"), new(nameof(Post.Title), "post_title")];
+/// public static RowMap&lt;Post&gt; PostMap
+///     =&gt; field ??=
+///     [
+///         new(nameof(Post.Id), "post_id"),
+///         new(nameof(Post.Title), "post_title")
+///     ];
 ///
-/// var posts = connection.Command("select * from posts").Map&lt;Post&gt;(PostMap).ToList();
+/// var posts = await connection
+///     .Command("select * from posts")
+///     .Map&lt;Post&gt;(PostMap)
+///     .ToListAsync(cancellationToken);
 /// </code>
 /// </example>
 /// <typeparam name="T">The model type whose properties and constructor parameters are mapped.</typeparam>
