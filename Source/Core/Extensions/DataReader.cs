@@ -30,6 +30,9 @@ public static class DataReaderExtensions
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception,
 	/// use <c>IterateWhile</c> and return <see langword="false"/>.
+	/// After a cancel, one more read decides:
+	/// no more rows, and the complete result is returned;
+	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
@@ -64,9 +67,43 @@ public static class DataReaderExtensions
 		}
 	}
 
+	// Reads the next row for a loop that checks the token before each read.
+	// A token canceled before the read: the read is made without it,
+	// so a provider does not throw before it can say there are no more rows.
+	// No row: the result is complete, so return false.
+	// A row: the cancel cut the read short, so throw (the row is not handled).
+	static async ValueTask<bool> ReadNextAsync(
+		DbDataReader reader,
+		CancellationToken cancellationToken)
+	{
+		if (!cancellationToken.IsCancellationRequested)
+		{
+			return await reader
+				.ReadAsync(cancellationToken)
+				.ConfigureAwait(false);
+		}
+
+		bool more = await reader
+			.ReadAsync(CancellationToken.None)
+			.ConfigureAwait(false);
+		if (more) cancellationToken.ThrowIfCancellationRequested();
+		return more;
+	}
+
 	/// <summary>
 	/// Iterates all records from an <see cref="DbDataReader"/>.
 	/// </summary>
+	/// <remarks>
+	/// The token is checked before each read.
+	/// A cancel that cuts the read short throws;
+	/// one that finds the read finished returns the complete result.
+	/// After a cancel, one more read decides:
+	/// no more rows, and the complete result is returned;
+	/// another row, and <see cref="OperationCanceledException"/>.
+	/// </remarks>
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled and cut the read short.
+	/// </exception>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
@@ -82,8 +119,11 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+			while (await ReadNextAsync(reader, cancellationToken)
+				.ConfigureAwait(false))
+			{
 				handler(reader);
+			}
 		}
 		else
 		{
@@ -104,8 +144,11 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+			while (await ReadNextAsync(reader, cancellationToken)
+				.ConfigureAwait(false))
+			{
 				await handler(reader).ConfigureAwait(false);
+			}
 		}
 		else if (cancellationToken.CanBeCanceled)
 		{
@@ -327,6 +370,9 @@ public static class DataReaderExtensions
 	/// the complete result has been yielded.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, stop enumerating.
+	/// After a cancel, one more read decides:
+	/// no more rows, and the complete result is returned;
+	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The reader to iterate.</param>
@@ -580,6 +626,9 @@ public static class DataReaderExtensions
 	/// the complete result has been yielded.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, leave the loop.
+	/// After a cancel, one more read decides:
+	/// no more rows, and the complete result is returned;
+	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <typeparam name="T">The return type of the transform function.</typeparam>
 	/// <param name="reader">The DbDataReader to iterate.</param>
@@ -849,6 +898,9 @@ public static class DataReaderExtensions
 	/// Rows already handed out stay handed out.
 	/// To stop early, return <see langword="false"/> from the predicate:
 	/// that ends the iteration without an exception.
+	/// After a cancel, one more read decides:
+	/// no more rows, and the complete result is returned;
+	/// another row, and <see cref="OperationCanceledException"/>.
 	/// </remarks>
 	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
@@ -893,7 +945,12 @@ public static class DataReaderExtensions
 		if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 		Contract.EndContractBlock();
 
-		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
+		while (true)
+		{
+			bool more = await ReadNextAsync(reader, cancellationToken)
+				.ConfigureAwait(false);
+			if (!more || !predicate(reader)) break;
+		}
 	}
 
 	/// <param name="reader">The DbDataReader to load data from.</param>
@@ -911,7 +968,12 @@ public static class DataReaderExtensions
 
 		if (useReadAsync)
 		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false) && predicate(reader)) { }
+			while (true)
+			{
+				bool more = await ReadNextAsync(reader, cancellationToken)
+					.ConfigureAwait(false);
+				if (!more || !predicate(reader)) break;
+			}
 		}
 		else if (cancellationToken.CanBeCanceled)
 		{
@@ -969,7 +1031,13 @@ public static class DataReaderExtensions
 
 		if (reader is DbDataReader r)
 		{
-			while (await r.ReadAsync(cancellationToken).ConfigureAwait(false) && await predicate(reader).ConfigureAwait(false)) { }
+			while (true)
+			{
+				bool more = await ReadNextAsync(r, cancellationToken)
+					.ConfigureAwait(false);
+				if (!more) break;
+				if (!await predicate(reader).ConfigureAwait(false)) break;
+			}
 		}
 		else
 		{

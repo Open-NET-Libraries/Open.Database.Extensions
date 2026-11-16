@@ -167,7 +167,7 @@ public static class DataReaderEdgeTests
 			}, cts.Token));
 
 		Assert.False(called);
-		Assert.Equal(0, reader.Reads);
+		Assert.Equal(1, reader.Reads); // the one read that found a row
 	}
 
 	// ---- Select / SelectAsync ----
@@ -432,6 +432,150 @@ public static class DataReaderEdgeTests
 				static _ => default,
 				false,
 				cts.Token));
+	}
+
+	static bool Visit(Action<IDataRecord> each, IDataRecord record)
+	{
+		each(record);
+		return true;
+	}
+
+	// The async loops that read with ReadAsync(token).
+	static ValueTask RunLoop(
+		string variant,
+		DbDataReader reader,
+		Action<IDataRecord> each,
+		CancellationToken token)
+		=> variant switch
+		{
+			"ForEachAsync(Action)" => reader.ForEachAsync(each, true, token),
+			"ForEachAsync(Func)" => reader.ForEachAsync(
+				r =>
+				{
+					each(r);
+					return default;
+				},
+				true,
+				token),
+			"IterateWhileAsync(Db)" => reader.IterateWhileAsync(
+				r => Visit(each, r),
+				token),
+			"IterateWhileAsync(Db, useReadAsync)" => reader.IterateWhileAsync(
+				r => Visit(each, r),
+				true,
+				token),
+			"IterateWhileAsync(IDataReader)"
+				=> ((IDataReader)reader).IterateWhileAsync(
+					r => new ValueTask<bool>(Visit(each, r)),
+					token),
+			_ => ((IDataReader)reader).IterateWhileAsync(
+				r => new ValueTask<bool>(Visit(each, r)),
+				true,
+				token),
+		};
+
+	[Theory]
+	[InlineData("ForEachAsync(Action)")]
+	[InlineData("ForEachAsync(Func)")]
+	[InlineData("IterateWhileAsync(Db)")]
+	[InlineData("IterateWhileAsync(Db, useReadAsync)")]
+	[InlineData("IterateWhileAsync(IDataReader)")]
+	[InlineData("IterateWhileAsync(IDataReader, useReadAsync)")]
+	public static async Task AsyncLoops_CancelledMidRead_ThrowBeforeTheNext(
+		string variant)
+	{
+		using var cts = new CancellationTokenSource();
+		TrackedReader reader = TrackedRows(10, n =>
+		{
+			if (n == 3) cts.Cancel();
+		});
+		int handled = 0;
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await RunLoop(
+				variant,
+				reader,
+				_ => handled++,
+				cts.Token));
+
+		Assert.Equal(3, handled);
+		Assert.Equal(4, reader.Reads); // the row not handled
+	}
+
+	[Theory]
+	[InlineData("ForEachAsync(Action)")]
+	[InlineData("ForEachAsync(Func)")]
+	[InlineData("IterateWhileAsync(Db)")]
+	[InlineData("IterateWhileAsync(Db, useReadAsync)")]
+	[InlineData("IterateWhileAsync(IDataReader)")]
+	[InlineData("IterateWhileAsync(IDataReader, useReadAsync)")]
+	public static async Task AsyncLoops_CancelledAfterTheLastRow_Return(
+		string variant)
+	{
+		// During the last row's handler (10),
+		// and as the read that ends the result is made (11).
+		foreach (int cancelAtRead in new[] { 10, 11 })
+		{
+			using var cts = new CancellationTokenSource();
+			TrackedReader reader = TrackedRows(10, n =>
+			{
+				if (n == cancelAtRead) cts.Cancel();
+			});
+			int handled = 0;
+
+			await RunLoop(variant, reader, _ => handled++, cts.Token);
+
+			Assert.Equal(10, handled);
+			Assert.Equal(11, reader.Reads);
+		}
+	}
+
+	// The command-level helpers hand a plain (non-Db) reader
+	// to ForEach and IterateWhile.
+	[Theory]
+	[InlineData(false, 3)]
+	[InlineData(true, 3)]
+	[InlineData(false, 10)]
+	[InlineData(true, 10)]
+	public static async Task IterateReaderAsync_OverAPlainReader_Cancel(
+		bool whileForm,
+		int cancelAtHandled)
+	{
+		using var cts = new CancellationTokenSource();
+		var command = new PlainAsyncReaderCommand(static () =>
+			FakeReader.Create(["Id", "Name", "Note"], Rows(10)));
+		int handled = 0;
+		void Handle(IDataRecord _)
+		{
+			if (++handled == cancelAtHandled) cts.Cancel();
+		}
+
+		async Task Run()
+		{
+			if (whileForm)
+			{
+				await command.IterateReaderWhileAsync(
+					r =>
+					{
+						Handle(r);
+						return true;
+					},
+					cancellationToken: cts.Token);
+			}
+			else
+			{
+				await command.IterateReaderAsync(
+					Handle,
+					cancellationToken: cts.Token);
+			}
+		}
+
+		if (cancelAtHandled == 3)
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(Run);
+		else
+			await Run(); // the last row: the read finished, so it returns
+
+		Assert.Equal(cancelAtHandled, handled);
 	}
 
 	// A stream over a plain IDataReader forwards the token,
