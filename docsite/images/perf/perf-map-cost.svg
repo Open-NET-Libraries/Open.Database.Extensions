@@ -9,14 +9,10 @@
       --frame: #d0d7de;
       --grid: #e6eaef;
       --axis: #8c959f;
-      --one-fill: #ddf4ff;
-      --one-line: #0969da;
-      --select-fill: #dafbe1;
-      --select-line: #1a7f37;
-      --dapper-fill: #ffe8d1;
-      --dapper-line: #bc4c00;
-      --grey-fill: #eaeef2;
-      --grey-line: #6e7781;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -26,14 +22,10 @@
         --frame: #30363d;
         --grid: #21262d;
         --axis: #8b949e;
-        --one-fill: #0c2d6b;
-        --one-line: #58a6ff;
-        --select-fill: #0f3d1f;
-        --select-line: #3fb950;
-        --dapper-fill: #4a2a0e;
-        --dapper-line: #f0883e;
-        --grey-fill: #2d333b;
-        --grey-line: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
       }
     }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
@@ -50,10 +42,10 @@
     .axis { stroke: var(--axis); stroke-width: 1.5; }
     .hit { fill: transparent; }
     .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
-    .one { fill: var(--one-fill); stroke: var(--one-line); stroke-width: 1.5; }
-    .select { fill: var(--select-fill); stroke: var(--select-line); stroke-width: 1.5; }
-    .dapper { fill: var(--dapper-fill); stroke: var(--dapper-line); stroke-width: 1.5; }
-    .grey { fill: var(--grey-fill); stroke: var(--grey-line); stroke-width: 1.5; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
     .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
@@ -83,21 +75,21 @@
     <title>1 columns: a map built on every call took 0.19 ms and allocated 15.6 KB; a reused map took 0.17 µs and allocated 0.55 KB. The difference, 0.19 ms and 15.1 KB, is the one-time cost.</title>
     <rect class="hit" x="0" y="66" width="560" height="26"/>
     <text class="name" x="90" y="83">1 column</text>
-    <rect class="one" x="100.75" y="71" width="73.08" height="16" rx="4"/>
+    <path class="one" d="M100,71 h70.58 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-70.58 z"/>
     <text class="val" x="180.58" y="83">0.19 ms</text>
   </g>
   <g>
     <title>5 columns: a map built on every call took 0.33 ms and allocated 22.9 KB; a reused map took 0.19 µs and allocated 0.55 KB. The difference, 0.33 ms and 22.4 KB, is the one-time cost.</title>
     <rect class="hit" x="0" y="92" width="560" height="26"/>
     <text class="name" x="90" y="109">5 columns</text>
-    <rect class="one" x="100.75" y="97" width="127.63" height="16" rx="4"/>
+    <path class="one" d="M100,97 h125.13 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-125.13 z"/>
     <text class="val" x="235.13" y="109">0.33 ms</text>
   </g>
   <g>
     <title>20 columns: a map built on every call took 0.88 ms and allocated 52.0 KB; a reused map took 0.27 µs and allocated 0.55 KB. The difference, 0.87 ms and 51.5 KB, is the one-time cost.</title>
     <rect class="hit" x="0" y="118" width="560" height="26"/>
     <text class="name" x="90" y="135">20 columns</text>
-    <rect class="one" x="100.75" y="123" width="337.91" height="16" rx="4"/>
+    <path class="one" d="M100,123 h335.41 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-335.41 z"/>
     <text class="val" x="445.41" y="135">0.87 ms</text>
   </g>
   <line class="axis" x1="100" y1="66" x2="100" y2="144"/>

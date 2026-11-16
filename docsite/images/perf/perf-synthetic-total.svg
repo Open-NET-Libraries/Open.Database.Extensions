@@ -9,14 +9,10 @@
       --frame: #d0d7de;
       --grid: #e6eaef;
       --axis: #8c959f;
-      --one-fill: #ddf4ff;
-      --one-line: #0969da;
-      --select-fill: #dafbe1;
-      --select-line: #1a7f37;
-      --dapper-fill: #ffe8d1;
-      --dapper-line: #bc4c00;
-      --grey-fill: #eaeef2;
-      --grey-line: #6e7781;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -26,14 +22,10 @@
         --frame: #30363d;
         --grid: #21262d;
         --axis: #8b949e;
-        --one-fill: #0c2d6b;
-        --one-line: #58a6ff;
-        --select-fill: #0f3d1f;
-        --select-line: #3fb950;
-        --dapper-fill: #4a2a0e;
-        --dapper-line: #f0883e;
-        --grey-fill: #2d333b;
-        --grey-line: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
       }
     }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
@@ -50,10 +42,10 @@
     .axis { stroke: var(--axis); stroke-width: 1.5; }
     .hit { fill: transparent; }
     .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
-    .one { fill: var(--one-fill); stroke: var(--one-line); stroke-width: 1.5; }
-    .select { fill: var(--select-fill); stroke: var(--select-line); stroke-width: 1.5; }
-    .dapper { fill: var(--dapper-fill); stroke: var(--dapper-line); stroke-width: 1.5; }
-    .grey { fill: var(--grey-fill); stroke: var(--grey-line); stroke-width: 1.5; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
     .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
@@ -87,112 +79,112 @@
     <title>Map(selector), hand-written (V2): A static Func&lt;IDataRecord,T&gt; with typed getters. Reader open 46.8 µs, total 47.0 µs, 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="114" width="560" height="26"/>
     <text class="name" x="222" y="131">Map(selector), hand-written</text>
-    <rect class="one" x="232.75" y="119" width="38.57" height="16" rx="4"/>
+    <path class="one" d="M232,119 h36.07 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-36.07 z"/>
     <text class="val" x="278.07" y="131">47.0 µs</text>
   </g>
   <g>
     <title>Selector, reused row, Select (V4a): Caller recipe: fill one held row, project it. Reader open 58.8 µs, total 59.0 µs, 228.1 KB allocated.</title>
     <rect class="hit" x="0" y="140" width="560" height="26"/>
     <text class="name" x="222" y="157">Selector, reused row, Select</text>
-    <rect class="one" x="232.75" y="145" width="48.86" height="16" rx="4"/>
+    <path class="one" d="M232,145 h46.36 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-46.36 z"/>
     <text class="val" x="288.36" y="157">59.0 µs</text>
   </g>
   <g>
     <title>Selector, pooled row, Select (V4b): Caller recipe: rent a row, project it, return it. Reader open 62.8 µs, total 63.1 µs, 228.2 KB allocated.</title>
     <rect class="hit" x="0" y="166" width="560" height="26"/>
     <text class="name" x="222" y="183">Selector, pooled row, Select</text>
-    <rect class="one" x="232.75" y="171" width="52.31" height="16" rx="4"/>
+    <path class="one" d="M232,171 h49.81 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-49.81 z"/>
     <text class="val" x="291.81" y="183">63.1 µs</text>
   </g>
   <g>
     <title>Shaping inside the selector (V6a): Computed members built in the selector. Reader open 67.6 µs, total 67.8 µs, 297.7 KB allocated.</title>
     <rect class="hit" x="0" y="192" width="560" height="26"/>
     <text class="name" x="222" y="209">Shaping inside the selector</text>
-    <rect class="one" x="232.75" y="197" width="56.33" height="16" rx="4"/>
+    <path class="one" d="M232,197 h53.83 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-53.83 z"/>
     <text class="val" x="295.83" y="209">67.8 µs</text>
   </g>
   <g>
     <title>Map&lt;T&gt;(), the RowMap plan (V1): The cached, compiled typed plan. Reader open 81.6 µs, total 81.7 µs, 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="218" width="560" height="26"/>
     <text class="name" x="222" y="235">Map&lt;T&gt;(), the RowMap plan</text>
-    <rect class="one" x="232.75" y="223" width="68.24" height="16" rx="4"/>
+    <path class="one" d="M232,223 h65.74 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-65.74 z"/>
     <text class="val" x="307.74" y="235">81.7 µs</text>
   </g>
   <g>
     <title>Row class, close, then Select (V5): Map&lt;Row&gt;().ToList(), then Select after the reader closes. Reader open 82.1 µs, total 97.8 µs, 446.3 KB allocated.</title>
     <rect class="hit" x="0" y="244" width="560" height="26"/>
     <text class="name" x="222" y="261">Row class, close, then Select</text>
-    <rect class="select" x="232.75" y="249" width="81.96" height="16" rx="4"/>
+    <path class="select" d="M232,249 h79.46 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-79.46 z"/>
     <text class="val" x="321.46" y="261">97.8 µs</text>
   </g>
   <g>
     <title>Row class, inline Select (V3): Two objects per row: a row class, then Select while the reader is open. Reader open 106.4 µs, total 106.7 µs, 438.7 KB allocated.</title>
     <rect class="hit" x="0" y="270" width="560" height="26"/>
     <text class="name" x="222" y="287">Row class, inline Select</text>
-    <rect class="select" x="232.75" y="275" width="89.52" height="16" rx="4"/>
+    <path class="select" d="M232,275 h87.02 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-87.02 z"/>
     <text class="val" x="329.02" y="287">106.7 µs</text>
   </g>
   <g>
     <title>Row class, shaping after close (V6d): Computed members built after the reader closes. Reader open 82.3 µs, total 134.5 µs, 516.7 KB allocated.</title>
     <rect class="hit" x="0" y="296" width="560" height="26"/>
     <text class="name" x="222" y="313">Row class, shaping after close</text>
-    <rect class="select" x="232.75" y="301" width="113.26" height="16" rx="4"/>
+    <path class="select" d="M232,301 h110.76 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-110.76 z"/>
     <text class="val" x="352.76" y="313">134.5 µs</text>
   </g>
   <g>
     <title>Row class, shaping in Select (V6c): Computed members built in an inline Select, reader open. Reader open 138.9 µs, total 139.2 µs, 509.1 KB allocated.</title>
     <rect class="hit" x="0" y="322" width="560" height="26"/>
     <text class="name" x="222" y="339">Row class, shaping in Select</text>
-    <rect class="select" x="232.75" y="327" width="117.26" height="16" rx="4"/>
+    <path class="select" d="M232,327 h114.76 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-114.76 z"/>
     <text class="val" x="356.76" y="339">139.2 µs</text>
   </g>
   <g>
     <title>object[] rows (baseline) (V0): Every cell boxed into an object[] with GetValues; the baseline. Reader open 178.4 µs, total 178.5 µs, 516.6 KB allocated.</title>
     <rect class="hit" x="0" y="348" width="560" height="26"/>
     <text class="name" x="222" y="365">object[] rows (baseline)</text>
-    <rect class="grey" x="232.75" y="353" width="150.82" height="16" rx="4"/>
+    <path class="grey" d="M232,353 h148.32 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-148.32 z"/>
     <text class="val" x="390.32" y="365">178.5 µs</text>
   </g>
   <g>
     <title>Dapper Query&lt;T&gt; (V7_V1): Dapper 2.1.89, buffered Query&lt;T&gt;, the plain map. Reader open 202.4 µs, total 202.7 µs, 548.1 KB allocated.</title>
     <rect class="hit" x="0" y="374" width="560" height="26"/>
     <text class="name" x="222" y="391">Dapper Query&lt;T&gt;</text>
-    <rect class="dapper" x="232.75" y="379" width="171.44" height="16" rx="4"/>
+    <path class="dapper" d="M232,379 h168.94 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-168.94 z"/>
     <text class="val" x="410.94" y="391">202.7 µs</text>
   </g>
   <g>
     <title>Dapper, inline Select (V7_V3): Query&lt;Row&gt;(buffered: false) with Select. Reader open 214.0 µs, total 214.3 µs, 759.0 KB allocated.</title>
     <rect class="hit" x="0" y="400" width="560" height="26"/>
     <text class="name" x="222" y="417">Dapper, inline Select</text>
-    <rect class="dapper" x="232.75" y="405" width="181.33" height="16" rx="4"/>
+    <path class="dapper" d="M232,405 h178.83 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-178.83 z"/>
     <text class="val" x="420.83" y="417">214.3 µs</text>
   </g>
   <g>
     <title>Dapper, then Select after (V7_V5): Query&lt;Row&gt;, then Select after. Reader open 197.5 µs, total 217.1 µs, 767.0 KB allocated.</title>
     <rect class="hit" x="0" y="426" width="560" height="26"/>
     <text class="name" x="222" y="443">Dapper, then Select after</text>
-    <rect class="dapper" x="232.75" y="431" width="183.78" height="16" rx="4"/>
+    <path class="dapper" d="M232,431 h181.28 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-181.28 z"/>
     <text class="val" x="423.28" y="443">217.1 µs</text>
   </g>
   <g>
     <title>object[] rows, objects later (V0b): GetValues into object[], typed objects built afterwards. Reader open 170.1 µs, total 221.0 µs, 735.4 KB allocated.</title>
     <rect class="hit" x="0" y="452" width="560" height="26"/>
     <text class="name" x="222" y="469">object[] rows, objects later</text>
-    <rect class="grey" x="232.75" y="457" width="187.12" height="16" rx="4"/>
+    <path class="grey" d="M232,457 h184.62 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-184.62 z"/>
     <text class="val" x="426.62" y="469">221.0 µs</text>
   </g>
   <g>
     <title>Dapper, shaping after (V7_V6d): Query&lt;Row&gt;, computed members afterwards. Reader open 200.5 µs, total 256.2 µs, 837.4 KB allocated.</title>
     <rect class="hit" x="0" y="478" width="560" height="26"/>
     <text class="name" x="222" y="495">Dapper, shaping after</text>
-    <rect class="dapper" x="232.75" y="483" width="217.13" height="16" rx="4"/>
+    <path class="dapper" d="M232,483 h214.63 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-214.63 z"/>
     <text class="val" x="456.63" y="495">256.2 µs</text>
   </g>
   <g>
     <title>Dapper, shaping in Select (V7_V6c): Unbuffered Query&lt;Row&gt;, computed members in Select. Reader open 257.6 µs, total 257.9 µs, 829.3 KB allocated.</title>
     <rect class="hit" x="0" y="504" width="560" height="26"/>
     <text class="name" x="222" y="521">Dapper, shaping in Select</text>
-    <rect class="dapper" x="232.75" y="509" width="218.55" height="16" rx="4"/>
+    <path class="dapper" d="M232,509 h216.05 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-216.05 z"/>
     <text class="val" x="458.05" y="521">257.9 µs</text>
   </g>
   <line class="axis" x1="232" y1="114" x2="232" y2="530"/>

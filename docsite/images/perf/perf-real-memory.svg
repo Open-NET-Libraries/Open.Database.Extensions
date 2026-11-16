@@ -9,14 +9,10 @@
       --frame: #d0d7de;
       --grid: #e6eaef;
       --axis: #8c959f;
-      --one-fill: #ddf4ff;
-      --one-line: #0969da;
-      --select-fill: #dafbe1;
-      --select-line: #1a7f37;
-      --dapper-fill: #ffe8d1;
-      --dapper-line: #bc4c00;
-      --grey-fill: #eaeef2;
-      --grey-line: #6e7781;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -26,14 +22,10 @@
         --frame: #30363d;
         --grid: #21262d;
         --axis: #8b949e;
-        --one-fill: #0c2d6b;
-        --one-line: #58a6ff;
-        --select-fill: #0f3d1f;
-        --select-line: #3fb950;
-        --dapper-fill: #4a2a0e;
-        --dapper-line: #f0883e;
-        --grey-fill: #2d333b;
-        --grey-line: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
       }
     }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
@@ -50,10 +42,10 @@
     .axis { stroke: var(--axis); stroke-width: 1.5; }
     .hit { fill: transparent; }
     .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
-    .one { fill: var(--one-fill); stroke: var(--one-line); stroke-width: 1.5; }
-    .select { fill: var(--select-fill); stroke: var(--select-line); stroke-width: 1.5; }
-    .dapper { fill: var(--dapper-fill); stroke: var(--dapper-line); stroke-width: 1.5; }
-    .grey { fill: var(--grey-fill); stroke: var(--grey-line); stroke-width: 1.5; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
     .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
@@ -90,35 +82,35 @@
     <title>Hand loop (reference): Typed getters written directly on the provider reader. SQL Server LocalDB, 20 columns, 10,000 rows: 25.6 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="138" width="560" height="26"/>
     <text class="name" x="186" y="155">Hand loop (reference)</text>
-    <rect class="grey" x="196.75" y="143" width="136.92" height="16" rx="4"/>
+    <path class="grey" d="M196,143 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
     <text class="val" x="340.42" y="155">9.48 MB</text>
   </g>
   <g>
     <title>Map&lt;T&gt;(), the RowMap plan: The cached, compiled typed plan. SQL Server LocalDB, 20 columns, 10,000 rows: 25.9 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="164" width="560" height="26"/>
     <text class="name" x="186" y="181">Map&lt;T&gt;(), the RowMap plan</text>
-    <rect class="one" x="196.75" y="169" width="136.92" height="16" rx="4"/>
+    <path class="one" d="M196,169 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
     <text class="val" x="340.42" y="181">9.48 MB</text>
   </g>
   <g>
     <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQL Server LocalDB, 20 columns, 10,000 rows: 25.2 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="190" width="560" height="26"/>
     <text class="name" x="186" y="207">Map(selector), hand-written</text>
-    <rect class="one" x="196.75" y="195" width="136.92" height="16" rx="4"/>
+    <path class="one" d="M196,195 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
     <text class="val" x="340.42" y="207">9.48 MB</text>
   </g>
   <g>
     <title>Row class, inline Select: Two objects per row: a row class, then Select while the reader is open. SQL Server LocalDB, 20 columns, 10,000 rows: 27.2 ms per call, 11.54 MB allocated.</title>
     <rect class="hit" x="0" y="216" width="560" height="26"/>
     <text class="name" x="186" y="233">Row class, inline Select</text>
-    <rect class="select" x="196.75" y="221" width="167" height="16" rx="4"/>
+    <path class="select" d="M196,221 h164.5 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-164.5 z"/>
     <text class="val" x="370.5" y="233">11.54 MB</text>
   </g>
   <g>
     <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQL Server LocalDB, 20 columns, 10,000 rows: 27.6 ms per call, 12.27 MB allocated.</title>
     <rect class="hit" x="0" y="242" width="560" height="26"/>
     <text class="name" x="186" y="259">Dapper Query&lt;T&gt;</text>
-    <rect class="dapper" x="196.75" y="247" width="177.6" height="16" rx="4"/>
+    <path class="dapper" d="M196,247 h175.1 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-175.1 z"/>
     <text class="val" x="381.1" y="259">12.27 MB</text>
   </g>
   <line class="axis" x1="196" y1="138" x2="196" y2="268"/>
@@ -137,35 +129,35 @@
     <title>Hand loop (reference): Typed getters written directly on the provider reader. SQLite file, 20 columns, 10,000 rows: 25.9 ms per call, 11.96 MB allocated.</title>
     <rect class="hit" x="0" y="330" width="560" height="26"/>
     <text class="name" x="186" y="347">Hand loop (reference)</text>
-    <rect class="grey" x="196.75" y="335" width="173.16" height="16" rx="4"/>
+    <path class="grey" d="M196,335 h170.66 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-170.66 z"/>
     <text class="val" x="376.66" y="347">11.96 MB</text>
   </g>
   <g>
     <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQLite file, 20 columns, 10,000 rows: 25.9 ms per call, 11.96 MB allocated.</title>
     <rect class="hit" x="0" y="356" width="560" height="26"/>
     <text class="name" x="186" y="373">Map(selector), hand-written</text>
-    <rect class="one" x="196.75" y="361" width="173.17" height="16" rx="4"/>
+    <path class="one" d="M196,361 h170.67 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-170.67 z"/>
     <text class="val" x="376.67" y="373">11.96 MB</text>
   </g>
   <g>
     <title>Map&lt;T&gt;(), the RowMap plan: The cached, compiled typed plan. SQLite file, 20 columns, 10,000 rows: 31.3 ms per call, 14.11 MB allocated.</title>
     <rect class="hit" x="0" y="382" width="560" height="26"/>
     <text class="name" x="186" y="399">Map&lt;T&gt;(), the RowMap plan</text>
-    <rect class="one" x="196.75" y="387" width="204.5" height="16" rx="4"/>
+    <path class="one" d="M196,387 h202 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-202 z"/>
     <text class="val" x="408" y="399">14.11 MB</text>
   </g>
   <g>
     <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQLite file, 20 columns, 10,000 rows: 29.8 ms per call, 14.79 MB allocated.</title>
     <rect class="hit" x="0" y="408" width="560" height="26"/>
     <text class="name" x="186" y="425">Dapper Query&lt;T&gt;</text>
-    <rect class="dapper" x="196.75" y="413" width="214.42" height="16" rx="4"/>
+    <path class="dapper" d="M196,413 h211.92 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-211.92 z"/>
     <text class="val" x="417.92" y="425">14.79 MB</text>
   </g>
   <g>
     <title>Row class, inline Select: Two objects per row: a row class, then Select while the reader is open. SQLite file, 20 columns, 10,000 rows: 30.9 ms per call, 16.17 MB allocated.</title>
     <rect class="hit" x="0" y="434" width="560" height="26"/>
     <text class="name" x="186" y="451">Row class, inline Select</text>
-    <rect class="select" x="196.75" y="439" width="234.58" height="16" rx="4"/>
+    <path class="select" d="M196,439 h232.08 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-232.08 z"/>
     <text class="val" x="438.08" y="451">16.17 MB</text>
   </g>
   <line class="axis" x1="196" y1="330" x2="196" y2="460"/>

@@ -79,14 +79,10 @@ $css = @'
       --frame: #d0d7de;
       --grid: #e6eaef;
       --axis: #8c959f;
-      --one-fill: #ddf4ff;
-      --one-line: #0969da;
-      --select-fill: #dafbe1;
-      --select-line: #1a7f37;
-      --dapper-fill: #ffe8d1;
-      --dapper-line: #bc4c00;
-      --grey-fill: #eaeef2;
-      --grey-line: #6e7781;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -96,14 +92,10 @@ $css = @'
         --frame: #30363d;
         --grid: #21262d;
         --axis: #8b949e;
-        --one-fill: #0c2d6b;
-        --one-line: #58a6ff;
-        --select-fill: #0f3d1f;
-        --select-line: #3fb950;
-        --dapper-fill: #4a2a0e;
-        --dapper-line: #f0883e;
-        --grey-fill: #2d333b;
-        --grey-line: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
       }
     }
     text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
@@ -120,10 +112,10 @@ $css = @'
     .axis { stroke: var(--axis); stroke-width: 1.5; }
     .hit { fill: transparent; }
     .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
-    .one { fill: var(--one-fill); stroke: var(--one-line); stroke-width: 1.5; }
-    .select { fill: var(--select-fill); stroke: var(--select-line); stroke-width: 1.5; }
-    .dapper { fill: var(--dapper-fill); stroke: var(--dapper-line); stroke-width: 1.5; }
-    .grey { fill: var(--grey-fill); stroke: var(--grey-line); stroke-width: 1.5; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
     .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
     .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
@@ -201,7 +193,8 @@ function New-BarSvg([string]$id, [string]$title, [string]$subtitle, $panels, [sc
       [void]$sb.AppendLine("    <title>$(X $r.Detail)</title>")
       [void]$sb.AppendLine("    <rect class=""hit"" x=""0"" y=""$ry"" width=""$W"" height=""$rowH""/>")
       [void]$sb.AppendLine("    <text class=""name"" x=""$($left - 10)"" y=""$($ry + 17)"">$(X $r.Name)</text>")
-      [void]$sb.AppendLine("    <rect class=""$($famClass[$r.Fam])"" x=""$(N ($left + 0.75))"" y=""$($ry + 5)"" width=""$(N ($bw - 1.5))"" height=""16"" rx=""4""/>")
+      $rr = [math]::Min(4.0, $bw / 2); $y0 = $ry + 5
+      [void]$sb.AppendLine("    <path class=""$($famClass[$r.Fam])"" d=""M$(N $left),$y0 h$(N ($bw - $rr)) a$(N $rr),$(N $rr) 0 0 1 $(N $rr),$(N $rr) v$(N (16 - 2 * $rr)) a$(N $rr),$(N $rr) 0 0 1 -$(N $rr),$(N $rr) h-$(N ($bw - $rr)) z""/>")
       [void]$sb.AppendLine("    <text class=""val"" x=""$(N ($left + $bw + 6))"" y=""$($ry + 17)"">$(X (& $format $r.Value))</text>")
       [void]$sb.AppendLine("  </g>")
       $i++
