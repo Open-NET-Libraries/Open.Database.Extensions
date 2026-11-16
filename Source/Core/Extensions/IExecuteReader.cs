@@ -19,8 +19,39 @@ public static class IExecuteReaderExtensions
 	const string IterateReaderObsolete = "Use .Map(transform).Read(selector) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use cmd.ExecuteReader(r => selector(r.Select(transform)), behavior | CommandBehavior.SingleResult). Removed in 12.";
 
 	/// <summary>
-	/// Iterates a reader on a command with a handler function.
+	/// Iterates a reader on a command with a handler function;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <remarks>
+	/// <note type="caution">
+	/// <b>This is not the recommended way to read rows: it holds the
+	/// connection while your code runs for each row.</b>
+	/// The reader, and the connection under it, stay open for as long as
+	/// your code takes per row, added up over all the rows.
+	/// <br/>
+	/// <br/>
+	/// In async code that time has no bound: every <c>await</c> in the
+	/// loop body can yield, and nothing says when the loop resumes.
+	/// Until it does, the connection is on hold: a pooled connection is
+	/// not returned to the pool, and the server keeps its locks and the
+	/// open result set.
+	/// <br/>
+	/// <br/>
+	/// It is here for the cases that need exactly that, such as a result
+	/// too large to buffer or a row-by-row pipeline.
+	/// Otherwise use a call that lets go of the connection first:
+	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// and
+	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// buffer the rows and release the connection, and
+	/// <see cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
+	/// streams them to a consumer without holding it
+	/// (it is unbounded by default: the read runs at full speed and
+	/// frees the connection while the consumer takes its time).
+	/// A bounded channel brings the hold back, because the read then
+	/// waits for room.
+	/// </note>
+	/// </remarks>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="handler">The handler function for each IDataRecord.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -36,8 +67,12 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true.
+	/// Iterates a reader on a command while the handler function returns true;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <param name="handler">The handler function for each IDataRecord.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -53,8 +88,12 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command with a handler function.
+	/// Iterates a reader on a command with a handler function;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The command to iterate.</param>
 	/// <param name="handler">The handler function for each IDataRecord.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -105,8 +144,12 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true.
+	/// Iterates a reader on a command while the handler function returns true;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The command to iterate.</param>
 	/// <param name="handler">The handler function for each IDataRecord.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -157,8 +200,12 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true.
+	/// Iterates a reader on a command while the handler function returns true;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The command to iterate.</param>
 	/// <param name="handler">The handler function for each IDataRecord.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>

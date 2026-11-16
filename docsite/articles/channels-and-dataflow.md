@@ -12,7 +12,7 @@ The packages work on expressive commands, on `IDbCommand` and on readers, and ma
 
 ## Streaming from a mapped query
 
-A channel earns its place when a producer and its consumers run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed, writes them into a channel that ODX makes and completes, and is finished with the connection as soon as the last row is read. One or more consumers do the slow work (a web call, a file write, a transform) on other tasks, while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`. There is nothing more to install: this is in the core package.
+A channel earns its place when a producer and its consumers run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed, writes them into a channel that ODX makes and completes, and is finished with the connection as soon as the last row is read. One or more consumers do the slow work (a web call, a file write, a transform) on other tasks, while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`. There is nothing more to install: this is in the core package. Reading the rows in your own loop instead (a `ReadAsync` handler, `ForEachAsync`, `AsAsyncEnumerable`) holds the connection for the whole loop: see [Streaming holds the connection](mapping.md#streaming-holds-the-connection).
 
 Which one to use:
 - `ToChannelReader()` is for streaming. It returns the `ChannelReader<T>`; hand it to the consumers, which read it with `await foreach` over `ReadAllAsync(cancellationToken)`.
@@ -57,7 +57,7 @@ If there is one consumer, only a few rows, and nothing else to overlap, you do n
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_buffer)]
 
-Iterating the query directly (the `ReadAsync` handler) holds the connection for the whole loop, so it is not the way to do slow work per row. The caution about streaming is documented separately.
+Iterating the query directly (the `ReadAsync` handler) holds the connection for the whole loop, so it is not the way to do slow work per row. The caution about streaming is [documented in the mapping article](mapping.md#streaming-holds-the-connection).
 
 ### What each choice costs
 
