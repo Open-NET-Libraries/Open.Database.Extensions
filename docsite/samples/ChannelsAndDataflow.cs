@@ -58,7 +58,7 @@ public static class ChannelsAndDataflow
 		// finishes at full speed however slow the loop body is.
 		await foreach (var post in query
 			.Map<Post>()
-			.ToChannelReader()
+			.ToChannelReader(cancellationToken)
 			.ReadAllAsync(cancellationToken))
 		{
 			received.Add(post);

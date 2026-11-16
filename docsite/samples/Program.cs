@@ -180,7 +180,7 @@ List<Post> streamChained = await ChannelsAndDataflow
 	.StreamChainedSample(connection, CancellationToken.None);
 Check(
 	streamChained.Select(p => p.Id).SequenceEqual(streamIds),
-	"query.Map<T>().ToChannelReader().ReadAllAsync(ct) delivers every row in order, and the channel completes");
+	"query.Map<T>().ToChannelReader(ct).ReadAllAsync(ct) delivers every row in order, and the channel completes");
 
 List<Post> streamDirect = await ChannelsAndDataflow
 	.StreamDirectSample(connection, CancellationToken.None);
