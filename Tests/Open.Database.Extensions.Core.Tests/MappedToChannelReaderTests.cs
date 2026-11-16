@@ -615,12 +615,12 @@ public static class MappedToChannelReaderTests
 
 		var channel = Posts()
 			.Map<ChannelRow>()
-			.ToChannel(out var rows, Ct);
+			.ToChannel(out var rowCount, Ct);
 
 		await foreach (ChannelRow row in channel.Reader.ReadAllAsync(Ct))
 			received.Add(row.Id);
 
-		long count = await rows;
+		long count = await rowCount;
 
 		Assert.Equal(Ids(5), received);
 		Assert.Equal(5, count);

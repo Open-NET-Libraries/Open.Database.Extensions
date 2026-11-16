@@ -132,7 +132,7 @@ public static class ChannelsAndDataflow
 		var channel = connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToChannel(out var rows, cancellationToken);
+			.ToChannel(out var rowCount, cancellationToken);
 
 		await foreach (Post post in channel.Reader
 			.ReadAllAsync(cancellationToken))
@@ -140,7 +140,7 @@ public static class ChannelsAndDataflow
 			received.Add(post);
 		}
 
-		long count = await rows;
+		long count = await rowCount;
 		#endregion
 
 		return (count, received);

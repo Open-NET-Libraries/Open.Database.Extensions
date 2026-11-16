@@ -27,11 +27,11 @@ public static class MappedToChannelCountTests
 		var rig = Create(view, () => new ChannelTestReader(5, laterSets: 1));
 		var received = new List<int>();
 
-		var channel = rig.ToCounted(out var rows, null, false, Ct);
+		var channel = rig.ToCounted(out var rowCount, null, false, Ct);
 		await foreach (ChannelRow row in channel.Reader.ReadAllAsync(Ct))
 			received.Add(row.Id);
 
-		long n = await rows.Within();
+		long n = await rowCount.Within();
 
 		Assert.Equal(Ids(5), received);
 		Assert.Equal(5, n);
@@ -47,11 +47,11 @@ public static class MappedToChannelCountTests
 		var rig = Create(
 			view,
 			() => new ChannelTestReader(2, laterSets: 2, failAtNextResult: 1));
-		var channel = rig.ToCounted(out var rows, null, false, Ct);
+		var channel = rig.ToCounted(out var rowCount, null, false, Ct);
 
 		var (received, error) = await Collect(channel.Reader);
 		var countError = await Assert.ThrowsAsync<LaterSetFailure>(
-			() => rows.Within());
+			() => rowCount.Within());
 
 		Assert.Equal(Ids(2), received);
 		Assert.Same(error, countError);
@@ -66,7 +66,7 @@ public static class MappedToChannelCountTests
 		using var cts = new CancellationTokenSource();
 		var rig = Create(view, () => new ChannelTestReader(10));
 		var channel = rig.ToCounted(
-			out var rows,
+			out var rowCount,
 			new BoundedChannelOptions(1),
 			true,
 			cts.Token);
@@ -77,8 +77,8 @@ public static class MappedToChannelCountTests
 
 		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => rows.Within());
-		Assert.True(rows.IsCanceled);
+			() => rowCount.Within());
+		Assert.True(rowCount.IsCanceled);
 	}
 
 	[Theory, MemberData(nameof(Views))]
@@ -89,11 +89,11 @@ public static class MappedToChannelCountTests
 		cts.Cancel();
 		var rig = Create(view, () => new ChannelTestReader(3));
 
-		var channel = rig.ToCounted(out var rows, null, false, cts.Token);
+		var channel = rig.ToCounted(out var rowCount, null, false, cts.Token);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => rows.Within());
-		Assert.True(rows.IsCanceled);
+			() => rowCount.Within());
+		Assert.True(rowCount.IsCanceled);
 		var (_, error) = await Collect(channel.Reader);
 		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		Assert.Equal(0, rig.Executes);
@@ -107,9 +107,9 @@ public static class MappedToChannelCountTests
 	{
 		var rig = Create(view, () => new ChannelTestReader(4));
 
-		_ = rig.ToCounted(out var rows, null, true, Ct);
+		_ = rig.ToCounted(out var rowCount, null, true, Ct);
 
-		Assert.Equal(4, await rows.Within());
+		Assert.Equal(4, await rowCount.Within());
 	}
 
 	[Theory, MemberData(nameof(Views))]
@@ -117,15 +117,15 @@ public static class MappedToChannelCountTests
 		string view)
 	{
 		var rig = Create(view, () => new ChannelTestReader(4));
-		var channel = rig.ToCounted(out var rows, null, false, Ct);
+		var channel = rig.ToCounted(out var rowCount, null, false, Ct);
 
-		var first = await Task.WhenAny(rows, Task.Delay(Quiet, Ct));
-		Assert.NotSame(rows, first);
-		Assert.False(rows.IsCompleted);
+		var first = await Task.WhenAny(rowCount, Task.Delay(Quiet, Ct));
+		Assert.NotSame(rowCount, first);
+		Assert.False(rowCount.IsCompleted);
 
 		channel.Reader.TryRead(out _);
 
-		Assert.Equal(4, await rows.Within());
+		Assert.Equal(4, await rowCount.Within());
 	}
 
 	// ---- 27: awaiting twice ----
@@ -135,11 +135,11 @@ public static class MappedToChannelCountTests
 		string view)
 	{
 		var rig = Create(view, () => new ChannelTestReader(3));
-		var channel = rig.ToCounted(out var rows, null, false, Ct);
+		var channel = rig.ToCounted(out var rowCount, null, false, Ct);
 		await Collect(channel.Reader);
 
-		long first = await rows;
-		long second = await rows;
+		long first = await rowCount;
+		long second = await rowCount;
 
 		Assert.Equal(3, first);
 		Assert.Equal(first, second);
@@ -153,7 +153,7 @@ public static class MappedToChannelCountTests
 	{
 		var rig = Create(view, () => new ChannelTestReader(10));
 		var channel = rig.ToCounted(
-			out var rows,
+			out var rowCount,
 			new BoundedChannelOptions(1),
 			true,
 			Ct);
@@ -164,7 +164,7 @@ public static class MappedToChannelCountTests
 		channel.Reader.TryRead(out _);
 		Assert.True(channel.Writer.TryComplete());
 
-		long n = await rows.Within();
+		long n = await rowCount.Within();
 
 		Assert.InRange(n, 1, 3);
 		Assert.Equal(1, rig.Reader!.Disposes);
@@ -177,7 +177,7 @@ public static class MappedToChannelCountTests
 		string view)
 	{
 		var rig = Create(view, () => new ChannelTestReader(3));
-		var channel = rig.ToCounted(out var rows, null, false, Ct);
+		var channel = rig.ToCounted(out var rowCount, null, false, Ct);
 		var owner = new InvalidOperationException("the owner's error");
 		Assert.True(channel.Writer.TryComplete(owner));
 
@@ -185,7 +185,7 @@ public static class MappedToChannelCountTests
 		// the closed channel: the owner's error, not a silent stop.
 		var (_, readError) = await Collect(channel.Reader);
 		var countError = await Assert.ThrowsAsync<InvalidOperationException>(
-			() => rows.Within());
+			() => rowCount.Within());
 
 		Assert.Same(owner, readError);
 		Assert.Same(owner, countError);

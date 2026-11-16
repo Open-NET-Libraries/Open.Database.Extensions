@@ -199,7 +199,7 @@ Check(
 Check(
 	streamCounted.Select(p => p.Id).SequenceEqual(streamIds)
 		&& streamCount == streamCounted.Count,
-	"ToChannel(out var rows) delivers every row in order, the channel completes, and the count equals the rows");
+	"ToChannel(out var rowCount) delivers every row in order, the channel completes, and the count equals the rows");
 
 // Transactions.
 Check(Transactions.Conditional(factory, true) is (true, 1), "returning true commits");
