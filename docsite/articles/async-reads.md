@@ -48,7 +48,7 @@ Three things were measured: CPU, memory, and wall time over a real link. Each is
 > [!NOTE]
 > Every number on this page is from one run. The CPU cells are four runs of different cases, each case run once. They show the size of the effect on that setup and are not a promise about yours. The runs used the opt-in as it was named in rc.5; the section on why it exists says how.
 
-**CPU.** On a synthetic provider where every `ReadAsync` completes at once, with 1,000 buffered rows per `Map<T>()` call, no refill and no thread-pool pressure, the default took 28.92 us at width 5 and the opt-in 32.30 us (+11.7%); at width 20 the default took 80.92 us and the opt-in 82.34 us (+1.8%). Because every `ReadAsync` completes at once, that difference is the async state machine alone. Source: the SA run, synthetic provider, one run per case.
+**CPU.** On a synthetic provider where every `ReadAsync` completes at once, with 1,000 buffered rows per `Map<T>()` call, no refill and no thread-pool pressure, the default took 28.92 µs at width 5 and the opt-in 32.30 µs (+11.7%); at width 20 the default took 80.92 µs and the opt-in 82.34 µs (+1.8%). Because every `ReadAsync` completes at once, that difference is the async state machine alone. Source: the SA run, synthetic provider, one run per case.
 
 **Memory.** `Map(Func)` over SQL Server on a link with 5 ms of latency and 100 Mbit of bandwidth, 10,000 rows of width 20, allocated 9,713 KB per operation by default and 16,812 KB with the opt-in: 7,099 KB more, +73.1%. Put the other way, the default used about 42% less. `Map<T>()` was equal: 9,709 KB against 9,743 KB (+0.35%). Source: the M-ALLOC run 2, whole-process KB per operation, one run.
 
@@ -56,7 +56,7 @@ On `Map(Func)`, 788.7 of 10,001 `ReadAsync` calls were incomplete (about 7.9%); 
 
 <div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/asyncreads-cost.svg" alt="Four panels of paired bars. CPU, Map of T: 28.92 against 32.30 us at width 5 and 80.92 against 82.34 us at width 20. Memory over SQL Server: Map of Func 9,713 against 16,812 KB; Map of T 9,709 against 9,743 KB." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
 
-Four panels, each a pair of bars that start at zero: the default on the left, the opt-in on the right. (a) CPU of `Map<T>()` on the synthetic provider at width 5: 28.92 against 32.30 us per 1,000 rows, +11.7%. (b) The same at width 20: 80.92 against 82.34 us, +1.8%; in (a) and (b) every `ReadAsync` completes at once, so the figure is the async state machine alone. (c) Memory of `Map(Func)` over SQL Server, 10,000 rows, width 20: 9,713 against 16,812 KB, +73.1%, at equal time (538.3 against 538.2 ms). (d) Memory of `Map<T>()` in the same run: 9,709 against 9,743 KB, +0.35%, equal. Panels (c) and (d) share one scale. One run for every number; the runs used the opt-in's rc.5 name.
+Four panels, each a pair of bars that start at zero: the default on the left, the opt-in on the right. (a) CPU of `Map<T>()` on the synthetic provider at width 5: 28.92 against 32.30 µs per 1,000 rows, +11.7%. (b) The same at width 20: 80.92 against 82.34 µs, +1.8%; in (a) and (b) every `ReadAsync` completes at once, so the figure is the async state machine alone. (c) Memory of `Map(Func)` over SQL Server, 10,000 rows, width 20: 9,713 against 16,812 KB, +73.1%, at equal time (538.3 against 538.2 ms). (d) Memory of `Map<T>()` in the same run: 9,709 against 9,743 KB, +0.35%, equal. Panels (c) and (d) share one scale. One run for every number; the runs used the opt-in's rc.5 name.
 
 **Wall time on a real link.** The 5 ms link is the bottleneck, and the choice of read does not change the time. In the raw-provider comparison run, one operation over 10,000 rows took 537.5 ms for ODX `Map<T>().ToList()` and 540.7 ms for raw SqlClient with `Default`, `ReadAsync` and synchronous getters (S2, 0.6% apart); on S3, the larger scenario in the same run, 6,759.7 ms against 6,757.4 ms. In the memory run, every cell took between 536.9 and 538.9 ms: 536.9 ms for the sync read and 538.2 ms for the opt-in on both `Map<T>()` and `Map(Func)`. Source: the P4-P6 run and the M-ALLOC run 2, SQL Server, one run each.
 
@@ -108,7 +108,7 @@ On `Map<T>()`, equal memory (+0.35%). CPU is +11.7% at width 5 and +1.8% at widt
 
 ### The busy-pool hazard
 
-Measured, synthetic, `Map<T>()` shape: with a read wait every 100 rows (20 us) and 8 busy thread-pool items, 1,000 rows at width 5 took 10,873.63 us with the opt-in against 218.83 us with the default (49.7 times as long). The synchronous read, for reference, took 214.71 us. This is a synthetic provider, one run, one width; do not generalize past that setup.
+Measured, synthetic, `Map<T>()` shape: with a read wait every 100 rows (20 µs) and 8 busy thread-pool items, 1,000 rows at width 5 took 10,873.63 µs with the opt-in against 218.83 µs with the default (49.7 times as long). The synchronous read, for reference, took 214.71 µs. This is a synthetic provider, one run, one width; do not generalize past that setup.
 
 The hazard points the opposite way from "use it on a starved pool". On a real link it is UNMEASURED.
 
@@ -136,9 +136,9 @@ Each row is one number or a group of numbers. Every run is one run; the SA run i
 
 | Figure or claim | Value | Run (label, provider, link, scenario) | Runs |
 |---|---|---|---|
-| CPU, `Map<T>()`, width 5 | 28.92 us default, 32.30 us opt-in per 1,000 buffered rows (+11.7%) | SA run, synthetic provider, no refill, no pressure | one run per case |
-| CPU, `Map<T>()`, width 20 | 80.92 us default, 82.34 us opt-in (+1.8%) | SA run, same | one run per case |
-| Busy pool, `Map<T>()`, width 5, 1,000 rows | 218.83 us default, 10,873.63 us opt-in (49.7 times); sync 214.71 us. A read wait every 100 rows, 8 busy thread-pool items | SA run, synthetic provider | one run per case |
+| CPU, `Map<T>()`, width 5 | 28.92 µs default, 32.30 µs opt-in per 1,000 buffered rows (+11.7%) | SA run, synthetic provider, no refill, no pressure | one run per case |
+| CPU, `Map<T>()`, width 20 | 80.92 µs default, 82.34 µs opt-in (+1.8%) | SA run, same | one run per case |
+| Busy pool, `Map<T>()`, width 5, 1,000 rows | 218.83 µs default, 10,873.63 µs opt-in (49.7 times); sync 214.71 µs. A read wait every 100 rows, 8 busy thread-pool items | SA run, synthetic provider | one run per case |
 | Memory, `Map(Func)` | 9,713 KB default, 16,812 KB opt-in (+7,099 KB, +73.1%); under 8 busy pool items 9,768 and 16,875 KB (+72.8%). 788.7 of 10,001 `ReadAsync` calls incomplete | M-ALLOC run 2, SQL Server, 5 ms + 100 Mbit link, width 20 (S2), 10,000 rows, mean of 3 operations after 1 warm-up; whole-process KB | one run |
 | Memory, `Map<T>()` | 9,709 KB default, 9,743 KB opt-in (+0.35%); under pressure 9,768 and 9,816 KB (+0.49%); sync anchor `Map<T>().ToList()` 9,708 KB. 4 of 10,001 `ReadAsync` calls incomplete | M-ALLOC run 2, same | one run |
 | Time in the memory run | 536.9 ms sync; 538.3 and 538.2 ms for `Map<T>()` default and opt-in; 538.3 and 538.2 ms for `Map(Func)`; every cell 536.9 to 538.9 ms | M-ALLOC run 2, same | one run |
