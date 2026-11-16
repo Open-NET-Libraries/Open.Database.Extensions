@@ -8,12 +8,22 @@ namespace Open.Database.Extensions.Tests;
 
 #nullable enable
 
-// What the AddParam overload set binds to, checked by compiling snippets with Roslyn at each language version and asking which symbol each call binds to. The LegacyCompiler project does the same
-// with the real compilers of the older targets (C# 7.3, 9, 12, 13) and checks the values and database types.
+// What the AddParam overload set binds to. Snippets are compiled with
+// Roslyn at each language version, and the symbol each call binds to is
+// compared. The LegacyCompiler project does the same with the real
+// compilers of the older targets (C# 7.3, 9, 12, 13) and checks the
+// values and database types.
 //
-// A5 keeps `direction`, the no-value forms and the untyped int and long forms; it removes only the dead parts (the Param constructor, the IEnumerable<Param> constructors, the untyped ExecuteReturn) and makes
-// the typed-NULL form take `object? value`. So this pins: an int or long value, with and without a database type, binds to the int and long forms ("x", i), ("x", i, null), ("x", i, nullableType), ("x", 0), ("x", 0L);
-// a user enum binds to a value form; a typed NULL byte array compiles warning-free; the removed members no longer compile.
+// A5 keeps `direction`, the no-value forms and the untyped int and long
+// forms. It removes only the dead parts (the Param constructor, the
+// IEnumerable<Param> constructors, the untyped ExecuteReturn) and makes
+// the typed-NULL form take `object? value`. This pins that:
+// - an int or long value, with and without a database type, binds to
+//   the int and long forms: ("x", i), ("x", i, null),
+//   ("x", i, nullableType), ("x", 0), ("x", 0L);
+// - a user enum binds to a value form;
+// - a typed NULL byte array compiles warning-free;
+// - the removed members no longer compile.
 [ExcludeFromCodeCoverage]
 public static class ParameterBindingMatrixTests
 {
@@ -26,7 +36,7 @@ public static class ParameterBindingMatrixTests
 			LanguageVersion.CSharp14,
 		];
 
-	static readonly Lazy<MetadataReference[]> References = new(() =>
+	static readonly Lazy<MetadataReference[]> References = new(static () =>
 	{
 		var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		if (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") is string tpa)
@@ -36,17 +46,21 @@ public static class ParameterBindingMatrixTests
 		}
 
 		paths.Add(typeof(ExpressiveCommand).Assembly.Location);
-		return [.. paths.Select(p => (MetadataReference)MetadataReference.CreateFromFile(p))];
+		return [.. paths.Select(static p => (MetadataReference)MetadataReference.CreateFromFile(p))];
 	});
 
-	// The same, plus the Microsoft.Data.SqlClient package (the other package defines a type of the same name, so it is not referenced).
-	static readonly Lazy<MetadataReference[]> SqlReferences = new(() =>
+	// The same, plus the Microsoft.Data.SqlClient package (the other
+	// package defines a type of the same name, so it is not referenced).
+	static readonly Lazy<MetadataReference[]> SqlReferences = new(static () =>
 		[.. References.Value, MetadataReference.CreateFromFile(typeof(mssql::Open.Database.Extensions.ExpressiveSqlCommand).Assembly.Location)]);
 
-	// Each statement is compiled in a method with: c (ExpressiveCommand), q (the SQL Server command, when sql is true), s (string), i (int), l (long), t (DbType?), st (SqlDbType?).
+	// Each statement is compiled in a method with: c (ExpressiveCommand),
+	// q (the SQL Server command, when sql is true), s (string), i (int),
+	// l (long), t (DbType?), st (SqlDbType?).
 	static (CSharpCompilation Compilation, SyntaxTree Tree) Compile(LanguageVersion version, string statements, bool sql = false)
 	{
-		// C# 7.3 has no nullable annotations: the snippet is then written without them and without the nullable context.
+		// C# 7.3 has no nullable annotations: the snippet is then written
+		// without them and without the nullable context.
 		bool nullable = version >= LanguageVersion.CSharp8;
 		if (!nullable)
 			statements = statements.Replace("[]?)", "[])").Replace(">?)", ">)").Replace("null!", "null");
@@ -78,17 +92,19 @@ public static class ParameterBindingMatrixTests
 	// Reference-type annotations only exist from C# 8: compare without them.
 	static string Normalize(string symbol) => symbol.Replace("object?", "object");
 
-	// The symbol the first call in the statement binds to, written as its name, type arguments and parameter types, "ERROR CSnnnn" for the first error.
+	// The symbol the first call in the statement binds to, written as its
+	// name, type arguments and parameter types; "ERROR CSnnnn" for the
+	// first error.
 	static string Bound(LanguageVersion version, string statement, bool sql = false)
 	{
 		var (compilation, tree) = Compile(version, statement, sql);
-		var errors = compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+		var errors = compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(static d => d.Severity == DiagnosticSeverity.Error).ToArray();
 		if (errors.Length != 0) return "ERROR " + errors[0].Id;
 
 		var call = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().First();
 		var method = (IMethodSymbol)compilation.GetSemanticModel(tree).GetSymbolInfo(call, TestContext.Current.CancellationToken).Symbol!;
-		string shape = string.Join(", ", method.Parameters.Select(p => p.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-		string args = method.TypeArguments.Length == 0 ? "" : "<" + string.Join(", ", method.TypeArguments.Select(t => t.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat))) + ">";
+		string shape = string.Join(", ", method.Parameters.Select(static p => p.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+		string args = method.TypeArguments.Length == 0 ? "" : "<" + string.Join(", ", method.TypeArguments.Select(static t => t.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat))) + ">";
 		return Normalize($"{method.Name}{args}({shape})");
 	}
 
@@ -99,7 +115,7 @@ public static class ParameterBindingMatrixTests
 		Assert.True(expected == actual, $"{version}: {statement} bound {actual}, expected {expected}");
 	}
 
-	// ---- an int or long value, with and without a database type, binds to the int and long forms ----
+	// ---- an int or long value binds to the int and long forms ----
 
 	[Theory]
 	[MemberData(nameof(Versions))]
@@ -170,7 +186,7 @@ public static class ParameterBindingMatrixTests
 	{
 		const string statement = "c.AddParam(\"b\", (byte[]?)null, DbType.Binary);";
 		var (compilation, _) = Compile(version, statement);
-		var problems = compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(d => d.Severity >= DiagnosticSeverity.Warning).Select(d => d.ToString()).ToArray();
+		var problems = compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(static d => d.Severity >= DiagnosticSeverity.Warning).Select(static d => d.ToString()).ToArray();
 		Assert.True(problems.Length == 0, $"{version}: {string.Join(" | ", problems)}");
 		Expect(version, "AddParam(string, object, DbType, ParameterDirection)", statement);
 	}

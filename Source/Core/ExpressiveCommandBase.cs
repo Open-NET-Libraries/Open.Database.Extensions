@@ -1292,7 +1292,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return ExecuteReaderAsync(transform, static (reader, f) => f(reader), behavior);
 	}
 
-	// The raw value of the return parameter: DBNull.Value when it is NULL. ExecuteReturn<T> converts it (a NULL gives default).
+	// The raw value of the return parameter: DBNull.Value when it is NULL.
+	// ExecuteReturn<T> converts it (a NULL gives default).
 	object? ExecuteReturnRaw()
 		// Open MUST occur before command creation as some DbCommands require it.
 		=> ExecuteCore(0, static (cmd, _, _) =>

@@ -302,7 +302,9 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal("", SentDb(NewDb().AddParamIf(false, "x", i, DbType.Int32)));
 		}
 
-		// The untyped int and long forms stay (DS2 #7, planning session): a literal 0 or 0L, and an int or long with a null or nullable database type, bind to them on this target's compiler.
+		// The untyped int and long forms stay (DS2 #7, planning session): a
+		// literal 0 or 0L, and an int or long with a null or nullable database
+		// type, bind to them on this target's compiler.
 		[Fact]
 		public static void AddParam_ALiteralZero_IsAValue_WithNoDatabaseType()
 		{

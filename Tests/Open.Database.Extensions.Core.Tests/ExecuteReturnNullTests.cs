@@ -47,14 +47,18 @@ public static class ExecuteReturnNullTests
 		Assert.Throws<ValueMappingException>(() => Returning(5_000_000_000L).ExecuteReturn<int>()); // a range check, as Map<int>() does
 	}
 
-	// The untyped ExecuteReturn() was removed: it returned the provider's raw value, DBNull.Value for a NULL. ExecuteReturn<object?>() is the way to ask for an object, and a NULL is null.
+	// The untyped ExecuteReturn() was removed: it returned the provider's
+	// raw value, DBNull.Value for a NULL. ExecuteReturn<object?>() is the
+	// way to ask for an object, and a NULL is null.
 	[Fact]
 	public static async Task ExecuteReturn_ObjectOrNull_GivesNull_WhereTheUntypedFormGaveDBNull()
 	{
 		foreach (object? none in NoValue)
 		{
 			Assert.Null(Returning(none).ExecuteReturn<object?>());
-			Assert.Null(await Returning(none).ExecuteReturnAsync<object?>(TestContext.Current.CancellationToken));
+			Assert.Null(
+				await Returning(none).ExecuteReturnAsync<object?>(
+					TestContext.Current.CancellationToken));
 		}
 
 		Assert.Equal(7, Returning(7).ExecuteReturn<object?>());

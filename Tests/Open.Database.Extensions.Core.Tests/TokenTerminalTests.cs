@@ -315,19 +315,38 @@ public static class TokenTerminalTests
 		await Cancels(task);
 	}
 
-	// The untyped ExecuteReturnAsync threw synchronously for a cancelled token; it was removed (A5). The generic form is an async method, so a cancelled token faults the returned task, before anything runs.
+	// The synchronous throw for a cancelled token was a property of the
+	// removed untyped ExecuteReturnAsync. The generic form is an async
+	// method: a cancelled token faults the returned task (possibly as a
+	// TaskCanceledException), and nothing reaches the provider.
 	[Fact]
-	public static async Task ExecuteReturnAsync_FaultsTheTaskWithNothingRun_ForEitherCancelledToken()
+	public static async Task ExecuteReturnAsync_Faults_ForACancelledCallToken()
 	{
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
 		var rig = new TokenRig();
-		await Assert.ThrowsAsync<OperationCanceledException>(
-			async () => await Make(rig).ExecuteReturnAsync<object?>(cts.Token));
-		await Assert.ThrowsAsync<OperationCanceledException>(
-			async () => await Make(rig)
+
+		await Cancels(
+			Make(rig)
+				.ExecuteReturnAsync<object?>(cts.Token)
+				.AsTask());
+
+		Assert.Empty(rig.Log);
+	}
+
+	[Fact]
+	public static async Task ExecuteReturnAsync_Faults_ForACancelledCommandToken()
+	{
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+		var rig = new TokenRig();
+
+		await Cancels(
+			Make(rig)
 				.UseCancellationToken(cts.Token)
-				.ExecuteReturnAsync<object?>());
+				.ExecuteReturnAsync<object?>()
+				.AsTask());
+
 		Assert.Empty(rig.Log);
 	}
 
