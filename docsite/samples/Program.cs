@@ -142,16 +142,16 @@ Check(
 Check(Mapping.StreamRows(connection) == 15, "Read streams rows inside the handler");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
 (List<PostSummary> summaries, PostSummary? newest) = await Mapping.QueryFactoryCallers(factory);
-Check(summaries.Select(s => s.Id).SequenceEqual([3, 2, 1]) && newest == new PostSummary(3, "Post 3"), "a query factory returns IMappedQuery<PostSummary> and each caller picks the terminal");
+Check(summaries.Select(s => s.Id).SequenceEqual([3, 2, 1]) && newest == new PostSummary(3, "Post 3"), "a query factory returns a MappedQuery<PostSummary> (a factory map) and each caller picks the terminal");
 int projected = 0;
-IMappedQuery<int> lazyIds = connection.Command("select * from posts order by id").Map<Post>().Select(p =>
+var lazyIds = connection.Command("select * from posts order by id").Map(record =>
 {
 	projected++;
-	return p.Id;
+	return record.GetInt32(0);
 });
-Check(projected == 0, "Select runs nothing until a terminal runs");
-Check(lazyIds.ToList().Count == 5 && projected == 5, "the selector runs once per row");
-Check(lazyIds.FirstOrDefault() == 1 && projected == 6, "a terminal that stops early projects only the rows it reads, and runs the command again");
+Check(projected == 0, "Map(selector) runs nothing until a terminal runs");
+Check((await lazyIds.ToListAsync(CancellationToken.None)).Count == 5 && projected == 5, "the selector runs once per row");
+Check(await lazyIds.FirstOrDefaultAsync(CancellationToken.None) == 1 && projected == 6, "a terminal that stops early maps only the rows it reads, and runs the command again");
 Dictionary<int, string> bodiesById = await Mapping.BodiesByIdAsync(connection, CancellationToken.None);
 Check(bodiesById.Count == 5 && bodiesById[1] == "Body 1" && bodiesById[2] == "", "ToDictionaryAsync with a value selector keeps only the value (NULL as empty text)");
 Check(connection.Command("select * from posts order by id").Map<Post>().First().Id == 1, "First returns the first of several rows");
