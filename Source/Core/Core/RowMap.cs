@@ -339,7 +339,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	const int MaxLayouts = 128;
 
-	// The per-model-type statics below (TypeShape, Slots, SlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
+	// The per-model-type statics below (TypeShape, ModelSlots, ModelSlotIndex, Default) are one immutable copy per T, built once. Any cache of compiled readers keyed by model type
 	// lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it. Nothing that does not depend on T belongs here.
 
 	// Whether T can be mapped at all, judged from its shape; never throws (an unmappable T holds its error), so no static initializer here can fail with it.
