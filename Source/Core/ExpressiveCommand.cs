@@ -16,6 +16,8 @@
 /// </remarks>
 /// <example>
 /// <code>
+/// // Synchronous: a command on an IDbConnection has no
+/// // ExecuteScalarAsync; use a DbConnection for the async form.
 /// int west = connection
 ///     .Command("SELECT COUNT(*) FROM Customers WHERE Region = @region")
 ///     .AddParam("region", "West")

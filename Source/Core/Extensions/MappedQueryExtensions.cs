@@ -16,10 +16,10 @@ namespace Open.Database.Extensions;
 /// </remarks>
 /// <example>
 /// <code>
-/// List&lt;Customer&gt; all = connection
+/// List&lt;Customer&gt; all = await connection
 ///     .Command("SELECT Id, Name FROM Customers")
 ///     .Map&lt;Customer&gt;()
-///     .ToList();
+///     .ToListAsync(cancellationToken);
 ///
 /// Customer? first = await connection
 ///     .Command("SELECT Id, Name FROM Customers ORDER BY Id")

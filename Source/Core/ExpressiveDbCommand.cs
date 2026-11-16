@@ -16,9 +16,8 @@
 /// List&lt;Customer&gt; customers = await connection
 ///     .Command("SELECT Id, Name FROM Customers WHERE Region = @region")
 ///     .AddParam("region", "West")
-///     .UseCancellationToken(cancellationToken)
 ///     .Map&lt;Customer&gt;()
-///     .ToListAsync();
+///     .ToListAsync(cancellationToken);
 /// </code>
 /// </example>
 /// <seealso cref="ExpressiveCommand"/>
