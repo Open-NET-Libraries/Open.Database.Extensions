@@ -16,7 +16,7 @@ public static class DerivedNameCostTests
 	// ---- measuring ----
 
 	// Bytes per call: after a warm-up, the smallest of three rounds of 1,000 calls (the allocated-bytes counter of this thread is exact, so only a stray JIT or GC adds noise).
-	static long BytesPerCall(Action call)
+	internal static long BytesPerCall(Action call)
 	{
 		for (int i = 0; i < 100; i++) call();
 		long best = long.MaxValue;
@@ -40,7 +40,7 @@ public static class DerivedNameCostTests
 		if (Environment.GetEnvironmentVariable("ODE_ALLOC_LOG") is { Length: > 0 } path) File.AppendAllText(path, line + Environment.NewLine);
 	}
 
-	static void AssertWithinBudget(string label, long derived, long explicitName)
+	internal static void AssertWithinBudget(string label, long derived, long explicitName)
 	{
 		Report(label, derived, explicitName);
 		Assert.True(derived <= explicitName + Slack, $"{label}: derived {derived} B per call, explicit {explicitName} B, budget explicit + {Slack}.");

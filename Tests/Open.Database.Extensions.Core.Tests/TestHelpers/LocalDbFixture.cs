@@ -58,6 +58,13 @@ internal static class LocalDbFixture
 		Assert.Skip(reason);
 	}
 
+	/// <summary>Fails the calling test when LocalDB cannot be reached, whatever the environment says: for a test that proves a defect only a real server shows, so it is never reported as skipped.</summary>
+	public static void RequireAvailable()
+	{
+		if (Unavailable.Value is { } reason)
+			Assert.Fail($"This test needs SQL Server LocalDB and never skips: {reason}");
+	}
+
 	/// <summary>A new, closed connection to LocalDB's <c>tempdb</c>. The caller disposes it.</summary>
 	public static SqlConnection Create() => new(ConnectionString);
 
