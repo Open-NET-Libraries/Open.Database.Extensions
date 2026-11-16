@@ -520,9 +520,10 @@ public static partial class CommandExtensions
 	/// <see cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
 	/// streams them to a consumer without holding it
 	/// (it is unbounded by default: the read runs at full speed and
-	/// frees the connection while the consumer takes its time).
-	/// A bounded channel brings the hold back, because the read then
-	/// waits for room.
+	/// frees the connection while the consumer takes its time, and the
+	/// rows wait in memory until the consumer takes them).
+	/// A bounded channel that waits when full brings the hold back,
+	/// because the read then waits for room.
 	/// </note>
 	/// <para>
 	/// The default behavior will open a connection, execute the reader

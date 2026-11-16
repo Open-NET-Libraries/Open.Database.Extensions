@@ -279,7 +279,7 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 > These members are here for the cases that need exactly that, such as a result too large to buffer or a row-by-row pipeline. Otherwise use a call that lets go of the connection first:
 >
 > - `ToListAsync(cancellationToken)` and `ToArrayAsync(cancellationToken)` buffer the rows and release the connection.
-> - `ToChannelReader()` streams the rows to a consumer without holding the connection. It is unbounded by default: the read runs at full speed and frees the connection while the consumer takes its time. A bounded channel brings the hold back, because the read then waits for room ([what each choice costs](channels-and-dataflow.md#what-each-choice-costs)).
+> - `ToChannelReader()` streams the rows to a consumer without holding the connection. It is unbounded by default: the read runs at full speed and frees the connection while the consumer takes its time, and the rows wait in memory until the consumer takes them. A bounded channel that waits when full brings the hold back, because the read then waits for room ([what each choice costs](channels-and-dataflow.md#what-each-choice-costs)).
 
 ## Mapping a reader or a command you already have
 
