@@ -62,9 +62,10 @@ public enum DataflowShape { Plain, Pool, Transform, Mapped, MappedMap }
 // when the call ends),
 // and no token is no allocation.
 #pragma warning disable xUnit1051 // These tests are about which token a call is given: no token, one, or two.
-// The allocation tests count the bytes of the thread that calls, and the JIT,
-// the tiering thread and the GC of the process move what a call costs: no other
-// test class runs while they do (the collection is defined in LeakRetentionTests).
+// The allocation tests count the bytes of the thread that calls, and what else
+// the process does (the JIT, the GC, other tests on the thread pool) moves what a
+// call costs: no other test class runs while they do (the collection is defined
+// in LeakRetentionTests).
 [Collection("Heap measurements")]
 [ExcludeFromCodeCoverage]
 public static class TokenTerminalTests
@@ -968,7 +969,7 @@ public static class TokenTerminalTests
 	// ---- allocation: a call with no token, or one token,
 	// or the same token twice, costs what the call with no token costs ----
 
-	const int Rounds = 15;
+	const int Rounds = 41;
 	const int CallsPerRound = 1000;
 
 	// One round: CallsPerRound calls of each of the calls, bytes counted call
@@ -992,14 +993,13 @@ public static class TokenTerminalTests
 	}
 
 	// Bytes of each round, in total for CallsPerRound calls, of each call,
-	// after a warm-up. The JIT recompiles the hot code of a process while it
-	// runs, and the new code allocates less (tens of bytes a call, in blocks
-	// of calls of +128 bytes and single calls of about +900, whatever the
-	// cause): the cost of a call is not one figure of a process, it moves,
-	// and moves for all the calls together. So the rounds are not reduced
-	// to a figure of their own for each call, which would compare each call
-	// at its own best moment; they are kept, to be compared round by round,
-	// where the calls that took turns meet the same state, whenever it changes.
+	// after a warm-up. What a call costs is not one figure of a process: some
+	// calls and some rounds cost more (async state machine boxes that depend on
+	// how the work was scheduled, a collection, a compile), and they do so
+	// for all the calls together. So the rounds are not reduced to a figure of
+	// their own for each call, which would compare each call at its own best
+	// moment; they are kept, to be compared round by round, where the calls
+	// that took turns meet the same state, whenever it changes.
 	static long[][] BytesPerRound(Action[] calls)
 	{
 		foreach (Action call in calls)
@@ -1041,15 +1041,18 @@ public static class TokenTerminalTests
 	}
 
 	// Of the paired differences of a round (the same round, the same state of
-	// the process, so the level that moves cancels), the median is what the
-	// call costs more than the reference: a round that met a recompile, or a
-	// pause, is one of the Rounds and does not decide, and an allocation
-	// planted in every call raises every difference and shows. The slack is
-	// above the spread of the medians of the paired differences of the same
-	// code (measured over 16 runs of the whole suite, 25 tests, 3 comparisons each:
-	// from -1 to +2.3 bytes, while single rounds ranged over -18 to +21), and
-	// below the smallest object a call can add (24 bytes on a 64-bit runtime).
-	const double Slack = 8;
+	// the process, so what moves for all the calls cancels), the median is what
+	// the call costs more than the reference: a round that met a pause or a
+	// collection is one of the Rounds and does not decide, and an allocation
+	// planted in every call raises every difference and shows.
+	// Derivation: the paired differences of one round have a standard deviation
+	// of 14.5 bytes per call on CI (artifact of CI run 43774021188); the median
+	// of N = 41 of them has 1.2533 * 14.5 / sqrt(41) = 2.84 bytes. The slack is
+	// 16 bytes, two thirds of 24 bytes, the smallest object a call can add (x64):
+	// a false failure is 5.6 standard deviations away, and one extra object per
+	// call (24 bytes) is 2.8 standard deviations above the slack.
+	// The test detects one extra object per call (24 B on x64).
+	const double Slack = 16;
 
 	// Compares the variants of one call, in the same run,
 	// so the budget follows the runtime and the configuration. (The calls
