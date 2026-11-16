@@ -418,11 +418,9 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
-	{
-		return query.ReadAsync(
+		=> query.ReadAsync(
 			(items, token) => CollectHashSetAsync(items, comparer, token),
 			cancellationToken);
-	}
 
 	/// <summary>
 	/// Reads the first mapped row.
