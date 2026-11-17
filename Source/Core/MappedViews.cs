@@ -970,6 +970,25 @@ public readonly record struct MappedCommand<T>
 			.Channel;
 
 	#endregion
+
+	#region Buffer terminals
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(cancellationToken);
+
+	#endregion
 }
 
 /// <summary>
