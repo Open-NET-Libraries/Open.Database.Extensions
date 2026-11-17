@@ -139,6 +139,10 @@ public sealed class PooledBuffer<T>
 		{
 			while (true)
 			{
+				// Stops this enumeration even when arrays are ready;
+				// the read goes on.
+				cancellationToken.ThrowIfCancellationRequested();
+
 				Step step = Next(
 					index,
 					out Chunk<T> chunk,
@@ -372,7 +376,9 @@ public sealed class PooledBuffer<T>
 /// It is valid until it is disposed. Disposing it disposes the
 /// buffer it came from, which returns the arrays to the pool.
 /// After that, every member throws
-/// <see cref="ObjectDisposedException"/>.
+/// <see cref="ObjectDisposedException"/>, an enumeration in
+/// progress included.
+/// It is not safe to use while another thread disposes it.
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
 public sealed class PooledArray<T> : IReadOnlyList<T>, IDisposable
@@ -482,7 +488,12 @@ public sealed class PooledArray<T> : IReadOnlyList<T>, IDisposable
 		foreach (Chunk<T> chunk in _chunks)
 		{
 			for (int i = 0; i < chunk.Count; ++i)
+			{
+				// The arrays go back to the pool on dispose: never
+				// hand out a row from one after it.
+				_owner.ThrowIfDisposed();
 				yield return chunk.Items[i];
+			}
 		}
 	}
 

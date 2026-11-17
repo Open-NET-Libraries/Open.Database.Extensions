@@ -502,6 +502,85 @@ public static class PooledBufferTests
 		Assert.Equal(0, context.Posts);
 	}
 
+	// ---- swarm fixes ----------------------------------------------------
+
+	[Fact]
+	public static async Task AfterDispose_TheEnumeratorIndexerAndCopyTo_Throw()
+	{
+		var run = Rows100();
+		var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+
+		// Created, and moved once, before the dispose.
+		IEnumerator<ChannelRow> e = items.GetEnumerator();
+		Assert.True(e.MoveNext());
+		ChannelRow[] copy = new ChannelRow[100];
+
+		items.Dispose();
+
+		Assert.Throws<ObjectDisposedException>(() => e.MoveNext());
+		Assert.Throws<ObjectDisposedException>(() => items[0]);
+		Assert.Throws<ObjectDisposedException>(
+			() => items.CopyTo(copy));
+		Assert.Throws<ObjectDisposedException>(
+			() => items.GetEnumerator());
+	}
+
+	[Fact]
+	public static async Task Indexer_IsRightAtEverySegmentBoundary()
+	{
+		// Arrays of 16, 32, 64 ... rows start at 0, 16, 48, 112, 240,
+		// 496, 1008 (the last array is not full).
+		var run = Run.Create(() => new ChannelTestReader(1100));
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+
+		int[] at = [0, 15, 16, 47, 48, 111, 112, 239, 240, 495, 496,
+			1007, 1008, 1099];
+		foreach (int i in at)
+			Assert.Equal(i + 1, items[i].Id);
+
+		Assert.Equal(1100, items.Count);
+	}
+
+	[Fact]
+	public static async Task ACancelledEnumeration_Throws_TheBufferStaysWhole()
+	{
+		var run = Rows100();
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await buffer.Items.Within();
+
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+
+		// The arrays are all there, and the cancelled token still
+		// stops the enumeration at the first step.
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () =>
+			{
+				await foreach (var _ in buffer.WithCancellation(cts.Token)) { }
+			});
+
+		List<int[]> again = await Chunks(buffer).Within();
+		AssertContiguous(again, 100);
+	}
+
+	[Fact]
+	public static async Task AStreamEnumeration_WithACancelledToken_Throws()
+	{
+		var run = Rows100();
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () =>
+			{
+				await foreach (var _ in run.View
+					.ToAsyncBufferStream(Ct)
+					.WithCancellation(cts.Token)) { }
+			});
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

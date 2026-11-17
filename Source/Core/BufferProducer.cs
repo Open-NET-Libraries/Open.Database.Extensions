@@ -114,6 +114,7 @@ internal sealed class ChunkProducer<T>(
 		if (caller.IsCancellationRequested)
 		{
 			target.Finish(new OperationCanceledException(caller));
+			_linked.Dispose();
 			return Task.CompletedTask;
 		}
 
@@ -159,7 +160,8 @@ internal sealed class ChunkProducer<T>(
 		Seal();
 		target.Finish(error);
 
-		if (target.IsDisposed) _linked.Dispose();
+		// Nothing reads the token now. Cancel() stays safe after this.
+		_linked.Dispose();
 	}
 
 	async ValueTask<long> FillAsync(
@@ -265,6 +267,12 @@ internal sealed class BufferStreamEnumerator<T>(
 	/// The rows of the current chunk: valid until the next
 	/// <see cref="MoveNextAsync"/> or the disposal.
 	/// </summary>
+	/// <remarks>
+	/// After <see cref="DisposeAsync"/>, <see cref="MoveNextAsync"/>
+	/// returns false (the <see cref="IAsyncEnumerator{T}"/>
+	/// convention), unlike <see cref="PooledBuffer{T}"/>, which
+	/// throws <see cref="ObjectDisposedException"/>.
+	/// </remarks>
 	public ReadOnlyMemory<T> Current
 		=> _current.Items is null ? default : _current.Memory;
 
@@ -283,6 +291,9 @@ internal sealed class BufferStreamEnumerator<T>(
 	public async ValueTask<bool> MoveNextAsync()
 	{
 		if (Volatile.Read(ref _disposed) != 0) return false;
+
+		// Stops this enumeration even when chunks are ready.
+		cancellationToken.ThrowIfCancellationRequested();
 
 		// The previous chunk's array goes back now.
 		ReleaseCurrent();
