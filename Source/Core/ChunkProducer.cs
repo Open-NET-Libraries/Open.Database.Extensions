@@ -23,8 +23,8 @@ namespace Open.Database.Extensions.Core;
 //
 // Why each non-obvious construct is here.
 // - Task.Factory.StartNew(..., TaskScheduler.Current).Unwrap(), not
-//   Task.Run: the producer keeps the scheduler of the caller (as the
-//   rest of ODX does), and the async lambda makes a Task<Task>, so it
+//   Task.Run: the producer keeps the caller's current scheduler (a design
+//   decision), and the async lambda makes a Task<Task>, so it
 //   is unwrapped. DenyChildAttach keeps it detached.
 // - The linked token source: the query runs on a token that fires when
 //   the caller's token fires OR when the owner disposes, so a dispose

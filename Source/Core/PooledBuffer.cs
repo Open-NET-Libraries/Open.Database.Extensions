@@ -2,6 +2,52 @@ using System.Runtime.ExceptionServices;
 
 namespace Open.Database.Extensions;
 
+// How this works (notes for a reader of the code; not the contract).
+//
+// Who does what.
+// The constructor starts ONE producer (ChunkProducer) on a thread-pool
+// thread. That producer is the only code that rents buffers and writes
+// rows. It calls Publish for each filled buffer and Finish once, last.
+// Readers (Items, any number of enumerations) and Dispose run on the
+// callers' threads.
+//
+// The handshake between them.
+// _gate guards _chunks, _signal, _items, _done, _error, _total and the
+// write of _disposed. Publish adds a chunk and swaps in a new _signal;
+// a reader that must wait takes the CURRENT signal's task under the
+// same lock that told it nothing was ready, so a Publish after that
+// completes exactly the task it holds: no wake-up is lost. Finish sets
+// _done and _error once and completes Items. Every task completes with
+// RunContinuationsAsynchronously, so no caller code ever runs under
+// _gate.
+//
+// Who owns each array.
+// The producer owns the buffer it is filling. Publish hands it to
+// _chunks (or refuses once the buffer is disposed, and the producer
+// releases it itself). From then on _chunks owns it, until ReturnAll
+// takes the whole list out under the lock and releases each one: so an
+// array is returned exactly once, and only when nothing can write or
+// add to it.
+//
+// Why dispose is ordered the way it is.
+// 1. Under the lock, set _disposed. From then on Publish refuses and
+//    readers throw ObjectDisposedException.
+// 2. Wake the waiting readers (they find the buffer disposed).
+// 3. If the read is still going, Cancel the producer: its linked token
+//    cancels the query itself. The producer then ends, swallows that
+//    cancel (the owner asked for it: IsDisposed), and in Finish, the
+//    last thing that can write, calls ReturnAll. If the read already
+//    finished, nothing can write, and Dispose calls ReturnAll itself.
+// Either way ReturnAll runs once the producer cannot add anything, and
+// DisposeAsync additionally awaits the producer, so its arrays are
+// back when it returns. The sync Dispose does not wait.
+// A caller's own cancel is the opposite: it is NOT swallowed. Finish
+// stores it, Items is cancelled with the caller's token, and every
+// enumeration throws it after the arrays already delivered.
+//
+// The connection ODX opened is closed by the query when the read ends,
+// which is before Finish: slow readers never hold it.
+
 /// <summary>
 /// Every row of a query, held in pooled arrays until the buffer is
 /// disposed.

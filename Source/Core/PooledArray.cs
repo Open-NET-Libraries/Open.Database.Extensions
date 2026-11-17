@@ -4,6 +4,29 @@ using System.Numerics;
 
 namespace Open.Database.Extensions;
 
+// How this works (notes for a reader of the code; not the contract).
+//
+// The view holds a snapshot of the buffer's owners, taken once when
+// the read completed, and the row count. It owns nothing: the buffer
+// does, and every member first asks the buffer whether it is disposed
+// (ThrowIfDisposed), so the view never reads an array that went back to
+// the pool. (It is not safe against ANOTHER thread disposing while a
+// member runs; the docs say so.)
+//
+// Why the indexer is O(1).
+// The producer rents arrays of 16, 32, 64 ... rows (FirstSize << k) and
+// every array but the last is full, so array k starts at row
+// 16 * (2^k - 1). Row i is therefore in array k = floor(log2(i/16 + 1)),
+// at offset i - (16 * 2^k - 16): one shift-and-log, no search. That
+// relies on every non-last owner's memory being exactly its row count,
+// which the producer guarantees by slicing each buffer to its rows
+// (MemoryOwnerExtensions.Slice), even for a pool that hands out more
+// than it was asked for.
+//
+// Why it is a read-only ICollection<T> too: LINQ's ToArray and ToList
+// and the List constructor look for ICollection<T>, and then know the
+// count and copy one array at a time instead of enumerating.
+
 /// <summary>
 /// The complete result of a <see cref="PooledBuffer{T}"/>:
 /// a read-only list over its pooled arrays.
