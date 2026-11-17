@@ -920,6 +920,24 @@ public static class PooledBufferTests
 		AssertBalanced(pool);
 	}
 
+	[Theory]
+	[InlineData(0)]
+	[InlineData(3)]
+	public static async Task ADrainedEnumerator_ThrowsAfterDispose(int n)
+	{
+		var run = Run.Create(() => new ChannelTestReader(n));
+		var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		IEnumerator<ChannelRow> e = items.GetEnumerator();
+		for (int i = 0; i < n; ++i) Assert.True(e.MoveNext());
+
+		// Nothing is left, and the buffer is disposed: not a quiet
+		// false, a throw.
+		items.Dispose();
+
+		Assert.Throws<ObjectDisposedException>(() => e.MoveNext());
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

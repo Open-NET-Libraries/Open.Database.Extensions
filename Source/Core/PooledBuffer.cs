@@ -20,6 +20,9 @@ namespace Open.Database.Extensions;
 /// <para>
 /// The rows live in arrays rented from the pool the caller passed
 /// (<see cref="ArrayPool{T}.Shared"/> when none was).
+/// A custom pool must not throw from <c>Return</c>: if it does,
+/// the exception propagates from the dispose, and the arrays not
+/// yet returned stay with the garbage collector.
 /// They are returned to the pool when the buffer is disposed,
 /// and not before: every <see cref="ReadOnlyMemory{T}"/> this buffer
 /// yields, and every <see cref="PooledArray{T}"/> it hands out,
@@ -515,6 +518,10 @@ public sealed class PooledArray<T>
 				yield return item;
 			}
 		}
+
+		// Nothing is left, but a disposed view still throws: the
+		// end is never a quiet false after the dispose.
+		_owner.ThrowIfDisposed();
 	}
 
 	IEnumerator IEnumerable.GetEnumerator()

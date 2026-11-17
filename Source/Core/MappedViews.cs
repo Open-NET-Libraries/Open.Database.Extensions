@@ -994,6 +994,9 @@ public readonly record struct MappedCommand<T>
 	/// The pool the arrays are rented from and returned to.
 	/// <see langword="null"/> (also what the overload without a pool
 	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read, as for the overload without a pool.
@@ -1009,6 +1012,9 @@ public readonly record struct MappedCommand<T>
 	/// The pool the arrays are rented from and returned to.
 	/// <see langword="null"/> (also what the overload without a pool
 	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read, as for the overload without a pool.
@@ -1024,6 +1030,9 @@ public readonly record struct MappedCommand<T>
 	/// The pool the arrays are rented from and returned to.
 	/// <see langword="null"/> (also what the overload without a pool
 	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read, as for the overload without a pool.
