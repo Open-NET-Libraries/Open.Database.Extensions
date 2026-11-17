@@ -6,7 +6,7 @@ namespace Open.Database.Extensions.Core;
 // at the next chunk step, as for the chunk stream.
 internal sealed class BufferedStream<T>(
 	MappedQueryCore<T> query,
-	MemoryPool<T> pool,
+	MemoryPool<T>? pool,
 	CancellationToken caller)
 	: IAsyncEnumerable<T>
 {

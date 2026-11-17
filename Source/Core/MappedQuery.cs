@@ -549,8 +549,7 @@ readonly struct MappedQueryCore<T>
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new(
-			this, pool ?? MemoryPool<T>.Shared, cancellationToken);
+		return new(this, pool, cancellationToken);
 	}
 
 	internal IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
@@ -558,8 +557,7 @@ readonly struct MappedQueryCore<T>
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new BufferStream<T>(
-			this, pool ?? MemoryPool<T>.Shared, cancellationToken);
+		return new BufferStream<T>(this, pool, cancellationToken);
 	}
 
 	internal IAsyncEnumerable<T> ToBufferedAsyncStream(
@@ -567,8 +565,7 @@ readonly struct MappedQueryCore<T>
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new BufferedStream<T>(
-			this, pool ?? MemoryPool<T>.Shared, cancellationToken);
+		return new BufferedStream<T>(this, pool, cancellationToken);
 	}
 
 	#endregion

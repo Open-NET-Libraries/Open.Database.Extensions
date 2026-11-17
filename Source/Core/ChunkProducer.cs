@@ -3,21 +3,59 @@ using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions.Core;
 
-// The two buffer terminals of the typed views (ToAsyncBuffer and
-// ToAsyncBufferStream) share one producer. It runs the query through
-// the view's own handler stream (so the connection, the read mode,
-// the skip and take and the read-through are the ones every other
-// terminal has, as for the channel feed), fills pooled arrays, and
-// hands each filled array to its target. The target decides what
-// happens to the chunks: the buffer keeps them until it is disposed,
-// the stream queues them for one consumer.
-
+// The one producer behind the buffer terminals (ToAsyncBuffer,
+// ToAsyncBufferStream and ToBufferedAsyncStream).
+//
+// What it does.
+// It runs the query through the view's own handler stream (so the
+// connection, the read mode, Skip and Take and the read-through of
+// later result sets are the ones every other terminal has, as for the
+// channel feed), copies each row into a buffer rented from the pool,
+// and hands each filled buffer to its target (IChunkTarget). The
+// target decides what happens to the chunks: the buffer keeps them
+// until it is disposed, the stream queues them for its one consumer.
+//
+// Threads.
+// Start runs RunAsync on a thread-pool thread, once. It is the only
+// code that writes rows or rents buffers. Everything else (readers,
+// dispose) runs on callers' threads and talks to it only through the
+// target and through Cancel.
+//
+// Why each non-obvious construct is here.
+// - Task.Factory.StartNew(..., TaskScheduler.Current).Unwrap(), not
+//   Task.Run: the producer keeps the scheduler of the caller (as the
+//   rest of ODX does), and the async lambda makes a Task<Task>, so it
+//   is unwrapped. DenyChildAttach keeps it detached.
+// - The linked token source: the query runs on a token that fires when
+//   the caller's token fires OR when the owner disposes, so a dispose
+//   cancels the database read itself and not only this loop.
+// - Both kinds of cancel end the same way here, but are reported
+//   differently: a cancel the owner asked for (the target is
+//   disposed) is swallowed; a cancel from the caller's token is
+//   reported to the target as an OperationCanceledException carrying
+//   the CALLER's token; any other failure is reported as it is.
+// - The rows read before a failure or a cancel are delivered first:
+//   the buffer that is still being filled is handed over (Seal) before
+//   Finish.
+//
+// Invariants.
+// - A buffer is owned by exactly one party at a time: the producer
+//   while it fills it, then the target (Publish returned true), or the
+//   producer again if the target refused it (the target is disposed),
+//   in which case it releases it at once.
+// - Finish is called exactly once, last. Nothing is written after it.
+// - The linked source is disposed when RunAsync ends, whatever
+//   happens; Cancel is safe at any time, before or after that.
+// - The connection ODX opened is closed by the query when the read
+//   ends, not by this class.
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
-	MemoryPool<T> pool,
+	MemoryPool<T>? pool,
 	CancellationToken caller)
 {
+	readonly MemoryPool<T> _pool = pool ?? MemoryPool<T>.Shared;
+
 	// The caller's token and the owner's dispose, as one token:
 	// it goes to the query, so a dispose cancels the database read.
 	readonly CancellationTokenSource _linked
@@ -150,7 +188,7 @@ internal sealed class ChunkProducer<T>(
 		}
 
 		_capacity = target.CapacityOf(_index++);
-		IMemoryOwner<T> owner = pool.Rent(_capacity);
+		IMemoryOwner<T> owner = _pool.Rent(_capacity);
 		Debug.Assert(owner.Memory.Length >= _capacity);
 		_owner = owner;
 

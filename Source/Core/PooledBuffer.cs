@@ -56,33 +56,26 @@ public sealed class PooledBuffer<T>
 	// So row i is in array floor(log2(i / 16 + 1)): O(1).
 	internal const int FirstSize = 16;
 
-	readonly MappedQueryCore<T> _query;
-	readonly MemoryPool<T> _pool;
-	readonly CancellationToken _caller;
 	readonly object _gate = new();
+	readonly ChunkProducer<T> _producer;
+	readonly Task _producerTask;
 	readonly List<IMemoryOwner<T>> _chunks = [];
 
 	TaskCompletionSource<bool> _signal = NewSignal();
 	TaskCompletionSource<PooledArray<T>>? _items;
-	ChunkProducer<T>? _producer;
-	Task? _producerTask;
 	Exception? _error;
 	int _total;
-	bool _running;
 	bool _done;
 	int _disposed;
 
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
-		MemoryPool<T> pool,
+		MemoryPool<T>? pool,
 		CancellationToken cancellationToken)
 	{
-		_query = query;
-		_pool = pool;
-		_caller = cancellationToken;
-
 		// The read starts now, whether or not anyone reads yet.
-		Start();
+		_producer = new(query, this, pool, cancellationToken);
+		_producerTask = _producer.Start();
 	}
 
 	static TaskCompletionSource<bool> NewSignal()
@@ -151,36 +144,32 @@ public sealed class PooledBuffer<T>
 		ThrowIfDisposed();
 		for (int index = 0; ; ++index)
 		{
+			Reading next;
 			while (true)
 			{
 				// Stops this enumeration even when arrays are ready;
 				// the read goes on.
 				cancellationToken.ThrowIfCancellationRequested();
 
-				Step step = Next(
-					index,
-					out IMemoryOwner<T>? chunk,
-					out Task? wait,
-					out Exception? error);
-
-				if (step == Step.Chunk)
-				{
-					yield return chunk!.Memory;
-					break;
-				}
-
-				if (step == Step.End)
-				{
-					if (error is not null)
-						ExceptionDispatchInfo.Capture(error).Throw();
-
-					yield break;
-				}
+				next = Next(index);
+				if (next.Wait is null) break;
 
 				await TaskWait
-					.Async(wait!, cancellationToken)
+					.Async(next.Wait, cancellationToken)
 					.ConfigureAwait(false);
 			}
+
+			if (next.Chunk is null)
+			{
+				// The end of the read, or its failure after the arrays
+				// that were delivered.
+				if (next.Error is not null)
+					ExceptionDispatchInfo.Capture(next.Error).Throw();
+
+				yield break;
+			}
+
+			yield return next.Chunk.Memory;
 		}
 	}
 
@@ -214,9 +203,7 @@ public sealed class PooledBuffer<T>
 	/// <returns>A task that completes when the arrays are back.</returns>
 	public async ValueTask DisposeAsync()
 	{
-		Task? producer = DisposeCore();
-		if (producer is not null)
-			await producer.ConfigureAwait(false);
+		await DisposeCore().ConfigureAwait(false);
 	}
 
 	internal void ThrowIfDisposed()
@@ -228,67 +215,48 @@ public sealed class PooledBuffer<T>
 		}
 	}
 
-	void Start()
+	// What a reader finds at its next step, read under the lock:
+	// an array to yield; or a task to wait on (nothing is ready and the
+	// read is still going); or neither, which is the end, with the
+	// failure of the read if it failed.
+	readonly struct Reading(
+		IMemoryOwner<T>? chunk,
+		Task? wait,
+		Exception? error)
 	{
-		lock (_gate)
-		{
-			_running = true;
-			_producer = new(_query, this, _pool, _caller);
-			_producerTask = _producer.Start();
-		}
+		internal IMemoryOwner<T>? Chunk { get; } = chunk;
+
+		internal Task? Wait { get; } = wait;
+
+		internal Exception? Error { get; } = error;
 	}
 
-	enum Step
-	{
-		Chunk,
-		Wait,
-		End,
-	}
-
-	Step Next(
-		int index,
-		out IMemoryOwner<T>? chunk,
-		out Task? wait,
-		out Exception? error)
+	Reading Next(int index)
 	{
 		lock (_gate)
 		{
 			ThrowIfDisposed();
-			wait = null;
-			error = null;
-			chunk = null;
-
 			if (index < _chunks.Count)
-			{
-				chunk = _chunks[index];
-				return Step.Chunk;
-			}
+				return new(_chunks[index], null, null);
 
-			if (_done)
-			{
-				error = _error;
-				return Step.End;
-			}
+			if (_done) return new(null, null, _error);
 
-			wait = _signal.Task;
-			return Step.Wait;
+			return new(null, _signal.Task, null);
 		}
 	}
 
-	Task? DisposeCore()
+	// The producer's task: it completes when the producer has exited.
+	Task DisposeCore()
 	{
-		ChunkProducer<T>? producer;
-		Task? task;
 		bool running;
 		TaskCompletionSource<bool> signal;
 		lock (_gate)
 		{
 			if (_disposed != 0) return _producerTask;
 
+			// From here on Publish refuses, so nothing is added.
 			Volatile.Write(ref _disposed, 1);
-			producer = _producer;
-			task = _producerTask;
-			running = _running;
+			running = !_done;
 			signal = _signal;
 			_items?.TrySetCanceled();
 		}
@@ -297,13 +265,13 @@ public sealed class PooledBuffer<T>
 		signal.TrySetResult(true);
 
 		// The query is cancelled by the linked token. Nothing is
-		// returned while the producer can still write.
-		// A producer that is not running has finished: nothing to
-		// cancel, and nothing can write.
-		if (running) producer?.Cancel();
+		// returned while the producer can still write: a running
+		// producer returns the arrays itself (Finish), the last thing
+		// that can write. A finished one has nothing left to cancel.
+		if (running) _producer.Cancel();
 		else ReturnAll();
 
-		return task;
+		return _producerTask;
 	}
 
 	void ReturnAll()
@@ -318,7 +286,7 @@ public sealed class PooledBuffer<T>
 		foreach (IMemoryOwner<T> chunk in taken) chunk.Release();
 	}
 
-	// Under the lock.
+	// Under the lock, when the read is done and Items was asked for.
 	void CompleteItems()
 	{
 		TaskCompletionSource<PooledArray<T>> items = _items!;
@@ -370,7 +338,6 @@ public sealed class PooledBuffer<T>
 		bool dispose;
 		lock (_gate)
 		{
-			_running = false;
 			_done = true;
 			_error = error;
 			signal = _signal;

@@ -995,7 +995,7 @@ public static class PooledBufferJourneyTests
 			typeof(PooledArray<>),
 			core.GetType("Open.Database.Extensions.Core.ChunkProducer`1")!,
 			core.GetType("Open.Database.Extensions.Core.BufferStream`1")!,
-			core.GetType("Open.Database.Extensions.Core.BufferStreamEnumerator`1")!,
+			core.GetType("Open.Database.Extensions.Core.StreamTarget`1")!,
 			core.GetType("Open.Database.Extensions.Core.BufferedStream`1")!,
 		];
 
