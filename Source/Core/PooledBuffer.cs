@@ -18,7 +18,8 @@ namespace Open.Database.Extensions;
 /// however many readers there are.
 /// </para>
 /// <para>
-/// The rows live in arrays rented from <see cref="ArrayPool{T}.Shared"/>.
+/// The rows live in arrays rented from the pool the caller passed
+/// (<see cref="ArrayPool{T}.Shared"/> when none was).
 /// They are returned to the pool when the buffer is disposed,
 /// and not before: every <see cref="ReadOnlyMemory{T}"/> this buffer
 /// yields, and every <see cref="PooledArray{T}"/> it hands out,
@@ -48,9 +49,10 @@ public sealed class PooledBuffer<T>
 	internal const int FirstSize = 16;
 
 	readonly MappedQueryCore<T> _query;
+	readonly ArrayPool<T> _pool;
 	readonly CancellationToken _caller;
 	readonly object _gate = new();
-	readonly List<Chunk<T>> _chunks = [];
+	readonly List<IMemoryOwner<T>> _chunks = [];
 
 	TaskCompletionSource<bool> _signal = NewSignal();
 	TaskCompletionSource<PooledArray<T>>? _items;
@@ -65,9 +67,11 @@ public sealed class PooledBuffer<T>
 
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
+		ArrayPool<T> pool,
 		CancellationToken cancellationToken)
 	{
 		_query = query;
+		_pool = pool;
 		_caller = cancellationToken;
 	}
 
@@ -145,13 +149,13 @@ public sealed class PooledBuffer<T>
 
 				Step step = Next(
 					index,
-					out Chunk<T> chunk,
+					out IMemoryOwner<T>? chunk,
 					out Task? wait,
 					out Exception? error);
 
 				if (step == Step.Chunk)
 				{
-					yield return chunk.Memory;
+					yield return chunk!.Memory;
 					break;
 				}
 
@@ -219,7 +223,7 @@ public sealed class PooledBuffer<T>
 
 			_started = true;
 			_running = true;
-			_producer = new(_query, this, _caller);
+			_producer = new(_query, this, _pool, _caller);
 			_producerTask = _producer.Start();
 		}
 	}
@@ -233,7 +237,7 @@ public sealed class PooledBuffer<T>
 
 	Step Next(
 		int index,
-		out Chunk<T> chunk,
+		out IMemoryOwner<T>? chunk,
 		out Task? wait,
 		out Exception? error)
 	{
@@ -242,7 +246,7 @@ public sealed class PooledBuffer<T>
 			ThrowIfDisposed();
 			wait = null;
 			error = null;
-			chunk = default;
+			chunk = null;
 
 			if (index < _chunks.Count)
 			{
@@ -296,14 +300,14 @@ public sealed class PooledBuffer<T>
 
 	void ReturnAll()
 	{
-		Chunk<T>[] taken;
+		IMemoryOwner<T>[] taken;
 		lock (_gate)
 		{
 			taken = [.. _chunks];
 			_chunks.Clear();
 		}
 
-		foreach (Chunk<T> chunk in taken) chunk.Return();
+		foreach (IMemoryOwner<T> chunk in taken) chunk.Dispose();
 	}
 
 	// Under the lock.
@@ -329,7 +333,7 @@ public sealed class PooledBuffer<T>
 			: throw new InvalidOperationException(
 				"A buffer cannot hold more rows than an int counts.");
 
-	bool IChunkTarget<T>.Publish(Chunk<T> chunk)
+	bool IChunkTarget<T>.Publish(IMemoryOwner<T> chunk)
 	{
 		TaskCompletionSource<bool> signal;
 		lock (_gate)
@@ -337,7 +341,7 @@ public sealed class PooledBuffer<T>
 			if (_disposed != 0) return false;
 
 			_chunks.Add(chunk);
-			_total += chunk.Count;
+			_total += chunk.Memory.Length;
 			signal = _signal;
 			_signal = NewSignal();
 		}
@@ -397,11 +401,11 @@ public sealed class PooledArray<T>
 	: IReadOnlyList<T>, ICollection<T>, IDisposable
 {
 	readonly PooledBuffer<T> _owner;
-	readonly Chunk<T>[] _chunks;
+	readonly IMemoryOwner<T>[] _chunks;
 
 	internal PooledArray(
 		PooledBuffer<T> owner,
-		Chunk<T>[] chunks,
+		IMemoryOwner<T>[] chunks,
 		int count)
 	{
 		_owner = owner;
@@ -444,7 +448,7 @@ public sealed class PooledArray<T>
 			int first = PooledBuffer<T>.FirstSize;
 			int segment = Log2((index / first) + 1);
 			int start = (first << segment) - first;
-			return _chunks[segment].Items[index - start];
+			return _chunks[segment].Memory.Span[index - start];
 		}
 	}
 
@@ -478,10 +482,11 @@ public sealed class PooledArray<T>
 				nameof(destination));
 		}
 
-		foreach (Chunk<T> chunk in _chunks)
+		foreach (IMemoryOwner<T> chunk in _chunks)
 		{
-			chunk.Memory.Span.CopyTo(destination);
-			destination = destination[chunk.Count..];
+			Span<T> rows = chunk.Memory.Span;
+			rows.CopyTo(destination);
+			destination = destination[rows.Length..];
 		}
 	}
 
@@ -498,14 +503,16 @@ public sealed class PooledArray<T>
 
 	IEnumerator<T> Enumerate()
 	{
-		foreach (Chunk<T> chunk in _chunks)
+		foreach (IMemoryOwner<T> chunk in _chunks)
 		{
-			for (int i = 0; i < chunk.Count; ++i)
+			Memory<T> memory = chunk.Memory;
+			for (int i = 0; i < memory.Length; ++i)
 			{
 				// The arrays go back to the pool on dispose: never
 				// hand out a row from one after it.
 				_owner.ThrowIfDisposed();
-				yield return chunk.Items[i];
+				T item = memory.Span[i];
+				yield return item;
 			}
 		}
 	}
@@ -545,12 +552,12 @@ public sealed class PooledArray<T>
 	{
 		_owner.ThrowIfDisposed();
 		EqualityComparer<T> comparer = EqualityComparer<T>.Default;
-		foreach (Chunk<T> chunk in _chunks)
+		foreach (IMemoryOwner<T> chunk in _chunks)
 		{
-			T[] items = chunk.Items;
-			for (int i = 0; i < chunk.Count; ++i)
+			ReadOnlySpan<T> rows = chunk.Memory.Span;
+			for (int i = 0; i < rows.Length; ++i)
 			{
-				if (comparer.Equals(items[i], item)) return true;
+				if (comparer.Equals(rows[i], item)) return true;
 			}
 		}
 
@@ -576,11 +583,11 @@ public sealed class PooledArray<T>
 				"The destination is too small.", nameof(array));
 		}
 
-		foreach (Chunk<T> chunk in _chunks)
+		foreach (IMemoryOwner<T> chunk in _chunks)
 		{
-			Array.Copy(
-				chunk.Items, 0, array, arrayIndex, chunk.Count);
-			arrayIndex += chunk.Count;
+			Span<T> rows = chunk.Memory.Span;
+			rows.CopyTo(array.AsSpan(arrayIndex));
+			arrayIndex += rows.Length;
 		}
 	}
 

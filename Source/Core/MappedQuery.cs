@@ -544,24 +544,30 @@ readonly struct MappedQueryCore<T>
 	// (see BufferProducer.cs). A default struct is refused here,
 	// at the call, as everywhere else.
 	internal PooledBuffer<T> ToAsyncBuffer(
+		ArrayPool<T>? pool,
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new(this, cancellationToken);
+		return new(
+			this, pool ?? ArrayPool<T>.Shared, cancellationToken);
 	}
 
 	internal IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		ArrayPool<T>? pool,
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new BufferStream<T>(this, cancellationToken);
+		return new BufferStream<T>(
+			this, pool ?? ArrayPool<T>.Shared, cancellationToken);
 	}
 
 	internal IAsyncEnumerable<T> ToBufferedAsyncStream(
+		ArrayPool<T>? pool,
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new BufferedStream<T>(this, cancellationToken);
+		return new BufferedStream<T>(
+			this, pool ?? ArrayPool<T>.Shared, cancellationToken);
 	}
 
 	#endregion
@@ -1079,7 +1085,7 @@ public readonly record struct MappedQuery<T>
 	/// <returns>The lazy buffer.</returns>
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToAsyncBuffer(null, cancellationToken);
 
 	/// <summary>
 	/// Reads the query in a rolling stream of pooled arrays,
@@ -1127,7 +1133,7 @@ public readonly record struct MappedQuery<T>
 	/// <returns>The lazy, single-use stream.</returns>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToAsyncBufferStream(null, cancellationToken);
 
 	/// <summary>
 	/// Reads the query in a rolling stream of pooled arrays,
@@ -1167,7 +1173,52 @@ public readonly record struct MappedQuery<T>
 	/// <returns>The lazy, single-use stream of elements.</returns>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToBufferedAsyncStream(null, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public PooledBuffer<T> ToAsyncBuffer(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, cancellationToken);
 
 	#endregion
 }
@@ -1352,20 +1403,65 @@ public readonly record struct MappedQueryWithSkip<T>
 
 	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToAsyncBuffer(null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToAsyncBufferStream(null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToBufferedAsyncStream(null, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public PooledBuffer<T> ToAsyncBuffer(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, cancellationToken);
 
 	#endregion
 }
@@ -1547,20 +1643,65 @@ public readonly record struct MappedQueryWithTake<T>
 
 	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToAsyncBuffer(null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToAsyncBufferStream(null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToBufferedAsyncStream(null, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public PooledBuffer<T> ToAsyncBuffer(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, cancellationToken);
+
+	/// <inheritdoc
+	/// cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
+	/// <param name="pool">
+	/// The pool the arrays are rented from and returned to.
+	/// <see langword="null"/> (also what the overload without a pool
+	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read, as for the overload without a pool.
+	/// </param>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		ArrayPool<T>? pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, cancellationToken);
 
 	#endregion
 }

@@ -11,24 +11,38 @@ namespace Open.Database.Extensions.Core;
 // happens to the chunks: the buffer keeps them until it is disposed,
 // the stream queues them for one consumer.
 
+// The unit of every chunk is an IMemoryOwner<T>: the rows of one
+// rented array. Disposing it returns the array, once, to the pool it
+// came from.
 /// <summary>
-/// A pooled array and how many of its slots hold rows.
+/// A rented array, the number of its slots that hold rows, and the
+/// pool it came from. Its memory is exactly the rows, never the whole
+/// array; disposing it returns the array to its pool, once.
 /// </summary>
-internal readonly struct Chunk<T>(T[] items, int count)
+internal sealed class ArrayPoolOwner<T>(
+	T[] array,
+	int count,
+	ArrayPool<T> pool)
+	: IMemoryOwner<T>
 {
-	internal T[] Items { get; } = items;
+	T[]? _array = array;
 
-	internal int Count { get; } = count;
-
-	internal ReadOnlyMemory<T> Memory
-		=> new(Items, 0, Count);
+	public Memory<T> Memory
+		=> Volatile.Read(ref _array) is { } items
+			? new(items, 0, count)
+			: throw new ObjectDisposedException(
+				nameof(ArrayPoolOwner<T>));
 
 	// The used prefix is cleared (as ArraySink does), so a pooled
-	// array never keeps a row alive.
-	internal void Return()
+	// array never keeps a row alive. Safe to call twice and from
+	// two threads: the array goes back once.
+	public void Dispose()
 	{
-		Array.Clear(Items, 0, Count);
-		ArrayPool<T>.Shared.Return(Items, clearArray: false);
+		T[]? items = Interlocked.Exchange(ref _array, null);
+		if (items is null) return;
+
+		Array.Clear(items, 0, count);
+		pool.Return(items, clearArray: false);
 	}
 }
 
@@ -48,7 +62,7 @@ internal interface IChunkTarget<T>
 	/// Takes over a chunk. False means refused (disposed):
 	/// the chunk stays the producer's, which returns it.
 	/// </summary>
-	bool Publish(Chunk<T> chunk);
+	bool Publish(IMemoryOwner<T> chunk);
 
 	/// <summary>
 	/// The producer ended; the error is null for an end that is not
@@ -93,6 +107,7 @@ internal static class TaskWait
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
+	ArrayPool<T> pool,
 	CancellationToken caller)
 {
 	// The caller's token and the owner's dispose, as one token:
@@ -191,18 +206,18 @@ internal sealed class ChunkProducer<T>(
 	{
 		if (_array is not null)
 		{
-			Chunk<T> full = new(_array, _count);
+			ArrayPoolOwner<T> full = new(_array, _count, pool);
 			_array = null;
 			_count = 0;
 			if (!target.Publish(full))
 			{
-				full.Return();
+				full.Dispose();
 				throw new OperationCanceledException();
 			}
 		}
 
 		_capacity = target.CapacityOf(_index++);
-		_array = ArrayPool<T>.Shared.Rent(_capacity);
+		_array = pool.Rent(_capacity);
 	}
 
 	// Hands on the array that is still being filled, if it has rows.
@@ -211,10 +226,11 @@ internal sealed class ChunkProducer<T>(
 		T[]? array = _array;
 		if (array is null) return;
 
-		Chunk<T> last = new(array, _count);
+		int count = _count;
+		ArrayPoolOwner<T> last = new(array, count, pool);
 		_array = null;
 		_count = 0;
-		if (last.Count == 0 || !target.Publish(last)) last.Return();
+		if (count == 0 || !target.Publish(last)) last.Dispose();
 	}
 }
 
@@ -223,6 +239,7 @@ internal sealed class ChunkProducer<T>(
 // consumer and the connection is held for the read only.
 internal sealed class BufferStream<T>(
 	MappedQueryCore<T> query,
+	ArrayPool<T> pool,
 	CancellationToken caller)
 	: IAsyncEnumerable<ReadOnlyMemory<T>>
 {
@@ -239,19 +256,20 @@ internal sealed class BufferStream<T>(
 		}
 
 		return new BufferStreamEnumerator<T>(
-			query, caller, cancellationToken);
+			query, pool, caller, cancellationToken);
 	}
 }
 
 internal sealed class BufferStreamEnumerator<T>(
 	MappedQueryCore<T> query,
+	ArrayPool<T> pool,
 	CancellationToken caller,
 	CancellationToken cancellationToken)
 	: IAsyncEnumerator<ReadOnlyMemory<T>>, IChunkTarget<T>
 {
 	// One writer (the producer) and one reader (the consumer).
-	readonly Channel<Chunk<T>> _channel
-		= Channel.CreateUnbounded<Chunk<T>>(
+	readonly Channel<IMemoryOwner<T>> _channel
+		= Channel.CreateUnbounded<IMemoryOwner<T>>(
 			new UnboundedChannelOptions
 			{
 				SingleWriter = true,
@@ -260,7 +278,7 @@ internal sealed class BufferStreamEnumerator<T>(
 
 	ChunkProducer<T>? _producer;
 	Task _producerTask = Task.CompletedTask;
-	Chunk<T> _current;
+	IMemoryOwner<T>? _current;
 	int _disposed;
 
 	/// <summary>
@@ -274,7 +292,7 @@ internal sealed class BufferStreamEnumerator<T>(
 	/// throws <see cref="ObjectDisposedException"/>.
 	/// </remarks>
 	public ReadOnlyMemory<T> Current
-		=> _current.Items is null ? default : _current.Memory;
+		=> _current is null ? default : _current.Memory;
 
 	bool IChunkTarget<T>.IsDisposed
 		=> Volatile.Read(ref _disposed) != 0;
@@ -282,7 +300,7 @@ internal sealed class BufferStreamEnumerator<T>(
 	int IChunkTarget<T>.CapacityOf(int index)
 		=> 16 << Math.Min(index, 8); // 16, 32 ... 4096.
 
-	bool IChunkTarget<T>.Publish(Chunk<T> chunk)
+	bool IChunkTarget<T>.Publish(IMemoryOwner<T> chunk)
 		=> _channel.Writer.TryWrite(chunk);
 
 	void IChunkTarget<T>.Finish(Exception? error)
@@ -300,14 +318,14 @@ internal sealed class BufferStreamEnumerator<T>(
 
 		if (_producer is null)
 		{
-			_producer = new(query, this, caller);
+			_producer = new(query, this, pool, caller);
 			_producerTask = _producer.Start();
 		}
 
-		ChannelReader<Chunk<T>> reader = _channel.Reader;
+		ChannelReader<IMemoryOwner<T>> reader = _channel.Reader;
 		while (true)
 		{
-			if (reader.TryRead(out Chunk<T> chunk))
+			if (reader.TryRead(out IMemoryOwner<T>? chunk))
 			{
 				_current = chunk;
 				return true;
@@ -327,9 +345,9 @@ internal sealed class BufferStreamEnumerator<T>(
 
 	void ReleaseCurrent()
 	{
-		Chunk<T> current = _current;
-		_current = default;
-		if (current.Items is not null) current.Return();
+		IMemoryOwner<T>? current = _current;
+		_current = null;
+		current?.Dispose();
 	}
 
 	public async ValueTask DisposeAsync()
@@ -345,8 +363,8 @@ internal sealed class BufferStreamEnumerator<T>(
 		producer.Cancel();
 		await _producerTask.ConfigureAwait(false);
 
-		while (_channel.Reader.TryRead(out Chunk<T> chunk))
-			chunk.Return();
+		while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
+			chunk.Dispose();
 
 		producer.DisposeSource();
 	}
@@ -358,10 +376,11 @@ internal sealed class BufferStreamEnumerator<T>(
 // at the next chunk step, as for the chunk stream.
 internal sealed class BufferedStream<T>(
 	MappedQueryCore<T> query,
+	ArrayPool<T> pool,
 	CancellationToken caller)
 	: IAsyncEnumerable<T>
 {
-	readonly BufferStream<T> _chunks = new(query, caller);
+	readonly BufferStream<T> _chunks = new(query, pool, caller);
 
 	public IAsyncEnumerator<T> GetAsyncEnumerator(
 		CancellationToken cancellationToken = default)

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Data.Common;
 using static Open.Database.Extensions.Tests.ChannelWait;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
@@ -686,6 +687,237 @@ public static class PooledBufferTests
 			() => collection.CopyTo(new ChannelRow[100], 0));
 		Assert.Throws<ObjectDisposedException>(
 			() => Enumerable.TryGetNonEnumeratedCount(items, out _));
+	}
+
+	// ---- a caller's pool: every rent is matched by one return ------------
+
+	// An ArrayPool that records what was rented and what came back,
+	// and that a return of an array it did not hand out (or twice) is
+	// counted as unmatched.
+	sealed class CountingPool<T> : ArrayPool<T>
+	{
+		readonly ArrayPool<T> _inner = Create();
+
+		readonly System.Collections.Concurrent.ConcurrentDictionary<T[], int>
+			_out = new(ReferenceEqualityComparer.Instance);
+
+		int _rents;
+		int _returns;
+		int _unmatched;
+
+		public int Rents => Volatile.Read(ref _rents);
+
+		public int Returns => Volatile.Read(ref _returns);
+
+		public int Unmatched => Volatile.Read(ref _unmatched);
+
+		public int Outstanding => _out.Count;
+
+		public override T[] Rent(int minimumLength)
+		{
+			T[] array = _inner.Rent(minimumLength);
+			Interlocked.Increment(ref _rents);
+			_out[array] = 0;
+			return array;
+		}
+
+		public override void Return(T[] array, bool clearArray = false)
+		{
+			Interlocked.Increment(ref _returns);
+			if (!_out.TryRemove(array, out _))
+				Interlocked.Increment(ref _unmatched);
+
+			_inner.Return(array, clearArray);
+		}
+	}
+
+	static void AssertBalanced(CountingPool<ChannelRow> pool)
+	{
+		Assert.True(pool.Rents > 0, "nothing was rented");
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+		Assert.Equal(0, pool.Outstanding);
+	}
+
+	public static TheoryData<string> Terminals
+		=> ["buffer", "stream", "buffered"];
+
+	static async Task<int> ReadAll(
+		string terminal,
+		MappedCommand<ChannelRow> view,
+		ArrayPool<ChannelRow>? pool)
+	{
+		int rows = 0;
+		switch (terminal)
+		{
+			case "buffer":
+				{
+					await using var buffer = view.ToAsyncBuffer(pool, Ct);
+					rows = (await buffer.Items.Within()).Count;
+					break;
+				}
+
+			case "stream":
+				await foreach (var chunk in view
+					.ToAsyncBufferStream(pool, Ct))
+				{
+					rows += chunk.Length;
+				}
+
+				break;
+
+			default:
+				await foreach (var _ in view
+					.ToBufferedAsyncStream(pool, Ct))
+				{
+					++rows;
+				}
+
+				break;
+		}
+
+		return rows;
+	}
+
+	[Theory, MemberData(nameof(Terminals))]
+	public static async Task APool_SeesEveryRentReturnedOnce_OnAFullRead(
+		string terminal)
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Rows100();
+
+		Assert.Equal(100, await ReadAll(terminal, run.View, pool));
+
+		AssertBalanced(pool);
+		Assert.Equal(3, pool.Rents);
+	}
+
+	[Theory, MemberData(nameof(Terminals))]
+	public static async Task ANullPool_UsesTheSharedPool(string terminal)
+	{
+		var run = Rows100();
+
+		// The literal null binds to the pool overload only.
+		int rows = terminal switch
+		{
+			"buffer" => await ReadBufferNull(run.View),
+			"stream" => await ReadStreamNull(run.View),
+			_ => await ReadBufferedNull(run.View),
+		};
+
+		Assert.Equal(100, rows);
+	}
+
+	static async Task<int> ReadBufferNull(MappedCommand<ChannelRow> view)
+	{
+		await using var buffer = view.ToAsyncBuffer(null);
+		return (await buffer.Items.Within()).Count;
+	}
+
+	static async Task<int> ReadStreamNull(MappedCommand<ChannelRow> view)
+	{
+		int rows = 0;
+		await foreach (var chunk in view.ToAsyncBufferStream(null))
+			rows += chunk.Length;
+
+		return rows;
+	}
+
+	static async Task<int> ReadBufferedNull(MappedCommand<ChannelRow> view)
+	{
+		int rows = 0;
+		await foreach (var _ in view.ToBufferedAsyncStream(null))
+			++rows;
+
+		return rows;
+	}
+
+	[Theory]
+	[InlineData("stream")]
+	[InlineData("buffered")]
+	public static async Task APool_SeesEveryRentReturned_AfterABreak(
+		string terminal)
+	{
+		var pool = new CountingPool<ChannelRow>();
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 40),
+			asyncReads: true);
+
+		if (terminal == "stream")
+		{
+			await foreach (var chunk in run.View
+				.ToAsyncBufferStream(pool, Ct))
+			{
+				await Until(() => reader is { Stalled: true }, "the stall");
+				break;
+			}
+		}
+		else
+		{
+			await foreach (ChannelRow row in run.View
+				.ToBufferedAsyncStream(pool, Ct))
+			{
+				if (row.Id != 5) continue;
+
+				await Until(() => reader is { Stalled: true }, "the stall");
+				break;
+			}
+		}
+
+		// The break disposed the enumerator, which awaited the
+		// producer and drained the channel: no waiting here.
+		Assert.True(reader!.CancelSeen);
+		AssertBalanced(pool);
+	}
+
+	[Fact]
+	public static async Task APool_SeesEveryRentReturned_AfterADisposeWhileFilling()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 40),
+			asyncReads: true);
+		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		_ = buffer.Items;
+		await Until(() => reader is { Stalled: true }, "the stall");
+
+		await buffer.DisposeAsync().AsTask().Within();
+
+		AssertBalanced(pool);
+
+		// The sync form returns them when the producer exits.
+		var pool2 = new CountingPool<ChannelRow>();
+		StallingReader? reader2 = null;
+		var run2 = Run.Create(
+			() => reader2 = new StallingReader(100, 40),
+			asyncReads: true);
+		var buffer2 = run2.View.ToAsyncBuffer(pool2, Ct);
+		_ = buffer2.Items;
+		await Until(
+			() => reader2 is { Stalled: true },
+			"the second stall");
+
+		buffer2.Dispose();
+
+		await Until(() => run2.Closed, "the connection closed");
+		await Until(() => pool2.Outstanding == 0, "the arrays back");
+		AssertBalanced(pool2);
+	}
+
+	[Theory, MemberData(nameof(Terminals))]
+	public static async Task APool_SeesEveryRentReturned_AfterAFault(
+		string terminal)
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Run.Create(
+			() => new ChannelTestReader(40, failAtRow: 30));
+
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => ReadAll(terminal, run.View, pool));
+
+		AssertBalanced(pool);
 	}
 
 	// ---- ToBufferedAsyncStream ------------------------------------------
