@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
@@ -12,40 +13,10 @@ namespace Open.Database.Extensions.Core;
 // happens to the chunks: the buffer keeps them until it is disposed,
 // the stream queues them for one consumer.
 
-// The unit of every chunk is an IMemoryOwner<T>: the rows of one
-// rented array. Disposing it returns the array, once, to the pool it
-// came from.
-/// <summary>
-/// A rented array, the number of its slots that hold rows, and the
-/// pool it came from. Its memory is exactly the rows, never the whole
-/// array; disposing it returns the array to its pool, once.
-/// </summary>
-internal sealed class ArrayPoolOwner<T>(
-	T[] array,
-	int count,
-	ArrayPool<T> pool)
-	: IMemoryOwner<T>
-{
-	T[]? _array = array;
-
-	public Memory<T> Memory
-		=> Volatile.Read(ref _array) is { } items
-			? new(items, 0, count)
-			: throw new ObjectDisposedException(
-				nameof(ArrayPoolOwner<T>));
-
-	// The used prefix is cleared (as ArraySink does), so a pooled
-	// array never keeps a row alive. Safe to call twice and from
-	// two threads: the array goes back once.
-	public void Dispose()
-	{
-		T[]? items = Interlocked.Exchange(ref _array, null);
-		if (items is null) return;
-
-		Array.Clear(items, 0, count);
-		pool.Return(items, clearArray: false);
-	}
-}
+// The unit of every chunk is an IMemoryOwner<T> rented from the pool:
+// exactly the rows of one buffer. Releasing it clears the rows (for
+// types that hold references) and disposes it, which returns the
+// buffer to its pool (see MemoryOwnerExtensions).
 
 /// <summary>Where the producer hands its chunks.</summary>
 internal interface IChunkTarget<T>
@@ -108,7 +79,7 @@ internal static class TaskWait
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
-	ArrayPool<T> pool,
+	MemoryPool<T> pool,
 	CancellationToken caller)
 {
 	// The caller's token and the owner's dispose, as one token:
@@ -116,7 +87,9 @@ internal sealed class ChunkProducer<T>(
 	readonly CancellationTokenSource _linked
 		= CancellationTokenSource.CreateLinkedTokenSource(caller);
 
+	IMemoryOwner<T>? _owner;
 	T[]? _array;
+	int _offset;
 	int _count;
 	int _index;
 	int _capacity;
@@ -210,48 +183,78 @@ internal sealed class ChunkProducer<T>(
 			// the token, so the loop does.
 			cancellationToken.ThrowIfCancellationRequested();
 
-			if (_array is null || _count == _capacity) Advance();
+			if (_owner is null || _count == _capacity) Advance();
 
-			_array![_count++] = row;
+			// Straight into the array behind the memory (the shared
+			// pool's memory is an array); a memory that is not an array
+			// goes through its span.
+			if (_array is not null)
+				_array[_offset + _count] = row;
+			else
+				_owner!.Memory.Span[_count] = row;
+
+			++_count;
 			++total;
 		}
 
 		return total;
 	}
 
-	// Hands the full array on and rents the next one.
+	// Hands the full buffer on and rents the next one.
 	void Advance()
 	{
-		if (_array is not null)
+		if (_owner is not null)
 		{
-			ArrayPoolOwner<T> full = new(_array, _count, pool);
-			_array = null;
-			_count = 0;
+			IMemoryOwner<T> full = Take();
 			if (!target.Publish(full))
 			{
-				full.Dispose();
+				full.Release();
 				throw new OperationCanceledException();
 			}
 		}
 
 		_capacity = target.CapacityOf(_index++);
-		_array = pool.Rent(_capacity);
+		IMemoryOwner<T> owner = pool.Rent(_capacity);
+		Debug.Assert(owner.Memory.Length >= _capacity);
+		_owner = owner;
+
+		if (MemoryMarshal.TryGetArray<T>(
+			owner.Memory,
+			out ArraySegment<T> segment)
+			&& segment.Array is not null)
+		{
+			_array = segment.Array;
+			_offset = segment.Offset;
+		}
+		else
+		{
+			_array = null;
+			_offset = 0;
+		}
 	}
 
-	// Hands on the array that is still being filled, if it has rows.
+	// The buffer being filled, cut to the rows it holds
+	// (the same owner when the pool gave exactly that).
+	IMemoryOwner<T> Take()
+	{
+		IMemoryOwner<T> owner = _owner!.Slice(_count);
+		_owner = null;
+		_array = null;
+		_offset = 0;
+		_count = 0;
+		return owner;
+	}
+
+	// Hands on the buffer that is still being filled, if it has rows.
 	void Seal()
 	{
-		T[]? array = _array;
-		if (array is null) return;
+		if (_owner is null) return;
 
-		// Advance runs just before a row is stored: an open array
+		// Advance runs just before a row is stored: an open buffer
 		// always holds at least one row.
-		int count = _count;
-		Debug.Assert(count > 0);
-		ArrayPoolOwner<T> last = new(array, count, pool);
-		_array = null;
-		_count = 0;
-		if (!target.Publish(last)) last.Dispose();
+		Debug.Assert(_count > 0);
+		IMemoryOwner<T> last = Take();
+		if (!target.Publish(last)) last.Release();
 	}
 }
 
@@ -260,7 +263,7 @@ internal sealed class ChunkProducer<T>(
 // consumer and the connection is held for the read only.
 internal sealed class BufferStream<T>(
 	MappedQueryCore<T> query,
-	ArrayPool<T> pool,
+	MemoryPool<T> pool,
 	CancellationToken caller)
 	: IAsyncEnumerable<ReadOnlyMemory<T>>
 {
@@ -283,7 +286,7 @@ internal sealed class BufferStream<T>(
 
 internal sealed class BufferStreamEnumerator<T>(
 	MappedQueryCore<T> query,
-	ArrayPool<T> pool,
+	MemoryPool<T> pool,
 	CancellationToken caller,
 	CancellationToken cancellationToken)
 	: IAsyncEnumerator<ReadOnlyMemory<T>>, IChunkTarget<T>
@@ -368,7 +371,7 @@ internal sealed class BufferStreamEnumerator<T>(
 	{
 		IMemoryOwner<T>? current = _current;
 		_current = null;
-		current?.Dispose();
+		current?.Release();
 	}
 
 	public async ValueTask DisposeAsync()
@@ -391,7 +394,7 @@ internal sealed class BufferStreamEnumerator<T>(
 		finally
 		{
 			while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
-				chunk.Dispose();
+				chunk.Release();
 		}
 	}
 }
@@ -402,7 +405,7 @@ internal sealed class BufferStreamEnumerator<T>(
 // at the next chunk step, as for the chunk stream.
 internal sealed class BufferedStream<T>(
 	MappedQueryCore<T> query,
-	ArrayPool<T> pool,
+	MemoryPool<T> pool,
 	CancellationToken caller)
 	: IAsyncEnumerable<T>
 {

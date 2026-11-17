@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Reflection;
 using System.Data.Common;
 using static Open.Database.Extensions.Tests.ChannelWait;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
@@ -710,46 +711,6 @@ public static class PooledBufferTests
 
 	// ---- a caller's pool: every rent is matched by one return ------------
 
-	// An ArrayPool that records what was rented and what came back,
-	// and that a return of an array it did not hand out (or twice) is
-	// counted as unmatched.
-	sealed class CountingPool<T> : ArrayPool<T>
-	{
-		readonly ArrayPool<T> _inner = Create();
-
-		readonly System.Collections.Concurrent.ConcurrentDictionary<T[], int>
-			_out = new(ReferenceEqualityComparer.Instance);
-
-		int _rents;
-		int _returns;
-		int _unmatched;
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Returns => Volatile.Read(ref _returns);
-
-		public int Unmatched => Volatile.Read(ref _unmatched);
-
-		public int Outstanding => _out.Count;
-
-		public override T[] Rent(int minimumLength)
-		{
-			T[] array = _inner.Rent(minimumLength);
-			Interlocked.Increment(ref _rents);
-			_out[array] = 0;
-			return array;
-		}
-
-		public override void Return(T[] array, bool clearArray = false)
-		{
-			Interlocked.Increment(ref _returns);
-			if (!_out.TryRemove(array, out _))
-				Interlocked.Increment(ref _unmatched);
-
-			_inner.Return(array, clearArray);
-		}
-	}
-
 	static void AssertBalanced(CountingPool<ChannelRow> pool)
 	{
 		Assert.True(pool.Rents > 0, "nothing was rented");
@@ -764,7 +725,7 @@ public static class PooledBufferTests
 	static async Task<int> ReadAll(
 		string terminal,
 		MappedCommand<ChannelRow> view,
-		ArrayPool<ChannelRow>? pool)
+		MemoryPool<ChannelRow>? pool)
 	{
 		int rows = 0;
 		switch (terminal)
@@ -1210,6 +1171,172 @@ public static class PooledBufferTests
 		{
 			TaskScheduler.UnobservedTaskException -= OnUnobserved;
 		}
+	}
+
+	// ---- the memory pool and its owners -----------------------------------
+
+	static readonly Type Extensions = typeof(PooledBuffer<>).Assembly
+		.GetType("Open.Database.Extensions.Core.MemoryOwnerExtensions")!;
+
+	static IMemoryOwner<T> Slice<T>(IMemoryOwner<T> owner, int count)
+		=> (IMemoryOwner<T>)Extensions
+			.GetMethod(
+				"Slice",
+				BindingFlags.Static | BindingFlags.NonPublic)!
+			.MakeGenericMethod(typeof(T))
+			.Invoke(null, [owner, count])!;
+
+	static void Release<T>(IMemoryOwner<T> owner)
+		=> Extensions
+			.GetMethod(
+				"Release",
+				BindingFlags.Static | BindingFlags.NonPublic)!
+			.MakeGenericMethod(typeof(T))
+			.Invoke(null, [owner]);
+
+	[Fact]
+	public static void Slice_ReturnsTheSameOwner_WhenTheLengthMatches()
+	{
+		var pool = new CountingPool<int>();
+		IMemoryOwner<int> owner = pool.Rent(16);
+
+		Assert.Same(owner, Slice(owner, 16));
+	}
+
+	[Fact]
+	public static void Slice_WrapsAnOwnerWhoseMemoryIsLonger()
+	{
+		var pool = new CountingPool<int>();
+		IMemoryOwner<int> host = pool.Rent(16);
+
+		IMemoryOwner<int> sliced = Slice(host, 10);
+
+		Assert.NotSame(host, sliced);
+		Assert.Equal(10, sliced.Memory.Length);
+
+		// Disposing the wrapper disposes the host (the array goes back
+		// once); a second disposal is safe, and after it the memory is
+		// refused.
+		sliced.Dispose();
+		Assert.Equal(1, pool.Returns);
+		Assert.Null(Record.Exception(() => sliced.Dispose()));
+		Assert.Equal(1, pool.Returns);
+		Assert.Throws<ObjectDisposedException>(() => sliced.Memory);
+		Assert.Throws<ObjectDisposedException>(() => host.Memory);
+	}
+
+	[Fact]
+	public static void Slice_OfTheSharedPoolsOwner_IsSafeToDisposeTwice()
+	{
+		IMemoryOwner<int> host = MemoryPool<int>.Shared.Rent(10);
+		IMemoryOwner<int> sliced = Slice(host, 7);
+
+		Assert.Equal(7, sliced.Memory.Length);
+		sliced.Dispose();
+		Assert.Null(Record.Exception(() => sliced.Dispose()));
+		Assert.Throws<ObjectDisposedException>(() => sliced.Memory);
+	}
+
+	[Fact]
+	public static async Task APoolThatRoundsUp_StillYieldsExactMemoryEverywhere()
+	{
+		var pool = new CountingPool<ChannelRow> { RoundUp = true };
+		var run = Rows100();
+
+		await using (var buffer = run.View.ToAsyncBuffer(pool, Ct))
+		{
+			PooledArray<ChannelRow> items = await buffer.Items.Within();
+			Assert.Equal(100, items.Count);
+			Assert.Equal(Ids(100), items.Select(r => r.Id).ToList());
+			Assert.Equal(100, items[99].Id);
+			Assert.Equal(48, items[47].Id);
+			Assert.Equal(49, items[48].Id);
+
+			ChannelRow[] copy = new ChannelRow[100];
+			items.CopyTo(copy);
+			Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
+			Assert.Equal(
+				Ids(100),
+				items.ToArray().Select(r => r.Id).ToList());
+		}
+
+		AssertBalanced(pool);
+
+		var pool2 = new CountingPool<ChannelRow> { RoundUp = true };
+		var run2 = Rows100();
+		List<int> sizes = [];
+		List<int> ids = [];
+		await foreach (var chunk in run2.View.ToAsyncBufferStream(pool2, Ct))
+		{
+			sizes.Add(chunk.Length);
+			ids.AddRange(chunk.ToArray().Select(r => r.Id));
+		}
+
+		Assert.Equal([16, 32, 52], sizes);
+		Assert.Equal(Ids(100), ids);
+		AssertBalanced(pool2);
+	}
+
+	[Fact]
+	public static async Task Release_ClearsTheRows_OfAReferenceType()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Rows100();
+		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		await buffer.Items.Within();
+
+		// Held, the arrays hold the rows; disposed, they are cleared.
+		Assert.All(pool.Captured, a => Assert.NotNull(a[0]));
+		await buffer.DisposeAsync();
+
+		Assert.All(pool.Captured, a => Assert.All(a, r => Assert.Null(r)));
+	}
+
+	[Fact]
+	public static async Task Release_DoesNotClear_AValueType()
+	{
+		var pool = new CountingPool<int>();
+		var view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(100))
+			.Map<int>()
+			.AsyncReads();
+		var buffer = view.ToAsyncBuffer(pool, Ct);
+		PooledArray<int> items = await buffer.Items.Within();
+		Assert.Equal(Enumerable.Range(1, 100), items);
+
+		await buffer.DisposeAsync();
+
+		// Nothing to keep alive: the rows are left as they were.
+		Assert.Equal(1, pool.Captured[0][0]);
+		Assert.Equal(pool.Rents, pool.Returns);
+	}
+
+	[Fact]
+	public static void Release_ClearsOnlyReferenceTypes()
+	{
+		var pool = new CountingPool<string>();
+		IMemoryOwner<string> owner = pool.Rent(4);
+		owner.Memory.Span[0] = "a";
+
+		Release(owner);
+
+		Assert.Null(pool.Captured[0][0]);
+		Assert.Equal(1, pool.Returns);
+	}
+
+	[Fact]
+	public static async Task APoolWhoseReturnThrows_PropagatesFromDisposeAsync()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Rows100();
+		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		await buffer.Items.Within();
+		pool.ThrowOnReturn = true;
+
+		// The documented contract: the exception is the caller's pool's.
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => buffer.DisposeAsync().AsTask());
 	}
 
 	// ---- ToBufferedAsyncStream ------------------------------------------

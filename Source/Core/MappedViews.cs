@@ -993,7 +993,12 @@ public readonly record struct MappedCommand<T>
 	/// <param name="pool">
 	/// The pool the arrays are rented from and returned to.
 	/// <see langword="null"/> (also what the overload without a pool
-	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// uses) is <see cref="MemoryPool{T}.Shared"/>.
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1002,7 +1007,7 @@ public readonly record struct MappedCommand<T>
 	/// Cancels the read, as for the overload without a pool.
 	/// </param>
 	public PooledBuffer<T> ToAsyncBuffer(
-		ArrayPool<T>? pool,
+		MemoryPool<T>? pool,
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBuffer(pool, cancellationToken);
 
@@ -1011,7 +1016,12 @@ public readonly record struct MappedCommand<T>
 	/// <param name="pool">
 	/// The pool the arrays are rented from and returned to.
 	/// <see langword="null"/> (also what the overload without a pool
-	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// uses) is <see cref="MemoryPool{T}.Shared"/>.
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1020,7 +1030,7 @@ public readonly record struct MappedCommand<T>
 	/// Cancels the read, as for the overload without a pool.
 	/// </param>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
-		ArrayPool<T>? pool,
+		MemoryPool<T>? pool,
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBufferStream(pool, cancellationToken);
 
@@ -1029,7 +1039,12 @@ public readonly record struct MappedCommand<T>
 	/// <param name="pool">
 	/// The pool the arrays are rented from and returned to.
 	/// <see langword="null"/> (also what the overload without a pool
-	/// uses) is <see cref="ArrayPool{T}.Shared"/>.
+	/// uses) is <see cref="MemoryPool{T}.Shared"/>.
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1038,7 +1053,7 @@ public readonly record struct MappedCommand<T>
 	/// Cancels the read, as for the overload without a pool.
 	/// </param>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
-		ArrayPool<T>? pool,
+		MemoryPool<T>? pool,
 		CancellationToken cancellationToken = default)
 		=> _core.ToBufferedAsyncStream(pool, cancellationToken);
 

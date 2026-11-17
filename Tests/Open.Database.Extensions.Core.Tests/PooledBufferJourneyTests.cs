@@ -84,49 +84,12 @@ public static class PooledBufferJourneyTests
 		}
 	}
 
-	sealed class JourneyPool<T> : ArrayPool<T>
-	{
-		readonly ArrayPool<T> _inner = Create();
-
-		readonly ConcurrentDictionary<T[], int> _out
-			= new(ReferenceEqualityComparer.Instance);
-
-		int _rents;
-		int _returns;
-		int _unmatched;
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Returns => Volatile.Read(ref _returns);
-
-		public int Unmatched => Volatile.Read(ref _unmatched);
-
-		public int Outstanding => _out.Count;
-
-		public override T[] Rent(int minimumLength)
-		{
-			T[] array = _inner.Rent(minimumLength);
-			Interlocked.Increment(ref _rents);
-			_out[array] = 0;
-			return array;
-		}
-
-		public override void Return(T[] array, bool clearArray = false)
-		{
-			Interlocked.Increment(ref _returns);
-			if (!_out.TryRemove(array, out _))
-				Interlocked.Increment(ref _unmatched);
-
-			_inner.Return(array, clearArray);
-		}
-	}
-
 	sealed class Journey : IDisposable
 	{
 		readonly List<Exception> _unobserved = [];
 		int _executes;
 
-		public JourneyPool<ChannelRow> Pool { get; } = new();
+		public CountingPool<ChannelRow> Pool { get; } = new();
 
 		public FakeDbConnection Connection { get; } = new();
 
@@ -834,7 +797,7 @@ public static class PooledBufferJourneyTests
 			() => reader = new ChannelTestReader(100, laterSets: 3))
 			.Map<ChannelRow>()
 			.AsyncReads();
-		JourneyPool<ChannelRow> pool = new();
+		CountingPool<ChannelRow> pool = new();
 		List<int> ids = [];
 
 		switch (terminal)
@@ -1030,7 +993,6 @@ public static class PooledBufferJourneyTests
 		[
 			typeof(PooledBuffer<>),
 			typeof(PooledArray<>),
-			core.GetType("Open.Database.Extensions.Core.ArrayPoolOwner`1")!,
 			core.GetType("Open.Database.Extensions.Core.ChunkProducer`1")!,
 			core.GetType("Open.Database.Extensions.Core.BufferStream`1")!,
 			core.GetType("Open.Database.Extensions.Core.BufferStreamEnumerator`1")!,

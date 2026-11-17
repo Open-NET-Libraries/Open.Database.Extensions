@@ -20,8 +20,11 @@ namespace Open.Database.Extensions;
 /// read, however many readers there are.
 /// </para>
 /// <para>
-/// The rows live in arrays rented from the pool the caller passed
-/// (<see cref="ArrayPool{T}.Shared"/> when none was).
+/// The rows live in buffers rented from the pool the caller passed
+/// (<see cref="MemoryPool{T}.Shared"/> when none was),
+/// each an <see cref="IMemoryOwner{T}"/> of that pool.
+/// There is no finalizer: a forgotten owner of the shared pool is
+/// just garbage-collected.
 /// A custom pool must not throw from <c>Return</c>: if it does,
 /// the exception propagates from the dispose, and the arrays not
 /// yet returned stay with the garbage collector.
@@ -57,7 +60,7 @@ public sealed class PooledBuffer<T>
 	internal const int FirstSize = 16;
 
 	readonly MappedQueryCore<T> _query;
-	readonly ArrayPool<T> _pool;
+	readonly MemoryPool<T> _pool;
 	readonly CancellationToken _caller;
 	readonly object _gate = new();
 	readonly List<IMemoryOwner<T>> _chunks = [];
@@ -74,7 +77,7 @@ public sealed class PooledBuffer<T>
 
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
-		ArrayPool<T> pool,
+		MemoryPool<T> pool,
 		CancellationToken cancellationToken)
 	{
 		_query = query;
@@ -315,7 +318,7 @@ public sealed class PooledBuffer<T>
 			_chunks.Clear();
 		}
 
-		foreach (IMemoryOwner<T> chunk in taken) chunk.Dispose();
+		foreach (IMemoryOwner<T> chunk in taken) chunk.Release();
 	}
 
 	// Under the lock.
