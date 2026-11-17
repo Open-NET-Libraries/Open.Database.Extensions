@@ -513,8 +513,16 @@ public sealed class PooledArray<T>
 	IEnumerator IEnumerable.GetEnumerator()
 		=> GetEnumerator();
 
+	// Every member checks the owner first, so a disposed view
+	// throws ObjectDisposedException, mutators included.
 	bool ICollection<T>.IsReadOnly
-		=> true;
+	{
+		get
+		{
+			_owner.ThrowIfDisposed();
+			return true;
+		}
+	}
 
 	void ICollection<T>.Add(T item)
 		=> throw ReadOnly();
@@ -525,8 +533,11 @@ public sealed class PooledArray<T>
 	bool ICollection<T>.Remove(T item)
 		=> throw ReadOnly();
 
-	static NotSupportedException ReadOnly()
-		=> new("A PooledArray is read-only.");
+	NotSupportedException ReadOnly()
+	{
+		_owner.ThrowIfDisposed();
+		return new("A PooledArray is read-only.");
+	}
 
 	// A linear scan over the rows only (never a pooled array's
 	// stale tail).

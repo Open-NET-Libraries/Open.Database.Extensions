@@ -599,7 +599,9 @@ public static class PooledBufferTests
 		Assert.Equal(n, c);
 
 		List<int> expected = Ids(n);
-		Assert.Equal(expected, items.ToArray().Select(r => r.Id).ToList());
+		ChannelRow[] array = items.ToArray();
+		Assert.Equal(n, array.Length);
+		Assert.Equal(expected, array.Select(r => r.Id).ToList());
 
 		List<ChannelRow> list = items.ToList();
 		Assert.Equal(expected, list.Select(r => r.Id).ToList());
@@ -669,6 +671,14 @@ public static class PooledBufferTests
 
 		items.Dispose();
 
+		Assert.Throws<ObjectDisposedException>(
+			() => collection.IsReadOnly);
+		Assert.Throws<ObjectDisposedException>(
+			() => collection.Add(new ChannelRow(1)));
+		Assert.Throws<ObjectDisposedException>(
+			() => collection.Clear());
+		Assert.Throws<ObjectDisposedException>(
+			() => collection.Remove(new ChannelRow(1)));
 		Assert.Throws<ObjectDisposedException>(() => collection.Count);
 		Assert.Throws<ObjectDisposedException>(
 			() => collection.Contains(new ChannelRow(1)));
