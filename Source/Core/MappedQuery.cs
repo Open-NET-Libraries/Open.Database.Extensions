@@ -539,10 +539,11 @@ readonly struct MappedQueryCore<T>
 
 	#region Buffer terminals
 
-	// The two buffer terminals of every view. Both are lazy and
-	// run the query through the handler stream above
-	// (see BufferProducer.cs). A default struct is refused here,
-	// at the call, as everywhere else.
+	// The buffer terminals of every view run the query through the
+	// handler stream above (see BufferProducer.cs). ToAsyncBuffer
+	// starts at the call; the two streams start at the first
+	// MoveNextAsync. A default struct is refused here, at the call,
+	// as everywhere else.
 	internal PooledBuffer<T> ToAsyncBuffer(
 		ArrayPool<T>? pool,
 		CancellationToken cancellationToken)
@@ -1049,19 +1050,20 @@ public readonly record struct MappedQuery<T>
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// The call returns at once and executes nothing:
-	/// the first access to the buffer (awaiting
-	/// <see cref="PooledBuffer{T}.Items"/> or enumerating it)
-	/// starts the read, on a background producer, once.
+	/// The call returns at once and starts the read on a background
+	/// producer, once, even if nobody reads the buffer yet
+	/// (it may finish before any read happens).
 	/// Await <see cref="PooledBuffer{T}.Items"/> for the complete
 	/// result, or enumerate the buffer to get each array of rows
-	/// as it fills.
+	/// as it fills: both attach to that one read.
 	/// </para>
 	/// <para>
 	/// The rows stay valid until the buffer is disposed:
 	/// dispose it (<c>await using</c>) when you are done.
 	/// Disposing it while the read is still running cancels the
-	/// query.
+	/// query; after the read finished it only releases the arrays.
+	/// A buffer that is never disposed holds its arrays until the
+	/// garbage collector takes it (there is no finalizer).
 	/// The connection ODX opened is closed when the read ends,
 	/// however slowly the buffer is read.
 	/// The producer is unbounded: it never waits for a reader, so a
@@ -1082,7 +1084,7 @@ public readonly record struct MappedQuery<T>
 	/// Cancels the read: a reader of the buffer then sees the cancel
 	/// after the arrays already delivered.
 	/// </param>
-	/// <returns>The lazy buffer.</returns>
+	/// <returns>The buffer, already reading.</returns>
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBuffer(null, cancellationToken);

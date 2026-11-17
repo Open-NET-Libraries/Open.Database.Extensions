@@ -12,10 +12,12 @@ namespace Open.Database.Extensions;
 /// <remarks>
 /// <para>
 /// Made by <c>ToAsyncBuffer()</c> on a typed view.
-/// Nothing runs until the first access:
-/// awaiting <see cref="Items"/> or the first read of an enumeration.
-/// The read then runs on a background producer, once,
-/// however many readers there are.
+/// The read starts when that method is called,
+/// on a background producer, once,
+/// even if nobody reads the buffer yet; it may finish before any
+/// read happens.
+/// <see cref="Items"/> and every enumeration attach to that one
+/// read, however many readers there are.
 /// </para>
 /// <para>
 /// The rows live in arrays rented from the pool the caller passed
@@ -28,8 +30,10 @@ namespace Open.Database.Extensions;
 /// yields, and every <see cref="PooledArray{T}"/> it hands out,
 /// is valid until then.
 /// Dispose the buffer (<c>await using</c>) when you are done.
-/// A buffer that is never disposed is not a leak: its arrays go
-/// to the garbage collector, only the pool does not get them back.
+/// A buffer that is never disposed is not a leak: it holds its
+/// arrays (and the finished read) until the garbage collector
+/// takes it, and the pool does not get them back (there is no
+/// finalizer).
 /// </para>
 /// <para>
 /// Enumerating yields each array as it fills,
@@ -37,7 +41,8 @@ namespace Open.Database.Extensions;
 /// It may be enumerated many times and by many readers.
 /// Cancelling an enumeration stops that reader only:
 /// it does not cancel the read.
-/// Disposing the buffer while it is still reading cancels the query.
+/// Disposing the buffer while it is still reading cancels the query;
+/// after the read finished it only releases the arrays.
 /// </para>
 /// </remarks>
 /// <typeparam name="T">The type each row is mapped to.</typeparam>
@@ -63,7 +68,6 @@ public sealed class PooledBuffer<T>
 	Task? _producerTask;
 	Exception? _error;
 	int _total;
-	bool _started;
 	bool _running;
 	bool _done;
 	int _disposed;
@@ -76,6 +80,9 @@ public sealed class PooledBuffer<T>
 		_query = query;
 		_pool = pool;
 		_caller = cancellationToken;
+
+		// The read starts now, whether or not anyone reads yet.
+		Start();
 	}
 
 	static TaskCompletionSource<bool> NewSignal()
@@ -83,7 +90,8 @@ public sealed class PooledBuffer<T>
 
 	/// <summary>
 	/// The complete result, once the read is done.
-	/// Awaiting it starts the read if it has not started.
+	/// It attaches to the read that started with the buffer,
+	/// and never starts another.
 	/// </summary>
 	/// <remarks>
 	/// The task is the same on every access.
@@ -100,7 +108,6 @@ public sealed class PooledBuffer<T>
 	{
 		get
 		{
-			Start();
 			lock (_gate)
 			{
 				ThrowIfDisposed();
@@ -121,8 +128,8 @@ public sealed class PooledBuffer<T>
 	/// <summary>
 	/// Yields each array as it fills, as a
 	/// <see cref="ReadOnlyMemory{T}"/> of exactly the rows it holds.
-	/// The first read starts the read of the query if it has not
-	/// started.
+	/// It attaches to the read that started with the buffer,
+	/// and never starts another.
 	/// </summary>
 	/// <remarks>
 	/// The memory is valid until the buffer is disposed.
@@ -141,7 +148,7 @@ public sealed class PooledBuffer<T>
 	public async IAsyncEnumerator<ReadOnlyMemory<T>> GetAsyncEnumerator(
 		CancellationToken cancellationToken = default)
 	{
-		Start();
+		ThrowIfDisposed();
 		for (int index = 0; ; ++index)
 		{
 			while (true)
@@ -221,10 +228,6 @@ public sealed class PooledBuffer<T>
 	{
 		lock (_gate)
 		{
-			ThrowIfDisposed();
-			if (_started) return;
-
-			_started = true;
 			_running = true;
 			_producer = new(_query, this, _pool, _caller);
 			_producerTask = _producer.Start();

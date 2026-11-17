@@ -156,19 +156,19 @@ public static class PooledBufferTests
 	// ---- 2: Mode 1, lazy, one fill -------------------------------------
 
 	[Fact]
-	public static async Task ToAsyncBuffer_IsLazy_AndFillsOnce()
+	public static async Task ToAsyncBuffer_StartsAtTheCall_AndFillsOnce()
 	{
 		var run = Rows100();
 		await using var buffer = run.View.ToAsyncBuffer(Ct);
 
-		await Task.Delay(200, Ct);
-		Assert.Equal(0, run.Executes);
+		// Nobody reads: the read runs, and the connection closes.
+		await Until(() => run.Closed, "the connection closed");
+		Assert.Equal(1, run.Executes);
 
+		// Items and every enumeration attach to that one fill.
 		Task<PooledArray<ChannelRow>> first = buffer.Items;
 		Assert.Same(first, buffer.Items);
 		await first.Within();
-		await buffer.Items.Within();
-
 		await foreach (var _ in buffer) { }
 		await foreach (var _ in buffer) { }
 
@@ -176,12 +176,21 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static async Task Enumerating_StartsTheFill_WithoutItems()
+	public static async Task ToAsyncBuffer_OfADefaultView_ThrowsAtTheCall()
+	{
+		MappedCommand<ChannelRow> view = default;
+
+		Assert.Throws<InvalidOperationException>(
+			() => view.ToAsyncBuffer(Ct));
+		await Task.CompletedTask;
+	}
+
+	[Fact]
+	public static async Task AnEnumeration_AttachesToTheRunningFill()
 	{
 		var run = Rows100();
 		await using var buffer = run.View.ToAsyncBuffer(Ct);
 
-		Assert.Equal(0, run.Executes);
 		await foreach (var _ in buffer) { }
 
 		Assert.Equal(1, run.Executes);
@@ -936,6 +945,138 @@ public static class PooledBufferTests
 		items.Dispose();
 
 		Assert.Throws<ObjectDisposedException>(() => e.MoveNext());
+	}
+
+	// ---- the eager buffer ---------------------------------------------
+
+	[Fact]
+	public static async Task DisposeBeforeTheFillFinishes_CancelsTheQuery()
+	{
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 20),
+			asyncReads: true);
+
+		// No access at all: the fill started at the call.
+		var buffer = run.View.ToAsyncBuffer(Ct);
+		await Until(() => reader is { Stalled: true }, "the stall");
+
+		await buffer.DisposeAsync().AsTask().Within();
+
+		Assert.True(reader!.CancelSeen);
+		Assert.True(run.Closed);
+	}
+
+	[Fact]
+	public static async Task DisposeAfterTheFillFinished_OnlyReleasesTheArrays()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Rows100();
+		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+
+		Task<PooledArray<ChannelRow>> items = buffer.Items;
+		await items.Within();
+		Assert.True(items.IsCompletedSuccessfully);
+
+		await buffer.DisposeAsync();
+
+		// Nothing was cancelled: one execute, one close, one dispose
+		// of the reader, every array back exactly once.
+		Assert.Equal(1, run.Executes);
+		Assert.Equal(1, run.Connection.Log.Count(l => l == "close"));
+		Assert.Equal(1, ((ChannelTestReader)run.Reader!).Disposes);
+		AssertBalanced(pool);
+	}
+
+	[Fact]
+	public static async Task ACallerToken_CancelledMidFill_ReachesItemsAndEnumerations()
+	{
+		using var cts = CancellationTokenSource
+			.CreateLinkedTokenSource(Ct);
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 20),
+			asyncReads: true);
+
+		// Nobody has touched the buffer when the token fires.
+		await using var buffer = run.View.ToAsyncBuffer(cts.Token);
+		await Until(() => reader is { Stalled: true }, "the stall");
+		cts.Cancel();
+		await Until(() => run.Closed, "the connection closed");
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => buffer.Items.Within());
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => buffer.Items.Within());
+
+		// The rows read before the cancel come first, then the cancel,
+		// for every enumeration.
+		for (int pass = 0; pass < 2; ++pass)
+		{
+			int rows = 0;
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(
+				async () =>
+				{
+					await foreach (var chunk in buffer)
+						rows += chunk.Length;
+				});
+			Assert.Equal(20, rows);
+		}
+	}
+
+	[Fact]
+	public static async Task AFault_NobodyReads_RaisesNoUnobservedTask()
+	{
+		List<Exception> unobserved = [];
+		void OnUnobserved(object? s, UnobservedTaskExceptionEventArgs e)
+		{
+			lock (unobserved)
+			{
+				unobserved.Add(e.Exception);
+			}
+		}
+
+		TaskScheduler.UnobservedTaskException += OnUnobserved;
+		try
+		{
+			var run = Run.Create(
+				() => new ChannelTestReader(40, failAtRow: 30));
+			var buffer = run.View.ToAsyncBuffer(Ct);
+
+			// Nobody reads: the fill ends with the fault, stored.
+			await Until(() => run.Closed, "the connection closed");
+			await Task.Delay(100, Ct);
+
+			// A later reader still gets it, after the chunks.
+			await Assert.ThrowsAsync<InvalidOperationException>(
+				() => buffer.Items.Within());
+			await buffer.DisposeAsync();
+
+			// And a buffer nobody ever touched.
+			var run2 = Run.Create(
+				() => new ChannelTestReader(40, failAtRow: 30));
+			var untouched = run2.View.ToAsyncBuffer(Ct);
+			await Until(() => run2.Closed, "the second close");
+			await Task.Delay(100, Ct);
+			await untouched.DisposeAsync();
+
+			for (int i = 0; i < 3; ++i)
+			{
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+			}
+
+			lock (unobserved)
+			{
+				Assert.DoesNotContain(
+					unobserved,
+					e => e.ToString().Contains("a row failed"));
+			}
+		}
+		finally
+		{
+			TaskScheduler.UnobservedTaskException -= OnUnobserved;
+		}
 	}
 
 	// ---- ToBufferedAsyncStream ------------------------------------------
