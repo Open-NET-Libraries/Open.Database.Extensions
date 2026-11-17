@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
@@ -144,14 +145,17 @@ internal sealed class ChunkProducer<T>(
 	}
 
 	/// <summary>Cancels the query. Never throws.</summary>
+	/// <remarks>
+	/// A provider's cancel callback may throw (the source then throws
+	/// an <see cref="AggregateException"/>), and the source may be
+	/// disposed already: the owner asked for the cancel, so neither
+	/// matters to it.
+	/// </remarks>
 	internal void Cancel()
 	{
 		try { _linked.Cancel(); }
-		catch (ObjectDisposedException) { }
+		catch (Exception) { }
 	}
-
-	internal void DisposeSource()
-		=> _linked.Dispose();
 
 	async Task RunAsync()
 	{
@@ -166,17 +170,31 @@ internal sealed class ChunkProducer<T>(
 		{
 			// The owner asked for this: not an error.
 		}
+		catch (OperationCanceledException ex)
+			when (caller.IsCancellationRequested)
+		{
+			// The query ran on the linked token: the reader sees the
+			// caller's own.
+			error = new OperationCanceledException(
+				ex.Message, ex, caller);
+		}
 		catch (Exception ex)
 		{
 			error = ex;
 		}
 
 		// The rows read so far are delivered, even on a failure.
-		Seal();
-		target.Finish(error);
-
-		// Nothing reads the token now. Cancel() stays safe after this.
-		_linked.Dispose();
+		// The source is disposed whatever happens here (a pool whose
+		// Return throws, for one); Cancel() stays safe after that.
+		try
+		{
+			Seal();
+			target.Finish(error);
+		}
+		finally
+		{
+			_linked.Dispose();
+		}
 	}
 
 	async ValueTask<long> FillAsync(
@@ -226,11 +244,14 @@ internal sealed class ChunkProducer<T>(
 		T[]? array = _array;
 		if (array is null) return;
 
+		// Advance runs just before a row is stored: an open array
+		// always holds at least one row.
 		int count = _count;
+		Debug.Assert(count > 0);
 		ArrayPoolOwner<T> last = new(array, count, pool);
 		_array = null;
 		_count = 0;
-		if (count == 0 || !target.Publish(last)) last.Dispose();
+		if (!target.Publish(last)) last.Dispose();
 	}
 }
 
@@ -360,13 +381,18 @@ internal sealed class BufferStreamEnumerator<T>(
 		// Cancel the query, wait for the producer (it never throws),
 		// and only then return what it left in the channel: no array
 		// goes back while something can still write to it.
-		producer.Cancel();
-		await _producerTask.ConfigureAwait(false);
-
-		while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
-			chunk.Dispose();
-
-		producer.DisposeSource();
+		// The drain is in a finally: every array goes back whatever
+		// the cancel or the wait does.
+		try
+		{
+			producer.Cancel();
+			await _producerTask.ConfigureAwait(false);
+		}
+		finally
+		{
+			while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
+				chunk.Dispose();
+		}
 	}
 }
 

@@ -19,7 +19,10 @@ public static class PooledBufferTests
 
 	// A reader that serves some rows and then stalls in ReadAsync
 	// until the token it was given fires, and records that it did.
-	sealed class StallingReader(int rows, int stallAfter)
+	sealed class StallingReader(
+		int rows,
+		int stallAfter,
+		bool throwOnCancel = false)
 		: TypedReader(Columns, Rows(rows))
 	{
 		int _reads;
@@ -39,6 +42,13 @@ public static class PooledBufferTests
 			if (++_reads > stallAfter)
 			{
 				_stalled = true;
+
+				// A provider whose cancel callback fails.
+				using var registration = throwOnCancel
+					? cancellationToken.Register(
+						static () => throw new InvalidOperationException(
+							"provider cancel failed"))
+					: default;
 				try
 				{
 					await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -1059,6 +1069,129 @@ public static class PooledBufferTests
 			await Until(() => run2.Closed, "the second close");
 			await Task.Delay(100, Ct);
 			await untouched.DisposeAsync();
+
+			for (int i = 0; i < 3; ++i)
+			{
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+			}
+
+			lock (unobserved)
+			{
+				Assert.DoesNotContain(
+					unobserved,
+					e => e.ToString().Contains("a row failed"));
+			}
+		}
+		finally
+		{
+			TaskScheduler.UnobservedTaskException -= OnUnobserved;
+		}
+	}
+
+	// ---- the proven repros of the whole-PR review ------------------------
+
+	[Fact]
+	public static async Task Dispose_NeverThrows_WhenTheProvidersCancelFails()
+	{
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 20, true),
+			asyncReads: true);
+		var buffer = run.View.ToAsyncBuffer(Ct);
+		await Until(() => reader is { Stalled: true }, "the stall");
+
+		Assert.Null(Record.Exception(() => buffer.Dispose()));
+		Assert.Null(await Record.ExceptionAsync(
+			() => buffer.DisposeAsync().AsTask()));
+	}
+
+	[Fact]
+	public static async Task DisposeAsync_OfTheStream_ReturnsEveryArray_WhenTheProvidersCancelFails()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 40, true),
+			asyncReads: true);
+		var e = run.View
+			.ToAsyncBufferStream(pool, Ct)
+			.GetAsyncEnumerator(Ct);
+		Assert.True(await e.MoveNextAsync().AsTask().Within());
+		await Until(() => reader is { Stalled: true }, "the stall");
+
+		Exception? thrown = await Record.ExceptionAsync(
+			() => e.DisposeAsync().AsTask().Within());
+
+		Assert.Null(thrown);
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		AssertBalanced(pool);
+	}
+
+	[Fact]
+	public static async Task ACallerCancel_OfTheStream_CarriesTheCallersToken()
+	{
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 20),
+			asyncReads: true);
+		using var cts = CancellationTokenSource
+			.CreateLinkedTokenSource(Ct);
+		await using var e = run.View
+			.ToAsyncBufferStream(cts.Token)
+			.GetAsyncEnumerator(Ct);
+		Assert.True(await e.MoveNextAsync().AsTask().Within());
+		await Until(() => reader is { Stalled: true }, "the stall");
+		cts.Cancel();
+
+		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () =>
+			{
+				while (await e.MoveNextAsync().AsTask().Within()) { }
+			});
+
+		Assert.Equal(cts.Token, ex.CancellationToken);
+	}
+
+	[Fact]
+	public static async Task ACallerCancel_OfItems_CarriesTheCallersToken()
+	{
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 20),
+			asyncReads: true);
+		using var cts = CancellationTokenSource
+			.CreateLinkedTokenSource(Ct);
+		await using var buffer = run.View.ToAsyncBuffer(cts.Token);
+		await Until(() => reader is { Stalled: true }, "the stall");
+		cts.Cancel();
+
+		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => buffer.Items.Within());
+
+		Assert.Equal(cts.Token, ex.CancellationToken);
+		Assert.True(buffer.Items.IsCanceled);
+	}
+
+	[Fact]
+	public static async Task AnItems_TouchedButNeverAwaited_RaisesNoUnobservedTask()
+	{
+		List<Exception> unobserved = [];
+		void OnUnobserved(object? s, UnobservedTaskExceptionEventArgs e)
+		{
+			lock (unobserved) unobserved.Add(e.Exception);
+		}
+
+		TaskScheduler.UnobservedTaskException += OnUnobserved;
+		try
+		{
+			var run = Run.Create(
+				() => new ChannelTestReader(40, failAtRow: 30));
+			var buffer = run.View.ToAsyncBuffer(Ct);
+			_ = buffer.Items;
+			await Until(() => run.Closed, "the connection closed");
+			await Task.Delay(100, Ct);
+			await buffer.DisposeAsync();
 
 			for (int i = 0; i < 3; ++i)
 			{

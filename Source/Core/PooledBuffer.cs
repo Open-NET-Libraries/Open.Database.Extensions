@@ -189,8 +189,11 @@ public sealed class PooledBuffer<T>
 	/// the buffer.
 	/// </summary>
 	/// <remarks>
-	/// Never throws and does not wait: the producer returns the
+	/// Does not throw and does not wait: the producer returns the
 	/// arrays to the pool when it exits.
+	/// A pool whose <c>Return</c> throws breaks its contract: the
+	/// exception is lost with the producer's task, or thrown here
+	/// when the producer had already finished.
 	/// Use <see cref="DisposeAsync"/> to wait for that.
 	/// Calling it again does nothing.
 	/// After it, access throws <see cref="ObjectDisposedException"/>.
@@ -203,7 +206,8 @@ public sealed class PooledBuffer<T>
 	/// producer to exit, and returns the arrays to the pool.
 	/// </summary>
 	/// <remarks>
-	/// Never throws.
+	/// Does not throw for a well-behaved pool; the exception of a pool
+	/// whose <c>Return</c> throws propagates from here.
 	/// Calling it again does nothing.
 	/// After it, access throws <see cref="ObjectDisposedException"/>.
 	/// </remarks>
@@ -294,12 +298,10 @@ public sealed class PooledBuffer<T>
 
 		// The query is cancelled by the linked token. Nothing is
 		// returned while the producer can still write.
-		producer?.Cancel();
-		if (!running)
-		{
-			ReturnAll();
-			producer?.DisposeSource();
-		}
+		// A producer that is not running has finished: nothing to
+		// cancel, and nothing can write.
+		if (running) producer?.Cancel();
+		else ReturnAll();
 
 		return task;
 	}
@@ -325,7 +327,13 @@ public sealed class PooledBuffer<T>
 		else if (_error is OperationCanceledException cancelled)
 			items.TrySetCanceled(cancelled.CancellationToken);
 		else if (_error is not null)
+		{
 			items.TrySetException(_error);
+
+			// Observed here: an Items nobody awaits must not raise
+			// UnobservedTaskException.
+			_ = items.Task.Exception;
+		}
 		else
 			items.TrySetResult(new(this, [.. _chunks], _total));
 	}

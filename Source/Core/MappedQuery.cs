@@ -1107,6 +1107,11 @@ public readonly record struct MappedQuery<T>
 	/// <c>MoveNextAsync</c> or the end of the enumeration,
 	/// when its array goes back to the pool:
 	/// copy what you keep.
+	/// Nothing guards a memory held longer (it then reads cleared or
+	/// reused rows), so do not buffer the chunks themselves, for
+	/// example with <c>ToListAsync</c> or <c>Buffer</c>.
+	/// An enumerator that is never disposed never returns its arrays
+	/// (there is no finalizer): they go to the garbage collector.
 	/// A producer reads ahead without waiting for the consumer
 	/// (the queue is unbounded), so the connection ODX opened is
 	/// closed when the read ends, not when the consumer is done,
