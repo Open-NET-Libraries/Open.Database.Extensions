@@ -2,7 +2,8 @@ using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
 
-// ToAsyncBufferStream: one consumer, one chunk at a time.
+// The chunk stream behind ToAsyncBufferStream (and, flattened, behind
+// ToBufferedAsyncStream): one consumer, one chunk at a time.
 //
 // Who does what.
 // The consumer runs the iterator below. The first MoveNextAsync starts
@@ -31,11 +32,33 @@ namespace Open.Database.Extensions.Core;
 // the channel, so the consumer's next step throws it, after the chunks
 // that were already delivered.
 //
+// Invariants worth knowing.
+// - target.Dispose() BEFORE producer.Cancel() is required: the producer
+//   swallows a cancel only while its target says it is disposed;
+//   otherwise a cancel that we caused would reach the consumer as an
+//   error.
+// - StreamTarget never refuses a Publish (an unbounded channel with one
+//   writer always accepts), so every published array is in the channel
+//   or with the consumer; nothing is returned until the producer has
+//   ended, and Drain (after it) releases what the consumer did not
+//   take.
+// - The producer's first step runs on a thread of the current
+//   scheduler (see ChunkProducer).
+//
 // An iterator that was never started starts nothing and owns nothing.
-// A stream that is abandoned without disposing its enumerator returns
-// nothing to the pool (there is no finalizer): the arrays are
-// garbage-collected.
-internal sealed class BufferStream<T>(
+// So does one whose token was already cancelled at its first step:
+// that is checked BEFORE the producer starts, so no command is run and
+// no connection is opened.
+//
+// Abandoning.
+// A stream whose enumerator is abandoned without being disposed gives
+// nothing back (there is no finalizer): the producer keeps reading the
+// WHOLE query into the unbounded channel, so the connection is held
+// until that read ends, and the arrays stay reachable until the
+// producer exits and the channel is garbage; they are then collected,
+// not returned to the pool. Always dispose the enumerator
+// (await foreach does).
+internal sealed class ChunkStream<T>(
 	MappedQueryCore<T> query,
 	MemoryPool<T>? pool,
 	CancellationToken caller)
@@ -62,6 +85,10 @@ internal sealed class BufferStream<T>(
 	async IAsyncEnumerator<ReadOnlyMemory<T>> Read(
 		CancellationToken cancellationToken)
 	{
+		// A token that is already cancelled starts nothing: no
+		// producer, so no command and no connection.
+		cancellationToken.ThrowIfCancellationRequested();
+
 		StreamTarget<T> target = new();
 		ChunkProducer<T> producer = new(query, target, pool, caller);
 		Task producerTask = producer.Start();
@@ -98,9 +125,10 @@ internal sealed class BufferStream<T>(
 			target.Dispose();
 			producer.Cancel();
 
-			// The drain is in a finally: every array goes back
-			// whatever the wait does (a pool whose Return throws can
-			// fault the producer).
+			// The producer cannot fault on this path (Publish is never
+			// refused here, so it never releases anything itself), but
+			// the drain is in a finally anyway: every array goes back
+			// whatever the wait does.
 			try { await producerTask.ConfigureAwait(false); }
 			finally { target.Drain(); }
 		}

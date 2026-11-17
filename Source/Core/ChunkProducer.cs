@@ -23,9 +23,16 @@ namespace Open.Database.Extensions.Core;
 //
 // Why each non-obvious construct is here.
 // - Task.Factory.StartNew(..., TaskScheduler.Current).Unwrap(), not
-//   Task.Run: the producer keeps the caller's current scheduler (a design
-//   decision), and the async lambda makes a Task<Task>, so it
-//   is unwrapped. DenyChildAttach keeps it detached.
+//   Task.Run: the producer runs on the AMBIENT scheduler (a design
+//   decision). RunAsync is async, so StartNew returns a Task<Task>,
+//   which is unwrapped. DenyChildAttach only stops tasks created by
+//   the read from attaching to this one; it is detached anyway,
+//   because AttachedToParent is not given.
+//   Consequence: on a single-thread scheduler, the producer's first
+//   step (everything up to the first real await, which for a
+//   provider that completes synchronously can be the whole read)
+//   needs that thread. A caller that blocks that thread waiting for
+//   Items.Result can therefore deadlock; await it instead.
 // - The linked token source: the query runs on a token that fires when
 //   the caller's token fires OR when the owner disposes, so a dispose
 //   cancels the database read itself and not only this loop.
@@ -39,6 +46,8 @@ namespace Open.Database.Extensions.Core;
 //   Finish.
 //
 // Invariants.
+// - The memory a pool returns must be at least the capacity asked for:
+//   a Debug.Assert checks it, nothing does in a release build.
 // - A buffer is owned by exactly one party at a time: the producer
 //   while it fills it, then the target (Publish returned true), or the
 //   producer again if the target refused it (the target is disposed),
@@ -82,7 +91,7 @@ internal sealed class ChunkProducer<T>(
 		}
 
 		// StartNew plus Unwrap, not Task.Run: it keeps
-		// TaskScheduler.Current (the lambda is async, so unwrap it).
+		// TaskScheduler.Current (RunAsync is async: unwrap the Task<Task>).
 		return Task.Factory.StartNew(
 			RunAsync,
 			CancellationToken.None,

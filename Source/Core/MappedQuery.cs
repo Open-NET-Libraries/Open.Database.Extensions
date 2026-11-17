@@ -557,7 +557,7 @@ readonly struct MappedQueryCore<T>
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new BufferStream<T>(this, pool, cancellationToken);
+		return new ChunkStream<T>(this, pool, cancellationToken);
 	}
 
 	internal IAsyncEnumerable<T> ToBufferedAsyncStream(
@@ -565,7 +565,27 @@ readonly struct MappedQueryCore<T>
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new BufferedStream<T>(this, pool, cancellationToken);
+		return Flatten(new ChunkStream<T>(this, pool, cancellationToken));
+	}
+
+	// The chunk stream, element by element. Each element is copied into
+	// a local before it is yielded, so no span lives across a yield; the
+	// chunk's array goes back at the next chunk step, as for the chunk
+	// stream, and the one-shot guard is the chunk stream's.
+	static async IAsyncEnumerable<T> Flatten(
+		IAsyncEnumerable<ReadOnlyMemory<T>> chunks,
+		[EnumeratorCancellation] CancellationToken cancellationToken = default)
+	{
+		await foreach (ReadOnlyMemory<T> chunk in chunks
+			.WithCancellation(cancellationToken)
+			.ConfigureAwait(false))
+		{
+			for (int i = 0; i < chunk.Length; ++i)
+			{
+				T item = chunk.Span[i];
+				yield return item;
+			}
+		}
 	}
 
 	#endregion
@@ -1156,8 +1176,9 @@ public readonly record struct MappedQuery<T>
 	/// no lifetime to mind.
 	/// The producer is unbounded, as for that stream: a slow consumer
 	/// lets chunks pile up in memory.
-	/// A second <c>GetAsyncEnumerator</c> throws
-	/// <see cref="InvalidOperationException"/>.
+	/// A second enumeration throws
+	/// <see cref="InvalidOperationException"/> at its first
+	/// <c>MoveNextAsync</c> (not at <c>GetAsyncEnumerator</c>).
 	/// </para>
 	/// <para>
 	/// Which one to use:

@@ -47,7 +47,8 @@ namespace Open.Database.Extensions;
 /// buffer it came from, which returns the arrays to the pool.
 /// After that, every member throws
 /// <see cref="ObjectDisposedException"/>, an enumeration in
-/// progress included.
+/// progress included, except <see cref="Dispose"/>, which does
+/// nothing again and does not throw.
 /// It is not safe to use while another thread disposes it.
 /// </para>
 /// </remarks>

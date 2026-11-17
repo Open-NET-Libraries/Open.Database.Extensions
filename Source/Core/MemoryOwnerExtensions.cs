@@ -4,9 +4,8 @@ namespace Open.Database.Extensions.Core;
 // them: cut it to the rows it holds, and let it go.
 //
 // Why both exist.
-// A pool may hand out more than was asked for (the shared pool rounds
-// up to a power of two for sizes that are not one; a custom pool may
-// round up anywhere). Every reader needs memory that is exactly the
+// A pool may hand out more than was asked for (a pool's memory may be
+// longer than the size requested; a custom pool may round up anywhere). Every reader needs memory that is exactly the
 // rows: the indexer arithmetic, CopyTo and the chunks yielded to the
 // consumer all use Memory.Length as the row count. So the producer
 // slices each filled buffer once (Slice), and that is the unit that is
@@ -16,7 +15,9 @@ namespace Open.Database.Extensions.Core;
 // last (the buffer's ReturnAll, the stream's next step or drain, or the
 // producer when the target refused it). Release clears the rows of a
 // type that holds references first, so a pooled buffer never keeps a
-// row alive; a value type is left as it is.
+// row alive. Which types: on netstandard2.0 every type is cleared;
+// on the other targets only a type that is or contains a reference,
+// and a value type is left as it is.
 internal static class MemoryOwnerExtensions
 {
 	/// <summary>

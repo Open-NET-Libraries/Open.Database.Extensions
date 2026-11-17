@@ -1356,8 +1356,11 @@ public static class PooledBufferTests
 
 		Assert.Equal(Ids(100), ids);
 		Assert.Equal(1, run.Executes);
-		Assert.Throws<InvalidOperationException>(
-			() => stream.GetAsyncEnumerator(Ct));
+
+		// A second enumeration is refused at its first step.
+		await using var again = stream.GetAsyncEnumerator(Ct);
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => again.MoveNextAsync().AsTask());
 		Assert.True(run.Closed);
 	}
 

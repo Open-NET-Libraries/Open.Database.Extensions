@@ -306,16 +306,20 @@ public static class PooledBufferJourneyTests
 
 		await using var e = stream.GetAsyncEnumerator(Ct);
 		Assert.Equal(0, j.Executes);
-		Assert.Throws<InvalidOperationException>(
-			() => stream.GetAsyncEnumerator(Ct));
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		Assert.Equal(1, j.Executes);
 		Assert.Equal(1, e.Current.Id);
 
+		// A second enumeration is refused at its first step.
+		await using var second = stream.GetAsyncEnumerator(Ct);
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => second.MoveNextAsync().AsTask());
+
 		while (await e.MoveNextAsync().AsTask().Within()) { }
-		Assert.Throws<InvalidOperationException>(
-			() => stream.GetAsyncEnumerator(Ct));
+		await using var third = stream.GetAsyncEnumerator(Ct);
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => third.MoveNextAsync().AsTask());
 	}
 
 	[Fact]
@@ -576,11 +580,14 @@ public static class PooledBufferJourneyTests
 		await j.AssertClean();
 	}
 
-	sealed class BoxedChunks(IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> source)
+	sealed class BoxedChunks(
+		IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> source,
+		CancellationToken token = default)
 		: IAsyncEnumerator<object>
 	{
 		readonly IAsyncEnumerator<ReadOnlyMemory<ChannelRow>> _inner
-			= source.GetAsyncEnumerator(Ct);
+			= source.GetAsyncEnumerator(
+				token.CanBeCanceled ? token : Ct);
 
 		public object Current => _inner.Current.ToArray();
 
@@ -589,11 +596,14 @@ public static class PooledBufferJourneyTests
 		public ValueTask DisposeAsync() => _inner.DisposeAsync();
 	}
 
-	sealed class BoxedRows(IAsyncEnumerable<ChannelRow> source)
+	sealed class BoxedRows(
+		IAsyncEnumerable<ChannelRow> source,
+		CancellationToken token = default)
 		: IAsyncEnumerator<object>
 	{
 		readonly IAsyncEnumerator<ChannelRow> _inner
-			= source.GetAsyncEnumerator(Ct);
+			= source.GetAsyncEnumerator(
+				token.CanBeCanceled ? token : Ct);
 
 		public object Current => _inner.Current;
 
@@ -727,6 +737,35 @@ public static class PooledBufferJourneyTests
 		await j.AssertClean();
 		Assert.True(((LagReader)j.Reader!).Reads < 500, "the read was cut short");
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+	}
+
+	// ---- a cancelled enumeration token starts nothing ---------------------
+
+	[Theory]
+	[InlineData("stream")]
+	[InlineData("buffered")]
+	public static async Task ACancelledEnumerationToken_ExecutesNothing(
+		string terminal)
+	{
+		using var j = Journey.Rows(100);
+		using var cts = new CancellationTokenSource();
+		cts.Cancel();
+		IAsyncEnumerator<object> e = terminal == "stream"
+			? new BoxedChunks(
+				j.View.ToAsyncBufferStream(j.Pool, Ct),
+				cts.Token)
+			: new BoxedRows(
+				j.View.ToBufferedAsyncStream(j.Pool, Ct),
+				cts.Token);
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => e.MoveNextAsync().AsTask().Within());
+		await e.DisposeAsync().AsTask().Within();
+
+		// No command, no connection, no array rented.
+		Assert.Empty(j.Connection.Log);
+		Assert.Equal(0, j.Pool.Rents);
+		await j.AssertClean(executed: false);
 	}
 
 	// ---- the arbiter's missing tests that fit the journeys ----------------
@@ -994,9 +1033,8 @@ public static class PooledBufferJourneyTests
 			typeof(PooledBuffer<>),
 			typeof(PooledArray<>),
 			core.GetType("Open.Database.Extensions.Core.ChunkProducer`1")!,
-			core.GetType("Open.Database.Extensions.Core.BufferStream`1")!,
+			core.GetType("Open.Database.Extensions.Core.ChunkStream`1")!,
 			core.GetType("Open.Database.Extensions.Core.StreamTarget`1")!,
-			core.GetType("Open.Database.Extensions.Core.BufferedStream`1")!,
 		];
 
 		foreach (Type type in types)

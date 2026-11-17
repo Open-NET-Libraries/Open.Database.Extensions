@@ -13,11 +13,14 @@ namespace Open.Database.Extensions;
 //
 // The handshake between them.
 // _gate guards _chunks, _signal, _items, _done, _error, _total and the
-// write of _disposed. Publish adds a chunk and swaps in a new _signal;
+// write of _disposed. (Finish reads _disposed under the same lock
+// DisposeCore sets it under: that is what makes the return of the
+// arrays exactly-once, see below.) Publish adds a chunk and swaps in a new _signal;
 // a reader that must wait takes the CURRENT signal's task under the
 // same lock that told it nothing was ready, so a Publish after that
 // completes exactly the task it holds: no wake-up is lost. Finish sets
-// _done and _error once and completes Items. Every task completes with
+// _done and _error once and completes Items. Items is a snapshot of
+// _chunks, safe because no Publish follows Finish. Every task completes with
 // RunContinuationsAsynchronously, so no caller code ever runs under
 // _gate.
 //
@@ -68,9 +71,13 @@ namespace Open.Database.Extensions;
 /// each an <see cref="IMemoryOwner{T}"/> of that pool.
 /// There is no finalizer: a forgotten owner of the shared pool is
 /// just garbage-collected.
-/// A custom pool must not throw from <c>Return</c>: if it does,
-/// the exception propagates from the dispose, and the arrays not
-/// yet returned stay with the garbage collector.
+/// A custom pool must not throw from <c>Return</c>. If it does,
+/// the exception propagates from <see cref="DisposeAsync"/>, and
+/// from <see cref="Dispose"/> when the read had already finished;
+/// from <see cref="Dispose"/> while the read is still running it
+/// ends in the producer's task, which nobody observes.
+/// In every case the arrays not yet returned stay with the garbage
+/// collector.
 /// They are returned to the pool when the buffer is disposed,
 /// and not before: every <see cref="ReadOnlyMemory{T}"/> this buffer
 /// yields, and every <see cref="PooledArray{T}"/> it hands out,
@@ -134,9 +141,11 @@ public sealed class PooledBuffer<T>
 	/// </summary>
 	/// <remarks>
 	/// The task is the same on every access.
-	/// It faults with the read's exception, and is cancelled
-	/// when the caller's token cancelled the read
-	/// or the buffer was disposed first.
+	/// It faults with the read's exception, except that it is
+	/// cancelled when the read ended with an
+	/// <see cref="OperationCanceledException"/> of any origin (the
+	/// caller's token, which it then carries, or a provider's own),
+	/// or when the buffer was disposed first.
 	/// Disposing the <see cref="PooledArray{T}"/> it returns
 	/// disposes this buffer.
 	/// </remarks>
@@ -182,7 +191,8 @@ public sealed class PooledBuffer<T>
 	/// </param>
 	/// <returns>An enumerator over the arrays of rows.</returns>
 	/// <exception cref="ObjectDisposedException">
-	/// The buffer is, or is being, disposed.
+	/// Thrown by a <c>MoveNextAsync</c> (the first one, or a later one)
+	/// when the buffer is, or is being, disposed; not by this call.
 	/// </exception>
 	public async IAsyncEnumerator<ReadOnlyMemory<T>> GetAsyncEnumerator(
 		CancellationToken cancellationToken = default)
@@ -226,9 +236,8 @@ public sealed class PooledBuffer<T>
 	/// <remarks>
 	/// Does not throw and does not wait: the producer returns the
 	/// arrays to the pool when it exits.
-	/// A pool whose <c>Return</c> throws breaks its contract: the
-	/// exception is lost with the producer's task, or thrown here
-	/// when the producer had already finished.
+	/// For a pool whose <c>Return</c> throws, see the remarks of the
+	/// class.
 	/// Use <see cref="DisposeAsync"/> to wait for that.
 	/// Calling it again does nothing.
 	/// After it, access throws <see cref="ObjectDisposedException"/>.
@@ -241,8 +250,8 @@ public sealed class PooledBuffer<T>
 	/// producer to exit, and returns the arrays to the pool.
 	/// </summary>
 	/// <remarks>
-	/// Does not throw for a well-behaved pool; the exception of a pool
-	/// whose <c>Return</c> throws propagates from here.
+	/// Does not throw for a well-behaved pool; for a pool whose
+	/// <c>Return</c> throws, see the remarks of the class.
 	/// Calling it again does nothing.
 	/// After it, access throws <see cref="ObjectDisposedException"/>.
 	/// </remarks>
