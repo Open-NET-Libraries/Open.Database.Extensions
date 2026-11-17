@@ -581,6 +581,103 @@ public static class PooledBufferTests
 			});
 	}
 
+	// ---- the completed view is a read-only ICollection<T> ---------------
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(16)]
+	[InlineData(17)]
+	[InlineData(100)]
+	public static async Task TheItems_AreAFastPathCollection_ForLinq(int n)
+	{
+		var run = Run.Create(() => new ChannelTestReader(n));
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+
+		Assert.True(Enumerable.TryGetNonEnumeratedCount(items, out int c));
+		Assert.Equal(n, c);
+
+		List<int> expected = Ids(n);
+		Assert.Equal(expected, items.ToArray().Select(r => r.Id).ToList());
+
+		List<ChannelRow> list = items.ToList();
+		Assert.Equal(expected, list.Select(r => r.Id).ToList());
+		Assert.Equal(n, list.Capacity);
+
+		List<ChannelRow> made = new(items);
+		Assert.Equal(expected, made.Select(r => r.Id).ToList());
+		Assert.Equal(n, made.Capacity);
+	}
+
+	[Fact]
+	public static async Task TheCollectionView_IsReadOnly_AndSearchable()
+	{
+		var run = Rows100();
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		ICollection<ChannelRow> collection = items;
+
+		Assert.True(collection.IsReadOnly);
+		Assert.Equal(100, collection.Count);
+		Assert.Throws<NotSupportedException>(
+			() => collection.Add(new ChannelRow(1)));
+		Assert.Throws<NotSupportedException>(() => collection.Clear());
+		Assert.Throws<NotSupportedException>(
+			() => collection.Remove(items[0]));
+
+		// Records compare by value, across segments.
+		Assert.True(collection.Contains(new ChannelRow(1)));
+		Assert.True(collection.Contains(new ChannelRow(17)));
+		Assert.True(collection.Contains(new ChannelRow(100)));
+		Assert.False(collection.Contains(new ChannelRow(101)));
+		Assert.False(collection.Contains(new ChannelRow(0)));
+	}
+
+	[Fact]
+	public static async Task TheCollectionCopyTo_ValidatesAndCopiesInOrder()
+	{
+		var run = Rows100();
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		ICollection<ChannelRow> collection = items;
+
+		Assert.Throws<ArgumentNullException>(
+			() => collection.CopyTo(null!, 0));
+		Assert.Throws<ArgumentOutOfRangeException>(
+			() => collection.CopyTo(new ChannelRow[100], -1));
+		Assert.Throws<ArgumentException>(
+			() => collection.CopyTo(new ChannelRow[99], 0));
+		Assert.Throws<ArgumentException>(
+			() => collection.CopyTo(new ChannelRow[100], 1));
+		Assert.Throws<ArgumentException>(
+			() => collection.CopyTo(new ChannelRow[100], 101));
+
+		ChannelRow[] target = new ChannelRow[103];
+		collection.CopyTo(target, 3);
+		Assert.Equal(Ids(100), target[3..].Select(r => r.Id).ToList());
+		Assert.All(target[..3], r => Assert.Null(r));
+	}
+
+	[Fact]
+	public static async Task TheCollectionMembers_ThrowAfterDispose()
+	{
+		var run = Rows100();
+		var buffer = run.View.ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		ICollection<ChannelRow> collection = items;
+
+		items.Dispose();
+
+		Assert.Throws<ObjectDisposedException>(() => collection.Count);
+		Assert.Throws<ObjectDisposedException>(
+			() => collection.Contains(new ChannelRow(1)));
+		Assert.Throws<ObjectDisposedException>(
+			() => collection.CopyTo(new ChannelRow[100], 0));
+		Assert.Throws<ObjectDisposedException>(
+			() => Enumerable.TryGetNonEnumeratedCount(items, out _));
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]
