@@ -1,4 +1,7 @@
 using System.Buffers;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Collections.Concurrent;
 using System.Data.Common;
 using static Open.Database.Extensions.Tests.ChannelWait;
@@ -181,6 +184,11 @@ public static class PooledBufferJourneyTests
 			Assert.Equal(0, Pool.Unmatched);
 			Assert.Equal(0, Pool.Outstanding);
 
+			AssertNoUnobserved();
+		}
+
+		public void AssertNoUnobserved()
+		{
 			for (int i = 0; i < 3; ++i)
 			{
 				GC.Collect();
@@ -924,6 +932,243 @@ public static class PooledBufferJourneyTests
 		Assert.Throws<ObjectDisposedException>(
 			() => collection.Contains(new ChannelRow(1)));
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+		await j.AssertClean();
+	}
+
+	// ---- J6: the controller flow -------------------------------------------
+
+	static bool HasDisposed(Exception? ex)
+	{
+		for (; ex is not null; ex = ex.InnerException)
+		{
+			if (ex is ObjectDisposedException) return true;
+		}
+
+		return false;
+	}
+
+	static string Json(int n)
+		=> JsonSerializer.Serialize(
+			Enumerable.Range(1, n).Select(i => new ChannelRow(i)).ToList());
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(17)]
+	[InlineData(3500)]
+	public static async Task J6_AControllerHandsTheBufferToAnotherLayer(int n)
+	{
+		// A fill that is still running when the call returns.
+		using var j = new Journey(
+			() => new LagReader(
+				n, TimeSpan.FromMilliseconds(15), Math.Max(1, n / 4)));
+		string json;
+
+		await using (var buffer = j.View.ToAsyncBuffer(j.Pool, Ct))
+		{
+			if (n >= 17) Assert.False(buffer.Items.IsCompleted);
+
+			// The other layer awaits the view and serializes it.
+			json = await Task.Run(
+				async () => JsonSerializer.Serialize(await buffer.Items),
+				Ct).Within();
+		}
+
+		Assert.Equal(Json(n), json);
+		await j.AssertClean();
+	}
+
+	[Fact]
+	public static async Task J6_ADisposeBeforeTheSerialization_ThrowsAndReadsNothing()
+	{
+		using var j = Journey.Rows(3500);
+		var buffer = j.View.ToAsyncBuffer(j.Pool, Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		IEnumerator<ChannelRow> e = items.GetEnumerator();
+		for (int i = 0; i < 100; ++i) Assert.True(e.MoveNext());
+
+		// The owner disposes while the other layer is part-way.
+		await buffer.DisposeAsync().AsTask().Within();
+
+		Assert.Throws<ObjectDisposedException>(() => e.MoveNext());
+		Assert.True(
+			HasDisposed(
+				Record.Exception(() => JsonSerializer.Serialize(items))));
+		await j.AssertClean();
+	}
+
+	[Fact]
+	public static async Task J6_TwoLayersAwaitingItems_ShareOneFill()
+	{
+		using var j = new Journey(
+			() => new LagReader(100, TimeSpan.FromMilliseconds(15), 25));
+		await using var buffer = j.View.ToAsyncBuffer(j.Pool, Ct);
+
+		Task<PooledArray<ChannelRow>> one = Task.Run(
+			async () => await buffer.Items, Ct);
+		Task<PooledArray<ChannelRow>> two = Task.Run(
+			async () => await buffer.Items, Ct);
+		PooledArray<ChannelRow>[] views = await Task
+			.WhenAll(one, two)
+			.Within();
+
+		Assert.Same(views[0], views[1]);
+		Assert.Equal(Ids(100), views[0].Select(r => r.Id).ToList());
+		Assert.Equal(1, j.Executes);
+
+		await buffer.DisposeAsync();
+		await j.AssertClean();
+	}
+
+	// ---- J7: a forgotten dispose ----------------------------------------------
+
+	[Fact]
+	public static void J7_NoBufferTypeDeclaresAFinalizer()
+	{
+		Assembly core = typeof(PooledBuffer<>).Assembly;
+		Type[] types =
+		[
+			typeof(PooledBuffer<>),
+			typeof(PooledArray<>),
+			core.GetType("Open.Database.Extensions.Core.ArrayPoolOwner`1")!,
+			core.GetType("Open.Database.Extensions.Core.ChunkProducer`1")!,
+			core.GetType("Open.Database.Extensions.Core.BufferStream`1")!,
+			core.GetType("Open.Database.Extensions.Core.BufferStreamEnumerator`1")!,
+			core.GetType("Open.Database.Extensions.Core.BufferedStream`1")!,
+		];
+
+		foreach (Type type in types)
+		{
+			Assert.NotNull(type);
+			Assert.Null(type.GetMethod(
+				"Finalize",
+				BindingFlags.Instance
+				| BindingFlags.NonPublic
+				| BindingFlags.DeclaredOnly));
+		}
+	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static async Task ForgetABufferAsync(Journey j)
+	{
+		var buffer = j.View.ToAsyncBuffer(j.Pool, Ct);
+		var items = await buffer.Items.Within();
+		Assert.Equal(100, items.Count);
+
+		// No dispose: every reference is dropped on return.
+	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static async Task AbandonAStreamAsync(Journey j, string terminal)
+	{
+		if (terminal == "stream")
+		{
+			var e = j.View
+				.ToAsyncBufferStream(j.Pool, Ct)
+				.GetAsyncEnumerator(Ct);
+			Assert.True(await e.MoveNextAsync().AsTask().Within());
+		}
+		else
+		{
+			var e = j.View
+				.ToBufferedAsyncStream(j.Pool, Ct)
+				.GetAsyncEnumerator(Ct);
+			Assert.True(await e.MoveNextAsync().AsTask().Within());
+		}
+	}
+
+	static void CollectTwice()
+	{
+		for (int i = 0; i < 2; ++i)
+		{
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+		}
+	}
+
+	[Fact]
+	public static async Task J7_AForgottenBuffer_ThrowsNothing_AndALaterReadWorks()
+	{
+		using var j = Journey.Rows(100);
+
+		await ForgetABufferAsync(j).Within();
+		CollectTwice();
+
+		// The forgotten arrays are never returned (the documented
+		// consequence); the pool and the view still work.
+		Outcome again = await Drive("buffer", j).Within();
+		Assert.Null(again.Error);
+		Assert.Equal(Ids(100), again.Ids);
+
+		CollectTwice();
+		j.AssertNoUnobserved();
+	}
+
+	[Theory]
+	[InlineData("stream")]
+	[InlineData("buffered")]
+	public static async Task J7_AnAbandonedEnumerator_ThrowsNothing_AndALaterReadWorks(
+		string terminal)
+	{
+		using var j = Journey.Rows(500);
+
+		await AbandonAStreamAsync(j, terminal).Within();
+		CollectTwice();
+
+		// The producer runs to its end on its own and closes the
+		// connection; nothing is asserted about the arrays.
+		await Until(() => j.Closed, "the abandoned read finished");
+
+		Outcome again = await Drive(terminal, j).Within();
+		Assert.Null(again.Error);
+		Assert.Equal(Ids(500), again.Ids);
+
+		CollectTwice();
+		j.AssertNoUnobserved();
+	}
+
+	// ---- J8: Items awaited at once while the fill is delayed -----------------
+
+	[Fact]
+	public static async Task J8_Items_CompletesOnlyWhenTheFillIsDone()
+	{
+		using var j = new Journey(
+			() => new LagReader(100, TimeSpan.FromMilliseconds(40), 25));
+		await using var buffer = j.View.ToAsyncBuffer(j.Pool, Ct);
+
+		Task<PooledArray<ChannelRow>> items = buffer.Items;
+		Assert.False(items.IsCompleted);
+
+		PooledArray<ChannelRow> view = await items.Within();
+
+		Assert.True(((LagReader)j.Reader!).Reads >= 100, "the fill was done");
+		Assert.Equal(100, view.Count);
+
+		await buffer.DisposeAsync();
+		await j.AssertClean();
+	}
+
+	[Fact]
+	public static async Task J8_ACancelDuringTheWait_ReachesItems_AndTheBufferDisposesCleanly()
+	{
+		using var cts = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+		using var j = new Journey(
+			() => new LagReader(500, TimeSpan.FromMilliseconds(40), 25));
+		var buffer = j.View.ToAsyncBuffer(j.Pool, cts.Token);
+
+		Task<PooledArray<ChannelRow>> items = buffer.Items;
+		await Until(
+			() => j.Reader is LagReader { Reads: > 1 },
+			"the fill under way");
+		Assert.False(items.IsCompleted);
+
+		cts.Cancel();
+
+		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => items.Within());
+		Assert.Equal(cts.Token, ex.CancellationToken);
+
+		await buffer.DisposeAsync().AsTask().Within();
 		await j.AssertClean();
 	}
 }
