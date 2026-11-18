@@ -227,7 +227,7 @@ public sealed class PooledArray<T>
 		}
 
 		/// <summary>The row the last <c>MoveNext</c> moved to.</summary>
-		public T Current { get; private set; }
+		public T Current { readonly get; private set; }
 
 		readonly object? IEnumerator.Current
 			=> Current;
