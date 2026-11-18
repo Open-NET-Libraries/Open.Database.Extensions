@@ -1,6 +1,6 @@
 using System.Buffers;
-using System.Reflection;
 using System.Data.Common;
+using System.Reflection;
 using static Open.Database.Extensions.Tests.ChannelWait;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
@@ -46,7 +46,7 @@ public static class PooledBufferTests
 				_stalled = true;
 
 				// A provider whose cancel callback fails.
-				using var registration = throwOnCancel
+				await using var registration = throwOnCancel
 					? cancellationToken.Register(
 						static () => throw new InvalidOperationException(
 							"provider cancel failed"))
@@ -108,16 +108,6 @@ public static class PooledBufferTests
 	static Run Rows100()
 		=> Run.Create(() => new ChannelTestReader(100));
 
-	static async Task<List<int[]>> Chunks(
-		IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> chunks)
-	{
-		List<int[]> result = [];
-		await foreach (ReadOnlyMemory<ChannelRow> chunk in chunks)
-			result.Add([.. chunk.ToArray().Select(r => r.Id)]);
-
-		return result;
-	}
-
 	static void AssertContiguous(List<int[]> chunks, int rows)
 	{
 		Assert.Equal(Ids(rows), chunks.SelectMany(c => c).ToList());
@@ -143,7 +133,7 @@ public static class PooledBufferTests
 
 		Assert.Equal(Ids(100), items.Select(r => r.Id).ToList());
 
-		ChannelRow[] copy = new ChannelRow[100];
+		var copy = new ChannelRow[100];
 		items.CopyTo(copy);
 		Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
 
@@ -209,7 +199,9 @@ public static class PooledBufferTests
 
 		Assert.Throws<ObjectDisposedException>(() => items.Count);
 		Assert.Throws<ObjectDisposedException>(() => items[0]);
+#pragma warning disable RCS1021 // Convert lambda expression body to expression body
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+#pragma warning restore RCS1021 // Convert lambda expression body to expression body
 
 		// Idempotent, and the async form too.
 		items.Dispose();
@@ -461,7 +453,7 @@ public static class PooledBufferTests
 		// Created, and moved once, before the dispose.
 		var e = items.GetEnumerator();
 		Assert.True(e.MoveNext());
-		ChannelRow[] copy = new ChannelRow[100];
+		var copy = new ChannelRow[100];
 
 		items.Dispose();
 
@@ -520,7 +512,7 @@ public static class PooledBufferTests
 		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
-		Assert.True(Enumerable.TryGetNonEnumeratedCount(items, out int c));
+		Assert.True(items.TryGetNonEnumeratedCount(out int c));
 		Assert.Equal(n, c);
 
 		List<int> expected = Ids(n);
@@ -528,7 +520,7 @@ public static class PooledBufferTests
 		Assert.Equal(n, array.Length);
 		Assert.Equal(expected, array.Select(r => r.Id).ToList());
 
-		List<ChannelRow> list = items.ToList();
+		var list = items.ToList();
 		Assert.Equal(expected, list.Select(r => r.Id).ToList());
 		Assert.Equal(n, list.Capacity);
 
@@ -580,7 +572,7 @@ public static class PooledBufferTests
 		Assert.Throws<ArgumentException>(
 			() => collection.CopyTo(new ChannelRow[100], 101));
 
-		ChannelRow[] target = new ChannelRow[103];
+		var target = new ChannelRow[103];
 		collection.CopyTo(target, 3);
 		Assert.Equal(Ids(100), target[3..].Select(r => r.Id).ToList());
 		Assert.All(target[..3], r => Assert.Null(r));
@@ -610,7 +602,7 @@ public static class PooledBufferTests
 		Assert.Throws<ObjectDisposedException>(
 			() => collection.CopyTo(new ChannelRow[100], 0));
 		Assert.Throws<ObjectDisposedException>(
-			() => Enumerable.TryGetNonEnumeratedCount(items, out _));
+			() => items.TryGetNonEnumeratedCount(out _));
 	}
 
 	// ---- a caller's pool: every rent is matched by one return ------------
@@ -1164,7 +1156,7 @@ public static class PooledBufferTests
 			Assert.Equal(48, items[47].Id);
 			Assert.Equal(49, items[48].Id);
 
-			ChannelRow[] copy = new ChannelRow[100];
+			var copy = new ChannelRow[100];
 			items.CopyTo(copy);
 			Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
 			Assert.Equal(
@@ -1328,7 +1320,7 @@ public static class PooledBufferTests
 				.Select(k => Task.Factory.StartNew(
 					() =>
 					{
-						Thread.SpinWait(((round * 31) + (k * 97)) % 2000);
+						Thread.SpinWait((round * 31 + k * 97) % 2000);
 						return buffer.Items;
 					},
 					Ct,
@@ -1362,19 +1354,19 @@ public static class PooledBufferTests
 		{
 			var buffer = view.ToAsyncBuffer(pool, Ct);
 			int round = i;
-			Task touch = Task.Run(
+			var touch = Task.Run(
 				async () =>
 				{
-					Thread.SpinWait((round * 53) % 3000);
+					Thread.SpinWait(round * 53 % 3000);
 					try { await buffer.Items; }
 					catch (ObjectDisposedException) { }
 					catch (OperationCanceledException) { }
 				},
 				Ct);
-			Task dispose = Task.Run(
+			var dispose = Task.Run(
 				async () =>
 				{
-					Thread.SpinWait((round * 71) % 20_000);
+					Thread.SpinWait(round * 71 % 20_000);
 					if (round % 2 == 0) buffer.Dispose();
 					else await buffer.DisposeAsync();
 				},
@@ -1704,8 +1696,8 @@ public static class PooledBufferTests
 			// Half the rounds dispose a finished buffer, half a filling one.
 			if (i % 2 == 0) await buffer.Items.Within();
 
-			Task a = Task.Run(buffer.Dispose, Ct);
-			Task b = Task.Run(buffer.Dispose, Ct);
+			var a = Task.Run(buffer.Dispose, Ct);
+			var b = Task.Run(buffer.Dispose, Ct);
 			await Task.WhenAll(a, b).Within();
 			await buffer.DisposeAsync();
 		}
@@ -2050,7 +2042,7 @@ public static class PooledBufferTests
 			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
 
 			Assert.Equal(Ids(100), viaForeach);
-			ChannelRow[] copy = new ChannelRow[100];
+			var copy = new ChannelRow[100];
 			items.CopyTo(copy);
 			Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
 			Assert.Equal(

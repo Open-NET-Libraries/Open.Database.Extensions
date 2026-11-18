@@ -106,6 +106,7 @@ internal static class RecycleBin
 				});
 
 		// Held so the one loop is never garbage; it never completes.
+		[SuppressMessage("Roslynator", "RCS1213:Remove unused member declaration")]
 		static readonly Task Loop = StartLoop();
 
 		internal static PostResult Post(Action action)
@@ -113,6 +114,7 @@ internal static class RecycleBin
 				? PostResult.Posted
 				: PostResult.Full;
 
+		[SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary")]
 		static Task StartLoop()
 		{
 			// Task.Run would capture the starter's ExecutionContext for the
@@ -135,7 +137,7 @@ internal static class RecycleBin
 				while (reader.TryRead(out Action? action))
 				{
 					try { action(); }
-					catch (Exception) { }
+					catch { }
 				}
 
 				// Once per batch, not per item.

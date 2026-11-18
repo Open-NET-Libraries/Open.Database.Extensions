@@ -552,7 +552,7 @@ readonly struct MappedQueryCore<T>
 	// The pool is checked once, here, for every public overload:
 	// null would silently mean "the shared pool", which is exactly the
 	// decision (clear or not) the shared-pool overload makes explicit.
-	static void RequirePool(MemoryPool<T>? pool)
+	static void RequirePool(MemoryPool<T> pool)
 	{
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
 	}

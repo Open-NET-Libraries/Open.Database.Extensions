@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions.Core;
@@ -114,6 +113,7 @@ internal sealed class ChunkProducer<T>(
 	/// Starts the producer, once. A token that is already cancelled
 	/// starts nothing: the target ends with that cancel.
 	/// </summary>
+	[SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary")]
 	internal Task Start()
 	{
 		if (caller.IsCancellationRequested)
@@ -158,7 +158,7 @@ internal sealed class ChunkProducer<T>(
 		if (Volatile.Read(ref _ended) != 0) return;
 
 		try { _linked.Cancel(); }
-		catch (Exception) { }
+		catch { }
 	}
 
 	async Task RunAsync()
@@ -351,5 +351,4 @@ internal sealed class ChunkProducer<T>(
 		IMemoryOwner<T> last = Take();
 		if (!target.Publish(last)) last.Release();
 	}
-
 }

@@ -1,9 +1,8 @@
 using System.Buffers;
+using System.Data.Common;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Collections.Concurrent;
-using System.Data.Common;
 using static Open.Database.Extensions.Tests.ChannelWait;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
@@ -318,6 +317,7 @@ public static class PooledBufferJourneyTests
 			() => second.MoveNextAsync().AsTask());
 
 		while (await e.MoveNextAsync().AsTask().Within()) { }
+
 		await using var third = stream.GetAsyncEnumerator(Ct);
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => third.MoveNextAsync().AsTask());
@@ -412,7 +412,7 @@ public static class PooledBufferJourneyTests
 		Assert.Equal(N, array.Length);
 		Assert.Equal(expected, array.Select(r => r.Id).ToList());
 
-		List<ChannelRow> list = items.ToList();
+		var list = items.ToList();
 		Assert.Equal(expected, list.Select(r => r.Id).ToList());
 		Assert.Equal(N, list.Capacity);
 
@@ -420,7 +420,7 @@ public static class PooledBufferJourneyTests
 		Assert.Equal(expected, made.Select(r => r.Id).ToList());
 		Assert.Equal(N, made.Capacity);
 
-		ChannelRow[] copy = new ChannelRow[N];
+		var copy = new ChannelRow[N];
 		items.CopyTo(copy);
 		Assert.Equal(expected, copy.Select(r => r.Id).ToList());
 		Assert.Equal(expected, items.Select(r => r.Id).ToList());
@@ -428,7 +428,9 @@ public static class PooledBufferJourneyTests
 		// Disposing the view disposes the buffer.
 		items.Dispose();
 		Assert.Throws<ObjectDisposedException>(() => items.Count);
+#pragma warning disable RCS1021 // Convert lambda expression body to expression body
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+#pragma warning restore RCS1021 // Convert lambda expression body to expression body
 
 		await j.AssertClean();
 	}
@@ -738,7 +740,9 @@ public static class PooledBufferJourneyTests
 			() => items.Within());
 		await j.AssertClean();
 		Assert.True(((LagReader)j.Reader!).Reads < 500, "the read was cut short");
+#pragma warning disable RCS1021 // Convert lambda expression body to expression body
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+#pragma warning restore RCS1021 // Convert lambda expression body to expression body
 	}
 
 	// ---- a cancelled enumeration token starts nothing ---------------------
@@ -834,7 +838,7 @@ public static class PooledBufferJourneyTests
 		// The cancel was sent, the provider ignores it: the dispose
 		// is still waiting for the call in progress.
 		await Task.Delay(100, Ct);
-		DeafReader reader = (DeafReader)j.Reader!;
+		var reader = (DeafReader)j.Reader!;
 		Assert.False(dispose.IsCompleted);
 		Assert.False(reader.StallEnded);
 
@@ -1079,7 +1083,9 @@ public static class PooledBufferJourneyTests
 		Assert.Throws<ObjectDisposedException>(() => items.GetEnumerator());
 		Assert.Throws<ObjectDisposedException>(
 			() => collection.Contains(new ChannelRow(1)));
+#pragma warning disable RCS1021 // Convert lambda expression body to expression body
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+#pragma warning restore RCS1021 // Convert lambda expression body to expression body
 		await j.AssertClean();
 	}
 
