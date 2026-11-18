@@ -167,15 +167,23 @@ internal sealed class StreamTarget<T> : IChunkTarget<T>
 
 	int _disposed;
 
+	internal StreamTarget()
+		=> _lastDoubling = ChunkSizing.Log2(
+			ChunkSizing.ResolveStreamMaxRows(_first) / _first);
+
 	internal ChannelReader<IMemoryOwner<T>> Reader
 		=> _channel.Reader;
 
 	bool IChunkTarget<T>.IsDisposed
 		=> Volatile.Read(ref _disposed) != 0;
 
-	// 16, 32 ... 4096 rows, then 4096 again.
+	// FirstRows, twice that ... StreamMaxRows rows (16, 32 ... 4096), then
+	// the maximum again. Read once, when the stream is made.
+	readonly int _first = ChunkSizing.ResolveFirstRows();
+	readonly int _lastDoubling;
+
 	int IChunkTarget<T>.CapacityOf(int index)
-		=> 16 << Math.Min(index, 8);
+		=> _first << Math.Min(index, _lastDoubling);
 
 	bool IChunkTarget<T>.Publish(IMemoryOwner<T> chunk)
 		=> _channel.Writer.TryWrite(chunk);

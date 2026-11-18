@@ -14,6 +14,7 @@ namespace Open.Database.Extensions.Tests;
 // the arrays' return to the pool cannot be observed from here.
 // Every wait is bounded.
 [ExcludeFromCodeCoverage]
+[Collection("ChunkSizing")]
 public static class PooledBufferTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;

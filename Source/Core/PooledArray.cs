@@ -1,6 +1,3 @@
-#if NET
-using System.Numerics;
-#endif
 using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions;
@@ -15,7 +12,7 @@ namespace Open.Database.Extensions;
 // member runs; the docs say so.)
 //
 // Why the indexer is O(1).
-// The producer rents arrays of 16, 32, 64 ... rows (FirstSize << k) and
+// The producer rents arrays of 16, 32, 64 ... rows (FirstRows << k) and
 // every array but the last is full, so array k starts at row
 // 16 * (2^k - 1). Row i is therefore in array k = floor(log2(i/16 + 1)),
 // at offset i - (16 * 2^k - 16): one shift-and-log, no search. That
@@ -72,14 +69,22 @@ public sealed class PooledArray<T>
 	readonly int[] _lengths;
 	readonly int _count;
 
+	// The rows of the first chunk (a power of two) and its log2: the
+	// indexer finds a row's chunk with a shift.
+	readonly int _first;
+	readonly int _shift;
+
 	internal PooledArray(
 		PooledBuffer<T> owner,
 		IMemoryOwner<T>[] chunks,
-		int count)
+		int count,
+		int firstRows)
 	{
 		_owner = owner;
 		_chunks = chunks;
 		_count = count;
+		_first = firstRows;
+		_shift = ChunkSizing.Log2(firstRows);
 
 		_arrays = new T[chunks.Length][];
 		_offsets = new int[chunks.Length];
@@ -126,9 +131,8 @@ public sealed class PooledArray<T>
 			_owner.ThrowIfDisposed();
 			if ((uint)index >= (uint)_count) ThrowOutOfRange(index);
 
-			int first = PooledBuffer<T>.FirstSize;
-			int segment = Log2((index / first) + 1);
-			int at = index - ((first << segment) - first);
+			int segment = ChunkSizing.Log2((index >> _shift) + 1);
+			int at = index - ((_first << segment) - _first);
 			T[]? array = _arrays[segment];
 			return array is not null
 				? array[_offsets[segment] + at]
@@ -140,17 +144,6 @@ public sealed class PooledArray<T>
 	static void ThrowOutOfRange(int index)
 		=> throw new ArgumentOutOfRangeException(
 			nameof(index), index, "Not a row of this array.");
-
-	static int Log2(int value)
-	{
-#if NET
-		return BitOperations.Log2((uint)value);
-#else
-		int log = 0;
-		while ((value >>= 1) != 0) ++log;
-		return log;
-#endif
-	}
 
 	/// <summary>Copies every row, in order, to the span.</summary>
 	/// <param name="destination">

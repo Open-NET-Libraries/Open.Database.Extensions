@@ -15,6 +15,7 @@ namespace Open.Database.Extensions.Tests;
 // its test hook, so they must not run beside each other. Everything else
 // in the suite passes false and never touches the bin.
 [ExcludeFromCodeCoverage]
+[Collection("ChunkSizing")]
 public static class ClearOnReturnTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;

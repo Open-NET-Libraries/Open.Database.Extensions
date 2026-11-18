@@ -134,9 +134,10 @@ public sealed class PooledBuffer<T>
 		IAsyncDisposable,
 		IChunkTarget<T>
 {
-	// The first array holds this many rows; each next one doubles.
-	// So row i is in array floor(log2(i / 16 + 1)): O(1).
-	internal const int FirstSize = 16;
+	// The first array holds FirstRows rows (a power of two, 16 unless a
+	// test changed it: see ChunkSizing); each next one doubles. So row i
+	// is in array floor(log2(i / FirstRows + 1)): O(1).
+	readonly int _firstRows = ChunkSizing.ResolveFirstRows();
 
 	readonly ChunkProducer<T> _producer;
 	readonly Task _producerTask;
@@ -301,7 +302,8 @@ public sealed class PooledBuffer<T>
 		{
 			try
 			{
-				items.TrySetResult(new(this, [.. chunks], _total));
+				items.TrySetResult(
+					new(this, [.. chunks], _total, _firstRows));
 			}
 			catch (ObjectDisposedException)
 			{
@@ -316,8 +318,8 @@ public sealed class PooledBuffer<T>
 		=> Volatile.Read(ref _disposed) != 0;
 
 	int IChunkTarget<T>.CapacityOf(int index)
-		=> index < 27
-			? FirstSize << index
+		=> index < 31 - ChunkSizing.Log2(_firstRows)
+			? _firstRows << index
 			: throw new InvalidOperationException(
 				"A buffer cannot hold more rows than an int counts.");
 
