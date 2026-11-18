@@ -1195,7 +1195,9 @@ public readonly record struct MappedQuery<T>
 		=> _core.ToAsyncBuffer(
 			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
 
-	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/returns"/>
 	/// <param name="pool">
 	/// The pool the buffers are rented from and returned to; not
 	/// <see langword="null"/> (that throws
@@ -1221,7 +1223,9 @@ public readonly record struct MappedQuery<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
 
-	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/returns"/>
 	/// <param name="pool">
 	/// The pool the buffers are rented from and returned to; not
 	/// <see langword="null"/> (that throws
@@ -1357,7 +1361,9 @@ public readonly record struct MappedQuery<T>
 		=> _core.ToAsyncBufferStream(
 			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
 
-	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/returns"/>
 	/// <param name="pool">
 	/// The pool the buffers are rented from and returned to; not
 	/// <see langword="null"/> (that throws
@@ -1383,7 +1389,9 @@ public readonly record struct MappedQuery<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
 
-	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/returns"/>
 	/// <param name="pool">
 	/// The pool the buffers are rented from and returned to; not
 	/// <see langword="null"/> (that throws
@@ -1507,7 +1515,9 @@ public readonly record struct MappedQuery<T>
 		=> _core.ToBufferedAsyncStream(
 			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
 
-	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/returns"/>
 	/// <param name="pool">
 	/// The pool the buffers are rented from and returned to; not
 	/// <see langword="null"/> (that throws
@@ -1533,7 +1543,9 @@ public readonly record struct MappedQuery<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
 
-	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/returns"/>
 	/// <param name="pool">
 	/// The pool the buffers are rented from and returned to; not
 	/// <see langword="null"/> (that throws
