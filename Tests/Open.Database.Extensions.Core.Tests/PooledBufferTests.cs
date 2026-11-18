@@ -2192,6 +2192,72 @@ public static class PooledBufferTests
 		Assert.Null(boxed.Current);
 	}
 
+	// A pool whose memory cannot be written through its span (a manager
+	// whose GetSpan fails), so the first row of a buffer cannot be stored.
+	sealed class FailingSpanPool : MemoryPool<ChannelRow>
+	{
+		int _rents;
+		int _disposes;
+
+		public int Rents => Volatile.Read(ref _rents);
+
+		public int Disposes => Volatile.Read(ref _disposes);
+
+		public override int MaxBufferSize => int.MaxValue;
+
+		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
+		{
+			Interlocked.Increment(ref _rents);
+			return new Manager(this, Math.Max(minBufferSize, 1));
+		}
+
+		protected override void Dispose(bool disposing) { }
+
+		sealed class Manager(FailingSpanPool pool, int size)
+			: MemoryManager<ChannelRow>
+		{
+			public override Memory<ChannelRow> Memory
+				=> CreateMemory(size);
+
+			public override Span<ChannelRow> GetSpan()
+				=> throw new InvalidOperationException("span failed");
+
+			public override MemoryHandle Pin(int elementIndex = 0)
+				=> throw new NotSupportedException();
+
+			public override void Unpin() { }
+
+			protected override void Dispose(bool disposing)
+			{
+				if (disposing) Interlocked.Increment(ref pool._disposes);
+			}
+		}
+	}
+
+	[Fact]
+	public static async Task ABufferThatCouldNotStoreItsFirstRow_IsNeverPublishedEmpty()
+	{
+		var pool = new FailingSpanPool();
+		var run = Rows100();
+		List<int> chunks = [];
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+			{
+				await foreach (var chunk in run.View.ToAsyncBufferStream(
+					pool, clearOnReturn: false, Ct))
+				{
+					chunks.Add(chunk.Length);
+				}
+			});
+
+		// The read fails with the pool's error (the first one), no empty
+		// chunk reached the consumer, and the owner was released.
+		Assert.Equal("span failed", ex.Message);
+		Assert.Empty(chunks);
+		Assert.Equal(pool.Rents, pool.Disposes);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

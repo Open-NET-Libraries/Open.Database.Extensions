@@ -262,20 +262,31 @@ internal sealed class ChunkProducer<T>(
 		_capacity = target.CapacityOf(_index++);
 		IMemoryOwner<T> owner = pool.Rent(_capacity);
 
-		// A pool must give at least what was asked for. Checked once per
-		// chunk, before the owner is set, so nothing is half-open.
-		if (owner.Memory.Length < _capacity)
+		// Ask for the memory ONCE, and fail cleanly: an owner that throws
+		// when asked is disposed here (nothing else holds it yet), and a
+		// pool must give at least what was asked for. Checked once per
+		// chunk, before the owner is kept, so nothing is half-open.
+		Memory<T> memory;
+		try
+		{
+			memory = owner.Memory;
+		}
+		catch
+		{
+			owner.Dispose();
+			throw;
+		}
+
+		if (memory.Length < _capacity)
 		{
 			owner.Dispose();
 			throw new InvalidOperationException(
 				"The pool returned less memory than asked for.");
 		}
 
-		_owner = owner;
-
 		_count = 0;
 		if (MemoryMarshal.TryGetArray<T>(
-			owner.Memory,
+			memory,
 			out ArraySegment<T> segment)
 			&& segment.Array is not null)
 		{
@@ -291,6 +302,9 @@ internal sealed class ChunkProducer<T>(
 			_next = 0;
 			_limit = 0;
 		}
+
+		// Kept last: the buffer is open only once the window is set.
+		_owner = owner;
 	}
 
 	// The buffer being filled, cut to the rows it holds
@@ -312,15 +326,26 @@ internal sealed class ChunkProducer<T>(
 		return owner;
 	}
 
-	// Hands on the buffer that is still being filled, if it has rows.
+	// Hands on the buffer that is still being filled, if there is one.
 	void Seal()
 	{
 		if (_owner is null) return;
 
-		// Advance runs just before a row is stored: an open buffer
-		// always holds at least one row.
-		Debug.Assert(Filled > 0);
+		// A buffer is opened just before a row is stored in it, so it
+		// holds a row unless storing that row failed (the failure is the
+		// read's error, and it is recorded first). An empty buffer is
+		// never published: it is released, and this is reported (the
+		// first error stays).
+		if (Filled == 0)
+		{
+			IMemoryOwner<T> empty = Take();
+			empty.Release();
+			throw new InvalidOperationException(
+				"The producer was left holding a buffer without a row.");
+		}
+
 		IMemoryOwner<T> last = Take();
 		if (!target.Publish(last)) last.Release();
 	}
+
 }
