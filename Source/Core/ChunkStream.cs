@@ -28,6 +28,13 @@ namespace Open.Database.Extensions.Core;
 // report it), cancels the producer (the linked token reaches the query
 // itself), waits for the producer (so nothing can write any more), and
 // only then releases every array still in the channel.
+// The wait has NO timeout, on purpose (an await in a finally is
+// legal; only a yield is not): correctness, meaning no array goes back
+// while the producer might still write, comes before promptness. So a
+// break or a dispose waits for the provider call in progress (the
+// execute, or a read) to return. A provider that ignores the cancel
+// token delays it by that call; the producer checks the token after
+// every row, so it stops at the next row after that.
 // A caller's own cancel is different: the producer reports it through
 // the channel, so the consumer's next step throws it, after the chunks
 // that were already delivered.

@@ -768,6 +768,83 @@ public static class PooledBufferJourneyTests
 		await j.AssertClean(executed: false);
 	}
 
+	// ---- a provider that ignores the cancel token ---------------------------
+
+	// Serves rows, but its read number `deafAt` takes `delay` and
+	// ignores every token, as a provider that does not honour
+	// cancellation would.
+	sealed class DeafReader(int rows, int deafAt, TimeSpan delay)
+		: TypedReader(Columns, Rows(rows))
+	{
+		int _calls;
+		volatile bool _stalled;
+		volatile bool _stallEnded;
+
+		public bool Stalled => _stalled;
+
+		public bool StallEnded => _stallEnded;
+
+		public int Calls => Volatile.Read(ref _calls);
+
+		public override async Task<bool> ReadAsync(
+			CancellationToken cancellationToken)
+		{
+			if (Interlocked.Increment(ref _calls) == deafAt)
+			{
+				_stalled = true;
+				await Task.Delay(delay, CancellationToken.None);
+				_stallEnded = true;
+			}
+
+			return await base.ReadAsync(CancellationToken.None);
+		}
+	}
+
+	[Theory]
+	[InlineData("stream")]
+	[InlineData("buffer")]
+	public static async Task ADisposeWaitsForAProviderThatIgnoresCancellation(
+		string terminal)
+	{
+		using var j = new Journey(
+			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(400)));
+		Task dispose;
+		if (terminal == "stream")
+		{
+			var e = j.View
+				.ToAsyncBufferStream(j.Pool, Ct)
+				.GetAsyncEnumerator(Ct);
+			Assert.True(await e.MoveNextAsync().AsTask().Within());
+			await Until(
+				() => j.Reader is DeafReader { Stalled: true },
+				"the stall");
+			dispose = e.DisposeAsync().AsTask();
+		}
+		else
+		{
+			var buffer = j.View.ToAsyncBuffer(j.Pool, Ct);
+			await Until(
+				() => j.Reader is DeafReader { Stalled: true },
+				"the stall");
+			dispose = buffer.DisposeAsync().AsTask();
+		}
+
+		// The cancel was sent, the provider ignores it: the dispose
+		// is still waiting for the call in progress.
+		await Task.Delay(100, Ct);
+		DeafReader reader = (DeafReader)j.Reader!;
+		Assert.False(dispose.IsCompleted);
+		Assert.False(reader.StallEnded);
+
+		await dispose.Within();
+
+		// It completed only after that call returned, then the
+		// producer stopped at the next row: no hang beyond the read.
+		Assert.True(reader.StallEnded);
+		Assert.True(reader.Calls <= 22);
+		await j.AssertClean();
+	}
+
 	// ---- the arbiter's missing tests that fit the journeys ----------------
 
 	[Theory]
