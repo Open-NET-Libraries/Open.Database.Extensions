@@ -22,18 +22,20 @@ namespace Open.Database.Extensions.Core;
 // read. The values are read once, when a buffer or a stream is made.
 internal static class ChunkSizing
 {
-	internal const int DefaultFirstRows = 16;
-	internal const int DefaultStreamMaxRows = 4096;
+	const int DefaultFirstRows = 16;
+	const int DefaultStreamMaxRows = 4096;
 
-	// Rows in the first chunk of a buffer or a stream.
-	internal static int FirstRows = DefaultFirstRows;
+	// Rows in the first chunk of a buffer or a stream (set by reflection
+	// as "_firstRows").
+	internal static int _firstRows = DefaultFirstRows;
 
-	// Rows at which a stream stops doubling.
-	internal static int StreamMaxRows = DefaultStreamMaxRows;
+	// Rows at which a stream stops doubling (set by reflection as
+	// "_streamMaxRows").
+	internal static int _streamMaxRows = DefaultStreamMaxRows;
 
 	internal static int ResolveFirstRows()
 	{
-		int first = Volatile.Read(ref FirstRows);
+		int first = Volatile.Read(ref _firstRows);
 		return IsPowerOfTwo(first) && first <= 1 << 20
 			? first
 			: DefaultFirstRows;
@@ -41,7 +43,7 @@ internal static class ChunkSizing
 
 	internal static int ResolveStreamMaxRows(int first)
 	{
-		int max = Volatile.Read(ref StreamMaxRows);
+		int max = Volatile.Read(ref _streamMaxRows);
 		return IsPowerOfTwo(max) && max >= first && max <= 1 << 26
 			? max
 			: Math.Max(DefaultStreamMaxRows, first);

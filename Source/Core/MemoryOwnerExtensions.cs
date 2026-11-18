@@ -71,7 +71,7 @@ file sealed class SlicedOwner<T>(IMemoryOwner<T> host, int count)
 	: IMemoryOwner<T>
 {
 	public Memory<T> Memory
-		=> host.Memory.Slice(0, count);
+		=> host.Memory[..count];
 
 	public void Dispose()
 		=> host.Dispose();
@@ -88,7 +88,7 @@ file sealed class DeferredClearOwner<T>(IMemoryOwner<T> inner)
 	public Memory<T> Memory
 		=> Volatile.Read(ref _inner)?.Memory
 			?? throw new ObjectDisposedException(
-				nameof(DeferredClearOwner<T>));
+				nameof(DeferredClearOwner<>));
 
 	public void Dispose()
 	{
