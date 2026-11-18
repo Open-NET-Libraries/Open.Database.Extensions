@@ -259,7 +259,7 @@ An insert that returns its new id is one `SingleAsync`: no handler, and no check
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-To process a large result one row at a time without holding it all, use `Read(rows => ...)` (`Action<IEnumerable<T>>`, or `Func<IEnumerable<T>, TResult>` to return a value). `rows` is a lazy sequence that is only valid inside the handler. In async code use `ReadAsync(handler, cancellationToken)`, whose handler is a `Func<IAsyncEnumerable<T>, CancellationToken, ValueTask>` (or `ValueTask<TResult>` to return a value): enumerate the rows inside it with `await foreach`. To hand rows to another consumer use [`ToChannel`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
+To process a large result one row at a time without holding it all, use `Read(rows => ...)` (`Action<IEnumerable<T>>`, or `Func<IEnumerable<T>, TResult>` to return a value). `rows` is a lazy sequence that is only valid inside the handler. In async code use `ReadAsync(handler, cancellationToken)`, whose handler is a `Func<IAsyncEnumerable<T>, CancellationToken, ValueTask>` (or `ValueTask<TResult>` to return a value): enumerate the rows inside it with `await foreach`. To hand rows to another consumer use [`ToBufferedAsyncStream`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
 

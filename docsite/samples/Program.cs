@@ -178,51 +178,19 @@ List<string> pcLines = await ChannelsAndDataflow
 	.ProducerConsumerSample(connection, CancellationToken.None);
 Check(
 	pcLines.SequenceEqual(expectedLines),
-	"a producer/consumer over ToChannelReader() handles every row, in order, and the channel completes");
-
-(
-	int handledWhenReadEnded,
-	long readCount,
-	int handledCount,
-	long meanwhile) = await ChannelsAndDataflow
-		.ProducerReleasesTheConnectionSample(
-			connection,
-			CancellationToken.None);
-Check(
-	handledWhenReadEnded == 0 && readCount == 5,
-	"rowCount completes when the query has been read, while the slow consumer has handled nothing");
-Check(
-	meanwhile == 5 && handledCount == 5,
-	"the connection is free for other work before the consumer is done, and every row is handled after the gate opens");
-
-List<int>[] shares = await ChannelsAndDataflow
-	.FanOutSample(connection, CancellationToken.None);
-Check(
-	shares
-		.SelectMany(static share => share)
-		.Order()
-		.SequenceEqual([1, 2, 3, 4, 5])
-		&& shares.All(static share => share.Count >= 1),
-	"three consumers on the same reader handle every row exactly once, and each handles at least one");
-
-(int readWhileHeld, List<int> bounded) = await ChannelsAndDataflow
-	.BackPressureSample(connection, CancellationToken.None);
-Check(
-	readWhileHeld <= 4
-		&& bounded.SequenceEqual(Enumerable.Range(1, 100)),
-	"a bound of two rows keeps the query at most four rows ahead of a stuck consumer, and every row still arrives in order");
+	"a producer/consumer over ToBufferedAsyncStream() handles every row, in order");
 
 List<string> pipelineLines = await ChannelsAndDataflow
 	.PipelineSample(connection, CancellationToken.None);
 Check(
 	pipelineLines.SequenceEqual(expectedLines),
-	"query -> ToChannelReader() -> transform -> second channel -> final consumer delivers every row in order");
+	"query -> ToBufferedAsyncStream() -> transform -> channel -> final consumer delivers every row in order");
 
 List<string> bufferLines = await ChannelsAndDataflow
 	.BufferSample(connection, CancellationToken.None);
 Check(
 	bufferLines.SequenceEqual(expectedLines),
-	"buffering with ToListAsync returns the same rows as the channel");
+	"buffering with ToListAsync returns the same rows as the stream");
 
 // Transactions.
 Check((await Transactions.ConditionalAsync(factory, true, CancellationToken.None)) is (true, 1), "returning true commits");

@@ -5,24 +5,15 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Changes since rc.7
+
+- **Removed: `ToChannelReader` and `ToChannel` on the typed views** (`Map<T>()` of a command, with `Skip` and `Take`): 48 signatures in all. A call to one no longer compiles. They will come back in the Channel library. To read a query while a consumer works, use `ToBufferedAsyncStream(clearOnReturn)` (the elements) or `ToAsyncBufferStream(clearOnReturn)` (the chunks): the query is read on a background producer and the connection is released as soon as the last row is read. For a projection after the map, use `System.Linq.Async` over the stream. See [Channels and Dataflow](channels-and-dataflow.md). The `ToChannel` overloads of the Channel library, on a command or a reader, are not affected.
+
 ## Changes since rc.6
 
 - **A cancel that cuts a reader-level read short now throws `OperationCanceledException`.** `ForEach`, `IterateWhile`, `Select` and `SelectAsync` on a reader, their async forms, and the reader-level `ToChannel` overloads that take a transform used to end quietly by default and return a partial result that looked complete. They now check the token at the top of the loop, before each read, and the async forms hand it to `ReadAsync` and `NextResultAsync`, so the provider cancels the read itself. A read that already returned its last row is complete: a cancel after that is not an error. **Removed:** the `throwOnCancellation` parameter on `ForEach`, `IterateWhile`, `Select` and `SelectAsync`, six signatures in all. A call that passed it no longer compiles (CS1503 or CS1501): delete the argument, as in `Select(reader, transform, cancellationToken)`. To stop early without an exception, return `false` from the predicate or leave the loop. A mapped query over a plain `IDataReader` now forwards the token, so a cancel between rows throws.
 - **`AddParam` and `AddParamIf` take an `object?` value** in the `(name, value, type, direction)` forms, so a typed NULL such as `AddParam(name, (byte[]?)null, SqlDbType.VarBinary)` compiles without a nullability warning and sends `DBNull`. No existing call changes.
 - **A stored procedure's parameter names are resolved on every run.** A command that gets its names from the database (`AddParam(value)` with no name) used to resolve them once and write them into `Params`, so a second run of the same command object, after a change of connection, database or procedure, could send the first run's names. The names are now resolved on every run into a list of their own, and `Params` keeps what you added. No API changes. One visible change: after a run, `Params` shows what you added, not the resolved names. To see what was sent, read the provider command's `Parameters` in `Execute(command => ...)`.
-- **`ToChannelReader` and `ToChannel` on the typed views** (`Map<T>()` of a command, with `Skip` and `Take`), in Core with no new package. The rows go into a channel and post-processing runs on another thread, so the reader is released as soon as the rows are read:
-
-  ```cs
-  await foreach (Post post in cmd
-  	.Map<Post>()
-  	.ToChannelReader(cancellationToken)
-  	.ReadAllAsync(cancellationToken))
-  {
-  	await HandleAsync(post, cancellationToken);
-  }
-  ```
-
-  `ToChannelReader` returns the reader of a channel the library makes and always completes. `ToChannel` returns the `Channel<T>`, and `ToChannel(out Task<long> readCount, ...)` also gives the count of rows handed to the writer. The channel is unbounded unless you pass a `BoundedChannelOptions`, and the read starts at the first read, or at the call with `startImmediately: true`. A failure or a cancel completes the channel with it. Every form takes the token as its last parameter, so it can be passed positionally. This is the route for a projection after the map, where `IMappedQuery<T>.Select` used to be: `ToChannelReader()` then `Transform(...)` from Open.ChannelExtensions.
 - **Documentation:** a new [AsyncReads()](async-reads.md) page says why rows are read with `Read()` by default, what the opt-in costs and when to use it. The [Performance](performance.md) page now leads with ranked charts, with their data tables and CSVs in [Performance data](performance-data.md), and the same charts are on a [benchmark charts](../benchmarks/ranking.html) page. The Core README has a section on trimming and native AOT, with a recipe for a trimmed app (see "Known limitations"). The examples in the README, the mapping article, the samples and the XML documentation use async terminals with a real `CancellationToken`, `static` lambdas and one pair per line.
 
 ## Changes since rc.5
