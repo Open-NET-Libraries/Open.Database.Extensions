@@ -1737,6 +1737,109 @@ public static class PooledBufferTests
 		Assert.Equal(0, pool.Unmatched);
 	}
 
+	// ---- the struct enumerator and the cached indexer ---------------------
+
+	[Fact]
+	public static void ForeachBinds_ToTheStructEnumerator()
+	{
+		MethodInfo method = typeof(PooledArray<ChannelRow>)
+			.GetMethod("GetEnumerator", Type.EmptyTypes)!;
+
+		// The pattern-based enumerator: a struct, no boxing, no iterator.
+		Assert.True(method.ReturnType.IsValueType);
+		Assert.Equal(
+			typeof(PooledArray<ChannelRow>.Enumerator),
+			method.ReturnType);
+		Assert.True(
+			typeof(IEnumerator<ChannelRow>)
+				.IsAssignableFrom(method.ReturnType));
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(16)]
+	[InlineData(17)]
+	[InlineData(100)]
+	[InlineData(3500)]
+	public static async Task TheStructEnumerator_WalksEveryRow_AcrossSegments(
+		int n)
+	{
+		var run = Run.Create(() => new ChannelTestReader(n));
+		await using var buffer = run.View.ToAsyncBuffer(
+			clearOnDispose: false, Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+
+		List<int> viaForeach = [];
+		foreach (ChannelRow row in items) viaForeach.Add(row.Id);
+
+		Assert.Equal(Ids(n), viaForeach);
+
+		// The explicit interface still works (a boxed enumerator).
+		IEnumerable<ChannelRow> asInterface = items;
+		Assert.Equal(
+			Ids(n),
+			asInterface.Select(r => r.Id).ToList());
+		Assert.Equal(
+			Ids(n),
+			((System.Collections.IEnumerable)items).Cast<ChannelRow>()
+				.Select(r => r.Id).ToList());
+
+		// And the indexer agrees with it.
+		for (int i = 0; i < n; i += Math.Max(1, n / 50))
+			Assert.Equal(i + 1, items[i].Id);
+
+		if (n > 0) Assert.Equal(n, items[n - 1].Id);
+	}
+
+	[Fact]
+	public static async Task TheStructEnumerator_ThrowsOnTheNextMoveNext_AfterADispose()
+	{
+		var run = Run.Create(() => new ChannelTestReader(100));
+		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		var e = items.GetEnumerator();
+		for (int i = 0; i < 40; ++i) Assert.True(e.MoveNext());
+		Assert.Equal(40, e.Current.Id);
+
+		await buffer.DisposeAsync();
+
+		Assert.Throws<ObjectDisposedException>(() => e.MoveNext());
+		Assert.Throws<ObjectDisposedException>(
+			() => items.GetEnumerator());
+	}
+
+	[Fact]
+	public static async Task TheEnumerator_Current_AndReset_Behave()
+	{
+		var run = Run.Create(() => new ChannelTestReader(20));
+		await using var buffer = run.View.ToAsyncBuffer(
+			clearOnDispose: false, Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		IEnumerator<ChannelRow> e = items.GetEnumerator();
+
+		// Before the first MoveNext and after the last, Current is the
+		// default.
+		Assert.Null(e.Current);
+		for (int i = 1; i <= 20; ++i)
+		{
+			Assert.True(e.MoveNext());
+			Assert.Equal(i, e.Current!.Id);
+		}
+
+		Assert.False(e.MoveNext());
+		Assert.Null(e.Current);
+		Assert.False(e.MoveNext());
+
+		// Reset starts again, across the segment boundary at 16 too.
+		e.Reset();
+		Assert.True(e.MoveNext());
+		Assert.Equal(1, e.Current!.Id);
+		for (int i = 2; i <= 20; ++i) Assert.True(e.MoveNext());
+
+		Assert.Equal(20, e.Current!.Id);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

@@ -7,7 +7,12 @@ Open.Database.Extensions.PooledArray<T>
 Open.Database.Extensions.PooledArray<T>.Count.get -> int
 Open.Database.Extensions.PooledArray<T>.CopyTo(System.Span<T> destination) -> void
 Open.Database.Extensions.PooledArray<T>.Dispose() -> void
-Open.Database.Extensions.PooledArray<T>.GetEnumerator() -> System.Collections.Generic.IEnumerator<T>!
+Open.Database.Extensions.PooledArray<T>.Enumerator
+Open.Database.Extensions.PooledArray<T>.Enumerator.Current.get -> T
+Open.Database.Extensions.PooledArray<T>.Enumerator.Dispose() -> void
+Open.Database.Extensions.PooledArray<T>.Enumerator.Enumerator() -> void
+Open.Database.Extensions.PooledArray<T>.Enumerator.MoveNext() -> bool
+Open.Database.Extensions.PooledArray<T>.GetEnumerator() -> Open.Database.Extensions.PooledArray<T>.Enumerator
 Open.Database.Extensions.PooledArray<T>.this[int index].get -> T
 Open.Database.Extensions.MappedQuery<T>.ToAsyncBuffer(bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
 Open.Database.Extensions.MappedQuery<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!

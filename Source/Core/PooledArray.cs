@@ -1,6 +1,7 @@
 #if NET
 using System.Numerics;
 #endif
+using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions;
 
@@ -61,6 +62,16 @@ public sealed class PooledArray<T>
 	readonly PooledBuffer<T> _owner;
 	readonly IMemoryOwner<T>[] _chunks;
 
+	// Per chunk, found once when the view is built: the array behind its
+	// memory and where the rows start in it (null: the memory is not
+	// array-backed, and the chunk is read through its span), and its row
+	// count. So reading a row, or walking the rows, never asks an owner
+	// for its Memory again.
+	readonly T[]?[] _arrays;
+	readonly int[] _offsets;
+	readonly int[] _lengths;
+	readonly int _count;
+
 	internal PooledArray(
 		PooledBuffer<T> owner,
 		IMemoryOwner<T>[] chunks,
@@ -68,7 +79,23 @@ public sealed class PooledArray<T>
 	{
 		_owner = owner;
 		_chunks = chunks;
-		Count = count;
+		_count = count;
+
+		_arrays = new T[chunks.Length][];
+		_offsets = new int[chunks.Length];
+		_lengths = new int[chunks.Length];
+		for (int i = 0; i < chunks.Length; ++i)
+		{
+			Memory<T> memory = chunks[i].Memory;
+			_lengths[i] = memory.Length;
+			if (MemoryMarshal.TryGetArray<T>(
+				memory, out ArraySegment<T> segment)
+				&& segment.Array is not null)
+			{
+				_arrays[i] = segment.Array;
+				_offsets[i] = segment.Offset;
+			}
+		}
 	}
 
 	/// <summary>The number of rows.</summary>
@@ -80,7 +107,7 @@ public sealed class PooledArray<T>
 		get
 		{
 			_owner.ThrowIfDisposed();
-			return field;
+			return _count;
 		}
 	}
 
@@ -97,18 +124,22 @@ public sealed class PooledArray<T>
 		get
 		{
 			_owner.ThrowIfDisposed();
-			if ((uint)index >= (uint)Count)
-			{
-				throw new ArgumentOutOfRangeException(
-					nameof(index), index, "Not a row of this array.");
-			}
+			if ((uint)index >= (uint)_count) ThrowOutOfRange(index);
 
 			int first = PooledBuffer<T>.FirstSize;
 			int segment = Log2((index / first) + 1);
-			int start = (first << segment) - first;
-			return _chunks[segment].Memory.Span[index - start];
+			int at = index - ((first << segment) - first);
+			T[]? array = _arrays[segment];
+			return array is not null
+				? array[_offsets[segment] + at]
+				: _chunks[segment].Memory.Span[at];
 		}
 	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static void ThrowOutOfRange(int index)
+		=> throw new ArgumentOutOfRangeException(
+			nameof(index), index, "Not a row of this array.");
 
 	static int Log2(int value)
 	{
@@ -149,38 +180,141 @@ public sealed class PooledArray<T>
 	}
 
 	/// <summary>Enumerates the rows in order.</summary>
+	/// <remarks>
+	/// <c>foreach</c> binds to this method: the enumerator is a struct
+	/// (like <see cref="List{T}.Enumerator"/>), so walking the rows
+	/// allocates nothing and costs no interface call.
+	/// It checks that the array is not disposed once per
+	/// <c>MoveNext</c>, so an enumeration in progress throws
+	/// <see cref="ObjectDisposedException"/> as soon as the array is
+	/// disposed, even when no row is left.
+	/// Through <see cref="IEnumerable{T}"/> the same enumerator is boxed.
+	/// </remarks>
 	/// <returns>An enumerator over the rows.</returns>
 	/// <exception cref="ObjectDisposedException">
 	/// The array is disposed.
 	/// </exception>
-	public IEnumerator<T> GetEnumerator()
+	public Enumerator GetEnumerator()
 	{
 		_owner.ThrowIfDisposed();
-		return Enumerate();
+		return new Enumerator(this);
 	}
 
-	IEnumerator<T> Enumerate()
-	{
-		foreach (IMemoryOwner<T> chunk in _chunks)
-		{
-			Memory<T> memory = chunk.Memory;
-			for (int i = 0; i < memory.Length; ++i)
-			{
-				// The arrays go back to the pool on dispose: never
-				// hand out a row from one after it.
-				_owner.ThrowIfDisposed();
-				T item = memory.Span[i];
-				yield return item;
-			}
-		}
-
-		// Nothing is left, but a disposed view still throws: the
-		// end is never a quiet false after the dispose.
-		_owner.ThrowIfDisposed();
-	}
+	IEnumerator<T> IEnumerable<T>.GetEnumerator()
+		=> GetEnumerator();
 
 	IEnumerator IEnumerable.GetEnumerator()
 		=> GetEnumerator();
+
+	/// <summary>
+	/// Walks the rows of a <see cref="PooledArray{T}"/>, chunk by chunk,
+	/// straight over the arrays behind them.
+	/// </summary>
+	public struct Enumerator : IEnumerator<T>
+	{
+		readonly PooledArray<T> _view;
+		int _segment;      // the next chunk to enter
+		T[]? _array;       // the current chunk's array, when array-backed
+		Memory<T> _memory; // the current chunk's memory, when it is not
+		int _index;        // the next element of the current chunk
+		int _end;          // one past its last element
+		T _current;
+
+		internal Enumerator(PooledArray<T> view)
+		{
+			_view = view;
+			_segment = 0;
+			_array = null;
+			_memory = default;
+			_index = 0;
+			_end = 0;
+			_current = default!;
+		}
+
+		/// <summary>The row the last <c>MoveNext</c> moved to.</summary>
+		public readonly T Current
+			=> _current;
+
+		readonly object? IEnumerator.Current
+			=> _current;
+
+		/// <summary>Moves to the next row.</summary>
+		/// <returns>False when there is none.</returns>
+		/// <exception cref="ObjectDisposedException">
+		/// The array is disposed.
+		/// </exception>
+		public bool MoveNext()
+		{
+			// One check per row: the arrays go back to the pool on
+			// dispose, so no row of one is handed out after it.
+			_view._owner.ThrowIfDisposed();
+
+			T[]? array = _array;
+			int index = _index;
+			if (array is not null && index < _end)
+			{
+				_current = array[index];
+				_index = index + 1;
+				return true;
+			}
+
+			return MoveNextSlow();
+		}
+
+		// A chunk that is not array-backed, or the end of a chunk.
+		bool MoveNextSlow()
+		{
+			while (true)
+			{
+				if (_index < _end)
+				{
+					_current = _array is not null
+						? _array[_index]
+						: _memory.Span[_index];
+					++_index;
+					return true;
+				}
+
+				if (_segment >= _view._chunks.Length)
+				{
+					_current = default!;
+					return false;
+				}
+
+				int segment = _segment++;
+				int length = _view._lengths[segment];
+				T[]? array = _view._arrays[segment];
+				if (array is not null)
+				{
+					_array = array;
+					_memory = default;
+					_index = _view._offsets[segment];
+					_end = _index + length;
+				}
+				else
+				{
+					_array = null;
+					_memory = _view._chunks[segment].Memory;
+					_index = 0;
+					_end = length;
+				}
+			}
+		}
+
+		void IEnumerator.Reset()
+		{
+			_view._owner.ThrowIfDisposed();
+			_segment = 0;
+			_array = null;
+			_memory = default;
+			_index = 0;
+			_end = 0;
+			_current = default!;
+		}
+
+		/// <summary>Does nothing: there is nothing to release.</summary>
+		public readonly void Dispose() { }
+	}
 
 	// Every member checks the owner first, so a disposed view
 	// throws ObjectDisposedException, mutators included.

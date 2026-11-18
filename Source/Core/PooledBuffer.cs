@@ -298,7 +298,18 @@ public sealed class PooledBuffer<T>
 			if (items.TrySetException(error)) _ = items.Task.Exception;
 		}
 		else
-			items.TrySetResult(new(this, [.. chunks], _total));
+		{
+			try
+			{
+				items.TrySetResult(new(this, [.. chunks], _total));
+			}
+			catch (ObjectDisposedException)
+			{
+				// A dispose landed while the view was being built (it asks
+				// each owner for its memory).
+				items.TrySetCanceled();
+			}
+		}
 	}
 
 	bool IChunkTarget<T>.IsDisposed
