@@ -54,15 +54,26 @@ namespace Open.Database.Extensions.Core;
 //   wraps before the Publish attempt, so a chunk the target refuses,
 //   and the partial chunk sealed on a cancel or a fault, are cleared
 //   too: they hold rows. Nothing on the consumer's side knows.
-// - The memory a pool returns must be at least the capacity asked for:
-//   a Debug.Assert checks it, nothing does in a release build.
+// - The memory a pool returns must be at least the capacity asked for.
+//   Advance checks it once per chunk, and a pool that gives less breaks
+//   its contract: the rented owner is disposed and the read fails with
+//   an InvalidOperationException (it goes the normal fault path, so
+//   Items and the stream complete with it). It does not clamp: the
+//   O(1) indexer needs every chunk exactly its planned size, and a
+//   short memory over a shared array would be written past its end.
 // - A buffer is owned by exactly one party at a time: the producer
 //   while it fills it, then the target (Publish returned true), or the
 //   producer again if the target refused it (the target is disposed),
 //   in which case it releases it at once.
-// - Finish is called exactly once, last. Nothing is written after it.
+// - Finish is called exactly once, last, whatever happens: a failure
+//   of Seal (a pool whose owner throws) is recorded as the read's
+//   error, so Items and the stream still complete. Nothing is written
+//   after it. (If it is Slice that throws, the one buffer being filled
+//   is not released: it goes to the garbage collector.)
 // - The linked source is disposed when RunAsync ends, whatever
-//   happens; Cancel is safe at any time, before or after that.
+//   happens. Cancel is safe at any time: once the read is over (_ended)
+//   it does nothing, so a stream that ends normally does not touch the
+//   disposed source and throws no exception.
 // - The connection ODX opened is closed by the query when the read
 //   ends, not by this class.
 internal sealed class ChunkProducer<T>(
@@ -83,6 +94,7 @@ internal sealed class ChunkProducer<T>(
 	int _count;
 	int _index;
 	int _capacity;
+	int _ended;
 
 	/// <summary>
 	/// Starts the producer, once. A token that is already cancelled
@@ -109,13 +121,16 @@ internal sealed class ChunkProducer<T>(
 
 	/// <summary>Cancels the query. Never throws.</summary>
 	/// <remarks>
-	/// A provider's cancel callback may throw (the source then throws
-	/// an <see cref="AggregateException"/>), and the source may be
-	/// disposed already: the owner asked for the cancel, so neither
-	/// matters to it.
+	/// Does nothing once the read is over. A provider's cancel callback
+	/// may throw (the source then throws an
+	/// <see cref="AggregateException"/>), and in a narrow race the source
+	/// may be disposed already: the owner asked for the cancel, so
+	/// neither matters to it.
 	/// </remarks>
 	internal void Cancel()
 	{
+		if (Volatile.Read(ref _ended) != 0) return;
+
 		try { _linked.Cancel(); }
 		catch (Exception) { }
 	}
@@ -146,12 +161,19 @@ internal sealed class ChunkProducer<T>(
 			error = ex;
 		}
 
-		// The rows read so far are delivered, even on a failure.
-		// The source is disposed whatever happens here (a pool whose
-		// Return throws, for one); Cancel() stays safe after that.
+		// The read is over: a Cancel can do nothing more.
+		Volatile.Write(ref _ended, 1);
+
+		// The rows read so far are delivered, even on a failure. If
+		// handing them over fails (a pool whose owner throws), that is
+		// the read's error (the first error stays), and Finish still
+		// runs: without it Items and the stream would never complete.
+		// The source is disposed whatever happens here.
+		try { Seal(); }
+		catch (Exception ex) { error ??= ex; }
+
 		try
 		{
-			Seal();
 			target.Finish(error);
 		}
 		finally
@@ -198,7 +220,16 @@ internal sealed class ChunkProducer<T>(
 
 		_capacity = target.CapacityOf(_index++);
 		IMemoryOwner<T> owner = pool.Rent(_capacity);
-		Debug.Assert(owner.Memory.Length >= _capacity);
+
+		// A pool must give at least what was asked for. Checked once per
+		// chunk, before the owner is set, so nothing is half-open.
+		if (owner.Memory.Length < _capacity)
+		{
+			owner.Dispose();
+			throw new InvalidOperationException(
+				"The pool returned less memory than asked for.");
+		}
+
 		_owner = owner;
 
 		if (MemoryMarshal.TryGetArray<T>(

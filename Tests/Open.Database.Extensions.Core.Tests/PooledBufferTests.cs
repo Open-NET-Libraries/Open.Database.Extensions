@@ -1445,6 +1445,192 @@ public static class PooledBufferTests
 			$"{small} then {large} bytes beyond the arrays");
 	}
 
+	// ---- the producer's failure paths (final review: S1, S2, S4) -------------
+
+	[Fact]
+	public static async Task ASealThatThrows_StillFinishes_AndReleasesTheKeptChunks()
+	{
+		// The partial chunk is sealed after the dispose, refused, and its
+		// release throws (the first return of this pool fails): Finish
+		// must still run, or the published chunk is never released.
+		var pool = new CountingPool<ChannelRow> { ThrowOnFirstReturns = 1 };
+		StallingReader? reader = null;
+		var run = Run.Create(
+			() => reader = new StallingReader(100, 40),
+			asyncReads: true);
+		var buffer = run.View.ToAsyncBuffer(pool, clearOnDispose: false, Ct);
+		await Until(() => reader is { Stalled: true }, "the stall");
+
+		await Record.ExceptionAsync(
+			() => buffer.DisposeAsync().AsTask().Within());
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
+	// A pool that hands back HALF of what was asked for, over one shared
+	// array: the other half of every rent belongs to a neighbour.
+	sealed class ShortPool : MemoryPool<ChannelRow>
+	{
+		public ChannelRow[] Backing { get; } = [.. Enumerable
+			.Range(0, 1 << 14)
+			.Select(_ => new ChannelRow(-1))];
+
+		readonly List<(int Start, int Length)> _given = [];
+		int _next;
+		int _disposes;
+
+		public int Rents => _given.Count;
+
+		public int Disposes => Volatile.Read(ref _disposes);
+
+		public override int MaxBufferSize => int.MaxValue;
+
+		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
+		{
+			int size = Math.Max(minBufferSize, 1);
+			int start = _next;
+			_next += size;
+			_given.Add((start, size / 2));
+			return new Owner(this, new Memory<ChannelRow>(
+				Backing, start, size / 2));
+		}
+
+		// Every cell that was written is inside memory that was given.
+		public bool NeighboursUntouched()
+		{
+			for (int i = 0; i < Backing.Length; ++i)
+			{
+				if (Backing[i].Id != -1
+					&& !_given.Any(g => i >= g.Start
+						&& i < g.Start + g.Length))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		protected override void Dispose(bool disposing) { }
+
+		sealed class Owner(ShortPool pool, Memory<ChannelRow> memory)
+			: IMemoryOwner<ChannelRow>
+		{
+			public Memory<ChannelRow> Memory => memory;
+
+			public void Dispose()
+				=> Interlocked.Increment(ref pool._disposes);
+		}
+	}
+
+	[Theory]
+	[InlineData("buffer")]
+	[InlineData("stream")]
+	public static async Task APoolThatGivesLessMemory_FailsTheRead_AndWritesNothingElse(
+		string terminal)
+	{
+		var pool = new ShortPool();
+		var run = Rows100();
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+			{
+				if (terminal == "buffer")
+				{
+					await using var buffer = run.View.ToAsyncBuffer(
+						pool, clearOnDispose: false, Ct);
+					await buffer.Items.Within();
+				}
+				else
+				{
+					await foreach (var _ in run.View.ToAsyncBufferStream(
+						pool, clearOnReturn: false, Ct)) { }
+				}
+			});
+
+		Assert.Contains("less memory", ex.Message);
+		Assert.True(pool.NeighboursUntouched());
+		Assert.Equal(pool.Rents, pool.Disposes);
+	}
+
+	[Theory]
+	[InlineData("buffer")]
+	[InlineData("stream")]
+	public static async Task APoolWhoseRentFailsMidRead_FailsTheRead_AndReleasesWhatWasKept(
+		string terminal)
+	{
+		// The second rent fails: 16 rows were read into the first chunk.
+		var pool = new CountingPool<ChannelRow> { FailRentsAfter = 1 };
+		var run = Rows100();
+		List<int> seen = [];
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+			{
+				if (terminal == "buffer")
+				{
+					await using var buffer = run.View.ToAsyncBuffer(
+						pool, clearOnDispose: false, Ct);
+					await buffer.Items.Within();
+				}
+				else
+				{
+					await foreach (var chunk in run.View.ToAsyncBufferStream(
+						pool, clearOnReturn: false, Ct))
+					{
+						seen.AddRange(chunk.ToArray().Select(r => r.Id));
+					}
+				}
+			});
+
+		Assert.Equal("the pool failed", ex.Message);
+		if (terminal == "stream") Assert.Equal(Ids(16), seen);
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(1, pool.Rents);
+		Assert.Equal(1, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
+	[Fact]
+	public static async Task AStreamThatEndsNormally_ThrowsNoObjectDisposedException()
+	{
+		int thrown = 0;
+		void OnFirstChance(
+			object? sender,
+			System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+		{
+			// Only the ones thrown under the producer: other tests may
+			// throw this on purpose, on other threads or elsewhere.
+			if (e.Exception is ObjectDisposedException
+				&& new System.Diagnostics.StackTrace()
+					.ToString().Contains("ChunkProducer"))
+			{
+				Interlocked.Increment(ref thrown);
+			}
+		}
+
+		AppDomain.CurrentDomain.FirstChanceException += OnFirstChance;
+		try
+		{
+			for (int i = 0; i < 20; ++i)
+			{
+				await foreach (var _ in Rows100().View
+					.ToAsyncBufferStream(clearOnReturn: false, Ct)) { }
+			}
+
+			await Task.Delay(100, Ct);
+		}
+		finally
+		{
+			AppDomain.CurrentDomain.FirstChanceException -= OnFirstChance;
+		}
+
+		Assert.Equal(0, thrown);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

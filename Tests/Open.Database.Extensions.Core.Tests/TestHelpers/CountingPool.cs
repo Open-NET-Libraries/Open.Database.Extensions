@@ -26,6 +26,7 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	int _returns;
 	int _unmatched;
 	int _dirty;
+	int _throwsLeft;
 
 	/// <summary>
 	/// True: every buffer is the whole, larger array.
@@ -38,6 +39,20 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	/// would.
 	/// </summary>
 	public bool ThrowOnReturn { get; set; }
+
+	/// <summary>
+	/// The first this many disposals fail (after they are counted).
+	/// </summary>
+	public int ThrowOnFirstReturns
+	{
+		get => Volatile.Read(ref _throwsLeft);
+		set => Volatile.Write(ref _throwsLeft, value);
+	}
+
+	/// <summary>
+	/// Every rent after this many fails (-1: never).
+	/// </summary>
+	public int FailRentsAfter { get; init; } = -1;
 
 	/// <summary>
 	/// Fills every rented array with this value, so a test can see
@@ -69,6 +84,9 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 
 	public override IMemoryOwner<T> Rent(int minBufferSize = -1)
 	{
+		if (FailRentsAfter >= 0 && Rents >= FailRentsAfter)
+			throw new InvalidOperationException("the pool failed");
+
 		int size = Math.Max(minBufferSize, 1);
 		T[] array = _inner.Rent(RoundUp ? size + 5 : size);
 		if (Sentinel is not null) Array.Fill(array, Sentinel());
@@ -107,7 +125,7 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 			pool._out.TryRemove(items, out _);
 			pool._inner.Return(items);
 
-			if (pool.ThrowOnReturn)
+			if (pool.ThrowOnReturn || Interlocked.Decrement(ref pool._throwsLeft) >= 0)
 				throw new InvalidOperationException("pool return failed");
 		}
 	}
