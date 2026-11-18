@@ -96,12 +96,13 @@ namespace Open.Database.Extensions;
 /// from <see cref="Dispose"/> when the read had already finished;
 /// from <see cref="Dispose"/> while the read is still running it
 /// ends in the producer's task, which nobody observes.
-/// In every case the arrays not yet returned stay with the garbage
-/// collector.
+/// Without clearing, in every case the arrays not yet returned stay
+/// with the garbage collector.
 /// With clearing on, a <c>Return</c> that throws inside the
-/// background queue is swallowed there, and one that runs inline
-/// (the queue was full) propagates as above: the load of the queue
-/// decides which.
+/// background queue is swallowed there and costs only that array. When
+/// the queue is full the
+/// buffer is discarded instead (never cleared, never returned), so a
+/// custom pool must tolerate an owner that is never disposed.
 /// While an array sits in the pool, or in a buffer that is not
 /// disposed, every reference-type row in it stays reachable.
 /// They are returned to the pool when the buffer is disposed,
@@ -118,7 +119,8 @@ namespace Open.Database.Extensions;
 /// are cleared as the arrays go back to the pool, and that happens
 /// when the buffer, or the <see cref="PooledArray{T}"/> view of it,
 /// is disposed (not when the read completes). The clear is off the
-/// caller's path, on an internal background queue.
+/// caller's path, on an internal background queue. (If that queue is
+/// ever full, the buffer is discarded instead.)
 /// </para>
 /// <para>
 /// Disposing the buffer while it is still reading cancels the query,
@@ -241,7 +243,10 @@ public sealed class PooledBuffer<T>
 	/// After it, <see cref="Items"/> throws
 	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>
-	/// <returns>A task that completes when the arrays are back.</returns>
+	/// <returns>
+/// A task that completes when the producer has stopped and the arrays
+/// are returned (with clearing on, they are handed to the cleanup queue).
+/// </returns>
 	public async ValueTask DisposeAsync()
 		=> await DisposeCore().ConfigureAwait(false);
 

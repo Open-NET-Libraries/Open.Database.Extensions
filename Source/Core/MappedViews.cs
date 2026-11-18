@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Threading.Channels;
 
 namespace Open.Database.Extensions;
 
@@ -877,99 +876,6 @@ public readonly record struct MappedCommand<T>
 		IEqualityComparer<T>? comparer = null,
 		CancellationToken cancellationToken = default)
 		=> _core.ToHashSetAsync(comparer, cancellationToken);
-
-	#region Channel terminals
-
-	/// <inheritdoc cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, false, cancellationToken).Reader;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannelReader(ChannelOptions, CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		ChannelOptions? options,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, false, cancellationToken).Reader;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannelReader(bool, CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, startImmediately, cancellationToken).Reader;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannelReader(ChannelOptions, bool, CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		ChannelOptions? options,
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, startImmediately, cancellationToken).Reader;
-
-	/// <inheritdoc cref="MappedQuery{T}.ToChannel(CancellationToken)"/>
-	public Channel<T> ToChannel(
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, false, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(ChannelOptions, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		ChannelOptions? options,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, false, cancellationToken).Channel;
-
-	/// <inheritdoc cref="MappedQuery{T}.ToChannel(bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, startImmediately, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(ChannelOptions, bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		ChannelOptions? options,
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, startImmediately, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, false, out readCount, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, ChannelOptions, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		ChannelOptions? options,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, false, out readCount, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(
-			null, startImmediately, out readCount, cancellationToken)
-			.Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, ChannelOptions, bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		ChannelOptions? options,
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(
-			options, startImmediately, out readCount, cancellationToken)
-			.Channel;
-
-	#endregion
 
 	#region Buffer terminals
 

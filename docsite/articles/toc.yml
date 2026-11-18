@@ -5,6 +5,7 @@
 - href: mapping.md
 - href: async-reads.md
 - href: channels-and-dataflow.md
+- href: async-buffers.md
 - href: performance.md
   items:
   - href: performance-data.md

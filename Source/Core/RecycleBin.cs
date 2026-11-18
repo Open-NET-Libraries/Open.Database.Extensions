@@ -33,14 +33,18 @@ namespace Open.Database.Extensions.Core;
 // What a post can say (the caller decides what to do):
 // - Posted: the bin will run it.
 // - Full: the bin cannot take it (saturated, or anything went wrong
-//   posting); the caller clears INLINE, so no consumer ever waits on the
-//   bin (the app degrades to the no-bin behaviour). A dirty array is
-//   never returned to a pool.
+//   posting). A bin that reaches Capacity means something is wrong
+//   (clearing cannot keep up, or the loop is stalled), so the caller
+//   DISCARDS the owner: it is not cleared and not returned, it is left
+//   to the GC (for the shared pool's array-backed owners that costs one
+//   future allocation). No consumer ever waits on the bin, and a dirty
+//   array is never returned to a pool. Discards are counted (Discarded).
 // Post never throws.
 //
 // What it cannot guard against: a caller's custom pool whose Return
 // blocks forever stalls the single loop; up to Capacity dirty arrays
-// then queue up, and every clearing user falls back to inline clears.
+// then queue up, and every later one is discarded. A custom pool must
+// tolerate an owner that is never disposed (it is, when the bin is full).
 // There is no per-action timeout: synchronous work cannot be cancelled
 // anyway. The static loop is also a process-lifetime root: in a host
 // with collectible AssemblyLoadContexts it pins the context that
@@ -57,26 +61,40 @@ internal static class RecycleBin
 	// bin, or to count posts). Never set outside tests.
 	internal static Func<Action, PostResult>? _hook;
 
+	static long _discarded;
+
+	/// <summary>How many posts were refused (the owners discarded).</summary>
+	internal static long Discarded
+		=> Interlocked.Read(ref _discarded);
+
 	internal static PostResult Post(Action action)
 	{
+		PostResult result;
 		try
 		{
 			Func<Action, PostResult>? hook = Volatile.Read(ref _hook);
-			return hook is null ? Bin.Post(action) : hook(action);
+			result = hook is null ? Bin.Post(action) : hook(action);
 		}
 		catch (Exception)
 		{
 			// Whatever went wrong (even the static initializer of Bin):
-			// the caller clears inline.
-			return PostResult.Full;
+			// the caller discards the owner.
+			result = PostResult.Full;
 		}
+
+		if (result == PostResult.Full)
+			Interlocked.Increment(ref _discarded);
+
+		return result;
 	}
 
 	// Nested static class: its static initializer runs on first access,
 	// that is when the first action is posted.
 	static class Bin
 	{
-		const int Capacity = 1024;
+		// A count, not bytes: far above any healthy backlog. Reaching
+		// it means something is wrong, and the rest is discarded.
+		const int Capacity = 10_240;
 
 		static readonly Channel<Action> Work
 			= Channel.CreateBounded<Action>(
@@ -110,8 +128,8 @@ internal static class RecycleBin
 			// The channel is never completed, so this never ends by
 			// itself. There is no outer guard: nothing here can throw (each
 			// action has its own catch), and if the loop ever did die,
-			// posts would be accepted up to Capacity and then cleared
-			// inline, and a dirty array still never reaches a pool.
+			// posts would be accepted up to Capacity and then discarded,
+			// and a dirty array still never reaches a pool.
 			while (await reader.WaitToReadAsync().ConfigureAwait(false))
 			{
 				while (reader.TryRead(out Action? action))
