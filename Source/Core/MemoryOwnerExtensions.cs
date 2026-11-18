@@ -13,14 +13,24 @@ namespace Open.Database.Extensions.Core;
 // and released.
 //
 // Why Release exists.
-// It is the one place an owner is let go. By default it is only
-// Dispose: NOTHING IS CLEARED (the BCL's behaviour), because a clear on
-// the consumer's read path costs tens of percent when the consumer does
-// little. A caller who passes clearOnReturn: true gets every row cleared (any
-// type) over the used slice before the array goes back to the pool,
-// because the shared pool does not clear and other code can rent the
-// array next. The owner at a release site is already the exactly-sized
-// one from Slice, so its Memory is exactly the rows to clear.
+// It is the one place an owner is let go, and it is only Dispose. NOTHING
+// is cleared on the consumer's side: a clear on the read path costs tens
+// of percent when the consumer does little.
+//
+// Why ClearOnDispose exists.
+// When the caller asked for clearing (clearOnReturn / clearOnDispose:
+// true) the WRITER decides: the producer wraps each exactly-sized owner
+// (right after Slice, before it is published) in a DeferredClearOwner.
+// Whoever disposes it later, wherever and whenever (the stream's next
+// step, the buffer's ReleaseAll, a refused or abandoned chunk), just
+// calls Dispose; the wrapper posts "clear the rows, then dispose the
+// real owner" to the recycle bin. So the consumer side has no flag and
+// no extra code, and a chunk that never reaches a consumer (refused,
+// leftover on a cancel or a fault) is cleared too, because it holds rows.
+// The shared pool does not clear what it gets back and other code can
+// rent the array next, so a dirty array is NEVER returned to a pool:
+// the bin posts it; if the bin is saturated the clear runs inline; if the
+// bin cannot take it the array is dropped to the garbage collector.
 //
 // Ownership: an owner is released exactly once, by whoever holds it
 // last (the buffer's ReleaseAll, the stream's next step or drain, or
@@ -41,74 +51,17 @@ internal static class MemoryOwnerExtensions
 			? owner
 			: new SlicedOwner<T>(owner, count);
 
-	/// <summary>
-	/// Disposes the owner. With <paramref name="clear"/>, the rows are
-	/// cleared first, off the caller's path (see RecycleBin): posted to
-	/// the bin; inline if the bin is full; and if the bin cannot take it
-	/// the owner is NOT disposed, so a dirty array is never returned to
-	/// a pool (it goes to the garbage collector).
-	/// </summary>
-	internal static void Release<T>(
-		this IMemoryOwner<T> owner,
-		bool clear)
-	{
-		if (!clear)
-		{
-			owner.Dispose();
-			return;
-		}
-
-		switch (RecycleBin.Post(() => ClearAndDispose(owner)))
-		{
-			case RecycleBin.PostResult.Full:
-				ClearAndDispose(owner);
-				break;
-
-			// Posted: the bin runs it. Closed: dropped to the GC.
-		}
-	}
+	/// <summary>Disposes the owner (nothing is cleared here).</summary>
+	internal static void Release<T>(this IMemoryOwner<T> owner)
+		=> owner.Dispose();
 
 	/// <summary>
-	/// Releases every owner of a buffer that is being disposed:
-	/// one piece of work for the whole list when clearing.
+	/// Wraps the owner so that disposing it clears the rows first, off
+	/// the caller's path (see the notes above and RecycleBin).
 	/// </summary>
-	internal static void ReleaseAll<T>(
-		this List<IMemoryOwner<T>> owners,
-		bool clear)
-	{
-		if (!clear)
-		{
-			foreach (IMemoryOwner<T> owner in owners) owner.Dispose();
-
-			return;
-		}
-
-		switch (RecycleBin.Post(() =>
-		{
-			// One owner failing (a pool that throws) does not stop the
-			// rest from being cleared and returned.
-			foreach (IMemoryOwner<T> owner in owners)
-			{
-				try { ClearAndDispose(owner); }
-				catch (Exception) { }
-			}
-		}))
-		{
-			case RecycleBin.PostResult.Full:
-				foreach (IMemoryOwner<T> owner in owners)
-					ClearAndDispose(owner);
-
-				break;
-		}
-	}
-
-	// The owner at a release site is already the exactly-sized one (see
-	// Slice), so its Memory is exactly the rows to clear. Every type.
-	static void ClearAndDispose<T>(IMemoryOwner<T> owner)
-	{
-		owner.Memory.Span.Clear();
-		owner.Dispose();
-	}
+	internal static IMemoryOwner<T> ClearOnDispose<T>(
+		this IMemoryOwner<T> owner)
+		=> new DeferredClearOwner<T>(owner);
 }
 
 // Stateless: the memory is a slice of the host's, and disposing it
@@ -121,4 +74,42 @@ file sealed class SlicedOwner<T>(IMemoryOwner<T> host, int count)
 
 	public void Dispose()
 		=> host.Dispose();
+}
+
+// Disposing it hands "clear the rows, then dispose the real owner" to the
+// recycle bin and returns at once. Idempotent and thread-safe (the inner
+// owner is taken once). The owner it wraps is already exactly the rows.
+file sealed class DeferredClearOwner<T>(IMemoryOwner<T> inner)
+	: IMemoryOwner<T>
+{
+	IMemoryOwner<T>? _inner = inner;
+
+	public Memory<T> Memory
+		=> Volatile.Read(ref _inner)?.Memory
+			?? throw new ObjectDisposedException(
+				nameof(DeferredClearOwner<T>));
+
+	public void Dispose()
+	{
+		IMemoryOwner<T>? owner = Interlocked.Exchange(ref _inner, null);
+		if (owner is null) return;
+
+		switch (RecycleBin.Post(() => ClearAndDispose(owner)))
+		{
+			// The bin is saturated: clear here, never wait for it.
+			case RecycleBin.PostResult.Full:
+				ClearAndDispose(owner);
+				break;
+
+			// Posted: the bin runs it.
+			// Closed: the array is dropped to the garbage collector,
+			// never returned dirty.
+		}
+	}
+
+	static void ClearAndDispose(IMemoryOwner<T> owner)
+	{
+		owner.Memory.Span.Clear();
+		owner.Dispose();
+	}
 }

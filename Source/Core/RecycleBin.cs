@@ -6,8 +6,9 @@ namespace Open.Database.Extensions.Core;
 // caller asked for it (clearOnDispose / clearOnReturn: true), so the clear
 // is off the read path.
 //
-// It is INTERNAL ONLY: nothing outside the release sites can feed it, and
-// the only work it ever runs is ours and bounded (clear a slice of known
+// It is INTERNAL ONLY: nothing outside DeferredClearOwner (see
+// MemoryOwnerExtensions) can feed it, and the only work it ever runs is
+// ours and bounded (clear a slice of known
 // length, then dispose an owner).
 //
 // Lazy: nothing exists until a release with clearing is posted. The

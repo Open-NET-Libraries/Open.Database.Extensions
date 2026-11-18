@@ -1101,7 +1101,7 @@ public static class PooledBufferTests
 				"Release",
 				BindingFlags.Static | BindingFlags.NonPublic)!
 			.MakeGenericMethod(typeof(T))
-			.Invoke(null, [owner, false]);
+			.Invoke(null, [owner]);
 
 	[Fact]
 	public static void Slice_ReturnsTheSameOwner_WhenTheLengthMatches()

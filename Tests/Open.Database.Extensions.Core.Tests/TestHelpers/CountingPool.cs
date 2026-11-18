@@ -25,6 +25,7 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	int _rents;
 	int _returns;
 	int _unmatched;
+	int _dirty;
 
 	/// <summary>
 	/// True: every buffer is the whole, larger array.
@@ -37,6 +38,20 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	/// would.
 	/// </summary>
 	public bool ThrowOnReturn { get; set; }
+
+	/// <summary>
+	/// Fills every rented array with this value, so a test can see
+	/// what was, and was not, cleared.
+	/// </summary>
+	public Func<T>? Sentinel { get; init; }
+
+	/// <summary>
+	/// Asked for the array of every owner at its disposal, before it
+	/// goes back: true counts a dirty return.
+	/// </summary>
+	public Func<T[], bool>? IsDirty { get; init; }
+
+	public int DirtyReturns => Volatile.Read(ref _dirty);
 
 	public int Rents => Volatile.Read(ref _rents);
 
@@ -56,6 +71,8 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	{
 		int size = Math.Max(minBufferSize, 1);
 		T[] array = _inner.Rent(RoundUp ? size + 5 : size);
+		if (Sentinel is not null) Array.Fill(array, Sentinel());
+
 		Interlocked.Increment(ref _rents);
 		_out[array] = 0;
 		_captured.Enqueue(array);
@@ -82,6 +99,9 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 				Interlocked.Increment(ref pool._unmatched);
 				return;
 			}
+
+			if (pool.IsDirty?.Invoke(items) == true)
+				Interlocked.Increment(ref pool._dirty);
 
 			Interlocked.Increment(ref pool._returns);
 			pool._out.TryRemove(items, out _);

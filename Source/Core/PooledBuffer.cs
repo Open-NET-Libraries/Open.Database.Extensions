@@ -128,7 +128,6 @@ public sealed class PooledBuffer<T>
 
 	readonly ChunkProducer<T> _producer;
 	readonly Task _producerTask;
-	readonly bool _clearOnDispose;
 
 	// Producer only, until _done; then read-only. Null once released.
 	List<IMemoryOwner<T>>? _chunks = [];
@@ -144,8 +143,6 @@ public sealed class PooledBuffer<T>
 		bool clearOnDispose,
 		CancellationToken cancellationToken)
 	{
-		_clearOnDispose = clearOnDispose;
-
 		// The read starts now, whether or not anyone reads yet.
 		_producer = new(query, this, pool, clearOnDispose, cancellationToken);
 		_producerTask = _producer.Start();
@@ -263,7 +260,7 @@ public sealed class PooledBuffer<T>
 			= Interlocked.Exchange(ref _chunks, null);
 		if (chunks is null) return;
 
-		chunks.ReleaseAll(_clearOnDispose);
+		foreach (IMemoryOwner<T> chunk in chunks) chunk.Release();
 	}
 
 	// Completes the Items source from the finished read. Idempotent

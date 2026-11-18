@@ -46,6 +46,12 @@ namespace Open.Database.Extensions.Core;
 //   Finish.
 //
 // Invariants.
+// - With clearing on (the terminal's clearOnReturn / clearOnDispose),
+//   Take wraps each exactly-sized owner so that disposing it clears
+//   its rows through the recycle bin (see MemoryOwnerExtensions). It
+//   wraps before the Publish attempt, so a chunk the target refuses,
+//   and the partial chunk sealed on a cancel or a fault, are cleared
+//   too: they hold rows. Nothing on the consumer's side knows.
 // - The memory a pool returns must be at least the capacity asked for:
 //   a Debug.Assert checks it, nothing does in a release build.
 // - A buffer is owned by exactly one party at a time: the producer
@@ -61,7 +67,7 @@ internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
 	MemoryPool<T> pool,
-	bool clearOnReturn,
+	bool clear,
 	CancellationToken caller)
 {
 	// The caller's token and the owner's dispose, as one token:
@@ -190,7 +196,7 @@ internal sealed class ChunkProducer<T>(
 			IMemoryOwner<T> full = Take();
 			if (!target.Publish(full))
 			{
-				full.Release(clearOnReturn);
+				full.Release();
 				throw new OperationCanceledException();
 			}
 		}
@@ -220,6 +226,11 @@ internal sealed class ChunkProducer<T>(
 	IMemoryOwner<T> Take()
 	{
 		IMemoryOwner<T> owner = _owner!.Slice(_count);
+
+		// The writer decides: with clearing on, every chunk it makes is
+		// wrapped here, before any Publish, so a refused or leftover chunk
+		// (released on a cancel, a fault or at Seal) is cleared too.
+		if (clear) owner = owner.ClearOnDispose();
 		_owner = null;
 		_array = null;
 		_offset = 0;
@@ -236,6 +247,6 @@ internal sealed class ChunkProducer<T>(
 		// always holds at least one row.
 		Debug.Assert(_count > 0);
 		IMemoryOwner<T> last = Take();
-		if (!target.Publish(last)) last.Release(clearOnReturn);
+		if (!target.Publish(last)) last.Release();
 	}
 }

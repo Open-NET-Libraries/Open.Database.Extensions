@@ -97,7 +97,7 @@ internal sealed class ChunkStream<T>(
 		// producer, so no command and no connection.
 		cancellationToken.ThrowIfCancellationRequested();
 
-		StreamTarget<T> target = new(clearOnReturn);
+		StreamTarget<T> target = new();
 		ChunkProducer<T> producer = new(
 			query, target, pool, clearOnReturn, caller);
 		Task producerTask = producer.Start();
@@ -116,7 +116,7 @@ internal sealed class ChunkStream<T>(
 				{
 					// The array goes back at the next step.
 					try { yield return chunk.Memory; }
-					finally { chunk.Release(clearOnReturn); }
+					finally { chunk.Release(); }
 				}
 
 				cancellationToken.ThrowIfCancellationRequested();
@@ -147,7 +147,7 @@ internal sealed class ChunkStream<T>(
 // The stream's side of the producer: an unbounded channel with one
 // writer (the producer) and one reader (the consumer), and the flag
 // the consumer sets when it is done.
-internal sealed class StreamTarget<T>(bool clearOnReturn) : IChunkTarget<T>
+internal sealed class StreamTarget<T> : IChunkTarget<T>
 {
 	readonly Channel<IMemoryOwner<T>> _channel
 		= Channel.CreateUnbounded<IMemoryOwner<T>>(
@@ -182,6 +182,6 @@ internal sealed class StreamTarget<T>(bool clearOnReturn) : IChunkTarget<T>
 	internal void Drain()
 	{
 		while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
-			chunk.Release(clearOnReturn);
+			chunk.Release();
 	}
 }
