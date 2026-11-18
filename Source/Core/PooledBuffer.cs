@@ -263,7 +263,7 @@ public sealed class PooledBuffer<T>
 			= Interlocked.Exchange(ref _chunks, null);
 		if (chunks is null) return;
 
-		foreach (IMemoryOwner<T> chunk in chunks) chunk.Release(_clearOnDispose);
+		chunks.ReleaseAll(_clearOnDispose);
 	}
 
 	// Completes the Items source from the finished read. Idempotent
