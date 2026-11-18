@@ -31,7 +31,10 @@ namespace Open.Database.Extensions.Core;
 // The shared pool does not clear what it gets back and other code can
 // rent the array next, so a dirty array is NEVER returned to a pool:
 // the bin posts it, and if the bin cannot take it (saturated, or anything
-// went wrong) the clear runs inline.
+// went wrong) the owner is DISCARDED: neither cleared nor returned, it is
+// left to the GC. That costs the pool one array (it allocates another),
+// and holds only for owners that need no Dispose (the shared pool's are
+// array-backed); a custom pool must tolerate an owner never disposed.
 //
 // Ownership: an owner is released exactly once, by whoever holds it
 // last (the buffer's ReleaseAll, the stream's next step or drain, or
@@ -95,13 +98,11 @@ file sealed class DeferredClearOwner<T>(IMemoryOwner<T> inner)
 		IMemoryOwner<T>? owner = Interlocked.Exchange(ref _inner, null);
 		if (owner is null) return;
 
-		// Posted: the bin runs it. Full: it cannot take it, so clear here,
-		// never wait for it.
-		if (RecycleBin.Post(() => ClearAndDispose(owner))
-			== RecycleBin.PostResult.Full)
-		{
-			ClearAndDispose(owner);
-		}
+		// Posted: the bin runs it. Full: it cannot take it (a bin that
+		// reaches its limit means something is wrong), so the owner is
+		// discarded: never cleared here, never returned dirty, never
+		// waited for.
+		_ = RecycleBin.Post(() => ClearAndDispose(owner));
 	}
 
 	static void ClearAndDispose(IMemoryOwner<T> owner)

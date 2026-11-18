@@ -200,8 +200,8 @@ public static class ClearOnReturnTests
 
 		Assert.True(Volatile.Read(ref _hookCalls) > before);
 
-		// "Count" answers Full: the clears ran inline.
-		AssertBalanced(pool);
+		// "Count" answers Full: the owners were discarded, not returned.
+		Assert.Equal(0, pool.Returns);
 		Assert.Equal(0, pool.DirtyReturns);
 	}
 
@@ -286,12 +286,19 @@ public static class ClearOnReturnTests
 		Assert.Equal(0, pool.DirtyReturns);
 	}
 
-	// ---- a full bin clears inline, a closed bin drops -----------------------
+	// ---- a full bin discards ------------------------------------------------
 
+	static long Discarded()
+		=> (long)Bin.GetProperty("Discarded", Internal)!.GetValue(null)!;
+
+	// A bin that is full means something is wrong: the owners are
+	// neither cleared nor returned (never dirty to a pool), they are left
+	// to the GC, and the refusals are counted.
 	[Theory, MemberData(nameof(Terminals))]
-	public static async Task AFullBin_ClearsInline(string terminal)
+	public static async Task AFullBin_DiscardsTheOwners(string terminal)
 	{
 		var pool = RowPool();
+		long before = Discarded();
 		SetHook("Full");
 		try
 		{
@@ -299,13 +306,10 @@ public static class ClearOnReturnTests
 				100,
 				await ReadAll(terminal, Rows(100), pool, true));
 
-			// Nothing was left to a worker: it is all done by the time
-			// the read is.
-			AssertBalanced(pool);
+			Assert.True(pool.Rents > 0, "nothing was rented");
+			Assert.Equal(0, pool.Returns);
 			Assert.Equal(0, pool.DirtyReturns);
-			Assert.Equal(
-				100,
-				pool.Captured.Sum(a => a.Count(r => r is null)));
+			Assert.True(Discarded() > before);
 		}
 		finally
 		{
@@ -313,9 +317,10 @@ public static class ClearOnReturnTests
 		}
 	}
 
-	// Whatever goes wrong posting, the caller clears inline.
+	// Whatever goes wrong posting, the owner is discarded.
 	[Theory, MemberData(nameof(Terminals))]
-	public static async Task ABinThatThrows_ClearsInline(string terminal)
+	public static async Task ABinThatThrows_DiscardsTheOwners(
+		string terminal)
 	{
 		var pool = RowPool();
 		SetHook("Throw");
@@ -330,7 +335,8 @@ public static class ClearOnReturnTests
 			SetHook(null);
 		}
 
-		AssertBalanced(pool);
+		Assert.True(pool.Rents > 0, "nothing was rented");
+		Assert.Equal(0, pool.Returns);
 		Assert.Equal(0, pool.DirtyReturns);
 	}
 
@@ -498,7 +504,9 @@ public static class ClearOnReturnTests
 		Assert.Equal(chunks, Volatile.Read(ref _hookCalls) - before);
 		Assert.Equal(chunks, pool.Rents);
 		Assert.Equal(0, pool.DirtyReturns);
-		Assert.Equal(pool.Rents, pool.Returns);
+
+		// "Count" answers Full, so every owner was discarded.
+		Assert.Equal(0, pool.Returns);
 	}
 
 	[Fact]
