@@ -5,9 +5,10 @@ using System.Numerics;
 namespace Open.Database.Extensions.Core;
 
 // The sizes of the chunks the buffer terminals rent: a TEST SEAM, not an
-// option. The fields hold the shipped values; the benchmark project sets
-// them by reflection (there is no InternalsVisibleTo) to sweep chunk
-// sizes, and puts them back.
+// option. The fields hold the shipped values. There is no
+// InternalsVisibleTo, so a test or a benchmark project that wants other
+// sizes (to sweep them, say) sets the fields by reflection, and puts
+// them back.
 //
 // What the arithmetic allows. Every chunk is twice the one before it: the
 // first has FirstRows rows, the next 2 * FirstRows, and so on. That is

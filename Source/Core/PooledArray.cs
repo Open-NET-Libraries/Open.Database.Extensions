@@ -12,10 +12,11 @@ namespace Open.Database.Extensions;
 // member runs; the docs say so.)
 //
 // Why the indexer is O(1).
-// The producer rents arrays of 16, 32, 64 ... rows (FirstRows << k) and
-// every array but the last is full, so array k starts at row
-// 16 * (2^k - 1). Row i is therefore in array k = floor(log2(i/16 + 1)),
-// at offset i - (16 * 2^k - 16): one shift-and-log, no search. That
+// The producer rents arrays of F, 2F, 4F ... rows (FirstRows << k; F is
+// 16 by default, so 16, 32, 64 ...) and every array but the last is
+// full, so array k starts at row F * (2^k - 1). Row i is therefore in
+// array k = floor(log2(i/F + 1)), at offset i - (F * 2^k - F): one
+// shift-and-log, no search. That
 // relies on every non-last owner's memory being exactly its row count,
 // which the producer guarantees by slicing each buffer to its rows
 // (MemoryOwnerExtensions.Slice), even for a pool that hands out more
@@ -62,8 +63,9 @@ public sealed class PooledArray<T>
 	// Per chunk, found once when the view is built: the array behind its
 	// memory and where the rows start in it (null: the memory is not
 	// array-backed, and the chunk is read through its span), and its row
-	// count. So reading a row, or walking the rows, never asks an owner
-	// for its Memory again.
+	// count. So an array-backed row read or step does not ask the owner
+	// for its Memory again (a chunk that is not array-backed still does,
+	// and so do CopyTo and the ICollection members).
 	readonly T[]?[] _arrays;
 	readonly int[] _offsets;
 	readonly int[] _lengths;

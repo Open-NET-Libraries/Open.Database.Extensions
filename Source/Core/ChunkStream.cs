@@ -37,7 +37,7 @@ namespace Open.Database.Extensions.Core;
 // next chunk boundary at the latest: the read loop checks the token
 // per row in the default Read mode, the provider does in ReadAsync
 // mode, and the producer checks once per chunk (a stream's chunks are
-// 16 to 4,096 rows).
+// by default 16 to 4,096 rows).
 // A pool whose Return throws surfaces at the release (the next step,
 // or the dispose) and replaces what the consumer was already about to
 // see; with clearing on, one that throws inside the background queue is
