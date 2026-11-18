@@ -954,7 +954,7 @@ public static class PooledBufferJourneyTests
 			.Map<ChannelRow>()
 			.SingleResult()
 			.AsyncReads();
-		await using var buffer2 = view2.ToAsyncBuffer(Ct);
+		await using var buffer2 = view2.ToAsyncBuffer(clearOnDispose: false, Ct);
 		Assert.Equal(100, (await buffer2.Items.Within()).Count);
 		Assert.Equal(0, single!.NextResultCalls);
 	}

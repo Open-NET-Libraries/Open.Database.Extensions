@@ -60,11 +60,10 @@ namespace Open.Database.Extensions.Core;
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
-	MemoryPool<T>? pool,
+	MemoryPool<T> pool,
+	bool clearOnReturn,
 	CancellationToken caller)
 {
-	readonly MemoryPool<T> _pool = pool ?? MemoryPool<T>.Shared;
-
 	// The caller's token and the owner's dispose, as one token:
 	// it goes to the query, so a dispose cancels the database read.
 	readonly CancellationTokenSource _linked
@@ -191,13 +190,13 @@ internal sealed class ChunkProducer<T>(
 			IMemoryOwner<T> full = Take();
 			if (!target.Publish(full))
 			{
-				full.Release();
+				full.Release(clearOnReturn);
 				throw new OperationCanceledException();
 			}
 		}
 
 		_capacity = target.CapacityOf(_index++);
-		IMemoryOwner<T> owner = _pool.Rent(_capacity);
+		IMemoryOwner<T> owner = pool.Rent(_capacity);
 		Debug.Assert(owner.Memory.Length >= _capacity);
 		_owner = owner;
 
@@ -237,6 +236,6 @@ internal sealed class ChunkProducer<T>(
 		// always holds at least one row.
 		Debug.Assert(_count > 0);
 		IMemoryOwner<T> last = Take();
-		if (!target.Publish(last)) last.Release();
+		if (!target.Publish(last)) last.Release(clearOnReturn);
 	}
 }

@@ -13,14 +13,14 @@ namespace Open.Database.Extensions.Core;
 // and released.
 //
 // Why Release exists.
-// It is the one place an owner is let go, and it is only Dispose:
-// NOTHING IS CLEARED by default (the BCL's behaviour), because a clear
-// on the consumer's read path costs tens of percent when the consumer
-// does little. The trade-off: with the default pool a reference row can
-// stay reachable through a pooled array until it is overwritten or the
-// pool trims. A caller who wants rows scrubbed passes a MemoryPool<T>
-// whose owners clear on Dispose (the recipe is in the pool parameter's
-// docs); there is no flag on any terminal.
+// It is the one place an owner is let go. By default it is only
+// Dispose: NOTHING IS CLEARED (the BCL's behaviour), because a clear on
+// the consumer's read path costs tens of percent when the consumer does
+// little. A caller who passes clearOnReturn: true gets every row cleared (any
+// type) over the used slice before the array goes back to the pool,
+// because the shared pool does not clear and other code can rent the
+// array next. The owner at a release site is already the exactly-sized
+// one from Slice, so its Memory is exactly the rows to clear.
 //
 // Ownership: an owner is released exactly once, by whoever holds it
 // last (the buffer's ReleaseAll, the stream's next step or drain, or
@@ -41,9 +41,18 @@ internal static class MemoryOwnerExtensions
 			? owner
 			: new SlicedOwner<T>(owner, count);
 
-	/// <summary>Disposes the owner (nothing is cleared).</summary>
-	internal static void Release<T>(this IMemoryOwner<T> owner)
-		=> owner.Dispose();
+	/// <summary>
+	/// Disposes the owner; with <paramref name="clearOnReturn"/>, clears its
+	/// rows first.
+	/// </summary>
+	internal static void Release<T>(
+		this IMemoryOwner<T> owner,
+		bool clearOnReturn)
+	{
+		if (clearOnReturn) owner.Memory.Span.Clear();
+
+		owner.Dispose();
+	}
 }
 
 // Stateless: the memory is a slice of the host's, and disposing it

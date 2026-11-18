@@ -102,6 +102,13 @@ namespace Open.Database.Extensions;
 /// finalizer).
 /// </para>
 /// <para>
+/// If the buffer was made with <c>clearOnDispose: true</c>, the rows
+/// are cleared as the arrays go back to the pool, and that happens
+/// when the buffer, or the <see cref="PooledArray{T}"/> view of it,
+/// is disposed (not when the read completes). The clear is off the
+/// caller's path, on an internal background queue.
+/// </para>
+/// <para>
 /// Disposing the buffer while it is still reading cancels the query,
 /// and waits (<see cref="DisposeAsync"/>) for the provider call in
 /// progress to return: a provider that ignores cancellation delays
@@ -121,6 +128,7 @@ public sealed class PooledBuffer<T>
 
 	readonly ChunkProducer<T> _producer;
 	readonly Task _producerTask;
+	readonly bool _clearOnDispose;
 
 	// Producer only, until _done; then read-only. Null once released.
 	List<IMemoryOwner<T>>? _chunks = [];
@@ -132,11 +140,14 @@ public sealed class PooledBuffer<T>
 
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
-		MemoryPool<T>? pool,
+		MemoryPool<T> pool,
+		bool clearOnDispose,
 		CancellationToken cancellationToken)
 	{
+		_clearOnDispose = clearOnDispose;
+
 		// The read starts now, whether or not anyone reads yet.
-		_producer = new(query, this, pool, cancellationToken);
+		_producer = new(query, this, pool, clearOnDispose, cancellationToken);
 		_producerTask = _producer.Start();
 	}
 
@@ -252,7 +263,7 @@ public sealed class PooledBuffer<T>
 			= Interlocked.Exchange(ref _chunks, null);
 		if (chunks is null) return;
 
-		foreach (IMemoryOwner<T> chunk in chunks) chunk.Release();
+		foreach (IMemoryOwner<T> chunk in chunks) chunk.Release(_clearOnDispose);
 	}
 
 	// Completes the Items source from the finished read. Idempotent
