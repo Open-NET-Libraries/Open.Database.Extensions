@@ -99,9 +99,9 @@ namespace Open.Database.Extensions;
 /// In every case the arrays not yet returned stay with the garbage
 /// collector.
 /// With clearing on, a <c>Return</c> that throws inside the
-/// background queue is swallowed there, and one that runs inline
-/// (the queue was full) propagates as above: the load of the queue
-/// decides which.
+/// background queue is swallowed there. When the queue is full the
+/// buffer is discarded instead (never cleared, never returned), so a
+/// custom pool must tolerate an owner that is never disposed.
 /// While an array sits in the pool, or in a buffer that is not
 /// disposed, every reference-type row in it stays reachable.
 /// They are returned to the pool when the buffer is disposed,

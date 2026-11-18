@@ -781,8 +781,9 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full, or cannot take the work, the clear runs
-	/// inline instead: a dirty array is never returned to the pool.
+	/// If the queue is full (10,240 waiting), or cannot take the work,
+	/// the buffer is discarded: neither cleared nor returned, it is left to
+	/// the garbage collector, so a dirty array never reaches the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// While an array sits in the pool, or in a buffer that is not
@@ -819,8 +820,8 @@ public readonly record struct MappedQuery<T>
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
 	/// (With clearing on, one that throws inside the background queue is
-	/// swallowed there, and one that runs inline, because the queue was
-	/// full, propagates: the load of the queue decides which.)
+	/// swallowed there. A custom pool must also tolerate an owner that is
+	/// never disposed, which is what happens when the queue is full.)
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read: a consumer then sees the cancel after
@@ -847,8 +848,8 @@ public readonly record struct MappedQuery<T>
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
 	/// (With clearing on, one that throws inside the background queue is
-	/// swallowed there, and one that runs inline, because the queue was
-	/// full, propagates: the load of the queue decides which.)
+	/// swallowed there. A custom pool must also tolerate an owner that is
+	/// never disposed, which is what happens when the queue is full.)
 	/// </param>
 	/// <param name="clearOnDispose">
 	/// <see langword="true"/> clears the rows in each pooled buffer
@@ -861,8 +862,9 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full, or cannot take the work, the clear runs
-	/// inline instead: a dirty array is never returned to the pool.
+	/// If the queue is full (10,240 waiting), or cannot take the work,
+	/// the buffer is discarded: neither cleared nor returned, it is left to
+	/// the garbage collector, so a dirty array never reaches the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// While an array sits in the pool, or in a buffer that is not
@@ -947,8 +949,9 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full, or cannot take the work, the clear runs
-	/// inline instead: a dirty array is never returned to the pool.
+	/// If the queue is full (10,240 waiting), or cannot take the work,
+	/// the buffer is discarded: neither cleared nor returned, it is left to
+	/// the garbage collector, so a dirty array never reaches the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// While an array sits in the pool, or in a buffer that is not
@@ -985,8 +988,8 @@ public readonly record struct MappedQuery<T>
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
 	/// (With clearing on, one that throws inside the background queue is
-	/// swallowed there, and one that runs inline, because the queue was
-	/// full, propagates: the load of the queue decides which.)
+	/// swallowed there. A custom pool must also tolerate an owner that is
+	/// never disposed, which is what happens when the queue is full.)
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read: a consumer then sees the cancel after
@@ -1013,8 +1016,8 @@ public readonly record struct MappedQuery<T>
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
 	/// (With clearing on, one that throws inside the background queue is
-	/// swallowed there, and one that runs inline, because the queue was
-	/// full, propagates: the load of the queue decides which.)
+	/// swallowed there. A custom pool must also tolerate an owner that is
+	/// never disposed, which is what happens when the queue is full.)
 	/// </param>
 	/// <param name="clearOnReturn">
 	/// <see langword="true"/> clears the rows in each pooled buffer
@@ -1027,8 +1030,9 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full, or cannot take the work, the clear runs
-	/// inline instead: a dirty array is never returned to the pool.
+	/// If the queue is full (10,240 waiting), or cannot take the work,
+	/// the buffer is discarded: neither cleared nor returned, it is left to
+	/// the garbage collector, so a dirty array never reaches the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// While an array sits in the pool, or in a buffer that is not
@@ -1101,8 +1105,9 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full, or cannot take the work, the clear runs
-	/// inline instead: a dirty array is never returned to the pool.
+	/// If the queue is full (10,240 waiting), or cannot take the work,
+	/// the buffer is discarded: neither cleared nor returned, it is left to
+	/// the garbage collector, so a dirty array never reaches the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// While an array sits in the pool, or in a buffer that is not
@@ -1139,8 +1144,8 @@ public readonly record struct MappedQuery<T>
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
 	/// (With clearing on, one that throws inside the background queue is
-	/// swallowed there, and one that runs inline, because the queue was
-	/// full, propagates: the load of the queue decides which.)
+	/// swallowed there. A custom pool must also tolerate an owner that is
+	/// never disposed, which is what happens when the queue is full.)
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read: a consumer then sees the cancel after
@@ -1167,8 +1172,8 @@ public readonly record struct MappedQuery<T>
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
 	/// (With clearing on, one that throws inside the background queue is
-	/// swallowed there, and one that runs inline, because the queue was
-	/// full, propagates: the load of the queue decides which.)
+	/// swallowed there. A custom pool must also tolerate an owner that is
+	/// never disposed, which is what happens when the queue is full.)
 	/// </param>
 	/// <param name="clearOnReturn">
 	/// <see langword="true"/> clears the rows in each pooled buffer
@@ -1181,8 +1186,9 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full, or cannot take the work, the clear runs
-	/// inline instead: a dirty array is never returned to the pool.
+	/// If the queue is full (10,240 waiting), or cannot take the work,
+	/// the buffer is discarded: neither cleared nor returned, it is left to
+	/// the garbage collector, so a dirty array never reaches the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// While an array sits in the pool, or in a buffer that is not
