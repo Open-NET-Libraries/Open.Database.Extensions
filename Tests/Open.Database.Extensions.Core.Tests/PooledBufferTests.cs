@@ -2258,6 +2258,23 @@ public static class PooledBufferTests
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
+	[Fact]
+	public static async Task AnOwnerWhoseMemoryThrowsRightAfterTheRent_IsDisposed()
+	{
+		var pool = new FlakyMemoryPool { ThrowAfter = 0 };
+		var run = Rows100();
+		await using var buffer = run.View.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct);
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			() => buffer.Items.Within());
+
+		Assert.Equal("memory failed", ex.Message);
+		await buffer.DisposeAsync();
+		Assert.True(pool.Rents > 0);
+		Assert.Equal(pool.Rents, pool.Disposes);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]
