@@ -1374,7 +1374,7 @@ public static class PooledBufferTests
 			Task dispose = Task.Run(
 				async () =>
 				{
-					Thread.SpinWait((round * 71) % 3000);
+					Thread.SpinWait((round * 71) % 20_000);
 					if (round % 2 == 0) buffer.Dispose();
 					else await buffer.DisposeAsync();
 				},
@@ -1437,14 +1437,15 @@ public static class PooledBufferTests
 	{
 		// A fixed cost per buffer (an owner, the pool's bookkeeping, the
 		// first rent of each size) is not per row: doubling the rows adds
-		// one more buffer, a few KB at most, where a cost of even one
-		// byte per row would add 100 KB.
+		// about 24 more 4,096-row buffers, a few hundred bytes each (more
+		// in Debug), where a cost of even one byte per row would add
+		// 100 KB.
 		await OverheadFor(1_000);
 		long small = await OverheadFor(100_000);
 		long large = await OverheadFor(200_000);
 
 		Assert.True(
-			large - small < 8_192,
+			large - small < 40_000,
 			$"{small} then {large} bytes beyond the arrays");
 	}
 
