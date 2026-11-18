@@ -841,7 +841,9 @@ public static class PooledBufferJourneyTests
 		// It completed only after that call returned, then the
 		// producer stopped at the next row: no hang beyond the read.
 		Assert.True(reader.StallEnded);
-		Assert.True(reader.Calls <= 22);
+		// (the token is checked once per chunk now: the read stops at
+		// the end of the chunk it was in, 48 rows in, not at the next row)
+		Assert.True(reader.Calls <= 50);
 		await j.AssertClean();
 	}
 

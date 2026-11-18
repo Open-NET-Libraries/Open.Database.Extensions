@@ -7,10 +7,12 @@ namespace Open.Database.Extensions.Core;
 // ToAsyncBufferStream and ToBufferedAsyncStream).
 //
 // What it does.
-// It runs the query through the view's own handler stream (so the
-// connection, the read mode, Skip and Take and the read-through of
-// later result sets are the ones every other terminal has, as for the
-// channel feed), copies each row into a buffer rented from the pool,
+// It runs the query through the same internal row-sink path as
+// ToArrayAsync and ToListAsync (MappedQueryCore.FillAsync into an
+// IRowSink, via ChunkSink), so the connection, the read mode, Skip and
+// Take and the read-through of later result sets are the ones every
+// other terminal has, and there is no per-row enumerator. It copies each
+// row into a buffer rented from the pool,
 // and hands each filled buffer to its target (IChunkTarget). The
 // target decides what happens to the chunks: the buffer keeps them
 // until it is disposed, the stream queues them for its one consumer.
@@ -124,7 +126,7 @@ internal sealed class ChunkProducer<T>(
 		try
 		{
 			await query
-				.ReadAsync<long>(FillAsync, _linked.Token)
+				.FillAsync(new ChunkSink<T>(this), _linked.Token)
 				.ConfigureAwait(false);
 		}
 		catch (OperationCanceledException) when (target.IsDisposed)
@@ -158,39 +160,32 @@ internal sealed class ChunkProducer<T>(
 		}
 	}
 
-	async ValueTask<long> FillAsync(
-		IAsyncEnumerable<T> rows,
-		CancellationToken cancellationToken)
+	// One row, from the read loop (through ChunkSink): straight into the
+	// array behind the current buffer's memory (the shared pool's memory
+	// is an array); a memory that is not an array goes through its span.
+	// No enumerator, no allocation: the same loop ToArrayAsync uses.
+	internal void Add(T row)
 	{
-		long total = 0;
-		await foreach (T row in rows
-			.WithCancellation(cancellationToken)
-			.ConfigureAwait(false))
-		{
-			// A provider that reads synchronously never looks at
-			// the token, so the loop does.
-			cancellationToken.ThrowIfCancellationRequested();
+		if (_owner is null || _count == _capacity) Advance();
 
-			if (_owner is null || _count == _capacity) Advance();
+		if (_array is not null)
+			_array[_offset + _count] = row;
+		else
+			_owner!.Memory.Span[_count] = row;
 
-			// Straight into the array behind the memory (the shared
-			// pool's memory is an array); a memory that is not an array
-			// goes through its span.
-			if (_array is not null)
-				_array[_offset + _count] = row;
-			else
-				_owner!.Memory.Span[_count] = row;
-
-			++_count;
-			++total;
-		}
-
-		return total;
+		++_count;
 	}
 
 	// Hands the full buffer on and rents the next one.
 	void Advance()
 	{
+		// The token is checked once per chunk (the read loop looks at it
+		// per row in the default Read mode, and the provider does in
+		// ReadAsync mode): a cancel that a provider ignores still ends
+		// the read here, at the next chunk. The chunk being filled is
+		// sealed and delivered, as for every cancel.
+		_linked.Token.ThrowIfCancellationRequested();
+
 		if (_owner is not null)
 		{
 			IMemoryOwner<T> full = Take();

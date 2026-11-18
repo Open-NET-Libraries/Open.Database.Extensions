@@ -1387,6 +1387,64 @@ public static class PooledBufferTests
 		Assert.Equal(0, pool.Unmatched);
 	}
 
+	// ---- the read loop: no per-row allocation ------------------------------
+
+	// Records, on the thread that reads, how much that thread allocated
+	// between its first and its last read.
+	sealed class AllocationProbeReader(int rows)
+		: TypedReader(ReaderFixtures.Columns, ReaderFixtures.Rows(rows))
+	{
+		long _first = -1;
+		long _last;
+
+		public long Allocated => _last - _first;
+
+		public override bool Read()
+		{
+			long now = GC.GetAllocatedBytesForCurrentThread();
+			if (_first < 0) _first = now;
+
+			_last = now;
+			return base.Read();
+		}
+	}
+
+	// What the read loop allocated, beyond the arrays it rented, for n
+	// rows (the thread that reads, from its first row to its last).
+	static async Task<long> OverheadFor(int rows)
+	{
+		AllocationProbeReader? reader = null;
+		var view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => reader = new AllocationProbeReader(rows))
+			.Map<int>();
+		var pool = new CountingPool<int>();
+
+		await using var buffer = view.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct);
+		PooledArray<int> items = await buffer.Items.Within();
+		Assert.Equal(rows, items.Count);
+
+		long arrays = pool.Captured.Sum(a => (long)a.Length * sizeof(int));
+		return reader!.Allocated - arrays;
+	}
+
+	[Fact]
+	public static async Task TheDump_AllocatesNothingPerRow()
+	{
+		// A fixed cost per buffer (an owner, the pool's bookkeeping, the
+		// first rent of each size) is not per row: doubling the rows adds
+		// one more buffer, a few KB at most, where a cost of even one
+		// byte per row would add 100 KB.
+		await OverheadFor(1_000);
+		long small = await OverheadFor(100_000);
+		long large = await OverheadFor(200_000);
+
+		Assert.True(
+			large - small < 8_192,
+			$"{small} then {large} bytes beyond the arrays");
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

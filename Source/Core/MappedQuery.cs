@@ -539,8 +539,45 @@ readonly struct MappedQueryCore<T>
 
 	#region Buffer terminals
 
+	// The producer reads straight into a sink by the same internal path
+	// as ToArrayAsync (RowReader.FillAsync / Fill): the connection, the
+	// read mode, Skip, Take and the read-through are the same, and
+	// there is no per-row enumerator. The sink is a struct (so the loop
+	// specializes) that holds a reference to its state, so the copy the
+	// loop passes across awaits is harmless.
+	internal ValueTask<bool> FillAsync<TSink>(
+		TSink sink,
+		CancellationToken cancellationToken)
+		where TSink : struct, IRowSink<T>
+	{
+		CancellationToken token = Combine(
+			cancellationToken, out CancellationTokenSource? linked);
+		return RunAsync(
+			(_source, _skip, _take, _asyncReads, token, sink),
+			static async (reader, s) =>
+			{
+				if (reader is DbDataReader db)
+				{
+					await RowReader.FillAsync(
+						s._source, db, s._skip, s._take,
+						s._asyncReads, s.sink, s.token)
+						.ConfigureAwait(false);
+				}
+				else
+				{
+					TSink copy = s.sink;
+					RowReader.Fill(
+						s._source, reader, s._skip, s._take,
+						ref copy, s.token);
+				}
+
+				return true;
+			},
+			Behavior, linked, token);
+	}
+
 	// The buffer terminals of every view run the query through the
-	// handler stream above (see BufferProducer.cs). ToAsyncBuffer
+	// sink path above (see ChunkProducer.cs). ToAsyncBuffer
 	// starts at the call; the two streams start at the first
 	// MoveNextAsync. A default struct is refused here, at the call,
 	// as everywhere else.
