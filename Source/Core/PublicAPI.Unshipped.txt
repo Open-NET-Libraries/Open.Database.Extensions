@@ -2,7 +2,6 @@
 Open.Database.Extensions.PooledBuffer<T>
 Open.Database.Extensions.PooledBuffer<T>.Dispose() -> void
 Open.Database.Extensions.PooledBuffer<T>.DisposeAsync() -> System.Threading.Tasks.ValueTask
-Open.Database.Extensions.PooledBuffer<T>.GetAsyncEnumerator(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerator<System.ReadOnlyMemory<T>>!
 Open.Database.Extensions.PooledBuffer<T>.Items.get -> System.Threading.Tasks.Task<Open.Database.Extensions.PooledArray<T>!>!
 Open.Database.Extensions.PooledArray<T>
 Open.Database.Extensions.PooledArray<T>.Count.get -> int

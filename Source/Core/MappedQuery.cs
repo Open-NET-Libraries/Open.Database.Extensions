@@ -1071,8 +1071,10 @@ public readonly record struct MappedQuery<T>
 	/// producer, once, even if nobody reads the buffer yet
 	/// (it may finish before any read happens).
 	/// Await <see cref="PooledBuffer{T}.Items"/> for the complete
-	/// result, or enumerate the buffer to get each array of rows
-	/// as it fills: both attach to that one read.
+	/// result. The buffer is not readable while it fills: to read
+	/// while the query is still running, use
+	/// <see cref="ToAsyncBufferStream(CancellationToken)"/> or
+	/// <see cref="ToBufferedAsyncStream(CancellationToken)"/>.
 	/// </para>
 	/// <para>
 	/// The rows stay valid until the buffer is disposed:

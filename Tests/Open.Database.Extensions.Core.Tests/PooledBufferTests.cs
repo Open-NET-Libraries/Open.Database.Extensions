@@ -176,12 +176,11 @@ public static class PooledBufferTests
 		await Until(() => run.Closed, "the connection closed");
 		Assert.Equal(1, run.Executes);
 
-		// Items and every enumeration attach to that one fill.
+		// Items attaches to that one fill, however often it is asked.
 		Task<PooledArray<ChannelRow>> first = buffer.Items;
 		Assert.Same(first, buffer.Items);
 		await first.Within();
-		await foreach (var _ in buffer) { }
-		await foreach (var _ in buffer) { }
+		Assert.Same(first, buffer.Items);
 
 		Assert.Equal(1, run.Executes);
 	}
@@ -194,35 +193,6 @@ public static class PooledBufferTests
 		Assert.Throws<InvalidOperationException>(
 			() => view.ToAsyncBuffer(Ct));
 		await Task.CompletedTask;
-	}
-
-	[Fact]
-	public static async Task AnEnumeration_AttachesToTheRunningFill()
-	{
-		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
-
-		await foreach (var _ in buffer) { }
-
-		Assert.Equal(1, run.Executes);
-	}
-
-	// ---- 3: Mode 1, chunk enumeration ----------------------------------
-
-	[Fact]
-	public static async Task Enumeration_YieldsExactSlices_ManyTimes()
-	{
-		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
-
-		List<int[]> one = await Chunks(buffer).Within();
-		List<int[]> two = await Chunks(buffer).Within();
-
-		AssertContiguous(one, 100);
-		Assert.Equal([16, 32, 52], one.Select(c => c.Length));
-		Assert.Equal(
-			one.SelectMany(c => c).ToList(),
-			two.SelectMany(c => c).ToList());
 	}
 
 	// ---- 4: disposing the PooledArray disposes the buffer --------------
@@ -239,11 +209,6 @@ public static class PooledBufferTests
 		Assert.Throws<ObjectDisposedException>(() => items.Count);
 		Assert.Throws<ObjectDisposedException>(() => items[0]);
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
-		await Assert.ThrowsAsync<ObjectDisposedException>(
-			async () =>
-			{
-				await foreach (var _ in buffer) { }
-			});
 
 		// Idempotent, and the async form too.
 		items.Dispose();
@@ -293,38 +258,6 @@ public static class PooledBufferTests
 	}
 
 	// ---- 6: Mode 1, cancelling one enumeration -------------------------
-
-	[Fact]
-	public static async Task CancellingAnEnumeration_DoesNotCancelTheRead()
-	{
-		// The read holds at its 20th row: the first array (16 rows) is
-		// out, the second is not full.
-		ChannelTestReader? reader = null;
-		var run = Run.Create(() =>
-		{
-			reader = new ChannelTestReader(50);
-			reader.Hold(20);
-			return reader;
-		});
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
-		var started = buffer.Items;
-
-		using var cts = CancellationTokenSource
-			.CreateLinkedTokenSource(Ct);
-		await using var e = buffer.GetAsyncEnumerator(cts.Token);
-		Assert.True(await e.MoveNextAsync().AsTask().Within());
-		Assert.Equal(16, e.Current.Length);
-
-		Task<bool> next = e.MoveNextAsync().AsTask();
-		cts.Cancel();
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => next.Within());
-
-		// The read did not notice: it finishes.
-		reader!.Release();
-		PooledArray<ChannelRow> items = await started.Within();
-		Assert.Equal(50, items.Count);
-	}
 
 	// ---- 7: Mode 2 ------------------------------------------------------
 
@@ -439,11 +372,6 @@ public static class PooledBufferTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => items.Within());
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () =>
-			{
-				await foreach (var _ in buffer) { }
-			});
 	}
 
 	[Fact]
@@ -468,16 +396,11 @@ public static class PooledBufferTests
 
 		Assert.Equal(Ids(29), chunks.SelectMany(c => c).ToList());
 
+		// The buffer is not readable while it fills, and a faulted read
+		// has no view: Items faults, every time it is asked.
 		await using var buffer = Faulty().View.ToAsyncBuffer(Ct);
-		List<int> seen = [];
 		await Assert.ThrowsAsync<InvalidOperationException>(
-			async () =>
-			{
-				await foreach (var chunk in buffer)
-					seen.AddRange(chunk.ToArray().Select(r => r.Id));
-			});
-		Assert.Equal(Ids(29), seen);
-
+			() => buffer.Items.Within());
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => buffer.Items.Within());
 	}
@@ -562,28 +485,6 @@ public static class PooledBufferTests
 			Assert.Equal(i + 1, items[i].Id);
 
 		Assert.Equal(1100, items.Count);
-	}
-
-	[Fact]
-	public static async Task ACancelledEnumeration_Throws_TheBufferStaysWhole()
-	{
-		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
-		await buffer.Items.Within();
-
-		using var cts = new CancellationTokenSource();
-		cts.Cancel();
-
-		// The arrays are all there, and the cancelled token still
-		// stops the enumeration at the first step.
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () =>
-			{
-				await foreach (var _ in buffer.WithCancellation(cts.Token)) { }
-			});
-
-		List<int[]> again = await Chunks(buffer).Within();
-		AssertContiguous(again, 100);
 	}
 
 	[Fact]
@@ -960,7 +861,7 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static async Task ACallerToken_CancelledMidFill_ReachesItemsAndEnumerations()
+	public static async Task ACallerToken_CancelledMidFill_ReachesItems()
 	{
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
@@ -979,20 +880,6 @@ public static class PooledBufferTests
 			() => buffer.Items.Within());
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => buffer.Items.Within());
-
-		// The rows read before the cancel come first, then the cancel,
-		// for every enumeration.
-		for (int pass = 0; pass < 2; ++pass)
-		{
-			int rows = 0;
-			await Assert.ThrowsAnyAsync<OperationCanceledException>(
-				async () =>
-				{
-					await foreach (var chunk in buffer)
-						rows += chunk.Length;
-				});
-			Assert.Equal(20, rows);
-		}
 	}
 
 	[Fact]
@@ -1337,6 +1224,92 @@ public static class PooledBufferTests
 		// The documented contract: the exception is the caller's pool's.
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => buffer.DisposeAsync().AsTask());
+	}
+
+	// ---- the lock-free Items: stress ---------------------------------------
+
+	[Fact]
+	public static async Task ManyThreadsTouchingItems_ShareOneTask_AndLoseNoCompletion()
+	{
+		const int Iterations = 10_000;
+		const int Threads = 4;
+		var view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(2))
+			.Map<ChannelRow>();
+
+		for (int i = 0; i < Iterations; ++i)
+		{
+			var buffer = view.ToAsyncBuffer(Ct);
+			int round = i;
+
+			// The first accesses land before, during and after the
+			// read finishes, one way or another.
+			Task<Task<PooledArray<ChannelRow>>>[] touches = [.. Enumerable
+				.Range(0, Threads)
+				.Select(k => Task.Factory.StartNew(
+					() =>
+					{
+						Thread.SpinWait(((round * 31) + (k * 97)) % 2000);
+						return buffer.Items;
+					},
+					Ct,
+					TaskCreationOptions.None,
+					TaskScheduler.Default))];
+			Task<PooledArray<ChannelRow>>[] tasks
+				= await Task.WhenAll(touches).Within();
+
+			Assert.All(tasks, t => Assert.Same(tasks[0], t));
+			PooledArray<ChannelRow> items = await tasks[0].Within();
+			Assert.Equal(2, items.Count);
+			Assert.All(
+				tasks,
+				t => Assert.Same(items, t.Result));
+
+			await buffer.DisposeAsync();
+		}
+	}
+
+	[Fact]
+	public static async Task ADisposeRacingTheFinishAndItems_ReleasesEveryArrayOnce()
+	{
+		const int Iterations = 3_000;
+		var pool = new CountingPool<ChannelRow>();
+		var view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(40))
+			.Map<ChannelRow>();
+
+		for (int i = 0; i < Iterations; ++i)
+		{
+			var buffer = view.ToAsyncBuffer(pool, Ct);
+			int round = i;
+			Task touch = Task.Run(
+				async () =>
+				{
+					Thread.SpinWait((round * 53) % 3000);
+					try { await buffer.Items; }
+					catch (ObjectDisposedException) { }
+					catch (OperationCanceledException) { }
+				},
+				Ct);
+			Task dispose = Task.Run(
+				async () =>
+				{
+					Thread.SpinWait((round * 71) % 3000);
+					if (round % 2 == 0) buffer.Dispose();
+					else await buffer.DisposeAsync();
+				},
+				Ct);
+
+			await Task.WhenAll(touch, dispose).Within();
+			await buffer.DisposeAsync();
+		}
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.True(pool.Rents > 0);
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
 	}
 
 	// ---- ToBufferedAsyncStream ------------------------------------------
