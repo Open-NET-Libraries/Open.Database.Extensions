@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions;
@@ -259,40 +260,48 @@ public sealed class PooledArray<T>
 		// A chunk that is not array-backed, or the end of a chunk.
 		bool MoveNextSlow()
 		{
-			while (true)
+			if (_index >= _end)
 			{
-				if (_index < _end)
-				{
-					_current = _array is not null
-						? _array[_index]
-						: _memory.Span[_index];
-					++_index;
-					return true;
-				}
-
 				if (_segment >= _view._chunks.Length)
 				{
 					_current = default!;
 					return false;
 				}
 
-				int segment = _segment++;
-				int length = _view._lengths[segment];
-				T[]? array = _view._arrays[segment];
-				if (array is not null)
-				{
-					_array = array;
-					_memory = default;
-					_index = _view._offsets[segment];
-					_end = _index + length;
-				}
-				else
-				{
-					_array = null;
-					_memory = _view._chunks[segment].Memory;
-					_index = 0;
-					_end = length;
-				}
+				LoadSegment(_segment++);
+
+				// A loaded chunk is never empty: nothing publishes an
+				// empty one (Seal hands on a buffer only if it has rows),
+				// and a pool that gave less memory fails the read.
+				Debug.Assert(_end > _index);
+			}
+
+			_current = _array is not null
+				? _array[_index]
+				: _memory.Span[_index];
+			++_index;
+			return true;
+		}
+
+		// Enters a chunk: its array and offset, or its memory when it is
+		// not array-backed.
+		void LoadSegment(int segment)
+		{
+			int length = _view._lengths[segment];
+			T[]? array = _view._arrays[segment];
+			if (array is not null)
+			{
+				_array = array;
+				_memory = default;
+				_index = _view._offsets[segment];
+				_end = _index + length;
+			}
+			else
+			{
+				_array = null;
+				_memory = _view._chunks[segment].Memory;
+				_index = 0;
+				_end = length;
 			}
 		}
 
