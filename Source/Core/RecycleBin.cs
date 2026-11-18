@@ -55,13 +55,13 @@ internal static class RecycleBin
 
 	// A test seam: when set, it answers every post (to simulate a full
 	// bin, or to count posts). Never set outside tests.
-	internal static Func<Action, PostResult>? Hook;
+	internal static Func<Action, PostResult>? _hook;
 
 	internal static PostResult Post(Action action)
 	{
 		try
 		{
-			Func<Action, PostResult>? hook = Volatile.Read(ref Hook);
+			Func<Action, PostResult>? hook = Volatile.Read(ref _hook);
 			return hook is null ? Bin.Post(action) : hook(action);
 		}
 		catch (Exception)
@@ -78,7 +78,7 @@ internal static class RecycleBin
 	{
 		const int Capacity = 1024;
 
-		static readonly Channel<Action> _channel
+		static readonly Channel<Action> Work
 			= Channel.CreateBounded<Action>(
 				new BoundedChannelOptions(Capacity)
 				{
@@ -88,10 +88,10 @@ internal static class RecycleBin
 				});
 
 		// Held so the one loop is never garbage; it never completes.
-		static readonly Task _loop = StartLoop();
+		static readonly Task Loop = StartLoop();
 
 		internal static PostResult Post(Action action)
-			=> _channel.Writer.TryWrite(action)
+			=> Work.Writer.TryWrite(action)
 				? PostResult.Posted
 				: PostResult.Full;
 
@@ -105,7 +105,7 @@ internal static class RecycleBin
 
 		static async Task DrainAsync()
 		{
-			ChannelReader<Action> reader = _channel.Reader;
+			ChannelReader<Action> reader = Work.Reader;
 
 			// The channel is never completed, so this never ends by
 			// itself. There is no outer guard: nothing here can throw (each
